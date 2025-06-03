@@ -11,7 +11,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import com.healapp.model.Consultation;
+// import com.healapp.model.Consultation;
 import com.healapp.model.UserDtls;
 
 import java.time.LocalDate;
@@ -70,90 +70,90 @@ public class EmailService {
         return message;
     }
 
-    public void sendConsultationConfirmation(Consultation consultation) throws MessagingException {
-        sendEmailToCustomer(consultation);
+    // public void sendConsultationConfirmation(Consultation consultation) throws MessagingException {
+    //     sendEmailToCustomer(consultation);
 
-        sendEmailToStaff(consultation);
-    }
+    //     sendEmailToStaff(consultation);
+    // }
 
-    @Async("asyncExecutor")
-    public void sendConsultationConfirmationAsync(Consultation consultation) {
-        try {
-            sendConsultationConfirmation(consultation);
-            logger.info("Consultation confirmation emails sent successfully for consultation ID: {}",
-                    consultation.getConsultationId());
-        } catch (MessagingException e) {
-            logger.error("Failed to send consultation confirmation emails for consultation ID {}: {}",
-                    consultation.getConsultationId(), e.getMessage());
-        }
-    }
+    // @Async("asyncExecutor")
+    // public void sendConsultationConfirmationAsync(Consultation consultation) {
+    //     try {
+    //         sendConsultationConfirmation(consultation);
+    //         logger.info("Consultation confirmation emails sent successfully for consultation ID: {}",
+    //                 consultation.getConsultationId());
+    //     } catch (MessagingException e) {
+    //         logger.error("Failed to send consultation confirmation emails for consultation ID {}: {}",
+    //                 consultation.getConsultationId(), e.getMessage());
+    //     }
+    // }
 
-    private void sendEmailToCustomer(Consultation consultation) throws MessagingException {
-        UserDtls customer = consultation.getCustomer();
-        UserDtls staff = consultation.getConsultant();
+    // private void sendEmailToCustomer(Consultation consultation) throws MessagingException {
+    //     UserDtls customer = consultation.getCustomer();
+    //     UserDtls staff = consultation.getConsultant();
 
-        String subject = "Xác nhận cuộc tư vấn #" + consultation.getConsultationId();
+    //     String subject = "Xác nhận cuộc tư vấn #" + consultation.getConsultationId();
 
-        String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
-                +
-                "<h2 style='color: #4a6ee0;'>Xác nhận cuộc tư vấn</h2>" +
-                "<p>Xin chào " + customer.getFullName() + ",</p>" +
-                "<p>Cuộc tư vấn của bạn đã được xác nhận với các thông tin sau:</p>" +
-                "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>" +
-                "<p><strong>Mã cuộc tư vấn:</strong> #" + consultation.getConsultationId() + "</p>" +
-                "<p><strong>Nhân viên tư vấn:</strong> " + staff.getFullName() + "</p>" +
-                "<p><strong>Ngày tư vấn:</strong> " + consultation.getStartTime().format(DATE_FORMATTER) + "</p>" +
-                "<p><strong>Thời gian:</strong> " + consultation.getStartTime().format(TIME_FORMATTER) +
-                " - " + consultation.getEndTime().format(TIME_FORMATTER) + "</p>" +
-                "</div>" +
-                "<p>Vui lòng tham gia cuộc tư vấn trực tuyến qua link Jitsi Meet sau:</p>" +
-                "<p><a href=\"" + consultation.getMeetUrl() + "\" style='display: inline-block; " +
-                "background-color: #4a6ee0; color: white; padding: 10px 20px; text-decoration: none; " +
-                "border-radius: 5px; font-weight: bold;'>Tham gia cuộc họp</a></p>" +
-                "<p><small>Hoặc copy link sau: " + consultation.getMeetUrl() + "</small></p>" +
-                "<h3>Hướng dẫn sử dụng Jitsi Meet:</h3>" +
-                "<ol>" +
-                "<li>Nhấn vào đường link trên vào đúng thời gian hẹn</li>" +
-                "<li>Cho phép trình duyệt truy cập camera và microphone</li>" +
-                "<li>Nhập tên của bạn và tham gia cuộc họp</li>" +
-                "</ol>" +
-                "<p>Nếu bạn cần hỗ trợ, vui lòng liên hệ chúng tôi qua email hoặc số điện thoại.</p>" +
-                "<p>Trân trọng,<br/>HealApp Team</p>" +
-                "</div>";
+    //     String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
+    //             +
+    //             "<h2 style='color: #4a6ee0;'>Xác nhận cuộc tư vấn</h2>" +
+    //             "<p>Xin chào " + customer.getFullName() + ",</p>" +
+    //             "<p>Cuộc tư vấn của bạn đã được xác nhận với các thông tin sau:</p>" +
+    //             "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>" +
+    //             "<p><strong>Mã cuộc tư vấn:</strong> #" + consultation.getConsultationId() + "</p>" +
+    //             "<p><strong>Nhân viên tư vấn:</strong> " + staff.getFullName() + "</p>" +
+    //             "<p><strong>Ngày tư vấn:</strong> " + consultation.getStartTime().format(DATE_FORMATTER) + "</p>" +
+    //             "<p><strong>Thời gian:</strong> " + consultation.getStartTime().format(TIME_FORMATTER) +
+    //             " - " + consultation.getEndTime().format(TIME_FORMATTER) + "</p>" +
+    //             "</div>" +
+    //             "<p>Vui lòng tham gia cuộc tư vấn trực tuyến qua link Jitsi Meet sau:</p>" +
+    //             "<p><a href=\"" + consultation.getMeetUrl() + "\" style='display: inline-block; " +
+    //             "background-color: #4a6ee0; color: white; padding: 10px 20px; text-decoration: none; " +
+    //             "border-radius: 5px; font-weight: bold;'>Tham gia cuộc họp</a></p>" +
+    //             "<p><small>Hoặc copy link sau: " + consultation.getMeetUrl() + "</small></p>" +
+    //             "<h3>Hướng dẫn sử dụng Jitsi Meet:</h3>" +
+    //             "<ol>" +
+    //             "<li>Nhấn vào đường link trên vào đúng thời gian hẹn</li>" +
+    //             "<li>Cho phép trình duyệt truy cập camera và microphone</li>" +
+    //             "<li>Nhập tên của bạn và tham gia cuộc họp</li>" +
+    //             "</ol>" +
+    //             "<p>Nếu bạn cần hỗ trợ, vui lòng liên hệ chúng tôi qua email hoặc số điện thoại.</p>" +
+    //             "<p>Trân trọng,<br/>HealApp Team</p>" +
+    //             "</div>";
 
-        sendEmail(customer.getEmail(), subject, htmlContent);
-    }
+    //     sendEmail(customer.getEmail(), subject, htmlContent);
+    // }
 
-    private void sendEmailToStaff(Consultation consultation) throws MessagingException {
-        UserDtls customer = consultation.getCustomer();
-        UserDtls consultant = consultation.getConsultant();
+    // private void sendEmailToStaff(Consultation consultation) throws MessagingException {
+    //     UserDtls customer = consultation.getCustomer();
+    //     UserDtls consultant = consultation.getConsultant();
 
-        String subject = "Xác nhận cuộc tư vấn với khách hàng #" + consultation.getConsultationId();
+    //     String subject = "Xác nhận cuộc tư vấn với khách hàng #" + consultation.getConsultationId();
 
-        String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
-                +
-                "<h2 style='color: #4a6ee0;'>Thông tin cuộc tư vấn</h2>" +
-                "<p>Xin chào " + consultant.getFullName() + ",</p>" +
-                "<p>Bạn có một cuộc tư vấn đã được xác nhận với khách hàng:</p>" +
-                "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>" +
-                "<p><strong>Mã cuộc tư vấn:</strong> #" + consultation.getConsultationId() + "</p>" +
-                "<p><strong>Khách hàng:</strong> " + customer.getFullName() + "</p>" +
-                "<p><strong>Email khách hàng:</strong> " + customer.getEmail() + "</p>" +
-                "<p><strong>Ngày tư vấn:</strong> " + consultation.getStartTime().format(DATE_FORMATTER) + "</p>" +
-                "<p><strong>Thời gian:</strong> " + consultation.getStartTime().format(TIME_FORMATTER) +
-                " - " + consultation.getEndTime().format(TIME_FORMATTER) + "</p>" +
-                "</div>" +
-                "<p>Link Jitsi Meet để tư vấn:</p>" +
-                "<p><a href=\"" + consultation.getMeetUrl() + "\" style='display: inline-block; " +
-                "background-color: #4a6ee0; color: white; padding: 10px 20px; text-decoration: none; " +
-                "border-radius: 5px; font-weight: bold;'>Tham gia cuộc họp</a></p>" +
-                "<p><small>Hoặc copy link sau: " + consultation.getMeetUrl() + "</small></p>" +
-                "<p>Vui lòng chuẩn bị và có mặt đúng giờ để đảm bảo chất lượng dịch vụ.</p>" +
-                "<p>Trân trọng,<br/>HealApp Team</p>" +
-                "</div>";
+    //     String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
+    //             +
+    //             "<h2 style='color: #4a6ee0;'>Thông tin cuộc tư vấn</h2>" +
+    //             "<p>Xin chào " + consultant.getFullName() + ",</p>" +
+    //             "<p>Bạn có một cuộc tư vấn đã được xác nhận với khách hàng:</p>" +
+    //             "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>" +
+    //             "<p><strong>Mã cuộc tư vấn:</strong> #" + consultation.getConsultationId() + "</p>" +
+    //             "<p><strong>Khách hàng:</strong> " + customer.getFullName() + "</p>" +
+    //             "<p><strong>Email khách hàng:</strong> " + customer.getEmail() + "</p>" +
+    //             "<p><strong>Ngày tư vấn:</strong> " + consultation.getStartTime().format(DATE_FORMATTER) + "</p>" +
+    //             "<p><strong>Thời gian:</strong> " + consultation.getStartTime().format(TIME_FORMATTER) +
+    //             " - " + consultation.getEndTime().format(TIME_FORMATTER) + "</p>" +
+    //             "</div>" +
+    //             "<p>Link Jitsi Meet để tư vấn:</p>" +
+    //             "<p><a href=\"" + consultation.getMeetUrl() + "\" style='display: inline-block; " +
+    //             "background-color: #4a6ee0; color: white; padding: 10px 20px; text-decoration: none; " +
+    //             "border-radius: 5px; font-weight: bold;'>Tham gia cuộc họp</a></p>" +
+    //             "<p><small>Hoặc copy link sau: " + consultation.getMeetUrl() + "</small></p>" +
+    //             "<p>Vui lòng chuẩn bị và có mặt đúng giờ để đảm bảo chất lượng dịch vụ.</p>" +
+    //             "<p>Trân trọng,<br/>HealApp Team</p>" +
+    //             "</div>";
 
-        sendEmail(consultant.getEmail(), subject, htmlContent);
-    }
+    //     sendEmail(consultant.getEmail(), subject, htmlContent);
+    // }
 
 
 
