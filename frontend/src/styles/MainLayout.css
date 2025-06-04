@@ -1,0 +1,35 @@
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+.main-content {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  /* Loại bỏ mọi khoảng trắng */
+  min-height: calc(100vh - 60px); /* Trừ đi chiều cao header */
+}
+
+/* Reset margin/padding cho toàn bộ trang */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Đảm bảo body không có margin/padding */
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Loại bỏ khoảng trắng default của các element */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
