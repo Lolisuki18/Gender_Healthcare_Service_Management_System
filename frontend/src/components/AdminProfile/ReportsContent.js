@@ -42,71 +42,79 @@ const MetricCard = ({ title, value, change, icon: Icon, color }) => (
       height: "100%",
       transition: "all 0.3s ease",
       "&:hover": {
-        transform: "translateY(-2px)",
-        boxShadow: "0 10px 30px rgba(74, 144, 226, 0.15)",
+        transform: "translateY(-4px)",
+        boxShadow: "0 8px 32px rgba(74, 144, 226, 0.15)",
       },
     }}
   >
     <CardContent sx={{ p: 3 }}>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          mb: 2,
-        }}
-      >
+      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
         <Box
           sx={{
-            background: `linear-gradient(45deg, ${color}, ${color}95)`,
+            width: 48,
+            height: 48,
             borderRadius: 2,
-            p: 1,
+            background: `linear-gradient(45deg, ${color}, ${color}dd)`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            mr: 2,
           }}
         >
           <Icon sx={{ color: "#fff", fontSize: 24 }} />
         </Box>
+        <Box sx={{ flex: 1 }}>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 700,
+              color: "#2D3748",
+              lineHeight: 1,
+            }}
+          >
+            {value}
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#4A5568", mt: 0.5 }}>
+            {title}
+          </Typography>
+        </Box>
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center" }}>
         <Typography
           variant="caption"
           sx={{
-            color: change >= 0 ? "#4CAF50" : "#F44336",
+            color: change > 0 ? "#4CAF50" : "#F44336",
             fontWeight: 600,
           }}
         >
-          {change >= 0 ? "+" : ""}
+          {change > 0 ? "+" : ""}
           {change}%
         </Typography>
+        <Typography variant="caption" sx={{ color: "#718096", ml: 1 }}>
+          so với tháng trước
+        </Typography>
       </Box>
-      <Typography
-        variant="h4"
-        sx={{ fontWeight: 700, color: "#2D3748", mb: 1 }}
-      >
-        {value}
-      </Typography>
-      <Typography variant="body2" sx={{ color: "#718096" }}>
-        {title}
-      </Typography>
     </CardContent>
   </Card>
 );
 
 const ReportsContent = () => {
-  const [timeRange, setTimeRange] = useState("month");
+  const [timeRange, setTimeRange] = useState("thisMonth");
 
-  // Mock data
   const metrics = [
     {
-      title: "Người dùng mới",
-      value: "234",
+      title: "Tổng người dùng",
+      value: "1,234",
       change: 12.5,
       icon: PeopleIcon,
       color: "#4A90E2",
     },
     {
       title: "Lịch hẹn",
-      value: "1,456",
-      change: 8.3,
+      value: "856",
+      change: 8.2,
       icon: AssignmentIcon,
-      color: "#1ABC9C",
+      color: "#4CAF50",
     },
     {
       title: "Doanh thu",
@@ -129,94 +137,68 @@ const ReportsContent = () => {
     { name: "Kiểm tra sức khỏe tổng quát", bookings: 134, revenue: "67M" },
     { name: "Tư vấn tâm lý", bookings: 98, revenue: "39M" },
     { name: "Điều trị hormone", bookings: 67, revenue: "33M" },
-    { name: "Phẫu thuật thẩm mỹ", bookings: 23, revenue: "46M" },
   ];
-
-  const handleExport = () => {
-    // Implement export logic
-    console.log("Exporting report...");
-  };
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-        }}
-      >
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
         <Typography
-          variant="h5"
+          variant="h4"
           sx={{
+            mb: 2,
+            fontWeight: 700,
             color: "#2D3748",
-            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            fontSize: { xs: "1.5rem", md: "2rem" },
           }}
         >
-          Báo cáo và thống kê
+          <TrendingUpIcon sx={{ mr: 2, color: "#4A90E2", fontSize: 32 }} />
+          Báo cáo & Thống kê
+        </Typography>
+        <Typography
+          variant="body1"
+          sx={{
+            color: "#4A5568",
+            mb: 3,
+            fontSize: "1rem",
+          }}
+        >
+          Phân tích hiệu suất và xu hướng hoạt động của hệ thống
         </Typography>
 
-        <Box sx={{ display: "flex", gap: 2 }}>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Thời gian</InputLabel>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel>Khoảng thời gian</InputLabel>
             <Select
               value={timeRange}
-              label="Thời gian"
+              label="Khoảng thời gian"
               onChange={(e) => setTimeRange(e.target.value)}
               sx={{
-                // Tùy chỉnh màu nền và border
                 "& .MuiOutlinedInput-root": {
                   backgroundColor: "rgba(255, 255, 255, 0.9)",
                   "&:hover .MuiOutlinedInput-notchedOutline": {
                     borderColor: "#4A90E2",
                   },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#4A90E2",
-                  },
-                },
-                // Tùy chỉnh dropdown menu
-                "& .MuiSelect-select": {
-                  color: "#2D3748",
-                },
-              }}
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(74, 144, 226, 0.2)",
-                    borderRadius: 2,
-                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-                    "& .MuiMenuItem-root": {
-                      color: "#2D3748",
-                      "&:hover": {
-                        backgroundColor: "rgba(74, 144, 226, 0.1)",
-                      },
-                      "&.Mui-selected": {
-                        backgroundColor: "rgba(74, 144, 226, 0.15)",
-                        color: "#4A90E2",
-                        fontWeight: 600,
-                        "&:hover": {
-                          backgroundColor: "rgba(74, 144, 226, 0.2)",
-                        },
-                      },
-                    },
-                  },
                 },
               }}
             >
-              <MenuItem value="week">Tuần này</MenuItem>
-              <MenuItem value="month">Tháng này</MenuItem>
-              <MenuItem value="quarter">Quý này</MenuItem>
-              <MenuItem value="year">Năm này</MenuItem>
+              <MenuItem value="thisWeek">Tuần này</MenuItem>
+              <MenuItem value="thisMonth">Tháng này</MenuItem>
+              <MenuItem value="thisQuarter">Quý này</MenuItem>
+              <MenuItem value="thisYear">Năm này</MenuItem>
             </Select>
           </FormControl>
-
           <Button
             variant="contained"
             startIcon={<DownloadIcon />}
-            onClick={handleExport}
             sx={{
               background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
               borderRadius: 2,
@@ -280,52 +262,34 @@ const ReportsContent = () => {
                     {topServices.map((service, index) => (
                       <TableRow key={index} hover>
                         <TableCell>
-                          <Typography
-                            variant="body2"
-                            sx={{ color: "#2D3748", fontWeight: 500 }}
-                          >
+                          <Typography variant="body2" sx={{ color: "#2D3748" }}>
                             {service.name}
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" sx={{ color: "#718096" }}>
+                          <Typography variant="body2" sx={{ color: "#2D3748" }}>
                             {service.bookings}
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" sx={{ color: "#718096" }}>
+                          <Typography variant="body2" sx={{ color: "#2D3748" }}>
                             {service.revenue}
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Box
+                          <LinearProgress
+                            variant="determinate"
+                            value={(service.bookings / 200) * 100}
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <LinearProgress
-                              variant="determinate"
-                              value={(service.bookings / 156) * 100}
-                              sx={{
-                                width: 60,
-                                height: 6,
+                              height: 6,
+                              borderRadius: 3,
+                              backgroundColor: "rgba(74, 144, 226, 0.1)",
+                              "& .MuiLinearProgress-bar": {
+                                backgroundColor: "#4A90E2",
                                 borderRadius: 3,
-                                background: "rgba(74, 144, 226, 0.1)",
-                                "& .MuiLinearProgress-bar": {
-                                  background:
-                                    "linear-gradient(90deg, #4A90E2, #1ABC9C)",
-                                },
-                              }}
-                            />
-                            <Typography
-                              variant="caption"
-                              sx={{ color: "#718096" }}
-                            >
-                              {Math.round((service.bookings / 156) * 100)}%
-                            </Typography>
-                          </Box>
+                              },
+                            }}
+                          />
                         </TableCell>
                       </TableRow>
                     ))}
@@ -336,7 +300,7 @@ const ReportsContent = () => {
           </Card>
         </Grid>
 
-        {/* Quick Stats */}
+        {/* Performance Overview */}
         <Grid item xs={12} lg={4}>
           <Card
             sx={{
@@ -344,7 +308,7 @@ const ReportsContent = () => {
               backdropFilter: "blur(20px)",
               border: "1px solid rgba(74, 144, 226, 0.15)",
               borderRadius: 3,
-              mb: 3,
+              height: "100%",
             }}
           >
             <CardContent sx={{ p: 3 }}>
@@ -352,7 +316,7 @@ const ReportsContent = () => {
                 variant="h6"
                 sx={{ mb: 3, color: "#2D3748", fontWeight: 600 }}
               >
-                Thống kê nhanh
+                Tổng quan hiệu suất
               </Typography>
 
               <Box sx={{ mb: 3 }}>
@@ -364,18 +328,18 @@ const ReportsContent = () => {
                   }}
                 >
                   <Typography variant="body2" sx={{ color: "#718096" }}>
-                    Khách hàng mới
+                    Người dùng hoạt động
                   </Typography>
                   <Typography
                     variant="body2"
                     sx={{ color: "#2D3748", fontWeight: 600 }}
                   >
-                    234
+                    87.2%
                   </Typography>
                 </Box>
                 <LinearProgress
                   variant="determinate"
-                  value={75}
+                  value={87.2}
                   sx={{
                     height: 4,
                     borderRadius: 2,

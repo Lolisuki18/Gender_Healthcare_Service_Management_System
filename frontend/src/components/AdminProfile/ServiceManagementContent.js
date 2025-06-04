@@ -25,6 +25,11 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  MedicalServices as HospitalIcon, // Icon dịch vụ y tế
+  // hoặc
+  // HealthAndSafety as HospitalIcon, // Icon sức khỏe và an toàn
+  // hoặc
+  // BusinessCenter as HospitalIcon, // Icon doanh nghiệp/dịch vụ
 } from "@mui/icons-material";
 
 const ServiceCard = ({ service, onEdit, onDelete, onToggleStatus }) => (
@@ -37,8 +42,8 @@ const ServiceCard = ({ service, onEdit, onDelete, onToggleStatus }) => (
       height: "100%",
       transition: "all 0.3s ease",
       "&:hover": {
-        transform: "translateY(-5px)",
-        boxShadow: "0 20px 40px rgba(74, 144, 226, 0.15)",
+        transform: "translateY(-4px)",
+        boxShadow: "0 8px 32px rgba(74, 144, 226, 0.15)",
       },
     }}
   >
@@ -51,7 +56,10 @@ const ServiceCard = ({ service, onEdit, onDelete, onToggleStatus }) => (
           mb: 2,
         }}
       >
-        <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
+        <Typography
+          variant="h6"
+          sx={{ color: "#2D3748", fontWeight: 600, lineHeight: 1.3 }}
+        >
           {service.name}
         </Typography>
         <Chip
@@ -183,18 +191,33 @@ const ServiceManagementContent = () => {
 
   return (
     <Box>
+      {/* Header với medical styling */}
       <Typography
-        variant="h5"
+        variant="h4"
         sx={{
-          mb: 3,
-          color: "#2D3748",
-          fontWeight: 600,
+          mb: 2,
+          fontWeight: 700,
+          color: "#2D3748", // Dark text for medical
+          display: "flex",
+          alignItems: "center",
+          fontSize: { xs: "1.5rem", md: "2rem" },
         }}
       >
+        <HospitalIcon sx={{ mr: 2, color: "#4A90E2", fontSize: 32 }} />
         Quản lý dịch vụ
       </Typography>
+      <Typography
+        variant="body1"
+        sx={{
+          color: "#4A5568", // Muted text for medical theme
+          mb: 4,
+          fontSize: "1rem",
+        }}
+      >
+        Quản lý các dịch vụ y tế và chăm sóc sức khỏe
+      </Typography>
 
-      {/* Search and Add */}
+      {/* Search and Add Section */}
       <Card
         sx={{
           background: "rgba(255, 255, 255, 0.95)",
@@ -211,7 +234,15 @@ const ServiceManagementContent = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               size="small"
-              sx={{ flex: 1 }}
+              sx={{
+                flex: 1,
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "rgba(255, 255, 255, 0.9)",
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#4A90E2",
+                  },
+                },
+              }}
             />
             <Button
               variant="contained"
@@ -221,6 +252,9 @@ const ServiceManagementContent = () => {
                 background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
                 borderRadius: 2,
                 px: 3,
+                "&:hover": {
+                  background: "linear-gradient(45deg, #357ABD, #17A2B8)",
+                },
               }}
             >
               Thêm dịch vụ

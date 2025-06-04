@@ -44,6 +44,14 @@ import {
   Settings as SettingsIcon,
   AdminPanelSettings as AdminIcon,
   Close as CloseIcon,
+  // Chọn 1 trong những icon này:
+  //Person as PersonIcon, // Icon người dùng cơ bản
+  // hoặc
+  // AccountCircle as PersonIcon, // Icon tài khoản tròn
+  // hoặc
+  SupervisorAccount as PersonIcon, // Icon tài khoản admin
+  // hoặc
+  // Badge as PersonIcon, // Icon huy hiệu
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { userService } from "@/services/userService";
@@ -53,67 +61,65 @@ const drawerWidth = 280;
 
 // Styled Drawer với admin theme - relative positioning cho MainLayout
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
-  width: drawerWidth,
+  width: 280,
   flexShrink: 0,
   "& .MuiDrawer-paper": {
-    width: drawerWidth,
-    boxSizing: "border-box",
+    width: 280,
     background:
-      "linear-gradient(145deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
-    borderRight: "1px solid rgba(255, 255, 255, 0.08)",
-    color: "#fff",
+      "linear-gradient(180deg, #f8faff 0%, #f0f7ff 50%, #e8f4ff 100%)", // Medical gradient background
     backdropFilter: "blur(20px)",
-    position: "relative", // Thay đổi từ fixed sang relative
-    height: "100%", // Full height của container
+    borderRight: "1px solid rgba(74, 144, 226, 0.15)", // Medical blue border
+    color: "#2D3748", // Dark text
+    position: "relative",
+    height: "100%",
+    boxShadow: "2px 0 10px rgba(74, 144, 226, 0.08)", // Subtle shadow
   },
 }));
 
-// Admin profile section styling
+// Admin profile section styling với medical theme
 const AdminProfileSection = styled(Box)(({ theme }) => ({
   padding: theme.spacing(3, 2),
   textAlign: "center",
-  background: "rgba(255, 255, 255, 0.02)",
+  background: "rgba(74, 144, 226, 0.08)", // Slightly darker medical blue background
   backdropFilter: "blur(20px)",
-  borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+  borderBottom: "1px solid rgba(74, 144, 226, 0.15)",
   position: "relative",
 }));
 
-// Menu item styling với selected state
+// Menu item styling với medical colors
 const StyledListItem = styled(ListItemButton)(({ theme, selected }) => ({
   margin: "6px 12px",
   borderRadius: "12px",
   transition: "all 0.3s ease",
-  minHeight: "56px",
-  backgroundColor: selected ? "rgba(59, 130, 246, 0.15)" : "transparent",
-  borderLeft: selected ? "3px solid #3b82f6" : "3px solid transparent",
+  background: selected
+    ? "rgba(74, 144, 226, 0.12)" // Slightly darker medical blue background when selected
+    : "transparent",
+  color: selected ? "#2D3748" : "#4A5568", // Dark colors for medical theme
   "&:hover": {
-    backgroundColor: selected
-      ? "rgba(59, 130, 246, 0.2)"
-      : "rgba(255, 255, 255, 0.08)",
+    background: "rgba(74, 144, 226, 0.1)",
     transform: "translateX(4px)",
-    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)",
   },
   "& .MuiListItemIcon-root": {
-    color: selected ? "#3b82f6" : "rgba(255, 255, 255, 0.7)",
-    minWidth: "40px",
+    color: selected ? "#4A90E2" : "#4A5568", // Medical blue for selected icon
+    minWidth: 40,
   },
   "& .MuiListItemText-primary": {
-    color: selected ? "#fff" : "rgba(255, 255, 255, 0.9)",
     fontWeight: selected ? 600 : 400,
     fontSize: "0.95rem",
+    color: selected ? "#2D3748" : "#4A5568",
   },
   "& .MuiListItemText-secondary": {
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "#718096", // Muted text color
     fontSize: "0.8rem",
   },
 }));
 
-// Logo section styling
+// Logo section styling với medical theme
 const LogoSection = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
   textAlign: "center",
-  borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-  background: "rgba(255, 255, 255, 0.02)",
+  borderBottom: "1px solid rgba(74, 144, 226, 0.15)",
+  background: "rgba(74, 144, 226, 0.05)", // Light medical blue tint
 }));
 
 const AdminSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
@@ -184,12 +190,12 @@ const AdminSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
             mb: 1,
           }}
         >
-          <AdminIcon sx={{ fontSize: 32, color: "#3b82f6", mr: 1 }} />
+          <AdminIcon sx={{ fontSize: 32, color: "#4A90E2", mr: 1 }} />
           <Typography
             variant="h6"
             sx={{
               fontWeight: 700,
-              background: "linear-gradient(45deg, #3b82f6, #8b5cf6)",
+              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
               backgroundClip: "text",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -200,7 +206,7 @@ const AdminSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
         </Box>
         <Typography
           variant="caption"
-          sx={{ color: "rgba(255, 255, 255, 0.6)" }}
+          sx={{ color: "#718096" }} // Medical muted text
         >
           Healthcare Management System
         </Typography>
@@ -216,8 +222,8 @@ const AdminSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
               position: "absolute",
               right: 8,
               top: 8,
-              color: "rgba(255, 255, 255, 0.7)",
-              "&:hover": { color: "#fff" },
+              color: "#4A5568", // Medical muted text
+              "&:hover": { color: "#2D3748" },
             }}
           >
             <CloseIcon />
@@ -226,39 +232,53 @@ const AdminSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
 
         <Avatar
           sx={{
-            width: 64,
-            height: 64,
+            width: 80,
+            height: 80,
             mx: "auto",
             mb: 2,
-            background: "linear-gradient(45deg, #3b82f6, #8b5cf6)",
-            fontSize: "24px",
-            fontWeight: 600,
+            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
           }}
         >
-          A
+          <PersonIcon sx={{ fontSize: 40, color: "#fff" }} />
         </Avatar>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-          {userData.fullName}
+
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
+            mb: 0.5,
+            fontSize: { xs: "16px", md: "18px" },
+            color: "#2D3748", // Dark text for medical theme
+          }}
+        >
+          Quản trị viên
         </Typography>
         <Typography
           variant="body2"
-          sx={{ color: "rgba(255, 255, 255, 0.7)", mb: 2 }}
+          sx={{
+            color: "#4A5568", // Muted text for medical theme
+            fontSize: "13px",
+            mb: 1,
+            wordBreak: "break-all",
+          }}
         >
-          {userData.email}
+          {userData?.email || "admin@healthcare.vn"}
         </Typography>
+
         <Chip
-          label="Admin"
+          label="Hoạt động"
           size="small"
           sx={{
-            background: "linear-gradient(45deg, #f44336, #d32f2f)",
+            background: "linear-gradient(45deg, #4CAF50, #2ECC71)", // Medical green
             color: "#fff",
-            fontWeight: 500,
-            boxShadow: "0 2px 8px rgba(244, 67, 54, 0.25)",
+            fontSize: "11px",
+            height: 20,
+            fontWeight: 600,
           }}
         />
       </AdminProfileSection>
 
-      <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }} />
+      <Divider sx={{ borderColor: "rgba(74, 144, 226, 0.08)" }} />
 
       {/* Navigation Menu */}
       <Box sx={{ flexGrow: 1, py: 2 }}>
@@ -266,7 +286,7 @@ const AdminSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
           variant="overline"
           sx={{
             px: 2,
-            color: "rgba(255, 255, 255, 0.5)",
+            color: "#718096", // Medical muted text
             fontWeight: 600,
             fontSize: "0.75rem",
             letterSpacing: "0.5px",
@@ -288,7 +308,7 @@ const AdminSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
                 secondaryTypographyProps={{
                   sx: {
                     mt: 0.5,
-                    display: { xs: "none", sm: "block" }, // Ẩn description trên mobile nhỏ
+                    display: { xs: "none", sm: "block" },
                   },
                 }}
               />
@@ -298,11 +318,11 @@ const AdminSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       </Box>
 
       {/* Footer */}
-      <Box sx={{ p: 2, borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
+      <Box sx={{ p: 2, borderTop: "1px solid rgba(74, 144, 226, 0.08)" }}>
         <Typography
           variant="caption"
           sx={{
-            color: "rgba(255, 255, 255, 0.5)",
+            color: "#718096", // Medical muted text
             textAlign: "center",
             display: "block",
           }}

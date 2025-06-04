@@ -86,14 +86,25 @@ const SettingsContent = () => {
   return (
     <Box>
       <Typography
-        variant="h5"
+        variant="h4"
         sx={{
-          mb: 3,
+          mb: 2,
+          fontWeight: 700,
           color: "#2D3748",
-          fontWeight: 600,
+          fontSize: { xs: "1.5rem", md: "2rem" },
         }}
       >
         Cài đặt hệ thống
+      </Typography>
+      <Typography
+        variant="body1"
+        sx={{
+          color: "#4A5568",
+          mb: 4,
+          fontSize: "1rem",
+        }}
+      >
+        Cấu hình và quản lý các thiết lập của hệ thống
       </Typography>
 
       <Card
@@ -104,8 +115,23 @@ const SettingsContent = () => {
           borderRadius: 3,
         }}
       >
-        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <Tabs value={tabValue} onChange={handleTabChange} sx={{ px: 3 }}>
+        <Box sx={{ borderBottom: 1, borderColor: "rgba(74, 144, 226, 0.15)" }}>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            sx={{
+              px: 3,
+              "& .MuiTab-root": {
+                color: "#4A5568",
+                "&.Mui-selected": {
+                  color: "#4A90E2",
+                },
+              },
+              "& .MuiTabs-indicator": {
+                backgroundColor: "#4A90E2",
+              },
+            }}
+          >
             <Tab label="Tổng quan" />
             <Tab label="Bảo mật" />
             <Tab label="Thông báo" />
@@ -125,6 +151,14 @@ const SettingsContent = () => {
                   onChange={(e) =>
                     handleSettingChange("siteName", e.target.value)
                   }
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#4A90E2",
+                      },
+                    },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -135,6 +169,14 @@ const SettingsContent = () => {
                   onChange={(e) =>
                     handleSettingChange("contactEmail", e.target.value)
                   }
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#4A90E2",
+                      },
+                    },
+                  }}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -147,6 +189,14 @@ const SettingsContent = () => {
                   onChange={(e) =>
                     handleSettingChange("siteDescription", e.target.value)
                   }
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#4A90E2",
+                      },
+                    },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -157,6 +207,14 @@ const SettingsContent = () => {
                   onChange={(e) =>
                     handleSettingChange("contactPhone", e.target.value)
                   }
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#4A90E2",
+                      },
+                    },
+                  }}
                 />
               </Grid>
             </Grid>

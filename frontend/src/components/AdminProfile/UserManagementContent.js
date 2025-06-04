@@ -29,6 +29,10 @@ import {
   Delete as DeleteIcon,
   MoreVert as MoreIcon,
   Search as SearchIcon,
+  ManageAccounts as ManageAccountsIcon, // Icon quản lý tài khoản
+  // People as ManageAccountsIcon, // Icon nhóm người
+  // Person as ManageAccountsIcon, // Icon người dùng
+  // Supervisor as ManageAccountsIcon, // Icon giám sát
 } from "@mui/icons-material";
 
 const UserManagementContent = () => {
@@ -97,14 +101,28 @@ const UserManagementContent = () => {
   return (
     <Box>
       <Typography
-        variant="h5"
+        variant="h4"
         sx={{
-          mb: 3,
-          color: "#2D3748",
-          fontWeight: 600,
+          mb: 2,
+          fontWeight: 700,
+          color: "#2D3748", // Dark text for medical
+          display: "flex",
+          alignItems: "center",
+          fontSize: { xs: "1.5rem", md: "2rem" },
         }}
       >
+        <ManageAccountsIcon sx={{ mr: 2, color: "#4A90E2", fontSize: 32 }} />
         Quản lý người dùng
+      </Typography>
+      <Typography
+        variant="body1"
+        sx={{
+          color: "#4A5568", // Muted text for medical theme
+          mb: 4,
+          fontSize: "1rem",
+        }}
+      >
+        Quản lý tài khoản và phân quyền người dùng trong hệ thống
       </Typography>
 
       {/* Search and Filter */}
@@ -124,9 +142,17 @@ const UserManagementContent = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               size="small"
-              sx={{ flex: 1 }}
+              sx={{
+                flex: 1,
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "rgba(255, 255, 255, 0.9)",
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#4A90E2",
+                  },
+                },
+              }}
               InputProps={{
-                startAdornment: <SearchIcon sx={{ color: "#718096", mr: 1 }} />,
+                startAdornment: <SearchIcon sx={{ color: "#4A5568", mr: 1 }} />,
               }}
             />
             <Button
@@ -135,6 +161,9 @@ const UserManagementContent = () => {
                 background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
                 borderRadius: 2,
                 px: 3,
+                "&:hover": {
+                  background: "linear-gradient(45deg, #357ABD, #17A2B8)",
+                },
               }}
             >
               Thêm người dùng

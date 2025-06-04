@@ -116,7 +116,7 @@ const AppointmentManagementContent = () => {
         variant="h5"
         sx={{
           mb: 3,
-          color: "#2D3748",
+          color: "#2D3748", // Dark text for medical
           fontWeight: 600,
         }}
       >
@@ -147,7 +147,16 @@ const AppointmentManagementContent = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               size="small"
-              sx={{ flex: 1, minWidth: "300px" }}
+              sx={{
+                flex: 1,
+                minWidth: "300px",
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "rgba(255, 255, 255, 0.9)",
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#4A90E2",
+                  },
+                },
+              }}
               InputProps={{
                 startAdornment: <SearchIcon sx={{ color: "#718096", mr: 1 }} />,
               }}

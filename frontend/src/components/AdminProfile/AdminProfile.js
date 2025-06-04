@@ -115,57 +115,59 @@ const AdminProfile = () => {
   };
 
   return (
-    // Container chính với full height và gradient background
+    // Container chính với medical background gradient
     <Box
       sx={{
         display: "flex",
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", // Admin gradient theme
+        background:
+          "linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 30%, #f5fafe 70%, #ffffff 100%)", // Xanh y tế nhẹ
       }}
     >
       {/* Sidebar Navigation Component */}
       <AdminSidebar
-        open={sidebarOpen} // Trạng thái mở/đóng
-        onClose={() => setSidebarOpen(false)} // Callback để đóng sidebar (mobile)
-        selectedItem={selectedMenuItem} // Menu item hiện tại
-        onItemSelect={handleMenuItemSelect} // Callback khi chọn menu
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        selectedItem={selectedMenuItem}
+        onItemSelect={handleMenuItemSelect}
       />
 
       {/* Main Content Area */}
       <MainContent sidebarOpen={sidebarOpen}>
-        {/* Header Section với glass morphism effect */}
+        {/* Header Section với enhanced glass effect */}
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             p: 3,
-            background: "rgba(255, 255, 255, 0.10)", // Dark glass effect for admin
-            backdropFilter: "blur(20px)", // Blur effect
-            borderBottom: "1px solid rgba(255, 255, 255, 0.15)", // Light border
+            background: "rgba(255, 255, 255, 0.85)", // Medical glass effect
+            backdropFilter: "blur(25px)",
+            borderBottom: "1px solid rgba(74, 144, 226, 0.12)",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
+          {/* Mobile menu button */}
+          {isMobile && (
             <IconButton
               onClick={handleSidebarToggle}
               sx={{
-                color: "#fff", // White color for dark background
                 mr: 2,
-                display: { md: "none" },
-                background: "rgba(255, 255, 255, 0.1)",
-                "&:hover": {
-                  background: "rgba(255, 255, 255, 0.2)",
-                },
+                color: "#2D3748", // Dark text for medical
               }}
             >
               <MenuIcon />
             </IconButton>
+          )}
+
+          {/* Page title với medical styling */}
+          <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
             <Typography
               variant="h4"
               sx={{
-                color: "#fff", // White text for admin theme
                 fontWeight: 700,
-                background: "linear-gradient(45deg, #fff, #e3f2fd)", // White to light blue gradient
+                color: "#2D3748", // Dark text for medical
+                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
                 backgroundClip: "text",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
@@ -174,15 +176,15 @@ const AdminProfile = () => {
               {getPageTitle()}
             </Typography>
           </Box>
+
           <Chip
-            label="Admin"
-            color="error"
+            label="Quản trị viên"
             size="small"
             sx={{
-              background: "linear-gradient(45deg, #f44336, #d32f2f)", // Red admin badge
+              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
               color: "#fff",
               fontWeight: 600,
-              boxShadow: "0 2px 8px rgba(244, 67, 54, 0.25)",
+              boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
             }}
           />
         </Box>
