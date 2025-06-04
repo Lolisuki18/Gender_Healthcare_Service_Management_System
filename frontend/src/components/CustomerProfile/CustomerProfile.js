@@ -1,0 +1,198 @@
+/**
+ * CustomerProfile.js - Component chính quản lý toàn bộ hệ thống hồ sơ khách hàng
+ *
+ * Mục đích:
+ * - Component container chính cho tất cả các trang con của khách hàng
+ * - Quản lý state navigation giữa các tab/menu items
+ * - Cung cấp layout responsive với sidebar có thể thu gọn
+ * - Xử lý hiển thị nội dung động dựa trên menu được chọn
+ *
+ * Kiến trúc:
+ * - Sử dụng React Hooks (useState) để quản lý state
+ * - Responsive design với Material-UI breakpoints
+ * - Tab-based navigation system (không sử dụng React Router)
+ * - Glass morphism design với gradient backgrounds
+ *
+ * State Management:
+ * - sidebarOpen: Kiểm soát việc mở/đóng sidebar (responsive)
+ * - selectedMenuItem: Xác định tab nào đang được chọn
+ *
+ * Navigation Flow:
+ * CustomerProfile → CustomerSidebar → Content Components
+ */
+
+import { useState } from "react";
+import {
+  Box,
+  Typography,
+  IconButton,
+  useMediaQuery,
+  useTheme,
+  Chip,
+} from "@mui/material";
+import { Menu as MenuIcon } from "@mui/icons-material";
+import { styled } from "@mui/material/styles";
+import CustomerSidebar from "@/components/CustomerProfile/CustomerSideBar";
+import ProfileContent from "@/components/CustomerProfile/ProfileContent";
+import AppointmentsContent from "@/components/CustomerProfile/AppointmentsContent";
+import DashboardContent from "@/components/CustomerProfile/DashboardContent";
+import MedicalHistoryContent from "@/components/CustomerProfile/MedicalHistoryContent";
+import PaymentHistoryContent from "@/components/CustomerProfile/PaymentHistoryContent";
+import SettingsContent from "@/components/CustomerProfile/SettingsContent";
+import InvoicesContent from "@/components/CustomerProfile/InvoicesContent";
+import NotificationsContent from "@/components/CustomerProfile/NotificationsContent";
+import HelpContent from "@/components/CustomerProfile/HelpContent";
+import QuestionsContent from "@/components/CustomerProfile/QuestionsContent";
+
+// Styled component cho nội dung chính
+// Tự động điều chỉnh margin dựa trên trạng thái sidebar
+// Responsive: trên mobile sidebar sẽ overlay thay vì push content
+const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
+  flexGrow: 1,
+  transition: theme.transitions.create(["margin", "width"], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  marginLeft: sidebarOpen ? 0 : `-280px`, // Sidebar width: 280px
+  [theme.breakpoints.down("md")]: {
+    marginLeft: 0, // Mobile: không có margin
+  },
+}));
+
+const CustomerProfile = () => {
+  // Hook để detect responsive breakpoints
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  // State management
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Mặc định mở trên desktop, đóng trên mobile
+  const [selectedMenuItem, setSelectedMenuItem] = useState("profile"); // Tab mặc định
+
+  // Handler functions
+  const handleSidebarToggle = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleMenuItemSelect = (itemId) => {
+    setSelectedMenuItem(itemId);
+  };
+  // Hàm render nội dung động dựa trên menu item được chọn
+  // Đây là core logic của tab navigation system
+  const renderContent = () => {
+    switch (selectedMenuItem) {
+      case "profile":
+        return <ProfileContent />; // Thông tin cá nhân
+      case "appointments":
+        return <AppointmentsContent />; // Quản lý lịch hẹn
+      case "dashboard":
+        return <DashboardContent />; // Tổng quan, thống kê
+      case "medical-history":
+        return <MedicalHistoryContent />; // Lịch sử khám bệnh
+      case "payment-history":
+        return <PaymentHistoryContent />; // Lịch sử thanh toán
+      case "invoices":
+        return <InvoicesContent />; // Hóa đơn
+      case "notifications":
+        return <NotificationsContent />; // Thông báo
+      case "settings":
+        return <SettingsContent />; // Cài đặt tài khoản
+      case "help":
+        return <HelpContent />; // Hỗ trợ, FAQ
+      case "questions":
+        return <QuestionsContent />; // Câu hỏi đã đặt
+      default:
+        return <ProfileContent />; // Fallback về profile
+    }
+  };
+
+  return (
+    // Container chính với full height và dark gradient background
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        background:
+          "linear-gradient(135deg, #F5F7FA 0%, #E3F2FD 50%, #F5F7FA 100%)", // Light medical theme gradient
+      }}
+    >
+      {/* Sidebar Navigation Component */}
+      <CustomerSidebar
+        open={sidebarOpen} // Trạng thái mở/đóng
+        onClose={() => setSidebarOpen(false)} // Callback để đóng sidebar (mobile)
+        selectedItem={selectedMenuItem} // Menu item hiện tại
+        onItemSelect={handleMenuItemSelect} // Callback khi chọn menu
+      />
+
+      {/* Main Content Area */}
+      <MainContent sidebarOpen={sidebarOpen}>
+        {/* Header Section với glass morphism effect */}{" "}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            p: 3,
+            background: "rgba(255, 255, 255, 0.90)", // Light glass effect for medical
+            backdropFilter: "blur(20px)", // Blur effect
+            borderBottom: "1px solid rgba(74, 144, 226, 0.15)", // Medical blue border
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            {" "}
+            <IconButton
+              onClick={handleSidebarToggle}
+              sx={{
+                color: "#2D3748", // Màu tối cho nút trên nền sáng
+                mr: 2,
+                display: { md: "none" },
+                background: "rgba(74, 144, 226, 0.1)",
+                "&:hover": {
+                  background: "rgba(74, 144, 226, 0.2)",
+                },
+              }}
+            >
+              <MenuIcon />
+            </IconButton>{" "}
+            <Typography
+              variant="h4"
+              sx={{
+                color: "#2D3748", // Dark text for medical
+                fontWeight: 700,
+                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical blue to teal
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              {selectedMenuItem === "profile" && "Hồ sơ cá nhân"}
+              {selectedMenuItem === "dashboard" && "Tổng quan"}
+              {selectedMenuItem === "appointments" && "Lịch hẹn"}
+              {selectedMenuItem === "medical-history" && "Lịch sử khám"}
+              {selectedMenuItem === "payment-history" && "Lịch sử thanh toán"}
+              {selectedMenuItem === "invoices" && "Hóa đơn"}{" "}
+              {selectedMenuItem === "notifications" && "Thông báo"}
+              {selectedMenuItem === "settings" && "Cài đặt"}
+              {selectedMenuItem === "help" && "Trợ giúp"}
+              {selectedMenuItem === "questions" && "Câu hỏi đã đặt"}
+            </Typography>
+          </Box>{" "}
+          <Chip
+            label="Đã xác thực"
+            color="success"
+            size="small"
+            sx={{
+              background: "linear-gradient(45deg, #4CAF50, #2ECC71)", // Medical green
+              color: "#fff",
+              fontWeight: 600,
+              boxShadow: "0 2px 8px rgba(76, 175, 80, 0.25)",
+            }}
+          />
+        </Box>{" "}
+        {/* Content */}
+        <Box sx={{ p: { xs: 2, md: 4 } }}>{renderContent()}</Box>
+      </MainContent>
+    </Box>
+  );
+};
+
+export default CustomerProfile;

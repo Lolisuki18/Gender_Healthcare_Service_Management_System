@@ -1,0 +1,54 @@
+.header-logo {
+    font-weight: 700;
+    color: white;
+    margin-right: 16px;
+    text-decoration: none;
+}
+
+.header-nav-container {
+    display: flex;
+    flex-grow: 1;
+    margin: 0 16px;
+}
+
+.header-nav-link {
+    margin: 0 15px;
+    color: white;
+    text-decoration: none;
+    transition: opacity 0.3s;
+}
+
+.header-nav-link:hover {
+    opacity: 0.8;
+}
+
+.header-avatar {
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+}
+
+.header-login-button {
+    margin-left: 16px;
+    border-color: white;
+}
+
+.header-login-button:hover {
+    border-color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+@media screen and (max-width: 768px) {
+    .header-nav-container {
+        display: none;
+    }
+
+    .header-mobile-menu {
+        display: block;
+    }
+}
+
+@media screen and (min-width: 769px) {
+    .header-mobile-menu {
+        display: none;
+    } }
