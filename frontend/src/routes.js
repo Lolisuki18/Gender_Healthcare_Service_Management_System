@@ -25,7 +25,7 @@ import LoginPage from "@/pages/LoginPage";
 import RegisterForm from "@/pages/RegisterPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ProfilePage from "@/pages/ProfilePage";
-import AdminTestPage from "@/pages/AdminTestPage";
+// import AdminTestPage from "@/pages/AdminTestPage";
 
 // Import Profile Components
 import CustomerProfile from "@/components/CustomerProfile/CustomerProfile";
