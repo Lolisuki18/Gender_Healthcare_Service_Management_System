@@ -45,7 +45,7 @@ const AppRoutes = () => {
         {/* Profile Routes for Different User Types */}
         <Route path="/customer-profile" element={<CustomerProfile />} />
         <Route path="/admin-profile" element={<AdminProfile />} />
-        <Route path="/admin-test" element={<AdminTestPage />} />
+        {/* <Route path="/admin-test" element={<AdminTestPage />} /> */}
         <Route path="/consultant-profile" element={<ConsultantProfile />} />
         <Route path="/staff-profile" element={<StaffProfile />} />
         <Route path="*" element={<NotFoundPage />} />
