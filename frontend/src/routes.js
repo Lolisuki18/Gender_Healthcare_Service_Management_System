@@ -25,6 +25,7 @@ import LoginPage from "@/pages/LoginPage";
 import RegisterForm from "@/pages/RegisterPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ProfilePage from "@/pages/ProfilePage";
+// import AdminTestPage from "@/pages/AdminTestPage";
 
 // Import Profile Components
 import CustomerProfile from "@/components/CustomerProfile/CustomerProfile";
@@ -40,10 +41,11 @@ const AppRoutes = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterForm />} />{" "}
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        {/* Profile Routes for Different User Types */}{" "}
+        <Route path="/profile" element={<ProfilePage />} />{" "}
+        {/* Profile Routes for Different User Types */}
         <Route path="/customer-profile" element={<CustomerProfile />} />
         <Route path="/admin-profile" element={<AdminProfile />} />
+        {/* <Route path="/admin-test" element={<AdminTestPage />} /> */}
         <Route path="/consultant-profile" element={<ConsultantProfile />} />
         <Route path="/staff-profile" element={<StaffProfile />} />
         <Route path="*" element={<NotFoundPage />} />
