@@ -6,16 +6,30 @@
 
 ```
 src/
-├── assets/            # Chứa tài nguyên tĩnh như images, styles
-├── components/        # Các components React
-│   ├── common/        # Components dùng chung (Button, Form, etc.)
-│   ├── layouts/       # Components layout (Header, Footer, etc.)
-│   └── pages/         # Components trang (HomePage, AboutPage, etc.)
-├── context/           # React Context API
-├── hooks/             # Custom hooks
-├── redux/             # Redux store, actions, reducers
-├── services/          # Các service gọi API
-└── utils/             # Các hàm utility
+├── assets/                # Tài nguyên tĩnh (images, styles)
+│   └── styles/            # Biến CSS, file style phụ trợ
+├── components/            # Các components React
+│   ├── common/            # Components dùng chung (Header, Footer, Button...)
+│   ├── layouts/           # Layout tổng thể (MainLayout...)
+│   ├── AdminProfile/      # Giao diện & sidebar cho Admin
+│   ├── ConsultantProfile/ # Giao diện & sidebar cho Tư vấn viên
+│   ├── CustomerProfile/   # Giao diện & sidebar cho Khách hàng, các content trang con
+│   └── StaffProfile/      # Giao diện & sidebar cho Nhân viên
+├── context/               # React Context API (Theme, User...)
+├── hooks/                 # Custom hooks (useAuthCheck, useLocalStorage...)
+├── pages/                 # Các trang chính (HomePage, LoginPage, RegisterPage...)
+├── redux/                 # Redux store, slices (authSlice...)
+│   └── slices/            # Các slice quản lý state
+├── services/              # Gọi API (api.js, userService.js...)
+├── styles/                # File CSS riêng cho từng component/layout
+└── utils/                 # Hàm tiện ích (helpers, localStorage, notification...)
+
+public/                    # File tĩnh public (index.html, manifest, favicon...)
+
+
+Các file cấu hình chính:
+- package.json, jsconfig.json, craco.config.js
+- README.md, ARCHITECTURE.md
 ```
 
 ## Công nghệ sử dụng
