@@ -26,6 +26,7 @@ const Footer = () => {
         py: 3,
         px: 2,
         mt: "auto",
+        zIndex: (theme) => theme.zIndex.appBar, // Đặt z-index thấp hơn sidebar
         backgroundColor: (theme) =>
           theme.palette.mode === "light"
             ? theme.palette.grey[200]
