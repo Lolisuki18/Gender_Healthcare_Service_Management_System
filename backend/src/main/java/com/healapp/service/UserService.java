@@ -384,7 +384,192 @@ public class UserService {
         }
     }
 
-    
+    public ApiResponse<UserResponse> updateBasicProfile(Long userId, UpdateProfileRequest request) {
+        try {
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+
+            // Cập nhật thông tin cơ bản
+            user.setFullName(request.getFullName());
+            user.setPhone(request.getPhone());
+            user.setBirthDay(request.getBirthDay());
+
+            UserDtls updatedUser = userRepository.save(user);
+            UserResponse response = mapUserToResponse(updatedUser);
+
+            return ApiResponse.success("Basic profile updated successfully", response);
+
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to update basic profile: " + e.getMessage());
+        }
+    }
+
+    public ApiResponse<String> sendEmailVerificationForUpdate(Long userId, VerificationCodeRequest request) {
+        try {
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+
+            // Kiểm tra email mới có trùng với email hiện tại
+            if (user.getEmail().equals(request.getEmail())) {
+                return ApiResponse.error("New email cannot be the same as current email");
+            }
+
+            // Kiểm tra email mới có được sử dụng bởi user khác
+            if (userRepository.existsByEmail(request.getEmail())) {
+                return ApiResponse.error("Email already exists");
+            }
+
+            // Tạo mã xác thực cho email mới
+            String verificationCode = emailVerificationService.generateVerificationCode(request.getEmail());
+
+            // Gửi email xác thực
+            emailService.sendEmailUpdateVerificationAsync(request.getEmail(), verificationCode, user.getFullName());
+
+            return ApiResponse.success("Verification code has been sent to your new email address",
+                    request.getEmail());
+
+        } catch (EmailVerificationService.RateLimitException e) {
+            return ApiResponse.error(e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to send verification code: " + e.getMessage());
+        }
+    }
+
+    public ApiResponse<UserResponse> updateEmail(Long userId, UpdateEmailRequest request) {
+        try {
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+
+            // Kiểm tra email mới có trùng với email hiện tại không
+            if (user.getEmail().equals(request.getNewEmail())) {
+                return ApiResponse.error("New email cannot be the same as current email");
+            }
+
+            // Kiểm tra email mới có được sử dụng bởi user khác không
+            if (userRepository.existsByEmail(request.getNewEmail())) {
+                return ApiResponse.error("Email already exists");
+            }
+
+            // Xác thực mã verification code
+            boolean isVerified = emailVerificationService.verifyCode(request.getNewEmail(),
+                    request.getVerificationCode());
+            if (!isVerified) {
+                return ApiResponse.error("Invalid or expired verification code");
+            }
+
+            // Cập nhật email mới
+            String oldEmail = user.getEmail();
+            user.setEmail(request.getNewEmail());
+
+            UserDtls updatedUser = userRepository.save(user);
+
+            // Gửi email thông báo về việc thay đổi email
+            try {
+                emailService.sendEmailChangeNotificationAsync(oldEmail, request.getNewEmail(), user.getFullName());
+                emailService.sendEmailChangeConfirmationAsync(request.getNewEmail(), user.getFullName());
+            } catch (Exception e) {
+            }
+
+            UserResponse response = mapUserToResponse(updatedUser);
+            return ApiResponse.success("Email updated successfully", response);
+
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to update email: " + e.getMessage());
+        }
+    }
+
+    public ApiResponse<String> changePassword(Long userId, ChangePasswordRequest request) {
+        try {
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+
+            // Kiểm tra mật khẩu hiện tại
+            if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+                return ApiResponse.error("Current password is incorrect");
+            }
+
+            // Kiểm tra mật khẩu mới và xác nhận mật khẩu
+            if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+                return ApiResponse.error("New password and confirm password do not match");
+            }
+
+            // Kiểm tra mật khẩu mới không giống mật khẩu cũ
+            if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+                return ApiResponse.error("New password must be different from current password");
+            }
+
+            // Cập nhật mật khẩu mới
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            userRepository.save(user);
+
+            // Gửi email thông báo thay đổi mật khẩu
+            try {
+                emailService.sendPasswordChangeNotificationAsync(user.getEmail(), user.getFullName());
+            } catch (Exception e) {
+            }
+
+            return ApiResponse.success("Password changed successfully", "password_changed");
+
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to change password: " + e.getMessage());
+        }
+    }
+
+    public ApiResponse<String> updateUserAvatar(Long userId, MultipartFile file) {
+        try {
+            // Kiểm tra user tồn tại
+            Optional<UserDtls> userOptional = userRepository.findById(userId);
+            if (userOptional.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            // Kiểm tra file null hoặc empty TRƯỚC khi gọi isEmpty()
+            if (file == null || file.isEmpty()) {
+                return ApiResponse.error("Please select a file");
+            }
+
+            // Kiểm tra file type
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return ApiResponse.error("Only image files are allowed");
+            }
+
+            // Kiểm tra file size (5MB = 5 * 1024 * 1024 bytes)
+            if (file.getSize() > 5 * 1024 * 1024) {
+                return ApiResponse.error("File size must be less than 5MB");
+            }
+
+            UserDtls user = userOptional.get();
+
+            // Lưu file avatar
+            String avatarPath = fileStorageService.saveAvatarFile(file, userId);
+
+            // Cập nhật avatar path trong database
+            user.setAvatar(avatarPath);
+            userRepository.save(user);
+
+            return ApiResponse.success("Avatar updated successfully", avatarPath);
+
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to save avatar file: " + e.getMessage());
+        }
+    }
 
     private UserResponse mapUserToResponse(UserDtls user) {
         UserResponse response = new UserResponse();
