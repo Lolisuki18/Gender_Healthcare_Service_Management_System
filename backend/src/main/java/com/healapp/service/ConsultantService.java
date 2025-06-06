@@ -87,6 +87,40 @@ public class ConsultantService {
         }
     }
 
+    // lấy tất cả Consultant có status là true
+    public ApiResponse<List<ConsultantProfileResponse>> getAllActiveConsultant() {
+        try {
+            // Lấy danh sách Consultant có isActive = true
+            List<UserDtls> consultantUsers = userRepository.findByRoleNameAndIsActive("CONSULTANT", true);
+
+            if (consultantUsers.isEmpty()) {
+                return ApiResponse.success("No active consultants found", List.of());
+            }
+
+            // Chuyển đổi sang ConsultantProfileResponse
+            List<ConsultantProfileResponse> responses = consultantUsers.stream()
+                    .map(user -> {
+                        Optional<ConsultantProfile> profileOpt = consultantProfileRepository.findByUser(user);
+                        if (profileOpt.isPresent()) {
+                            return convertToResponse(profileOpt.get());
+                        } else {
+                            ConsultantProfileResponse response = new ConsultantProfileResponse();
+                            response.setUserId(user.getId());
+                            response.setFullName(user.getFullName());
+                            response.setEmail(user.getEmail());
+                            response.setPhone(user.getPhone());
+                            response.setAvatar(user.getAvatar());
+                            return response;
+                        }
+                    })
+                    .collect(Collectors.toList());
+
+            return ApiResponse.success("Active consultant profiles retrieved successfully", responses);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to retrieve active consultant profiles: " + e.getMessage());
+        }
+    }
+
     @Transactional
     public ApiResponse<ConsultantProfileResponse> createOrUpdateConsultantProfile(Long userId,
             ConsultantProfileRequest request) {

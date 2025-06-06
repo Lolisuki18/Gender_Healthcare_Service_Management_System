@@ -45,8 +45,12 @@ public class AdminController {
 
     // CONSULTANT MANAGEMENT
     @GetMapping("/consultants")
-    public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getAllConsultantProfiles() {
-        ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getAllConsultantProfiles();
+    // public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getAllConsultantProfiles() {
+    //     ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getAllConsultantProfiles();
+    //     return getResponseEntity(response);
+    // }
+        public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getAllActiveConsultant() {
+        ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getAllActiveConsultant();
         return getResponseEntity(response);
     }
 
