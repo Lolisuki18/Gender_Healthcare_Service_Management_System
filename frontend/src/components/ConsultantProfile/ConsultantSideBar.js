@@ -1,3 +1,17 @@
+/**
+ * ConsultantSideBar Component
+ *
+ * Medical Light Theme Sidebar for Consultant Profile
+ * Provides navigation menu with medical-themed styling and consistent color scheme
+ *
+ * Features:
+ * - Medical light theme with professional healthcare colors
+ * - Responsive design for mobile and desktop
+ * - Expandable menu items with smooth animations
+ * - User profile section with medical styling
+ * - Consistent with CustomerProfile and AdminProfile themes
+ */
+
 import React, { useState } from "react";
 import {
   Drawer,
@@ -20,17 +34,12 @@ import {
   CalendarToday as CalendarIcon,
   People as PeopleIcon,
   MedicalServices as MedicalIcon,
-  Assignment as AssignmentIcon,
-  Schedule as ScheduleIcon,
-  VideoCall as VideoCallIcon,
   Chat as ChatIcon,
   Assessment as ReportsIcon,
   Settings as SettingsIcon,
-  Notifications as NotificationsIcon,
   Payment as PaymentIcon,
   LocalHospital as HospitalIcon,
   Psychology as PsychologyIcon,
-  HealthAndSafety as HealthIcon,
   Medication as MedicationIcon,
   MonitorHeart as MonitorIcon,
   ExpandLess,
@@ -38,7 +47,6 @@ import {
   Close as CloseIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
-import { useNavigate } from "react-router-dom";
 import localStorageUtil from "@/utils/localStorage";
 
 const drawerWidth = 280;
@@ -50,19 +58,20 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
     width: drawerWidth,
     boxSizing: "border-box",
     background:
-      "linear-gradient(145deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
-    borderRight: "1px solid rgba(255, 255, 255, 0.08)",
-    color: "#fff",
+      "linear-gradient(145deg, #f0f8ff 0%, #e6f3ff 25%, #f5fafe 75%, #ffffff 100%)",
+    borderRight: "1px solid rgba(74, 144, 226, 0.12)",
+    color: "#2D3748",
     backdropFilter: "blur(20px)",
+    boxShadow: "0 4px 20px rgba(74, 144, 226, 0.08)",
   },
 }));
 
 const UserProfile = styled(Box)(({ theme }) => ({
   padding: theme.spacing(3, 2),
   textAlign: "center",
-  background: "rgba(255, 255, 255, 0.02)",
+  background: "rgba(74, 144, 226, 0.04)",
   backdropFilter: "blur(20px)",
-  borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+  borderBottom: "1px solid rgba(74, 144, 226, 0.12)",
   position: "relative",
 }));
 
@@ -72,21 +81,21 @@ const StyledListItem = styled(ListItemButton)(({ theme }) => ({
   transition: "all 0.3s ease",
   minHeight: "48px",
   "&:hover": {
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(74, 144, 226, 0.08)",
     transform: "translateX(4px)",
-    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)",
+    boxShadow: "0 4px 12px rgba(74, 144, 226, 0.15)",
   },
   "&.Mui-selected": {
-    backgroundColor: "rgba(59, 130, 246, 0.15)",
-    borderLeft: "3px solid #3b82f6",
+    backgroundColor: "rgba(74, 144, 226, 0.12)",
+    borderLeft: "3px solid #4A90E2",
     "&:hover": {
-      backgroundColor: "rgba(59, 130, 246, 0.2)",
+      backgroundColor: "rgba(74, 144, 226, 0.16)",
     },
     "& .MuiListItemIcon-root": {
-      color: "#3b82f6",
+      color: "#4A90E2",
     },
     "& .MuiListItemText-primary": {
-      color: "#fff",
+      color: "#2D3748",
       fontWeight: 600,
     },
   },
@@ -95,8 +104,8 @@ const StyledListItem = styled(ListItemButton)(({ theme }) => ({
 const LogoSection = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
   textAlign: "center",
-  borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-  background: "rgba(255, 255, 255, 0.02)",
+  borderBottom: "1px solid rgba(74, 144, 226, 0.12)",
+  background: "rgba(74, 144, 226, 0.04)",
 }));
 
 const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
@@ -412,6 +421,7 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
         },
       }}
     >
+      {" "}
       {/* Header with close button for mobile */}
       <Box
         sx={{
@@ -419,14 +429,15 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
           justifyContent: "space-between",
           alignItems: "center",
           p: 2,
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          borderBottom: "1px solid rgba(74, 144, 226, 0.12)",
+          background: "rgba(74, 144, 226, 0.04)",
         }}
       >
         <Typography
           variant="h6"
           sx={{
             fontWeight: 700,
-            background: "linear-gradient(45deg, #10b981, #059669)",
+            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
             backgroundClip: "text",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
@@ -434,18 +445,17 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
         >
           Consultant Panel
         </Typography>
-        <IconButton onClick={onClose} sx={{ color: "#fff" }}>
+        <IconButton onClick={onClose} sx={{ color: "#4A90E2" }}>
           <CloseIcon />
         </IconButton>
-      </Box>
-
+      </Box>{" "}
       {/* Logo Section for Desktop */}
       <LogoSection sx={{ display: { xs: "none", md: "block" } }}>
         <Typography
           variant="h5"
           sx={{
             fontWeight: 700,
-            background: "linear-gradient(45deg, #10b981, #059669)",
+            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
             backgroundClip: "text",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
@@ -457,14 +467,13 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
         <Typography
           variant="body2"
           sx={{
-            color: "rgba(255, 255, 255, 0.6)",
+            color: "#718096",
             fontSize: "12px",
           }}
         >
           Healthcare Consultation System
         </Typography>
-      </LogoSection>
-
+      </LogoSection>{" "}
       {/* User Profile Section */}
       <UserProfile>
         <Box sx={{ position: "relative", display: "inline-block", mb: 2 }}>
@@ -473,14 +482,16 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
               width: { xs: 60, md: 80 },
               height: { xs: 60, md: 80 },
               margin: "0 auto",
-              background: "linear-gradient(135deg, #10b981, #059669)",
+              background: "linear-gradient(135deg, #4A90E2, #1ABC9C)",
               fontSize: { xs: "24px", md: "32px" },
               fontWeight: 700,
-              boxShadow: "0 8px 32px rgba(16, 185, 129, 0.3)",
-              border: "3px solid rgba(255, 255, 255, 0.1)",
+              boxShadow: "0 8px 32px rgba(74, 144, 226, 0.25)",
+              border: "3px solid rgba(74, 144, 226, 0.1)",
             }}
           >
-            <MedicalIcon sx={{ fontSize: { xs: "24px", md: "32px" } }} />
+            <MedicalIcon
+              sx={{ fontSize: { xs: "24px", md: "32px" }, color: "#ffffff" }}
+            />
           </Avatar>
           <Box
             sx={{
@@ -491,12 +502,12 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
               width: 20,
               height: 20,
               borderRadius: "50%",
-              background: "linear-gradient(45deg, #3b82f6, #1d4ed8)",
+              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              border: "2px solid rgba(255, 255, 255, 0.2)",
-              boxShadow: "0 2px 8px rgba(59, 130, 246, 0.3)",
+              border: "2px solid rgba(74, 144, 226, 0.2)",
+              boxShadow: "0 2px 8px rgba(74, 144, 226, 0.3)",
             }}
           >
             <Box
@@ -516,6 +527,7 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
             fontWeight: 600,
             mb: 0.5,
             fontSize: { xs: "16px", md: "18px" },
+            color: "#2D3748",
           }}
         >
           Dr. {userData?.fullName || userData?.username || "Doctor"}
@@ -523,7 +535,7 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
         <Typography
           variant="body2"
           sx={{
-            color: "rgba(255, 255, 255, 0.6)",
+            color: "#718096",
             fontSize: "13px",
             mb: 1,
             wordBreak: "break-all",
@@ -535,15 +547,15 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
           label="Bác sĩ tư vấn"
           size="small"
           sx={{
-            background: "linear-gradient(45deg, #10b981, #059669)",
+            background: "linear-gradient(45deg, #4CAF50, #2ECC71)",
             color: "#fff",
             fontWeight: 500,
             fontSize: "11px",
             height: "24px",
+            boxShadow: "0 2px 8px rgba(76, 175, 80, 0.25)",
           }}
         />
       </UserProfile>
-
       {/* Navigation Menu */}
       <List
         sx={{
@@ -561,12 +573,10 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
                 selected={selectedItem === item.id}
                 onClick={() => handleItemClick(item)}
               >
+                {" "}
                 <ListItemIcon
                   sx={{
-                    color:
-                      selectedItem === item.id
-                        ? "#3b82f6"
-                        : "rgba(255, 255, 255, 0.7)",
+                    color: selectedItem === item.id ? "#4A90E2" : "#718096",
                     minWidth: 40,
                     transition: "color 0.3s ease",
                   }}
@@ -579,16 +589,13 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
                     "& .MuiTypography-root": {
                       fontSize: "14px",
                       fontWeight: selectedItem === item.id ? 600 : 500,
-                      color:
-                        selectedItem === item.id
-                          ? "#fff"
-                          : "rgba(255, 255, 255, 0.8)",
+                      color: selectedItem === item.id ? "#2D3748" : "#718096",
                       transition: "all 0.3s ease",
                     },
                   }}
                 />
                 {item.subItems && (
-                  <Box sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
+                  <Box sx={{ color: "#718096" }}>
                     {expandedItems[item.id] ? <ExpandLess /> : <ExpandMore />}
                   </Box>
                 )}
@@ -614,7 +621,7 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
                           mr: 1,
                           borderLeft:
                             selectedItem === subItem.id
-                              ? "2px solid #3b82f6"
+                              ? "2px solid #4A90E2"
                               : "2px solid transparent",
                         }}
                       >
@@ -627,8 +634,8 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
                                 selectedItem === subItem.id ? 600 : 400,
                               color:
                                 selectedItem === subItem.id
-                                  ? "#fff"
-                                  : "rgba(255, 255, 255, 0.7)",
+                                  ? "#2D3748"
+                                  : "#718096",
                               transition: "all 0.3s ease",
                             },
                           }}
@@ -642,8 +649,7 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
           </React.Fragment>
         ))}
       </List>
-
-      <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)", mx: 2 }} />
+      <Divider sx={{ borderColor: "rgba(74, 144, 226, 0.12)", mx: 2 }} />
     </StyledDrawer>
   );
 };

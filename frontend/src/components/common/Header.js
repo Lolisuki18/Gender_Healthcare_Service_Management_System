@@ -114,9 +114,13 @@ const Header = () => {
     //chuyển hướng đến trang hồ sơ người dùng
     navigate("/profile");
   };
-
   return (
-    <AppBar position="static">
+    <AppBar
+      position="static"
+      sx={{
+        zIndex: (theme) => theme.zIndex.appBar, // Đặt z-index thấp hơn sidebar
+      }}
+    >
       <Container maxWidth="xl">
         <Toolbar disableGutters>
           <Typography
