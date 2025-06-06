@@ -154,6 +154,70 @@ public class UserController {
                     .body(ApiResponse.error("Error retrieving profile: " + e.getMessage()));
         }
     }
+    //cập nhật thông tin
+    @PutMapping("/profile/basic")
+    public ResponseEntity<ApiResponse<UserResponse>> updateBasicProfile(
+            @Valid @RequestBody UpdateProfileRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.error("User not authenticated"));
+            }
+            //Lấy thông tin người dùng
+            String username = authentication.getName();
+            Long userId = userService.getUserIdFromUsername(username);
 
-    
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("User not found"));
+            }
+
+            ApiResponse<UserResponse> response = userService.updateBasicProfile(userId, request);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error updating basic profile: " + e.getMessage()));
+        }
+    }
+     //gửi mã email mới khi cập nhật
+    @PostMapping("/profile/email/send-verification")
+    public ResponseEntity<ApiResponse<String>> sendEmailVerificationForUpdate(
+            @Valid @RequestBody VerificationCodeRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.error("User not authenticated"));
+            }
+
+            String username = authentication.getName();
+            Long userId = userService.getUserIdFromUsername(username);
+
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("User not found"));
+            }
+
+            ApiResponse<String> response = userService.sendEmailVerificationForUpdate(userId, request);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error sending verification code: " + e.getMessage()));
+        }
+        
+    }
+
 }
