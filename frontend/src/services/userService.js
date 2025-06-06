@@ -86,3 +86,38 @@ export const userService = {
     }
   },
 };
+export const consultantService = {
+  // Lấy danh sách bác sĩ
+  getConsultants: async () => {
+    try {
+      const response = await apiClient.get("/consultants");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching consultants:", error);
+      throw error.response?.data || error;
+    }
+  },
+
+  updateProfile: async (consultantDate) => {
+    try {
+      const response = await apiClient.put(
+        "/consultants/profile",
+        consultantDate
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating consultant profile:", error);
+      throw error.response?.data || error;
+    }
+  },
+
+  getConsultantProfile: async (consultantId) => {
+    try {
+      const response = await apiClient.get(`/consultants/${consultantId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching consultant profile:", error);
+      throw error.response?.data || error;
+    }
+  },
+};
