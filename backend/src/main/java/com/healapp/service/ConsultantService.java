@@ -151,6 +151,34 @@ public class ConsultantService {
         }
     }
 
+        @Transactional
+    public ApiResponse<String> changeAccountStatus(Long userId) {
+        try {
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            if (!"CONSULTANT".equals(user.getRoleName())) {
+                return ApiResponse.error("User is not a consultant");
+            }
+
+            // Xóa profile
+            Optional<ConsultantProfile> profileOpt = consultantProfileRepository.findByUser(user);
+            profileOpt.ifPresent(consultantProfileRepository::delete);
+
+            // Cập nhật: chỉnh status về false
+            user.setIsActive(false);
+            userRepository.save(user);
+
+            return ApiResponse.success("Consultant role removed successfully", null);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to remove consultant role: " + e.getMessage());
+        }
+    }
+
     private ConsultantProfileResponse convertToResponse(ConsultantProfile consultantProfile) {
         ConsultantProfileResponse response = new ConsultantProfileResponse();
         response.setProfileId(consultantProfile.getProfileId());

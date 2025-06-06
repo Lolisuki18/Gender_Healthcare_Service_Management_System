@@ -60,9 +60,15 @@ public class AdminController {
         return getResponseEntity(response);
     }
 
+    // @DeleteMapping("/consultants/{userId}")
+    // public ResponseEntity<ApiResponse<String>> removeConsultantRole(@PathVariable Long userId) {
+    //     ApiResponse<String> response = consultantService.removeConsultantRole(userId);
+    //     return getResponseEntity(response);
+    // }
+
     @DeleteMapping("/consultants/{userId}")
     public ResponseEntity<ApiResponse<String>> removeConsultantRole(@PathVariable Long userId) {
-        ApiResponse<String> response = consultantService.removeConsultantRole(userId);
+        ApiResponse<String> response = consultantService.changeAccountStatus(userId);
         return getResponseEntity(response);
     }
 
