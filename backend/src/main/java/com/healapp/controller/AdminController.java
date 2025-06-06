@@ -3,10 +3,12 @@ package com.healapp.controller;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ConsultantProfileRequest;
 import com.healapp.dto.ConsultantProfileResponse;
+import com.healapp.dto.CreateConsultantAccRequest;
 import com.healapp.dto.STIServiceRequest;
 import com.healapp.dto.STIServiceResponse;
 import com.healapp.dto.UserResponse;
 import com.healapp.dto.UserUpdateRequest;
+import com.healapp.model.UserDtls;
 // import com.healapp.service.AppConfigService;
 import com.healapp.service.ConsultantService;
 import com.healapp.service.STIServiceService;
@@ -61,6 +63,12 @@ public class AdminController {
     @DeleteMapping("/consultants/{userId}")
     public ResponseEntity<ApiResponse<String>> removeConsultantRole(@PathVariable Long userId) {
         ApiResponse<String> response = consultantService.removeConsultantRole(userId);
+        return getResponseEntity(response);
+    }
+
+    @PostMapping("/consultants")
+    public ResponseEntity<ApiResponse<UserDtls>> createNewConsultantAccount(@RequestBody @Valid CreateConsultantAccRequest request){
+        ApiResponse<UserDtls> response = userService.createConsultant(request);
         return getResponseEntity(response);
     }
 

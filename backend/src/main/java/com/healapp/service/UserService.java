@@ -2,6 +2,7 @@ package com.healapp.service;
 
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ChangePasswordRequest;
+import com.healapp.dto.CreateConsultantAccRequest;
 import com.healapp.dto.LoginRequest;
 import com.healapp.dto.LoginResponse;
 import com.healapp.dto.RegisterRequest;
@@ -22,6 +23,8 @@ import com.healapp.service.EmailService;
 import com.healapp.service.PasswordResetService;
 import com.healapp.service.PasswordResetService.RateLimitException;
 import jakarta.mail.MessagingException;
+import jakarta.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -584,6 +587,40 @@ public class UserService {
         response.setRole(user.getRoleName());
         response.setCreatedDate(user.getCreatedDate());
         return response;
+    }
+
+    // tạo Consultant account chỉ nhập fullname và email
+    @Transactional
+    public ApiResponse<UserDtls> createConsultant(CreateConsultantAccRequest request) {
+        try{
+            // Check if email already exists
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new RuntimeException("Email already exists");
+            }
+
+            // Get CONSULTANT role by RoleName
+            Role consultantRole = roleRepository.findByRoleName("CONSULTANT")
+                    .orElseThrow(() -> new RuntimeException("Consultant role not found"));
+
+            // Use password default is Aa@123456
+            String password = "Aa@123456";
+
+            // Create new user
+            UserDtls consultant = new UserDtls();
+            consultant.setFullName(request.getFullName());
+            consultant.setEmail(request.getEmail());
+            consultant.setUsername(request.getEmail()); // Use email as username
+            consultant.setPassword(passwordEncoder.encode(password));
+            consultant.setRole(consultantRole);
+            consultant.setIsActive(true);
+
+            // Save user
+            UserDtls savedConsultant = userRepository.save(consultant);
+
+            return ApiResponse.success("Consultant created successfully", savedConsultant);
+        } catch (Exception e){
+            return ApiResponse.error("Failed to create consultant: " + e.getMessage());
+        }
     }
 
     // kiểm tra role
