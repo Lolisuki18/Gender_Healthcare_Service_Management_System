@@ -64,80 +64,81 @@ public class AdminController {
         return getResponseEntity(response);
     }
 
-    // USER MANAGEMENT
-    @GetMapping("/users")
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(
-            @RequestParam(value = "role", required = false) String role) {
-        ApiResponse<List<UserResponse>> response;
+    // ===================================USER MANAGEMENT============================================
 
-        if (role != null && !role.trim().isEmpty()) {
-            response = userService.getUsersByRole(role.trim().toUpperCase());
-        } else {
-            response = userService.getAllUsers();
-        }
+    // @GetMapping("/users")
+    // public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(
+    //         @RequestParam(value = "role", required = false) String role) {
+    //     ApiResponse<List<UserResponse>> response;
 
-        return getResponseEntity(response);
-    }
+    //     if (role != null && !role.trim().isEmpty()) {
+    //         response = userService.getUsersByRole(role.trim().toUpperCase());
+    //     } else {
+    //         response = userService.getAllUsers();
+    //     }
 
-    @GetMapping("/users/roles")
-    public ResponseEntity<ApiResponse<List<String>>> getAvailableRoles() {
-        ApiResponse<List<String>> response = userService.getAvailableRoles();
-        return getResponseEntity(response);
-    }
+    //     return getResponseEntity(response);
+    // }
 
-    @GetMapping("/users/count")
-    public ResponseEntity<ApiResponse<Map<String, Long>>> getUserCountByRole() {
-        ApiResponse<Map<String, Long>> response = userService.getUserCountByRole();
-        return getResponseEntity(response);
-    }
+    // @GetMapping("/users/roles")
+    // public ResponseEntity<ApiResponse<List<String>>> getAvailableRoles() {
+    //     ApiResponse<List<String>> response = userService.getAvailableRoles();
+    //     return getResponseEntity(response);
+    // }
 
-    @GetMapping("/users/{userId}")
-    public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable Long userId) {
-        ApiResponse<UserResponse> response = userService.getUserById(userId);
-        return getResponseEntity(response);
-    }
+    // @GetMapping("/users/count")
+    // public ResponseEntity<ApiResponse<Map<String, Long>>> getUserCountByRole() {
+    //     ApiResponse<Map<String, Long>> response = userService.getUserCountByRole();
+    //     return getResponseEntity(response);
+    // }
 
-    @PutMapping("/users/{userId}")
-    public ResponseEntity<ApiResponse<UserResponse>> updateUserRoleAndStatus(
-            @PathVariable Long userId,
-            @Valid @RequestBody UserUpdateRequest request) {
-        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(userId, request);
-        return getResponseEntity(response);
-    }
+    // @GetMapping("/users/{userId}")
+    // public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable Long userId) {
+    //     ApiResponse<UserResponse> response = userService.getUserById(userId);
+    //     return getResponseEntity(response);
+    // }
 
-    // ========= STI SERVICES WITH COMPONENTS MANAGEMENT =========
+    // @PutMapping("/users/{userId}")
+    // public ResponseEntity<ApiResponse<UserResponse>> updateUserRoleAndStatus(
+    //         @PathVariable Long userId,
+    //         @Valid @RequestBody UserUpdateRequest request) {
+    //     ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(userId, request);
+    //     return getResponseEntity(response);
+    // }
 
-    @PostMapping("/sti-services")
-    public ResponseEntity<ApiResponse<STIServiceResponse>> createSTIServiceWithComponents(
-            @Valid @RequestBody STIServiceRequest request) {
+    // =================== STI SERVICES WITH COMPONENTS MANAGEMENT ============================
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        Long adminUserId = userService.getUserIdFromUsername(username);
+    // @PostMapping("/sti-services")
+    // public ResponseEntity<ApiResponse<STIServiceResponse>> createSTIServiceWithComponents(
+    //         @Valid @RequestBody STIServiceRequest request) {
 
-        ApiResponse<STIServiceResponse> response = stiServiceService.createServiceWithComponents(request, adminUserId);
-        return getResponseEntity(response);
-    }
+    //     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    //     String username = authentication.getName();
+    //     Long adminUserId = userService.getUserIdFromUsername(username);
 
-    @PutMapping("/sti-services/{serviceId}")
-    public ResponseEntity<ApiResponse<STIServiceResponse>> updateSTIServiceWithComponents(
-            @PathVariable Long serviceId,
-            @Valid @RequestBody STIServiceRequest request) {
+    //     ApiResponse<STIServiceResponse> response = stiServiceService.createServiceWithComponents(request, adminUserId);
+    //     return getResponseEntity(response);
+    // }
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        Long adminUserId = userService.getUserIdFromUsername(username);
+    // @PutMapping("/sti-services/{serviceId}")
+    // public ResponseEntity<ApiResponse<STIServiceResponse>> updateSTIServiceWithComponents(
+    //         @PathVariable Long serviceId,
+    //         @Valid @RequestBody STIServiceRequest request) {
 
-        ApiResponse<STIServiceResponse> response = stiServiceService.updateServiceWithComponents(serviceId, request,
-                adminUserId);
-        return getResponseEntity(response);
-    }
+    //     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    //     String username = authentication.getName();
+    //     Long adminUserId = userService.getUserIdFromUsername(username);
 
-    @GetMapping("/sti-services/{serviceId}")
-    public ResponseEntity<ApiResponse<STIServiceResponse>> getSTIServiceWithComponents(@PathVariable Long serviceId) {
-        ApiResponse<STIServiceResponse> response = stiServiceService.getServiceWithComponents(serviceId);
-        return getResponseEntity(response);
-    }
+    //     ApiResponse<STIServiceResponse> response = stiServiceService.updateServiceWithComponents(serviceId, request,
+    //             adminUserId);
+    //     return getResponseEntity(response);
+    // }
+
+    // @GetMapping("/sti-services/{serviceId}")
+    // public ResponseEntity<ApiResponse<STIServiceResponse>> getSTIServiceWithComponents(@PathVariable Long serviceId) {
+    //     ApiResponse<STIServiceResponse> response = stiServiceService.getServiceWithComponents(serviceId);
+    //     return getResponseEntity(response);
+    // }
 
     // ========= APP CONFIG MANAGEMENT =========
 
