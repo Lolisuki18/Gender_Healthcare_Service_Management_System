@@ -185,7 +185,7 @@ public class ConsultantService {
         }
     }
 
-        @Transactional
+    @Transactional
     public ApiResponse<String> changeAccountStatus(Long userId) {
         try {
             Optional<UserDtls> userOpt = userRepository.findById(userId);
