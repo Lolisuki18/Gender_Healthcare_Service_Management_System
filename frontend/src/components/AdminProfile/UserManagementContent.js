@@ -27,7 +27,6 @@ import {
   InputLabel,
   Select,
   Grid,
-  Divider,
   MenuItem,
 } from "@mui/material";
 import {
@@ -35,20 +34,28 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   ManageAccounts as ManageAccountsIcon,
-  FilterList as FilterIcon,
   People as PeopleIcon,
   BusinessCenter as BusinessIcon,
   Security as SecurityIcon,
   Person as PersonIcon,
   Support as SupportIcon,
+  Visibility as VisibilityIcon,
 } from "@mui/icons-material";
+import AddUserModal from "./modals/AddUserModal";
+import ViewUserModal from "./modals/ViewUserModal";
 
 const UserManagementContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState(0);
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  // State cho modal
+  const [openModal, setOpenModal] = useState(false);
+  const [modalType, setModalType] = useState("");
 
+  // State cho view modal
+  const [openViewModal, setOpenViewModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   // Mock data với nhiều người dùng hơn
   const users = [
     {
@@ -61,6 +68,9 @@ const UserManagementContent = () => {
       joinDate: "2024-01-15",
       avatar: null,
       lastLogin: "2024-06-05 09:30",
+      gender: "male",
+      dateOfBirth: "1990-05-15",
+      address: "123 Nguyễn Huệ, Quận 1, TP.HCM",
     },
     {
       id: 2,
@@ -72,6 +82,13 @@ const UserManagementContent = () => {
       joinDate: "2024-02-10",
       avatar: null,
       lastLogin: "2024-06-05 08:15",
+      gender: "female",
+      dateOfBirth: "1985-08-20",
+      address: "456 Lê Lợi, Quận 3, TP.HCM",
+      specialization: "Sức khỏe sinh sản nữ",
+      experience: "8",
+      certification:
+        "- Bác sĩ Chuyên khoa I Sản Phụ khoa\n- Chứng chỉ tư vấn sức khỏe sinh sản\n- Thạc sĩ Y học cộng đồng",
     },
     {
       id: 3,
@@ -83,6 +100,9 @@ const UserManagementContent = () => {
       joinDate: "2024-03-05",
       avatar: null,
       lastLogin: "2024-06-01 14:20",
+      gender: "male",
+      dateOfBirth: "1995-12-10",
+      address: "789 Trần Hưng Đạo, Quận 5, TP.HCM",
     },
     {
       id: 4,
@@ -94,6 +114,9 @@ const UserManagementContent = () => {
       joinDate: "2023-12-01",
       avatar: null,
       lastLogin: "2024-06-05 10:45",
+      gender: "female",
+      dateOfBirth: "1988-03-25",
+      address: "321 Võ Văn Tần, Quận 3, TP.HCM",
     },
     {
       id: 5,
@@ -105,6 +128,9 @@ const UserManagementContent = () => {
       joinDate: "2024-04-20",
       avatar: null,
       lastLogin: "2024-06-04 16:30",
+      gender: "male",
+      dateOfBirth: "1992-07-08",
+      address: "654 Hai Bà Trưng, Quận 1, TP.HCM",
     },
   ];
 
@@ -141,7 +167,6 @@ const UserManagementContent = () => {
       count: users.filter((u) => u.role === "Consultant").length,
     },
   ];
-
   // ✅ THÊM các function mới cho Edit và Delete
   const handleEdit = (userId) => {
     console.log("Chỉnh sửa người dùng ID:", userId);
@@ -158,6 +183,15 @@ const UserManagementContent = () => {
       // Xử lý xóa user ở đây
       alert(`Đã xóa người dùng ID: ${userId}`);
       // Có thể update state để remove user khỏi danh sách
+    }
+  };
+
+  // ✅ Function xử lý xem thông tin chi tiết
+  const handleViewUser = (userId) => {
+    const user = users.find((u) => u.id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setOpenViewModal(true);
     }
   };
 
@@ -206,32 +240,39 @@ const UserManagementContent = () => {
         return "Thêm mới";
     }
   };
-
-  // ✅ Function xử lý thêm mới - log bằng tiếng Anh, alert tiếng Việt
+  // ✅ Function xử lý thêm mới - mở modal
   const handleAddNew = (userType) => {
-    console.log("Thêm mới người dùng loại:", userType); // Log database value
+    console.log("Thêm mới người dùng loại:", userType);
+    setModalType(userType);
+    setOpenModal(true);
+  };
 
+  // ✅ Function xử lý submit từ modal
+  const handleModalSubmit = (formData, userType) => {
+    console.log("Dữ liệu form:", formData);
+    console.log("Loại người dùng:", userType);
+
+    // TODO: Gửi data đến API
+    // Simulate API call
+    alert(`Đã thêm ${getModalTitle(userType)} thành công!`);
+
+    // Có thể thêm user mới vào danh sách (nếu muốn update UI ngay lập tức)
+    // setUsers(prev => [...prev, { ...formData, id: Date.now(), role: userType }]);
+  };
+
+  // Get modal title based on user type
+  const getModalTitle = (userType) => {
     switch (userType) {
       case "Admin":
-        alert("Mở form thêm Quản trị viên mới");
-        // TODO: Mở dialog/form thêm Admin
-        break;
+        return "Quản trị viên";
       case "Staff":
-        alert("Mở form thêm Nhân viên mới");
-        // TODO: Mở dialog/form thêm Staff
-        break;
+        return "Nhân viên";
       case "Customer":
-        alert("Mở form thêm Khách hàng mới");
-        // TODO: Mở dialog/form thêm Customer
-        break;
+        return "Khách hàng";
       case "Consultant":
-        alert("Mở form thêm Tư vấn viên mới");
-        // TODO: Mở dialog/form thêm Consultant
-        break;
+        return "Tư vấn viên";
       default:
-        alert("Mở form thêm người dùng mới");
-        // TODO: Mở dialog/form thêm người dùng chung
-        break;
+        return "Người dùng";
     }
   };
 
@@ -341,7 +382,6 @@ const UserManagementContent = () => {
       >
         Quản lý tài khoản và phân quyền người dùng trong hệ thống
       </Typography>
-
       {/* User Category Tabs với integrated filters */}
       <Card
         sx={{
@@ -489,7 +529,6 @@ const UserManagementContent = () => {
           </Grid>
         </CardContent>
       </Card>
-
       {/* Results Summary */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="body2" sx={{ color: "#4A5568" }}>
@@ -498,7 +537,6 @@ const UserManagementContent = () => {
             ` trong danh mục "${userCategories[selectedTab]?.label}"`}
         </Typography>
       </Box>
-
       {/* Users Table */}
       <Card
         sx={{
@@ -596,9 +634,25 @@ const UserManagementContent = () => {
                       <Typography variant="body2" sx={{ color: "#718096" }}>
                         {user.lastLogin}
                       </Typography>
-                    </TableCell>
+                    </TableCell>{" "}
                     <TableCell>
                       <Box sx={{ display: "flex", gap: 1 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleViewUser(user.id)}
+                          sx={{
+                            color: "#48BB78",
+                            backgroundColor: "rgba(72, 187, 120, 0.1)",
+                            "&:hover": {
+                              backgroundColor: "rgba(72, 187, 120, 0.2)",
+                              transform: "scale(1.1)",
+                            },
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          <VisibilityIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+
                         <IconButton
                           size="small"
                           onClick={() => handleEdit(user.id)}
@@ -643,10 +697,23 @@ const UserManagementContent = () => {
                   </TableCell>
                 </TableRow>
               )}
-            </TableBody>
+            </TableBody>{" "}
           </Table>
         </TableContainer>
-      </Card>
+      </Card>{" "}
+      {/* Add User Modal */}
+      <AddUserModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        userType={modalType}
+        onSubmit={handleModalSubmit}
+      />
+      {/* View User Modal */}
+      <ViewUserModal
+        open={openViewModal}
+        onClose={() => setOpenViewModal(false)}
+        user={selectedUser}
+      />
     </Box>
   );
 };
