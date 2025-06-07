@@ -1,0 +1,17 @@
+/**
+ * HomePage.js - Trang chủ của ứng dụng
+ * 
+ * Component này hiển thị trang chủ với các phần chính như hero section,
+ * dịch vụ nổi bật và các phần call-to-action.
+ * 
+ * Lý do tạo file:
+ * - Trang đầu tiên người dùng thấy khi truy cập ứng dụng
+ * - Hiển thị tổng quan về các dịch vụ chăm sóc sức khỏe
+ * - Tạo ấn tượng đầu tiên và dẫn dắt người dùng đến các phần khác
+ * 
+ * Các tính năng:
+ * - Hero section với hình ảnh và nút call-to-action chính
+ * - Showcase các dịch vụ nổi bật trong hệ thống
+ * - Thiết kế responsive sử dụng Material UI Grid và Card
+ * - Phần đăng ký nhận thông báo
+ */

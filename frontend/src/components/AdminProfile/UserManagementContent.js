@@ -43,6 +43,7 @@ import {
 } from "@mui/icons-material";
 import AddUserModal from "./modals/AddUserModal";
 import ViewUserModal from "./modals/ViewUserModal";
+import EditUserModal from "./modals/EditUserModal";
 
 const UserManagementContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,10 +53,13 @@ const UserManagementContent = () => {
   // State cho modal
   const [openModal, setOpenModal] = useState(false);
   const [modalType, setModalType] = useState("");
-
   // State cho view modal
   const [openViewModal, setOpenViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+
+  // State cho edit modal
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   // Mock data với nhiều người dùng hơn
   const users = [
     {
@@ -167,12 +171,14 @@ const UserManagementContent = () => {
       count: users.filter((u) => u.role === "Consultant").length,
     },
   ];
+
   // ✅ THÊM các function mới cho Edit và Delete
   const handleEdit = (userId) => {
-    console.log("Chỉnh sửa người dùng ID:", userId);
-    // TODO: Implement edit functionality
-    // Có thể mở dialog hoặc navigate đến trang edit
-    alert(`Chỉnh sửa người dùng ID: ${userId}`);
+    const user = users.find((u) => u.id === userId);
+    if (user) {
+      setEditingUser(user);
+      setOpenEditModal(true);
+    }
   };
 
   const handleDelete = (userId) => {
@@ -193,6 +199,16 @@ const UserManagementContent = () => {
       setSelectedUser(user);
       setOpenViewModal(true);
     }
+  };
+
+  // Hàm xử lý submit form edit user
+  const handleEditSubmit = (formData) => {
+    console.log("Cập nhật thông tin người dùng:", formData);
+    // TODO: Implement API call to update user
+    // Tạm thời chỉ log và đóng modal
+    alert(`Đã cập nhật thông tin người dùng: ${formData.name}`);
+    setOpenEditModal(false);
+    setEditingUser(null);
   };
 
   // ✅ Function chuyển đổi role từ tiếng Anh sang tiếng Việt để hiển thị
@@ -707,12 +723,22 @@ const UserManagementContent = () => {
         onClose={() => setOpenModal(false)}
         userType={modalType}
         onSubmit={handleModalSubmit}
-      />
+      />{" "}
       {/* View User Modal */}
       <ViewUserModal
         open={openViewModal}
         onClose={() => setOpenViewModal(false)}
         user={selectedUser}
+      />
+      {/* Edit User Modal */}
+      <EditUserModal
+        open={openEditModal}
+        onClose={() => {
+          setOpenEditModal(false);
+          setEditingUser(null);
+        }}
+        user={editingUser}
+        onSubmit={handleEditSubmit}
       />
     </Box>
   );

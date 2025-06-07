@@ -1,0 +1,19 @@
+/**
+ * helpers.js - Tập hợp các hàm tiện ích cho ứng dụng
+ * 
+ * File này cung cấp các hàm tiện ích (utility functions) được sử dụng
+ * rộng rãi trong ứng dụng, giúp tránh việc lặp lại code và chuẩn hóa
+ * các xử lý phổ biến.
+ * 
+ * Lý do tạo file:
+ * - Tập trung các hàm tiện ích vào một chỗ dễ quản lý
+ * - Tránh lặp lại code ở nhiều component khác nhau
+ * - Chuẩn hóa các thao tác phổ biến như format date, kiểm tra email...
+ * 
+ * Các hàm chính:
+ * - formatDate: định dạng ngày tháng
+ * - formatCurrency: định dạng tiền tệ
+ * - truncateText: rút gọn văn bản dài
+ * - isValidEmail: kiểm tra định dạng email
+ * - setWithExpiry/getWithExpiry: thao tác với localStorage có thời hạn
+ */

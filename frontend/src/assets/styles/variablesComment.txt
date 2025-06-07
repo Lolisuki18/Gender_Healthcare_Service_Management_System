@@ -1,0 +1,19 @@
+/**
+ * variables.css - Biến CSS và thiết lập cơ bản cho toàn bộ ứng dụng
+ * 
+ * File CSS này định nghĩa các biến CSS (custom properties) và các thiết lập
+ * cơ bản được sử dụng xuyên suốt ứng dụng để đảm bảo giao diện nhất quán.
+ * 
+ * Lý do tạo file:
+ * - Tạo một hệ thống design nhất quán với các biến có thể tái sử dụng
+ * - Dễ dàng cập nhật toàn bộ hệ thống màu sắc, typography và spacing
+ * - Hỗ trợ chế độ dark/light với các biến có thể thay đổi động
+ * 
+ * Các nhóm biến chính:
+ * - Colors: Màu sắc cơ bản, primary, secondary, error...
+ * - Typography: Font family, font size, line height...
+ * - Spacing: Khoảng cách chuẩn cho margin, padding...
+ * - Border radius: Bo góc chuẩn cho các component
+ * - Box shadow: Đổ bóng chuẩn cho các component
+ * - Breakpoints: Các điểm dừng cho responsive design
+ */
