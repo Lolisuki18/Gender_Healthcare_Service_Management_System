@@ -589,40 +589,6 @@ public class UserService {
         return response;
     }
 
-    // tạo Consultant account chỉ nhập fullname và email
-    @Transactional
-    public ApiResponse<UserDtls> createConsultant(CreateConsultantAccRequest request) {
-        try{
-            // Check if email already exists
-            if (userRepository.existsByEmail(request.getEmail())) {
-                throw new RuntimeException("Email already exists");
-            }
-
-            // Get CONSULTANT role by RoleName
-            Role consultantRole = roleRepository.findByRoleName("CONSULTANT")
-                    .orElseThrow(() -> new RuntimeException("Consultant role not found"));
-
-            // Use password default is Aa@123456
-            String password = "Aa@123456";
-
-            // Create new user
-            UserDtls consultant = new UserDtls();
-            consultant.setFullName(request.getFullName());
-            consultant.setEmail(request.getEmail());
-            consultant.setUsername(request.getEmail()); // Use email as username
-            consultant.setPassword(passwordEncoder.encode(password));
-            consultant.setRole(consultantRole);
-            consultant.setIsActive(true);
-
-            // Save user
-            UserDtls savedConsultant = userRepository.save(consultant);
-
-            return ApiResponse.success("Consultant created successfully", savedConsultant);
-        } catch (Exception e){
-            return ApiResponse.error("Failed to create consultant: " + e.getMessage());
-        }
-    }
-
     // kiểm tra role
     private boolean isValidRole(String roleName) {
         return roleService.isValidRole(roleName);
