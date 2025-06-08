@@ -1,0 +1,17 @@
+/**
+ * UserContext.js - Context quản lý thông tin người dùng
+ * 
+ * File này tạo một React Context để quản lý thông tin đăng nhập/đăng xuất và 
+ * các thao tác xác thực người dùng xuyên suốt ứng dụng.
+ * 
+ * Lý do tạo file:
+ * - Quản lý tập trung thông tin người dùng đã đăng nhập
+ * - Cung cấp các phương thức xác thực (đăng nhập, đăng xuất)
+ * - Tránh phải truyền props qua nhiều cấp component
+ * 
+ * Các tính năng:
+ * - Lưu trữ thông tin người dùng và token vào localStorage
+ * - Custom hook useUser để truy cập dữ liệu người dùng từ bất kỳ component nào
+ * - Xử lý các trường hợp đăng nhập/đăng xuất, lỗi xác thực
+ * - Tự động kiểm tra trạng thái đăng nhập khi tải trang
+ */

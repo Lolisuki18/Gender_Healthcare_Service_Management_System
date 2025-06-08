@@ -91,8 +91,8 @@ const ProfilePage = () => {
   const renderProfileByRole = () => {
     const role = user.role?.toLowerCase();
     switch (role) {
-      case "admin":
-        return <AdminProfile user={user} />;
+      // case "admin":
+      //   return <AdminProfile user={user} />;
       case "consultant":
         return <ConsultantProfile user={user} />;
       case "staff":

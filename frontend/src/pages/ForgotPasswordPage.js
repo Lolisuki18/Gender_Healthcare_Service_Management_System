@@ -203,9 +203,6 @@ const ForgotPasswordPage = () => {
     return <LoggedInView user={user} onLogout={logout} />;
   }
 
-  if (!isLoggedIn && !user) {
-    return <NotLoggedInView />;
-  }
   // Form quên mật khẩu
   return (
     <Box

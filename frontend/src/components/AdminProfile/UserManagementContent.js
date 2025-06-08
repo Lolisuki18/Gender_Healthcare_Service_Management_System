@@ -27,28 +27,51 @@ import {
   InputLabel,
   Select,
   Grid,
-  Divider,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
   ManageAccounts as ManageAccountsIcon,
-  FilterList as FilterIcon,
   People as PeopleIcon,
   BusinessCenter as BusinessIcon,
   Security as SecurityIcon,
   Person as PersonIcon,
   Support as SupportIcon,
+  Visibility as VisibilityIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
+import AddUserModal from "./modals/AddUserModal";
+import ViewUserModal from "./modals/ViewUserModal";
+import EditUserModal from "./modals/EditUserModal";
 
 const UserManagementContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState(0);
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  // State cho modal
+  const [openModal, setOpenModal] = useState(false);
+  const [modalType, setModalType] = useState("");
+  // State cho view modal
+  const [openViewModal, setOpenViewModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
+  // State cho edit modal
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  // State cho role selection modal
+  const [openRoleSelection, setOpenRoleSelection] = useState(false);
   // Mock data với nhiều người dùng hơn
   const users = [
     {
@@ -61,6 +84,9 @@ const UserManagementContent = () => {
       joinDate: "2024-01-15",
       avatar: null,
       lastLogin: "2024-06-05 09:30",
+      gender: "male",
+      dateOfBirth: "1990-05-15",
+      address: "123 Nguyễn Huệ, Quận 1, TP.HCM",
     },
     {
       id: 2,
@@ -72,6 +98,13 @@ const UserManagementContent = () => {
       joinDate: "2024-02-10",
       avatar: null,
       lastLogin: "2024-06-05 08:15",
+      gender: "female",
+      dateOfBirth: "1985-08-20",
+      address: "456 Lê Lợi, Quận 3, TP.HCM",
+      specialization: "Sức khỏe sinh sản nữ",
+      experience: "8",
+      certification:
+        "- Bác sĩ Chuyên khoa I Sản Phụ khoa\n- Chứng chỉ tư vấn sức khỏe sinh sản\n- Thạc sĩ Y học cộng đồng",
     },
     {
       id: 3,
@@ -83,6 +116,9 @@ const UserManagementContent = () => {
       joinDate: "2024-03-05",
       avatar: null,
       lastLogin: "2024-06-01 14:20",
+      gender: "male",
+      dateOfBirth: "1995-12-10",
+      address: "789 Trần Hưng Đạo, Quận 5, TP.HCM",
     },
     {
       id: 4,
@@ -94,6 +130,9 @@ const UserManagementContent = () => {
       joinDate: "2023-12-01",
       avatar: null,
       lastLogin: "2024-06-05 10:45",
+      gender: "female",
+      dateOfBirth: "1988-03-25",
+      address: "321 Võ Văn Tần, Quận 3, TP.HCM",
     },
     {
       id: 5,
@@ -105,6 +144,9 @@ const UserManagementContent = () => {
       joinDate: "2024-04-20",
       avatar: null,
       lastLogin: "2024-06-04 16:30",
+      gender: "male",
+      dateOfBirth: "1992-07-08",
+      address: "654 Hai Bà Trưng, Quận 1, TP.HCM",
     },
   ];
 
@@ -144,10 +186,11 @@ const UserManagementContent = () => {
 
   // ✅ THÊM các function mới cho Edit và Delete
   const handleEdit = (userId) => {
-    console.log("Chỉnh sửa người dùng ID:", userId);
-    // TODO: Implement edit functionality
-    // Có thể mở dialog hoặc navigate đến trang edit
-    alert(`Chỉnh sửa người dùng ID: ${userId}`);
+    const user = users.find((u) => u.id === userId);
+    if (user) {
+      setEditingUser(user);
+      setOpenEditModal(true);
+    }
   };
 
   const handleDelete = (userId) => {
@@ -158,6 +201,54 @@ const UserManagementContent = () => {
       // Xử lý xóa user ở đây
       alert(`Đã xóa người dùng ID: ${userId}`);
       // Có thể update state để remove user khỏi danh sách
+    }
+  };
+
+  // ✅ Function xử lý xem thông tin chi tiết
+  const handleViewUser = (userId) => {
+    const user = users.find((u) => u.id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setOpenViewModal(true);
+    }
+  };
+
+  // Hàm xử lý submit form edit user
+  const handleEditSubmit = (formData) => {
+    console.log("Cập nhật thông tin người dùng:", formData);
+    // TODO: Implement API call to update user
+    // Tạm thời chỉ log và đóng modal
+    alert(`Đã cập nhật thông tin người dùng: ${formData.name}`);
+    setOpenEditModal(false);
+    setEditingUser(null);
+  };
+
+  // ✅ Function xử lý submit từ modal
+  const handleModalSubmit = (formData, userType) => {
+    console.log("Dữ liệu form:", formData);
+    console.log("Loại người dùng:", userType);
+
+    // TODO: Gửi data đến API
+    // Simulate API call
+    alert(`Đã thêm ${getModalTitle(userType)} thành công!`);
+
+    // Có thể thêm user mới vào danh sách (nếu muốn update UI ngay lập tức)
+    // setUsers(prev => [...prev, { ...formData, id: Date.now(), role: userType }]);
+  };
+
+  // Get modal title based on user type
+  const getModalTitle = (userType) => {
+    switch (userType) {
+      case "Admin":
+        return "Quản trị viên";
+      case "Staff":
+        return "Nhân viên";
+      case "Customer":
+        return "Khách hàng";
+      case "Consultant":
+        return "Tư vấn viên";
+      default:
+        return "Người dùng";
     }
   };
 
@@ -191,49 +282,54 @@ const UserManagementContent = () => {
     }
   };
 
-  // ✅ Function để lấy text cho nút Add - hiển thị tiếng Việt
-  const getAddButtonText = (tabValue) => {
-    switch (tabValue) {
-      case "Admin":
-        return "Thêm Quản trị viên";
-      case "Staff":
-        return "Thêm Nhân viên";
-      case "Customer":
-        return "Thêm Khách hàng";
-      case "Consultant":
-        return "Thêm Tư vấn viên";
-      default:
-        return "Thêm mới";
-    }
+  // ✅ Function để lấy text cho nút Add - hiển thị chung cho tất cả
+  const getAddButtonText = () => {
+    return "Thêm người dùng mới";
   };
 
-  // ✅ Function xử lý thêm mới - log bằng tiếng Anh, alert tiếng Việt
-  const handleAddNew = (userType) => {
-    console.log("Thêm mới người dùng loại:", userType); // Log database value
-
-    switch (userType) {
-      case "Admin":
-        alert("Mở form thêm Quản trị viên mới");
-        // TODO: Mở dialog/form thêm Admin
-        break;
-      case "Staff":
-        alert("Mở form thêm Nhân viên mới");
-        // TODO: Mở dialog/form thêm Staff
-        break;
-      case "Customer":
-        alert("Mở form thêm Khách hàng mới");
-        // TODO: Mở dialog/form thêm Customer
-        break;
-      case "Consultant":
-        alert("Mở form thêm Tư vấn viên mới");
-        // TODO: Mở dialog/form thêm Consultant
-        break;
-      default:
-        alert("Mở form thêm người dùng mới");
-        // TODO: Mở dialog/form thêm người dùng chung
-        break;
-    }
+  // ✅ Function xử lý mở role selection dialog
+  const handleAddNew = () => {
+    setOpenRoleSelection(true);
   };
+
+  // ✅ Function xử lý chọn role và mở modal thêm mới
+  const handleRoleSelect = (userType) => {
+    setOpenRoleSelection(false);
+    setModalType(userType);
+    setOpenModal(true);
+  };
+
+  // ✅ Danh sách roles để chọn
+  const roleOptions = [
+    {
+      value: "Admin",
+      label: "Quản trị viên",
+      icon: <SecurityIcon />,
+      description: "Có quyền quản lý toàn bộ hệ thống",
+      color: "#E53E3E",
+    },
+    {
+      value: "Staff",
+      label: "Nhân viên",
+      icon: <BusinessIcon />,
+      description: "Nhân viên hỗ trợ khách hàng",
+      color: "#3182CE",
+    },
+    {
+      value: "Consultant",
+      label: "Tư vấn viên",
+      icon: <SupportIcon />,
+      description: "Chuyên gia tư vấn sức khỏe",
+      color: "#D69E2E",
+    },
+    {
+      value: "Customer",
+      label: "Khách hàng",
+      icon: <PersonIcon />,
+      description: "Người dùng sử dụng dịch vụ",
+      color: "#4A90E2",
+    },
+  ];
 
   // ✅ Cập nhật getFilteredUsers để reset roleFilter khi chọn tab cụ thể
   const getFilteredUsers = () => {
@@ -341,7 +437,6 @@ const UserManagementContent = () => {
       >
         Quản lý tài khoản và phân quyền người dùng trong hệ thống
       </Typography>
-
       {/* User Category Tabs với integrated filters */}
       <Card
         sx={{
@@ -396,10 +491,28 @@ const UserManagementContent = () => {
           ))}
         </Tabs>
 
-        {/* Integrated Search and Filters Section */}
-        <CardContent sx={{ p: 3 }}>
+        {/* Header Section - Remove Add Button */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-start",
+            alignItems: "center",
+            px: 3,
+            pt: 3,
+            pb: 2,
+          }}
+        >
+          <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
+            {userCategories[selectedTab]?.label === "Tất cả"
+              ? "Danh sách người dùng"
+              : `Danh sách ${userCategories[selectedTab]?.label}`}
+          </Typography>
+        </Box>
+
+        {/* Search and Filters Section */}
+        <CardContent sx={{ pt: 0, p: 3 }}>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <TextField
                 placeholder="Tìm kiếm người dùng..."
                 value={searchTerm}
@@ -433,14 +546,10 @@ const UserManagementContent = () => {
                     onChange={(e) => setRoleFilter(e.target.value)}
                   >
                     <MenuItem value="all">Tất cả</MenuItem>
-                    <MenuItem value="Admin">Quản trị viên</MenuItem>{" "}
-                    {/* ✅ Hiển thị tiếng Việt */}
-                    <MenuItem value="Consultant">Tư vấn viên</MenuItem>{" "}
-                    {/* ✅ Hiển thị tiếng Việt */}
-                    <MenuItem value="Staff">Nhân viên</MenuItem>{" "}
-                    {/* ✅ Hiển thị tiếng Việt */}
-                    <MenuItem value="Customer">Khách hàng</MenuItem>{" "}
-                    {/* ✅ Hiển thị tiếng Việt */}
+                    <MenuItem value="Admin">Quản trị viên</MenuItem>
+                    <MenuItem value="Consultant">Tư vấn viên</MenuItem>
+                    <MenuItem value="Staff">Nhân viên</MenuItem>
+                    <MenuItem value="Customer">Khách hàng</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -449,7 +558,7 @@ const UserManagementContent = () => {
             <Grid
               item
               xs={12}
-              md={userCategories[selectedTab]?.value === "all" ? 3 : 4}
+              md={userCategories[selectedTab]?.value === "all" ? 3 : 6}
             >
               <FormControl size="small" fullWidth>
                 <InputLabel>Trạng thái</InputLabel>
@@ -464,32 +573,9 @@ const UserManagementContent = () => {
                 </Select>
               </FormControl>
             </Grid>
-
-            {/* Dynamic Add Button based on selected tab */}
-            <Grid
-              item
-              xs={12}
-              md={userCategories[selectedTab]?.value === "all" ? 2 : 4}
-            >
-              <Button
-                variant="contained"
-                fullWidth
-                onClick={() => handleAddNew(userCategories[selectedTab]?.value)}
-                sx={{
-                  background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                  borderRadius: 2,
-                  "&:hover": {
-                    background: "linear-gradient(45deg, #357ABD, #17A2B8)",
-                  },
-                }}
-              >
-                {getAddButtonText(userCategories[selectedTab]?.value)}
-              </Button>
-            </Grid>
           </Grid>
         </CardContent>
       </Card>
-
       {/* Results Summary */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="body2" sx={{ color: "#4A5568" }}>
@@ -498,7 +584,6 @@ const UserManagementContent = () => {
             ` trong danh mục "${userCategories[selectedTab]?.label}"`}
         </Typography>
       </Box>
-
       {/* Users Table */}
       <Card
         sx={{
@@ -596,9 +681,25 @@ const UserManagementContent = () => {
                       <Typography variant="body2" sx={{ color: "#718096" }}>
                         {user.lastLogin}
                       </Typography>
-                    </TableCell>
+                    </TableCell>{" "}
                     <TableCell>
                       <Box sx={{ display: "flex", gap: 1 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleViewUser(user.id)}
+                          sx={{
+                            color: "#48BB78",
+                            backgroundColor: "rgba(72, 187, 120, 0.1)",
+                            "&:hover": {
+                              backgroundColor: "rgba(72, 187, 120, 0.2)",
+                              transform: "scale(1.1)",
+                            },
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          <VisibilityIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+
                         <IconButton
                           size="small"
                           onClick={() => handleEdit(user.id)}
@@ -643,10 +744,134 @@ const UserManagementContent = () => {
                   </TableCell>
                 </TableRow>
               )}
-            </TableBody>
+            </TableBody>{" "}
           </Table>
         </TableContainer>
       </Card>
+      {/* Standalone Add User Button Section - Moved to bottom after table */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+        <Button
+          variant="contained"
+          onClick={handleAddNew}
+          startIcon={<AddIcon />}
+          sx={{
+            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+            borderRadius: 2,
+            px: 4,
+            py: 1.5,
+            fontSize: "1rem",
+            fontWeight: 600,
+            boxShadow: "0 4px 12px rgba(74, 144, 226, 0.3)",
+            "&:hover": {
+              background: "linear-gradient(45deg, #357ABD, #17A2B8)",
+              transform: "translateY(-2px)",
+              boxShadow: "0 6px 20px rgba(74, 144, 226, 0.4)",
+            },
+            transition: "all 0.3s ease",
+          }}
+        >
+          {getAddButtonText()}
+        </Button>
+      </Box>
+      {/* Role Selection Dialog */}
+      <Dialog
+        open={openRoleSelection}
+        onClose={() => setOpenRoleSelection(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(20px)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            textAlign: "center",
+            pb: 1,
+            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+            backgroundClip: "text",
+            WebkitBackgroundClip: "text",
+            color: "transparent",
+            fontWeight: 700,
+          }}
+        >
+          Chọn loại người dùng cần thêm
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <List sx={{ py: 2 }}>
+            {roleOptions.map((role) => (
+              <ListItem key={role.value} sx={{ px: 3 }}>
+                <ListItemButton
+                  onClick={() => handleRoleSelect(role.value)}
+                  sx={{
+                    borderRadius: 2,
+                    mb: 1,
+                    border: "1px solid rgba(74, 144, 226, 0.15)",
+                    "&:hover": {
+                      backgroundColor: "rgba(74, 144, 226, 0.05)",
+                      borderColor: role.color,
+                    },
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <ListItemIcon sx={{ color: role.color }}>
+                    {role.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Typography
+                        variant="body1"
+                        sx={{ fontWeight: 600, color: "#2D3748" }}
+                      >
+                        {role.label}
+                      </Typography>
+                    }
+                    secondary={
+                      <Typography variant="body2" sx={{ color: "#718096" }}>
+                        {role.description}
+                      </Typography>
+                    }
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button
+            onClick={() => setOpenRoleSelection(false)}
+            sx={{ color: "#718096" }}
+          >
+            Hủy
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Add User Modal */}
+      <AddUserModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        userType={modalType}
+        onSubmit={handleModalSubmit}
+      />{" "}
+      {/* View User Modal */}
+      <ViewUserModal
+        open={openViewModal}
+        onClose={() => setOpenViewModal(false)}
+        user={selectedUser}
+      />
+      {/* Edit User Modal */}
+      <EditUserModal
+        open={openEditModal}
+        onClose={() => {
+          setOpenEditModal(false);
+          setEditingUser(null);
+        }}
+        user={editingUser}
+        onSubmit={handleEditSubmit}
+      />
     </Box>
   );
 };

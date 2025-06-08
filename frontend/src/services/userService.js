@@ -1,5 +1,6 @@
 import notify from "@/utils/notification";
 import apiClient from "@services/api";
+import axios from "axios";
 
 // Service cho các API liên quan đến người dùng
 export const userService = {
@@ -43,11 +44,28 @@ export const userService = {
       throw error.response?.data || error;
     }
   },
-
   // Cập nhật thông tin người dùng
   updateProfile: async (userData) => {
     try {
       const response = await apiClient.put("/users/profile/basic", userData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Cập nhật thông tin người dùng không cần token (cho staff profile)
+  updateProfileNoAuth: async (userData) => {
+    try {
+      // Tạo một instance axios riêng không có interceptor
+      const noAuthClient = axios.create({
+        baseURL: process.env.REACT_APP_API_URL || "http://localhost:8080/",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const response = await noAuthClient.put("/users/profile/basic", userData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;

@@ -140,7 +140,7 @@ const ProfileContent = () => {
         birthDay: formDataUpdate.birthDay,
       };
 
-      const response = await userService.updateProfile(updateData);
+      const response = userService.updateProfile(updateData, userData);
 
       if (response.success) {
         const updatedUser = { ...userData, ...updateData };
