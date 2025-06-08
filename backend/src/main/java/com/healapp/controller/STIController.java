@@ -23,7 +23,7 @@ public class STIController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{serviceId}")
+    @GetMapping("/sti-services/{serviceId}")
     public ResponseEntity<ApiResponse<STIServiceResponse>> getSTIServiceDetails(@PathVariable Long serviceId) {
         ApiResponse<STIServiceResponse> response = stiServiceService.getServiceWithComponents(serviceId);
         return ResponseEntity.ok(response);

@@ -45,6 +45,7 @@ public class ConsultantService {
                             response.setEmail(user.getEmail());
                             response.setPhone(user.getPhone());
                             response.setAvatar(user.getAvatar());
+                            response.setGender(user.getGender());
                             return response;
                         }
                     })
@@ -77,6 +78,8 @@ public class ConsultantService {
                 response.setEmail(user.getEmail());
                 response.setPhone(user.getPhone());
                 response.setAvatar(user.getAvatar());
+                response.setGender(user.getGender());
+
                 return ApiResponse.success("Consultant found but profile not complete", response);
             }
 
@@ -163,6 +166,7 @@ public class ConsultantService {
         response.setExperience(consultantProfile.getExperience());
         response.setBio(consultantProfile.getBio());
         response.setUpdatedAt(consultantProfile.getUpdatedAt());
+        response.setGender(consultantProfile.getUser().getGender());
         return response;
     }
 }

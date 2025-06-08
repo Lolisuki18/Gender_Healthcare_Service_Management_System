@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
+import com.healapp.model.Gender;
 import com.healapp.model.Role;
 
 @Data
@@ -19,4 +20,5 @@ public class LoginResponse {
     private String role;
     private LocalDate birthDay;
     private String phone;
+    private Gender gender;
 }

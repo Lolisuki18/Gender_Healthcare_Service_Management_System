@@ -3,6 +3,8 @@ package com.healapp.dto;
 import lombok.Data;
 import java.time.LocalDateTime;
 
+import com.healapp.model.Gender;
+
 @Data
 public class ConsultantProfileResponse {
     private Long profileId;
@@ -15,4 +17,5 @@ public class ConsultantProfileResponse {
     private String experience;
     private String bio;
     private LocalDateTime updatedAt;
+    private Gender gender;
 }
