@@ -15,14 +15,58 @@
  * - Xử lý lỗi tập trung, bao gồm việc xử lý token hết hạn
  */
 
+import localStorageUtil from "@/utils/localStorage";
 import axios from "axios";
 
 // Tạo instance Axios với các cấu hình mặc định
+var userData = localStorageUtil.get("user");
+// Nếu có userData, lấy token từ đó
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:8080/",
-  headers: {
-    "Content-Type": "application/json",
+  baseURL: "http://localhost:8080",
+  auth: {
+    username: userData.username, // Hoặc lấy từ localStorage/context
+    password: "Ninh123@", // Hoặc lấy từ localStorage/context
   },
 });
+
+// ✅ Request interceptor (không có token)
+apiClient.interceptors.request.use(
+  (config) => {
+    console.log("API Request:", {
+      url: config.baseURL + config.url,
+      method: config.method.toUpperCase(),
+      headers: config.headers,
+    });
+
+    return config;
+  },
+  (error) => {
+    console.error("Request interceptor error:", error);
+    return Promise.reject(error);
+  }
+);
+
+// ✅ Response interceptor (đơn giản hơn)
+apiClient.interceptors.response.use(
+  (response) => {
+    console.log("API Response:", {
+      status: response.status,
+      url: response.config.url,
+      data: response.data,
+    });
+    return response;
+  },
+  (error) => {
+    console.error("API Error:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      data: error.response?.data,
+      message: error.message,
+    });
+
+    return Promise.reject(error);
+  }
+);
 
 export default apiClient;

@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import HomeIcon from "@mui/icons-material/Home";
 import notify from "@/utils/notification";
+import localStorageUtil from "@/utils/localStorage";
 
 const LoggedInView = ({ user, onLogout }) => {
   const theme = useTheme();
@@ -17,6 +18,8 @@ const LoggedInView = ({ user, onLogout }) => {
   const handleLogout = () => {
     onLogout();
     notify.info("Đăng xuất", "Bạn đã đăng xuất khỏi hệ thống");
+    localStorageUtil.remove("user"); // Xóa thông tin user khỏi localStorage
+    window.location.href = "/login"; // Redirect to login page after logout
   };
 
   return (

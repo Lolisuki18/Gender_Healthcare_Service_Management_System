@@ -136,7 +136,7 @@ const AdminProfile = () => {
   // Kiểm tra đăng nhập và quyền admin
   const user = localStorageUtil.get("user");
 
-  if (!user || user.role !== "Admin") {
+  if (!user || user.role !== "ADMIN") {
     return <NoLoggedInView />;
   }
 

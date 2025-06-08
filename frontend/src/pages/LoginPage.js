@@ -110,7 +110,7 @@ const LoginPage = () => {
           localStorageUtil.set("user", response.data);
 
           // Kiểm tra role và chuyển hướng
-          if (role === "Admin") {
+          if (role === "ADMIN") {
             // Nếu là admin, chuyển hướng đến trang quản trị
             notify.success(
               "Đăng nhập thành công",

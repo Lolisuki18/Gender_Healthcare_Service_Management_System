@@ -2,6 +2,7 @@
  * ViewUserModal.js - Modal xem thông tin chi tiết người dùng
  *
  * Modal component để hiển thị thông tin chi tiết của người dùng
+ * Hỗ trợ hiển thị thông tin profile riêng cho Consultant
  */
 import React from "react";
 import {
@@ -35,46 +36,81 @@ import {
 const ViewUserModal = ({ open, onClose, user }) => {
   if (!user) return null;
 
+  // Check if this is a consultant with profile data
+  const isConsultantWithProfile = user.role === "CONSULTANT" && user.profileId;
+
+  // Helper function to get display data based on user type
+  const getDisplayData = () => {
+    if (isConsultantWithProfile) {
+      // For consultant with profile, use profile data
+      return {
+        name: user.fullName || user.username,
+        email: user.email,
+        phone: user.phone || "Chưa cập nhật",
+        avatar: user.avatar,
+        // Professional info from profile
+        qualifications: user.qualifications,
+        experience: user.experience,
+        bio: user.bio,
+        updatedAt: user.updatedAt,
+        // Keep original data for system info
+        role: user.role,
+        isActive: user.isActive,
+        createdDate: user.createdDate,
+        id: user.userId || user.id,
+        profileId: user.profileId,
+      };
+    } else {
+      // For other roles or consultant without profile, use original data
+      return {
+        name: user.fullName || user.username,
+        email: user.email,
+        phone: user.phone,
+        avatar: user.avatar,
+        gender: user.gender,
+        birthDay: user.birthDay,
+        // System info
+        role: user.role,
+        isActive: user.isActive,
+        createdDate: user.createdDate,
+        id: user.id,
+      };
+    }
+  };
+
+  const displayData = getDisplayData();
+
   // Function chuyển đổi role từ tiếng Anh sang tiếng Việt để hiển thị
   const getRoleDisplayName = (role) => {
     switch (role) {
-      case "Admin":
+      case "ADMIN":
         return "Quản trị viên";
-      case "Staff":
+      case "STAFF":
         return "Nhân viên";
-      case "Customer":
+      case "CUSTOMER":
         return "Khách hàng";
-      case "Consultant":
+      case "CONSULTANT":
         return "Tư vấn viên";
       default:
         return role;
     }
   };
 
-  // Function chuyển đổi status từ tiếng Anh sang tiếng Việt
-  const getStatusDisplayName = (status) => {
-    switch (status) {
-      case "Active":
-        return "Hoạt động";
-      case "Inactive":
-        return "Tạm khóa";
-      case "Blocked":
-        return "Bị chặn";
-      default:
-        return status;
-    }
+  // Function chuyển đổi status từ boolean sang tiếng Việt
+  const getStatusDisplayName = (isActive) => {
+    return isActive ? "Hoạt động" : "Tạm khóa";
   };
 
   // Get role color
   const getRoleColor = (role) => {
     switch (role) {
-      case "Admin":
+      case "ADMIN":
         return "error";
-      case "Consultant":
+      case "CONSULTANT":
         return "warning";
-      case "Staff":
+      case "STAFF":
         return "info";
-      case "Customer":
+      case "CUSTOMER":
         return "primary";
       default:
         return "default";
@@ -82,16 +118,56 @@ const ViewUserModal = ({ open, onClose, user }) => {
   };
 
   // Get status color
-  const getStatusColor = (status) => {
-    return status === "Hoạt động" || status === "Active"
-      ? "success"
-      : "default";
+  const getStatusColor = (isActive) => {
+    return isActive ? "success" : "error";
   };
 
   // Format date
-  const formatDate = (dateString) => {
-    if (!dateString) return "Chưa cập nhật";
-    return new Date(dateString).toLocaleDateString("vi-VN");
+  const formatDate = (dateArray) => {
+    if (!dateArray || !Array.isArray(dateArray)) return "Chưa cập nhật";
+
+    try {
+      // dateArray format: [year, month, day, hour, minute, second, nanosecond]
+      const [year, month, day, hour = 0, minute = 0] = dateArray;
+      const date = new Date(year, month - 1, day, hour, minute);
+
+      return date.toLocaleDateString("vi-VN", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Chưa cập nhật";
+    }
+  };
+
+  // Format birth date
+  const formatBirthDate = (birthDay) => {
+    if (!birthDay) return "Chưa cập nhật";
+
+    if (Array.isArray(birthDay)) {
+      try {
+        const [year, month, day] = birthDay;
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString("vi-VN", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      } catch (error) {
+        return "Chưa cập nhật";
+      }
+    }
+
+    // Fallback for string dates
+    return new Date(birthDay).toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   return (
@@ -118,7 +194,19 @@ const ViewUserModal = ({ open, onClose, user }) => {
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Thông tin chi tiết - {getRoleDisplayName(user.role)}
+          Thông tin chi tiết - {getRoleDisplayName(displayData.role)}
+          {isConsultantWithProfile && (
+            <Chip
+              label="Profile"
+              size="small"
+              sx={{
+                ml: 1,
+                backgroundColor: "rgba(255,255,255,0.2)",
+                color: "white",
+                fontSize: "0.75rem",
+              }}
+            />
+          )}
         </Typography>
         <IconButton onClick={onClose} sx={{ color: "white" }}>
           <CloseIcon />
@@ -137,7 +225,7 @@ const ViewUserModal = ({ open, onClose, user }) => {
         >
           <CardContent sx={{ textAlign: "center", py: 3 }}>
             <Avatar
-              src={user.avatar}
+              src={displayData.avatar}
               sx={{
                 width: 80,
                 height: 80,
@@ -147,31 +235,35 @@ const ViewUserModal = ({ open, onClose, user }) => {
                 fontWeight: 600,
               }}
             >
-              {user.name.charAt(0)}
+              {displayData.name?.charAt(0) || "?"}
             </Avatar>
             <Typography
               variant="h5"
               sx={{ fontWeight: 600, color: "#2D3748", mb: 1 }}
             >
-              {user.name}
+              {displayData.name || "Không có tên"}
             </Typography>
             <Box
               sx={{ display: "flex", justifyContent: "center", gap: 1, mb: 2 }}
             >
               <Chip
-                label={getRoleDisplayName(user.role)}
-                color={getRoleColor(user.role)}
+                label={getRoleDisplayName(displayData.role)}
+                color={getRoleColor(displayData.role)}
                 size="small"
                 variant="outlined"
               />
               <Chip
-                label={getStatusDisplayName(user.status)}
-                color={getStatusColor(user.status)}
+                label={getStatusDisplayName(displayData.isActive)}
+                color={getStatusColor(displayData.isActive)}
                 size="small"
               />
             </Box>
             <Typography variant="body2" sx={{ color: "#718096" }}>
-              ID: {user.id} • Tham gia: {formatDate(user.joinDate)}
+              ID: {displayData.id}
+              {isConsultantWithProfile &&
+                ` • Profile ID: ${displayData.profileId}`}
+              {displayData.createdDate &&
+                ` • Tham gia: ${formatDate(displayData.createdDate)}`}
             </Typography>
           </CardContent>
         </Card>
@@ -202,7 +294,7 @@ const ViewUserModal = ({ open, onClose, user }) => {
                     Email
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#718096" }}>
-                    {user.email}
+                    {displayData.email}
                   </Typography>
                 </Box>
               </Box>
@@ -216,28 +308,10 @@ const ViewUserModal = ({ open, onClose, user }) => {
                     Số điện thoại
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#718096" }}>
-                    {user.phone}
+                    {displayData.phone || "Chưa cập nhật"}
                   </Typography>
                 </Box>
               </Box>
-              {user.address && (
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <LocationIcon
-                    sx={{ mr: 2, color: "#718096", fontSize: 20 }}
-                  />
-                  <Box>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "#2D3748", fontWeight: 500 }}
-                    >
-                      Địa chỉ
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "#718096" }}>
-                      {user.address}
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
             </Box>
           </Grid>
 
@@ -256,63 +330,58 @@ const ViewUserModal = ({ open, onClose, user }) => {
               Thông tin hệ thống
             </Typography>
             <Box sx={{ pl: 2 }}>
-              <Box sx={{ mb: 2 }}>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "#2D3748", fontWeight: 500 }}
-                >
-                  Ngày tham gia
-                </Typography>
-                <Typography variant="body2" sx={{ color: "#718096" }}>
-                  {formatDate(user.joinDate)}
-                </Typography>
-              </Box>
-              <Box sx={{ mb: 2 }}>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "#2D3748", fontWeight: 500 }}
-                >
-                  Lần đăng nhập cuối
-                </Typography>
-                <Typography variant="body2" sx={{ color: "#718096" }}>
-                  {user.lastLogin || "Chưa đăng nhập"}
-                </Typography>
-              </Box>
-              {user.gender && (
+              {displayData.createdDate && (
                 <Box sx={{ mb: 2 }}>
                   <Typography
                     variant="body2"
                     sx={{ color: "#2D3748", fontWeight: 500 }}
                   >
-                    Giới tính
+                    Ngày tham gia
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#718096" }}>
-                    {user.gender === "male"
-                      ? "Nam"
-                      : user.gender === "female"
-                      ? "Nữ"
-                      : "Khác"}
+                    {formatDate(displayData.createdDate)}
                   </Typography>
                 </Box>
               )}
-              {user.dateOfBirth && (
+
+              {/* Show profile update time for consultant with profile */}
+              {isConsultantWithProfile && displayData.updatedAt && (
                 <Box sx={{ mb: 2 }}>
                   <Typography
                     variant="body2"
                     sx={{ color: "#2D3748", fontWeight: 500 }}
                   >
-                    Ngày sinh
+                    Cập nhật profile
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#718096" }}>
-                    {formatDate(user.dateOfBirth)}
+                    {formatDate(displayData.updatedAt)}
                   </Typography>
                 </Box>
+              )}
+
+              {/* Show traditional fields for non-consultant-profile users */}
+              {!isConsultantWithProfile && (
+                <>
+                  {displayData.birthDay && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "#2D3748", fontWeight: 500 }}
+                      >
+                        Ngày sinh
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "#718096" }}>
+                        {formatBirthDate(displayData.birthDay)}
+                      </Typography>
+                    </Box>
+                  )}
+                </>
               )}
             </Box>
           </Grid>
 
           {/* Thông tin chuyên môn cho Tư vấn viên */}
-          {user.role === "Consultant" && (
+          {displayData.role === "CONSULTANT" && (
             <Grid item xs={12}>
               <Divider sx={{ my: 2 }} />
               <Typography
@@ -329,80 +398,105 @@ const ViewUserModal = ({ open, onClose, user }) => {
               </Typography>
 
               <Grid container spacing={2} sx={{ pl: 2 }}>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#2D3748",
-                        fontWeight: 500,
-                        display: "flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      <StarIcon
-                        sx={{ mr: 1, fontSize: 16, color: "#F6AD55" }}
-                      />
-                      Chuyên khoa
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "#718096", pl: 3 }}
-                    >
-                      {user.specialization || "Chưa cập nhật"}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#2D3748",
-                        fontWeight: 500,
-                        display: "flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      <CalendarIcon
-                        sx={{ mr: 1, fontSize: 16, color: "#4A90E2" }}
-                      />
-                      Kinh nghiệm
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "#718096", pl: 3 }}
-                    >
-                      {user.experience
-                        ? `${user.experience} năm`
-                        : "Chưa cập nhật"}
-                    </Typography>
-                  </Box>
-                </Grid>
-                {user.certification && (
+                {/* For consultant with profile */}
+                {isConsultantWithProfile ? (
+                  <>
+                    <Grid item xs={12}>
+                      <Box sx={{ mb: 2 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "#2D3748",
+                            fontWeight: 500,
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <SchoolIcon
+                            sx={{ mr: 1, fontSize: 16, color: "#48BB78" }}
+                          />
+                          Trình độ chuyên môn
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "#718096",
+                            pl: 3,
+                            whiteSpace: "pre-line",
+                          }}
+                        >
+                          {displayData.qualifications || "Chưa cập nhật"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Box sx={{ mb: 2 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "#2D3748",
+                            fontWeight: 500,
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <CalendarIcon
+                            sx={{ mr: 1, fontSize: 16, color: "#4A90E2" }}
+                          />
+                          Kinh nghiệm làm việc
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "#718096",
+                            pl: 3,
+                            whiteSpace: "pre-line",
+                          }}
+                        >
+                          {displayData.experience || "Chưa cập nhật"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    {displayData.bio && (
+                      <Grid item xs={12}>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: "#2D3748",
+                              fontWeight: 500,
+                              display: "flex",
+                              alignItems: "center",
+                            }}
+                          >
+                            <PersonIcon
+                              sx={{ mr: 1, fontSize: 16, color: "#9F7AEA" }}
+                            />
+                            Giới thiệu bản thân
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: "#718096",
+                              pl: 3,
+                              whiteSpace: "pre-line",
+                            }}
+                          >
+                            {displayData.bio}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                  </>
+                ) : (
+                  // For traditional consultant data without profile
                   <Grid item xs={12}>
-                    <Box sx={{ mb: 2 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "#2D3748",
-                          fontWeight: 500,
-                          display: "flex",
-                          alignItems: "center",
-                        }}
-                      >
-                        <SchoolIcon
-                          sx={{ mr: 1, fontSize: 16, color: "#48BB78" }}
-                        />
-                        Chứng chỉ & Bằng cấp
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "#718096", pl: 3, whiteSpace: "pre-line" }}
-                      >
-                        {user.certification}
-                      </Typography>
-                    </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "#718096", fontStyle: "italic" }}
+                    >
+                      Tư vấn viên chưa có thông tin chuyên môn chi tiết.
+                    </Typography>
                   </Grid>
                 )}
               </Grid>

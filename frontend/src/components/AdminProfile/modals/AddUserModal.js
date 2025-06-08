@@ -5,6 +5,7 @@
  */
 import React, { useState, useEffect } from "react";
 import { adminService } from "../../../services/adminService";
+import notify from "../../../utils/notification";
 import {
   Dialog,
   DialogTitle,
@@ -42,15 +43,19 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
     name: "",
     email: "",
     phone: "",
-    password: "",
-    confirmPassword: "",
     gender: "",
     dateOfBirth: "",
     address: "",
     role: userType !== "all" ? userType : "",
-    specialization: "",
-    experience: "",
-    certification: "",
+    // For consultant - required and optional fields
+    fullName: "",
+    birthday: "", // Optional for consultant
+    phoneConsultant: "", // Optional for consultant (separate from general phone)
+    genderConsultant: "", // Optional for consultant
+    // Remove professional information fields
+    // specialization: "",
+    // experience: "",
+    // certification: "",
   };
 
   // State cho form data
@@ -78,61 +83,83 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
 
   // Handle form submit
   const handleSubmit = async () => {
-    // Validation
-    const requiredFields = ["name", "email", "phone", "password", "role"];
+    // Different validation based on role
+    let requiredFields = [];
+    let formDataToSend = {};
+
+    if (formData.role === "Consultant") {
+      // For Consultant - only fullName and email are required
+      requiredFields = ["fullName", "email"];
+      formDataToSend = {
+        fullName: formData.fullName || formData.name,
+        email: formData.email,
+        birthday: formData.birthday || "", // Default to empty string if not provided
+        phone: formData.phoneConsultant || "", // Default to empty string if not provided
+        gender: formData.genderConsultant || "", // Default to empty string if not provided
+      };
+    } else {
+      // For other roles - use existing validation
+      requiredFields = ["name", "email", "phone", "role"];
+      formDataToSend = { ...formData };
+    }
+
     const missingFields = requiredFields.filter((field) => !formData[field]);
 
     if (missingFields.length > 0) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp!");
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      alert("Mật khẩu phải có ít nhất 6 ký tự!");
+      notify.warning(
+        "Thông tin thiếu",
+        "Vui lòng điền đầy đủ thông tin bắt buộc!"
+      );
       return;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      alert("Email không hợp lệ!");
+      notify.error(
+        "Email không hợp lệ",
+        "Vui lòng nhập địa chỉ email đúng định dạng!"
+      );
       return;
     }
 
-    // Phone validation
-    const phoneRegex = /^[0-9]{10,11}$/;
-    if (!phoneRegex.test(formData.phone)) {
-      alert("Số điện thoại phải có 10-11 chữ số!");
-      return;
-    }
-
-    // Validation cho Consultant
-    if (formData.role === "Consultant") {
-      if (!formData.specialization) {
-        alert("Vui lòng nhập chuyên khoa cho tư vấn viên!");
+    // Phone validation for non-consultant roles
+    if (formData.role !== "Consultant") {
+      const phoneRegex = /^[0-9]{10,11}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        notify.error(
+          "Số điện thoại không hợp lệ",
+          "Số điện thoại phải có 10-11 chữ số!"
+        );
         return;
       }
-      if (!formData.experience || formData.experience < 0) {
-        alert("Vui lòng nhập số năm kinh nghiệm hợp lệ!");
-        return;
+    } else {
+      // Optional phone validation for consultant
+      if (formData.phoneConsultant && formData.phoneConsultant.trim() !== "") {
+        const phoneRegex = /^[0-9]{10,11}$/;
+        if (!phoneRegex.test(formData.phoneConsultant)) {
+          notify.error(
+            "Số điện thoại không hợp lệ",
+            "Số điện thoại phải có 10-11 chữ số!"
+          );
+          return;
+        }
       }
     }
 
     setIsLoading(true);
     try {
-      // Hiển thị loading state (optional)
       console.log("Creating user with role:", formData.role);
+      console.log("Data to send:", formDataToSend);
 
       // Gọi API thông qua service
-      const result = await adminService.createUserByRole(formData);
+      const result = await adminService.createUserByRole(formDataToSend);
 
       console.log("User created successfully:", result);
-      alert(`Tạo ${getRoleDisplayName(formData.role)} thành công!`);
+      notify.success(
+        "Tạo thành công!",
+        `Tạo ${getRoleDisplayName(formData.role)} thành công!`
+      );
 
       // Gọi callback function nếu có
       if (onSubmit) {
@@ -155,7 +182,7 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
         errorMessage = error;
       }
 
-      alert(errorMessage);
+      notify.error("Lỗi tạo người dùng", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -739,15 +766,23 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
               </Box>
               {/* Name */}
               <Grid container spacing={3}>
-                <Grid item size={6}>
+                {/* Name field - different for consultant */}
+                <Grid item size={formData.role === "Consultant" ? 12 : 6}>
                   <TextField
                     required
                     fullWidth
-                    label="Họ và tên"
-                    name="name"
-                    value={formData.name}
+                    label={
+                      formData.role === "Consultant"
+                        ? "Họ và tên (Full Name)"
+                        : "Họ và tên"
+                    }
+                    name={formData.role === "Consultant" ? "fullName" : "name"}
+                    value={
+                      formData.role === "Consultant"
+                        ? formData.fullName
+                        : formData.name
+                    }
                     onChange={handleInputChange}
-                    // variant="outlined"
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         borderRadius: 3,
@@ -755,11 +790,9 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                         backgroundColor: "rgba(248,252,255,0.8)",
                         border: "2px solid transparent",
                         "&:hover": {
-                          // borderColor: "#4A90E2",
                           backgroundColor: "rgba(248,252,255,0.95)",
                         },
                         "&.Mui-focused": {
-                          // borderColor: "#4A90E2",
                           backgroundColor: "rgba(248,252,255,1)",
                           boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
                         },
@@ -776,8 +809,8 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                   />
                 </Grid>
 
-                {/* Email */}
-                <Grid item size={6}>
+                {/* Email field */}
+                <Grid item size={formData.role === "Consultant" ? 12 : 6}>
                   <TextField
                     required
                     fullWidth
@@ -786,7 +819,6 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    // variant="outlined"
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         borderRadius: 3,
@@ -794,11 +826,9 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                         backgroundColor: "rgba(248,252,255,0.8)",
                         border: "2px solid transparent",
                         "&:hover": {
-                          // borderColor: "#4A90E2",
                           backgroundColor: "rgba(248,252,255,0.95)",
                         },
                         "&.Mui-focused": {
-                          // borderColor: "#4A90E2",
                           backgroundColor: "rgba(248,252,255,1)",
                           boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
                         },
@@ -814,465 +844,305 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                     }}
                   />
                 </Grid>
-                {/* Số điện thoại  */}
-                <Grid item size={4}>
-                  <TextField
-                    required
-                    fullWidth
-                    label="Số điện thoại"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    // variant="outlined"
-                    placeholder="VD: 0901234567"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,252,255,0.8)",
-                        border: "2px solid transparent",
-                        "&:hover": {
-                          // borderColor: "#4A90E2",
-                          backgroundColor: "rgba(248,252,255,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          // borderColor: "#4A90E2",
-                          backgroundColor: "rgba(248,252,255,1)",
-                          boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
-                        },
-                      },
-                      "& .MuiInputLabel-root": {
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: "#546e7a",
-                        textDecoration: "none !important",
-                        "&.Mui-focused": {
-                          color: "#4A90E2",
-                        },
-                      },
-                      "& .MuiOutlinedInput-input": {
-                        textDecoration: "none !important",
-                        "&::-webkit-input-placeholder": {
-                          textDecoration: "none !important",
-                        },
-                        "&::placeholder": {
-                          textDecoration: "none !important",
-                        },
-                      },
-                      "& input": {
-                        textDecoration: "none !important",
-                        "&:-webkit-autofill": {
-                          textDecoration: "none !important",
-                          "-webkit-text-decoration": "none !important",
-                        },
-                      },
-                    }}
-                    inputProps={{
-                      style: {
-                        textDecoration: "none",
-                        WebkitTextDecoration: "none",
-                      },
-                    }}
-                  />
-                </Grid>
-                {/* Giới tính  */}
-                <Grid item size={4}>
-                  <Box sx={{ mt: 1 }}>
-                    <FormLabel
-                      component="legend"
-                      sx={{
-                        color: "#374151",
-                        fontWeight: 600,
-                        fontSize: 16,
-                        mb: 2,
-                        display: "block",
-                      }}
-                    >
-                      Giới tính
-                    </FormLabel>
-                    <RadioGroup
-                      row
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleInputChange}
-                      sx={{
-                        gap: 3,
-                        "& .MuiFormControlLabel-label": {
-                          fontSize: 16,
-                          fontWeight: 500,
-                        },
-                      }}
-                    >
-                      <FormControlLabel
-                        value="male"
-                        control={
-                          <Radio
-                            sx={{
+
+                {/* Optional fields for consultant */}
+                {formData.role === "Consultant" && (
+                  <>
+                    <Grid item size={4}>
+                      <TextField
+                        fullWidth
+                        label="Ngày sinh (Tùy chọn)"
+                        name="birthday"
+                        type="date"
+                        value={formData.birthday}
+                        onChange={handleInputChange}
+                        InputLabelProps={{ shrink: true }}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 3,
+                            height: 56,
+                            backgroundColor: "rgba(248,252,255,0.8)",
+                            border: "2px solid transparent",
+                            "&:hover": {
+                              backgroundColor: "rgba(248,252,255,0.95)",
+                            },
+                            "&.Mui-focused": {
+                              backgroundColor: "rgba(248,252,255,1)",
+                              boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
+                            },
+                          },
+                          "& .MuiInputLabel-root": {
+                            fontSize: 16,
+                            fontWeight: 600,
+                            color: "#546e7a",
+                            "&.Mui-focused": {
                               color: "#4A90E2",
-                              "&.Mui-checked": {
-                                color: "#4A90E2",
-                              },
-                            }}
+                            },
+                          },
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item size={4}>
+                      <TextField
+                        fullWidth
+                        label="Số điện thoại (Tùy chọn)"
+                        name="phoneConsultant"
+                        value={formData.phoneConsultant}
+                        onChange={handleInputChange}
+                        placeholder="VD: 0901234567"
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 3,
+                            height: 56,
+                            backgroundColor: "rgba(248,252,255,0.8)",
+                            border: "2px solid transparent",
+                            "&:hover": {
+                              backgroundColor: "rgba(248,252,255,0.95)",
+                            },
+                            "&.Mui-focused": {
+                              backgroundColor: "rgba(248,252,255,1)",
+                              boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
+                            },
+                          },
+                          "& .MuiInputLabel-root": {
+                            fontSize: 16,
+                            fontWeight: 600,
+                            color: "#546e7a",
+                            "&.Mui-focused": {
+                              color: "#4A90E2",
+                            },
+                          },
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item size={4}>
+                      <Box sx={{ mt: 1 }}>
+                        <FormLabel
+                          component="legend"
+                          sx={{
+                            color: "#374151",
+                            fontWeight: 600,
+                            fontSize: 16,
+                            mb: 2,
+                            display: "block",
+                          }}
+                        >
+                          Giới tính (Tùy chọn)
+                        </FormLabel>
+                        <RadioGroup
+                          row
+                          name="genderConsultant"
+                          value={formData.genderConsultant}
+                          onChange={handleInputChange}
+                          sx={{
+                            gap: 2,
+                            "& .MuiFormControlLabel-label": {
+                              fontSize: 15,
+                              fontWeight: 500,
+                            },
+                          }}
+                        >
+                          <FormControlLabel
+                            value="male"
+                            control={
+                              <Radio
+                                sx={{
+                                  color: "#4A90E2",
+                                  "&.Mui-checked": {
+                                    color: "#4A90E2",
+                                  },
+                                }}
+                              />
+                            }
+                            label="Nam"
                           />
-                        }
-                        label="Nam"
+                          <FormControlLabel
+                            value="female"
+                            control={<Radio sx={{ color: "#4A90E2" }} />}
+                            label="Nữ"
+                          />
+                          <FormControlLabel
+                            value="other"
+                            control={<Radio sx={{ color: "#4A90E2" }} />}
+                            label="Khác"
+                          />
+                        </RadioGroup>
+                      </Box>
+                    </Grid>
+                  </>
+                )}
+
+                {/* Show additional fields only for non-consultant roles */}
+                {formData.role !== "Consultant" && (
+                  <>
+                    {/* Phone */}
+                    <Grid item size={4}>
+                      <TextField
+                        required
+                        fullWidth
+                        label="Số điện thoại"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        placeholder="VD: 0901234567"
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 3,
+                            height: 56,
+                            backgroundColor: "rgba(248,252,255,0.8)",
+                            border: "2px solid transparent",
+                            "&:hover": {
+                              backgroundColor: "rgba(248,252,255,0.95)",
+                            },
+                            "&.Mui-focused": {
+                              backgroundColor: "rgba(248,252,255,1)",
+                              boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
+                            },
+                          },
+                          "& .MuiInputLabel-root": {
+                            fontSize: 16,
+                            fontWeight: 600,
+                            color: "#546e7a",
+                            "&.Mui-focused": {
+                              color: "#4A90E2",
+                            },
+                          },
+                        }}
                       />
-                      <FormControlLabel
-                        value="female"
-                        control={<Radio sx={{ color: "#4A90E2" }} />}
-                        label="Nữ"
+                    </Grid>
+
+                    {/* Gender */}
+                    <Grid item size={4}>
+                      <Box sx={{ mt: 1 }}>
+                        <FormLabel
+                          component="legend"
+                          sx={{
+                            color: "#374151",
+                            fontWeight: 600,
+                            fontSize: 16,
+                            mb: 2,
+                            display: "block",
+                          }}
+                        >
+                          Giới tính
+                        </FormLabel>
+                        <RadioGroup
+                          row
+                          name="gender"
+                          value={formData.gender}
+                          onChange={handleInputChange}
+                          sx={{
+                            gap: 3,
+                            "& .MuiFormControlLabel-label": {
+                              fontSize: 16,
+                              fontWeight: 500,
+                            },
+                          }}
+                        >
+                          <FormControlLabel
+                            value="male"
+                            control={
+                              <Radio
+                                sx={{
+                                  color: "#4A90E2",
+                                  "&.Mui-checked": {
+                                    color: "#4A90E2",
+                                  },
+                                }}
+                              />
+                            }
+                            label="Nam"
+                          />
+                          <FormControlLabel
+                            value="female"
+                            control={<Radio sx={{ color: "#4A90E2" }} />}
+                            label="Nữ"
+                          />
+                          <FormControlLabel
+                            value="other"
+                            control={<Radio sx={{ color: "#4A90E2" }} />}
+                            label="Khác"
+                          />
+                        </RadioGroup>
+                      </Box>
+                    </Grid>
+
+                    {/* Date of Birth */}
+                    <Grid item size={4}>
+                      <TextField
+                        fullWidth
+                        label="Ngày sinh"
+                        name="dateOfBirth"
+                        type="date"
+                        value={formData.dateOfBirth}
+                        onChange={handleInputChange}
+                        InputLabelProps={{ shrink: true }}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 3,
+                            height: 56,
+                            backgroundColor: "rgba(248,252,255,0.8)",
+                            border: "2px solid transparent",
+                            "&:hover": {
+                              backgroundColor: "rgba(248,252,255,0.95)",
+                            },
+                            "&.Mui-focused": {
+                              backgroundColor: "rgba(248,252,255,1)",
+                              boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
+                            },
+                          },
+                          "& .MuiInputLabel-root": {
+                            fontSize: 16,
+                            fontWeight: 600,
+                            color: "#546e7a",
+                            "&.Mui-focused": {
+                              color: "#4A90E2",
+                            },
+                          },
+                        }}
                       />
-                      <FormControlLabel
-                        value="other"
-                        control={<Radio sx={{ color: "#4A90E2" }} />}
-                        label="Khác"
+                    </Grid>
+
+                    {/* Address */}
+                    <Grid item size={12}>
+                      <TextField
+                        fullWidth
+                        label="Địa chỉ"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 3,
+                            height: 56,
+                            backgroundColor: "rgba(248,252,255,0.8)",
+                            border: "2px solid transparent",
+                            "&:hover": {
+                              backgroundColor: "rgba(248,252,255,0.95)",
+                            },
+                            "&.Mui-focused": {
+                              backgroundColor: "rgba(248,252,255,1)",
+                              boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
+                            },
+                          },
+                          "& .MuiInputLabel-root": {
+                            fontSize: 16,
+                            fontWeight: 600,
+                            color: "#546e7a",
+                            "&.Mui-focused": {
+                              color: "#4A90E2",
+                            },
+                          },
+                        }}
                       />
-                    </RadioGroup>
-                  </Box>
-                </Grid>
-                {/* Ngày sinh  */}
-                <Grid item size={4}>
-                  <TextField
-                    fullWidth
-                    label="Ngày sinh"
-                    name="dateOfBirth"
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={handleInputChange}
-                    InputLabelProps={{ shrink: true }}
-                    // variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,252,255,0.8)",
-                        border: "2px solid transparent",
-                        "&:hover": {
-                          // borderColor: "#4A90E2",
-                          backgroundColor: "rgba(248,252,255,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          // borderColor: "#4A90E2",
-                          backgroundColor: "rgba(248,252,255,1)",
-                          boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
-                        },
-                      },
-                      "& .MuiInputLabel-root": {
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: "#546e7a",
-                        "&.Mui-focused": {
-                          color: "#4A90E2",
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-                {/* Địa chỉ */}
-                <Grid item size={12}>
-                  <TextField
-                    fullWidth
-                    label="Địa chỉ"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    // variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,252,255,0.8)",
-                        border: "2px solid transparent",
-                        "&:hover": {
-                          // borderColor: "#4A90E2",
-                          backgroundColor: "rgba(248,252,255,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          // borderColor: "#4A90E2",
-                          backgroundColor: "rgba(248,252,255,1)",
-                          boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
-                        },
-                      },
-                      "& .MuiInputLabel-root": {
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: "#546e7a",
-                        "&.Mui-focused": {
-                          color: "#4A90E2",
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
+                    </Grid>
+                  </>
+                )}
               </Grid>
             </CardContent>
           </Card>
-
-          {/* Security Information Card */}
-          <Card
-            sx={{
-              mb: 3,
-              borderRadius: 4,
-              boxShadow: "0 8px 32px rgba(26, 188, 156, 0.08)",
-              border: "1px solid rgba(255,255,255,0.5)",
-              background:
-                "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,255,248,0.9))",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <CardContent sx={{ p: 4 }}>
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 3, mb: 4 }}
-              >
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 3,
-                    background: "linear-gradient(45deg, #1ABC9C, #16a085)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 2px 8px rgba(26, 188, 156, 0.25)",
-                  }}
-                >
-                  <SecurityIcon sx={{ color: "white", fontSize: 24 }} />
-                </Box>
-                <Typography
-                  variant="h5"
-                  sx={{ color: "#1ABC9C", fontWeight: 700, fontSize: 20 }}
-                >
-                  Thông tin bảo mật
-                </Typography>
-              </Box>
-
-              <Grid container spacing={3}>
-                <Grid item size={6}>
-                  <TextField
-                    required
-                    fullWidth
-                    label="Mật khẩu"
-                    name="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    // variant="outlined"
-                    helperText="Tối thiểu 6 ký tự"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,255,248,0.8)",
-                        border: "2px solid transparent",
-                        "&:hover": {
-                          // borderColor: "#1ABC9C",
-                          backgroundColor: "rgba(248,255,248,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          // borderColor: "#1ABC9C",
-                          backgroundColor: "rgba(248,255,248,1)",
-                          boxShadow: "0 0 0 3px rgba(26, 188, 156, 0.1)",
-                        },
-                      },
-                      "& .MuiInputLabel-root": {
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: "#546e7a",
-                        "&.Mui-focused": {
-                          color: "#1ABC9C",
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-
-                <Grid item size={6}>
-                  <TextField
-                    required
-                    fullWidth
-                    label="Xác nhận mật khẩu"
-                    name="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    // variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,255,248,0.8)",
-                        border: "2px solid transparent",
-                        "&:hover": {
-                          // borderColor: "#1ABC9C",
-                          backgroundColor: "rgba(248,255,248,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          // borderColor: "#1ABC9C",
-                          backgroundColor: "rgba(248,255,248,1)",
-                          boxShadow: "0 0 0 3px rgba(26, 188, 156, 0.1)",
-                        },
-                      },
-                      "& .MuiInputLabel-root": {
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: "#546e7a",
-                        "&.Mui-focused": {
-                          color: "#1ABC9C",
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-
-          {/* Professional Information Card - Only for Consultant */}
-          {(formData.role === "Consultant" || userType === "Consultant") && (
-            <Card
-              sx={{
-                mb: 3,
-                borderRadius: 4,
-                boxShadow: "0 8px 32px rgba(142, 68, 173, 0.08)",
-                border: "1px solid rgba(255,255,255,0.5)",
-                background:
-                  "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(252,248,255,0.9))",
-                backdropFilter: "blur(10px)",
-              }}
-            >
-              <CardContent sx={{ p: 4 }}>
-                <Box
-                  sx={{ display: "flex", alignItems: "center", gap: 3, mb: 4 }}
-                >
-                  <Box
-                    sx={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 3,
-                      background: "linear-gradient(45deg, #8e44ad, #9b59b6)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 2px 8px rgba(142, 68, 173, 0.25)",
-                    }}
-                  >
-                    <WorkIcon sx={{ color: "white", fontSize: 24 }} />
-                  </Box>
-                  <Typography
-                    variant="h5"
-                    sx={{ color: "#8e44ad", fontWeight: 700, fontSize: 20 }}
-                  >
-                    Thông tin chuyên môn
-                  </Typography>
-                </Box>
-
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Chuyên khoa"
-                      name="specialization"
-                      value={formData.specialization}
-                      onChange={handleInputChange}
-                      // variant="outlined"
-                      placeholder="VD: Sức khỏe sinh sản nữ"
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 3,
-                          height: 56,
-                          backgroundColor: "rgba(248,252,255,0.8)",
-                          border: "2px solid transparent",
-                          "&:hover": {
-                            // borderColor: "#8e44ad",
-                            backgroundColor: "rgba(252,248,255,0.95)",
-                          },
-                          "&.Mui-focused": {
-                            // borderColor: "#8e44ad",
-                            backgroundColor: "rgba(252,248,255,1)",
-                            boxShadow: "0 0 0 3px rgba(142, 68, 173, 0.1)",
-                          },
-                        },
-                        "& .MuiInputLabel-root": {
-                          fontSize: 16,
-                          fontWeight: 600,
-                          color: "#546e7a",
-                          "&.Mui-focused": {
-                            color: "#8e44ad",
-                          },
-                        },
-                      }}
-                    />
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Số năm kinh nghiệm"
-                      name="experience"
-                      type="number"
-                      value={formData.experience}
-                      onChange={handleInputChange}
-                      variant="outlined"
-                      inputProps={{ min: 0, max: 50 }}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 3,
-                          height: 56,
-                          backgroundColor: "rgba(248,252,255,0.8)",
-                          border: "2px solid transparent",
-                          "&:hover": {
-                            borderColor: "#8e44ad",
-                            backgroundColor: "rgba(252,248,255,0.95)",
-                          },
-                          "&.Mui-focused": {
-                            borderColor: "#8e44ad",
-                            backgroundColor: "rgba(252,248,255,1)",
-                            boxShadow: "0 0 0 3px rgba(142, 68, 173, 0.1)",
-                          },
-                        },
-                        "& .MuiInputLabel-root": {
-                          fontSize: 16,
-                          fontWeight: 600,
-                          color: "#546e7a",
-                          "&.Mui-focused": {
-                            color: "#8e44ad",
-                          },
-                        },
-                      }}
-                    />
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Chứng chỉ / Bằng cấp"
-                      name="certification"
-                      value={formData.certification}
-                      onChange={handleInputChange}
-                      variant="outlined"
-                      multiline
-                      rows={4}
-                      placeholder="Mô tả các chứng chỉ, bằng cấp liên quan..."
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 3,
-                          backgroundColor: "rgba(248,252,255,0.8)",
-                        },
-                        "& .MuiInputLabel-root": {
-                          fontSize: 16,
-                          fontWeight: 600,
-                          color: "#546e7a",
-                          "&.Mui-focused": {
-                            color: "#8e44ad",
-                          },
-                        },
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-          )}
         </Box>
       </DialogContent>
 
