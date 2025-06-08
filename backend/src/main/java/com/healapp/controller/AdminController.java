@@ -50,22 +50,22 @@ public class AdminController {
 
     // Admin xem danh sách tất cả consultant
     @GetMapping("/consultants")
-    public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getAllConsultantProfiles(@RequestParam(name = "q", required = false) String query) {
-        if(query != null && !query.isEmpty()){
-            ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getAllConsultantProfilesByFilters(query);
+    public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getAllConsultantProfiles(
+            @RequestParam(name = "q", required = false) String query) {
+        if (query != null && !query.isEmpty()) {
+            ApiResponse<List<ConsultantProfileResponse>> response = consultantService
+                    .getAllConsultantProfilesByFilters(query);
             return getResponseEntity(response);
         }
         ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getAllConsultantProfiles();
-    // public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>>
-    // getAllConsultantProfiles() {
-    // ApiResponse<List<ConsultantProfileResponse>> response =
-    // consultantService.getAllConsultantProfiles();
-    // return getResponseEntity(response);
-    // }
-    public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getAllActiveConsultant() {
-        ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getAllActiveConsultant();
         return getResponseEntity(response);
     }
+    // public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>>
+    // getAllActiveConsultant() {
+    // ApiResponse<List<ConsultantProfileResponse>> response =
+    // consultantService.getAllActiveConsultant();
+    // return getResponseEntity(response);
+    // }
 
     // Admin xem chi tiết consultant theo userId
     @GetMapping("/consultants/{userId}")
@@ -93,12 +93,9 @@ public class AdminController {
     }
 
     @PostMapping("/consultants")
-    public ResponseEntity<ApiResponse<UserDtls>> addNewConsultantAccount(@RequestBody @Valid CreateConsultantAccRequest request){
-        ApiResponse<UserDtls> response = consultantService.createConsultant(request);
-
     public ResponseEntity<ApiResponse<UserDtls>> createNewConsultantAccount(
             @RequestBody @Valid CreateConsultantAccRequest request) {
-        ApiResponse<UserDtls> response = userService.createConsultant(request);
+        ApiResponse<UserDtls> response = consultantService.createConsultant(request);
         return getResponseEntity(response);
     }
 

@@ -34,7 +34,6 @@ public class ConsultantService {
     @Autowired
     private RoleRepository roleRepository;
 
-
     // lấy tất cả Consultant profile
     // dùng ở AdminController để xem danh sách Consultant
     public ApiResponse<List<ConsultantProfileResponse>> getAllConsultantProfiles() {
@@ -67,9 +66,10 @@ public class ConsultantService {
 
     // lấy tất cả Consultant có chứa chuỗi query ở fullName hoặc email
     // dùng ở AdminController để xem danh sách Consultant
-    public ApiResponse<List<ConsultantProfileResponse>> getAllConsultantProfilesByFilters(String query){
+    public ApiResponse<List<ConsultantProfileResponse>> getAllConsultantProfilesByFilters(String query) {
         try {
-            List<UserDtls> consultantList = userRepository.findByRoleNameAndFullNameContainingOrEmailContaining("CONSULTANT", query);
+            List<UserDtls> consultantList = userRepository
+                    .findByRoleNameAndFullNameContainingOrEmailContaining("CONSULTANT", query);
             List<ConsultantProfileResponse> responses = consultantList.stream()
                     .map(user -> {
                         Optional<ConsultantProfile> profileOpt = consultantProfileRepository.findByUser(user);
@@ -90,7 +90,7 @@ public class ConsultantService {
                     .collect(Collectors.toList());
 
             return ApiResponse.success("Consultant profiles retrieved successfully", responses);
-        } catch (Exception e){
+        } catch (Exception e) {
             return ApiResponse.error("Failed to retrieve consultant profiles: " + e.getMessage());
         }
     }
@@ -130,7 +130,8 @@ public class ConsultantService {
     }
 
     // lấy Consultant có status là true và lấy theo userId
-    // dùng ở ConsultantController để Customer, Consultant, Staff xem profile Consultant
+    // dùng ở ConsultantController để Customer, Consultant, Staff xem profile
+    // Consultant
     public ApiResponse<ConsultantProfileResponse> getActiveConsultantProfileById(Long userId) {
         try {
             Optional<UserDtls> userOpt = userRepository.findById(userId);
@@ -138,7 +139,7 @@ public class ConsultantService {
                 return ApiResponse.error("User not found");
             }
 
-            if( !userOpt.get().getRoleName().equals("CONSULTANT")) {
+            if (!userOpt.get().getRoleName().equals("CONSULTANT")) {
                 return ApiResponse.error("User is not a consultant");
             }
 
@@ -166,7 +167,8 @@ public class ConsultantService {
     }
 
     // lấy tất cả Consultant có status là true
-    // dùng ở ConsultantController để Customer, Consultant, Staff xem danh sách Consultant
+    // dùng ở ConsultantController để Customer, Consultant, Staff xem danh sách
+    // Consultant
     public ApiResponse<List<ConsultantProfileResponse>> getAllActiveConsultants() {
         try {
             // Lấy danh sách Consultant có isActive = true
@@ -201,11 +203,13 @@ public class ConsultantService {
     }
 
     // lấy tất cả Consultant có status là true và tên đầy đủ chứa name
-    // dùng ở ConsultantController để Customer, Consultant, Staff tìm kiếm Consultant theo tên
+    // dùng ở ConsultantController để Customer, Consultant, Staff tìm kiếm
+    // Consultant theo tên
     public ApiResponse<List<ConsultantProfileResponse>> getAllActiveConsultantByFullNameContaining(String name) {
         try {
             // Lấy danh sách Consultant có isActive = true và tên đầy đủ chứa name
-            List<UserDtls> consultantUsers = userRepository.findByRoleNameAndIsActiveAndFullNameContaining(true, "CONSULTANT", name);
+            List<UserDtls> consultantUsers = userRepository.findByRoleNameAndIsActiveAndFullNameContaining(true,
+                    "CONSULTANT", name);
 
             if (consultantUsers.isEmpty()) {
                 return ApiResponse.success("No consultants found with the given name", List.of());
@@ -238,7 +242,7 @@ public class ConsultantService {
     // tạo Consultant account chỉ nhập fullname và email
     @Transactional
     public ApiResponse<UserDtls> createConsultant(CreateConsultantAccRequest request) {
-        try{
+        try {
             // Check if email already exists
             if (userRepository.existsByEmail(request.getEmail())) {
                 throw new RuntimeException("Email already exists");
@@ -272,7 +276,7 @@ public class ConsultantService {
             consultantProfileRepository.save(consultantProfile);
 
             return ApiResponse.success("Consultant created successfully", savedConsultant);
-        } catch (Exception e){
+        } catch (Exception e) {
             return ApiResponse.error("Failed to create consultant: " + e.getMessage());
         }
     }
