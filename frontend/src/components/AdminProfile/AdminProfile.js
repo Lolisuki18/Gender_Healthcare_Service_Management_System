@@ -29,8 +29,9 @@ import {
   useMediaQuery,
   useTheme,
   Chip,
+  Button,
 } from "@mui/material";
-import { Menu as MenuIcon } from "@mui/icons-material";
+import { Menu as MenuIcon, Logout as LogoutIcon } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import AdminSidebar from "@/components/AdminProfile/AdminSideBar";
 import DashboardContent from "@/components/AdminProfile/DashboardContent";
@@ -39,6 +40,10 @@ import ServiceManagementContent from "@/components/AdminProfile/ServiceManagemen
 import AppointmentManagementContent from "@/components/AdminProfile/AppointmentManagementContent";
 import ReportsContent from "@/components/AdminProfile/ReportsContent";
 import SettingsContent from "@/components/AdminProfile/SettingsContent";
+import NoLoggedInView from "../common/NoLoggedInView";
+import localStorageUtil from "@/utils/localStorage";
+import { useNavigate } from "react-router-dom";
+import notify from "@/utils/notification";
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
@@ -59,6 +64,7 @@ const AdminProfile = () => {
   // Hook để detect responsive breakpoints
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const navigate = useNavigate();
 
   // State management
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Mặc định mở trên desktop, đóng trên mobile
@@ -71,6 +77,19 @@ const AdminProfile = () => {
 
   const handleMenuItemSelect = (itemId) => {
     setSelectedMenuItem(itemId);
+  };
+
+  // Hàm xử lý logout
+  const handleLogout = () => {
+    // Xóa dữ liệu user khỏi localStorage
+    localStorageUtil.remove("user");
+    localStorageUtil.remove("loginSuccessMessage");
+
+    // Hiển thị thông báo
+    notify.success("Đăng xuất thành công", "Hẹn gặp lại bạn!");
+
+    // Chuyển hướng về trang đăng nhập
+    navigate("/login");
   };
 
   // Hàm render nội dung động dựa trên menu item được chọn
@@ -113,6 +132,13 @@ const AdminProfile = () => {
         return "Tổng quan";
     }
   };
+
+  // Kiểm tra đăng nhập và quyền admin
+  const user = localStorageUtil.get("user");
+
+  if (!user || user.role !== "Admin") {
+    return <NoLoggedInView />;
+  }
 
   return (
     // Container chính với medical background gradient
@@ -159,7 +185,6 @@ const AdminProfile = () => {
               <MenuIcon />
             </IconButton>
           )}
-
           {/* Page title với medical styling */}
           <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
             <Typography
@@ -175,18 +200,39 @@ const AdminProfile = () => {
             >
               {getPageTitle()}
             </Typography>
-          </Box>
+          </Box>{" "}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Chip
+              label="Quản trị viên"
+              size="small"
+              sx={{
+                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
+                color: "#fff",
+                fontWeight: 600,
+                boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+              }}
+            />
 
-          <Chip
-            label="Quản trị viên"
-            size="small"
-            sx={{
-              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
-              color: "#fff",
-              fontWeight: 600,
-              boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-            }}
-          />
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<LogoutIcon />}
+              onClick={handleLogout}
+              sx={{
+                background: "linear-gradient(45deg, #FF6B6B, #FF8E53)",
+                color: "#fff",
+                fontWeight: 600,
+                boxShadow: "0 2px 8px rgba(255, 107, 107, 0.25)",
+                textTransform: "none",
+                "&:hover": {
+                  background: "linear-gradient(45deg, #FF5252, #FF7043)",
+                  boxShadow: "0 4px 12px rgba(255, 107, 107, 0.35)",
+                },
+              }}
+            >
+              Đăng xuất
+            </Button>
+          </Box>
         </Box>
 
         {/* Content */}

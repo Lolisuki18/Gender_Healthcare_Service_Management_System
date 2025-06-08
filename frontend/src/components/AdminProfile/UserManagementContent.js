@@ -28,6 +28,15 @@ import {
   Select,
   Grid,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -40,6 +49,7 @@ import {
   Person as PersonIcon,
   Support as SupportIcon,
   Visibility as VisibilityIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
 import AddUserModal from "./modals/AddUserModal";
 import ViewUserModal from "./modals/ViewUserModal";
@@ -60,6 +70,8 @@ const UserManagementContent = () => {
   // State cho edit modal
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  // State cho role selection modal
+  const [openRoleSelection, setOpenRoleSelection] = useState(false);
   // Mock data với nhiều người dùng hơn
   const users = [
     {
@@ -211,6 +223,35 @@ const UserManagementContent = () => {
     setEditingUser(null);
   };
 
+  // ✅ Function xử lý submit từ modal
+  const handleModalSubmit = (formData, userType) => {
+    console.log("Dữ liệu form:", formData);
+    console.log("Loại người dùng:", userType);
+
+    // TODO: Gửi data đến API
+    // Simulate API call
+    alert(`Đã thêm ${getModalTitle(userType)} thành công!`);
+
+    // Có thể thêm user mới vào danh sách (nếu muốn update UI ngay lập tức)
+    // setUsers(prev => [...prev, { ...formData, id: Date.now(), role: userType }]);
+  };
+
+  // Get modal title based on user type
+  const getModalTitle = (userType) => {
+    switch (userType) {
+      case "Admin":
+        return "Quản trị viên";
+      case "Staff":
+        return "Nhân viên";
+      case "Customer":
+        return "Khách hàng";
+      case "Consultant":
+        return "Tư vấn viên";
+      default:
+        return "Người dùng";
+    }
+  };
+
   // ✅ Function chuyển đổi role từ tiếng Anh sang tiếng Việt để hiển thị
   const getRoleDisplayName = (role) => {
     switch (role) {
@@ -241,56 +282,54 @@ const UserManagementContent = () => {
     }
   };
 
-  // ✅ Function để lấy text cho nút Add - hiển thị tiếng Việt
-  const getAddButtonText = (tabValue) => {
-    switch (tabValue) {
-      case "Admin":
-        return "Thêm Quản trị viên";
-      case "Staff":
-        return "Thêm Nhân viên";
-      case "Customer":
-        return "Thêm Khách hàng";
-      case "Consultant":
-        return "Thêm Tư vấn viên";
-      default:
-        return "Thêm mới";
-    }
+  // ✅ Function để lấy text cho nút Add - hiển thị chung cho tất cả
+  const getAddButtonText = () => {
+    return "Thêm người dùng mới";
   };
-  // ✅ Function xử lý thêm mới - mở modal
-  const handleAddNew = (userType) => {
-    console.log("Thêm mới người dùng loại:", userType);
+
+  // ✅ Function xử lý mở role selection dialog
+  const handleAddNew = () => {
+    setOpenRoleSelection(true);
+  };
+
+  // ✅ Function xử lý chọn role và mở modal thêm mới
+  const handleRoleSelect = (userType) => {
+    setOpenRoleSelection(false);
     setModalType(userType);
     setOpenModal(true);
   };
 
-  // ✅ Function xử lý submit từ modal
-  const handleModalSubmit = (formData, userType) => {
-    console.log("Dữ liệu form:", formData);
-    console.log("Loại người dùng:", userType);
-
-    // TODO: Gửi data đến API
-    // Simulate API call
-    alert(`Đã thêm ${getModalTitle(userType)} thành công!`);
-
-    // Có thể thêm user mới vào danh sách (nếu muốn update UI ngay lập tức)
-    // setUsers(prev => [...prev, { ...formData, id: Date.now(), role: userType }]);
-  };
-
-  // Get modal title based on user type
-  const getModalTitle = (userType) => {
-    switch (userType) {
-      case "Admin":
-        return "Quản trị viên";
-      case "Staff":
-        return "Nhân viên";
-      case "Customer":
-        return "Khách hàng";
-      case "Consultant":
-        return "Tư vấn viên";
-      default:
-        return "Người dùng";
-    }
-  };
+  // ✅ Danh sách roles để chọn
+  const roleOptions = [
+    {
+      value: "Admin",
+      label: "Quản trị viên",
+      icon: <SecurityIcon />,
+      description: "Có quyền quản lý toàn bộ hệ thống",
+      color: "#E53E3E",
+    },
+    {
+      value: "Staff",
+      label: "Nhân viên",
+      icon: <BusinessIcon />,
+      description: "Nhân viên hỗ trợ khách hàng",
+      color: "#3182CE",
+    },
+    {
+      value: "Consultant",
+      label: "Tư vấn viên",
+      icon: <SupportIcon />,
+      description: "Chuyên gia tư vấn sức khỏe",
+      color: "#D69E2E",
+    },
+    {
+      value: "Customer",
+      label: "Khách hàng",
+      icon: <PersonIcon />,
+      description: "Người dùng sử dụng dịch vụ",
+      color: "#4A90E2",
+    },
+  ];
 
   // ✅ Cập nhật getFilteredUsers để reset roleFilter khi chọn tab cụ thể
   const getFilteredUsers = () => {
@@ -452,10 +491,28 @@ const UserManagementContent = () => {
           ))}
         </Tabs>
 
-        {/* Integrated Search and Filters Section */}
-        <CardContent sx={{ p: 3 }}>
+        {/* Header Section - Remove Add Button */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-start",
+            alignItems: "center",
+            px: 3,
+            pt: 3,
+            pb: 2,
+          }}
+        >
+          <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
+            {userCategories[selectedTab]?.label === "Tất cả"
+              ? "Danh sách người dùng"
+              : `Danh sách ${userCategories[selectedTab]?.label}`}
+          </Typography>
+        </Box>
+
+        {/* Search and Filters Section */}
+        <CardContent sx={{ pt: 0, p: 3 }}>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <TextField
                 placeholder="Tìm kiếm người dùng..."
                 value={searchTerm}
@@ -489,14 +546,10 @@ const UserManagementContent = () => {
                     onChange={(e) => setRoleFilter(e.target.value)}
                   >
                     <MenuItem value="all">Tất cả</MenuItem>
-                    <MenuItem value="Admin">Quản trị viên</MenuItem>{" "}
-                    {/* ✅ Hiển thị tiếng Việt */}
-                    <MenuItem value="Consultant">Tư vấn viên</MenuItem>{" "}
-                    {/* ✅ Hiển thị tiếng Việt */}
-                    <MenuItem value="Staff">Nhân viên</MenuItem>{" "}
-                    {/* ✅ Hiển thị tiếng Việt */}
-                    <MenuItem value="Customer">Khách hàng</MenuItem>{" "}
-                    {/* ✅ Hiển thị tiếng Việt */}
+                    <MenuItem value="Admin">Quản trị viên</MenuItem>
+                    <MenuItem value="Consultant">Tư vấn viên</MenuItem>
+                    <MenuItem value="Staff">Nhân viên</MenuItem>
+                    <MenuItem value="Customer">Khách hàng</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -505,7 +558,7 @@ const UserManagementContent = () => {
             <Grid
               item
               xs={12}
-              md={userCategories[selectedTab]?.value === "all" ? 3 : 4}
+              md={userCategories[selectedTab]?.value === "all" ? 3 : 6}
             >
               <FormControl size="small" fullWidth>
                 <InputLabel>Trạng thái</InputLabel>
@@ -519,28 +572,6 @@ const UserManagementContent = () => {
                   <MenuItem value="Tạm khóa">Tạm khóa</MenuItem>
                 </Select>
               </FormControl>
-            </Grid>
-
-            {/* Dynamic Add Button based on selected tab */}
-            <Grid
-              item
-              xs={12}
-              md={userCategories[selectedTab]?.value === "all" ? 2 : 4}
-            >
-              <Button
-                variant="contained"
-                fullWidth
-                onClick={() => handleAddNew(userCategories[selectedTab]?.value)}
-                sx={{
-                  background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                  borderRadius: 2,
-                  "&:hover": {
-                    background: "linear-gradient(45deg, #357ABD, #17A2B8)",
-                  },
-                }}
-              >
-                {getAddButtonText(userCategories[selectedTab]?.value)}
-              </Button>
             </Grid>
           </Grid>
         </CardContent>
@@ -716,7 +747,108 @@ const UserManagementContent = () => {
             </TableBody>{" "}
           </Table>
         </TableContainer>
-      </Card>{" "}
+      </Card>
+      {/* Standalone Add User Button Section - Moved to bottom after table */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+        <Button
+          variant="contained"
+          onClick={handleAddNew}
+          startIcon={<AddIcon />}
+          sx={{
+            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+            borderRadius: 2,
+            px: 4,
+            py: 1.5,
+            fontSize: "1rem",
+            fontWeight: 600,
+            boxShadow: "0 4px 12px rgba(74, 144, 226, 0.3)",
+            "&:hover": {
+              background: "linear-gradient(45deg, #357ABD, #17A2B8)",
+              transform: "translateY(-2px)",
+              boxShadow: "0 6px 20px rgba(74, 144, 226, 0.4)",
+            },
+            transition: "all 0.3s ease",
+          }}
+        >
+          {getAddButtonText()}
+        </Button>
+      </Box>
+      {/* Role Selection Dialog */}
+      <Dialog
+        open={openRoleSelection}
+        onClose={() => setOpenRoleSelection(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(20px)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            textAlign: "center",
+            pb: 1,
+            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+            backgroundClip: "text",
+            WebkitBackgroundClip: "text",
+            color: "transparent",
+            fontWeight: 700,
+          }}
+        >
+          Chọn loại người dùng cần thêm
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <List sx={{ py: 2 }}>
+            {roleOptions.map((role) => (
+              <ListItem key={role.value} sx={{ px: 3 }}>
+                <ListItemButton
+                  onClick={() => handleRoleSelect(role.value)}
+                  sx={{
+                    borderRadius: 2,
+                    mb: 1,
+                    border: "1px solid rgba(74, 144, 226, 0.15)",
+                    "&:hover": {
+                      backgroundColor: "rgba(74, 144, 226, 0.05)",
+                      borderColor: role.color,
+                    },
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <ListItemIcon sx={{ color: role.color }}>
+                    {role.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Typography
+                        variant="body1"
+                        sx={{ fontWeight: 600, color: "#2D3748" }}
+                      >
+                        {role.label}
+                      </Typography>
+                    }
+                    secondary={
+                      <Typography variant="body2" sx={{ color: "#718096" }}>
+                        {role.description}
+                      </Typography>
+                    }
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button
+            onClick={() => setOpenRoleSelection(false)}
+            sx={{ color: "#718096" }}
+          >
+            Hủy
+          </Button>
+        </DialogActions>
+      </Dialog>
       {/* Add User Modal */}
       <AddUserModal
         open={openModal}

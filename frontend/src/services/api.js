@@ -25,37 +25,4 @@ const apiClient = axios.create({
   },
 });
 
-// Thêm interceptor cho request
-apiClient.interceptors.request.use(
-  (config) => {
-    // Lấy token từ localStorage nếu có
-    const token = localStorage.getItem("token");
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Thêm interceptor cho response
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Xử lý lỗi chung
-    const { status } = error.response || {};
-
-    if (status === 401) {
-      // Xử lý khi token hết hạn
-      localStorage.removeItem("token");
-      // Có thể redirect tới trang login
-      // window.location.href = '/login';
-    }
-
-    return Promise.reject(error);
-  }
-);
-
 export default apiClient;

@@ -32,6 +32,7 @@ import CustomerProfile from "@/components/CustomerProfile/CustomerProfile";
 import AdminProfile from "@/components/AdminProfile/AdminProfile";
 import ConsultantProfile from "@/components/ConsultantProfile/ConsultantProfile";
 import StaffProfile from "@/components/StaffProfile/StaffProfile";
+import AdminLayout from "./components/layouts/AdminLayout";
 
 const AppRoutes = () => {
   return (
@@ -39,16 +40,20 @@ const AppRoutes = () => {
       <Route path="/" element={<MainLayout />}>
         <Route index element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterForm />} />{" "}
+        <Route path="/register" element={<RegisterForm />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/profile" element={<ProfilePage />} />{" "}
-        {/* Profile Routes for Different User Types */}
+        <Route path="/profile" element={<ProfilePage />} />
+        {/* Profile Routes for Different User Types
         <Route path="/customer-profile" element={<CustomerProfile />} />
-        <Route path="/admin-profile" element={<AdminProfile />} />
+        
         {/* <Route path="/admin-test" element={<AdminTestPage />} /> */}
-        <Route path="/consultant-profile" element={<ConsultantProfile />} />
-        <Route path="/staff-profile" element={<StaffProfile />} />
+        {/* <Route path="/consultant-profile" element={<ConsultantProfile />} />
+        <Route path="/staff-profile" element={<StaffProfile />} /> */}
         <Route path="*" element={<NotFoundPage />} />
+      </Route>
+
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route path="profile" element={<AdminProfile />} />
       </Route>
     </Routes>
   );

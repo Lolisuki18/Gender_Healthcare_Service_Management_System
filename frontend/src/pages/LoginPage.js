@@ -26,25 +26,21 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import { userService } from "@/services/userService";
-import localStorageUtil from "@/utils/localStorage";
-import { Link, useNavigate } from "react-router-dom";
-import notification from "@/utils/notification";
-
-// --- ICONS ---
+// Thêm các icon còn thiếu
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PersonIcon from "@mui/icons-material/Person";
 import VpnKeyIcon from "@mui/icons-material/VpnKey";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import LoginIcon from "@mui/icons-material/Login";
-import HomeIcon from "@mui/icons-material/Home";
-import LoggedInView from "@common/LoggedInView";
+
+import { userService } from "@/services/userService";
+import localStorageUtil from "@/utils/localStorage";
+import { Link, useNavigate } from "react-router-dom";
+import notify from "@/utils/notification";
+import LoggedInView from "@/components/common/LoggedInView";
 import { logout } from "@/redux/slices/authSlice";
 
-/**
- * Component chính Trang Đăng Nhập
- */
 const LoginPage = () => {
   // --- THEME & STYLES ---
   const theme = useTheme();
@@ -61,6 +57,7 @@ const LoginPage = () => {
   const [user, setUser] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   // --- LIFECYCLE HOOKS ---
   /**
@@ -84,12 +81,12 @@ const LoginPage = () => {
 
     // Validation
     if (!formData.usernameOrEmail) {
-      notification.error("Lỗi đăng nhập", "Vui lòng nhập username hoặc email");
+      notify.error("Lỗi đăng nhập", "Vui lòng nhập username hoặc email");
       return;
     }
 
     if (!formData.password) {
-      notification.error("Lỗi đăng nhập", "Vui lòng nhập mật khẩu");
+      notify.error("Lỗi đăng nhập", "Vui lòng nhập mật khẩu");
       return;
     }
 
@@ -106,26 +103,40 @@ const LoginPage = () => {
     userService
       .login(loginData)
       .then((response) => {
+        var role = response.data.role; // Lấy role từ response
+
         if (response.success) {
           // Lưu thông tin người dùng vào localStorage
           localStorageUtil.set("user", response.data);
 
-          // Lưu thông báo đăng nhập thành công vào localStorage để hiển thị ở homepage
-          localStorageUtil.set("loginSuccessMessage", {
-            title: "Đăng nhập thành công",
-            message: `Chào mừng ${response.data.username} trở lại!`,
-            timestamp: Date.now(),
-          });
+          // Kiểm tra role và chuyển hướng
+          if (role === "Admin") {
+            // Nếu là admin, chuyển hướng đến trang quản trị
+            notify.success(
+              "Đăng nhập thành công",
+              `Chào mừng Admin ${response.data.fullName}!`
+            );
+            navigate("/admin/profile");
+            return;
+          } else {
+            // Nếu không phải admin, chuyển về trang chủ
+            // Lưu thông báo đăng nhập thành công vào localStorage để hiển thị ở homepage
+            localStorageUtil.set("loginSuccessMessage", {
+              title: "Đăng nhập thành công",
+              message: `Chào mừng ${response.data.fullName} trở lại!`,
+              timestamp: Date.now(),
+            });
+            // Chuyển hướng về trang chủ
 
-          // Chuyển hướng về trang chủ ngay lập tức
-          window.location.href = "/";
+            window.location.href = "/";
+          }
         } else {
-          notification.error("Đăng nhập thất bại", response.message);
+          notify.error("Đăng nhập thất bại", response.message);
         }
       })
       .catch((error) => {
         console.error("Login error:", error);
-        notification.error(
+        notify.error(
           "Đăng nhập thất bại",
           error.message || "Có lỗi xảy ra khi đăng nhập"
         );
