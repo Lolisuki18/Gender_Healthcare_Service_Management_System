@@ -2,7 +2,7 @@
  * ProfileContent.js - Staff Profile Management
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Card,
@@ -14,8 +14,70 @@ import {
   TextField,
 } from "@mui/material";
 import { Edit as EditIcon } from "@mui/icons-material";
+import { userService } from "@/services/userService";
+import localStorageUtil from "@/utils/localStorage";
 
 const ProfileContent = () => {
+  const [isEditing, setIsEditing] = useState(false);
+  const userData = localStorageUtil.get("user");
+
+  const [formData, setFormData] = useState({
+    fullName: userData?.fullName || "Nhân viên",
+    email: userData?.email || "staff@hospital.com",
+    phone: userData?.phone || "0123456789",
+    position: userData?.position || "Nhân viên y tế",
+    address: userData?.address || "123 Đường ABC, Quận 1, TP.HCM",
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSave = async () => {
+    try {
+      console.log("Saving profile data:", formData);
+
+      const updateData = {
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        position: formData.position,
+        address: formData.address,
+      };
+
+      const response = await userService.updateProfile(updateData);
+
+      if (response.success) {
+        const updatedUser = { ...userData, ...updateData };
+        localStorageUtil.set("user", updatedUser);
+        setFormData({ ...formData, ...updateData });
+        setIsEditing(false);
+        alert("Cập nhật thông tin thành công!");
+      } else {
+        alert("Có lỗi xảy ra: " + (response.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Update profile error:", error);
+      alert(
+        "Có lỗi xảy ra khi cập nhật thông tin: " +
+          (error.message || "Unknown error")
+      );
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      fullName: userData?.fullName || "Nhân viên",
+      email: userData?.email || "staff@hospital.com",
+      phone: userData?.phone || "0123456789",
+      position: userData?.position || "Nhân viên y tế",
+      address: userData?.address || "123 Đường ABC, Quận 1, TP.HCM",
+    });
+    setIsEditing(false);
+  };
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
@@ -54,19 +116,20 @@ const ProfileContent = () => {
                 }}
               >
                 S
-              </Avatar>
+              </Avatar>{" "}
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                Nhân viên
+                {formData.fullName}
               </Typography>
               <Typography variant="body2" sx={{ color: "#64748B", mb: 2 }}>
-                Nhân viên y tế
+                {formData.position}
               </Typography>
               <Button
                 variant="outlined"
                 startIcon={<EditIcon />}
                 sx={{ borderRadius: "8px" }}
+                onClick={() => setIsEditing(!isEditing)}
               >
-                Chỉnh sửa ảnh
+                {isEditing ? "Hủy chỉnh sửa" : "Chỉnh sửa ảnh"}
               </Button>
             </CardContent>
           </Card>
@@ -83,6 +146,7 @@ const ProfileContent = () => {
             }}
           >
             <CardContent sx={{ p: 3 }}>
+              {" "}
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
                 Thông tin cá nhân
               </Typography>
@@ -90,7 +154,10 @@ const ProfileContent = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     label="Họ và tên"
-                    defaultValue="Nhân viên"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    disabled={!isEditing}
                     fullWidth
                     sx={{ mb: 2 }}
                   />
@@ -98,7 +165,11 @@ const ProfileContent = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     label="Email"
-                    defaultValue="staff@hospital.com"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    type="email"
                     fullWidth
                     sx={{ mb: 2 }}
                   />
@@ -106,7 +177,10 @@ const ProfileContent = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     label="Số điện thoại"
-                    defaultValue="0123456789"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    disabled={!isEditing}
                     fullWidth
                     sx={{ mb: 2 }}
                   />
@@ -114,7 +188,10 @@ const ProfileContent = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     label="Chức vụ"
-                    defaultValue="Nhân viên y tế"
+                    name="position"
+                    value={formData.position}
+                    onChange={handleChange}
+                    disabled={!isEditing}
                     fullWidth
                     sx={{ mb: 2 }}
                   />
@@ -122,28 +199,52 @@ const ProfileContent = () => {
                 <Grid item xs={12}>
                   <TextField
                     label="Địa chỉ"
-                    defaultValue="123 Đường ABC, Quận 1, TP.HCM"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    disabled={!isEditing}
                     fullWidth
                     multiline
                     rows={3}
                     sx={{ mb: 2 }}
                   />
                 </Grid>
-              </Grid>
+              </Grid>{" "}
               <Box sx={{ textAlign: "right", mt: 3 }}>
-                <Button
-                  variant="contained"
-                  sx={{
-                    background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                    borderRadius: "8px",
-                    mr: 2,
-                  }}
-                >
-                  Lưu thay đổi
-                </Button>
-                <Button variant="outlined" sx={{ borderRadius: "8px" }}>
-                  Hủy
-                </Button>
+                {isEditing ? (
+                  <>
+                    <Button
+                      variant="contained"
+                      onClick={handleSave}
+                      sx={{
+                        background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                        borderRadius: "8px",
+                        mr: 2,
+                      }}
+                    >
+                      Lưu thay đổi
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={handleCancel}
+                      sx={{ borderRadius: "8px" }}
+                    >
+                      Hủy
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="contained"
+                    startIcon={<EditIcon />}
+                    onClick={() => setIsEditing(true)}
+                    sx={{
+                      background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    Chỉnh sửa thông tin
+                  </Button>
+                )}
               </Box>
             </CardContent>
           </Card>
