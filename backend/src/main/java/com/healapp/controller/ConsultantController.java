@@ -19,15 +19,22 @@ public class ConsultantController {
     @Autowired
     private ConsultantService consultantService;
 
+    //customer, consultant, staff xem danh sách consultant có isActive = true
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getAllConsultantProfiles() {
-        ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getAllConsultantProfiles();
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getAllConsultants(@RequestParam(name = "name", required = false) String name) {
+        ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getAllActiveConsultants();
+        if(name == null || name.isEmpty()) {
+            return ResponseEntity.ok(response);
+        } else {
+            response = consultantService.getAllActiveConsultantByFullNameContaining(name);
+            return ResponseEntity.ok(response);
+        }
     }
 
+    //customer, consultant, staff xem details của consultant có isActive = true
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<ConsultantProfileResponse>> getConsultantProfileById(@PathVariable Long userId) {
-        ApiResponse<ConsultantProfileResponse> response = consultantService.getConsultantProfileById(userId);
+    public ResponseEntity<ApiResponse<ConsultantProfileResponse>> getActiveConsultantProfileById(@PathVariable Long userId) {
+        ApiResponse<ConsultantProfileResponse> response = consultantService.getActiveConsultantProfileById(userId);
         return ResponseEntity.ok(response);
     }
 
@@ -38,7 +45,7 @@ public class ConsultantController {
             @PathVariable Long userId,
             @Valid @RequestBody ConsultantProfileRequest request) {
 
-        ApiResponse<ConsultantProfileResponse> response = consultantService.createOrUpdateConsultantProfile(userId,
+        ApiResponse<ConsultantProfileResponse> response = consultantService.updateConsultantProfile(userId,
                 request);
         return ResponseEntity.ok(response);
     }

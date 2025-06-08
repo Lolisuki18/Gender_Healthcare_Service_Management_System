@@ -25,6 +25,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/admin")
@@ -43,8 +45,17 @@ public class AdminController {
     @Autowired
     private STIServiceService stiServiceService;
 
-    // CONSULTANT MANAGEMENT
+    // =========================================== CONSULTANT
+    // MANAGEMENT========================================
+
+    // Admin xem danh sách tất cả consultant
     @GetMapping("/consultants")
+    public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getAllConsultantProfiles(@RequestParam(name = "q", required = false) String query) {
+        if(query != null && !query.isEmpty()){
+            ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getAllConsultantProfilesByFilters(query);
+            return getResponseEntity(response);
+        }
+        ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getAllConsultantProfiles();
     // public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>>
     // getAllConsultantProfiles() {
     // ApiResponse<List<ConsultantProfileResponse>> response =
@@ -56,16 +67,19 @@ public class AdminController {
         return getResponseEntity(response);
     }
 
-    @PostMapping("/consultants/{userId}")
-    public ResponseEntity<ApiResponse<ConsultantProfileResponse>> createOrUpdateConsultantProfile(
-            @PathVariable Long userId,
-            @Valid @RequestBody ConsultantProfileRequest request) {
-
-        ApiResponse<ConsultantProfileResponse> response = consultantService.createOrUpdateConsultantProfile(userId,
-                request);
+    // Admin xem chi tiết consultant theo userId
+    @GetMapping("/consultants/{userId}")
+    public ResponseEntity<ApiResponse<ConsultantProfileResponse>> getConsultantProfileById(@PathVariable Long userId) {
+        ApiResponse<ConsultantProfileResponse> response = consultantService.getConsultantProfileById(userId);
         return getResponseEntity(response);
     }
 
+    @DeleteMapping("/consultants/{userId}")
+    // public ResponseEntity<ApiResponse<String>> removeConsultantRole(@PathVariable
+    // Long userId) {
+    // ApiResponse<String> response =
+    // consultantService.removeConsultantRole(userId);
+    // return getResponseEntity(response);
     // @DeleteMapping("/consultants/{userId}")
     // public ResponseEntity<ApiResponse<String>> removeConsultantRole(@PathVariable
     // Long userId) {
@@ -73,14 +87,15 @@ public class AdminController {
     // consultantService.removeConsultantRole(userId);
     // return getResponseEntity(response);
     // }
-
-    @DeleteMapping("/consultants/{userId}")
-    public ResponseEntity<ApiResponse<String>> removeConsultantRole(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse<String>> changeAccountStatus(@PathVariable Long userId) {
         ApiResponse<String> response = consultantService.changeAccountStatus(userId);
         return getResponseEntity(response);
     }
 
     @PostMapping("/consultants")
+    public ResponseEntity<ApiResponse<UserDtls>> addNewConsultantAccount(@RequestBody @Valid CreateConsultantAccRequest request){
+        ApiResponse<UserDtls> response = consultantService.createConsultant(request);
+
     public ResponseEntity<ApiResponse<UserDtls>> createNewConsultantAccount(
             @RequestBody @Valid CreateConsultantAccRequest request) {
         ApiResponse<UserDtls> response = userService.createConsultant(request);
@@ -90,20 +105,36 @@ public class AdminController {
     // ===================================USER
     // MANAGEMENT============================================
 
-    // @GetMapping("/users")
-    // public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(
-    // @RequestParam(value = "role", required = false) String role) {
-    // ApiResponse<List<UserResponse>> response;
+    @GetMapping("/users")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(
+            @RequestParam(value = "role", required = false) String role) {
+        ApiResponse<List<UserResponse>> response;
+        // @GetMapping("/users")
+        // public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(
+        // @RequestParam(value = "role", required = false) String role) {
+        // ApiResponse<List<UserResponse>> response;
 
-    // if (role != null && !role.trim().isEmpty()) {
-    // response = userService.getUsersByRole(role.trim().toUpperCase());
-    // } else {
-    // response = userService.getAllUsers();
-    // }
+        if (role != null && !role.trim().isEmpty()) {
+            response = userService.getUsersByRole(role.trim().toUpperCase());
+        } else {
+            response = userService.getAllUsers();
+        }
+        // if (role != null && !role.trim().isEmpty()) {
+        // response = userService.getUsersByRole(role.trim().toUpperCase());
+        // } else {
+        // response = userService.getAllUsers();
+        // }
 
+        return getResponseEntity(response);
+    }
     // return getResponseEntity(response);
     // }
 
+    @GetMapping("/users/roles")
+    public ResponseEntity<ApiResponse<List<String>>> getAvailableRoles() {
+        ApiResponse<List<String>> response = userService.getAvailableRoles();
+        return getResponseEntity(response);
+    }
     // @GetMapping("/users/roles")
     // public ResponseEntity<ApiResponse<List<String>>> getAvailableRoles() {
     // ApiResponse<List<String>> response = userService.getAvailableRoles();

@@ -8,7 +8,10 @@ public class ConsultantProfileResponse {
     private Long profileId;
     private Long userId;
     private String fullName;
+    // chỉ hiện khi admin xem profile consultant
+    private String username;
     private String email;
+    private boolean isActive;
     private String phone;
     private String avatar;
     private String qualifications;

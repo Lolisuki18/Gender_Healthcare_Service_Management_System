@@ -154,6 +154,7 @@ public class UserController {
                     .body(ApiResponse.error("Error retrieving profile: " + e.getMessage()));
         }
     }
+    
     //cập nhật thông tin
     @PutMapping("/profile/basic")
     public ResponseEntity<ApiResponse<UserResponse>> updateBasicProfile(
@@ -186,7 +187,8 @@ public class UserController {
                     .body(ApiResponse.error("Error updating basic profile: " + e.getMessage()));
         }
     }
-     //gửi mã email mới khi cập nhật
+    
+    //gửi mã email mới khi cập nhật
     @PostMapping("/profile/email/send-verification")
     public ResponseEntity<ApiResponse<String>> sendEmailVerificationForUpdate(
             @Valid @RequestBody VerificationCodeRequest request) {
@@ -219,6 +221,7 @@ public class UserController {
         }
 
     }
+
     //câp nhật email của người dùng đã đăng nhập
     @PutMapping("/profile/email")
     public ResponseEntity<ApiResponse<UserResponse>> updateEmail(
@@ -251,6 +254,7 @@ public class UserController {
                     .body(ApiResponse.error("Error updating email: " + e.getMessage()));
         }
     }
+
     //API thay đổi mật khẩu
     @PutMapping("/profile/password")
     public ResponseEntity<ApiResponse<String>> changePassword(
@@ -283,6 +287,7 @@ public class UserController {
                     .body(ApiResponse.error("Error changing password: " + e.getMessage()));
         }
     }
+
     //API thay đổi ava
     @PostMapping(value = "/profile/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<String>> updateAvatar(
