@@ -20,5 +20,7 @@ public class UserResponse {
     private String avatar;
     private Boolean isActive;
     private String role;
+    private String address;
+    private String gender;
     private LocalDateTime createdDate;
 }

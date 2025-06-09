@@ -2,11 +2,13 @@ package com.healapp.service;
 
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ChangePasswordRequest;
+import com.healapp.dto.CreateAccountRequest;
 import com.healapp.dto.CreateConsultantAccRequest;
 import com.healapp.dto.LoginRequest;
 import com.healapp.dto.LoginResponse;
 import com.healapp.dto.RegisterRequest;
 import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Gender;
 import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
@@ -29,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -127,6 +130,8 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setAvatar(defaultAvatarPath);
             user.setIsActive(true);
+            user.setGender(Gender.valueOf(request.getGender()));
+            user.setAddress(request.getAddress());
 
             // Set role mặc định là customer
             Role userRole = roleService.getDefaultUserRole();
@@ -585,8 +590,71 @@ public class UserService {
         response.setAvatar(user.getAvatar());
         response.setIsActive(user.getIsActive());
         response.setRole(user.getRoleName());
+        response.setAddress(user.getAddress());
+        response.setAddress(user.getGender().toString());
         response.setCreatedDate(user.getCreatedDate());
         return response;
+    }
+
+    public ApiResponse<UserDtls> createNewAccount(CreateAccountRequest request) {
+        try {
+            // Check if email already exists
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new RuntimeException("Email already exists");
+            }
+
+            // Check username already exists
+            if(userRepository.existsByUsername(request.getUsername())){
+                throw new RuntimeException("Username already exists");
+            }
+
+            // Check role
+            Optional<Role> roleOpt = roleRepository.findByRoleName(request.getRole().toUpperCase());
+            if(!roleRepository.existsByRoleName(request.getRole().toUpperCase())){
+                throw new RuntimeException("Role not found: " + roleOpt.get());
+            }
+
+            // Create new user
+            UserDtls nAccount = new UserDtls();
+            nAccount.setFullName(request.getFullName());
+            nAccount.setEmail(request.getEmail());
+            if (StringUtils.hasText(request.getUsername())) {
+                if (userRepository.existsByUsername(request.getUsername())) {
+                    return ApiResponse.error("Username already exists");
+                }
+                nAccount.setUsername(request.getUsername());
+            } else {
+                nAccount.setUsername(request.getEmail()); // fallback: dùng email làm username nếu không có
+            }
+            if (StringUtils.hasText(request.getPassword())) {
+                nAccount.setPassword(passwordEncoder.encode(request.getPassword()));
+            } else {
+                nAccount.setPassword(passwordEncoder.encode("Aa@123456"));
+            }
+            nAccount.setRole(roleOpt.get());
+            nAccount.setIsActive(true);
+            nAccount.setAddress(request.getAddress());
+            nAccount.setBirthDay(request.getBirthDay());
+            nAccount.setGender(Gender.valueOf(request.getGender()));
+            nAccount.setPhone(request.getPhone());
+
+            // Save user
+            UserDtls savedAccount = userRepository.save(nAccount);
+
+            // Create empty ConsultantProfile
+            if(request.getRole().toUpperCase().equals("CONSULTANT")){
+                ConsultantProfile consultantProfile = new ConsultantProfile();
+                consultantProfile.setUser(savedAccount);
+                consultantProfile.setQualifications("");
+                consultantProfile.setExperience("");
+                consultantProfile.setBio("");
+                consultantProfileRepository.save(consultantProfile);
+            }
+
+            return ApiResponse.success("Consultant created successfully", savedAccount);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to create consultant: " + e.getMessage());
+        }
     }
 
     // kiểm tra role

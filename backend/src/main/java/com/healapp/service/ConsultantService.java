@@ -53,6 +53,9 @@ public class ConsultantService {
                             response.setEmail(user.getEmail());
                             response.setPhone(user.getPhone());
                             response.setAvatar(user.getAvatar());
+                            response.setActive(user.getIsActive());
+                            response.setAddress(user.getAddress());
+                            response.setGender(user.getGender().toString());
                             return response;
                         }
                     })
@@ -81,9 +84,11 @@ public class ConsultantService {
                             response.setFullName(user.getFullName());
                             response.setUsername(user.getUsername());
                             response.setEmail(user.getEmail());
-                            response.setActive(user.getIsActive());
                             response.setPhone(user.getPhone());
                             response.setAvatar(user.getAvatar());
+                            response.setActive(user.getIsActive());
+                            response.setAddress(user.getAddress());
+                            response.setGender(user.getGender().toString());
                             return response;
                         }
                     })
@@ -119,6 +124,9 @@ public class ConsultantService {
                 response.setEmail(user.getEmail());
                 response.setPhone(user.getPhone());
                 response.setAvatar(user.getAvatar());
+                response.setActive(user.getIsActive());
+                response.setAddress(user.getAddress());
+                response.setGender(user.getGender().toString());
                 return ApiResponse.success("Consultant found but profile not complete", response);
             }
 
@@ -156,6 +164,9 @@ public class ConsultantService {
                 response.setEmail(user.getEmail());
                 response.setPhone(user.getPhone());
                 response.setAvatar(user.getAvatar());
+                response.setActive(user.getIsActive());
+                response.setAddress(user.getAddress());
+                response.setGender(user.getGender().toString());
                 return ApiResponse.success("Consultant found but profile not complete", response);
             }
 
@@ -189,8 +200,12 @@ public class ConsultantService {
                             response.setUserId(user.getId());
                             response.setFullName(user.getFullName());
                             response.setEmail(user.getEmail());
+                            response.setUsername(user.getUsername());
                             response.setPhone(user.getPhone());
                             response.setAvatar(user.getAvatar());
+                            response.setActive(user.getIsActive());
+                            response.setAddress(user.getAddress());
+                            response.setGender(user.getGender().toString());
                             return response;
                         }
                     })
@@ -359,10 +374,6 @@ public class ConsultantService {
                 return ApiResponse.error("User is not a consultant");
             }
 
-            // Xóa profile
-            Optional<ConsultantProfile> profileOpt = consultantProfileRepository.findByUser(user);
-            profileOpt.ifPresent(consultantProfileRepository::delete);
-
             // Cập nhật: chỉnh status về false
             user.setIsActive(false);
             userRepository.save(user);
@@ -380,6 +391,8 @@ public class ConsultantService {
         response.setUsername(consultantProfile.getUser().getUsername());
         response.setFullName(consultantProfile.getUser().getFullName());
         response.setEmail(consultantProfile.getUser().getEmail());
+        response.setAddress(consultantProfile.getUser().getAddress());
+        response.setGender(consultantProfile.getUser().getGender().toString());
         response.setPhone(consultantProfile.getUser().getPhone());
         response.setAvatar(consultantProfile.getUser().getAvatar());
         response.setQualifications(consultantProfile.getQualifications());

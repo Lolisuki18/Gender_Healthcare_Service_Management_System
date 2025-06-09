@@ -11,6 +11,8 @@ public class ConsultantProfileResponse {
     // chỉ hiện khi admin xem profile consultant
     private String username;
     private String email;
+    private String address;
+    private String gender;
     private boolean isActive;
     private String phone;
     private String avatar;

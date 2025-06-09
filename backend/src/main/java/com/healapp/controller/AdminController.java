@@ -3,6 +3,7 @@ package com.healapp.controller;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ConsultantProfileRequest;
 import com.healapp.dto.ConsultantProfileResponse;
+import com.healapp.dto.CreateAccountRequest;
 import com.healapp.dto.CreateConsultantAccRequest;
 import com.healapp.dto.STIServiceRequest;
 import com.healapp.dto.STIServiceResponse;
@@ -25,8 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/admin")
@@ -48,7 +48,14 @@ public class AdminController {
     // =========================================== CONSULTANT
     // MANAGEMENT========================================
 
-    // Admin xem danh sách tất cả consultant
+    /*
+     * descripton: admin laays danh sachs taats car consultant
+     * path: /admin/consultants
+     * method: GET
+     * body: 
+    {
+    }
+     */
     @GetMapping("/consultants")
     public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getAllConsultantProfiles(
             @RequestParam(name = "q", required = false) String query) {
@@ -67,76 +74,108 @@ public class AdminController {
     // return getResponseEntity(response);
     // }
 
-    // Admin xem chi tiết consultant theo userId
+    /*
+     * descripton: admin xem chi tiết thông tin Consultant theo id
+     * path: /admin/consultants/{userId}
+     * method: GET
+     * body: 
+    {
+    }
+     */
     @GetMapping("/consultants/{userId}")
     public ResponseEntity<ApiResponse<ConsultantProfileResponse>> getConsultantProfileById(@PathVariable Long userId) {
         ApiResponse<ConsultantProfileResponse> response = consultantService.getConsultantProfileById(userId);
         return getResponseEntity(response);
     }
 
+    /*
+     * descripton: admin xóa consultant bằng cách thay đổi status
+     * path: /admin/consultants/{userId}
+     * method: DELETE
+     * body: 
+    {
+    }
+     */
     @DeleteMapping("/consultants/{userId}")
     // public ResponseEntity<ApiResponse<String>> removeConsultantRole(@PathVariable
     // Long userId) {
     // ApiResponse<String> response =
     // consultantService.removeConsultantRole(userId);
     // return getResponseEntity(response);
-    // @DeleteMapping("/consultants/{userId}")
-    // public ResponseEntity<ApiResponse<String>> removeConsultantRole(@PathVariable
-    // Long userId) {
-    // ApiResponse<String> response =
-    // consultantService.removeConsultantRole(userId);
-    // return getResponseEntity(response);
-    // }
     public ResponseEntity<ApiResponse<String>> changeAccountStatus(@PathVariable Long userId) {
         ApiResponse<String> response = consultantService.changeAccountStatus(userId);
         return getResponseEntity(response);
     }
 
-    @PostMapping("/consultants")
-    public ResponseEntity<ApiResponse<UserDtls>> createNewConsultantAccount(
-            @RequestBody @Valid CreateConsultantAccRequest request) {
-        ApiResponse<UserDtls> response = consultantService.createConsultant(request);
-        return getResponseEntity(response);
+    /*
+     * descripton: admin tạo tài khoản cho consultant
+     * path: /admin/consultants/{userId}
+     * method: GET
+     * body: 
+    {
     }
+     */
+    // @PostMapping("/consultants")
+    // public ResponseEntity<ApiResponse<UserDtls>> createNewConsultantAccount(
+    //         @RequestBody @Valid CreateConsultantAccRequest request) {
+    //     ApiResponse<UserDtls> response = consultantService.createConsultant(request);
+    //     return getResponseEntity(response);
+    // }
 
-    // ===================================USER
-    // MANAGEMENT============================================
+    // ===================================USER MANAGEMENT============================================
 
+    /*
+     * descripton: admin lấy danh sách tất cả người dùng
+     * path: /admin/users
+     * method: GET
+     * body: 
+    {
+    }
+     */
     @GetMapping("/users")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(
             @RequestParam(value = "role", required = false) String role) {
         ApiResponse<List<UserResponse>> response;
-        // @GetMapping("/users")
-        // public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(
-        // @RequestParam(value = "role", required = false) String role) {
-        // ApiResponse<List<UserResponse>> response;
 
         if (role != null && !role.trim().isEmpty()) {
             response = userService.getUsersByRole(role.trim().toUpperCase());
         } else {
             response = userService.getAllUsers();
         }
-        // if (role != null && !role.trim().isEmpty()) {
-        // response = userService.getUsersByRole(role.trim().toUpperCase());
-        // } else {
-        // response = userService.getAllUsers();
-        // }
-
         return getResponseEntity(response);
     }
-    // return getResponseEntity(response);
-    // }
+
 
     @GetMapping("/users/roles")
     public ResponseEntity<ApiResponse<List<String>>> getAvailableRoles() {
         ApiResponse<List<String>> response = userService.getAvailableRoles();
         return getResponseEntity(response);
     }
-    // @GetMapping("/users/roles")
-    // public ResponseEntity<ApiResponse<List<String>>> getAvailableRoles() {
-    // ApiResponse<List<String>> response = userService.getAvailableRoles();
-    // return getResponseEntity(response);
-    // }
+
+    /*
+     * descripton: admin lấy danh sách tất cả người dùng
+     * path: /admin/users
+     * method: GET
+     * body: 
+    {
+        String role *;
+        String fullName *;
+        String email *;
+        String gender *;
+        String username;
+        String password;
+        LocalDate birthDay;
+        String phone;
+        String address;
+    }
+     */
+    @PostMapping("/users")
+    public ResponseEntity<ApiResponse<UserDtls>> createNewAccount(
+            @RequestBody @Valid CreateAccountRequest request) {
+        ApiResponse<UserDtls> response = userService.createNewAccount(request);
+        return getResponseEntity(response);
+    }
+    
 
     // @GetMapping("/users/count")
     // public ResponseEntity<ApiResponse<Map<String, Long>>> getUserCountByRole() {
@@ -144,24 +183,31 @@ public class AdminController {
     // return getResponseEntity(response);
     // }
 
+
     // @GetMapping("/users/{userId}")
-    // public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable
-    // Long userId) {
-    // ApiResponse<UserResponse> response = userService.getUserById(userId);
-    // return getResponseEntity(response);
+    // public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable Long userId) {
+    //     ApiResponse<UserResponse> response = userService.getUserById(userId);
+    //     return getResponseEntity(response);
     // }
 
-    // @PutMapping("/users/{userId}")
-    // public ResponseEntity<ApiResponse<UserResponse>> updateUserRoleAndStatus(
-    // @PathVariable Long userId,
-    // @Valid @RequestBody UserUpdateRequest request) {
-    // ApiResponse<UserResponse> response =
-    // userService.updateUserRoleAndStatus(userId, request);
-    // return getResponseEntity(response);
-    // }
+    /*
+     * descripton: admin xem thông tin chi tiết của người dùng
+     * path: /admin/users/{userId}
+     * method: PUT
+     * body: 
+    {
+    }
+     */
+    @PutMapping("/users/{userId}")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUserRoleAndStatus(
+            @PathVariable Long userId,
+            @Valid @RequestBody UserUpdateRequest request) {
+        ApiResponse<UserResponse> response =
+        userService.updateUserRoleAndStatus(userId, request);
+        return getResponseEntity(response);
+    }
 
-    // =================== STI SERVICES WITH COMPONENTS MANAGEMENT
-    // ============================
+    // =================== STI SERVICES WITH COMPONENTS MANAGEMENT============================
 
     // @PostMapping("/sti-services")
     // public ResponseEntity<ApiResponse<STIServiceResponse>>

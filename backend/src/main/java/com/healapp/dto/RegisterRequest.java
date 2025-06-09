@@ -20,10 +20,15 @@ public class RegisterRequest {
     @NotBlank(message = "Full name is required")
     @Size(max = 100, message = "Full name must not exceed 100 characters")
     private String fullName;
+    
+    @NotBlank(message = "Gender is required!")
+    private String gender;
 
     @NotBlank(message = "Email is required")
     @Email(message = "Email is invalid")
     private String email;
+
+    private String address;
 
     private String phone;
 

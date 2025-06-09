@@ -19,7 +19,14 @@ public class ConsultantController {
     @Autowired
     private ConsultantService consultantService;
 
-    //customer, consultant, staff xem danh sách consultant có isActive = true
+    /*
+     * descripton: xem danh sách consultant còn hoạt động
+     * path: /consultants/
+     * method: GET
+     * body: 
+    {
+    }
+     */
     @GetMapping
     public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getAllConsultants(@RequestParam(name = "name", required = false) String name) {
         ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getAllActiveConsultants();
@@ -31,14 +38,28 @@ public class ConsultantController {
         }
     }
 
-    //customer, consultant, staff xem details của consultant có isActive = true
+    /*
+     * descripton: xem danh sách consultant còn hoạt động theo id
+     * path: /consultants/{userId}
+     * method: GET
+     * body: 
+    {
+    }
+     */
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<ConsultantProfileResponse>> getActiveConsultantProfileById(@PathVariable Long userId) {
         ApiResponse<ConsultantProfileResponse> response = consultantService.getActiveConsultantProfileById(userId);
         return ResponseEntity.ok(response);
     }
 
-    // consultant tự update profile
+    /*
+     * descripton: cônssultant tự động cập nhật thông tin chuyên môn
+     * path: /consultants/profile/{userId}
+     * method: PUT
+     * body: 
+    {
+    }
+     */
     @PutMapping("/profile/{userId}")
     @PreAuthorize("hasRole('ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<ConsultantProfileResponse>> updateOwnProfile(
