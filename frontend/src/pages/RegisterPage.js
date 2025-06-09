@@ -70,9 +70,10 @@ const RegisterPage = () => {
     fullName: "",
     email: "",
     verificationCode: "",
-    gender: "",
+    gender: "", // Ensure this starts as empty string
     phone: "",
     birthDay: "", // Đổi từ dateOfBirth thành birthDay
+    address: "", // ✅ Thêm trường address
   });
 
   // UI states
@@ -249,8 +250,15 @@ const RegisterPage = () => {
       return;
     }
 
-    if (!formData.gender) {
+    // Kiểm tra gender - sửa logic validation
+    if (
+      !formData.gender ||
+      formData.gender === "" ||
+      formData.gender === null ||
+      formData.gender === undefined
+    ) {
       notify.error("Lỗi đăng ký", "Vui lòng chọn giới tính");
+      console.log("Gender value:", formData.gender); // Debug log
       return;
     }
 
@@ -270,9 +278,25 @@ const RegisterPage = () => {
       return;
     }
 
+    // ✅ Tạo object dữ liệu đầy đủ để gửi lên server
+    const registrationData = {
+      username: formData.username,
+      password: formData.password,
+      fullName: formData.fullName,
+      email: formData.email,
+      gender: formData.gender, // ✅ Đảm bảo gender được gửi
+      phone: formData.phone || null, // Optional field
+      birthDay: formData.birthDay || null, // Optional field
+      address: formData.address || null, // ✅ Thêm address
+      verificationCode: formData.verificationCode,
+    };
+
+    // Debug: Log dữ liệu trước khi gửi
+    console.log("Registration data being sent:", registrationData);
+
     // Gửi form đăng ký đến server
     userService
-      .register(formData)
+      .register(registrationData) // ✅ Gửi registrationData thay vì formData
       .then((response) => {
         if (response.success) {
           notify.success(
@@ -290,8 +314,13 @@ const RegisterPage = () => {
         }
       })
       .catch((error) => {
+        console.error("Register error:", error);
+
         // Response từ server là một object, message là một field trong object đó
-        const errorMessage = error.message || "Có lỗi xảy ra khi đăng ký";
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "Có lỗi xảy ra khi đăng ký";
 
         // Phân tích message để xác định loại lỗi và hiển thị thông báo tương ứng
         if (errorMessage.includes("Username already exists")) {
@@ -303,10 +332,11 @@ const RegisterPage = () => {
             "Lỗi xác thực",
             "Mã xác nhận không đúng hoặc đã hết hạn. Vui lòng yêu cầu mã mới."
           );
+        } else if (errorMessage.includes("gender")) {
+          notify.error("Lỗi đăng ký", "Vui lòng chọn giới tính");
         } else {
           notify.error("Đăng ký thất bại", errorMessage);
         }
-        console.error("Register error:", error);
       });
   };
 
@@ -358,15 +388,10 @@ const RegisterPage = () => {
       });
     }, 1000);
 
-    // Kiểm tra các trường bắt buộc (không bao gồm phone và dateOfBirth)
-    if (
-      !formData.username ||
-      !formData.password ||
-      !formData.fullName ||
-      !formData.gender ||
-      !formData.email
-    ) {
-      notify.error("Lỗi", "Vui lòng điền đầy đủ thông tin bắt buộc");
+    // ✅ CHỈ KIỂM TRA EMAIL - không cần kiểm tra các trường khác khi gửi mã
+    // Vì mã xác nhận chỉ cần email để gửi
+    if (!formData.email) {
+      notify.error("Lỗi", "Vui lòng nhập email để gửi mã xác nhận");
       clearInterval(intervalId);
       setCodeButtonDisabled(false);
       return;
@@ -727,6 +752,22 @@ const RegisterPage = () => {
                     name="gender"
                     value={formData.gender}
                     onChange={handleOnChange}
+                    displayEmpty={false}
+                    renderValue={(selected) => {
+                      if (!selected || selected === "") {
+                        return <em>Chọn giới tính</em>;
+                      }
+                      switch (selected) {
+                        case "MALE":
+                          return "Nam";
+                        case "FEMALE":
+                          return "Nữ";
+                        case "OTHER":
+                          return "Khác";
+                        default:
+                          return selected;
+                      }
+                    }}
                     startAdornment={
                       <InputAdornment position="start">
                         <WcIcon sx={{ color: "#1ABC9C" }} />
@@ -803,6 +844,40 @@ const RegisterPage = () => {
                   }}
                   InputLabelProps={{
                     shrink: true,
+                  }}
+                />
+
+                {/* Địa chỉ nhà với màu y tế */}
+                <TextField
+                  label="Địa chỉ nhà"
+                  name="address"
+                  fullWidth
+                  multiline
+                  rows={2}
+                  value={formData.address}
+                  onChange={handleOnChange}
+                  variant="outlined"
+                  placeholder="Ví dụ: 123 Đường ABC, Phường XYZ, Quận DEF, TP.HCM"
+                  sx={{
+                    mb: 3,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                      transition: "all 0.3s ease",
+                    },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#1ABC9C",
+                    },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#1ABC9C",
+                      },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <HomeIcon sx={{ color: "#1ABC9C" }} />
+                      </InputAdornment>
+                    ),
                   }}
                 />
 

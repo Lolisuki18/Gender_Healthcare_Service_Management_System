@@ -75,6 +75,7 @@ const UserManagementContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
+  const [loadingUserDetails, setLoadingUserDetails] = useState(false);
 
   // ✅ Fetch users từ API khi component mount
   useEffect(() => {
@@ -219,15 +220,108 @@ const UserManagementContent = () => {
     }
   };
 
-  // ✅ Function xử lý xem thông tin chi tiết
-  const handleViewUser = (userId) => {
-    const user = users.find((u) => u.id === userId);
-    if (user) {
+  // ✅ Thêm state để quản lý loading consultant details
+  const [loadingConsultantDetails, setLoadingConsultantDetails] =
+    useState(false);
+
+  // ✅ Cập nhật Function xử lý xem thông tin chi tiết với API call
+  const handleViewUser = async (userId) => {
+    try {
+      setLoadingUserDetails(true);
+
+      // Tìm user trong state để lấy thông tin cơ bản
+      const user = users.find((u) => u.id === userId);
+      if (!user) {
+        notify.error("Lỗi", "Không tìm thấy thông tin người dùng");
+        return;
+      }
+
+      console.log("🔍 User từ state:", user);
+
+      // ✅ Hiển thị modal ngay với thông tin cơ bản
       setSelectedUser(user);
       setOpenViewModal(true);
+
+      // ✅ Nếu là Consultant, gọi API để lấy thêm thông tin
+      if (user.role === "CONSULTANT") {
+        console.log("📞 Đang gọi API getConsultantDetails cho userId:", userId);
+
+        // Gọi API để lấy consultant profile
+        const response = await adminService.getConsultantDetails(userId);
+
+        console.log("📋 Raw response từ API:", response);
+
+        // ✅ Extract data từ response structure
+        const consultantDetails = response.data || response;
+        console.log("📋 Consultant details:", consultantDetails);
+
+        // ✅ Map response từ ConsultantProfileResponse
+        const mappedUser = {
+          // Thông tin cơ bản từ user hiện tại
+          id: user.id,
+          role: user.role,
+
+          // Thông tin chi tiết từ API response
+          profileId: consultantDetails.profileId,
+          full_name:
+            consultantDetails.fullName || user.fullName || user.full_name,
+          username: consultantDetails.username || user.username,
+          email: consultantDetails.email || user.email,
+          phone: consultantDetails.phone || user.phone,
+          address: consultantDetails.address || user.address,
+          gender: consultantDetails.gender || user.gender,
+          is_active:
+            consultantDetails.active !== undefined
+              ? consultantDetails.active
+              : consultantDetails.isActive !== undefined
+              ? consultantDetails.isActive
+              : user.is_active,
+          avatar: consultantDetails.avatar || user.avatar,
+
+          // Thông tin từ state (có thể API không trả về)
+          birth_day: user.birth_day,
+          created_date: user.created_date,
+
+          // Thông tin chuyên môn từ API
+          qualifications: consultantDetails.qualifications,
+          experience: consultantDetails.experience,
+          bio: consultantDetails.bio,
+          updated_at: consultantDetails.updatedAt,
+
+          // Flag để biết đã load thông tin chi tiết
+          _hasDetailedInfo: true,
+        };
+
+        console.log("🔄 Mapped user data:", mappedUser);
+        setSelectedUser(mappedUser);
+
+        notify.success("Thành công", "Đã tải thông tin chi tiết tư vấn viên");
+      } else {
+        console.log("ℹ️ Không phải consultant, chỉ hiển thị thông tin cơ bản");
+      }
+    } catch (error) {
+      console.error("❌ Lỗi khi lấy thông tin chi tiết:", error);
+      console.error("❌ Error response:", error.response?.data);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi tải thông tin người dùng";
+
+      notify.error("Lỗi tải thông tin", errorMessage);
+
+      // Fallback: giữ thông tin cơ bản và đánh dấu load failed
+      const user = users.find((u) => u.id === userId);
+      if (user) {
+        setSelectedUser({
+          ...user,
+          _detailsLoadFailed: true,
+        });
+      }
+    } finally {
+      setLoadingUserDetails(false);
     }
   };
-
   // ✅ Cập nhật handleEditSubmit
   const handleEditSubmit = async (formData) => {
     const user = editingUser;
@@ -801,6 +895,7 @@ const UserManagementContent = () => {
                         <IconButton
                           size="small"
                           onClick={() => handleViewUser(user.id)}
+                          disabled={loadingUserDetails}
                           sx={{
                             color: "#48BB78",
                             backgroundColor: "rgba(72, 187, 120, 0.1)",
@@ -808,10 +903,21 @@ const UserManagementContent = () => {
                               backgroundColor: "rgba(72, 187, 120, 0.2)",
                               transform: "scale(1.1)",
                             },
+                            "&:disabled": {
+                              opacity: 0.6,
+                              transform: "none",
+                            },
                             transition: "all 0.2s ease",
                           }}
                         >
-                          <VisibilityIcon sx={{ fontSize: 16 }} />
+                          {loadingUserDetails ? (
+                            <CircularProgress
+                              size={16}
+                              sx={{ color: "#48BB78" }}
+                            />
+                          ) : (
+                            <VisibilityIcon sx={{ fontSize: 16 }} />
+                          )}
                         </IconButton>
 
                         <IconButton
@@ -978,6 +1084,7 @@ const UserManagementContent = () => {
         open={openViewModal}
         onClose={() => setOpenViewModal(false)}
         user={selectedUser}
+        loadingConsultantDetails={loadingUserDetails}
       />
 
       <EditUserModal

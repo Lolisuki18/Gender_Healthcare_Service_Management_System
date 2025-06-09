@@ -159,10 +159,10 @@ export const adminService = {
   },
 
   // Lấy thông tin consultant với profile (nếu có)
-  getConsultantWithProfile: async (consultantId) => {
+  getConsultantDetails: async (consultantId) => {
     try {
       const response = await apiClient.get(
-        `/admin/consultants/${consultantId}/profile`
+        `/admin/consultants/${consultantId}`
       );
       return response.data;
     } catch (error) {

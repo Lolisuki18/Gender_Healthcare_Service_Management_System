@@ -28,10 +28,14 @@ export const userService = {
   // Đăng ký
   register: async (userData) => {
     try {
+      console.log("Sending registration data:", userData); // ✅ Debug log
+
       const response = await apiClient.post("/users/register", userData);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error("Register error:", error);
+      console.error("Error response:", error.response?.data); // ✅ Debug log
+      throw error;
     }
   },
 

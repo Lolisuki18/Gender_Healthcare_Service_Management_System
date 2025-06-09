@@ -27,7 +27,7 @@ const config = {
 };
 
 // Nếu có userData, thêm auth vào config
-if (userData) {
+if (userData.role === "ADMIN") {
   config.auth = {
     //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
     //các tác vụ yêu cầu quyền truy cập
