@@ -24,7 +24,7 @@ const AppRoutes = () => {
   // Lấy thông tin user từ localStorage
   const userData = localStorageUtil.get("user");
 
-  // Component để redirect đến trang profile phù hợp khi truy cập "/"
+  // Component để redirect đến trang phù hợp khi truy cập "/"
   const AutoRedirectToProfile = () => {
     if (!userData || !userData.role) {
       return <Navigate to="/login" replace />;
@@ -32,13 +32,11 @@ const AppRoutes = () => {
 
     switch (userData.role) {
       case "ADMIN":
-        return <Navigate to="/admin/profile" replace />;
+        return <Navigate to="/admin/profile" replace />; // Admin vào admin profile
       case "CUSTOMER":
-        return <Navigate to="/profile" replace />; // Dùng ProfilePage generic
       case "CONSULTANT":
-        return <Navigate to="/profile" replace />; // Dùng ProfilePage generic
       case "STAFF":
-        return <Navigate to="/profile" replace />; // Dùng ProfilePage generic
+        return <HomePage />; // Các role khác vào homepage
       default:
         return <Navigate to="/login" replace />;
     }
@@ -48,17 +46,24 @@ const AppRoutes = () => {
     <Routes>
       {/* Route chính cho trang chủ */}
       <Route path="/" element={<MainLayout />}>
-        {/* Trang chủ - Auto redirect nếu đã đăng nhập */}
+        {/* Trang chủ - Auto redirect admin, hiển thị homepage cho user thường */}
         <Route
           index
           element={userData ? <AutoRedirectToProfile /> : <HomePage />}
         />
 
+        {/* Homepage cho các role đã đăng nhập (trừ admin) */}
+        <Route path="home" element={<HomePage />} />
+
         {/* Profile Page chung - sẽ render component phù hợp với role */}
         <Route
           path="profile"
           element={
-            userData ? <ProfilePage /> : <Navigate to="/login" replace />
+            userData && userData.role !== "ADMIN" ? (
+              <ProfilePage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
           }
         />
 
@@ -66,40 +71,6 @@ const AppRoutes = () => {
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterForm />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
-
-        {/* Optional: Specific profile routes nếu cần thiết */}
-        <Route
-          path="customer-profile"
-          element={
-            userData?.role === "CUSTOMER" ? (
-              <CustomerProfile />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-
-        <Route
-          path="consultant-profile"
-          element={
-            userData?.role === "CONSULTANT" ? (
-              <ConsultantProfile />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-
-        <Route
-          path="staff-profile"
-          element={
-            userData?.role === "STAFF" ? (
-              <StaffProfile />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
 
         {/* 404 Page */}
         <Route path="*" element={<NotFoundPage />} />

@@ -203,15 +203,13 @@ const ForgotPasswordPage = () => {
     return <LoggedInView user={user} onLogout={logout} />;
   }
 
-  // Form quên mật khẩu
+  // Form quên mật khẩu với màu y tế
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        background: `linear-gradient(135deg, ${alpha(
-          theme.palette.primary.main,
-          0.1
-        )} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
+        background:
+          "linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 50%, #E3F2FD 100%)", // Medical background
         py: 4,
         display: "flex",
         alignItems: "center",
@@ -224,13 +222,14 @@ const ForgotPasswordPage = () => {
             borderRadius: 4,
             overflow: "hidden",
             background:
-              "linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%)",
+              "linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%)",
             backdropFilter: "blur(10px)",
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+            border: "1px solid rgba(74, 144, 226, 0.1)",
+            boxShadow: "0 8px 32px rgba(74, 144, 226, 0.15)",
           }}
         >
           <CardContent sx={{ p: 4 }}>
-            {/* Header Section */}
+            {/* Header Section với màu y tế */}
             <Box sx={{ textAlign: "center", mb: 4 }}>
               <Avatar
                 sx={{
@@ -238,11 +237,8 @@ const ForgotPasswordPage = () => {
                   height: 80,
                   mx: "auto",
                   mb: 2,
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                  boxShadow: `0 8px 24px ${alpha(
-                    theme.palette.primary.main,
-                    0.3
-                  )}`,
+                  background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
+                  boxShadow: "0 8px 24px rgba(74, 144, 226, 0.25)",
                 }}
               >
                 <LockOutlinedIcon fontSize="large" />
@@ -253,7 +249,7 @@ const ForgotPasswordPage = () => {
                 gutterBottom
                 fontWeight="bold"
                 sx={{
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                  background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
                   backgroundClip: "text",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
@@ -269,6 +265,7 @@ const ForgotPasswordPage = () => {
                   maxWidth: 400,
                   mx: "auto",
                   lineHeight: 1.6,
+                  color: "#546E7A", // Medical text color
                 }}
               >
                 Vui lòng nhập địa chỉ email của bạn để nhận mã xác nhận và đặt
@@ -276,91 +273,115 @@ const ForgotPasswordPage = () => {
               </Typography>
             </Box>
 
-            <Divider sx={{ mb: 3, opacity: 0.3 }} />
+            <Divider sx={{ mb: 3, opacity: 0.3, borderColor: "#4A90E2" }} />
 
             {/* Form Section */}
             <Box component="form">
-              {/* Email và nút gửi mã xác nhận */}
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item size={8}>
-                  <TextField
-                    fullWidth
-                    label="Địa chỉ email"
-                    variant="outlined"
-                    value={formDataForgotPassword.email}
-                    onChange={handleChangeEmail}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
+              {/* Card chứa form gửi email */}
+              <Box
+                sx={{
+                  mb: 3,
+                  p: 3,
+                  borderRadius: 3,
+                  background:
+                    "linear-gradient(135deg, rgba(74, 144, 226, 0.05) 0%, rgba(26, 188, 156, 0.05) 100%)",
+                  border: "1px solid rgba(74, 144, 226, 0.2)",
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{
+                    color: "#4A90E2", // Medical blue
+                    fontWeight: "bold",
+                    mb: 2,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <EmailIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+                  Nhập email của bạn
+                </Typography>
+
+                {/* Email và nút gửi mã xác nhận */}
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid item size={8}>
+                    <TextField
+                      fullWidth
+                      label="Địa chỉ email"
+                      variant="outlined"
+                      value={formDataForgotPassword.email}
+                      onChange={handleChangeEmail}
+                      required
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                          transition: "all 0.3s ease",
+                          "&:hover": {
+                            boxShadow: "0 0 0 2px rgba(74, 144, 226, 0.1)",
+                          },
+                          "&.Mui-focused": {
+                            boxShadow: "0 0 0 2px rgba(74, 144, 226, 0.2)",
+                          },
+                        },
+                        "& .MuiInputLabel-root.Mui-focused": {
+                          color: "#4A90E2",
+                        },
+                        "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                          {
+                            borderColor: "#4A90E2",
+                          },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <EmailIcon sx={{ color: "#4A90E2" }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item size={4}>
+                    <Button
+                      variant="contained"
+                      onClick={handleSendCode}
+                      disabled={isCodeButtonDisabled}
+                      fullWidth
+                      sx={{
+                        height: 56,
+                        fontWeight: "bold",
                         borderRadius: 2,
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          boxShadow: `0 0 0 2px ${alpha(
-                            theme.palette.primary.main,
-                            0.1
-                          )}`,
-                        },
-                        "&.Mui-focused": {
-                          boxShadow: `0 0 0 2px ${alpha(
-                            theme.palette.primary.main,
-                            0.2
-                          )}`,
-                        },
-                      },
-                    }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <EmailIcon color="primary" />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid item size={4}>
-                  <Button
-                    variant="contained"
-                    onClick={handleSendCode}
-                    disabled={isCodeButtonDisabled}
-                    fullWidth
-                    sx={{
-                      height: 56,
-                      fontWeight: "bold",
-                      borderRadius: 2,
-                      background: isCodeButtonDisabled
-                        ? `linear-gradient(135deg, ${alpha(
-                            theme.palette.grey[400],
-                            0.8
-                          )} 0%, ${alpha(theme.palette.grey[500], 0.8)} 100%)`
-                        : `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
-                      boxShadow: isCodeButtonDisabled
-                        ? "none"
-                        : `0 6px 20px ${alpha(
-                            theme.palette.success.main,
-                            0.4
-                          )}`,
-                      textTransform: "none",
-                      transition: "all 0.3s ease",
-                      "&:hover": {
-                        transform: isCodeButtonDisabled
-                          ? "none"
-                          : "translateY(-2px)",
+                        background: isCodeButtonDisabled
+                          ? "linear-gradient(45deg, #B0BEC5, #90A4AE)"
+                          : "linear-gradient(45deg, #1ABC9C, #16A085)",
+                        color: "#fff",
                         boxShadow: isCodeButtonDisabled
                           ? "none"
-                          : `0 8px 25px ${alpha(
-                              theme.palette.success.main,
-                              0.5
-                            )}`,
-                      },
-                    }}
-                  >
-                    {isCodeButtonDisabled && countdown > 0
-                      ? `Gửi lại (${countdown}s)`
-                      : checksendCode
-                      ? "Gửi lại mã"
-                      : "Gửi mã"}
-                  </Button>
+                          : "0 2px 8px rgba(26, 188, 156, 0.25)",
+                        textTransform: "none",
+                        transition: "all 0.3s ease",
+                        "&:hover": {
+                          transform: isCodeButtonDisabled
+                            ? "none"
+                            : "translateY(-2px)",
+                          boxShadow: isCodeButtonDisabled
+                            ? "none"
+                            : "0 4px 12px rgba(26, 188, 156, 0.35)",
+                          background: isCodeButtonDisabled
+                            ? "linear-gradient(45deg, #B0BEC5, #90A4AE)"
+                            : "linear-gradient(45deg, #17A2B8, #138496)",
+                        },
+                      }}
+                    >
+                      {isCodeButtonDisabled && countdown > 0
+                        ? `Đợi ${countdown}s`
+                        : checksendCode
+                        ? "Gửi lại mã"
+                        : "Gửi mã"}
+                    </Button>
+                  </Grid>
                 </Grid>
-              </Grid>
+              </Box>
 
               {/* Reset Password Section */}
               {checksendCode && (
@@ -369,14 +390,9 @@ const ForgotPasswordPage = () => {
                     mt: 3,
                     p: 3,
                     borderRadius: 3,
-                    background: `linear-gradient(135deg, ${alpha(
-                      theme.palette.success.main,
-                      0.05
-                    )} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
-                    border: `1px solid ${alpha(
-                      theme.palette.success.main,
-                      0.2
-                    )}`,
+                    background:
+                      "linear-gradient(135deg, rgba(26, 188, 156, 0.05) 0%, rgba(74, 144, 226, 0.05) 100%)",
+                    border: "1px solid rgba(26, 188, 156, 0.2)",
                     animation: "fadeInUp 0.5s ease-out",
                     "@keyframes fadeInUp": {
                       from: {
@@ -394,10 +410,11 @@ const ForgotPasswordPage = () => {
                     variant="h6"
                     gutterBottom
                     sx={{
-                      color: theme.palette.success.main,
+                      color: "#1ABC9C", // Medical green
                       fontWeight: "bold",
                       mb: 2,
-                      textAlign: "center",
+                      display: "flex",
+                      alignItems: "center",
                     }}
                   >
                     <VerifiedUserIcon sx={{ mr: 1, verticalAlign: "middle" }} />
@@ -411,17 +428,25 @@ const ForgotPasswordPage = () => {
                     name="code"
                     value={formDataResetPassword.code}
                     onChange={handleChangeResetPassword}
+                    required
                     sx={{
-                      mb: 2,
+                      mb: 3,
                       "& .MuiOutlinedInput-root": {
                         borderRadius: 2,
                         transition: "all 0.3s ease",
                       },
+                      "& .MuiInputLabel-root.Mui-focused": {
+                        color: "#1ABC9C",
+                      },
+                      "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                        {
+                          borderColor: "#1ABC9C",
+                        },
                     }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <VerifiedUserIcon color="success" />
+                          <VerifiedUserIcon sx={{ color: "#1ABC9C" }} />
                         </InputAdornment>
                       ),
                     }}
@@ -435,17 +460,25 @@ const ForgotPasswordPage = () => {
                     type="password"
                     value={formDataResetPassword.newPassword}
                     onChange={handleChangeResetPassword}
+                    required
                     sx={{
                       mb: 3,
                       "& .MuiOutlinedInput-root": {
                         borderRadius: 2,
                         transition: "all 0.3s ease",
                       },
+                      "& .MuiInputLabel-root.Mui-focused": {
+                        color: "#1ABC9C",
+                      },
+                      "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                        {
+                          borderColor: "#1ABC9C",
+                        },
                     }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <VpnKeyIcon color="primary" />
+                          <VpnKeyIcon sx={{ color: "#1ABC9C" }} />
                         </InputAdornment>
                       ),
                     }}
@@ -457,23 +490,20 @@ const ForgotPasswordPage = () => {
                     fullWidth
                     size="large"
                     sx={{
-                      py: 1.5,
+                      py: 2,
                       fontWeight: "bold",
-                      borderRadius: 2,
-                      background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                      boxShadow: `0 6px 20px ${alpha(
-                        theme.palette.primary.main,
-                        0.4
-                      )}`,
+                      borderRadius: 3,
+                      background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
+                      color: "#fff",
+                      fontWeight: 600,
+                      boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
                       textTransform: "none",
                       fontSize: "1.1rem",
                       transition: "all 0.3s ease",
                       "&:hover": {
                         transform: "translateY(-2px)",
-                        boxShadow: `0 8px 25px ${alpha(
-                          theme.palette.primary.main,
-                          0.5
-                        )}`,
+                        boxShadow: "0 4px 12px rgba(74, 144, 226, 0.35)",
+                        background: "linear-gradient(45deg, #357ABD, #17A085)",
                       },
                     }}
                   >
@@ -490,14 +520,9 @@ const ForgotPasswordPage = () => {
                     mt: 3,
                     p: 3,
                     borderRadius: 3,
-                    background: `linear-gradient(135deg, ${alpha(
-                      theme.palette.success.main,
-                      0.1
-                    )} 0%, ${alpha(theme.palette.success.light, 0.1)} 100%)`,
-                    border: `1px solid ${alpha(
-                      theme.palette.success.main,
-                      0.3
-                    )}`,
+                    background:
+                      "linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(129, 199, 132, 0.1) 100%)",
+                    border: "1px solid rgba(76, 175, 80, 0.3)",
                     textAlign: "center",
                     animation: "fadeInUp 0.5s ease-out",
                   }}
@@ -505,21 +530,27 @@ const ForgotPasswordPage = () => {
                   <VerifiedUserIcon
                     sx={{
                       fontSize: 48,
-                      color: theme.palette.success.main,
+                      color: "#4CAF50", // Success green
                       mb: 1,
                     }}
                   />
                   <Typography
                     variant="h6"
                     sx={{
-                      color: theme.palette.success.main,
+                      color: "#4CAF50",
                       fontWeight: "bold",
                       mb: 1,
                     }}
                   >
                     Đặt lại mật khẩu thành công!
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "#546E7A",
+                      mb: 3,
+                    }}
+                  >
                     Bạn có thể đăng nhập với mật khẩu mới của mình.
                   </Typography>
                   <Button
@@ -528,26 +559,20 @@ const ForgotPasswordPage = () => {
                       window.location.href = "/login";
                     }}
                     sx={{
-                      mt: 3,
                       px: 4,
                       py: 1.5,
                       fontWeight: "bold",
                       borderRadius: 3,
-                      background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                      boxShadow: `0 6px 20px ${alpha(
-                        theme.palette.primary.main,
-                        0.4
-                      )}`,
+                      background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
+                      color: "#fff",
+                      boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
                       textTransform: "none",
                       fontSize: "1rem",
                       transition: "all 0.3s ease",
                       "&:hover": {
                         transform: "translateY(-2px)",
-                        boxShadow: `0 8px 25px ${alpha(
-                          theme.palette.primary.main,
-                          0.6
-                        )}`,
-                        background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
+                        boxShadow: "0 4px 12px rgba(74, 144, 226, 0.35)",
+                        background: "linear-gradient(45deg, #357ABD, #17A085)",
                       },
                       "&:active": {
                         transform: "translateY(0px)",
@@ -559,6 +584,30 @@ const ForgotPasswordPage = () => {
                   </Button>
                 </Box>
               )}
+
+              <Divider sx={{ my: 3, opacity: 0.3, borderColor: "#4A90E2" }} />
+
+              {/* Link về trang đăng nhập */}
+              <Box sx={{ textAlign: "center" }}>
+                <Button
+                  variant="text"
+                  onClick={() => {
+                    window.location.href = "/login";
+                  }}
+                  sx={{
+                    fontWeight: 500,
+                    color: "#4A90E2", // Medical blue
+                    textTransform: "none",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      color: "#357ABD",
+                      backgroundColor: "rgba(74, 144, 226, 0.05)",
+                    },
+                  }}
+                >
+                  Quay lại trang đăng nhập
+                </Button>
+              </Box>
             </Box>
           </CardContent>
         </Card>

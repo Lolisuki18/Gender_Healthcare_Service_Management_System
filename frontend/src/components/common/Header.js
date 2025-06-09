@@ -27,6 +27,7 @@ import {
   MenuItem,
   Menu,
   IconButton,
+  Box,
 } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import localStorageUtil from "@utils/localStorage";
@@ -36,17 +37,6 @@ import notify from "@utils/notification";
 import "@styles/Header.css";
 
 const Header = () => {
-  //làm thanh search
-  //   const [searchQuery, setSearchQuery] = useState("");
-  //   const handleSearchChange = (event) => {
-  //     setSearchQuery(event.target.value);
-  //   };
-  //   const handleSearchSubmit = (event) => {
-  //     if (event.key == "Enter") {
-  //       console.log("Searching for :", searchQuery);
-  //       //chưa làm api cho search các tác vụ mà mình có
-  //     }
-  //   };
   //check xem đã đăng nhập hay chưa
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   //state cho người dùng
@@ -58,14 +48,13 @@ const Header = () => {
   //kiểm tra trạng thái đăng nhập khi component được mount lần đầu tiên
   useEffect(() => {
     checkLoginStatus();
-  }, []); // [] có nghĩa là chỉ chạy 1 lần khi component được mount
-  //nếu truyền vào mảng dependencies thì useEffect sẽ chạy lại khi các giá trị trong mảng thay đổi
+  }, []);
+
   const checkLoginStatus = () => {
     try {
       const user = localStorageUtil.get("user");
       if (user) {
         setIsLoggedIn(true);
-        //set user từ localStorage
         setUser(user);
       } else {
         setIsLoggedIn(false);
@@ -95,9 +84,7 @@ const Header = () => {
     handleCloseMenu();
     try {
       await userService.logout();
-      // Hiển thị thông báo đăng xuất thành công
       notify.success("Đăng xuất thành công", "Bạn đã đăng xuất khỏi hệ thống");
-      // Chuyển hướng về trang chủ sau khi đăng xuất
       navigate("/");
     } catch (error) {
       console.error("Error during logout:", error);
@@ -107,63 +94,122 @@ const Header = () => {
       );
     }
   };
+
   const navigate = useNavigate();
+
   //xử lý chuyển hướng trang hồ sơ
   const handleProfile = () => {
     handleCloseMenu();
-    //chuyển hướng đến trang hồ sơ người dùng
     navigate("/profile");
   };
+
   return (
     <AppBar
       position="static"
       sx={{
-        zIndex: (theme) => theme.zIndex.appBar, // Đặt z-index thấp hơn sidebar
+        background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+        boxShadow: "0 2px 12px rgba(74, 144, 226, 0.25)",
+        zIndex: (theme) => theme.zIndex.appBar,
       }}
     >
       <Container maxWidth="xl">
-        <Toolbar disableGutters>
+        <Toolbar disableGutters sx={{ minHeight: 70 }}>
+          {/* Logo */}
           <Typography
             variant="h6"
             noWrap
             component={Link}
             to="/"
-            className="header-logo"
+            sx={{
+              mr: 4,
+              fontFamily: "monospace",
+              fontWeight: 700,
+              letterSpacing: ".1rem",
+              color: "inherit",
+              textDecoration: "none",
+              fontSize: "1.4rem",
+              "&:hover": {
+                color: "rgba(255, 255, 255, 0.9)",
+              },
+            }}
           >
-            {" "}
-            Gender Health Care Systems{" "}
+            Gender Health Care
           </Typography>
-          <div className="header-nav-container">
-            <Link to="/" className="header-nav-link">
-              Trang chủ
-            </Link>
-            <Link to="/sti-test" className="header-nav-link">
-              Xét nghiệm STIs
-            </Link>
-            <Link to="/blog" className="header-nav-link">
-              Blogs
-            </Link>
-            <Link to="/about" className="header-nav-link">
-              Giới thiệu
-            </Link>
-            <Link to="/ovulation" className="header-nav-link">
-              Kiểm tra chu kì rụng trứng
-            </Link>
-            <Link to="/pill-reminder" className="header-nav-link">
-              Nhắc nhở uống thuốc tránh thai
-            </Link>
-          </div>
+
+          {/* Navigation Links */}
+          <Box
+            sx={{ flexGrow: 1, display: { xs: "none", md: "flex" }, gap: 1 }}
+          >
+            {[
+              { to: "/", label: "Trang chủ" },
+              { to: "/sti-test", label: "Xét nghiệm STIs" },
+              { to: "/blog", label: "Blogs" },
+              { to: "/about", label: "Giới thiệu" },
+              { to: "/ovulation", label: "Chu kì rụng trứng" },
+              { to: "/pill-reminder", label: "Nhắc uống thuốc" },
+            ].map((item) => (
+              <Button
+                key={item.to}
+                component={Link}
+                to={item.to}
+                sx={{
+                  color: "white",
+                  fontWeight: 500,
+                  textTransform: "none",
+                  fontSize: "0.95rem",
+                  px: 2,
+                  py: 1,
+                  borderRadius: 2,
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    backgroundColor: "rgba(255, 255, 255, 0.15)",
+                    transform: "translateY(-1px)",
+                  },
+                }}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </Box>
+
+          {/* User Section */}
           {isLoggedIn ? (
-            <div>
-              <IconButton onClick={handleAvatarClick}>
+            <Box sx={{ flexShrink: 0 }}>
+              <IconButton
+                onClick={handleAvatarClick}
+                sx={{
+                  p: 1,
+                  "&:hover": {
+                    backgroundColor: "rgba(255, 255, 255, 0.15)",
+                  },
+                }}
+              >
                 {user && user.avatarUrl ? (
                   <Avatar
                     src={user.avatarUrl}
                     alt={user.name || "User"}
-                    className="header-avatar"
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      border: "2px solid rgba(255, 255, 255, 0.3)",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        border: "2px solid rgba(255, 255, 255, 0.6)",
+                        transform: "scale(1.05)",
+                      },
+                    }}
                   />
                 ) : (
-                  <AccountCircleIcon className="header-avatar" />
+                  <AccountCircleIcon
+                    sx={{
+                      color: "white",
+                      fontSize: 40,
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        transform: "scale(1.1)",
+                      },
+                    }}
+                  />
                 )}
               </IconButton>
               <Menu
@@ -171,6 +217,15 @@ const Header = () => {
                 anchorEl={dropdownOpen}
                 open={open}
                 onClose={handleCloseMenu}
+                sx={{
+                  mt: 1,
+                  "& .MuiPaper-root": {
+                    borderRadius: 2,
+                    minWidth: 180,
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                    border: "1px solid rgba(74, 144, 226, 0.1)",
+                  },
+                }}
                 MenuListProps={{
                   "aria-labelledby": "account-button",
                 }}
@@ -183,17 +238,54 @@ const Header = () => {
                   horizontal: "right",
                 }}
               >
-                <MenuItem onClick={handleProfile}>Hồ sơ</MenuItem>
-                <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
+                <MenuItem
+                  onClick={handleProfile}
+                  sx={{
+                    py: 1.5,
+                    px: 2,
+                    "&:hover": {
+                      backgroundColor: "rgba(74, 144, 226, 0.1)",
+                    },
+                  }}
+                >
+                  Hồ sơ
+                </MenuItem>
+                <MenuItem
+                  onClick={handleLogout}
+                  sx={{
+                    py: 1.5,
+                    px: 2,
+                    color: "#d32f2f",
+                    "&:hover": {
+                      backgroundColor: "rgba(211, 47, 47, 0.1)",
+                    },
+                  }}
+                >
+                  Đăng xuất
+                </MenuItem>
               </Menu>
-            </div>
+            </Box>
           ) : (
             <Button
               color="inherit"
               component={Link}
               to="/login"
               variant="outlined"
-              className="header-login-button"
+              sx={{
+                borderColor: "rgba(255, 255, 255, 0.5)",
+                color: "white",
+                fontWeight: 600,
+                textTransform: "none",
+                px: 3,
+                py: 1,
+                borderRadius: 2,
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  borderColor: "white",
+                  backgroundColor: "rgba(255, 255, 255, 0.15)",
+                  transform: "translateY(-1px)",
+                },
+              }}
             >
               Đăng nhập
             </Button>
