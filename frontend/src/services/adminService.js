@@ -226,10 +226,10 @@ export const adminService = {
 
   //================================================Xoá thông tin=================================================
 
-  // Xóa người dùng theo ID và role
-  deleteUser: async (userId, role) => {
+  // Xóa customer theo ID
+  deleteCustomer: async (customerId) => {
     try {
-      const response = await apiClient.delete(`/admin/users/${role}/${userId}`);
+      const response = await apiClient.delete(`/admin/customer/${customerId}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -247,7 +247,24 @@ export const adminService = {
       throw error.response?.data || error;
     }
   },
-
+  //xoá staff theo id
+  deleteStaff: async (staffId) => {
+    try {
+      const response = await apiClient.delete(`/admin/consultants/${staffId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+  //xoá admin theo id
+  deleteAdmin: async (adminId) => {
+    try {
+      const response = await apiClient.delete(`/admin/admins/${adminId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
   //=================================================Cập nhật thông tin=================================================
 
   // Cập nhật thông tin người dùng theo role

@@ -24,6 +24,8 @@ var userData = localStorageUtil.get("user");
 const apiClient = axios.create({
   baseURL: "http://localhost:8080",
   auth: {
+    //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
+    //các tác vụ yêu cầu quyền truy cập
     username: userData.username, // Hoặc lấy từ localStorage/context
     password: "Ninh123@", // Hoặc lấy từ localStorage/context
   },

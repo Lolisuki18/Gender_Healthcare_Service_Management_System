@@ -58,6 +58,7 @@ import EditUserModal from "./modals/EditUserModal";
 import { confirmDialog } from "@/utils/confirmDialog";
 import { userService } from "@/services/userService";
 import { adminService } from "@/services/adminService";
+import notify from "@/utils/notification";
 
 const UserManagementContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -184,10 +185,26 @@ const UserManagementContent = () => {
 
     if (isConfirmed) {
       try {
-        console.log("Đang xóa người dùng ID:", userId);
-        await userService.deleteUser(userId);
-        setUsers((prevUsers) => prevUsers.filter((u) => u.id !== userId));
-        alert(
+        if (user.role === "CONSULTANT") {
+          console.log("Đang xóa người dùng ID:", userId);
+          await adminService.deleteConsultant(userId);
+        }
+        if (user.role === "STAFF") {
+          console.log("Đang xóa nhân viên ID:", userId);
+          await adminService.deleteUser(userId, "STAFF");
+        }
+        if (user.role === "CUSTOMER") {
+          console.log("Đang xóa khách hàng ID:", userId);
+          await adminService.deleteCustomer(userId);
+        }
+        if (user.role === "ADMIN") {
+          console.log("Đang xóa quản trị viên ID:", userId);
+          await adminService.deleteAdmin(userId);
+        }
+
+        // setUsers((prevUsers) => prevUsers.filter((u) => u.id !== userId));
+        notify.success(
+          "Xóa người dùng thành công",
           `Đã xóa người dùng "${user.fullName || user.username}" thành công!`
         );
         console.log("Xóa người dùng thành công");
@@ -812,7 +829,7 @@ const UserManagementContent = () => {
                         >
                           <EditIcon sx={{ fontSize: 16 }} />
                         </IconButton>
-
+                        {/* delete button */}
                         <IconButton
                           size="small"
                           onClick={() => handleDelete(user.id)}
