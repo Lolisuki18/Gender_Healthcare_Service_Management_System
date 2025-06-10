@@ -400,6 +400,10 @@ public class UserService {
             user.setPhone(request.getPhone());
             user.setBirthDay(request.getBirthDay());
 
+            if (request.getGender() != null) {
+                user.setGender(request.getGender());
+            }
+
             UserDtls updatedUser = userRepository.save(user);
             UserResponse response = mapUserToResponse(updatedUser);
 
@@ -583,6 +587,7 @@ public class UserService {
         response.setUsername(user.getUsername());
         response.setAvatar(user.getAvatar());
         response.setIsActive(user.getIsActive());
+        response.setGender(user.getGender());
         response.setRole(user.getRoleName());
         response.setCreatedDate(user.getCreatedDate());
         return response;
