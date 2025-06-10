@@ -12,11 +12,19 @@ export const consultantService = {
     }
   },
   //==================================================Cập nhật thông tin=================================================
-  updateConsultantProfile: async (consultantId, profileData) => {
+  updatePersonalInfo: async (consultantId, data) => {
+    try {
+      const response = await apiClient.put(`/profile/basic`, data);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+  updateProfessionalInfo: async (consultantId, data) => {
     try {
       const response = await apiClient.put(
         `/consultants/profile/${consultantId}`,
-        profileData
+        data
       );
       return response.data;
     } catch (error) {

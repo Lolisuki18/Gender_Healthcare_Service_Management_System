@@ -395,6 +395,7 @@ public class ConsultantService {
         response.setGender(consultantProfile.getUser().getGender().toString());
         response.setPhone(consultantProfile.getUser().getPhone());
         response.setAvatar(consultantProfile.getUser().getAvatar());
+        response.setActive(consultantProfile.getUser().getIsActive()); // ✅ THÊM DÒNG NÀY
         response.setQualifications(consultantProfile.getQualifications());
         response.setExperience(consultantProfile.getExperience());
         response.setBio(consultantProfile.getBio());

@@ -40,25 +40,17 @@ import {
   LocationOn as LocationIcon,
   School as SchoolIcon,
   Work as WorkIcon,
-  Language as LanguageIcon,
-  Star as StarIcon,
   Edit as EditIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  Verified as VerifiedIcon,
-  Schedule as ScheduleIcon,
-  AttachMoney as MoneyIcon,
-  Notifications as NotificationsIcon,
-  Security as SecurityIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
   Camera as CameraIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { consultantService } from "../../services/consultantService";
-import localStorageUtil from "@/utils/localStorage";
+import localStorageUtil from "../../utils/localStorage";
+import { userService } from "../../services/userService";
+import notify from "../../utils/notification";
+import { confirmDialog } from "../../utils/confirmDialog";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: "rgba(255, 255, 255, 0.95)",
@@ -85,10 +77,12 @@ const ProfileAvatar = styled(Avatar)(({ theme }) => ({
 
 const ConsultantProfileContent = ({ consultantId }) => {
   const [selectedTab, setSelectedTab] = useState(0);
-  const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [saving, setSaving] = useState(false);
+
+  // Tách riêng edit mode cho từng phần
+  const [editPersonalInfo, setEditPersonalInfo] = useState(false);
+  const [editProfessionalInfo, setEditProfessionalInfo] = useState(false);
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [savingProfessional, setSavingProfessional] = useState(false);
 
@@ -109,8 +103,29 @@ const ConsultantProfileContent = ({ consultantId }) => {
     bio: "",
     updatedAt: "",
   });
-
   const [tempData, setTempData] = useState({ ...profileData });
+
+  // Helper function để hiển thị giới tính
+  const getGenderDisplay = (gender) => {
+    switch (gender) {
+      case "MALE":
+        return "Nam";
+      case "FEMALE":
+        return "Nữ";
+      case "OTHER":
+        return "Khác";
+      default:
+        return "Chưa cập nhật";
+    }
+  };
+
+  // Handle input changes - THÊM FUNCTION NÀY
+  const handleInputChange = (field, value) => {
+    setTempData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   // Fetch consultant profile data
   useEffect(() => {
@@ -119,24 +134,20 @@ const ConsultantProfileContent = ({ consultantId }) => {
         setLoading(true);
         setError(null);
 
-        // Lấy consultantId từ props hoặc từ URL params hoặc localStorage
         const userData = localStorageUtil.get("user");
-
         const response = await consultantService.getConsultantDetails(
           userData.userId
         );
         console.log("Consultant Profile Response:", response);
 
-        // Check if response has data property
         const responseData = response?.data || response;
         console.log("Response Data:", responseData);
 
-        // Map response data to component state
         const mappedData = {
           profileId: responseData.profileId || null,
           userId: responseData.userId || null,
           fullName: responseData.fullName || "",
-          username: responseData.username || "", // chỉ có khi admin xem
+          username: responseData.username || "",
           email: responseData.email || "",
           address: responseData.address || "",
           gender: responseData.gender || "",
@@ -164,41 +175,144 @@ const ConsultantProfileContent = ({ consultantId }) => {
     fetchConsultantProfile();
   }, [consultantId]);
 
-  const handleEdit = () => {
-    setEditMode(true);
+  // Handlers for Personal Info
+  const handleEditPersonal = () => {
+    setEditPersonalInfo(true);
     setTempData({ ...profileData });
   };
-
-  const handleSave = async () => {
+  const handleSavePersonal = async () => {
     try {
-      setSaving(true);
+      setSavingPersonal(true);
 
-      // TODO: Call API to save data
-      // await consultantService.updateConsultantProfile(tempData);
+      const personalData = {
+        fullName: tempData.fullName,
+        email: tempData.email,
+        phone: tempData.phone,
+        address: tempData.address,
+        gender: tempData.gender,
+      };
 
-      setProfileData({ ...tempData });
-      setEditMode(false);
+      await userService.updateProfile(personalData);
 
-      // Show success message
-      alert("Đã lưu thông tin hồ sơ!");
+      setProfileData((prev) => ({
+        ...prev,
+        ...personalData,
+        updatedAt: new Date().toISOString(),
+      }));
+
+      setEditPersonalInfo(false);
+
+      // Hiển thị thông báo thành công
+      notify.success(
+        "Cập nhật thành công!",
+        "Thông tin cá nhân đã được cập nhật thành công."
+      );
     } catch (err) {
-      console.error("Error saving profile:", err);
-      alert("Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại.");
+      console.error("Error saving personal info:", err);
+
+      // Hiển thị thông báo lỗi
+      notify.error(
+        "Cập nhật thất bại!",
+        "Có lỗi xảy ra khi cập nhật thông tin cá nhân. Vui lòng thử lại."
+      );
     } finally {
-      setSaving(false);
+      setSavingPersonal(false);
     }
   };
 
-  const handleCancel = () => {
+  const handleCancelPersonal = async () => {
+    // Hiển thị dialog xác nhận nếu có thay đổi
+    const hasChanges = JSON.stringify(tempData) !== JSON.stringify(profileData);
+
+    if (hasChanges) {
+      const confirmed = await confirmDialog.warning(
+        "Bạn có chắc chắn muốn hủy các thay đổi chưa lưu?",
+        {
+          title: "Xác nhận hủy",
+          confirmText: "Hủy thay đổi",
+          cancelText: "Tiếp tục chỉnh sửa",
+        }
+      );
+
+      if (!confirmed) return;
+    }
+
     setTempData({ ...profileData });
-    setEditMode(false);
+    setEditPersonalInfo(false);
+
+    // Hiển thị thông báo hủy
+    notify.info("Đã hủy", "Các thay đổi đã được hủy.");
   };
 
-  const handleInputChange = (field, value) => {
-    setTempData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  // Handlers for Professional Info
+  const handleEditProfessional = () => {
+    setEditProfessionalInfo(true);
+    setTempData({ ...profileData });
+  };
+  const handleSaveProfessional = async () => {
+    try {
+      setSavingProfessional(true);
+
+      const professionalData = {
+        bio: tempData.bio,
+        qualifications: tempData.qualifications,
+        experience: tempData.experience,
+      };
+
+      const userData = localStorageUtil.get("user");
+      await consultantService.updateProfessionalInfo(
+        userData.userId,
+        professionalData
+      );
+
+      setProfileData((prev) => ({
+        ...prev,
+        ...professionalData,
+        updatedAt: new Date().toISOString(),
+      }));
+
+      setEditProfessionalInfo(false);
+
+      // Hiển thị thông báo thành công
+      notify.success(
+        "Cập nhật thành công!",
+        "Thông tin nghề nghiệp đã được cập nhật thành công."
+      );
+    } catch (err) {
+      console.error("Error saving professional info:", err);
+
+      // Hiển thị thông báo lỗi
+      notify.error(
+        "Cập nhật thất bại!",
+        "Có lỗi xảy ra khi cập nhật thông tin nghề nghiệp. Vui lòng thử lại."
+      );
+    } finally {
+      setSavingProfessional(false);
+    }
+  };
+
+  const handleCancelProfessional = async () => {
+    // Hiển thị dialog xác nhận nếu có thay đổi
+    const hasChanges = JSON.stringify(tempData) !== JSON.stringify(profileData);
+
+    if (hasChanges) {
+      const confirmed = await confirmDialog.warning(
+        "Bạn có chắc chắn muốn hủy các thay đổi chưa lưu?",
+        {
+          title: "Xác nhận hủy",
+          confirmText: "Hủy thay đổi",
+          cancelText: "Tiếp tục chỉnh sửa",
+        }
+      );
+
+      if (!confirmed) return;
+    }
+
+    setTempData({ ...profileData });
+    setEditProfessionalInfo(false);
+
+    // Hiển thị thông báo hủy
+    notify.info("Đã hủy", "Các thay đổi đã được hủy.");
   };
 
   // Loading state
@@ -262,10 +376,10 @@ const ConsultantProfileContent = ({ consultantId }) => {
         >
           Thông tin cá nhân
         </Typography>
-        {!editMode ? (
+        {!editPersonalInfo ? (
           <Button
             startIcon={<EditIcon />}
-            onClick={handleEdit}
+            onClick={handleEditPersonal}
             sx={{ color: "#10b981" }}
           >
             Chỉnh sửa
@@ -275,8 +389,8 @@ const ConsultantProfileContent = ({ consultantId }) => {
             <Button
               startIcon={<SaveIcon />}
               variant="contained"
-              onClick={handleSave}
-              disabled={saving}
+              onClick={handleSavePersonal}
+              disabled={savingPersonal}
               sx={{
                 background: "linear-gradient(45deg, #10b981, #059669)",
                 "&:hover": {
@@ -287,12 +401,16 @@ const ConsultantProfileContent = ({ consultantId }) => {
                 },
               }}
             >
-              {saving ? <CircularProgress size={20} color="inherit" /> : "Lưu"}
+              {savingPersonal ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                "Lưu"
+              )}
             </Button>
             <Button
               startIcon={<CancelIcon />}
-              onClick={handleCancel}
-              disabled={saving}
+              onClick={handleCancelPersonal}
+              disabled={savingPersonal}
               sx={{ color: "#ef4444" }}
             >
               Hủy
@@ -309,7 +427,7 @@ const ConsultantProfileContent = ({ consultantId }) => {
               tempData.fullName &&
               tempData.fullName.charAt(0)}
           </ProfileAvatar>
-          {editMode && (
+          {editPersonalInfo && (
             <IconButton
               sx={{
                 position: "absolute",
@@ -357,23 +475,23 @@ const ConsultantProfileContent = ({ consultantId }) => {
       </Box>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid item size={12} md={6}>
           <TextField
             fullWidth
             label="Họ và tên"
             value={tempData.fullName}
             onChange={(e) => handleInputChange("fullName", e.target.value)}
-            disabled={!editMode}
+            disabled={!editPersonalInfo}
             margin="normal"
           />
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid item size={6} md={6}>
           <TextField
             fullWidth
             label="Email"
             value={tempData.email}
             onChange={(e) => handleInputChange("email", e.target.value)}
-            disabled={!editMode}
+            disabled={!editPersonalInfo}
             margin="normal"
             InputProps={{
               endAdornment: <EmailIcon sx={{ color: "#64748b" }} />,
@@ -381,13 +499,13 @@ const ConsultantProfileContent = ({ consultantId }) => {
           />
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid item size={6} md={6}>
           <TextField
             fullWidth
             label="Số điện thoại"
             value={tempData.phone}
             onChange={(e) => handleInputChange("phone", e.target.value)}
-            disabled={!editMode}
+            disabled={!editPersonalInfo}
             margin="normal"
             InputProps={{
               endAdornment: <PhoneIcon sx={{ color: "#64748b" }} />,
@@ -395,29 +513,38 @@ const ConsultantProfileContent = ({ consultantId }) => {
           />
         </Grid>
 
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Giới tính</InputLabel>
-            <Select
-              value={tempData.gender}
-              onChange={(e) => handleInputChange("gender", e.target.value)}
-              disabled={!editMode}
+        <Grid item size={4} md={6}>
+          {editPersonalInfo ? (
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Giới tính</InputLabel>
+              <Select
+                value={tempData.gender}
+                onChange={(e) => handleInputChange("gender", e.target.value)}
+                label="Giới tính"
+              >
+                <MenuItem value="MALE">Nam</MenuItem>
+                <MenuItem value="FEMALE">Nữ</MenuItem>
+                <MenuItem value="OTHER">Khác</MenuItem>
+              </Select>
+            </FormControl>
+          ) : (
+            <TextField
+              fullWidth
               label="Giới tính"
-            >
-              <MenuItem value="MALE">Nam</MenuItem>
-              <MenuItem value="FEMALE">Nữ</MenuItem>
-              <MenuItem value="OTHER">Khác</MenuItem>
-            </Select>
-          </FormControl>
+              value={getGenderDisplay(tempData.gender)}
+              disabled={true}
+              margin="normal"
+            />
+          )}
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid item size={4} md={6}>
           <TextField
             fullWidth
             label="Địa chỉ"
             value={tempData.address}
             onChange={(e) => handleInputChange("address", e.target.value)}
-            disabled={!editMode}
+            disabled={!editPersonalInfo}
             margin="normal"
             InputProps={{
               endAdornment: <LocationIcon sx={{ color: "#64748b" }} />,
@@ -427,7 +554,7 @@ const ConsultantProfileContent = ({ consultantId }) => {
 
         {/* Hiển thị username chỉ khi admin xem */}
         {tempData.username && (
-          <Grid item xs={12} md={6}>
+          <Grid item size={4} md={6}>
             <TextField
               fullWidth
               label="Tên đăng nhập"
@@ -446,16 +573,66 @@ const ConsultantProfileContent = ({ consultantId }) => {
 
   const renderProfessionalInfo = () => (
     <StyledPaper sx={{ p: 3 }}>
-      <Typography
-        variant="h6"
-        component="div"
-        sx={{ fontWeight: 600, color: "#1e293b", mb: 3 }}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
       >
-        Thông tin nghề nghiệp
-      </Typography>
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{ fontWeight: 600, color: "#1e293b" }}
+        >
+          Thông tin nghề nghiệp
+        </Typography>
+        {!editProfessionalInfo ? (
+          <Button
+            startIcon={<EditIcon />}
+            onClick={handleEditProfessional}
+            sx={{ color: "#10b981" }}
+          >
+            Chỉnh sửa
+          </Button>
+        ) : (
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              startIcon={<SaveIcon />}
+              variant="contained"
+              onClick={handleSaveProfessional}
+              disabled={savingProfessional}
+              sx={{
+                background: "linear-gradient(45deg, #10b981, #059669)",
+                "&:hover": {
+                  background: "linear-gradient(45deg, #059669, #047857)",
+                },
+                "&:disabled": {
+                  background: "#94a3b8",
+                },
+              }}
+            >
+              {savingProfessional ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                "Lưu"
+              )}
+            </Button>
+            <Button
+              startIcon={<CancelIcon />}
+              onClick={handleCancelProfessional}
+              disabled={savingProfessional}
+              sx={{ color: "#ef4444" }}
+            >
+              Hủy
+            </Button>
+          </Box>
+        )}
+      </Box>
 
       <Grid container spacing={3}>
-        <Grid item xs={12}>
+        <Grid item size={12} md={6}>
           <TextField
             fullWidth
             label="Giới thiệu bản thân"
@@ -463,12 +640,12 @@ const ConsultantProfileContent = ({ consultantId }) => {
             rows={4}
             value={tempData.bio}
             onChange={(e) => handleInputChange("bio", e.target.value)}
-            disabled={!editMode}
+            disabled={!editProfessionalInfo}
             margin="normal"
             helperText="Giới thiệu ngắn gọn về bản thân, chuyên môn và kinh nghiệm"
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid item size={12} md={6}>
           <TextField
             fullWidth
             label="Trình độ chuyên môn"
@@ -478,7 +655,7 @@ const ConsultantProfileContent = ({ consultantId }) => {
             onChange={(e) =>
               handleInputChange("qualifications", e.target.value)
             }
-            disabled={!editMode}
+            disabled={!editProfessionalInfo}
             margin="normal"
             InputProps={{
               endAdornment: <SchoolIcon sx={{ color: "#64748b" }} />,
@@ -486,7 +663,7 @@ const ConsultantProfileContent = ({ consultantId }) => {
             helperText="Ví dụ: Thạc sĩ Tâm lý học - Đại học Y Hà Nội (2018), Bác sĩ Đa khoa - Đại học Y Dược TP.HCM (2015)"
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid item size={12} md={6}>
           <TextField
             fullWidth
             label="Kinh nghiệm làm việc"
@@ -494,7 +671,7 @@ const ConsultantProfileContent = ({ consultantId }) => {
             rows={3}
             value={tempData.experience}
             onChange={(e) => handleInputChange("experience", e.target.value)}
-            disabled={!editMode}
+            disabled={!editProfessionalInfo}
             margin="normal"
             InputProps={{
               endAdornment: <WorkIcon sx={{ color: "#64748b" }} />,
@@ -516,7 +693,7 @@ const ConsultantProfileContent = ({ consultantId }) => {
           Thông tin hồ sơ
         </Typography>
         <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
+          <Grid item size={6} md={6}>
             <Card sx={{ p: 2, background: "rgba(16, 185, 129, 0.05)" }}>
               <Typography
                 variant="body2"
@@ -530,7 +707,7 @@ const ConsultantProfileContent = ({ consultantId }) => {
               </Typography>
             </Card>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid item size={6} md={6}>
             <Card sx={{ p: 2, background: "rgba(59, 130, 246, 0.05)" }}>
               <Typography
                 variant="body2"
@@ -575,7 +752,6 @@ const ConsultantProfileContent = ({ consultantId }) => {
           Quản lý thông tin cá nhân và nghề nghiệp
         </Typography>
       </Box>
-
       {/* Tabs */}
       <StyledPaper sx={{ mb: 3 }}>
         <Tabs
@@ -599,8 +775,7 @@ const ConsultantProfileContent = ({ consultantId }) => {
             <Tab key={index} label={label} />
           ))}
         </Tabs>
-      </StyledPaper>
-
+      </StyledPaper>{" "}
       {/* Content */}
       <Box>
         {selectedTab === 0 && renderPersonalInfo()}
