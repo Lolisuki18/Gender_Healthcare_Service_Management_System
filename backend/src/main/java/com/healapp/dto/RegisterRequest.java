@@ -4,6 +4,8 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.healapp.model.Gender;
+
 import java.time.LocalDate;
 
 @Data
@@ -28,6 +30,8 @@ public class RegisterRequest {
     private String phone;
 
     private LocalDate birthDay;
+
+    private Gender gender;
 
     private MultipartFile avatar;
 

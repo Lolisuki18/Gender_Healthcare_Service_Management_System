@@ -31,7 +31,6 @@ public class ConsultantService {
 
     public ApiResponse<List<ConsultantProfileResponse>> getAllConsultantProfiles() {
         try {
-            // Cập nhật: Sử dụng findByRoleName thay vì findByRole
             List<UserDtls> consultantUsers = userRepository.findByRoleName("CONSULTANT");
             List<ConsultantProfileResponse> responses = consultantUsers.stream()
                     .map(user -> {
@@ -65,7 +64,7 @@ public class ConsultantService {
             }
 
             UserDtls user = userOpt.get();
-            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            
             if (!"CONSULTANT".equals(user.getRoleName())) {
                 return ApiResponse.error("User is not a consultant");
             }
@@ -101,7 +100,7 @@ public class ConsultantService {
 
             UserDtls user = userOpt.get();
 
-            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            
             if (!"CONSULTANT".equals(user.getRoleName())) {
                 return ApiResponse.error("User must have CONSULTANT role to update profile. Please update role first.");
             }
@@ -132,7 +131,7 @@ public class ConsultantService {
             }
 
             UserDtls user = userOpt.get();
-            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            
             if (!"CONSULTANT".equals(user.getRoleName())) {
                 return ApiResponse.error("User is not a consultant");
             }

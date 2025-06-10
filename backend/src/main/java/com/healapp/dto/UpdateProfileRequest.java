@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
+import com.healapp.model.Gender;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,4 +24,6 @@ public class UpdateProfileRequest {
     private String phone;
 
     private LocalDate birthDay;
+
+    private Gender gender;
 }

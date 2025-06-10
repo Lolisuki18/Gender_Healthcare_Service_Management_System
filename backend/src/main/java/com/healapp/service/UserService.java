@@ -6,6 +6,7 @@ import com.healapp.dto.LoginRequest;
 import com.healapp.dto.LoginResponse;
 import com.healapp.dto.RegisterRequest;
 import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Gender;
 import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
@@ -122,6 +123,7 @@ public class UserService {
             user.setEmail(request.getEmail());
             user.setUsername(request.getUsername());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setGender(request.getGender() != null ? request.getGender() : Gender.OTHER);
             user.setAvatar(defaultAvatarPath);
             user.setIsActive(true);
 
