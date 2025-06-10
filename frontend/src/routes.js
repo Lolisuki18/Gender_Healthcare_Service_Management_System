@@ -26,11 +26,11 @@ const AppRoutes = () => {
 
   // Component để redirect đến trang phù hợp khi truy cập "/"
   const AutoRedirectToProfile = () => {
-    if (!userData || !userData.role) {
+    if (!userData || !userData.data.role) {
       return <Navigate to="/login" replace />;
     }
 
-    switch (userData.role) {
+    switch (userData.data.role) {
       case "ADMIN":
         return <Navigate to="/admin/profile" replace />; // Admin vào admin profile
       case "CUSTOMER":
@@ -51,37 +51,34 @@ const AppRoutes = () => {
           index
           element={userData ? <AutoRedirectToProfile /> : <HomePage />}
         />
-
         {/* Homepage cho các role đã đăng nhập (trừ admin) */}
         <Route path="home" element={<HomePage />} />
-
-        {/* Profile Page chung - sẽ render component phù hợp với role */}
+        {/* Profile Page chung - sẽ render component phù hợp với role */}{" "}
         <Route
           path="profile"
           element={
-            userData && userData.role !== "ADMIN" ? (
+            userData && userData.data && userData.data.role !== "ADMIN" ? (
               <ProfilePage />
             ) : (
               <Navigate to="/login" replace />
             )
           }
         />
-
         {/* Public routes */}
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterForm />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
-
         {/* 404 Page */}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
       {/* Admin Routes riêng với AdminLayout */}
       <Route path="/admin" element={<AdminLayout />}>
+        {" "}
         <Route
           path="profile"
           element={
-            userData?.role === "ADMIN" ? (
+            userData?.data?.role === "ADMIN" ? (
               <AdminProfile />
             ) : (
               <Navigate to="/login" replace />

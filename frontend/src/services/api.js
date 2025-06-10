@@ -26,12 +26,12 @@ const config = {
   baseURL: "http://localhost:8080",
 };
 
-// Nếu có userData, thêm auth vào config
-if (userData.role === "ADMIN") {
+// Nếu có userData và role là ADMIN, thêm auth vào config
+if (userData && userData.data && userData.data.role === "ADMIN") {
   config.auth = {
     //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
     //các tác vụ yêu cầu quyền truy cập
-    username: userData.username,
+    username: userData.data.username || userData.username,
     password: "Ninh123@", // Hoặc lấy từ localStorage/context
   };
 }
