@@ -369,23 +369,33 @@ const UserManagementContent = () => {
     }
   };
 
+  // ✅ Thêm state mới cho loading create user
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+
   // ✅ Cập nhật handleModalSubmit
   const handleModalSubmit = async (formData, userType) => {
+    setIsCreatingUser(true); // ✅ Sử dụng state riêng
+
     try {
       console.log("Đang tạo người dùng mới:", formData);
       console.log("Loại người dùng:", userType);
 
-      const newUser = await userService.createUser({
-        ...formData,
-        role: userType,
-      });
+      const result = await adminService.addNewUserAccount(formData);
 
-      if (newUser) {
-        setUsers((prevUsers) => [...prevUsers, newUser]);
-        alert(`Đã thêm ${getModalTitle(userType)} thành công!`);
+      if (result && result.success) {
+        notify.success(
+          "Tạo thành công!",
+          `Tạo ${getRoleDisplayName(userType)} thành công!`
+        );
+
+        // ✅ Refresh data
+        await fetchUsers();
+
+        // Đóng modal
         setOpenModal(false);
         setModalType("");
-        console.log("Tạo người dùng thành công:", newUser);
+
+        console.log("Tạo người dùng thành công:", result);
       }
     } catch (error) {
       console.error("Lỗi khi tạo người dùng:", error);
@@ -393,7 +403,10 @@ const UserManagementContent = () => {
         error.response?.data?.message ||
         error.message ||
         "Có lỗi xảy ra khi tạo người dùng";
-      alert(`Lỗi: ${errorMessage}`);
+
+      notify.error("Lỗi tạo người dùng", errorMessage);
+    } finally {
+      setIsCreatingUser(false); // ✅ Clear loading state
     }
   };
 
@@ -1003,7 +1016,6 @@ const UserManagementContent = () => {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: 3,
             background: "rgba(255, 255, 255, 0.95)",
             backdropFilter: "blur(20px)",
           },
