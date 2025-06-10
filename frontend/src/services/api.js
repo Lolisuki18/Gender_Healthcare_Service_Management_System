@@ -18,29 +18,28 @@
 import localStorageUtil from "@/utils/localStorage";
 import axios from "axios";
 
-// Tạo instance Axios với các cấu hình mặc định
-var userData = localStorageUtil.get("user");
-
 // Tạo config object trước
 const config = {
   baseURL: "http://localhost:8080",
 };
 
-// Nếu có userData và role là ADMIN, thêm auth vào config
-if (userData && userData.data && userData.data.role === "ADMIN") {
-  config.auth = {
-    //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
-    //các tác vụ yêu cầu quyền truy cập
-    username: userData.data.username || userData.username,
-    password: "Ninh123@", // Hoặc lấy từ localStorage/context
-  };
-}
-
 const apiClient = axios.create(config);
 
 // ✅ Request interceptor (không có token)
 apiClient.interceptors.request.use(
+  // Tạo instance Axios với các cấu hình mặc định
+
   (config) => {
+    var userData = localStorageUtil.get("user");
+    // Nếu có userData, thêm auth vào config
+    if (userData && userData.role === "ADMIN") {
+      config.auth = {
+        //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
+        //các tác vụ yêu cầu quyền truy cập
+        username: userData.username,
+        password: "Ninh123@", // Hoặc lấy từ localStorage/context
+      };
+    }
     console.log("API Request:", {
       url: config.baseURL + config.url,
       method: config.method.toUpperCase(),

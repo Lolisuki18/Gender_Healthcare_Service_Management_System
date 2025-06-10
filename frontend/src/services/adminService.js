@@ -1,4 +1,4 @@
-import apiClient from "@services/api";
+import apiClient from "./api";
 import axios from "axios";
 
 // Service cho các API liên quan đến người dùng
@@ -88,7 +88,7 @@ export const adminService = {
   getAllUsers: async () => {
     try {
       console.log("Making API call to: /admin/users");
-      const response = await apiClient.get(`admin/users`);
+      const response = await apiClient.get(`/admin/users`);
 
       // ✅ Log để debug structure
       console.log("Raw API Response:", response);
