@@ -1,24 +1,16 @@
 /**
  * ==================================================================
- * EDIT USER MODAL COMPONENT
+ * EDIT USER MODAL COMPONENT - VERSION 2.0
  * ==================================================================
  *
- * Chức năng: Modal chỉnh sửa thông tin người dùng với xác nhận thay đổi
- *
- * Tính năng chính:
- * ✅ Form chỉnh sửa thông tin cơ bản (tên, email, phone, etc.)
- * ✅ Form chỉnh sửa trạng thái tài khoản
- * ✅ Form chỉnh sửa vai trò người dùng
- * ✅ Phát hiện và hiển thị các thay đổi trước khi lưu
- * ✅ Dialog xác nhận thay đổi với giao diện đẹp
- * ✅ Validation dữ liệu đầu vào
- * ✅ Cảnh báo khi thoát với thay đổi chưa lưu
+ * Cập nhật: Tách riêng API calls cho thông tin cơ bản và vai trò/trạng thái
  *
  * Props:
  * - open: boolean - Trạng thái mở/đóng modal
  * - onClose: function - Callback khi đóng modal
  * - user: object - Thông tin người dùng cần chỉnh sửa
- * - onSubmit: function - Callback khi submit thành công
+ * - onSubmitBasicInfo: function - Callback cho API cập nhật thông tin cơ bản
+ * - onSubmitRole: function - Callback cho API cập nhật vai trò & trạng thái
  */
 
 import React, { useState, useEffect } from "react";
@@ -32,12 +24,7 @@ import {
   Grid,
   Button,
   IconButton,
-  Divider,
   FormControl,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
   InputLabel,
   Select,
   MenuItem,
@@ -48,62 +35,90 @@ import {
   ListItem,
   ListItemText,
   Chip,
+  Tabs,
+  Tab,
+  Divider,
 } from "@mui/material";
 import {
   Close as CloseIcon,
   Person as PersonIcon,
   Security as SecurityIcon,
-  Work as WorkIcon,
   CompareArrows as CompareIcon,
   Check as CheckIcon,
+  Info as InfoIcon,
+  Warning as WarningIcon,
 } from "@mui/icons-material";
 
-const EditUserModal = ({ open, onClose, user, onSubmit }) => {
+const EditUserModal = ({
+  open,
+  onClose,
+  user,
+  onSubmitBasicInfo,
+  onSubmitRole,
+}) => {
   // ====================================================================
   // STATE MANAGEMENT
   // ====================================================================
 
   /**
-   * Form data state - Chứa tất cả thông tin form
-   * Cập nhật theo cấu trúc API mới
+   * Tab management
    */
-  const [formData, setFormData] = useState({
-    // Thông tin cơ bản
-    fullName: "", // Họ và tên (bắt buộc)
-    username: "", // Tên đăng nhập
-    email: "", // Email (bắt buộc)
-    phone: "", // Số điện thoại
-    role: "", // Vai trò
-    isActive: true, // Trạng thái tài khoản (boolean)
+  const [activeTab, setActiveTab] = useState(0);
+
+  /**
+   * Form data states - Tách riêng cho 2 loại thông tin
+   */
+  const [basicFormData, setBasicFormData] = useState({
+    fullName: "",
+    username: "",
+    email: "",
+    phone: "",
+  });
+
+  const [roleFormData, setRoleFormData] = useState({
+    role: "",
+    isActive: true,
   });
 
   /**
-   * Change confirmation states
+   * Original data để so sánh thay đổi
    */
-  const [showChangeConfirmation, setShowChangeConfirmation] = useState(false);
-  const [originalData, setOriginalData] = useState({});
+  const [originalBasicData, setOriginalBasicData] = useState({});
+  const [originalRoleData, setOriginalRoleData] = useState({});
+
+  /**
+   * Confirmation dialog states
+   */
+  const [showBasicConfirmation, setShowBasicConfirmation] = useState(false);
+  const [showRoleConfirmation, setShowRoleConfirmation] = useState(false);
 
   // ====================================================================
   // EFFECTS & DATA INITIALIZATION
   // ====================================================================
 
   /**
-   * Effect: Khởi tạo dữ liệu form khi user hoặc modal thay đổi
+   * Effect: Khởi tạo dữ liệu khi user hoặc modal thay đổi
    */
   useEffect(() => {
     if (user && open) {
-      // Chuẩn bị dữ liệu từ user object theo API structure
-      const userData = {
+      // Tách dữ liệu thông tin cơ bản
+      const basicData = {
         fullName: user.fullName || "",
         username: user.username || "",
         email: user.email || "",
         phone: user.phone || "",
+      };
+
+      // Tách dữ liệu vai trò & trạng thái
+      const roleData = {
         role: user.role || "",
         isActive: user.isActive !== undefined ? user.isActive : true,
       };
 
-      setFormData(userData);
-      setOriginalData(userData);
+      setBasicFormData(basicData);
+      setRoleFormData(roleData);
+      setOriginalBasicData(basicData);
+      setOriginalRoleData(roleData);
     }
   }, [user, open]);
 
@@ -112,26 +127,45 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
   // ====================================================================
 
   /**
-   * Phát hiện và trả về danh sách các thay đổi
+   * Phát hiện thay đổi thông tin cơ bản
    */
-  const getChanges = () => {
+  const getBasicChanges = () => {
     const changes = [];
-
-    // Mapping field names sang labels tiếng Việt
     const fieldLabels = {
       fullName: "Họ và tên",
       username: "Tên đăng nhập",
       email: "Email",
       phone: "Số điện thoại",
+    };
+
+    Object.keys(basicFormData).forEach((key) => {
+      if (basicFormData[key] !== originalBasicData[key]) {
+        changes.push({
+          field: key,
+          label: fieldLabels[key],
+          oldValue: originalBasicData[key] || "(Trống)",
+          newValue: basicFormData[key] || "(Trống)",
+        });
+      }
+    });
+
+    return changes;
+  };
+
+  /**
+   * Phát hiện thay đổi vai trò & trạng thái
+   */
+  const getRoleChanges = () => {
+    const changes = [];
+    const fieldLabels = {
       role: "Vai trò",
       isActive: "Trạng thái",
     };
 
-    // Duyệt qua tất cả fields và tìm thay đổi
-    Object.keys(formData).forEach((key) => {
-      if (formData[key] !== originalData[key]) {
-        let oldValue = originalData[key];
-        let newValue = formData[key];
+    Object.keys(roleFormData).forEach((key) => {
+      if (roleFormData[key] !== originalRoleData[key]) {
+        let oldValue = originalRoleData[key];
+        let newValue = roleFormData[key];
 
         // Format display cho boolean values
         if (key === "isActive") {
@@ -158,34 +192,16 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
   };
 
   /**
-   * Get modal title dựa trên role của user
-   */
-  const getModalTitle = (userRole) => {
-    const titles = {
-      ADMIN: "Chỉnh sửa Quản trị viên",
-      STAFF: "Chỉnh sửa Nhân viên",
-      CUSTOMER: "Chỉnh sửa Khách hàng",
-      CONSULTANT: "Chỉnh sửa Tư vấn viên",
-    };
-    return titles[userRole] || "Chỉnh sửa người dùng";
-  };
-
-  /**
    * Get role display name
    */
   const getRoleDisplayName = (role) => {
-    switch (role) {
-      case "ADMIN":
-        return "Quản trị viên";
-      case "STAFF":
-        return "Nhân viên";
-      case "CUSTOMER":
-        return "Khách hàng";
-      case "CONSULTANT":
-        return "Tư vấn viên";
-      default:
-        return role;
-    }
+    const roleNames = {
+      ADMIN: "Quản trị viên",
+      STAFF: "Nhân viên",
+      CUSTOMER: "Khách hàng",
+      CONSULTANT: "Tư vấn viên",
+    };
+    return roleNames[role] || role;
   };
 
   // ====================================================================
@@ -193,100 +209,144 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
   // ====================================================================
 
   /**
-   * Xử lý thay đổi input trong form
+   * Xử lý thay đổi tab
    */
-  const handleInputChange = (e) => {
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
+  /**
+   * Xử lý thay đổi thông tin cơ bản
+   */
+  const handleBasicInputChange = (e) => {
+    const { name, value } = e.target;
+    setBasicFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  /**
+   * Xử lý thay đổi vai trò & trạng thái
+   */
+  const handleRoleInputChange = (e) => {
     const { name, value } = e.target;
     let processedValue = value;
 
-    // Xử lý đặc biệt cho isActive
     if (name === "isActive") {
       processedValue = value === "true";
     }
 
-    setFormData((prev) => ({
+    setRoleFormData((prev) => ({
       ...prev,
       [name]: processedValue,
     }));
   };
 
   /**
-   * Xử lý submit form - Validation và hiển thị xác nhận
+   * Validate thông tin cơ bản
    */
-  const handleSubmit = () => {
-    // === VALIDATION ===
-
-    // Kiểm tra các trường bắt buộc
-    if (!formData.fullName && !formData.username) {
+  const validateBasicInfo = () => {
+    if (!basicFormData.fullName && !basicFormData.username) {
       alert("Vui lòng điền họ tên hoặc tên đăng nhập!");
-      return;
+      return false;
     }
 
-    if (!formData.email) {
+    if (!basicFormData.email) {
       alert("Vui lòng điền email!");
-      return;
+      return false;
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
+    if (!emailRegex.test(basicFormData.email)) {
       alert("Email không hợp lệ!");
-      return;
+      return false;
     }
 
-    // Validate phone format (nếu có)
-    if (formData.phone) {
+    if (basicFormData.phone) {
       const phoneRegex = /^[0-9]{10,11}$/;
-      if (!phoneRegex.test(formData.phone)) {
+      if (!phoneRegex.test(basicFormData.phone)) {
         alert("Số điện thoại phải có 10-11 chữ số!");
-        return;
+        return false;
       }
     }
 
-    // === KIỂM TRA THAY ĐỔI ===
-    const changes = getChanges();
+    return true;
+  };
+
+  /**
+   * Submit thông tin cơ bản
+   */
+  const handleSubmitBasicInfo = () => {
+    if (!validateBasicInfo()) return;
+
+    const changes = getBasicChanges();
     if (changes.length === 0) {
       alert("Không có thay đổi nào để lưu.");
       return;
     }
 
-    // === HIỂN THỊ XÁC NHẬN ===
-    setShowChangeConfirmation(true);
+    setShowBasicConfirmation(true);
   };
 
   /**
-   * Xác nhận và thực hiện lưu thay đổi
+   * Submit vai trò & trạng thái
    */
-  const handleConfirmChanges = () => {
-    if (onSubmit) {
-      // Gửi dữ liệu kèm theo id của user
-      onSubmit({
-        ...formData,
+  const handleSubmitRole = () => {
+    const changes = getRoleChanges();
+    if (changes.length === 0) {
+      alert("Không có thay đổi nào để lưu.");
+      return;
+    }
+
+    setShowRoleConfirmation(true);
+  };
+
+  /**
+   * Xác nhận cập nhật thông tin cơ bản
+   */
+  const handleConfirmBasicChanges = () => {
+    if (onSubmitBasicInfo) {
+      onSubmitBasicInfo({
+        ...basicFormData,
         id: user.id,
       });
     }
-
-    // Đóng tất cả modal
-    setShowChangeConfirmation(false);
+    setShowBasicConfirmation(false);
     onClose();
   };
 
   /**
-   * Xử lý đóng modal với cảnh báo thay đổi chưa lưu
+   * Xác nhận cập nhật vai trò & trạng thái
+   */
+  const handleConfirmRoleChanges = () => {
+    if (onSubmitRole) {
+      onSubmitRole({
+        ...roleFormData,
+        id: user.id,
+      });
+    }
+    setShowRoleConfirmation(false);
+    onClose();
+  };
+
+  /**
+   * Xử lý đóng modal
    */
   const handleClose = () => {
-    const changes = getChanges();
+    const basicChanges = getBasicChanges();
+    const roleChanges = getRoleChanges();
 
-    // Nếu có thay đổi chưa lưu, hiển thị cảnh báo
-    if (changes.length > 0) {
+    if (basicChanges.length > 0 || roleChanges.length > 0) {
       const confirmLeave = window.confirm(
         "Bạn có thay đổi chưa lưu. Bạn có chắc chắn muốn thoát?"
       );
       if (!confirmLeave) return;
     }
 
-    // Đóng tất cả modal
-    setShowChangeConfirmation(false);
+    setShowBasicConfirmation(false);
+    setShowRoleConfirmation(false);
+    setActiveTab(0);
     onClose();
   };
 
@@ -303,10 +363,10 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
   return (
     <>
       {/* ============================================================== */}
-      {/* MAIN EDIT DIALOG - Form chỉnh sửa chính */}
+      {/* MAIN EDIT DIALOG */}
       {/* ============================================================== */}
       <Dialog
-        open={open && !showChangeConfirmation}
+        open={open && !showBasicConfirmation && !showRoleConfirmation}
         onClose={handleClose}
         maxWidth="lg"
         fullWidth
@@ -321,7 +381,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
           },
         }}
       >
-        {/* Dialog Header - Tiêu đề và nút đóng */}
+        {/* Dialog Header */}
         <DialogTitle
           sx={{
             background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
@@ -334,7 +394,6 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
             boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
           }}
         >
-          {/* Icon và tiêu đề */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Box
               sx={{
@@ -350,11 +409,10 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
               <PersonIcon sx={{ fontSize: 20 }} />
             </Box>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              {getModalTitle(user.role)}
+              Chỉnh sửa thông tin người dùng
             </Typography>
           </Box>
 
-          {/* Nút đóng */}
           <IconButton
             onClick={handleClose}
             sx={{
@@ -370,309 +428,407 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
           </IconButton>
         </DialogTitle>
 
-        {/* Dialog Content - Nội dung form */}
+        {/* User Info Banner */}
+        <Box
+          sx={{
+            px: 3,
+            py: 2,
+            background:
+              "linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))",
+            borderBottom: "1px solid rgba(74, 144, 226, 0.2)",
+          }}
+        >
+          <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
+            Đang chỉnh sửa: <strong>{user?.fullName || user?.username}</strong>
+            <Chip
+              label={getRoleDisplayName(user?.role)}
+              size="small"
+              sx={{
+                ml: 2,
+                backgroundColor: "rgba(74, 144, 226, 0.1)",
+                color: "#4A90E2",
+                fontWeight: 600,
+              }}
+            />
+          </Typography>
+        </Box>
+
+        {/* Tabs Navigation */}
+        <Box sx={{ borderBottom: 1, borderColor: "divider", px: 3, pt: 1 }}>
+          <Tabs value={activeTab} onChange={handleTabChange}>
+            <Tab
+              label="Thông tin cơ bản"
+              icon={<PersonIcon />}
+              iconPosition="start"
+              sx={{
+                fontWeight: 600,
+                minHeight: 64,
+                "&.Mui-selected": {
+                  color: "#4A90E2",
+                },
+              }}
+            />
+            <Tab
+              label="Vai trò & Trạng thái"
+              icon={<SecurityIcon />}
+              iconPosition="start"
+              sx={{
+                fontWeight: 600,
+                minHeight: 64,
+                "&.Mui-selected": {
+                  color: "#1ABC9C",
+                },
+              }}
+            />
+          </Tabs>
+        </Box>
+
+        {/* Dialog Content */}
         <DialogContent sx={{ p: 0, backgroundColor: "transparent" }}>
           <Box sx={{ p: 3 }}>
             {/* ====================================================== */}
-            {/* BASIC INFORMATION CARD - Thông tin cơ bản */}
+            {/* TAB 1: BASIC INFORMATION */}
             {/* ====================================================== */}
-            <Card
-              sx={{
-                mb: 3,
-                borderRadius: 4,
-                boxShadow: "0 8px 32px rgba(74, 144, 226, 0.08)",
-                border: "1px solid rgba(255,255,255,0.5)",
-                background:
-                  "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,252,255,0.9))",
-                backdropFilter: "blur(10px)",
-              }}
-            >
-              <CardContent sx={{ p: 4 }}>
-                {/* Card Header */}
-                <Box
-                  sx={{ display: "flex", alignItems: "center", gap: 3, mb: 4 }}
-                >
+            {activeTab === 0 && (
+              <Card
+                sx={{
+                  borderRadius: 4,
+                  boxShadow: "0 8px 32px rgba(74, 144, 226, 0.08)",
+                  border: "1px solid rgba(255,255,255,0.5)",
+                  background:
+                    "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,252,255,0.9))",
+                  backdropFilter: "blur(10px)",
+                }}
+              >
+                <CardContent sx={{ p: 4 }}>
+                  {/* Card Header */}
                   <Box
                     sx={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 3,
-                      background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+                      gap: 3,
+                      mb: 4,
                     }}
                   >
-                    <PersonIcon sx={{ color: "white", fontSize: 24 }} />
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 3,
+                        background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+                      }}
+                    >
+                      <PersonIcon sx={{ color: "white", fontSize: 24 }} />
+                    </Box>
+                    <Box>
+                      <Typography
+                        variant="h6"
+                        sx={{ color: "#4A90E2", fontWeight: 700, fontSize: 20 }}
+                      >
+                        Thông tin cơ bản
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "#718096", mt: 0.5 }}
+                      >
+                        Cập nhật thông tin cá nhân của người dùng
+                      </Typography>
+                    </Box>
                   </Box>
-                  <Typography
-                    variant="h6"
-                    sx={{ color: "#4A90E2", fontWeight: 700, fontSize: 20 }}
-                  >
-                    Thông tin cơ bản
-                  </Typography>
-                </Box>
 
-                {/* Form Fields Grid */}
-                <Grid container spacing={3}>
-                  {/* Họ và tên */}
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Họ và tên"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      variant="outlined"
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 3,
-                          height: 56,
-                          backgroundColor: "rgba(248,252,255,0.8)",
-                          border: "2px solid transparent",
-                          "&:hover": {
-                            borderColor: "#4A90E2",
-                            backgroundColor: "rgba(248,252,255,0.95)",
-                          },
-                          "&.Mui-focused": {
-                            borderColor: "#4A90E2",
-                            backgroundColor: "rgba(248,252,255,1)",
-                            boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
-                          },
-                        },
-                        "& .MuiInputLabel-root": {
-                          fontSize: 16,
-                          fontWeight: 600,
-                          color: "#546e7a",
-                          "&.Mui-focused": {
-                            color: "#4A90E2",
-                          },
-                        },
-                      }}
-                    />
-                  </Grid>
-
-                  {/* Tên đăng nhập */}
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Tên đăng nhập"
-                      name="username"
-                      value={formData.username}
-                      onChange={handleInputChange}
-                      variant="outlined"
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 3,
-                          height: 56,
-                          backgroundColor: "rgba(248,252,255,0.8)",
-                        },
-                        "& .MuiInputLabel-root": {
-                          fontSize: 16,
-                          fontWeight: 600,
-                          color: "#546e7a",
-                        },
-                      }}
-                    />
-                  </Grid>
-
-                  {/* Email */}
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      required
-                      fullWidth
-                      label="Email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      variant="outlined"
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 3,
-                          height: 56,
-                          backgroundColor: "rgba(248,252,255,0.8)",
-                        },
-                        "& .MuiInputLabel-root": {
-                          fontSize: 16,
-                          fontWeight: 600,
-                          color: "#546e7a",
-                        },
-                      }}
-                    />
-                  </Grid>
-
-                  {/* Số điện thoại */}
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Số điện thoại"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      variant="outlined"
-                      placeholder="VD: 0901234567"
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 3,
-                          height: 56,
-                          backgroundColor: "rgba(248,252,255,0.8)",
-                        },
-                        "& .MuiInputLabel-root": {
-                          fontSize: 16,
-                          fontWeight: 500,
-                        },
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-
-            {/* ====================================================== */}
-            {/* ROLE & STATUS CARD - Vai trò & Trạng thái */}
-            {/* ====================================================== */}
-            <Card
-              sx={{
-                mb: 3,
-                borderRadius: 4,
-                boxShadow: "0 8px 32px rgba(26, 188, 156, 0.08)",
-                border: "1px solid rgba(255,255,255,0.5)",
-                background:
-                  "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,255,248,0.9))",
-                backdropFilter: "blur(10px)",
-              }}
-            >
-              <CardContent sx={{ p: 4 }}>
-                {/* Card Header */}
-                <Box
-                  sx={{ display: "flex", alignItems: "center", gap: 3, mb: 4 }}
-                >
+                  {/* Info Notice */}
                   <Box
                     sx={{
-                      width: 48,
-                      height: 48,
+                      mb: 4,
+                      p: 3,
                       borderRadius: 3,
-                      background: "linear-gradient(45deg, #1ABC9C, #16a085)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 2px 8px rgba(26, 188, 156, 0.25)",
+                      background: "linear-gradient(45deg, #E3F2FD, #F0F8FF)",
+                      border: "1px solid #2196F3",
                     }}
                   >
-                    <SecurityIcon sx={{ color: "white", fontSize: 24 }} />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#1565C0",
+                        fontWeight: 500,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <InfoIcon sx={{ fontSize: 18 }} />
+                      <strong>Thông tin:</strong> Chưa cập nhập API, nên chưa
+                      test được, sẽ thêm và cập nhật sau
+                    </Typography>
                   </Box>
-                  <Typography
-                    variant="h6"
-                    sx={{ color: "#1ABC9C", fontWeight: 700, fontSize: 20 }}
+
+                  {/* Form Fields */}
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Họ và tên"
+                        name="fullName"
+                        value={basicFormData.fullName}
+                        onChange={handleBasicInputChange}
+                        variant="outlined"
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 3,
+                            height: 56,
+                            backgroundColor: "rgba(248,252,255,0.8)",
+                          },
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Tên đăng nhập"
+                        name="username"
+                        value={basicFormData.username}
+                        onChange={handleBasicInputChange}
+                        variant="outlined"
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 3,
+                            height: 56,
+                            backgroundColor: "rgba(248,252,255,0.8)",
+                          },
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        required
+                        fullWidth
+                        label="Email"
+                        name="email"
+                        type="email"
+                        value={basicFormData.email}
+                        onChange={handleBasicInputChange}
+                        variant="outlined"
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 3,
+                            height: 56,
+                            backgroundColor: "rgba(248,252,255,0.8)",
+                          },
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Số điện thoại"
+                        name="phone"
+                        value={basicFormData.phone}
+                        onChange={handleBasicInputChange}
+                        variant="outlined"
+                        placeholder="VD: 0901234567"
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 3,
+                            height: 56,
+                            backgroundColor: "rgba(248,252,255,0.8)",
+                          },
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ====================================================== */}
+            {/* TAB 2: ROLE & STATUS */}
+            {/* ====================================================== */}
+            {activeTab === 1 && (
+              <Card
+                sx={{
+                  borderRadius: 4,
+                  boxShadow: "0 8px 32px rgba(26, 188, 156, 0.08)",
+                  border: "1px solid rgba(255,255,255,0.5)",
+                  background:
+                    "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,255,248,0.9))",
+                  backdropFilter: "blur(10px)",
+                }}
+              >
+                <CardContent sx={{ p: 4 }}>
+                  {/* Card Header */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 3,
+                      mb: 4,
+                    }}
                   >
-                    Vai trò & Trạng thái
-                  </Typography>
-                </Box>
-
-                <Grid container spacing={3}>
-                  {/* Vai trò */}
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth variant="outlined">
-                      <InputLabel sx={{ fontSize: 16, fontWeight: 500 }}>
-                        Vai trò
-                      </InputLabel>
-                      <Select
-                        value={formData.role}
-                        label="Vai trò"
-                        name="role"
-                        onChange={handleInputChange}
-                        sx={{
-                          borderRadius: 3,
-                          height: 56,
-                          backgroundColor: "rgba(248,255,248,0.8)",
-                        }}
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 3,
+                        background: "linear-gradient(45deg, #1ABC9C, #16a085)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 2px 8px rgba(26, 188, 156, 0.25)",
+                      }}
+                    >
+                      <SecurityIcon sx={{ color: "white", fontSize: 24 }} />
+                    </Box>
+                    <Box>
+                      <Typography
+                        variant="h6"
+                        sx={{ color: "#1ABC9C", fontWeight: 700, fontSize: 20 }}
                       >
-                        <MenuItem value="ADMIN">Quản trị viên</MenuItem>
-                        <MenuItem value="STAFF">Nhân viên</MenuItem>
-                        <MenuItem value="CONSULTANT">Tư vấn viên</MenuItem>
-                        <MenuItem value="CUSTOMER">Khách hàng</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-
-                  {/* Trạng thái */}
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth variant="outlined">
-                      <InputLabel sx={{ fontSize: 16, fontWeight: 500 }}>
-                        Trạng thái
-                      </InputLabel>
-                      <Select
-                        value={formData.isActive.toString()}
-                        label="Trạng thái"
-                        name="isActive"
-                        onChange={handleInputChange}
-                        sx={{
-                          borderRadius: 3,
-                          height: 56,
-                          backgroundColor: "rgba(248,255,248,0.8)",
-                        }}
+                        Vai trò & Trạng thái
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "#718096", mt: 0.5 }}
                       >
-                        <MenuItem value="true">
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 2,
-                            }}
-                          >
+                        Quản lý quyền hạn và trạng thái tài khoản
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Warning Notice */}
+                  <Box
+                    sx={{
+                      mb: 4,
+                      p: 3,
+                      borderRadius: 3,
+                      background: "linear-gradient(45deg, #FFF3CD, #FCF4A3)",
+                      border: "1px solid #F59E0B",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#92400E",
+                        fontWeight: 500,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <WarningIcon sx={{ fontSize: 18 }} />
+                      <strong>Cảnh báo:</strong> Thay đổi vai trò hoặc trạng
+                      thái sẽ ảnh hưởng đến quyền truy cập của tài khoản này
+                    </Typography>
+                  </Box>
+
+                  {/* Form Fields */}
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <FormControl fullWidth variant="outlined">
+                        <InputLabel sx={{ fontSize: 16, fontWeight: 500 }}>
+                          Vai trò
+                        </InputLabel>
+                        <Select
+                          value={roleFormData.role}
+                          label="Vai trò"
+                          name="role"
+                          onChange={handleRoleInputChange}
+                          sx={{
+                            borderRadius: 3,
+                            height: 56,
+                            backgroundColor: "rgba(248,255,248,0.8)",
+                          }}
+                        >
+                          <MenuItem value="ADMIN">🔐 Quản trị viên</MenuItem>
+                          <MenuItem value="STAFF">👔 Nhân viên</MenuItem>
+                          <MenuItem value="CONSULTANT">🩺 Tư vấn viên</MenuItem>
+                          <MenuItem value="CUSTOMER">👤 Khách hàng</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} md={6}>
+                      <FormControl fullWidth variant="outlined">
+                        <InputLabel sx={{ fontSize: 16, fontWeight: 500 }}>
+                          Trạng thái
+                        </InputLabel>
+                        <Select
+                          value={roleFormData.isActive.toString()}
+                          label="Trạng thái"
+                          name="isActive"
+                          onChange={handleRoleInputChange}
+                          sx={{
+                            borderRadius: 3,
+                            height: 56,
+                            backgroundColor: "rgba(248,255,248,0.8)",
+                          }}
+                        >
+                          <MenuItem value="true">
                             <Box
                               sx={{
-                                width: 12,
-                                height: 12,
-                                borderRadius: "50%",
-                                backgroundColor: "#4caf50",
-                                boxShadow: "0 0 12px rgba(76, 175, 80, 0.5)",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
                               }}
-                            />
-                            <Typography
-                              sx={{ color: "#2e7d32", fontWeight: 600 }}
                             >
-                              Hoạt động
-                            </Typography>
-                          </Box>
-                        </MenuItem>
+                              <Box
+                                sx={{
+                                  width: 12,
+                                  height: 12,
+                                  borderRadius: "50%",
+                                  backgroundColor: "#4caf50",
+                                  boxShadow: "0 0 12px rgba(76, 175, 80, 0.5)",
+                                }}
+                              />
+                              <Typography
+                                sx={{ color: "#2e7d32", fontWeight: 600 }}
+                              >
+                                Hoạt động
+                              </Typography>
+                            </Box>
+                          </MenuItem>
 
-                        <MenuItem value="false">
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 2,
-                            }}
-                          >
+                          <MenuItem value="false">
                             <Box
                               sx={{
-                                width: 12,
-                                height: 12,
-                                borderRadius: "50%",
-                                backgroundColor: "#f44336",
-                                boxShadow: "0 0 12px rgba(244, 67, 54, 0.5)",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
                               }}
-                            />
-                            <Typography
-                              sx={{ color: "#d32f2f", fontWeight: 600 }}
                             >
-                              Tạm khóa
-                            </Typography>
-                          </Box>
-                        </MenuItem>
-                      </Select>
-                    </FormControl>
+                              <Box
+                                sx={{
+                                  width: 12,
+                                  height: 12,
+                                  borderRadius: "50%",
+                                  backgroundColor: "#f44336",
+                                  boxShadow: "0 0 12px rgba(244, 67, 54, 0.5)",
+                                }}
+                              />
+                              <Typography
+                                sx={{ color: "#d32f2f", fontWeight: 600 }}
+                              >
+                                Tạm khóa
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
                   </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </Box>
         </DialogContent>
 
-        {/* Dialog Actions - Nút Hủy và Lưu */}
+        {/* Dialog Actions */}
         <DialogActions
           sx={{
             p: 4,
@@ -682,7 +838,6 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
             boxShadow: "0 -4px 20px rgba(74, 144, 226, 0.05)",
           }}
         >
-          {/* Nút Hủy bỏ */}
           <Button
             onClick={handleClose}
             variant="outlined"
@@ -699,9 +854,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
               "&:hover": {
                 borderColor: "#4A90E2",
                 backgroundColor: "rgba(74, 144, 226, 0.05)",
-                transform: "translateY(-2px)",
                 color: "#4A90E2",
-                boxShadow: "0 8px 25px rgba(74, 144, 226, 0.15)",
               },
               transition: "all 0.3s ease",
             }}
@@ -709,40 +862,69 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
             Hủy bỏ
           </Button>
 
-          {/* Nút Lưu thay đổi */}
-          <Button
-            onClick={handleSubmit}
-            variant="contained"
-            size="large"
-            sx={{
-              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-              color: "#fff",
-              fontWeight: 600,
-              minWidth: 180,
-              height: 52,
-              borderRadius: 3,
-              px: 4,
-              fontSize: 16,
-              boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-              "&:hover": {
-                background: "linear-gradient(45deg, #357ABD, #17A2B8)",
-                transform: "translateY(-2px)",
-                boxShadow: "0 15px 40px rgba(74, 144, 226, 0.4)",
-              },
-              transition: "all 0.3s ease",
-            }}
-          >
-            💾 Lưu thay đổi
-          </Button>
+          {/* Conditional Submit Button based on active tab */}
+          {activeTab === 0 && (
+            <Button
+              onClick={handleSubmitBasicInfo}
+              variant="contained"
+              size="large"
+              sx={{
+                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                color: "#fff",
+                fontWeight: 600,
+                minWidth: 220,
+                height: 52,
+                borderRadius: 3,
+                px: 4,
+                fontSize: 16,
+                boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+                "&:hover": {
+                  background: "linear-gradient(45deg, #357ABD, #17A2B8)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 15px 40px rgba(74, 144, 226, 0.4)",
+                },
+                transition: "all 0.3s ease",
+              }}
+            >
+              💾 Cập nhật thông tin cơ bản
+            </Button>
+          )}
+
+          {activeTab === 1 && (
+            <Button
+              onClick={handleSubmitRole}
+              variant="contained"
+              size="large"
+              sx={{
+                background: "linear-gradient(45deg, #1ABC9C, #16a085)",
+                color: "#fff",
+                fontWeight: 600,
+                minWidth: 220,
+                height: 52,
+                borderRadius: 3,
+                px: 4,
+                fontSize: 16,
+                boxShadow: "0 2px 8px rgba(26, 188, 156, 0.25)",
+                "&:hover": {
+                  background: "linear-gradient(45deg, #16a085, #138d75)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 15px 40px rgba(26, 188, 156, 0.4)",
+                },
+                transition: "all 0.3s ease",
+              }}
+            >
+              🔐 Cập nhật vai trò & trạng thái
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
       {/* ============================================================== */}
-      {/* CHANGE CONFIRMATION DIALOG - Dialog xác nhận thay đổi */}
+      {/* BASIC INFO CONFIRMATION DIALOG */}
       {/* ============================================================== */}
       <Dialog
-        open={showChangeConfirmation}
-        onClose={() => setShowChangeConfirmation(false)}
+        open={showBasicConfirmation}
+        onClose={() => setShowBasicConfirmation(false)}
         maxWidth="md"
         fullWidth
         PaperProps={{
@@ -754,7 +936,6 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
           },
         }}
       >
-        {/* Confirmation Dialog Header */}
         <DialogTitle
           sx={{
             background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
@@ -766,43 +947,39 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
             fontWeight: 700,
           }}
         >
-          <CompareIcon sx={{ fontSize: 28 }} />
+          <PersonIcon sx={{ fontSize: 28 }} />
           <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            Xác nhận thay đổi
+            Xác nhận cập nhật thông tin cơ bản
           </Typography>
         </DialogTitle>
 
-        {/* Confirmation Dialog Content */}
         <DialogContent sx={{ p: 4 }}>
-          {/* Thông tin user đang chỉnh sửa */}
           <Typography
             variant="h6"
             sx={{ mb: 3, color: "#2D3748", fontWeight: 600 }}
           >
-            Bạn đang thay đổi thông tin của người dùng:{" "}
+            Thông tin cơ bản của:{" "}
             <strong>{user?.fullName || user?.username}</strong>
           </Typography>
 
           <Typography variant="body1" sx={{ mb: 3, color: "#4A5568" }}>
-            Dưới đây là danh sách các thay đổi sẽ được áp dụng:
+            Những thay đổi sau sẽ được gửi đến API cập nhật thông tin cơ bản:
           </Typography>
 
-          {/* Danh sách các thay đổi */}
           <Card
             sx={{
               borderRadius: 3,
               border: "1px solid rgba(74, 144, 226, 0.15)",
-              background: "linear-gradient(145deg, #f8faff, #f0f7ff)",
             }}
           >
             <CardContent sx={{ p: 0 }}>
               <List>
-                {getChanges().map((change, index) => (
+                {getBasicChanges().map((change, index) => (
                   <ListItem
                     key={change.field}
                     sx={{
                       borderBottom:
-                        index < getChanges().length - 1
+                        index < getBasicChanges().length - 1
                           ? "1px solid rgba(74, 144, 226, 0.1)"
                           : "none",
                       py: 2,
@@ -826,62 +1003,27 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                             flexWrap: "wrap",
                           }}
                         >
-                          {/* Giá trị cũ */}
-                          <Box
+                          <Chip
+                            label={change.oldValue}
+                            size="small"
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
+                              backgroundColor: "#FEF2F2",
+                              color: "#DC2626",
+                              fontWeight: 500,
                             }}
-                          >
-                            <Typography
-                              variant="caption"
-                              sx={{ color: "#718096", fontWeight: 500 }}
-                            >
-                              Cũ:
-                            </Typography>
-                            <Chip
-                              label={change.oldValue}
-                              size="small"
-                              sx={{
-                                backgroundColor: "#FEF2F2",
-                                color: "#DC2626",
-                                fontWeight: 500,
-                                border: "1px solid #FECACA",
-                              }}
-                            />
-                          </Box>
-
-                          {/* Icon so sánh */}
+                          />
                           <CompareIcon
                             sx={{ color: "#4A90E2", fontSize: 20 }}
                           />
-
-                          {/* Giá trị mới */}
-                          <Box
+                          <Chip
+                            label={change.newValue}
+                            size="small"
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
+                              backgroundColor: "#ECFDF5",
+                              color: "#059669",
+                              fontWeight: 500,
                             }}
-                          >
-                            <Typography
-                              variant="caption"
-                              sx={{ color: "#718096", fontWeight: 500 }}
-                            >
-                              Mới:
-                            </Typography>
-                            <Chip
-                              label={change.newValue}
-                              size="small"
-                              sx={{
-                                backgroundColor: "#ECFDF5",
-                                color: "#059669",
-                                fontWeight: 500,
-                                border: "1px solid #BBF7D0",
-                              }}
-                            />
-                          </Box>
+                          />
                         </Box>
                       }
                     />
@@ -890,84 +1032,194 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
               </List>
             </CardContent>
           </Card>
+        </DialogContent>
 
-          {/* Cảnh báo quan trọng */}
+        <DialogActions sx={{ p: 4, gap: 2 }}>
+          <Button
+            onClick={() => setShowBasicConfirmation(false)}
+            variant="outlined"
+            size="large"
+            sx={{ minWidth: 140, height: 52, borderRadius: 3 }}
+          >
+            ❌ Hủy bỏ
+          </Button>
+          <Button
+            onClick={handleConfirmBasicChanges}
+            variant="contained"
+            size="large"
+            sx={{
+              background: "linear-gradient(45deg, #4CAF50, #45A049)",
+              minWidth: 200,
+              height: 52,
+              borderRadius: 3,
+            }}
+          >
+            <CheckIcon sx={{ mr: 1 }} /> Xác nhận cập nhật
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ============================================================== */}
+      {/* ROLE CONFIRMATION DIALOG */}
+      {/* ============================================================== */}
+      <Dialog
+        open={showRoleConfirmation}
+        onClose={() => setShowRoleConfirmation(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            background: "rgba(255, 255, 255, 0.98)",
+            backdropFilter: "blur(20px)",
+            boxShadow: "0 25px 50px rgba(0, 0, 0, 0.15)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            background: "linear-gradient(45deg, #1ABC9C, #16a085)",
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            py: 3,
+            fontWeight: 700,
+          }}
+        >
+          <SecurityIcon sx={{ fontSize: 28 }} />
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            Xác nhận cập nhật vai trò & trạng thái
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 4 }}>
+          <Typography
+            variant="h6"
+            sx={{ mb: 3, color: "#2D3748", fontWeight: 600 }}
+          >
+            Vai trò & trạng thái của:{" "}
+            <strong>{user?.fullName || user?.username}</strong>
+          </Typography>
+
           <Box
             sx={{
-              mt: 3,
+              mb: 3,
               p: 3,
               borderRadius: 3,
-              background: "linear-gradient(45deg, #FFF3CD, #FCF4A3)",
-              border: "1px solid #F59E0B",
+              background: "linear-gradient(45deg, #FFE4B5, #FFF8DC)",
+              border: "1px solid #F0A500",
             }}
           >
             <Typography
               variant="body2"
               sx={{
-                color: "#92400E",
+                color: "#B8860B",
                 fontWeight: 500,
                 display: "flex",
                 alignItems: "center",
                 gap: 1,
               }}
             >
-              ⚠️ <strong>Lưu ý:</strong> Sau khi xác nhận, các thay đổi này sẽ
-              được lưu vào hệ thống và không thể hoàn tác.
+              ⚠️ <strong>Cảnh báo:</strong> Những thay đổi này sẽ được gửi đến
+              API riêng và có thể ảnh hưởng đến quyền truy cập!
             </Typography>
           </Box>
+
+          <Typography variant="body1" sx={{ mb: 3, color: "#4A5568" }}>
+            Những thay đổi sau sẽ được gửi đến API cập nhật vai trò & trạng
+            thái:
+          </Typography>
+
+          <Card
+            sx={{
+              borderRadius: 3,
+              border: "1px solid rgba(26, 188, 156, 0.15)",
+            }}
+          >
+            <CardContent sx={{ p: 0 }}>
+              <List>
+                {getRoleChanges().map((change, index) => (
+                  <ListItem
+                    key={change.field}
+                    sx={{
+                      borderBottom:
+                        index < getRoleChanges().length - 1
+                          ? "1px solid rgba(26, 188, 156, 0.1)"
+                          : "none",
+                      py: 2,
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Typography
+                          variant="subtitle1"
+                          sx={{ fontWeight: 600, color: "#2D3748", mb: 1 }}
+                        >
+                          {change.label}
+                        </Typography>
+                      }
+                      secondary={
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <Chip
+                            label={change.oldValue}
+                            size="small"
+                            sx={{
+                              backgroundColor: "#FEF2F2",
+                              color: "#DC2626",
+                              fontWeight: 500,
+                            }}
+                          />
+                          <CompareIcon
+                            sx={{ color: "#1ABC9C", fontSize: 20 }}
+                          />
+                          <Chip
+                            label={change.newValue}
+                            size="small"
+                            sx={{
+                              backgroundColor: "#ECFDF5",
+                              color: "#059669",
+                              fontWeight: 500,
+                            }}
+                          />
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
         </DialogContent>
 
-        {/* Confirmation Dialog Actions */}
         <DialogActions sx={{ p: 4, gap: 2 }}>
-          {/* Nút Hủy bỏ xác nhận */}
           <Button
-            onClick={() => setShowChangeConfirmation(false)}
+            onClick={() => setShowRoleConfirmation(false)}
             variant="outlined"
             size="large"
-            sx={{
-              borderColor: "#90a4ae",
-              color: "#546e7a",
-              minWidth: 140,
-              height: 52,
-              borderRadius: 3,
-              px: 4,
-              fontSize: 16,
-              fontWeight: 600,
-              "&:hover": {
-                borderColor: "#f44336",
-                backgroundColor: "rgba(244, 67, 54, 0.05)",
-                color: "#f44336",
-              },
-              transition: "all 0.3s ease",
-            }}
+            sx={{ minWidth: 140, height: 52, borderRadius: 3 }}
           >
             ❌ Hủy bỏ
           </Button>
-
-          {/* Nút Xác nhận thay đổi */}
           <Button
-            onClick={handleConfirmChanges}
+            onClick={handleConfirmRoleChanges}
             variant="contained"
             size="large"
             sx={{
-              background: "linear-gradient(45deg, #4CAF50, #45A049)",
-              color: "#fff",
-              fontWeight: 600,
-              minWidth: 180,
+              background: "linear-gradient(45deg, #1ABC9C, #16a085)",
+              minWidth: 200,
               height: 52,
               borderRadius: 3,
-              px: 4,
-              fontSize: 16,
-              boxShadow: "0 2px 8px rgba(76, 175, 80, 0.25)",
-              "&:hover": {
-                background: "linear-gradient(45deg, #45A049, #388E3C)",
-                transform: "translateY(-2px)",
-                boxShadow: "0 15px 40px rgba(76, 175, 80, 0.4)",
-              },
-              transition: "all 0.3s ease",
             }}
           >
-            <CheckIcon sx={{ mr: 1 }} /> Xác nhận thay đổi
+            <CheckIcon sx={{ mr: 1 }} /> Xác nhận cập nhật
           </Button>
         </DialogActions>
       </Dialog>

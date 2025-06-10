@@ -40,6 +40,14 @@ apiClient.interceptors.request.use(
         password: "Ninh123@", // Hoặc lấy từ localStorage/context
       };
     }
+    if (userData && userData.role === "CONSULTANT") {
+      config.auth = {
+        //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
+        //các tác vụ yêu cầu quyền truy cập
+        username: userData.username,
+        password: "Ninh123@", // Hoặc lấy từ localStorage/context
+      };
+    }
     console.log("API Request:", {
       url: config.baseURL + config.url,
       method: config.method.toUpperCase(),

@@ -227,13 +227,16 @@ export const adminService = {
   },
 
   // Cập nhật trạng thái người dùng
-  updateUserStatus: async (userId, role, status) => {
+  updateUserStatus: async (userId, roleData) => {
     try {
-      const response = await apiClient.patch(
-        `/admin/users/${role}/${userId}/status`,
-        {
-          status: status,
-        }
+      //tạo request object
+      const updateRoleAndStatus = {
+        role: roleData.role,
+        isActive: roleData.isActive,
+      };
+      const response = await apiClient.put(
+        `/admin/users/${userId}`,
+        updateRoleAndStatus
       );
       return response.data;
     } catch (error) {

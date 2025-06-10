@@ -167,6 +167,108 @@ const UserManagementContent = () => {
     setEditingUser(user);
     setOpenEditModal(true);
   };
+  // * ✅ Thêm handler riêng cho cập nhật thông tin cơ bản
+  //Hàm này chưa gắn API
+  const handleUpdateBasicInfo = async (formData) => {
+    try {
+      console.log("🔄 Đang cập nhật thông tin cơ bản:", formData);
+
+      // Gọi API riêng cho thông tin cơ bản
+      const response = await userService.updateBasicInfo(formData.id, {
+        fullName: formData.fullName,
+        username: formData.username,
+        email: formData.email,
+        phone: formData.phone,
+      });
+
+      // Cập nhật state local
+      setUsers((prevUsers) =>
+        prevUsers.map((u) => (u.id === formData.id ? { ...u, ...formData } : u))
+      );
+
+      notify.success(
+        "Cập nhật thành công!",
+        `Đã cập nhật thông tin cơ bản của ${
+          formData.fullName || formData.username
+        }`
+      );
+
+      // Refresh data từ server
+      await fetchUsers();
+
+      console.log("✅ Cập nhật thông tin cơ bản thành công");
+    } catch (error) {
+      console.error("❌ Lỗi khi cập nhật thông tin cơ bản:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi cập nhật thông tin cơ bản";
+
+      notify.error("Lỗi cập nhật", errorMessage);
+    }
+  };
+
+  /**
+   * ✅ Thêm handler riêng cho cập nhật vai trò & trạng thái
+   */
+  const handleUpdateRole = async (formData) => {
+    const user = editingUser;
+
+    // Xác nhận thay đổi vai trò
+    if (formData.role !== user.role) {
+      const isConfirmed = await confirmDialog.warning(
+        `Bạn đang thay đổi vai trò từ "${getRoleDisplayName(
+          user.role
+        )}" thành "${getRoleDisplayName(
+          formData.role
+        )}". Điều này có thể ảnh hưởng đến quyền truy cập của người dùng.`,
+        {
+          title: "🔄 Thay đổi vai trò",
+          confirmText: "Xác nhận thay đổi",
+          cancelText: "Giữ nguyên",
+        }
+      );
+
+      if (!isConfirmed) return;
+    }
+
+    try {
+      console.log("🔐 Đang cập nhật vai trò & trạng thái:", formData);
+
+      // Gọi API riêng cho vai trò & trạng thái
+      const response = await adminService.updateUserStatus(formData.id, {
+        role: formData.role,
+        isActive: formData.isActive,
+      });
+
+      // Cập nhật state local
+      setUsers((prevUsers) =>
+        prevUsers.map((u) =>
+          u.id === formData.id
+            ? { ...u, role: formData.role, isActive: formData.isActive }
+            : u
+        )
+      );
+
+      notify.success(
+        "Cập nhật thành công!",
+        `Đã cập nhật vai trò & trạng thái của ${user.fullName || user.username}`
+      );
+
+      // Refresh data từ server
+      await fetchUsers();
+
+      console.log("✅ Cập nhật vai trò & trạng thái thành công");
+    } catch (error) {
+      console.error("❌ Lỗi khi cập nhật vai trò & trạng thái:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi cập nhật vai trò & trạng thái";
+
+      notify.error("Lỗi cập nhật", errorMessage);
+    }
+  };
 
   // ✅ Cập nhật handleDelete
   const handleDelete = async (userId) => {
@@ -295,7 +397,7 @@ const UserManagementContent = () => {
         console.log("🔄 Mapped user data:", mappedUser);
         setSelectedUser(mappedUser);
 
-        notify.success("Thành công", "Đã tải thông tin chi tiết tư vấn viên");
+        // notify.success("Thành công", "Đã tải thông tin chi tiết tư vấn viên");
       } else {
         console.log("ℹ️ Không phải consultant, chỉ hiển thị thông tin cơ bản");
       }
@@ -1106,7 +1208,8 @@ const UserManagementContent = () => {
           setEditingUser(null);
         }}
         user={editingUser}
-        onSubmit={handleEditSubmit}
+        onSubmitBasicInfo={handleUpdateBasicInfo} // ✅ API cho thông tin cơ bản
+        onSubmitRole={handleUpdateRole} // ✅ API cho vai trò & trạng thái
       />
     </Box>
   );
