@@ -26,6 +26,7 @@ import com.healapp.service.PasswordResetService;
 import com.healapp.service.PasswordResetService.RateLimitException;
 import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -269,7 +270,7 @@ public class UserService {
     }
 
     // For Admin
-    public ApiResponse<UserResponse> updateUserRoleAndStatus(Long userId, UserUpdateRequest request) {
+    public ApiResponse<UserResponse> updateUserInfomation(Long userId, @Valid UserUpdateRequest request) {
         try {
             Optional<UserDtls> userOpt = userRepository.findById(userId);
             if (userOpt.isEmpty()) {
@@ -277,42 +278,60 @@ public class UserService {
             }
 
             UserDtls user = userOpt.get();
-            String oldRoleName = user.getRoleName();
-            String newRoleName = request.getRole(); // Kiểm tra role hợp lệ
-            if (!roleService.isValidRole(newRoleName)) {
-                return ApiResponse.error("Invalid role. Role must be CUSTOMER, CONSULTANT, STAFF or ADMIN");
+
+            // Kiểm tra email đã tồn tại (khác user hiện tại)
+            if (!user.getEmail().equalsIgnoreCase(request.getEmail())) {
+                boolean emailExists = userRepository.existsByEmail(request.getEmail());
+                if (emailExists) {
+                    return ApiResponse.error("Email already exists");
+                }
             }
 
-            // Lấy role entity từ database
+            String oldRoleName = user.getRoleName();
+            String newRoleName = request.getRole().toUpperCase().trim();
+
+            // Kiểm tra role hợp lệ
+            if (!roleService.isValidRole(newRoleName)) {
+                return ApiResponse.error("Invalid role. Role must be CUSTOMER, CONSULTANT, STAFF, or ADMIN");
+            }
+
+            // Cập nhật thông tin
             Role newRole = roleRepository.findByRoleName(newRoleName)
                     .orElseThrow(() -> new RuntimeException("Role not found: " + newRoleName));
-
             user.setRole(newRole);
             user.setIsActive(request.getIsActive());
+            user.setAddress(request.getAddress());
+            user.setBirthDay(request.getBirthDay());
+            user.setEmail(request.getEmail());
+            user.setFullName(request.getFullName());
+            user.setGender(Gender.valueOf(request.getGender()));
+            user.setPassword(request.getPassword());
+            user.setPhone(request.getPhone());
 
-            // Xử lý chuyển đổi role consultant
+            // Xử lý CONSULTANT chuyển đổi
             if ("CONSULTANT".equals(oldRoleName) && !"CONSULTANT".equals(newRoleName)) {
-                Optional<ConsultantProfile> profileOpt = consultantProfileRepository.findByUser(user);
-                profileOpt.ifPresent(consultantProfileRepository::delete);
+                consultantProfileRepository.findByUser(user)
+                        .ifPresent(consultantProfileRepository::delete);
             }
 
             if (!"CONSULTANT".equals(oldRoleName) && "CONSULTANT".equals(newRoleName)) {
-                ConsultantProfile newProfile = new ConsultantProfile();
-                newProfile.setUser(user);
-                newProfile.setQualifications("Not updated yet");
-                newProfile.setExperience("0 years experience");
-                newProfile.setBio("No details updated yet");
-                consultantProfileRepository.save(newProfile);
+                ConsultantProfile profile = new ConsultantProfile();
+                profile.setUser(user);
+                profile.setQualifications("");
+                profile.setExperience("");
+                profile.setBio("");
+                consultantProfileRepository.save(profile);
             }
 
+            // Lưu user
             UserDtls updatedUser = userRepository.save(user);
             UserResponse response = mapUserToResponse(updatedUser);
-
-            return ApiResponse.success("User update successful", response);
+            return ApiResponse.success("User updated successfully", response);
         } catch (Exception e) {
             return ApiResponse.error("Error updating user: " + e.getMessage());
         }
     }
+
 
     public ApiResponse<List<UserResponse>> getAllUsers() {
         try {
@@ -591,7 +610,7 @@ public class UserService {
         response.setIsActive(user.getIsActive());
         response.setRole(user.getRoleName());
         response.setAddress(user.getAddress());
-        response.setAddress(user.getGender().toString());
+        response.setGender(user.getGender().toString());
         response.setCreatedDate(user.getCreatedDate());
         return response;
     }

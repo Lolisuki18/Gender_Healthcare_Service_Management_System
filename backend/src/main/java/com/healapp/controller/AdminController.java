@@ -146,14 +146,14 @@ public class AdminController {
     }
 
 
-    @GetMapping("/users/roles")
-    public ResponseEntity<ApiResponse<List<String>>> getAvailableRoles() {
-        ApiResponse<List<String>> response = userService.getAvailableRoles();
-        return getResponseEntity(response);
-    }
+    // @GetMapping("/users/roles")
+    // public ResponseEntity<ApiResponse<List<String>>> getAvailableRoles() {
+    //     ApiResponse<List<String>> response = userService.getAvailableRoles();
+    //     return getResponseEntity(response);
+    // }
 
     /*
-     * descripton: admin lấy danh sách tất cả người dùng
+     * descripton: admin tạo tài khoản người dùng
      * path: /admin/users
      * method: GET
      * body: 
@@ -191,19 +191,28 @@ public class AdminController {
     // }
 
     /*
-     * descripton: admin xem thông tin chi tiết của người dùng
+     * descripton: admin sửa thông tin chi tiết của người dùng
      * path: /admin/users/{userId}
      * method: PUT
      * body: 
     {
+        Stirng fullName *,
+        LocalDate birthDay,
+        String phone,
+        String email *,
+        String password *,
+        String address,
+        String gender *,
+        boolean isActive *,
+        String role *
     }
      */
     @PutMapping("/users/{userId}")
-    public ResponseEntity<ApiResponse<UserResponse>> updateUserRoleAndStatus(
+    public ResponseEntity<ApiResponse<UserResponse>> updateUserInfomation(
             @PathVariable Long userId,
             @Valid @RequestBody UserUpdateRequest request) {
         ApiResponse<UserResponse> response =
-        userService.updateUserRoleAndStatus(userId, request);
+        userService.updateUserInfomation(userId, request);
         return getResponseEntity(response);
     }
 

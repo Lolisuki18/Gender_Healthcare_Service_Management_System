@@ -38,6 +38,7 @@ public class CreateAccountRequest {
 
     private LocalDate birthDay;
 
+    @Pattern(regexp = "^[0-9]{10,11}$", message = "Phone number must be 10-11 digits")
     private String phone;
 
     private String address;
