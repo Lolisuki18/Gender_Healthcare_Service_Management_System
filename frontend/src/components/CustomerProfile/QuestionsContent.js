@@ -55,8 +55,8 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   backdropFilter: "blur(20px)",
   borderRadius: "20px",
   border: "1px solid rgba(74, 144, 226, 0.15)",
-  color: "#2D3748", // Dark blue-gray for text on light background - medical
-  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.1)",
+  color: "#2D3748",
+  boxShadow: "0 8px 32px 0 rgba(74, 144, 226, 0.1)",
 }));
 
 const QuestionCard = styled(Card)(({ theme }) => ({
@@ -74,9 +74,9 @@ const QuestionCard = styled(Card)(({ theme }) => ({
 }));
 
 const StyledTab = styled(Tab)(({ theme }) => ({
-  color: "#607D8B", // Blue-gray
+  color: "#4A5568",
   "&.Mui-selected": {
-    color: "#4A90E2", // Medical blue
+    color: "#4A90E2",
     fontWeight: 600,
   },
 }));
@@ -89,12 +89,12 @@ const StatusChip = styled(Chip)(({ status }) => ({
   color: "#fff",
   background:
     status === "answered"
-      ? "linear-gradient(45deg, #4CAF50, #2ECC71)" // Medical green
-      : "linear-gradient(45deg, #F39C12, #E67E22)", // Medical orange-yellow
+      ? "linear-gradient(45deg, #4CAF50, #2ECC71)"
+      : "linear-gradient(45deg, #F39C12, #E67E22)",
   boxShadow:
     status === "answered"
-      ? "0 3px 10px rgba(76, 175, 80, 0.3)" // Medical green shadow
-      : "0 3px 10px rgba(243, 156, 18, 0.3)", // Medical orange-yellow shadow
+      ? "0 3px 10px rgba(76, 175, 80, 0.3)"
+      : "0 3px 10px rgba(243, 156, 18, 0.3)",
 }));
 
 // Mock data cho câu hỏi
@@ -288,7 +288,7 @@ const QuestionsContent = () => {
               fontSize: "1rem",
               alignSelf: { xs: "stretch", sm: "auto" },
               "&:hover": {
-                background: "linear-gradient(45deg, #3498DB, #16A085)", // Darker medical blue to teal
+                background: "linear-gradient(45deg, #357ABD, #16A085)",
                 boxShadow: "0 10px 20px rgba(74, 144, 226, 0.6)",
               },
             }}
@@ -303,7 +303,7 @@ const QuestionsContent = () => {
               p: { xs: 2.5, md: 4 },
               mb: 4,
               background:
-                "linear-gradient(145deg, rgba(74, 144, 226, 0.2), rgba(26, 188, 156, 0.1))", // Medical blue to teal
+                "linear-gradient(145deg, rgba(74, 144, 226, 0.15), rgba(26, 188, 156, 0.1))",
               borderRadius: "16px",
               border: "1px solid rgba(74, 144, 226, 0.3)",
               boxShadow: "0 8px 20px rgba(74, 144, 226, 0.2)",

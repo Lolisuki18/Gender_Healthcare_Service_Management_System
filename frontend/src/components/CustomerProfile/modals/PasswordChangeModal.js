@@ -101,6 +101,7 @@ export const PasswordChangeDialog = ({
       onChangePassword({
         currentPassword: passwords.currentPassword,
         newPassword: passwords.newPassword,
+        confirmPassword: passwords.confirmPassword,
       });
     }
   };

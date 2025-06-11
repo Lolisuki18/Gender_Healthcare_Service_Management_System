@@ -47,25 +47,25 @@ import { styled } from "@mui/material/styles";
 import { formatDateDisplay } from "../../utils/dateUtils.js";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.95)", // Light glass background for medical
+  background: "rgba(255, 255, 255, 0.95)",
   backdropFilter: "blur(20px)",
   borderRadius: "20px",
-  border: "1px solid rgba(74, 144, 226, 0.15)", // Medical blue border
-  color: "#2D3748", // Dark text for readability
-  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.1)", // Lighter shadow
+  border: "1px solid rgba(74, 144, 226, 0.15)",
+  color: "#2D3748",
+  boxShadow: "0 8px 32px 0 rgba(74, 144, 226, 0.1)",
 }));
 
 const AppointmentCard = styled(Card)(({ theme }) => ({
-  background: "linear-gradient(145deg, #FFFFFF, #F5F7FA)", // Light card background
+  background: "linear-gradient(145deg, #FFFFFF, #F5F7FA)",
   backdropFilter: "blur(20px)",
   borderRadius: "16px",
-  border: "1px solid rgba(74, 144, 226, 0.12)", // Medical blue border
-  color: "#2D3748", // Dark text for readability
+  border: "1px solid rgba(74, 144, 226, 0.12)",
+  color: "#2D3748",
   boxShadow: "0 4px 15px 0 rgba(0, 0, 0, 0.05)",
   transition: "all 0.3s ease",
   "&:hover": {
     transform: "translateY(-2px)",
-    boxShadow: "0 8px 25px 0 rgba(74, 144, 226, 0.2)", // Medical blue shadow
+    boxShadow: "0 8px 25px 0 rgba(74, 144, 226, 0.2)",
   },
 }));
 
@@ -103,13 +103,13 @@ const AppointmentsContent = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case "confirmed":
-        return "linear-gradient(45deg, #4CAF50, #2ECC71)"; // Medical green
+        return "linear-gradient(45deg, #4CAF50, #2ECC71)";
       case "pending":
-        return "linear-gradient(45deg, #F39C12, #E67E22)"; // Medical orange
+        return "linear-gradient(45deg, #F39C12, #E67E22)";
       case "completed":
-        return "linear-gradient(45deg, #607D8B, #455A64)"; // Medical gray-blue
+        return "linear-gradient(45deg, #4A90E2, #1ABC9C)";
       default:
-        return "linear-gradient(45deg, #4A90E2, #3498DB)"; // Medical blue
+        return "linear-gradient(45deg, #607D8B, #455A64)";
     }
   };
 
@@ -195,7 +195,7 @@ const AppointmentsContent = () => {
 
                 {/* Doctor Info */}
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <DoctorIcon sx={{ color: "#4CAF50", fontSize: 18, mr: 1 }} />{" "}
+                  <DoctorIcon sx={{ color: "#4A90E2", fontSize: 18, mr: 1 }} />{" "}
                   {/* Medical green */}
                   <Typography
                     variant="body2"
@@ -211,7 +211,7 @@ const AppointmentsContent = () => {
                 {/* Date & Time */}
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                   <CalendarIcon
-                    sx={{ color: "#4A90E2", fontSize: 18, mr: 1 }} // Medical blue
+                    sx={{ color: "#4CAF50", fontSize: 18, mr: 1 }}
                   />
                   <Typography
                     variant="body2"
@@ -241,8 +241,9 @@ const AppointmentsContent = () => {
                 {/* Location */}
                 <Box sx={{ display: "flex", alignItems: "center" }}>
                   <LocationIcon
-                    sx={{ color: "#1ABC9C", fontSize: 18, mr: 1 }} // Medical teal
-                  />
+                    sx={{ color: "#1ABC9C", fontSize: 18, mr: 1 }}
+                  />{" "}
+                  {/* Medical teal */}
                   <Typography
                     variant="body2"
                     sx={{

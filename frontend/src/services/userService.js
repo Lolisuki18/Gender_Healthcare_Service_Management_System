@@ -173,24 +173,25 @@ export const userService = {
    * @param {string} data.newPassword - New password
    * @returns {Promise<Object>} API response
    */
-  changePassword: async (data) => {
+  changePassword: async (passwordData) => {
     try {
-      const response = await apiClient.post("/users/profile/change-password", {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
+      const response = await apiClient.put("/users/profile/password", {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword,
       });
 
       return {
         success: true,
-        data: response.data,
-        message: "Mật khẩu đã được thay đổi thành công",
+        data: response.data.data,
+        message: response.data.message || "Đổi mật khẩu thành công",
       };
     } catch (error) {
       console.error("❌ Error changing password:", error);
       return {
         success: false,
-        message: error.response?.data?.message || "Không thể đổi mật khẩu",
-        error: error,
+        message:
+          error.response?.data?.message || "Có lỗi xảy ra khi đổi mật khẩu",
       };
     }
   },

@@ -59,20 +59,20 @@ import {
 import { styled } from "@mui/material/styles";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.95)", // Light glass background for medical
+  background: "rgba(255, 255, 255, 0.95)",
   backdropFilter: "blur(20px)",
   borderRadius: "20px",
-  border: "1px solid rgba(74, 144, 226, 0.15)", // Medical blue border
-  color: "#2D3748", // Dark text for readability
-  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.1)", // Lighter shadow
+  border: "1px solid rgba(74, 144, 226, 0.15)",
+  color: "#2D3748",
+  boxShadow: "0 8px 32px 0 rgba(74, 144, 226, 0.1)",
 }));
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.9)", // Light background for medical
+  background: "rgba(255, 255, 255, 0.9)",
   backdropFilter: "blur(10px)",
   borderRadius: "12px !important",
-  border: "1px solid rgba(74, 144, 226, 0.1)", // Medical blue border
-  color: "#2D3748", // Dark text for readability
+  border: "1px solid rgba(74, 144, 226, 0.1)",
+  color: "#2D3748",
   marginBottom: "12px",
   "&:before": {
     display: "none",
@@ -156,28 +156,28 @@ const HelpContent = () => {
       title: "Tổng đài hỗ trợ",
       description: "24/7 - Miễn phí",
       contact: "1900-1234",
-      icon: <PhoneIcon sx={{ color: "#4CAF50", fontSize: 32 }} />,
+      icon: <PhoneIcon sx={{ color: "#4A90E2", fontSize: 32 }} />,
       action: () => window.open("tel:19001234"),
     },
     {
       title: "Email hỗ trợ",
       description: "Phản hồi trong 2-4 giờ",
       contact: "support@healthcare.vn",
-      icon: <EmailIcon sx={{ color: "#4A90E2", fontSize: 32 }} />,
+      icon: <EmailIcon sx={{ color: "#1ABC9C", fontSize: 32 }} />,
       action: () => setOpenContactDialog(true),
     },
     {
       title: "Chat trực tuyến",
       description: "Thời gian: 8:00 - 22:00",
       contact: "Bắt đầu chat",
-      icon: <ChatIcon sx={{ color: "#F39C12", fontSize: 32 }} />,
+      icon: <ChatIcon sx={{ color: "#4CAF50", fontSize: 32 }} />,
       action: () => console.log("Start chat"),
     },
     {
       title: "Video call hỗ trợ",
       description: "Hẹn trước 30 phút",
       contact: "Đặt lịch hẹn",
-      icon: <VideoCallIcon sx={{ color: "#1ABC9C", fontSize: 32 }} />,
+      icon: <VideoCallIcon sx={{ color: "#F39C12", fontSize: 32 }} />,
       action: () => console.log("Schedule video call"),
     },
   ];

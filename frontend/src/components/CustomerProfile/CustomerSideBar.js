@@ -68,10 +68,10 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
     width: drawerWidth,
     boxSizing: "border-box",
     background:
-      "linear-gradient(165deg, #F0F4F8 0%, #E3F2FD 50%, #F0F4F8 100%)", // Light medical gradient
-    borderRight: "1px solid rgba(74, 144, 226, 0.15)", // Medical blue border
-    color: "#2D3748", // Dark text
-    backdropFilter: "blur(20px)", // Glass effect
+      "linear-gradient(165deg, #F5F7FA 0%, #E3F2FD 50%, #F5F7FA 100%)",
+    borderRight: "1px solid rgba(74, 144, 226, 0.15)",
+    color: "#2D3748",
+    backdropFilter: "blur(20px)",
   },
 }));
 
@@ -79,9 +79,9 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
 const UserProfile = styled(Box)(({ theme }) => ({
   padding: theme.spacing(3, 2),
   textAlign: "center",
-  background: "rgba(255, 255, 255, 0.8)", // Light glass background for medical theme
+  background: "rgba(255, 255, 255, 0.8)",
   backdropFilter: "blur(20px)",
-  borderBottom: "1px solid rgba(74, 144, 226, 0.15)", // Medical blue border
+  borderBottom: "1px solid rgba(74, 144, 226, 0.15)",
   position: "relative",
 }));
 

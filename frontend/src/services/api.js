@@ -45,7 +45,7 @@ apiClient.interceptors.request.use(
         //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
         //các tác vụ yêu cầu quyền truy cập
         username: userData.username,
-        password: "Ninh123@", // Hoặc lấy từ localStorage/context
+        password: "Ninh1234@", // Hoặc lấy từ localStorage/context
       };
     }
     if (userData && userData.role === "CUSTOMER") {

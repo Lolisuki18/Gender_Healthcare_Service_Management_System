@@ -128,8 +128,8 @@ const CustomerProfile = () => {
             alignItems: "center",
             justifyContent: "space-between",
             p: 3,
-            background: "rgba(255, 255, 255, 0.90)", // Light glass effect for medical
-            backdropFilter: "blur(20px)", // Blur effect
+            background: "rgba(255, 255, 255, 0.90)",
+            backdropFilter: "blur(20px)",
             borderBottom: "1px solid rgba(74, 144, 226, 0.15)", // Medical blue border
           }}
         >
@@ -138,7 +138,7 @@ const CustomerProfile = () => {
             <IconButton
               onClick={handleSidebarToggle}
               sx={{
-                color: "#2D3748", // Màu tối cho nút trên nền sáng
+                color: "#2D3748",
                 mr: 2,
                 display: { md: "none" },
                 background: "rgba(74, 144, 226, 0.1)",
@@ -152,9 +152,9 @@ const CustomerProfile = () => {
             <Typography
               variant="h4"
               sx={{
-                color: "#2D3748", // Dark text for medical
+                color: "#2D3748",
                 fontWeight: 700,
-                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical blue to teal
+                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
                 backgroundClip: "text",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",

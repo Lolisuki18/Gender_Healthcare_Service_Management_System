@@ -40,6 +40,7 @@ import {
   Container,
   Divider,
   Chip,
+  Grid, // Added Grid import
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -68,7 +69,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   borderRadius: "20px",
   border: "1px solid rgba(74, 144, 226, 0.15)",
   color: "#2D3748",
-  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.1)",
+  boxShadow: "0 8px 32px 0 rgba(74, 144, 226, 0.1)",
 }));
 
 const ProfileCard = styled(Card)(({ theme }) => ({
@@ -88,7 +89,8 @@ const IconWrapper = styled(Box)(({ theme }) => ({
   width: "40px",
   height: "40px",
   borderRadius: "12px",
-  background: "rgba(74, 144, 226, 0.1)",
+  background:
+    "linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))",
   marginRight: "16px",
   flexShrink: 0,
 }));
@@ -108,10 +110,10 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
       transition: "all 0.3s ease",
     },
     "&:hover fieldset": {
-      borderColor: "rgba(74, 144, 226, 0.4)",
+      borderColor: "rgba(26, 188, 156, 0.4)",
     },
     "&.Mui-focused fieldset": {
-      borderColor: "#4A90E2",
+      borderColor: "#1ABC9C",
       borderWidth: 2,
     },
     "&.Mui-disabled": {
@@ -147,7 +149,7 @@ const FieldInfoBox = ({
   options = null,
   backgroundColor,
   iconColor,
-  actionButton = null, // ✅ New prop for action button
+  actionButton = null,
 }) => {
   const isEmailField = type === "email";
 
@@ -157,17 +159,16 @@ const FieldInfoBox = ({
       sx={{
         p: 3,
         borderRadius: "16px",
-        background: backgroundColor || "rgba(59, 130, 246, 0.05)",
-        border: `1px solid ${
-          backgroundColor?.replace("0.05", "0.1") || "rgba(59, 130, 246, 0.1)"
-        }`,
+        background:
+          backgroundColor ||
+          "linear-gradient(45deg, rgba(74, 144, 226, 0.05), rgba(26, 188, 156, 0.05))",
+        border: `1px solid rgba(74, 144, 226, 0.1)`,
         transition: "all 0.3s ease",
         "&:hover": {
           background:
-            backgroundColor?.replace("0.05", "0.08") ||
-            "rgba(59, 130, 246, 0.08)",
+            "linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.08))",
           transform: !isEditing ? "translateY(-2px)" : "none",
-          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+          boxShadow: "0 8px 24px rgba(74, 144, 226, 0.08)",
         },
       }}
     >
@@ -175,12 +176,11 @@ const FieldInfoBox = ({
         <IconWrapper
           sx={{
             background:
-              backgroundColor?.replace("0.05", "0.1") ||
-              "rgba(59, 130, 246, 0.1)",
+              "linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))",
           }}
         >
           {React.cloneElement(icon, {
-            sx: { color: iconColor || "#3b82f6", fontSize: 20 },
+            sx: { color: iconColor || "#4A90E2", fontSize: 20 },
           })}
         </IconWrapper>
         <Typography
@@ -798,10 +798,10 @@ const ProfileContent = () => {
                     sx={{
                       width: { xs: 120, md: 140 },
                       height: { xs: 120, md: 140 },
-                      background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                      background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
                       fontSize: { xs: "48px", md: "56px" },
                       fontWeight: 700,
-                      boxShadow: "0 12px 40px rgba(59, 130, 246, 0.4)",
+                      boxShadow: "0 12px 40px rgba(74, 144, 226, 0.4)",
                       border: "4px solid rgba(255, 255, 255, 0.1)",
                     }}
                   >
@@ -817,12 +817,12 @@ const ProfileContent = () => {
                       width: 36,
                       height: 36,
                       borderRadius: "50%",
-                      background: "linear-gradient(45deg, #4CAF50, #2ECC71)",
+                      background: "linear-gradient(45deg, #1ABC9C, #16A085)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       border: "4px solid rgba(255, 255, 255, 0.2)",
-                      boxShadow: "0 4px 12px rgba(76, 175, 80, 0.4)",
+                      boxShadow: "0 4px 12px rgba(26, 188, 156, 0.4)",
                     }}
                   >
                     <Box
@@ -884,8 +884,9 @@ const ProfileContent = () => {
                       flex: 1,
                       p: 2,
                       borderRadius: "12px",
-                      background: "rgba(76, 175, 80, 0.1)",
-                      border: "1px solid rgba(76, 175, 80, 0.2)",
+                      background:
+                        "linear-gradient(45deg, rgba(26, 188, 156, 0.1), rgba(22, 160, 133, 0.1))",
+                      border: "1px solid rgba(26, 188, 156, 0.2)",
                       textAlign: "center",
                     }}
                   >
@@ -909,8 +910,9 @@ const ProfileContent = () => {
                       flex: 1,
                       p: 2,
                       borderRadius: "12px",
-                      background: "rgba(236, 72, 153, 0.1)",
-                      border: "1px solid rgba(236, 72, 153, 0.2)",
+                      background:
+                        "linear-gradient(45deg, rgba(155, 89, 182, 0.1), rgba(142, 68, 173, 0.1))",
+                      border: "1px solid rgba(155, 89, 182, 0.2)",
                       textAlign: "center",
                     }}
                   >
@@ -954,24 +956,26 @@ const ProfileContent = () => {
                     textTransform: "none",
                     ...(isEditing
                       ? {
-                          color: "#ef4444",
-                          borderColor: "#ef4444",
+                          color: "#e74c3c",
+                          borderColor: "#e74c3c",
                           borderWidth: "2px",
                           "&:hover": {
-                            backgroundColor: "rgba(239, 68, 68, 0.1)",
-                            borderColor: "#ef4444",
+                            backgroundColor: "rgba(231, 76, 60, 0.1)",
+                            borderColor: "#e74c3c",
                             transform: "translateY(-2px)",
                           },
                         }
                       : {
                           background:
-                            "linear-gradient(45deg, #3b82f6, #1d4ed8)",
-                          boxShadow: "0 6px 20px rgba(59, 130, 246, 0.4)",
+                            "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                          color: "#fff",
+                          fontWeight: 600,
+                          boxShadow: "0 6px 20px rgba(74, 144, 226, 0.4)",
                           "&:hover": {
                             background:
-                              "linear-gradient(45deg, #1d4ed8, #1e40af)",
+                              "linear-gradient(45deg, #357ABD, #16A085)",
                             transform: "translateY(-2px)",
-                            boxShadow: "0 8px 25px rgba(59, 130, 246, 0.5)",
+                            boxShadow: "0 8px 25px rgba(74, 144, 226, 0.5)",
                           },
                         }),
                     transition: "all 0.3s ease",
@@ -1002,11 +1006,11 @@ const ProfileContent = () => {
                     fontWeight: 500,
                     fontSize: "14px",
                     textTransform: "none",
-                    color: "#4A90E2",
-                    borderColor: "#4A90E2",
+                    color: "#1ABC9C",
+                    borderColor: "#1ABC9C",
                     "&:hover": {
-                      backgroundColor: "rgba(74, 144, 226, 0.1)",
-                      borderColor: "#4A90E2",
+                      backgroundColor: "rgba(26, 188, 156, 0.1)",
+                      borderColor: "#1ABC9C",
                     },
                   }}
                 >
@@ -1020,221 +1024,434 @@ const ProfileContent = () => {
         {/* ============================================================== */}
         {/* DETAILS SECTION - INLINE EDITING */}
         {/* ============================================================== */}
-        <StyledPaper sx={{ p: { xs: 3, md: 4 } }}>
-          <Stack spacing={4}>
-            {/* Header */}
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <PersonIcon sx={{ color: "#4A90E2", fontSize: 32 }} />
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  color: "#2D3748",
-                  fontSize: { xs: "1.5rem", md: "2rem" },
-                }}
-              >
-                Thông tin chi tiết
-              </Typography>
-              {isEditing && (
-                <Typography
-                  variant="body2"
+        <StyledPaper sx={{ p: { xs: 3, md: 4 }, overflow: "hidden", position: "relative" }}>
+          {/* Background Decoration */}
+          <Box
+            sx={{
+              position: "absolute",
+              top: -50,
+              right: -50,
+              width: 150,
+              height: 150,
+              borderRadius: "50%",
+              background: "linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.04))",
+              zIndex: 0,
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: -30,
+              left: -30,
+              width: 100,
+              height: 100,
+              borderRadius: "50%",
+              background: "linear-gradient(45deg, rgba(26, 188, 156, 0.06), rgba(74, 144, 226, 0.03))",
+              zIndex: 0,
+            }}
+          />
+
+          <Stack spacing={4} sx={{ position: "relative", zIndex: 1 }}>
+            {/* Enhanced Header */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                alignItems: { xs: "flex-start", sm: "center" },
+                justifyContent: "space-between",
+                gap: 2,
+                pb: 3,
+                borderBottom: "2px solid rgba(74, 144, 226, 0.1)",
+                position: "relative",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box
                   sx={{
-                    color: "#f59e0b",
-                    fontSize: "0.9rem",
-                    fontWeight: 500,
-                    backgroundColor: "rgba(245, 158, 11, 0.1)",
-                    padding: "4px 12px",
-                    borderRadius: "12px",
-                    border: "1px solid rgba(245, 158, 11, 0.2)",
+                    p: 2,
+                    borderRadius: "16px",
+                    background: "linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))",
+                    border: "1px solid rgba(74, 144, 226, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  🖊️ Đang chỉnh sửa
-                </Typography>
+                  <PersonIcon sx={{ color: "#4A90E2", fontSize: 32 }} />
+                </Box>
+                <Box>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#2D3748",
+                      fontSize: { xs: "1.5rem", md: "2rem" },
+                      lineHeight: 1.2,
+                      mb: 0.5,
+                    }}
+                  >
+                    Thông tin chi tiết
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: "#4A5568",
+                      fontSize: "16px",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Quản lý và cập nhật thông tin cá nhân của bạn
+                  </Typography>
+                </Box>
+              </Box>
+
+              {isEditing && (
+                <Chip
+                  icon={<EditIcon />}
+                  label="Đang chỉnh sửa"
+                  sx={{
+                    background: "linear-gradient(45deg, #1ABC9C, #16A085)",
+                    color: "#fff",
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
+                    padding: "8px 16px",
+                    height: "40px",
+                    borderRadius: "20px",
+                    boxShadow: "0 4px 12px rgba(26, 188, 156, 0.3)",
+                    "& .MuiChip-icon": {
+                      color: "#fff",
+                    },
+                  }}
+                />
               )}
-            </Stack>
+            </Box>
 
-            <Divider sx={{ my: 2 }} />
+            {/* Form Fields with Enhanced Layout */}
+            <Stack spacing={4}>
+              {/* Personal Information Section */}
+              <Box>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: "#2D3748",
+                    fontWeight: 600,
+                    fontSize: "18px",
+                    mb: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 4,
+                      height: 20,
+                      background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                      borderRadius: 2,
+                    }}
+                  />
+                  Thông tin cá nhân
+                </Typography>
 
-            {/* Form Fields */}
-            <Stack spacing={3}>
-              {/* ✅ Họ và tên */}
-              <FieldInfoBox
-                icon={<PersonIcon />}
-                label="Họ và tên"
-                name="fullName"
-                value={formDataUpdate.fullName}
-                onChange={handleChangeUpdate}
-                isEditing={isEditing}
-                disabled={false}
-                backgroundColor="rgba(59, 130, 246, 0.05)"
-                iconColor="#3b82f6"
-              />{" "}
-              {/* ✅ Contact Fields Stack */}
-              <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                <Box sx={{ flex: 1 }}>
+                <Stack spacing={3}>
+                  {/* Họ và tên */}
                   <FieldInfoBox
-                    icon={<PhoneIcon />}
-                    label="Số điện thoại"
-                    name="phone"
-                    value={formDataUpdate.phone}
+                    icon={<PersonIcon />}
+                    label="Họ và tên"
+                    name="fullName"
+                    value={formDataUpdate.fullName}
                     onChange={handleChangeUpdate}
                     isEditing={isEditing}
                     disabled={false}
-                    type="tel"
-                    backgroundColor="rgba(16, 185, 129, 0.05)"
-                    iconColor="#10b981"
+                    backgroundColor="linear-gradient(45deg, rgba(74, 144, 226, 0.06), rgba(26, 188, 156, 0.04))"
+                    iconColor="#4A90E2"
                   />
-                </Box>
 
-                <Box sx={{ flex: 1 }}>
-                  <FieldInfoBox
-                    icon={<EmailIcon />}
-                    label="Email"
-                    name="email"
-                    value={formDataUpdate.email}
-                    onChange={handleChangeUpdate}
-                    isEditing={isEditing}
-                    disabled={true} // ✅ Always disabled, use separate button
-                    type="email"
-                    backgroundColor="rgba(139, 92, 246, 0.05)"
-                    iconColor="#8b5cf6"
-                    actionButton={
-                      !isEditing && (
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={handleEmailChangeClick}
-                          startIcon={<EditIcon />}
-                          sx={{
-                            borderRadius: "8px",
-                            fontSize: "0.8rem",
-                            py: 0.5,
-                            px: 2,
-                            color: "#8b5cf6",
-                            borderColor: "#8b5cf6",
-                            "&:hover": {
-                              backgroundColor: "rgba(139, 92, 246, 0.1)",
-                              borderColor: "#7c3aed",
-                            },
-                          }}
-                        >
-                          Đổi Email
-                        </Button>
-                      )
-                    }
-                  />
-                </Box>
-              </Stack>
-              {/* ✅ Personal Info Stack */}
-              <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                <Box sx={{ flex: 1 }}>
-                  <FieldInfoBox
-                    icon={<CakeIcon />}
-                    label="Ngày sinh"
-                    name="birthDay"
-                    value={
-                      isEditing
-                        ? formatDateForInput(formDataUpdate.birthDay)
-                        : formatDateDisplay(formDataUpdate.birthDay)
-                    }
-                    onChange={handleChangeUpdate}
-                    isEditing={isEditing}
-                    disabled={false}
-                    type="date"
-                    backgroundColor="rgba(245, 158, 11, 0.05)"
-                    iconColor="#f59e0b"
-                  />
-                </Box>
+                  {/* Personal Info Stack */}
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <FieldInfoBox
+                        icon={<CakeIcon />}
+                        label="Ngày sinh"
+                        name="birthDay"
+                        value={
+                          isEditing
+                            ? formatDateForInput(formDataUpdate.birthDay)
+                            : formatDateDisplay(formDataUpdate.birthDay)
+                        }
+                        onChange={handleChangeUpdate}
+                        isEditing={isEditing}
+                        disabled={false}
+                        type="date"
+                        backgroundColor="linear-gradient(45deg, rgba(241, 196, 15, 0.08), rgba(230, 126, 34, 0.04))"
+                        iconColor="#F1C40F"
+                      />
+                    </Grid>
 
-                <Box sx={{ flex: 1 }}>
-                  <FieldInfoBox
-                    icon={<GenderIcon />}
-                    label="Giới tính"
-                    name="gender"
-                    value={
-                      isEditing
-                        ? formDataUpdate.gender
-                        : formatGenderDisplay(formDataUpdate.gender)
-                    }
-                    onChange={handleChangeUpdate}
-                    isEditing={isEditing}
-                    disabled={false}
-                    options={[
-                      { value: "MALE", label: "Nam" },
-                      { value: "FEMALE", label: "Nữ" },
-                      { value: "OTHER", label: "Khác" },
-                    ]}
-                    backgroundColor="rgba(236, 72, 153, 0.05)"
-                    iconColor="#ec4899"
+                    <Grid item xs={12} md={6}>
+                      <FieldInfoBox
+                        icon={<GenderIcon />}
+                        label="Giới tính"
+                        name="gender"
+                        value={
+                          isEditing
+                            ? formDataUpdate.gender
+                            : formatGenderDisplay(formDataUpdate.gender)
+                        }
+                        onChange={handleChangeUpdate}
+                        isEditing={isEditing}
+                        disabled={false}
+                        options={[
+                          { value: "MALE", label: "Nam" },
+                          { value: "FEMALE", label: "Nữ" },
+                          { value: "OTHER", label: "Khác" },
+                        ]}
+                        backgroundColor="linear-gradient(45deg, rgba(155, 89, 182, 0.08), rgba(142, 68, 173, 0.04))"
+                        iconColor="#9B59B6"
+                      />
+                    </Grid>
+                  </Grid>
+                </Stack>
+              </Box>
+
+              {/* Contact Information Section */}
+              <Box>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: "#2D3748",
+                    fontWeight: 600,
+                    fontSize: "18px",
+                    mb: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 4,
+                      height: 20,
+                      background: "linear-gradient(45deg, #1ABC9C, #4CAF50)",
+                      borderRadius: 2,
+                    }}
                   />
-                </Box>
-              </Stack>{" "}
-              {/* ✅ Địa chỉ */}
-              <FieldInfoBox
-                icon={<LocationIcon />}
-                label="Địa chỉ"
-                name="address"
-                value={formDataUpdate.address}
-                onChange={handleChangeUpdate}
-                isEditing={isEditing}
-                disabled={false}
-                multiline={true}
-                rows={3}
-                backgroundColor="rgba(239, 68, 68, 0.05)"
-                iconColor="#ef4444"
-              />
-              {/* ✅ Password Field với nút đổi mật khẩu */}
-              <FieldInfoBox
-                icon={<LockIcon />}
-                label="Mật khẩu"
-                name="password"
-                value="••••••••" // Display masked password
-                onChange={() => {}} // No change handler needed
-                isEditing={false} // Never editable directly
-                disabled={true}
-                type="password"
-                backgroundColor="rgba(239, 68, 68, 0.05)"
-                iconColor="#ef4444"
-                actionButton={
-                  !isEditing && (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={handlePasswordChangeClick}
-                      startIcon={<LockIcon />}
-                      sx={{
-                        borderRadius: "8px",
-                        fontSize: "0.8rem",
-                        py: 0.5,
-                        px: 2,
-                        color: "#ef4444",
-                        borderColor: "#ef4444",
-                        "&:hover": {
-                          backgroundColor: "rgba(239, 68, 68, 0.1)",
-                          borderColor: "#dc2626",
-                        },
-                      }}
-                    >
-                      Đổi mật khẩu
-                    </Button>
-                  )
-                }
-              />
-              {/* Action Buttons - CHỈ HIỂN THỊ KHI ĐANG EDIT */}
+                  Thông tin liên hệ
+                </Typography>
+
+                <Stack spacing={3}>
+                  {/* Contact Fields Stack */}
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <FieldInfoBox
+                        icon={<PhoneIcon />}
+                        label="Số điện thoại"
+                        name="phone"
+                        value={formDataUpdate.phone}
+                        onChange={handleChangeUpdate}
+                        isEditing={isEditing}
+                        disabled={false}
+                        type="tel"
+                        backgroundColor="linear-gradient(45deg, rgba(26, 188, 156, 0.08), rgba(22, 160, 133, 0.04))"
+                        iconColor="#1ABC9C"
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} md={6}>
+                      <FieldInfoBox
+                        icon={<EmailIcon />}
+                        label="Email"
+                        name="email"
+                        value={formDataUpdate.email}
+                        onChange={handleChangeUpdate}
+                        isEditing={isEditing}
+                        disabled={true}
+                        type="email"
+                        backgroundColor="linear-gradient(45deg, rgba(52, 152, 219, 0.08), rgba(41, 128, 185, 0.04))"
+                        iconColor="#3498DB"
+                        actionButton={
+                          !isEditing && (
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={handleEmailChangeClick}
+                              startIcon={<EditIcon />}
+                              sx={{
+                                borderRadius: "10px",
+                                fontSize: "0.8rem",
+                                py: 1,
+                                px: 2.5,
+                                color: "#3498DB",
+                                borderColor: "#3498DB",
+                                fontWeight: 600,
+                                textTransform: "none",
+                                "&:hover": {
+                                  backgroundColor: "rgba(52, 152, 219, 0.1)",
+                                  borderColor: "#2980B9",
+                                  transform: "translateY(-1px)",
+                                },
+                                transition: "all 0.3s ease",
+                              }}
+                            >
+                              Đổi Email
+                            </Button>
+                          )
+                        }
+                      />
+                    </Grid>
+                  </Grid>
+                </Stack>
+              </Box>
+
+              {/* Address Information Section */}
+              <Box>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: "#2D3748",
+                    fontWeight: 600,
+                    fontSize: "18px",
+                    mb: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 4,
+                      height: 20,
+                      background: "linear-gradient(45deg, #E74C3C, #C0392B)",
+                      borderRadius: 2,
+                    }}
+                  />
+                  Địa chỉ
+                </Typography>
+
+                <FieldInfoBox
+                  icon={<LocationIcon />}
+                  label="Địa chỉ hiện tại"
+                  name="address"
+                  value={formDataUpdate.address}
+                  onChange={handleChangeUpdate}
+                  isEditing={isEditing}
+                  disabled={false}
+                  multiline={true}
+                  rows={3}
+                  backgroundColor="linear-gradient(45deg, rgba(231, 76, 60, 0.08), rgba(192, 57, 43, 0.04))"
+                  iconColor="#E74C3C"
+                />
+              </Box>
+
+              {/* Security Section */}
+              <Box>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: "#2D3748",
+                    fontWeight: 600,
+                    fontSize: "18px",
+                    mb: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 4,
+                      height: 20,
+                      background: "linear-gradient(45deg, #E74C3C, #8E44AD)",
+                      borderRadius: 2,
+                    }}
+                  />
+                  Bảo mật
+                </Typography>
+
+                <FieldInfoBox
+                  icon={<LockIcon />}
+                  label="Mật khẩu"
+                  name="password"
+                  value="••••••••"
+                  onChange={() => {}}
+                  isEditing={false}
+                  disabled={true}
+                  type="password"
+                  backgroundColor="linear-gradient(45deg, rgba(142, 68, 173, 0.08), rgba(155, 89, 182, 0.04))"
+                  iconColor="#8E44AD"
+                  actionButton={
+                    !isEditing && (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={handlePasswordChangeClick}
+                        startIcon={<LockIcon />}
+                        sx={{
+                          borderRadius: "10px",
+                          fontSize: "0.8rem",
+                          py: 1,
+                          px: 2.5,
+                          color: "#8E44AD",
+                          borderColor: "#8E44AD",
+                          fontWeight: 600,
+                          textTransform: "none",
+                          "&:hover": {
+                            backgroundColor: "rgba(142, 68, 173, 0.1)",
+                            borderColor: "#9B59B6",
+                            transform: "translateY(-1px)",
+                          },
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        Đổi mật khẩu
+                      </Button>
+                    )
+                  }
+                />
+              </Box>
+
+              {/* Action Buttons - Enhanced Design */}
               {isEditing && (
                 <Paper
                   elevation={0}
                   sx={{
-                    p: 3,
-                    borderRadius: "16px",
-                    background: "rgba(74, 144, 226, 0.05)",
-                    border: "1px solid rgba(74, 144, 226, 0.1)",
+                    p: 4,
+                    borderRadius: "20px",
+                    background: "linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.04))",
+                    border: "2px solid rgba(74, 144, 226, 0.15)",
+                    mt: 4,
+                    position: "relative",
+                    overflow: "hidden",
                   }}
                 >
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 4,
+                      background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                    }}
+                  />
+
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "#2D3748",
+                      fontWeight: 600,
+                      mb: 3,
+                      textAlign: "center",
+                    }}
+                  >
+                    Xác nhận thay đổi thông tin
+                  </Typography>
+
                   <Stack
                     direction={{ xs: "column", sm: "row" }}
-                    spacing={2}
-                    justifyContent="flex-end"
+                    spacing={3}
+                    justifyContent="center"
+                    alignItems="center"
                   >
                     <Button
                       variant="outlined"
@@ -1242,22 +1459,26 @@ const ProfileContent = () => {
                       disabled={isSaving}
                       startIcon={<CancelIcon />}
                       sx={{
-                        px: 4,
-                        py: 2,
-                        borderRadius: "12px",
+                        px: 5,
+                        py: 2.5,
+                        borderRadius: "15px",
                         fontWeight: 600,
                         fontSize: "16px",
-                        color: "#ef4444",
-                        borderColor: "#ef4444",
+                        color: "#e74c3c",
+                        borderColor: "#e74c3c",
+                        borderWidth: "2px",
+                        minWidth: "160px",
+                        textTransform: "none",
                         "&:hover": {
-                          backgroundColor: "rgba(239, 68, 68, 0.1)",
-                          borderColor: "#ef4444",
+                          backgroundColor: "rgba(231, 76, 60, 0.1)",
+                          borderColor: "#e74c3c",
                           transform: "translateY(-2px)",
+                          boxShadow: "0 6px 20px rgba(231, 76, 60, 0.3)",
                         },
                         transition: "all 0.3s ease",
                       }}
                     >
-                      Hủy
+                      Hủy bỏ
                     </Button>
 
                     <Button
@@ -1272,18 +1493,20 @@ const ProfileContent = () => {
                         )
                       }
                       sx={{
-                        px: 4,
-                        py: 2,
-                        borderRadius: "12px",
+                        px: 5,
+                        py: 2.5,
+                        borderRadius: "15px",
                         fontWeight: 600,
                         fontSize: "16px",
-                        background: "linear-gradient(45deg, #3b82f6, #1d4ed8)",
-                        boxShadow: "0 4px 15px rgba(59, 130, 246, 0.3)",
+                        background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                        color: "#fff",
+                        minWidth: "160px",
+                        textTransform: "none",
+                        boxShadow: "0 8px 25px rgba(74, 144, 226, 0.4)",
                         "&:hover": {
-                          background:
-                            "linear-gradient(45deg, #1d4ed8, #1e40af)",
+                          background: "linear-gradient(45deg, #357ABD, #16A085)",
                           transform: "translateY(-2px)",
-                          boxShadow: "0 8px 25px rgba(59, 130, 246, 0.4)",
+                          boxShadow: "0 12px 30px rgba(74, 144, 226, 0.5)",
                         },
                         "&:disabled": {
                           background: "#ccc",
@@ -1314,11 +1537,6 @@ const ProfileContent = () => {
           isVerifying={isVerifying}
           currentEmail={formDataUpdate.email}
         />
-
-        {/* ============================================================== */}
-        {/* REMOVE OLD EMAIL VERIFICATION DIALOG - No longer needed */}
-        {/* ============================================================== */}
-        {/* <EmailVerificationDialog ... /> */}
 
         {/* ============================================================== */}
         {/* PASSWORD CHANGE DIALOG */}

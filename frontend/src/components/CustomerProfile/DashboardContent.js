@@ -41,26 +41,26 @@ import { styled } from "@mui/material/styles";
 
 // Styled Components cho glass morphism design
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.95)", // Light glass background for medical
-  backdropFilter: "blur(20px)", // Blur effect
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
   borderRadius: "20px",
-  border: "1px solid rgba(74, 144, 226, 0.15)", // Medical blue border
-  color: "#2D3748", // Dark text for readability
-  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.1)", // Lighter shadow
+  border: "1px solid rgba(74, 144, 226, 0.15)",
+  color: "#2D3748",
+  boxShadow: "0 8px 32px 0 rgba(74, 144, 226, 0.1)",
 }));
 
 // Statistical cards với gradient background
 const StatCard = styled(Card)(({ theme }) => ({
-  background: "linear-gradient(145deg, #FFFFFF, #F5F7FA)", // Light card background
+  background: "linear-gradient(145deg, #FFFFFF, #F5F7FA)",
   backdropFilter: "blur(20px)",
   borderRadius: "16px",
-  border: "1px solid rgba(74, 144, 226, 0.12)", // Medical blue border
-  color: "#2D3748", // Dark text for readability
+  border: "1px solid rgba(74, 144, 226, 0.12)",
+  color: "#2D3748",
   boxShadow: "0 4px 15px 0 rgba(0, 0, 0, 0.05)",
   transition: "all 0.3s ease",
   "&:hover": {
     transform: "translateY(-4px)",
-    boxShadow: "0 10px 25px 0 rgba(74, 144, 226, 0.2)", // Medical blue shadow
+    boxShadow: "0 10px 25px 0 rgba(74, 144, 226, 0.2)",
   },
 }));
 
@@ -70,28 +70,28 @@ const DashboardContent = () => {
       title: "Tổng lịch hẹn",
       value: "12",
       icon: ScheduleIcon,
-      color: "#4A90E2", // Medical blue
+      color: "#4A90E2",
       progress: 75,
     },
     {
       title: "Lịch hẹn hoàn thành",
       value: "8",
       icon: AssignmentIcon,
-      color: "#4CAF50", // Medical green
+      color: "#4CAF50",
       progress: 65,
     },
     {
       title: "Lịch hẹn sắp tới",
       value: "3",
       icon: TrendingUpIcon,
-      color: "#F39C12", // Medical orange
+      color: "#F39C12",
       progress: 40,
     },
     {
       title: "Tổng thanh toán",
       value: "2.5M VNĐ",
       icon: PaymentIcon,
-      color: "#1ABC9C", // Medical teal
+      color: "#1ABC9C",
       progress: 85,
     },
   ];
@@ -133,7 +133,7 @@ const DashboardContent = () => {
                       sx={{
                         p: 1.5,
                         borderRadius: "12px",
-                        background: `${stat.color}15`, // Lighter background
+                        background: `linear-gradient(45deg, ${stat.color}15, ${stat.color}08)`,
                         border: `1px solid ${stat.color}30`,
                       }}
                     >
@@ -165,7 +165,7 @@ const DashboardContent = () => {
                     sx={{
                       height: 6,
                       borderRadius: 3,
-                      backgroundColor: "rgba(0, 0, 0, 0.05)", // Light background
+                      backgroundColor: "rgba(74, 144, 226, 0.1)",
                       "& .MuiLinearProgress-bar": {
                         borderRadius: 3,
                         background: `linear-gradient(45deg, ${stat.color}, ${stat.color}cc)`,
