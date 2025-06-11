@@ -46,7 +46,6 @@ import {
   CalendarToday as CalendarIcon,
   History as HistoryIcon,
   Payment as PaymentIcon,
-  Settings as SettingsIcon,
   Notifications as NotificationsIcon,
   Help as HelpIcon,
   QuestionAnswer as QuestionIcon,
@@ -181,12 +180,6 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       label: "Thông báo",
       icon: <NotificationsIcon />,
       path: "/customer/notifications",
-    },
-    {
-      id: "settings",
-      label: "Cài đặt",
-      icon: <SettingsIcon />,
-      path: "/customer/settings",
     },
     {
       id: "help",

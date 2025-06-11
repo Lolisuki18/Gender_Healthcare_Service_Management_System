@@ -43,6 +43,8 @@ import {
   LocationOn as LocationIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
+// Import dateUtils for consistent date formatting
+import { formatDateDisplay } from "../../utils/dateUtils.js";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: "rgba(255, 255, 255, 0.95)", // Light glass background for medical
@@ -218,7 +220,7 @@ const AppointmentsContent = () => {
                       fontWeight: 500,
                     }}
                   >
-                    {new Date(appointment.date).toLocaleDateString("vi-VN")}
+                    {formatDateDisplay(appointment.date)}
                   </Typography>
                 </Box>
 

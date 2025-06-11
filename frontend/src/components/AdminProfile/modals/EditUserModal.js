@@ -1,16 +1,7 @@
 /**
  * ==================================================================
- * EDIT USER MODAL COMPONENT - VERSION 2.0
+ * EDIT USER MODAL COMPONENT - VERSION 4.0 (BACKEND COMPLIANT)
  * ==================================================================
- *
- * Cập nhật: Tách riêng API calls cho thông tin cơ bản và vai trò/trạng thái
- *
- * Props:
- * - open: boolean - Trạng thái mở/đóng modal
- * - onClose: function - Callback khi đóng modal
- * - user: object - Thông tin người dùng cần chỉnh sửa
- * - onSubmitBasicInfo: function - Callback cho API cập nhật thông tin cơ bản
- * - onSubmitRole: function - Callback cho API cập nhật vai trò & trạng thái
  */
 
 import React, { useState, useEffect } from "react";
@@ -35,62 +26,52 @@ import {
   ListItem,
   ListItemText,
   Chip,
-  Tabs,
-  Tab,
   Divider,
 } from "@mui/material";
 import {
   Close as CloseIcon,
   Person as PersonIcon,
-  Security as SecurityIcon,
   CompareArrows as CompareIcon,
   Check as CheckIcon,
-  Info as InfoIcon,
   Warning as WarningIcon,
 } from "@mui/icons-material";
+// Import dateUtils for consistent date formatting
+import { formatDateDisplay } from "../../../utils/dateUtils.js";
 
-const EditUserModal = ({
-  open,
-  onClose,
-  user,
-  onSubmitBasicInfo,
-  onSubmitRole,
-}) => {
+const EditUserModal = ({ open, onClose, user, onSubmit }) => {
   // ====================================================================
   // STATE MANAGEMENT
   // ====================================================================
 
   /**
-   * Tab management
+   * ✅ Updated form data với TẤT CẢ fields theo backend requirements
    */
-  const [activeTab, setActiveTab] = useState(0);
-
-  /**
-   * Form data states - Tách riêng cho 2 loại thông tin
-   */
-  const [basicFormData, setBasicFormData] = useState({
+  const [formData, setFormData] = useState({
     fullName: "",
-    username: "",
-    email: "",
+    birthDay: "",
     phone: "",
-  });
-
-  const [roleFormData, setRoleFormData] = useState({
-    role: "",
+    email: "",
+    password: "", // Để trống nếu không muốn đổi
+    address: "",
+    gender: "",
     isActive: true,
+    role: "",
   });
 
   /**
    * Original data để so sánh thay đổi
    */
-  const [originalBasicData, setOriginalBasicData] = useState({});
-  const [originalRoleData, setOriginalRoleData] = useState({});
+  const [originalData, setOriginalData] = useState({});
 
   /**
-   * Confirmation dialog states
+   * Validation errors
    */
-  const [showBasicConfirmation, setShowBasicConfirmation] = useState(false);
-  const [showRoleConfirmation, setShowRoleConfirmation] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  /**
+   * ✅ Unified confirmation dialog state
+   */
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // ====================================================================
   // EFFECTS & DATA INITIALIZATION
@@ -101,94 +82,282 @@ const EditUserModal = ({
    */
   useEffect(() => {
     if (user && open) {
-      // Tách dữ liệu thông tin cơ bản
-      const basicData = {
-        fullName: user.fullName || "",
-        username: user.username || "",
-        email: user.email || "",
+      const userData = {
+        fullName: user.fullName || user.full_name || "",
+        birthDay: user.birthDay || user.birth_day || "",
         phone: user.phone || "",
-      };
-
-      // Tách dữ liệu vai trò & trạng thái
-      const roleData = {
+        email: user.email || "",
+        password: "", // Luôn để trống để giữ password cũ
+        address: user.address || "",
+        gender: user.gender || "",
+        isActive:
+          user.isActive !== undefined
+            ? user.isActive
+            : user.is_active !== undefined
+            ? user.is_active
+            : true,
         role: user.role || "",
-        isActive: user.isActive !== undefined ? user.isActive : true,
       };
 
-      setBasicFormData(basicData);
-      setRoleFormData(roleData);
-      setOriginalBasicData(basicData);
-      setOriginalRoleData(roleData);
+      setFormData(userData);
+      setOriginalData(userData);
+      setErrors({});
     }
   }, [user, open]);
+
+  // ====================================================================
+  // VALIDATION FUNCTIONS
+  // ====================================================================
+
+  /**
+   * ✅ Validate individual fields theo backend requirements - FIX TRIM ERROR
+   */
+  const validateField = (name, value) => {
+    const newErrors = { ...errors };
+
+    // ✅ Convert value to string trước khi validate để tránh lỗi trim
+    const stringValue =
+      value !== null && value !== undefined ? String(value) : "";
+
+    switch (name) {
+      case "fullName":
+        if (!stringValue || stringValue.trim() === "") {
+          newErrors.fullName = "Full name is required";
+        } else if (stringValue.length > 100) {
+          newErrors.fullName = "Full name must not exceed 100 characters";
+        } else {
+          delete newErrors.fullName;
+        }
+        break;
+
+      case "email":
+        if (!stringValue || stringValue.trim() === "") {
+          newErrors.email = "Email is required";
+        } else {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(stringValue)) {
+            newErrors.email = "Invalid email format";
+          } else {
+            delete newErrors.email;
+          }
+        }
+        break;
+
+      case "phone":
+        if (stringValue && stringValue.trim() !== "") {
+          const phoneRegex = /^[0-9]{10,11}$/;
+          if (!phoneRegex.test(stringValue)) {
+            newErrors.phone = "Phone number must be between 10 and 11 digits";
+          } else {
+            delete newErrors.phone;
+          }
+        } else {
+          delete newErrors.phone;
+        }
+        break;
+
+      case "password":
+        if (stringValue && stringValue.trim() !== "") {
+          const passwordRegex =
+            /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).{6,100}$/;
+          if (!passwordRegex.test(stringValue)) {
+            newErrors.password =
+              "Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, 1 special character and be 6-100 characters long";
+          } else {
+            delete newErrors.password;
+          }
+        } else {
+          delete newErrors.password;
+        }
+        break;
+
+      case "address":
+        if (stringValue && stringValue.length > 255) {
+          newErrors.address = "Address must not exceed 255 characters";
+        } else {
+          delete newErrors.address;
+        }
+        break;
+
+      case "gender":
+        if (!stringValue || stringValue.trim() === "") {
+          newErrors.gender = "Gender is required";
+        } else if (!["MALE", "FEMALE", "OTHER"].includes(stringValue)) {
+          newErrors.gender = "Gender must be MALE, FEMALE, or OTHER";
+        } else {
+          delete newErrors.gender;
+        }
+        break;
+
+      case "birthDay":
+        if (stringValue && stringValue.trim() !== "") {
+          const birthDate = new Date(stringValue);
+          const today = new Date();
+          if (birthDate >= today) {
+            newErrors.birthDay = "Birth day must be in the past";
+          } else {
+            delete newErrors.birthDay;
+          }
+        } else {
+          delete newErrors.birthDay;
+        }
+        break;
+
+      case "role":
+        if (!stringValue || stringValue.trim() === "") {
+          newErrors.role = "Role is required";
+        } else {
+          delete newErrors.role;
+        }
+        break;
+
+      case "isActive":
+        // ✅ Boolean field - không cần validate trim, chỉ validate type
+        if (value !== true && value !== false) {
+          newErrors.isActive = "Active status is required";
+        } else {
+          delete newErrors.isActive;
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  /**
+   * ✅ Validate toàn bộ form - FIX VALIDATE ALL FIELDS
+   */
+  const validateForm = () => {
+    let isValid = true;
+
+    // ✅ Validate từng field một cách an toàn
+    const fieldsToValidate = [
+      "fullName",
+      "email",
+      "phone",
+      "password",
+      "address",
+      "gender",
+      "birthDay",
+      "role",
+      "isActive",
+    ];
+
+    fieldsToValidate.forEach((fieldName) => {
+      const fieldValue = formData[fieldName];
+      if (!validateField(fieldName, fieldValue)) {
+        isValid = false;
+      }
+    });
+
+    return isValid;
+  };
 
   // ====================================================================
   // UTILITY FUNCTIONS
   // ====================================================================
 
   /**
-   * Phát hiện thay đổi thông tin cơ bản
+   * ✅ Chỉ lấy những field đã thay đổi
    */
-  const getBasicChanges = () => {
+  const getChangedFields = () => {
+    const changedFields = {};
     const changes = [];
-    const fieldLabels = {
-      fullName: "Họ và tên",
-      username: "Tên đăng nhập",
-      email: "Email",
-      phone: "Số điện thoại",
-    };
 
-    Object.keys(basicFormData).forEach((key) => {
-      if (basicFormData[key] !== originalBasicData[key]) {
-        changes.push({
-          field: key,
-          label: fieldLabels[key],
-          oldValue: originalBasicData[key] || "(Trống)",
-          newValue: basicFormData[key] || "(Trống)",
-        });
+    Object.keys(formData).forEach((key) => {
+      if (formData[key] !== originalData[key]) {
+        // Đặc biệt xử lý password - chỉ gửi khi có giá trị mới
+        if (key === "password") {
+          if (formData[key] && formData[key].trim() !== "") {
+            changedFields[key] = formData[key];
+            changes.push({
+              field: key,
+              label: "Mật khẩu",
+              oldValue: "********",
+              newValue: "******** (mới)",
+              category: "security",
+            });
+          }
+        } else {
+          changedFields[key] = formData[key];
+          changes.push({
+            field: key,
+            label: getFieldLabel(key),
+            oldValue: formatDisplayValue(key, originalData[key]),
+            newValue: formatDisplayValue(key, formData[key]),
+            category: getFieldCategory(key),
+          });
+        }
       }
     });
 
-    return changes;
+    return { changedFields, changes };
   };
 
   /**
-   * Phát hiện thay đổi vai trò & trạng thái
+   * Get field label for display
    */
-  const getRoleChanges = () => {
-    const changes = [];
-    const fieldLabels = {
-      role: "Vai trò",
+  const getFieldLabel = (field) => {
+    const labels = {
+      fullName: "Họ và tên",
+      birthDay: "Ngày sinh",
+      phone: "Số điện thoại",
+      email: "Email",
+      password: "Mật khẩu",
+      address: "Địa chỉ",
+      gender: "Giới tính",
       isActive: "Trạng thái",
+      role: "Vai trò",
     };
+    return labels[field] || field;
+  };
 
-    Object.keys(roleFormData).forEach((key) => {
-      if (roleFormData[key] !== originalRoleData[key]) {
-        let oldValue = originalRoleData[key];
-        let newValue = roleFormData[key];
+  /**
+   * Format value for display
+   */
+  const formatDisplayValue = (field, value) => {
+    if (field === "isActive") {
+      return value ? "Hoạt động" : "Tạm khóa";
+    }
+    if (field === "role") {
+      return getRoleDisplayName(value);
+    }
+    if (field === "gender") {
+      const genderLabels = {
+        MALE: "Nam",
+        FEMALE: "Nữ",
+        OTHER: "Khác",
+      };
+      return genderLabels[value] || value;
+    }
+    if (field === "birthDay" && value) {
+      return formatDateDisplay(value);
+    }
+    return value || "(Trống)";
+  };
 
-        // Format display cho boolean values
-        if (key === "isActive") {
-          oldValue = oldValue ? "Hoạt động" : "Tạm khóa";
-          newValue = newValue ? "Hoạt động" : "Tạm khóa";
-        }
-
-        // Format display cho role
-        if (key === "role") {
-          oldValue = getRoleDisplayName(oldValue);
-          newValue = getRoleDisplayName(newValue);
-        }
-
-        changes.push({
-          field: key,
-          label: fieldLabels[key],
-          oldValue: oldValue || "(Trống)",
-          newValue: newValue || "(Trống)",
-        });
-      }
-    });
-
-    return changes;
+  /**
+   * Get field category
+   */
+  const getFieldCategory = (field) => {
+    if (
+      ["fullName", "birthDay", "phone", "email", "address", "gender"].includes(
+        field
+      )
+    ) {
+      return "basic";
+    }
+    if (["role", "isActive"].includes(field)) {
+      return "role";
+    }
+    if (field === "password") {
+      return "security";
+    }
+    return "other";
   };
 
   /**
@@ -209,27 +378,9 @@ const EditUserModal = ({
   // ====================================================================
 
   /**
-   * Xử lý thay đổi tab
+   * ✅ Unified input change handler với validation
    */
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
-  /**
-   * Xử lý thay đổi thông tin cơ bản
-   */
-  const handleBasicInputChange = (e) => {
-    const { name, value } = e.target;
-    setBasicFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  /**
-   * Xử lý thay đổi vai trò & trạng thái
-   */
-  const handleRoleInputChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     let processedValue = value;
 
@@ -237,116 +388,73 @@ const EditUserModal = ({
       processedValue = value === "true";
     }
 
-    setRoleFormData((prev) => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: processedValue,
     }));
+
+    // Validate field on change
+    validateField(name, processedValue);
   };
 
   /**
-   * Validate thông tin cơ bản
+   * ✅ Unified submit handler
    */
-  const validateBasicInfo = () => {
-    if (!basicFormData.fullName && !basicFormData.username) {
-      alert("Vui lòng điền họ tên hoặc tên đăng nhập!");
-      return false;
+  const handleSubmit = () => {
+    if (!validateForm()) {
+      alert("Vui lòng kiểm tra lại các trường bị lỗi!");
+      return;
     }
 
-    if (!basicFormData.email) {
-      alert("Vui lòng điền email!");
-      return false;
+    const { changedFields, changes } = getChangedFields();
+
+    if (Object.keys(changedFields).length === 0) {
+      alert("Không có thay đổi nào để lưu.");
+      return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(basicFormData.email)) {
-      alert("Email không hợp lệ!");
-      return false;
-    }
+    setShowConfirmation(true);
+  };
 
-    if (basicFormData.phone) {
-      const phoneRegex = /^[0-9]{10,11}$/;
-      if (!phoneRegex.test(basicFormData.phone)) {
-        alert("Số điện thoại phải có 10-11 chữ số!");
-        return false;
+  /**
+   * ✅ Confirm changes - chỉ gửi những field đã thay đổi
+   */
+  const handleConfirmChanges = () => {
+    const { changedFields } = getChangedFields();
+
+    if (onSubmit) {
+      // ✅ Gửi đúng format backend yêu cầu
+      const requestData = {
+        id: user.id,
+        ...changedFields, // Chỉ gửi những field đã thay đổi
+      };
+
+      // ✅ Đặc biệt xử lý password - xóa nếu rỗng
+      if (requestData.password === "") {
+        delete requestData.password;
       }
+
+      console.log("🚀 Sending request data:", requestData);
+      onSubmit(requestData);
     }
-
-    return true;
-  };
-
-  /**
-   * Submit thông tin cơ bản
-   */
-  const handleSubmitBasicInfo = () => {
-    if (!validateBasicInfo()) return;
-
-    const changes = getBasicChanges();
-    if (changes.length === 0) {
-      alert("Không có thay đổi nào để lưu.");
-      return;
-    }
-
-    setShowBasicConfirmation(true);
-  };
-
-  /**
-   * Submit vai trò & trạng thái
-   */
-  const handleSubmitRole = () => {
-    const changes = getRoleChanges();
-    if (changes.length === 0) {
-      alert("Không có thay đổi nào để lưu.");
-      return;
-    }
-
-    setShowRoleConfirmation(true);
-  };
-
-  /**
-   * Xác nhận cập nhật thông tin cơ bản
-   */
-  const handleConfirmBasicChanges = () => {
-    if (onSubmitBasicInfo) {
-      onSubmitBasicInfo({
-        ...basicFormData,
-        id: user.id,
-      });
-    }
-    setShowBasicConfirmation(false);
+    setShowConfirmation(false);
     onClose();
   };
 
   /**
-   * Xác nhận cập nhật vai trò & trạng thái
-   */
-  const handleConfirmRoleChanges = () => {
-    if (onSubmitRole) {
-      onSubmitRole({
-        ...roleFormData,
-        id: user.id,
-      });
-    }
-    setShowRoleConfirmation(false);
-    onClose();
-  };
-
-  /**
-   * Xử lý đóng modal
+   * ✅ Handle close
    */
   const handleClose = () => {
-    const basicChanges = getBasicChanges();
-    const roleChanges = getRoleChanges();
+    const { changes } = getChangedFields();
 
-    if (basicChanges.length > 0 || roleChanges.length > 0) {
+    if (changes.length > 0) {
       const confirmLeave = window.confirm(
         "Bạn có thay đổi chưa lưu. Bạn có chắc chắn muốn thoát?"
       );
       if (!confirmLeave) return;
     }
 
-    setShowBasicConfirmation(false);
-    setShowRoleConfirmation(false);
-    setActiveTab(0);
+    setShowConfirmation(false);
     onClose();
   };
 
@@ -355,6 +463,8 @@ const EditUserModal = ({
   // ====================================================================
 
   if (!user) return null;
+
+  const { changes } = getChangedFields();
 
   // ====================================================================
   // RENDER MAIN COMPONENT
@@ -366,7 +476,7 @@ const EditUserModal = ({
       {/* MAIN EDIT DIALOG */}
       {/* ============================================================== */}
       <Dialog
-        open={open && !showBasicConfirmation && !showRoleConfirmation}
+        open={open && !showConfirmation}
         onClose={handleClose}
         maxWidth="lg"
         fullWidth
@@ -453,378 +563,380 @@ const EditUserModal = ({
           </Typography>
         </Box>
 
-        {/* Tabs Navigation */}
-        <Box sx={{ borderBottom: 1, borderColor: "divider", px: 3, pt: 1 }}>
-          <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab
-              label="Thông tin cơ bản"
-              icon={<PersonIcon />}
-              iconPosition="start"
-              sx={{
-                fontWeight: 600,
-                minHeight: 64,
-                "&.Mui-selected": {
-                  color: "#4A90E2",
-                },
-              }}
-            />
-            <Tab
-              label="Vai trò & Trạng thái"
-              icon={<SecurityIcon />}
-              iconPosition="start"
-              sx={{
-                fontWeight: 600,
-                minHeight: 64,
-                "&.Mui-selected": {
-                  color: "#1ABC9C",
-                },
-              }}
-            />
-          </Tabs>
-        </Box>
-
         {/* Dialog Content */}
         <DialogContent sx={{ p: 0, backgroundColor: "transparent" }}>
           <Box sx={{ p: 3 }}>
-            {/* ====================================================== */}
-            {/* TAB 1: BASIC INFORMATION */}
-            {/* ====================================================== */}
-            {activeTab === 0 && (
-              <Card
-                sx={{
-                  borderRadius: 4,
-                  boxShadow: "0 8px 32px rgba(74, 144, 226, 0.08)",
-                  border: "1px solid rgba(255,255,255,0.5)",
-                  background:
-                    "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,252,255,0.9))",
-                  backdropFilter: "blur(10px)",
-                }}
-              >
-                <CardContent sx={{ p: 4 }}>
-                  {/* Card Header */}
-                  <Box
+            <Card
+              sx={{
+                borderRadius: 4,
+                boxShadow: "0 8px 32px rgba(74, 144, 226, 0.08)",
+                border: "1px solid rgba(255,255,255,0.5)",
+                background:
+                  "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,252,255,0.9))",
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              <CardContent sx={{ p: 4 }}>
+                {/* ====================================================== */}
+                {/* THÔNG TIN CƠ BẢN */}
+                {/* ====================================================== */}
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: "#2D3748",
+                    fontWeight: 600,
+                    mb: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  👤 Thông tin cơ bản
+                </Typography>
+
+                <Grid container spacing={3} sx={{ mb: 4 }}>
+                  {/* ✅ Full Name - REQUIRED */}
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="Họ và tên"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleInputChange}
+                      error={!!errors.fullName}
+                      helperText={errors.fullName}
+                      variant="outlined"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 3,
+                          backgroundColor: "rgba(248,252,255,0.8)",
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  {/* ✅ Email - REQUIRED */}
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="Email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      error={!!errors.email}
+                      helperText={errors.email}
+                      variant="outlined"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 3,
+                          backgroundColor: "rgba(248,252,255,0.8)",
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  {/* ✅ Phone - Optional */}
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Số điện thoại"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      error={!!errors.phone}
+                      helperText={errors.phone || "10-11 chữ số"}
+                      variant="outlined"
+                      placeholder="VD: 0901234567"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 3,
+                          backgroundColor: "rgba(248,252,255,0.8)",
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  {/* ✅ Birth Day - Optional */}
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Ngày sinh"
+                      name="birthDay"
+                      type="date"
+                      value={formData.birthDay}
+                      onChange={handleInputChange}
+                      error={!!errors.birthDay}
+                      helperText={errors.birthDay}
+                      variant="outlined"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 3,
+                          backgroundColor: "rgba(248,252,255,0.8)",
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  {/* ✅ Address - Optional */}
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Địa chỉ"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      error={!!errors.address}
+                      helperText={errors.address}
+                      variant="outlined"
+                      multiline
+                      rows={2}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 3,
+                          backgroundColor: "rgba(248,252,255,0.8)",
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  {/* ✅ Gender - REQUIRED */}
+                  <Grid item xs={12} md={6}>
+                    <FormControl
+                      fullWidth
+                      variant="outlined"
+                      error={!!errors.gender}
+                    >
+                      <InputLabel>Giới tính *</InputLabel>
+                      <Select
+                        value={formData.gender}
+                        label="Giới tính *"
+                        name="gender"
+                        onChange={handleInputChange}
+                        sx={{
+                          borderRadius: 3,
+                          backgroundColor: "rgba(248,252,255,0.8)",
+                        }}
+                      >
+                        <MenuItem value="MALE">👨 Nam</MenuItem>
+                        <MenuItem value="FEMALE">👩 Nữ</MenuItem>
+                        <MenuItem value="OTHER">🏳️‍⚧️ Khác</MenuItem>
+                      </Select>
+                      {errors.gender && (
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "error.main", mt: 0.5, ml: 2 }}
+                        >
+                          {errors.gender}
+                        </Typography>
+                      )}
+                    </FormControl>
+                  </Grid>
+                </Grid>
+
+                <Divider
+                  sx={{ my: 4, borderColor: "rgba(74, 144, 226, 0.2)" }}
+                />
+
+                {/* ====================================================== */}
+                {/* BẢO MẬT */}
+                {/* ====================================================== */}
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: "#2D3748",
+                    fontWeight: 600,
+                    mb: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  🔒 Bảo mật
+                </Typography>
+
+                <Grid container spacing={3} sx={{ mb: 4 }}>
+                  {/* ✅ Password - Optional */}
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Mật khẩu mới (để trống nếu không đổi)"
+                      name="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      error={!!errors.password}
+                      helperText={
+                        errors.password ||
+                        "Ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
+                      }
+                      variant="outlined"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 3,
+                          backgroundColor: "rgba(248,252,255,0.8)",
+                        },
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+
+                <Divider
+                  sx={{ my: 4, borderColor: "rgba(74, 144, 226, 0.2)" }}
+                />
+
+                {/* ====================================================== */}
+                {/* VAI TRÒ & TRẠNG THÁI */}
+                {/* ====================================================== */}
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: "#2D3748",
+                    fontWeight: 600,
+                    mb: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  🔐 Vai trò & Trạng thái
+                </Typography>
+
+                {/* Warning Notice */}
+                <Box
+                  sx={{
+                    mb: 3,
+                    p: 3,
+                    borderRadius: 3,
+                    background: "linear-gradient(45deg, #FFF3CD, #FCF4A3)",
+                    border: "1px solid #F59E0B",
+                  }}
+                >
+                  <Typography
+                    variant="body2"
                     sx={{
+                      color: "#92400E",
+                      fontWeight: 500,
                       display: "flex",
                       alignItems: "center",
-                      gap: 3,
-                      mb: 4,
+                      gap: 1,
                     }}
                   >
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 3,
-                        background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-                      }}
+                    <WarningIcon sx={{ fontSize: 18 }} />
+                    <strong>Cảnh báo:</strong> Thay đổi vai trò hoặc trạng thái
+                    sẽ ảnh hưởng đến quyền truy cập của tài khoản này
+                  </Typography>
+                </Box>
+
+                <Grid container spacing={3}>
+                  {/* ✅ Role - REQUIRED */}
+                  <Grid item xs={12} md={6}>
+                    <FormControl
+                      fullWidth
+                      variant="outlined"
+                      error={!!errors.role}
                     >
-                      <PersonIcon sx={{ color: "white", fontSize: 24 }} />
-                    </Box>
-                    <Box>
-                      <Typography
-                        variant="h6"
-                        sx={{ color: "#4A90E2", fontWeight: 700, fontSize: 20 }}
+                      <InputLabel>Vai trò *</InputLabel>
+                      <Select
+                        value={formData.role}
+                        label="Vai trò *"
+                        name="role"
+                        onChange={handleInputChange}
+                        sx={{
+                          borderRadius: 3,
+                          backgroundColor: "rgba(248,255,248,0.8)",
+                        }}
                       >
-                        Thông tin cơ bản
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "#718096", mt: 0.5 }}
-                      >
-                        Cập nhật thông tin cá nhân của người dùng
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Info Notice */}
-                  <Box
-                    sx={{
-                      mb: 4,
-                      p: 3,
-                      borderRadius: 3,
-                      background: "linear-gradient(45deg, #E3F2FD, #F0F8FF)",
-                      border: "1px solid #2196F3",
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#1565C0",
-                        fontWeight: 500,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <InfoIcon sx={{ fontSize: 18 }} />
-                      <strong>Thông tin:</strong> Chưa cập nhập API, nên chưa
-                      test được, sẽ thêm và cập nhật sau
-                    </Typography>
-                  </Box>
-
-                  {/* Form Fields */}
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Họ và tên"
-                        name="fullName"
-                        value={basicFormData.fullName}
-                        onChange={handleBasicInputChange}
-                        variant="outlined"
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: 3,
-                            height: 56,
-                            backgroundColor: "rgba(248,252,255,0.8)",
-                          },
-                        }}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Tên đăng nhập"
-                        name="username"
-                        value={basicFormData.username}
-                        onChange={handleBasicInputChange}
-                        variant="outlined"
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: 3,
-                            height: 56,
-                            backgroundColor: "rgba(248,252,255,0.8)",
-                          },
-                        }}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        required
-                        fullWidth
-                        label="Email"
-                        name="email"
-                        type="email"
-                        value={basicFormData.email}
-                        onChange={handleBasicInputChange}
-                        variant="outlined"
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: 3,
-                            height: 56,
-                            backgroundColor: "rgba(248,252,255,0.8)",
-                          },
-                        }}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Số điện thoại"
-                        name="phone"
-                        value={basicFormData.phone}
-                        onChange={handleBasicInputChange}
-                        variant="outlined"
-                        placeholder="VD: 0901234567"
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: 3,
-                            height: 56,
-                            backgroundColor: "rgba(248,252,255,0.8)",
-                          },
-                        }}
-                      />
-                    </Grid>
+                        <MenuItem value="ADMIN">🔐 Quản trị viên</MenuItem>
+                        <MenuItem value="STAFF">👔 Nhân viên</MenuItem>
+                        <MenuItem value="CONSULTANT">🩺 Tư vấn viên</MenuItem>
+                        <MenuItem value="CUSTOMER">👤 Khách hàng</MenuItem>
+                      </Select>
+                      {errors.role && (
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "error.main", mt: 0.5, ml: 2 }}
+                        >
+                          {errors.role}
+                        </Typography>
+                      )}
+                    </FormControl>
                   </Grid>
-                </CardContent>
-              </Card>
-            )}
 
-            {/* ====================================================== */}
-            {/* TAB 2: ROLE & STATUS */}
-            {/* ====================================================== */}
-            {activeTab === 1 && (
-              <Card
-                sx={{
-                  borderRadius: 4,
-                  boxShadow: "0 8px 32px rgba(26, 188, 156, 0.08)",
-                  border: "1px solid rgba(255,255,255,0.5)",
-                  background:
-                    "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,255,248,0.9))",
-                  backdropFilter: "blur(10px)",
-                }}
-              >
-                <CardContent sx={{ p: 4 }}>
-                  {/* Card Header */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 3,
-                      mb: 4,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 3,
-                        background: "linear-gradient(45deg, #1ABC9C, #16a085)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "0 2px 8px rgba(26, 188, 156, 0.25)",
-                      }}
-                    >
-                      <SecurityIcon sx={{ color: "white", fontSize: 24 }} />
-                    </Box>
-                    <Box>
-                      <Typography
-                        variant="h6"
-                        sx={{ color: "#1ABC9C", fontWeight: 700, fontSize: 20 }}
+                  {/* ✅ Status - REQUIRED */}
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth variant="outlined">
+                      <InputLabel>Trạng thái *</InputLabel>
+                      <Select
+                        value={formData.isActive.toString()}
+                        label="Trạng thái *"
+                        name="isActive"
+                        onChange={handleInputChange}
+                        sx={{
+                          borderRadius: 3,
+                          backgroundColor: "rgba(248,255,248,0.8)",
+                        }}
                       >
-                        Vai trò & Trạng thái
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "#718096", mt: 0.5 }}
-                      >
-                        Quản lý quyền hạn và trạng thái tài khoản
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Warning Notice */}
-                  <Box
-                    sx={{
-                      mb: 4,
-                      p: 3,
-                      borderRadius: 3,
-                      background: "linear-gradient(45deg, #FFF3CD, #FCF4A3)",
-                      border: "1px solid #F59E0B",
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#92400E",
-                        fontWeight: 500,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <WarningIcon sx={{ fontSize: 18 }} />
-                      <strong>Cảnh báo:</strong> Thay đổi vai trò hoặc trạng
-                      thái sẽ ảnh hưởng đến quyền truy cập của tài khoản này
-                    </Typography>
-                  </Box>
-
-                  {/* Form Fields */}
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
-                      <FormControl fullWidth variant="outlined">
-                        <InputLabel sx={{ fontSize: 16, fontWeight: 500 }}>
-                          Vai trò
-                        </InputLabel>
-                        <Select
-                          value={roleFormData.role}
-                          label="Vai trò"
-                          name="role"
-                          onChange={handleRoleInputChange}
-                          sx={{
-                            borderRadius: 3,
-                            height: 56,
-                            backgroundColor: "rgba(248,255,248,0.8)",
-                          }}
-                        >
-                          <MenuItem value="ADMIN">🔐 Quản trị viên</MenuItem>
-                          <MenuItem value="STAFF">👔 Nhân viên</MenuItem>
-                          <MenuItem value="CONSULTANT">🩺 Tư vấn viên</MenuItem>
-                          <MenuItem value="CUSTOMER">👤 Khách hàng</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <FormControl fullWidth variant="outlined">
-                        <InputLabel sx={{ fontSize: 16, fontWeight: 500 }}>
-                          Trạng thái
-                        </InputLabel>
-                        <Select
-                          value={roleFormData.isActive.toString()}
-                          label="Trạng thái"
-                          name="isActive"
-                          onChange={handleRoleInputChange}
-                          sx={{
-                            borderRadius: 3,
-                            height: 56,
-                            backgroundColor: "rgba(248,255,248,0.8)",
-                          }}
-                        >
-                          <MenuItem value="true">
+                        <MenuItem value="true">
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                            }}
+                          >
                             <Box
                               sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 2,
+                                width: 12,
+                                height: 12,
+                                borderRadius: "50%",
+                                backgroundColor: "#4caf50",
+                                boxShadow: "0 0 12px rgba(76, 175, 80, 0.5)",
                               }}
+                            />
+                            <Typography
+                              sx={{ color: "#2e7d32", fontWeight: 600 }}
                             >
-                              <Box
-                                sx={{
-                                  width: 12,
-                                  height: 12,
-                                  borderRadius: "50%",
-                                  backgroundColor: "#4caf50",
-                                  boxShadow: "0 0 12px rgba(76, 175, 80, 0.5)",
-                                }}
-                              />
-                              <Typography
-                                sx={{ color: "#2e7d32", fontWeight: 600 }}
-                              >
-                                Hoạt động
-                              </Typography>
-                            </Box>
-                          </MenuItem>
+                              Hoạt động
+                            </Typography>
+                          </Box>
+                        </MenuItem>
 
-                          <MenuItem value="false">
+                        <MenuItem value="false">
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                            }}
+                          >
                             <Box
                               sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 2,
+                                width: 12,
+                                height: 12,
+                                borderRadius: "50%",
+                                backgroundColor: "#f44336",
+                                boxShadow: "0 0 12px rgba(244, 67, 54, 0.5)",
                               }}
+                            />
+                            <Typography
+                              sx={{ color: "#d32f2f", fontWeight: 600 }}
                             >
-                              <Box
-                                sx={{
-                                  width: 12,
-                                  height: 12,
-                                  borderRadius: "50%",
-                                  backgroundColor: "#f44336",
-                                  boxShadow: "0 0 12px rgba(244, 67, 54, 0.5)",
-                                }}
-                              />
-                              <Typography
-                                sx={{ color: "#d32f2f", fontWeight: 600 }}
-                              >
-                                Tạm khóa
-                              </Typography>
-                            </Box>
-                          </MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
+                              Tạm khóa
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
                   </Grid>
-                </CardContent>
-              </Card>
-            )}
+                </Grid>
+              </CardContent>
+            </Card>
           </Box>
         </DialogContent>
 
@@ -862,69 +974,45 @@ const EditUserModal = ({
             Hủy bỏ
           </Button>
 
-          {/* Conditional Submit Button based on active tab */}
-          {activeTab === 0 && (
-            <Button
-              onClick={handleSubmitBasicInfo}
-              variant="contained"
-              size="large"
-              sx={{
-                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                color: "#fff",
-                fontWeight: 600,
-                minWidth: 220,
-                height: 52,
-                borderRadius: 3,
-                px: 4,
-                fontSize: 16,
-                boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-                "&:hover": {
-                  background: "linear-gradient(45deg, #357ABD, #17A2B8)",
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 15px 40px rgba(74, 144, 226, 0.4)",
-                },
-                transition: "all 0.3s ease",
-              }}
-            >
-              💾 Cập nhật thông tin cơ bản
-            </Button>
-          )}
-
-          {activeTab === 1 && (
-            <Button
-              onClick={handleSubmitRole}
-              variant="contained"
-              size="large"
-              sx={{
-                background: "linear-gradient(45deg, #1ABC9C, #16a085)",
-                color: "#fff",
-                fontWeight: 600,
-                minWidth: 220,
-                height: 52,
-                borderRadius: 3,
-                px: 4,
-                fontSize: 16,
-                boxShadow: "0 2px 8px rgba(26, 188, 156, 0.25)",
-                "&:hover": {
-                  background: "linear-gradient(45deg, #16a085, #138d75)",
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 15px 40px rgba(26, 188, 156, 0.4)",
-                },
-                transition: "all 0.3s ease",
-              }}
-            >
-              🔐 Cập nhật vai trò & trạng thái
-            </Button>
-          )}
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            size="large"
+            disabled={Object.keys(errors).length > 0}
+            sx={{
+              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+              color: "#fff",
+              fontWeight: 600,
+              minWidth: 220,
+              height: 52,
+              borderRadius: 3,
+              px: 4,
+              fontSize: 16,
+              boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+              "&:hover": {
+                background: "linear-gradient(45deg, #357ABD, #17A2B8)",
+                transform: "translateY(-2px)",
+                boxShadow: "0 15px 40px rgba(74, 144, 226, 0.4)",
+              },
+              "&:disabled": {
+                background: "#ccc",
+                transform: "none",
+                boxShadow: "none",
+              },
+              transition: "all 0.3s ease",
+            }}
+          >
+            💾 Cập nhật thông tin
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* ============================================================== */}
-      {/* BASIC INFO CONFIRMATION DIALOG */}
+      {/* UNIFIED CONFIRMATION DIALOG */}
       {/* ============================================================== */}
       <Dialog
-        open={showBasicConfirmation}
-        onClose={() => setShowBasicConfirmation(false)}
+        open={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
         maxWidth="md"
         fullWidth
         PaperProps={{
@@ -949,7 +1037,7 @@ const EditUserModal = ({
         >
           <PersonIcon sx={{ fontSize: 28 }} />
           <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            Xác nhận cập nhật thông tin cơ bản
+            Xác nhận cập nhật thông tin
           </Typography>
         </DialogTitle>
 
@@ -958,12 +1046,11 @@ const EditUserModal = ({
             variant="h6"
             sx={{ mb: 3, color: "#2D3748", fontWeight: 600 }}
           >
-            Thông tin cơ bản của:{" "}
-            <strong>{user?.fullName || user?.username}</strong>
+            Thông tin của: <strong>{user?.fullName || user?.username}</strong>
           </Typography>
 
           <Typography variant="body1" sx={{ mb: 3, color: "#4A5568" }}>
-            Những thay đổi sau sẽ được gửi đến API cập nhật thông tin cơ bản:
+            Những thay đổi sau sẽ được cập nhật:
           </Typography>
 
           <Card
@@ -974,12 +1061,12 @@ const EditUserModal = ({
           >
             <CardContent sx={{ p: 0 }}>
               <List>
-                {getBasicChanges().map((change, index) => (
+                {changes.map((change, index) => (
                   <ListItem
                     key={change.field}
                     sx={{
                       borderBottom:
-                        index < getBasicChanges().length - 1
+                        index < changes.length - 1
                           ? "1px solid rgba(74, 144, 226, 0.1)"
                           : "none",
                       py: 2,
@@ -991,6 +1078,11 @@ const EditUserModal = ({
                           variant="subtitle1"
                           sx={{ fontWeight: 600, color: "#2D3748", mb: 1 }}
                         >
+                          {change.category === "basic"
+                            ? "📝"
+                            : change.category === "security"
+                            ? "🔒"
+                            : "🔐"}{" "}
                           {change.label}
                         </Typography>
                       }
@@ -1036,7 +1128,7 @@ const EditUserModal = ({
 
         <DialogActions sx={{ p: 4, gap: 2 }}>
           <Button
-            onClick={() => setShowBasicConfirmation(false)}
+            onClick={() => setShowConfirmation(false)}
             variant="outlined"
             size="large"
             sx={{ minWidth: 140, height: 52, borderRadius: 3 }}
@@ -1044,176 +1136,11 @@ const EditUserModal = ({
             ❌ Hủy bỏ
           </Button>
           <Button
-            onClick={handleConfirmBasicChanges}
+            onClick={handleConfirmChanges}
             variant="contained"
             size="large"
             sx={{
               background: "linear-gradient(45deg, #4CAF50, #45A049)",
-              minWidth: 200,
-              height: 52,
-              borderRadius: 3,
-            }}
-          >
-            <CheckIcon sx={{ mr: 1 }} /> Xác nhận cập nhật
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* ============================================================== */}
-      {/* ROLE CONFIRMATION DIALOG */}
-      {/* ============================================================== */}
-      <Dialog
-        open={showRoleConfirmation}
-        onClose={() => setShowRoleConfirmation(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 4,
-            background: "rgba(255, 255, 255, 0.98)",
-            backdropFilter: "blur(20px)",
-            boxShadow: "0 25px 50px rgba(0, 0, 0, 0.15)",
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            background: "linear-gradient(45deg, #1ABC9C, #16a085)",
-            color: "#fff",
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            py: 3,
-            fontWeight: 700,
-          }}
-        >
-          <SecurityIcon sx={{ fontSize: 28 }} />
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            Xác nhận cập nhật vai trò & trạng thái
-          </Typography>
-        </DialogTitle>
-
-        <DialogContent sx={{ p: 4 }}>
-          <Typography
-            variant="h6"
-            sx={{ mb: 3, color: "#2D3748", fontWeight: 600 }}
-          >
-            Vai trò & trạng thái của:{" "}
-            <strong>{user?.fullName || user?.username}</strong>
-          </Typography>
-
-          <Box
-            sx={{
-              mb: 3,
-              p: 3,
-              borderRadius: 3,
-              background: "linear-gradient(45deg, #FFE4B5, #FFF8DC)",
-              border: "1px solid #F0A500",
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                color: "#B8860B",
-                fontWeight: 500,
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-              }}
-            >
-              ⚠️ <strong>Cảnh báo:</strong> Những thay đổi này sẽ được gửi đến
-              API riêng và có thể ảnh hưởng đến quyền truy cập!
-            </Typography>
-          </Box>
-
-          <Typography variant="body1" sx={{ mb: 3, color: "#4A5568" }}>
-            Những thay đổi sau sẽ được gửi đến API cập nhật vai trò & trạng
-            thái:
-          </Typography>
-
-          <Card
-            sx={{
-              borderRadius: 3,
-              border: "1px solid rgba(26, 188, 156, 0.15)",
-            }}
-          >
-            <CardContent sx={{ p: 0 }}>
-              <List>
-                {getRoleChanges().map((change, index) => (
-                  <ListItem
-                    key={change.field}
-                    sx={{
-                      borderBottom:
-                        index < getRoleChanges().length - 1
-                          ? "1px solid rgba(26, 188, 156, 0.1)"
-                          : "none",
-                      py: 2,
-                    }}
-                  >
-                    <ListItemText
-                      primary={
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ fontWeight: 600, color: "#2D3748", mb: 1 }}
-                        >
-                          {change.label}
-                        </Typography>
-                      }
-                      secondary={
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 2,
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <Chip
-                            label={change.oldValue}
-                            size="small"
-                            sx={{
-                              backgroundColor: "#FEF2F2",
-                              color: "#DC2626",
-                              fontWeight: 500,
-                            }}
-                          />
-                          <CompareIcon
-                            sx={{ color: "#1ABC9C", fontSize: 20 }}
-                          />
-                          <Chip
-                            label={change.newValue}
-                            size="small"
-                            sx={{
-                              backgroundColor: "#ECFDF5",
-                              color: "#059669",
-                              fontWeight: 500,
-                            }}
-                          />
-                        </Box>
-                      }
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
-        </DialogContent>
-
-        <DialogActions sx={{ p: 4, gap: 2 }}>
-          <Button
-            onClick={() => setShowRoleConfirmation(false)}
-            variant="outlined"
-            size="large"
-            sx={{ minWidth: 140, height: 52, borderRadius: 3 }}
-          >
-            ❌ Hủy bỏ
-          </Button>
-          <Button
-            onClick={handleConfirmRoleChanges}
-            variant="contained"
-            size="large"
-            sx={{
-              background: "linear-gradient(45deg, #1ABC9C, #16a085)",
               minWidth: 200,
               height: 52,
               borderRadius: 3,

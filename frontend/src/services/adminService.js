@@ -244,6 +244,19 @@ export const adminService = {
     }
   },
 
+  // ✅ Thêm API mới cho cập nhật toàn bộ thông tin (tùy chọn)
+  // updateAllUserInfo: async (userId, userData) => {
+  //   try {
+  //     const response = await apiClient.put(
+  //       `/admin/users/all/${userId}`,
+  //       userData
+  //     );
+  //     return response.data;
+  //   } catch (error) {
+  //     throw error.response?.data || error;
+  //   }
+  // },
+
   //=================================================Utility Methods=================================================
 
   // Kiểm tra xem consultant có profile hay không

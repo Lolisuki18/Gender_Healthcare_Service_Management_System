@@ -37,6 +37,8 @@ import {
   Business as BusinessIcon,
   Description as DescriptionIcon,
 } from "@mui/icons-material";
+// Import dateUtils for consistent date formatting
+import { formatDateDisplay } from "../../../utils/dateUtils.js";
 
 const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
   const theme = useTheme();
@@ -122,7 +124,7 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
   };
 
   const getStatusColor = (isActive) => (isActive ? "success" : "error");
-
+  // Helper functions for date formatting using dateUtils
   const formatDate = (dateInput) => {
     if (!dateInput) return "Chưa cập nhật";
     try {
@@ -130,16 +132,18 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
       if (Array.isArray(dateInput)) {
         const [year, month, day, hour = 0, minute = 0] = dateInput;
         date = new Date(year, month - 1, day, hour, minute);
+        // For array input with time, show time as well
+        return date.toLocaleDateString("vi-VN", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
       } else {
-        date = new Date(dateInput);
+        // Use dateUtils for consistent formatting
+        return formatDateDisplay(dateInput);
       }
-      return date.toLocaleDateString("vi-VN", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
     } catch (error) {
       return "Chưa cập nhật";
     }
@@ -147,22 +151,8 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
 
   const formatBirthDate = (birthDay) => {
     if (!birthDay) return "Chưa cập nhật";
-    try {
-      let date;
-      if (Array.isArray(birthDay)) {
-        const [year, month, day] = birthDay;
-        date = new Date(year, month - 1, day);
-      } else {
-        date = new Date(birthDay);
-      }
-      return date.toLocaleDateString("vi-VN", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    } catch (error) {
-      return "Chưa cập nhật";
-    }
+    // Use dateUtils for consistent formatting
+    return formatDateDisplay(birthDay);
   };
 
   // Enhanced Info Item Component

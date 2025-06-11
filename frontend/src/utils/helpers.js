@@ -1,20 +1,28 @@
+// Import dateUtils for consistent date formatting
+import { formatDateDisplay } from "./dateUtils.js";
+
 /**
  * Format một chuỗi thời gian thành định dạng ngày tháng cụ thể
  * @param {string|Date} dateString - Chuỗi thời gian hoặc đối tượng Date
- * @param {object} options - Các tùy chọn định dạng
+ * @param {object} options - Các tùy chọn định dạng (deprecated, use dateUtils instead)
  * @returns {string} - Chuỗi ngày đã định dạng
+ * @deprecated Use formatDateDisplay from dateUtils.js for consistent formatting
  */
 export const formatDate = (dateString, options = {}) => {
-  const date = new Date(dateString);
+  // For backward compatibility, if custom options are provided, use old method
+  if (Object.keys(options).length > 0) {
+    const date = new Date(dateString);
+    const defaultOptions = {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      ...options,
+    };
+    return new Intl.DateTimeFormat("vi-VN", defaultOptions).format(date);
+  }
 
-  const defaultOptions = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    ...options,
-  };
-
-  return new Intl.DateTimeFormat("vi-VN", defaultOptions).format(date);
+  // Use new dateUtils for consistent formatting
+  return formatDateDisplay(dateString);
 };
 
 /**

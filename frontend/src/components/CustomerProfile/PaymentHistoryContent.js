@@ -43,6 +43,8 @@ import {
   Visibility as ViewIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
+// Import dateUtils for consistent date formatting
+import { formatDateDisplay } from "../../utils/dateUtils.js";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: "rgba(255, 255, 255, 0.95)", // Light glass background for medical
@@ -268,9 +270,9 @@ const PaymentHistoryContent = () => {
                           fontWeight: 600,
                           mb: 1,
                         }}
-                      />
+                      />{" "}
                       <Typography variant="body2" sx={{ color: "#4A5568" }}>
-                        {new Date(payment.date).toLocaleDateString("vi-VN")}
+                        {formatDateDisplay(payment.date)}
                       </Typography>
                     </Box>
                   </Grid>

@@ -294,7 +294,7 @@ const UserManagementContent = () => {
         }
         if (user.role === "STAFF") {
           console.log("Đang xóa nhân viên ID:", userId);
-          await adminService.deleteUser(userId, "STAFF");
+          await adminService.deleteStaff(userId); // ✅ Sửa từ deleteUser thành deleteStaff
         }
         if (user.role === "CUSTOMER") {
           console.log("Đang xóa khách hàng ID:", userId);
@@ -305,7 +305,9 @@ const UserManagementContent = () => {
           await adminService.deleteAdmin(userId);
         }
 
-        // setUsers((prevUsers) => prevUsers.filter((u) => u.id !== userId));
+        // ✅ Refresh lại danh sách người dùng sau khi xóa thành công
+        await fetchUsers();
+
         notify.success(
           "Xóa người dùng thành công",
           `Đã xóa người dùng "${user.fullName || user.username}" thành công!`
@@ -317,7 +319,8 @@ const UserManagementContent = () => {
           error.response?.data?.message ||
           error.message ||
           "Có lỗi xảy ra khi xóa người dùng";
-        alert(`Lỗi: ${errorMessage}`);
+
+        notify.error("Lỗi xóa người dùng", errorMessage);
       }
     }
   };
@@ -428,8 +431,9 @@ const UserManagementContent = () => {
   const handleEditSubmit = async (formData) => {
     const user = editingUser;
 
+    // Xác nhận thay đổi vai trò nếu có
     if (formData.role !== user.role) {
-      const isConfirmed = await confirmDialog.info(
+      const isConfirmed = await confirmDialog.warning(
         `Bạn đang thay đổi vai trò từ "${getRoleDisplayName(
           user.role
         )}" thành "${getRoleDisplayName(
@@ -446,28 +450,48 @@ const UserManagementContent = () => {
     }
 
     try {
-      console.log("Đang cập nhật thông tin người dùng:", formData);
-      const updatedUser = await userService.updateUser(user.id, formData);
+      console.log("🔄 Đang cập nhật thông tin người dùng:", formData);
 
+      // ✅ Gọi API thống nhất - bạn có thể chọn 1 trong các cách sau:
+
+      // Cách 1: Sử dụng API updateUser (cập nhật cả thông tin cơ bản)
+      const response = await adminService.updateUser(formData.id, user.role, {
+        fullName: formData.fullName,
+        username: formData.username,
+        email: formData.email,
+        phone: formData.phone,
+        role: formData.role,
+        isActive: formData.isActive,
+      });
+
+      // Hoặc Cách 2: Tạo API mới updateAllUserInfo
+      // const response = await adminService.updateAllUserInfo(formData.id, formData);
+
+      // Cập nhật state local
       setUsers((prevUsers) =>
-        prevUsers.map((u) => (u.id === user.id ? { ...u, ...formData } : u))
+        prevUsers.map((u) => (u.id === formData.id ? { ...u, ...formData } : u))
       );
 
-      alert(
-        `Đã cập nhật thông tin người dùng: ${
-          formData.fullName || formData.username
-        }`
+      notify.success(
+        "Cập nhật thành công!",
+        `Đã cập nhật thông tin của ${formData.fullName || formData.username}`
       );
+
+      // Refresh data từ server
+      await fetchUsers();
+
       setOpenEditModal(false);
       setEditingUser(null);
-      console.log("Cập nhật người dùng thành công:", updatedUser);
+
+      console.log("✅ Cập nhật người dùng thành công");
     } catch (error) {
-      console.error("Lỗi khi cập nhật người dùng:", error);
+      console.error("❌ Lỗi khi cập nhật người dùng:", error);
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
-        "Có lỗi xảy ra khi cập nhật người dùng";
-      alert(`Lỗi: ${errorMessage}`);
+        "Có lỗi xảy ra khi cập nhật thông tin người dùng";
+
+      notify.error("Lỗi cập nhật", errorMessage);
     }
   };
 
@@ -1208,8 +1232,7 @@ const UserManagementContent = () => {
           setEditingUser(null);
         }}
         user={editingUser}
-        onSubmitBasicInfo={handleUpdateBasicInfo} // ✅ API cho thông tin cơ bản
-        onSubmitRole={handleUpdateRole} // ✅ API cho vai trò & trạng thái
+        onSubmit={handleEditSubmit} // ✅ Chỉ còn 1 callback
       />
     </Box>
   );

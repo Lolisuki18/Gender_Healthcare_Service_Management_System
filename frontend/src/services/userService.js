@@ -1,4 +1,3 @@
-import notify from "@/utils/notification";
 import apiClient from "@services/api";
 import axios from "axios";
 
@@ -105,6 +104,94 @@ export const userService = {
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * ✅ Send email verification code for email change
+   * @param {string} newEmail - New email address
+   * @returns {Promise<Object>} API response
+   */
+  sendEmailVerificationCode: async (newEmail) => {
+    try {
+      const response = await apiClient.post(
+        "/users/profile/email/send-verification",
+        {
+          email: newEmail,
+        }
+      );
+      console.log("Email verification code sent:", response.data);
+      // Trả về kết quả thành công
+      return {
+        success: true,
+        data: response.data,
+        message: "Đã gửi mã xác nhận thành công",
+      };
+    } catch (error) {
+      console.error("❌ Error sending email verification code:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Không thể gửi mã xác nhận",
+        error: error,
+      };
+    }
+  },
+
+  /**
+   * ✅ Verify email change with verification code and update email
+   * @param {Object} data - Verification data
+   * @param {string} data.newEmail - New email address
+   * @param {string} data.verificationCode - 6-digit verification code
+   * @returns {Promise<Object>} API response
+   */
+  verifyEmailChange: async (data) => {
+    try {
+      const response = await apiClient.put("/users/profile/email", {
+        newEmail: data.newEmail,
+        verificationCode: data.verificationCode,
+      });
+
+      return {
+        success: true,
+        data: response.data,
+        message: "Email đã được thay đổi thành công",
+      };
+    } catch (error) {
+      console.error("❌ Error verifying email change:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Mã xác nhận không đúng",
+        error: error,
+      };
+    }
+  },
+
+  /**
+   * ✅ Change user password
+   * @param {Object} data - Password change data
+   * @param {string} data.currentPassword - Current password
+   * @param {string} data.newPassword - New password
+   * @returns {Promise<Object>} API response
+   */
+  changePassword: async (data) => {
+    try {
+      const response = await apiClient.post("/users/profile/change-password", {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
+
+      return {
+        success: true,
+        data: response.data,
+        message: "Mật khẩu đã được thay đổi thành công",
+      };
+    } catch (error) {
+      console.error("❌ Error changing password:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Không thể đổi mật khẩu",
+        error: error,
+      };
     }
   },
 };
