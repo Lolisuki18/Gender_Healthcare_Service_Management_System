@@ -26,8 +26,9 @@ public class UserUpdateRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, max = 100, message = "Password must be at least 6 characters")
+    @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
+    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).*$", 
+            message = "Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character")
     private String password;
 
     @Size(max = 255, message = "Address must not exceed 255 characters")
