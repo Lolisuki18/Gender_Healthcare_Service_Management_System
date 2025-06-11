@@ -305,7 +305,9 @@ public class UserService {
             user.setEmail(request.getEmail());
             user.setFullName(request.getFullName());
             user.setGender(Gender.valueOf(request.getGender()));
-            user.setPassword(request.getPassword());
+            if (StringUtils.hasText(request.getPassword())) {
+                user.setPassword(passwordEncoder.encode(request.getPassword()));
+            }
             user.setPhone(request.getPhone());
 
             // Xử lý CONSULTANT chuyển đổi
