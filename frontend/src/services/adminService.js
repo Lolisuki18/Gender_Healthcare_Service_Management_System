@@ -203,10 +203,7 @@ export const adminService = {
   // Cập nhật thông tin người dùng theo role
   updateUser: async (userId, role, userData) => {
     try {
-      const response = await apiClient.put(
-        `/admin/users/${role}/${userId}`,
-        userData
-      );
+      const response = await apiClient.put(`/admin/users/${userId}`, userData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;

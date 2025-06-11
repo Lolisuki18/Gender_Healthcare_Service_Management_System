@@ -37,6 +37,8 @@ import {
 } from "@mui/icons-material";
 // Import dateUtils for consistent date formatting
 import { formatDateDisplay } from "../../../utils/dateUtils.js";
+import { confirmDialog } from "../../../utils/confirmDialog.js";
+import notify from "../../../utils/notification.js";
 
 const EditUserModal = ({ open, onClose, user, onSubmit }) => {
   // ====================================================================
@@ -82,6 +84,13 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
    */
   useEffect(() => {
     if (user && open) {
+      // ✅ Xử lý role đặc biệt - đảm bảo lấy đúng giá trị role
+      const userRole = user.role || user.Role || "";
+
+      console.log("🔍 User object received:", user);
+      console.log("🔍 Original role from user:", user.role);
+      console.log("🔍 Processed role:", userRole);
+
       const userData = {
         fullName: user.fullName || user.full_name || "",
         birthDay: user.birthDay || user.birth_day || "",
@@ -96,8 +105,10 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
             : user.is_active !== undefined
             ? user.is_active
             : true,
-        role: user.role || "",
+        role: userRole, // ✅ Sử dụng role đã được xử lý
       };
+
+      console.log("🔍 Form data initialized:", userData);
 
       setFormData(userData);
       setOriginalData(userData);
@@ -398,43 +409,108 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
   };
 
   /**
-   * ✅ Unified submit handler
+   * ✅ Unified submit handler - BỎ LUÔN THÔNG BÁO KHI KHÔNG CÓ THAY ĐỔI
    */
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    // ✅ Kiểm tra role required trước khi validate
+    if (!formData.role || formData.role.trim() === "") {
+      notify.warning(
+        "Thiếu thông tin bắt buộc",
+        "Vui lòng chọn vai trò cho người dùng!"
+      );
+      return;
+    }
+
     if (!validateForm()) {
-      alert("Vui lòng kiểm tra lại các trường bị lỗi!");
+      notify.error(
+        "Lỗi validation",
+        "Vui lòng kiểm tra lại các trường bị lỗi!"
+      );
       return;
     }
 
     const { changedFields, changes } = getChangedFields();
 
-    if (Object.keys(changedFields).length === 0) {
-      alert("Không có thay đổi nào để lưu.");
-      return;
-    }
+    // ✅ Debug log để kiểm tra
+    console.log("🔍 Submit check:", {
+      formData,
+      originalData,
+      changedFields,
+      changes,
+    });
 
+    // ✅ Submit luôn không cần thông báo gì cả
     setShowConfirmation(true);
   };
 
   /**
-   * ✅ Confirm changes - chỉ gửi những field đã thay đổi
+   * ✅ Confirm changes - GỬI TOÀN BỘ DỮ LIỆU VỚI DEBUG NETWORK REQUEST
    */
   const handleConfirmChanges = () => {
-    const { changedFields } = getChangedFields();
+    const { changedFields, changes } = getChangedFields();
 
     if (onSubmit) {
-      // ✅ Gửi đúng format backend yêu cầu
+      // ✅ Luôn gửi toàn bộ dữ liệu form, không chỉ những field thay đổi
       const requestData = {
         id: user.id,
-        ...changedFields, // Chỉ gửi những field đã thay đổi
+        fullName: formData.fullName.trim(),
+        birthDay: formData.birthDay,
+        phone: formData.phone.trim(),
+        email: formData.email.trim(),
+        address: formData.address.trim(),
+        gender: formData.gender,
+        isActive: formData.isActive,
+        role: formData.role,
       };
 
-      // ✅ Đặc biệt xử lý password - xóa nếu rỗng
-      if (requestData.password === "") {
-        delete requestData.password;
+      // ✅ XỬ LÝ PASSWORD CẨN THẬN VỚI TRIM VÀ LOG CHI TIẾT
+      const passwordValue = formData.password || "";
+      const trimmedPassword = passwordValue.trim();
+
+      console.log("🔍 PASSWORD DEBUG:");
+      console.log("  - Original password:", JSON.stringify(passwordValue));
+      console.log("  - Trimmed password:", JSON.stringify(trimmedPassword));
+      console.log("  - Password length:", trimmedPassword.length);
+      console.log("  - Has password:", trimmedPassword.length > 0);
+
+      if (trimmedPassword.length > 0) {
+        requestData.password = trimmedPassword;
+        console.log("✅ Password INCLUDED in request");
+      } else {
+        console.log("❌ Password EXCLUDED from request");
       }
 
-      console.log("🚀 Sending request data:", requestData);
+      // ✅ THÊM DEBUG CHO BACKEND API FORMAT
+      console.log("🔍 BACKEND REQUEST FORMAT CHECK:");
+      console.log("  - Request data keys:", Object.keys(requestData));
+      console.log("  - Password field exists:", "password" in requestData);
+      console.log("  - Password value type:", typeof requestData.password);
+
+      // ✅ KIỂM TRA FIELD MAPPING BACKEND
+      console.log("🔍 FIELD MAPPING CHECK:");
+      console.log("  - fullName:", requestData.fullName);
+      console.log("  - email:", requestData.email);
+      console.log(
+        "  - isActive:",
+        requestData.isActive,
+        typeof requestData.isActive
+      );
+      if (requestData.password) {
+        console.log(
+          "  - password:",
+          "[HIDDEN]",
+          "length:",
+          requestData.password.length
+        );
+      }
+
+      console.log("🚀 FINAL REQUEST DATA:");
+      console.log(JSON.stringify(requestData, null, 2));
+      console.log("🚀 Changed fields (for reference):", changedFields);
+
+      // ✅ INTERCEPT VÀ LOG API CALL
+      console.log("🌐 CALLING onSubmit with data...");
+
       onSubmit(requestData);
     }
     setShowConfirmation(false);
@@ -442,14 +518,19 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
   };
 
   /**
-   * ✅ Handle close
+   * ✅ Handle close - THAY THẾ WINDOW.CONFIRM
    */
-  const handleClose = () => {
+  const handleClose = async () => {
     const { changes } = getChangedFields();
 
     if (changes.length > 0) {
-      const confirmLeave = window.confirm(
-        "Bạn có thay đổi chưa lưu. Bạn có chắc chắn muốn thoát?"
+      const confirmLeave = await confirmDialog.warning(
+        "Bạn có thay đổi chưa lưu. Nếu thoát bây giờ, tất cả thay đổi sẽ bị mất.",
+        {
+          title: "⚠️ Thay đổi chưa lưu",
+          confirmText: "Thoát không lưu",
+          cancelText: "Tiếp tục chỉnh sửa",
+        }
       );
       if (!confirmLeave) return;
     }
@@ -1049,81 +1130,104 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
             Thông tin của: <strong>{user?.fullName || user?.username}</strong>
           </Typography>
 
-          <Typography variant="body1" sx={{ mb: 3, color: "#4A5568" }}>
-            Những thay đổi sau sẽ được cập nhật:
-          </Typography>
+          {/* ✅ Hiển thị thông báo khác nhau tùy theo có thay đổi hay không */}
+          {changes.length > 0 ? (
+            <>
+              <Typography variant="body1" sx={{ mb: 3, color: "#4A5568" }}>
+                Những thay đổi sau sẽ được cập nhật:
+              </Typography>
 
-          <Card
-            sx={{
-              borderRadius: 3,
-              border: "1px solid rgba(74, 144, 226, 0.15)",
-            }}
-          >
-            <CardContent sx={{ p: 0 }}>
-              <List>
-                {changes.map((change, index) => (
-                  <ListItem
-                    key={change.field}
-                    sx={{
-                      borderBottom:
-                        index < changes.length - 1
-                          ? "1px solid rgba(74, 144, 226, 0.1)"
-                          : "none",
-                      py: 2,
-                    }}
-                  >
-                    <ListItemText
-                      primary={
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ fontWeight: 600, color: "#2D3748", mb: 1 }}
-                        >
-                          {change.category === "basic"
-                            ? "📝"
-                            : change.category === "security"
-                            ? "🔒"
-                            : "🔐"}{" "}
-                          {change.label}
-                        </Typography>
-                      }
-                      secondary={
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 2,
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <Chip
-                            label={change.oldValue}
-                            size="small"
-                            sx={{
-                              backgroundColor: "#FEF2F2",
-                              color: "#DC2626",
-                              fontWeight: 500,
-                            }}
-                          />
-                          <CompareIcon
-                            sx={{ color: "#4A90E2", fontSize: 20 }}
-                          />
-                          <Chip
-                            label={change.newValue}
-                            size="small"
-                            sx={{
-                              backgroundColor: "#ECFDF5",
-                              color: "#059669",
-                              fontWeight: 500,
-                            }}
-                          />
-                        </Box>
-                      }
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
+              <Card
+                sx={{
+                  borderRadius: 3,
+                  border: "1px solid rgba(74, 144, 226, 0.15)",
+                }}
+              >
+                <CardContent sx={{ p: 0 }}>
+                  <List>
+                    {changes.map((change, index) => (
+                      <ListItem
+                        key={change.field}
+                        sx={{
+                          borderBottom:
+                            index < changes.length - 1
+                              ? "1px solid rgba(74, 144, 226, 0.1)"
+                              : "none",
+                          py: 2,
+                        }}
+                      >
+                        <ListItemText
+                          primary={
+                            <Typography
+                              variant="subtitle1"
+                              sx={{ fontWeight: 600, color: "#2D3748", mb: 1 }}
+                            >
+                              {change.category === "basic"
+                                ? "📝"
+                                : change.category === "security"
+                                ? "🔒"
+                                : "🔐"}{" "}
+                              {change.label}
+                            </Typography>
+                          }
+                          secondary={
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <Chip
+                                label={change.oldValue}
+                                size="small"
+                                sx={{
+                                  backgroundColor: "#FEF2F2",
+                                  color: "#DC2626",
+                                  fontWeight: 500,
+                                }}
+                              />
+                              <CompareIcon
+                                sx={{ color: "#4A90E2", fontSize: 20 }}
+                              />
+                              <Chip
+                                label={change.newValue}
+                                size="small"
+                                sx={{
+                                  backgroundColor: "#ECFDF5",
+                                  color: "#059669",
+                                  fontWeight: 500,
+                                }}
+                              />
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Box
+              sx={{
+                textAlign: "center",
+                py: 3,
+                px: 2,
+                borderRadius: 3,
+                background: "rgba(74, 144, 226, 0.05)",
+                border: "1px solid rgba(74, 144, 226, 0.15)",
+              }}
+            >
+              <Typography variant="body1" sx={{ color: "#4A5568", mb: 1 }}>
+                📋 Không có thay đổi nào được phát hiện
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#718096" }}>
+                Toàn bộ thông tin hiện tại sẽ được gửi lại để đồng bộ dữ liệu
+              </Typography>
+            </Box>
+          )}
         </DialogContent>
 
         <DialogActions sx={{ p: 4, gap: 2 }}>
@@ -1146,7 +1250,8 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
               borderRadius: 3,
             }}
           >
-            <CheckIcon sx={{ mr: 1 }} /> Xác nhận cập nhật
+            <CheckIcon sx={{ mr: 1 }} />
+            {changes.length > 0 ? "Xác nhận cập nhật" : "Gửi lại thông tin"}
           </Button>
         </DialogActions>
       </Dialog>

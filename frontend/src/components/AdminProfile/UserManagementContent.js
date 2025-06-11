@@ -147,6 +147,9 @@ const UserManagementContent = () => {
   // ✅ Cập nhật handleEdit
   const handleEdit = async (userId) => {
     const user = users.find((u) => u.id === userId);
+    console.log("🔍 User found for edit:", user);
+    console.log("🔍 User role:", user?.role);
+
     if (!user) return;
 
     if (user.role === "ADMIN") {
@@ -164,7 +167,15 @@ const UserManagementContent = () => {
       if (!isConfirmed) return;
     }
 
-    setEditingUser(user);
+    // ✅ Đảm bảo user object có đầy đủ thông tin role
+    const userToEdit = {
+      ...user,
+      role: user.role || user.Role || "", // Đảm bảo role luôn có giá trị
+    };
+
+    console.log("🔍 User to edit prepared:", userToEdit);
+
+    setEditingUser(userToEdit);
     setOpenEditModal(true);
   };
   // * ✅ Thêm handler riêng cho cập nhật thông tin cơ bản
@@ -194,9 +205,9 @@ const UserManagementContent = () => {
       );
 
       // Refresh data từ server
-      await fetchUsers();
 
       console.log("✅ Cập nhật thông tin cơ bản thành công");
+      await fetchUsers();
     } catch (error) {
       console.error("❌ Lỗi khi cập nhật thông tin cơ bản:", error);
       const errorMessage =
@@ -431,8 +442,16 @@ const UserManagementContent = () => {
   const handleEditSubmit = async (formData) => {
     const user = editingUser;
 
-    // Xác nhận thay đổi vai trò nếu có
-    if (formData.role !== user.role) {
+    console.log("🔍 Edit submit - Original user:", user);
+    console.log("🔍 Edit submit - Form data:", formData);
+    console.log("🔍 Edit submit - Role comparison:", {
+      originalRole: user?.role,
+      newRole: formData?.role,
+      isRoleChanged: formData?.role !== user?.role,
+    });
+
+    // ✅ Xác nhận thay đổi vai trò nếu có - KIỂM TRA AN TOÀN
+    if (formData.role && user.role && formData.role !== user.role) {
       const isConfirmed = await confirmDialog.warning(
         `Bạn đang thay đổi vai trò từ "${getRoleDisplayName(
           user.role
@@ -452,20 +471,19 @@ const UserManagementContent = () => {
     try {
       console.log("🔄 Đang cập nhật thông tin người dùng:", formData);
 
-      // ✅ Gọi API thống nhất - bạn có thể chọn 1 trong các cách sau:
-
-      // Cách 1: Sử dụng API updateUser (cập nhật cả thông tin cơ bản)
+      // ✅ Gọi API thống nhất
       const response = await adminService.updateUser(formData.id, user.role, {
         fullName: formData.fullName,
         username: formData.username,
         email: formData.email,
         phone: formData.phone,
+        address: formData.address,
+        gender: formData.gender,
+        birthDay: formData.birthDay,
         role: formData.role,
+        password: formData.password,
         isActive: formData.isActive,
       });
-
-      // Hoặc Cách 2: Tạo API mới updateAllUserInfo
-      // const response = await adminService.updateAllUserInfo(formData.id, formData);
 
       // Cập nhật state local
       setUsers((prevUsers) =>

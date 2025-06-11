@@ -186,71 +186,44 @@
 - - **Testing**: Unit tests cho critical functions
 - - **Performance**: Optimized re-renders và memory usage
 -
-- ## BẢNG MÀU HƯỚNG DẪN Y TẾ
+- ## BẢNG MÀU Y TẾ MEDICAL GRADIENT
 -
-- Hệ thống sử dụng bảng màu y tế chuyên nghiệp để tạo cảm giác tin cậy và an tâm cho người dùng.
+- Hệ thống sử dụng bảng màu y tế chuyên nghiệp với medical gradient để tạo cảm giác tin cậy và an tâm cho người dùng.
 -
-- ### Màu chính (Primary Colors)
-- - **Xanh dương y tế** (#4A90E2) - Tạo cảm giác tin cậy, chuyên nghiệp, bình tĩnh
-- - **Xanh lá y tế** (#4CAF50, #2ECC71) - Biểu trưng cho sức khỏe, an toàn và tăng trưởng
-- - **Xanh ngọc** (#1ABC9C) - Sạch sẽ, tươi mới, trẻ trung
+- ### Màu chính (Primary Medical Colors)
+- - **Medical Blue** (#4A90E2) - Primary color cho buttons, headers, icons
+- - **Medical Teal** (#1ABC9C) - Secondary color cho accent, success states
+- - **Medical Green** (#4CAF50) - Success, health, positive status
+- - **Medical Orange** (#F39C12) - Warning, pending, attention
 -
-- ### Màu phụ (Secondary Colors)
-- - **Cam y tế** (#F39C12) - Cảnh báo nhẹ, chú ý, năng động
-- - **Xám xanh** (#607D8B) - Trung tính, chuyên nghiệp
+- ### Gradients Y Tế
+- - **Primary Gradient**: linear-gradient(45deg, #4A90E2, #1ABC9C)
+- - **Success Gradient**: linear-gradient(45deg, #4CAF50, #2ECC71)
+- - **Warning Gradient**: linear-gradient(45deg, #F39C12, #E67E22)
+- - **Background Gradient**: linear-gradient(135deg, #F5F7FA 0%, #E3F2FD 50%, #F5F7FA 100%)
 -
-- ### Màu nền (Background)
-- - **Trắng xanh nhạt** (#F5F7FA) - Sạch sẽ, y tế
-- - **Xanh dương rất nhạt** (#E3F2FD) - Tạo không khí điềm tĩnh
+- ### Text Colors (Medical Theme)
+- - **Primary Text**: #2D3748 (Dark blue-gray for maximum readability)
+- - **Secondary Text**: #4A5568 (Medium blue-gray for descriptions)
+- - **Muted Text**: #718096 (Light blue-gray for disabled states)
 -
-- ### Quy tắc sử dụng
-- - Xanh dương (#4A90E2) cho các tiêu đề, nút chính và điểm nhấn
-- - Xanh lá (#4CAF50) cho các trạng thái tích cực, hoàn thành
-- - Cam (#F39C12) cho cảnh báo, chú ý và trạng thái chờ
-- - Tránh sử dụng màu đỏ mạnh trừ các thông báo lỗi quan trọng
-- - Ưu tiên gradient từ xanh dương sang xanh ngọc cho các phần tử nổi bật
-    \*/
+- ### Medical Component Styling
+- - **Glass Morphism**: rgba(255, 255, 255, 0.95) background with blur(20px)
+- - **Borders**: 1px solid rgba(74, 144, 226, 0.15)
+- - **Shadows**: 0 8px 32px rgba(74, 144, 226, 0.1)
+- - **Hover Effects**: Medical blue shadow with transform
+-
+- ### Quy tắc sử dụng Medical Theme
+- - Medical Blue (#4A90E2) cho primary actions, selected states, icons chính
+- - Medical Teal (#1ABC9C) cho secondary actions, refresh buttons, online status
+- - Medical Green (#4CAF50) cho success states, completed status, verified badges
+- - Medical Orange (#F39C12) cho warning states, pending status, attention
+- - Gradient backgrounds cho buttons, avatars, status indicators
+- - Light medical backgrounds cho cards và containers
+- - Dark text (#2D3748) cho maximum readability trên nền sáng
+- ***
 
-## CẬP NHẬT GIAO DIỆN & TRẢI NGHIỆM NGƯỜI DÙNG (06/2025)
-
-### 1. Cải thiện màu sắc và độ tương phản
-
-- Đã cập nhật toàn bộ hệ thống màu sắc cho các component giao diện khách hàng để đảm bảo độ tương phản cao, dễ đọc trên nền sáng.
-- Thay thế toàn bộ text màu trắng hoặc màu nhạt bằng các màu tối (#2D3748, #4A5568) cho tất cả label, value, heading, button, v.v.
-- Đảm bảo mọi text, icon, label trên sidebar, content, card, chip, button đều rõ ràng, không bị mờ/trắng trên nền sáng.
-
-### 2. Chuẩn hóa tiêu đề và mô tả các trang
-
-- Thêm icon và format lại tiêu đề các trang lớn ("Lịch sử khám bệnh", "Lịch sử thanh toán", "Cài đặt tài khoản") theo chuẩn:
-  - Icon lớn bên trái, tiêu đề lớn, mô tả nhỏ bên dưới, căn trái, đồng nhất với "Lịch hẹn của tôi".
-- Thêm mô tả ngắn gọn dưới tiêu đề giúp người dùng dễ hiểu chức năng từng trang.
-
-### 3. Sidebar và navigation
-
-- Đổi màu chữ sidebar: mục được chọn dùng #2D3748, không chọn dùng #4A5568.
-- Đổi màu icon sidebar: mục được chọn dùng #4A90E2, không chọn dùng #4A5568.
-- Đảm bảo sidebar luôn rõ ràng, dễ nhìn trên nền sáng.
-
-### 4. Các component nội dung
-
-- MedicalHistoryContent: Đổi màu text, thêm ô trắng cuối trang, format lại tiêu đề và mô tả.
-- PaymentHistoryContent: Đổi màu text, format lại tiêu đề và mô tả.
-- SettingsContent: Đổi màu text, format lại tiêu đề và mô tả.
-- HelpContent: Đổi màu text các liên kết hữu ích sang màu tối.
-
-### 5. Accessibility & Best Practice
-
-- Đảm bảo mọi text, icon, label đều có độ tương phản tốt, không bị ẩn trên nền sáng.
-- Giữ nguyên các hiệu ứng hover, shadow, glass morphism, gradient cho cảm giác hiện đại, chuyên nghiệp.
-
-### 6. Ghi chú triển khai
-
-- Đã kiểm tra và sửa toàn bộ các trường hợp text bị trắng/mờ theo phản hồi thực tế.
-- Đảm bảo đồng nhất trải nghiệm người dùng trên toàn bộ các tab: Hồ sơ, Lịch hẹn, Lịch sử khám, Thanh toán, Cài đặt, Trợ giúp...
-
----
-
-> Các thay đổi này giúp hệ thống quản lý hồ sơ khách hàng thân thiện, dễ sử dụng, chuyên nghiệp và phù hợp với tiêu chuẩn giao diện y tế hiện đại.
+> Medical theme này đảm bảo tính nhất quán, chuyên nghiệp và dễ đọc trong toàn bộ hệ thống CustomerProfile.
 
 ## TỔNG QUAN CHỨC NĂNG & CÔNG NGHỆ - CUSTOMER PROFILE
 
