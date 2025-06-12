@@ -90,31 +90,30 @@ const LoginPage = () => {
       return;
     }
 
-    setLoading(true);
-
-    // Chuẩn bị dữ liệu để gửi đến server
+    setLoading(true);    // Chuẩn bị dữ liệu để gửi đến server
     const loginData = {
-      // Server sẽ tự động phát hiện đây là username hay email
+      // Gửi username (backend sẽ tự động xử lý username hoặc email)
       username: formData.usernameOrEmail,
-      email: formData.usernameOrEmail,
       password: formData.password,
-    };
-
-    userService
+    };    userService
       .login(loginData)
       .then((response) => {
-        var role = response.data.role; // Lấy role từ response
+        console.log("Login response:", response); // ✅ Debug log
 
-        if (response.success) {
+        if (response.success || response.accessToken) {
+          // Xử lý response data - có thể là response.data hoặc trực tiếp response
+          const userData = response.data || response;
+          const role = userData.role;
+
           // Lưu thông tin người dùng vào localStorage
-          localStorageUtil.set("user", response.data);
+          localStorageUtil.set("user", userData);
 
           // Kiểm tra role và chuyển hướng
           if (role === "ADMIN") {
             // Nếu là admin, chuyển hướng đến trang quản trị
             notify.success(
               "Đăng nhập thành công",
-              `Chào mừng Admin ${response.data.fullName}!`
+              `Chào mừng Admin ${userData.username}!`
             );
             navigate("/admin/profile");
             return;
@@ -123,7 +122,7 @@ const LoginPage = () => {
             // Lưu thông báo đăng nhập thành công vào localStorage để hiển thị ở homepage
             localStorageUtil.set("loginSuccessMessage", {
               title: "Đăng nhập thành công",
-              message: `Chào mừng ${response.data.fullName} trở lại!`,
+              message: `Chào mừng ${userData.username} trở lại!`,
               timestamp: Date.now(),
             });
             // Chuyển hướng về trang chủ
@@ -131,7 +130,7 @@ const LoginPage = () => {
             window.location.href = "/";
           }
         } else {
-          notify.error("Đăng nhập thất bại", response.message);
+          notify.error("Đăng nhập thất bại", response.message || "Có lỗi xảy ra");
         }
       })
       .catch((error) => {

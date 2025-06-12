@@ -2,22 +2,32 @@ import apiClient from "@services/api";
 import axios from "axios";
 
 // Service cho các API liên quan đến người dùng
-export const userService = {
-  //đăng xuất
+export const userService = {  //đăng xuất
   logout: async () => {
     try {
-      const response = await apiClient.post("/users/logout");
+      const response = await apiClient.post("/auth/logout");
 
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
     }
-  },
-  // Đăng nhập
+  },  // Đăng nhập
 
   login: async (credentials) => {
     try {
-      const response = await apiClient.post("/users/login", credentials);
+      const response = await apiClient.post("/auth/login", credentials);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Refresh token
+  refreshToken: async (refreshToken) => {
+    try {
+      const response = await apiClient.post("/auth/refresh-token", {
+        refreshToken: refreshToken
+      });
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
