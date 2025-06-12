@@ -1,18 +1,29 @@
 import apiClient from "@services/api";
 import axios from "axios";
+import localStorageUtil from "@utils/localStorage"; // Giả sử đường dẫn đến file util là như này
 
 // Service cho các API liên quan đến người dùng
-export const userService = {  //đăng xuất
+export const userService = {
+  //đăng xuất
   logout: async () => {
     try {
       const response = await apiClient.post("/auth/logout");
 
+      // Xóa token và user data khỏi localStorage
+      localStorageUtil.remove("token");
+      localStorageUtil.remove("user");
+
       return response.data;
     } catch (error) {
+      // Dù có lỗi, vẫn xóa token local
+      localStorageUtil.remove("token");
+      localStorageUtil.remove("user");
+
       throw error.response?.data || error;
     }
-  },  // Đăng nhập
-
+  },
+  
+  // Đăng nhập
   login: async (credentials) => {
     try {
       const response = await apiClient.post("/auth/login", credentials);

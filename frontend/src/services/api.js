@@ -11,7 +11,7 @@
  *
  * Tính năng chính:
  * - Cấu hình baseURL và headers mặc định
- * - Interceptor tự động thêm token xác thực vào các request
+ * - Interceptor tự động thêm JWT token vào các request
  * - Xử lý lỗi tập trung, bao gồm việc xử lý token hết hạn
  */
 
@@ -21,6 +21,9 @@ import axios from "axios";
 // Tạo config object trước
 const config = {
   baseURL: "http://localhost:8080",
+  headers: {
+    "Content-Type": "application/json",
+  },
 };
 
 const apiClient = axios.create(config);
@@ -77,7 +80,8 @@ apiClient.interceptors.response.use(
         try {
           const { userService } = await import("./userService");
           const refreshResponse = await userService.refreshToken(userData.refreshToken);
-            if (refreshResponse.success || refreshResponse.accessToken) {
+          
+          if (refreshResponse.success || refreshResponse.accessToken) {
             // Cập nhật token mới vào localStorage
             const newTokenData = refreshResponse.data || refreshResponse;
             const newUserData = {
