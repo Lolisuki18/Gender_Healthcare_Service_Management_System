@@ -2,10 +2,7 @@ package com.healapp.controller;
 
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ChangePasswordRequest;
-import com.healapp.dto.LoginRequest;
-import com.healapp.dto.LoginResponse;
 import com.healapp.dto.RegisterRequest;
-import com.healapp.model.UserDtls;
 import com.healapp.service.EmailService;
 import com.healapp.service.EmailVerificationService;
 import com.healapp.service.UserService;
@@ -16,8 +13,6 @@ import com.healapp.dto.UpdateProfileRequest;
 import com.healapp.dto.UserResponse;
 import com.healapp.dto.VerificationCodeRequest;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,7 +20,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -65,9 +59,7 @@ public class UserController {
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(errorResponse);
         }
-    }
-
-    @PostMapping("/send-verification")
+    }    @PostMapping("/send-verification")
     public ResponseEntity<ApiResponse<String>> sendVerificationCode(
             @Valid @RequestBody VerificationCodeRequest request) {
 
@@ -78,28 +70,6 @@ public class UserController {
         } else {
             return ResponseEntity.badRequest().body(response);
         }
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
-        ApiResponse<LoginResponse> response = userService.login(loginRequest);
-
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-        }
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request, HttpServletResponse response) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        if (auth != null) {
-            new SecurityContextLogoutHandler().logout(request, response, auth);
-        }
-
-        return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
     }
 
     @PostMapping("/forgot-password")
@@ -154,7 +124,7 @@ public class UserController {
                     .body(ApiResponse.error("Error retrieving profile: " + e.getMessage()));
         }
     }
-    //cập nhật thông tin
+
     @PutMapping("/profile/basic")
     public ResponseEntity<ApiResponse<UserResponse>> updateBasicProfile(
             @Valid @RequestBody UpdateProfileRequest request) {
@@ -164,7 +134,7 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ApiResponse.error("User not authenticated"));
             }
-            //Lấy thông tin người dùng
+
             String username = authentication.getName();
             Long userId = userService.getUserIdFromUsername(username);
 
@@ -186,7 +156,7 @@ public class UserController {
                     .body(ApiResponse.error("Error updating basic profile: " + e.getMessage()));
         }
     }
-     //gửi mã email mới khi cập nhật
+
     @PostMapping("/profile/email/send-verification")
     public ResponseEntity<ApiResponse<String>> sendEmailVerificationForUpdate(
             @Valid @RequestBody VerificationCodeRequest request) {
@@ -217,9 +187,8 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Error sending verification code: " + e.getMessage()));
         }
-
     }
-    //câp nhật email của người dùng đã đăng nhập
+
     @PutMapping("/profile/email")
     public ResponseEntity<ApiResponse<UserResponse>> updateEmail(
             @Valid @RequestBody UpdateEmailRequest request) {
@@ -251,7 +220,7 @@ public class UserController {
                     .body(ApiResponse.error("Error updating email: " + e.getMessage()));
         }
     }
-    //API thay đổi mật khẩu
+
     @PutMapping("/profile/password")
     public ResponseEntity<ApiResponse<String>> changePassword(
             @Valid @RequestBody ChangePasswordRequest request) {
@@ -283,7 +252,7 @@ public class UserController {
                     .body(ApiResponse.error("Error changing password: " + e.getMessage()));
         }
     }
-    //API thay đổi ava
+
     @PostMapping(value = "/profile/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<String>> updateAvatar(
             @RequestParam("file") MultipartFile file) {
@@ -315,6 +284,4 @@ public class UserController {
                     .body(ApiResponse.error("Error updating avatar: " + e.getMessage()));
         }
     }
-
-
 }

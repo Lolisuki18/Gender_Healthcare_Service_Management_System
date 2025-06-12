@@ -3,8 +3,6 @@ package com.healapp.dto;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.healapp.model.Gender;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,12 +14,12 @@ public class UserResponse {
     private Long id;
     private String fullName;
     private LocalDate birthDay;
+    private String gender;
     private String phone;
     private String email;
     private String username;
     private String avatar;
     private Boolean isActive;
-    private Gender gender;
     private String role;
     private LocalDateTime createdDate;
 }

@@ -5,8 +5,6 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
-import com.healapp.model.Gender;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,7 +21,8 @@ public class UpdateProfileRequest {
     @Pattern(regexp = "^[0-9]{10,11}$", message = "Phone number must be 10-11 digits")
     private String phone;
 
-    private LocalDate birthDay;
+    @Pattern(regexp = "^(Nam|Nữ|Khác)$", message = "Giới tính phải là: Nam, Nữ, hoặc Khác")
+    private String gender;
 
-    private Gender gender;
+    private LocalDate birthDay;
 }

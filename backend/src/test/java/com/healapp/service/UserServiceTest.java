@@ -2,9 +2,9 @@ package com.healapp.service;
 
 import com.healapp.dto.*;
 import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Gender;
 import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
-import com.healapp.model.Gender;
 import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
@@ -110,7 +110,6 @@ class UserServiceTest {
         sampleUser.setPassword("encodedPassword");
         sampleUser.setAvatar("/img/avatar/default.jpg");
         sampleUser.setIsActive(true);
-        sampleUser.setGender(Gender.MALE);
         sampleUser.setRole(userRole);
         sampleUser.setCreatedDate(LocalDateTime.now().minusDays(30));
 
@@ -210,11 +209,11 @@ class UserServiceTest {
         RegisterRequest request = new RegisterRequest();
         request.setFullName("Test User");
         request.setBirthDay(LocalDate.of(1995, 5, 15));
+        request.setGender("Nam"); // ✅ THÊM GENDER
         request.setPhone("0987654321");
         request.setEmail("test@example.com");
         request.setUsername("testuser");
         request.setPassword("password123");
-        request.setGender(Gender.FEMALE);
         request.setVerificationCode("123456");
 
         MultipartFile avatarFile = new MockMultipartFile("avatar", "avatar.jpg", "image/jpeg", "test".getBytes());
@@ -234,12 +233,17 @@ class UserServiceTest {
         assertEquals("Nguyen Van A", response.getData().getFullName());
         assertEquals("CUSTOMER", response.getData().getRole());
 
+        // ✅ VERIFY GENDER WAS SET CORRECTLY
+        ArgumentCaptor<UserDtls> userCaptor = ArgumentCaptor.forClass(UserDtls.class);
+        verify(userRepository).save(userCaptor.capture());
+        UserDtls savedUser = userCaptor.getValue();
+        assertEquals(Gender.MALE, savedUser.getGender()); // Verify gender enum
+
         verify(emailVerificationService).verifyCode("test@example.com", "123456");
         verify(userRepository).existsByUsername("testuser");
         verify(userRepository).existsByEmail("test@example.com");
         verify(passwordEncoder).encode("password123");
         verify(roleService).getDefaultUserRole();
-        verify(userRepository).save(any(UserDtls.class));
     }
 
     @Test
@@ -299,34 +303,6 @@ class UserServiceTest {
 
         verify(userRepository).existsByEmail("existing@example.com");
         verify(userRepository, never()).save(any(UserDtls.class));
-    }
-
-    @Test
-    @DisplayName("Đăng ký với gender null - set default OTHER")
-    void registerUser_WithNullGender_ShouldSetDefault() throws Exception {
-        RegisterRequest request = new RegisterRequest();
-        request.setFullName("Test User");
-        request.setEmail("test@example.com");
-        request.setUsername("testuser");
-        request.setPassword("password123");
-        request.setGender(null); // Gender null
-        request.setVerificationCode("123456");
-
-        when(emailVerificationService.verifyCode("test@example.com", "123456")).thenReturn(true);
-        when(userRepository.existsByUsername("testuser")).thenReturn(false);
-        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
-        when(roleService.getDefaultUserRole()).thenReturn(userRole);
-        when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
-
-        ApiResponse<UserResponse> response = userService.registerUser(request, null);
-
-        assertTrue(response.isSuccess());
-
-        // Verify gender được set default là OTHER
-        ArgumentCaptor<UserDtls> userCaptor = ArgumentCaptor.forClass(UserDtls.class);
-        verify(userRepository).save(userCaptor.capture());
-        assertEquals(Gender.OTHER, userCaptor.getValue().getGender());
     }
 
     // Login tests
@@ -772,14 +748,12 @@ class UserServiceTest {
         request.setFullName("Updated Name");
         request.setPhone("0987654321");
         request.setBirthDay(LocalDate.of(1991, 2, 20));
-        request.setGender(Gender.FEMALE);
 
         UserDtls updatedUser = new UserDtls();
         updatedUser.setId(1L);
         updatedUser.setFullName("Updated Name");
         updatedUser.setPhone("0987654321");
         updatedUser.setBirthDay(LocalDate.of(1991, 2, 20));
-        updatedUser.setGender(Gender.FEMALE);
         updatedUser.setRole(userRole);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
@@ -1197,7 +1171,6 @@ class UserServiceTest {
         user.setEmail(email);
         user.setRole(role);
         user.setIsActive(true);
-        user.setGender(Gender.OTHER);
         user.setCreatedDate(LocalDateTime.now());
         return user;
     }
@@ -1213,7 +1186,6 @@ class UserServiceTest {
         response.setBirthDay(user.getBirthDay());
         response.setAvatar(user.getAvatar());
         response.setIsActive(user.getIsActive());
-        response.setGender(user.getGender());
         response.setRole(user.getRole() != null ? user.getRole().getRoleName() : null);
         response.setCreatedDate(user.getCreatedDate());
         return response;
