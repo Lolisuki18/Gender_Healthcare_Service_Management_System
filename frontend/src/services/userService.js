@@ -1,25 +1,56 @@
 import apiClient from "@services/api";
 import axios from "axios";
+import localStorageUtil from "@utils/localStorage"; // Giả sử đường dẫn đến file util là như này
 
 // Service cho các API liên quan đến người dùng
 export const userService = {
-  //đăng xuất
+  // Đăng nhập
+  login: async (credentials) => {
+    try {
+      const response = await apiClient.post("/auth/login", credentials);
+
+      // Lưu token và user data vào localStorage
+      if (response.data.token) {
+        localStorageUtil.set("token", response.data.token);
+      }
+      if (response.data.user || response.data.data) {
+        localStorageUtil.set("user", response.data.user || response.data.data);
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Login error:", error);
+
+      // Xử lý lỗi cụ thể cho JWT
+      if (
+        error.response?.data?.message?.includes("JWT") ||
+        error.response?.data?.message?.includes("key byte array")
+      ) {
+        // throw {
+        //   message: "Lỗi cấu hình server. Vui lòng liên hệ quản trị viên.",
+        //   type: "SERVER_CONFIG_ERROR",
+        // };
+      }
+
+      throw error.response?.data || error;
+    }
+  },
+
+  // Đăng xuất
   logout: async () => {
     try {
       const response = await apiClient.post("/users/logout");
 
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-  // Đăng nhập
+      // Xóa token và user data khỏi localStorage
+      localStorageUtil.remove("token");
+      localStorageUtil.remove("user");
 
-  login: async (credentials) => {
-    try {
-      const response = await apiClient.post("/users/login", credentials);
       return response.data;
     } catch (error) {
+      // Dù có lỗi, vẫn xóa token local
+      localStorageUtil.remove("token");
+      localStorageUtil.remove("user");
+
       throw error.response?.data || error;
     }
   },

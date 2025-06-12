@@ -11,7 +11,7 @@
  *
  * Tính năng chính:
  * - Cấu hình baseURL và headers mặc định
- * - Interceptor tự động thêm token xác thực vào các request
+ * - Interceptor tự động thêm JWT token vào các request
  * - Xử lý lỗi tập trung, bao gồm việc xử lý token hết hạn
  */
 
@@ -21,45 +21,29 @@ import axios from "axios";
 // Tạo config object trước
 const config = {
   baseURL: "http://localhost:8080",
+  headers: {
+    "Content-Type": "application/json",
+  },
 };
 
 const apiClient = axios.create(config);
 
-// ✅ Request interceptor (không có token)
+// ✅ Request interceptor - Thêm JWT token vào header
 apiClient.interceptors.request.use(
-  // Tạo instance Axios với các cấu hình mặc định
-
   (config) => {
-    var userData = localStorageUtil.get("user");
-    // Nếu có userData, thêm auth vào config
-    if (userData && userData.role === "ADMIN") {
-      config.auth = {
-        //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
-        //các tác vụ yêu cầu quyền truy cập
-        username: userData.username,
-        password: "Ninh123@", // Hoặc lấy từ localStorage/context
-      };
+    // Lấy token từ localStorage
+    const token = localStorageUtil.get("token");
+
+    if (token) {
+      // Thêm JWT token vào Authorization header
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    if (userData && userData.role === "CONSULTANT") {
-      config.auth = {
-        //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
-        //các tác vụ yêu cầu quyền truy cập
-        username: userData.username,
-        password: "Ninh1234@", // Hoặc lấy từ localStorage/context
-      };
-    }
-    if (userData && userData.role === "CUSTOMER") {
-      config.auth = {
-        //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
-        //các tác vụ yêu cầu quyền truy cập
-        username: userData.username,
-        password: "Ninh123@", // Hoặc lấy từ localStorage/context
-      };
-    }
+
     console.log("API Request:", {
       url: config.baseURL + config.url,
       method: config.method.toUpperCase(),
       headers: config.headers,
+      hasToken: !!token,
     });
 
     return config;
@@ -70,7 +54,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// ✅ Response interceptor (đơn giản hơn)
+// ✅ Response interceptor - Xử lý lỗi và token hết hạn
 apiClient.interceptors.response.use(
   (response) => {
     console.log("API Response:", {
@@ -88,6 +72,18 @@ apiClient.interceptors.response.use(
       data: error.response?.data,
       message: error.message,
     });
+
+    // Xử lý token hết hạn hoặc không hợp lệ
+    if (error.response?.status === 401) {
+      console.warn("Token expired or invalid, redirecting to login...");
+
+      // Xóa token và user data
+      localStorageUtil.remove("token");
+      localStorageUtil.remove("user");
+
+      // Redirect to login page
+      window.location.href = "/login";
+    }
 
     return Promise.reject(error);
   }
