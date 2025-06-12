@@ -25,37 +25,16 @@ const config = {
 
 const apiClient = axios.create(config);
 
-// ✅ Request interceptor (không có token)
+// ✅ Request interceptor - sử dụng JWT token
 apiClient.interceptors.request.use(
-  // Tạo instance Axios với các cấu hình mặc định
-
   (config) => {
     var userData = localStorageUtil.get("user");
-    // Nếu có userData, thêm auth vào config
-    if (userData && userData.role === "ADMIN") {
-      config.auth = {
-        //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
-        //các tác vụ yêu cầu quyền truy cập
-        username: userData.username,
-        password: "Ninh123@", // Hoặc lấy từ localStorage/context
-      };
+
+    // Nếu có userData và có accessToken, thêm Bearer token vào header
+    if (userData && userData.accessToken) {
+      config.headers.Authorization = `Bearer ${userData.accessToken}`;
     }
-    if (userData && userData.role === "CONSULTANT") {
-      config.auth = {
-        //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
-        //các tác vụ yêu cầu quyền truy cập
-        username: userData.username,
-        password: "Ninh1234@", // Hoặc lấy từ localStorage/context
-      };
-    }
-    if (userData && userData.role === "CUSTOMER") {
-      config.auth = {
-        //sử dụng basic auth nên phải truyền username và password của người dùng xuống để có thể thực hiện
-        //các tác vụ yêu cầu quyền truy cập
-        username: userData.username,
-        password: "Ninh123@", // Hoặc lấy từ localStorage/context
-      };
-    }
+
     console.log("API Request:", {
       url: config.baseURL + config.url,
       method: config.method.toUpperCase(),
@@ -70,7 +49,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// ✅ Response interceptor (đơn giản hơn)
+// ✅ Response interceptor - xử lý token hết hạn
 apiClient.interceptors.response.use(
   (response) => {
     console.log("API Response:", {
@@ -80,7 +59,7 @@ apiClient.interceptors.response.use(
     });
     return response;
   },
-  (error) => {
+  async (error) => {
     console.error("API Error:", {
       status: error.response?.status,
       statusText: error.response?.statusText,
@@ -88,6 +67,43 @@ apiClient.interceptors.response.use(
       data: error.response?.data,
       message: error.message,
     });
+
+    // Xử lý token hết hạn (401 Unauthorized)
+    if (error.response?.status === 401) {
+      const userData = localStorageUtil.get("user");
+
+      // Nếu có refresh token, thử refresh
+      if (userData && userData.refreshToken) {
+        try {
+          const { userService } = await import("./userService");
+          const refreshResponse = await userService.refreshToken(
+            userData.refreshToken
+          );
+          if (refreshResponse.success || refreshResponse.accessToken) {
+            // Cập nhật token mới vào localStorage
+            const newTokenData = refreshResponse.data || refreshResponse;
+            const newUserData = {
+              ...userData,
+              accessToken: newTokenData.accessToken,
+              refreshToken: newTokenData.refreshToken,
+            };
+            localStorageUtil.set("user", newUserData);
+
+            // Retry request với token mới
+            error.config.headers.Authorization = `Bearer ${newTokenData.accessToken}`;
+            return apiClient.request(error.config);
+          }
+        } catch (refreshError) {
+          // Refresh token cũng hết hạn, đăng xuất user
+          localStorageUtil.remove("user");
+          window.location.href = "/login";
+        }
+      } else {
+        // Không có refresh token, chuyển về trang login
+        localStorageUtil.remove("user");
+        window.location.href = "/login";
+      }
+    }
 
     return Promise.reject(error);
   }

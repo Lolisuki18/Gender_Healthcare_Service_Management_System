@@ -270,13 +270,21 @@ const RegisterPage = () => {
     if (!formData.verificationCode) {
       notify.error("Lỗi đăng ký", "Vui lòng nhập mã xác nhận");
       return;
-    }
-
-    // Kiểm tra confirm password có trùng khớp không
+    } // Kiểm tra confirm password có trùng khớp không
     if (confirmPassword !== formData.password) {
       notify.error("Lỗi đăng ký", "Mật khẩu xác nhận không trùng khớp");
       return;
     }
+
+    // ✅ CHUYỂN ĐỔI GENDER SANG TIẾNG VIỆT
+    const convertGenderToVietnamese = (genderValue) => {
+      const genderMapping = {
+        MALE: "Nam",
+        FEMALE: "Nữ",
+        OTHER: "Khác",
+      };
+      return genderMapping[genderValue] || genderValue;
+    };
 
     // ✅ Tạo object dữ liệu đầy đủ để gửi lên server
     const registrationData = {
@@ -284,7 +292,7 @@ const RegisterPage = () => {
       password: formData.password,
       fullName: formData.fullName,
       email: formData.email,
-      gender: formData.gender, // ✅ Đảm bảo gender được gửi
+      gender: convertGenderToVietnamese(formData.gender), // ✅ Chuyển đổi gender sang tiếng Việt
       phone: formData.phone || null, // Optional field
       birthDay: formData.birthDay || null, // Optional field
       address: formData.address || null, // ✅ Thêm address
