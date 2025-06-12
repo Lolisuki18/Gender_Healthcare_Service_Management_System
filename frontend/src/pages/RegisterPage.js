@@ -276,16 +276,6 @@ const RegisterPage = () => {
       return;
     }
 
-    // ✅ CHUYỂN ĐỔI GENDER SANG TIẾNG VIỆT
-    const convertGenderToVietnamese = (genderValue) => {
-      const genderMapping = {
-        MALE: "Nam",
-        FEMALE: "Nữ",
-        OTHER: "Khác",
-      };
-      return genderMapping[genderValue] || genderValue;
-    };
-
     // ✅ Tạo object dữ liệu đầy đủ để gửi lên server
     const registrationData = {
       username: formData.username,
@@ -765,16 +755,7 @@ const RegisterPage = () => {
                       if (!selected || selected === "") {
                         return <em>Chọn giới tính</em>;
                       }
-                      switch (selected) {
-                        case "MALE":
-                          return "Nam";
-                        case "FEMALE":
-                          return "Nữ";
-                        case "OTHER":
-                          return "Khác";
-                        default:
-                          return selected;
-                      }
+                      return selected;
                     }}
                     startAdornment={
                       <InputAdornment position="start">
@@ -782,9 +763,9 @@ const RegisterPage = () => {
                       </InputAdornment>
                     }
                   >
-                    <MenuItem value="MALE">Nam</MenuItem>
-                    <MenuItem value="FEMALE">Nữ</MenuItem>
-                    <MenuItem value="OTHER">Khác</MenuItem>
+                    <MenuItem value="Nam">Nam</MenuItem>
+                    <MenuItem value="Nữ">Nữ</MenuItem>
+                    <MenuItem value="Khác">Khác</MenuItem>
                   </Select>
                 </FormControl>
 
