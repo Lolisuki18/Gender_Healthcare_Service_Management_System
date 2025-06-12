@@ -21,7 +21,7 @@ public class UserDtls {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "full_name", nullable = false)
+    @Column(name = "full_name", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String fullName;
 
     @Column(name = "birth_day")
@@ -39,7 +39,14 @@ public class UserDtls {
     @Column(nullable = false)
     private String password;
 
-    @Column(columnDefinition = "nvarchar(MAX)")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
+    private String address;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String avatar;
 
     @Column(name = "is_active", nullable = false)

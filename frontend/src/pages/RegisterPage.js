@@ -25,6 +25,10 @@ import {
   CardContent,
   InputAdornment,
   IconButton,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import notify from "@/utils/notification";
@@ -41,6 +45,9 @@ import AlternateEmailIcon from "@mui/icons-material/AlternateEmail";
 import HomeIcon from "@mui/icons-material/Home";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import WcIcon from "@mui/icons-material/Wc";
+import PhoneIcon from "@mui/icons-material/Phone";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 
 // --- SERVICES & UTILS ---
 import { styled } from "@mui/material/styles";
@@ -63,6 +70,10 @@ const RegisterPage = () => {
     fullName: "",
     email: "",
     verificationCode: "",
+    gender: "", // Ensure this starts as empty string
+    phone: "",
+    birthDay: "", // Đổi từ dateOfBirth thành birthDay
+    address: "", // ✅ Thêm trường address
   });
 
   // UI states
@@ -79,6 +90,7 @@ const RegisterPage = () => {
     username: "",
     email: "",
     confirmPassword: "",
+    password: "", // Thêm password error
   });
 
   // --- LIFECYCLE HOOKS ---
@@ -103,6 +115,28 @@ const RegisterPage = () => {
     };
   }, []);
 
+  // --- VALIDATION FUNCTIONS ---
+  /**
+   * Validation mật khẩu theo yêu cầu backend
+   */
+  const validatePassword = (password) => {
+    const pattern = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).*$/;
+
+    if (password.length < 6) {
+      return "Mật khẩu phải có ít nhất 6 ký tự";
+    }
+
+    if (password.length > 100) {
+      return "Mật khẩu không được vượt quá 100 ký tự";
+    }
+
+    if (!pattern.test(password)) {
+      return "Mật khẩu phải chứa ít nhất: 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt (@#$%^&+=)";
+    }
+
+    return "";
+  };
+
   // --- EVENT HANDLERS ---
   /**
    * Xử lý thay đổi giá trị của các trường input
@@ -113,8 +147,48 @@ const RegisterPage = () => {
     // Cập nhật formData
     setFormData({ ...formData, [name]: value });
 
-    // Reset lỗi khi người dùng thay đổi giá trị
-    if (errors[name]) {
+    // Validation đặc biệt cho password
+    if (name === "password") {
+      const passwordError = validatePassword(value);
+      setErrors({
+        ...errors,
+        password: passwordError,
+      });
+    }
+
+    // Validation cho username
+    if (name === "username") {
+      let usernameError = "";
+      if (value.length > 0 && value.length < 4) {
+        usernameError = "Username phải có ít nhất 4 ký tự";
+      } else if (value.length > 50) {
+        usernameError = "Username không được vượt quá 50 ký tự";
+      }
+      setErrors({
+        ...errors,
+        username: usernameError,
+      });
+    }
+
+    // Validation cho fullName
+    if (name === "fullName") {
+      let fullNameError = "";
+      if (value.length > 100) {
+        fullNameError = "Họ tên không được vượt quá 100 ký tự";
+      }
+      setErrors({
+        ...errors,
+        fullName: fullNameError,
+      });
+    }
+
+    // Reset lỗi khi người dùng thay đổi giá trị (cho các trường khác)
+    if (
+      errors[name] &&
+      name !== "password" &&
+      name !== "username" &&
+      name !== "fullName"
+    ) {
       setErrors({
         ...errors,
         [name]: "",
@@ -142,19 +216,49 @@ const RegisterPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Kiểm tra tất cả các trường và hiển thị thông báo lỗi
+    // Kiểm tra username
     if (!formData.username) {
       notify.error("Lỗi đăng ký", "Vui lòng nhập tên đăng nhập");
       return;
     }
 
+    if (formData.username.length < 4 || formData.username.length > 50) {
+      notify.error("Lỗi đăng ký", "Username phải có từ 4-50 ký tự");
+      return;
+    }
+
+    // Kiểm tra password với validation mới
     if (!formData.password) {
       notify.error("Lỗi đăng ký", "Vui lòng nhập mật khẩu");
       return;
     }
 
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      notify.error("Lỗi đăng ký", passwordError);
+      return;
+    }
+
+    // Kiểm tra fullName
     if (!formData.fullName) {
       notify.error("Lỗi đăng ký", "Vui lòng nhập họ tên đầy đủ");
+      return;
+    }
+
+    if (formData.fullName.length > 100) {
+      notify.error("Lỗi đăng ký", "Họ tên không được vượt quá 100 ký tự");
+      return;
+    }
+
+    // Kiểm tra gender - sửa logic validation
+    if (
+      !formData.gender ||
+      formData.gender === "" ||
+      formData.gender === null ||
+      formData.gender === undefined
+    ) {
+      notify.error("Lỗi đăng ký", "Vui lòng chọn giới tính");
+      console.log("Gender value:", formData.gender); // Debug log
       return;
     }
 
@@ -174,9 +278,25 @@ const RegisterPage = () => {
       return;
     }
 
+    // ✅ Tạo object dữ liệu đầy đủ để gửi lên server
+    const registrationData = {
+      username: formData.username,
+      password: formData.password,
+      fullName: formData.fullName,
+      email: formData.email,
+      gender: formData.gender, // ✅ Đảm bảo gender được gửi
+      phone: formData.phone || null, // Optional field
+      birthDay: formData.birthDay || null, // Optional field
+      address: formData.address || null, // ✅ Thêm address
+      verificationCode: formData.verificationCode,
+    };
+
+    // Debug: Log dữ liệu trước khi gửi
+    console.log("Registration data being sent:", registrationData);
+
     // Gửi form đăng ký đến server
     userService
-      .register(formData)
+      .register(registrationData) // ✅ Gửi registrationData thay vì formData
       .then((response) => {
         if (response.success) {
           notify.success(
@@ -194,8 +314,13 @@ const RegisterPage = () => {
         }
       })
       .catch((error) => {
+        console.error("Register error:", error);
+
         // Response từ server là một object, message là một field trong object đó
-        const errorMessage = error.message || "Có lỗi xảy ra khi đăng ký";
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "Có lỗi xảy ra khi đăng ký";
 
         // Phân tích message để xác định loại lỗi và hiển thị thông báo tương ứng
         if (errorMessage.includes("Username already exists")) {
@@ -207,10 +332,11 @@ const RegisterPage = () => {
             "Lỗi xác thực",
             "Mã xác nhận không đúng hoặc đã hết hạn. Vui lòng yêu cầu mã mới."
           );
+        } else if (errorMessage.includes("gender")) {
+          notify.error("Lỗi đăng ký", "Vui lòng chọn giới tính");
         } else {
           notify.error("Đăng ký thất bại", errorMessage);
         }
-        console.error("Register error:", error);
       });
   };
 
@@ -262,17 +388,13 @@ const RegisterPage = () => {
       });
     }, 1000);
 
-    // Kiểm tra các trường bắt buộc
-    if (
-      !formData.username ||
-      !formData.password ||
-      !formData.fullName ||
-      !formData.email
-    ) {
-      notify.error("Lỗi", "Vui lòng điền đầy đủ thông tin");
+    // ✅ CHỈ KIỂM TRA EMAIL - không cần kiểm tra các trường khác khi gửi mã
+    // Vì mã xác nhận chỉ cần email để gửi
+    if (!formData.email) {
+      notify.error("Lỗi", "Vui lòng nhập email để gửi mã xác nhận");
       clearInterval(intervalId);
       setCodeButtonDisabled(false);
-      return; // Dừng việc submit form nếu có trường nào đó trống
+      return;
     }
 
     // Gọi API gửi mã xác nhận
@@ -316,10 +438,8 @@ const RegisterPage = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: `linear-gradient(135deg, ${alpha(
-          theme.palette.primary.main,
-          0.1
-        )} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
+        background:
+          "linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 50%, #E3F2FD 100%)", // Medical background
         py: 4,
         display: "flex",
         alignItems: "center",
@@ -332,13 +452,14 @@ const RegisterPage = () => {
             borderRadius: 4,
             overflow: "hidden",
             background:
-              "linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%)",
+              "linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%)",
             backdropFilter: "blur(10px)",
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+            border: "1px solid rgba(74, 144, 226, 0.1)",
+            boxShadow: "0 8px 32px rgba(74, 144, 226, 0.15)",
           }}
         >
           <CardContent sx={{ p: 4 }}>
-            {/* Header Section */}
+            {/* Header Section với màu y tế */}
             <Box sx={{ textAlign: "center", mb: 4 }}>
               <Avatar
                 sx={{
@@ -346,11 +467,8 @@ const RegisterPage = () => {
                   height: 80,
                   mx: "auto",
                   mb: 2,
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                  boxShadow: `0 8px 24px ${alpha(
-                    theme.palette.primary.main,
-                    0.3
-                  )}`,
+                  background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
+                  boxShadow: "0 8px 24px rgba(74, 144, 226, 0.25)",
                 }}
               >
                 <LockOutlinedIcon fontSize="large" />
@@ -361,7 +479,7 @@ const RegisterPage = () => {
                 gutterBottom
                 fontWeight="bold"
                 sx={{
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                  background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
                   backgroundClip: "text",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
@@ -377,34 +495,33 @@ const RegisterPage = () => {
                   maxWidth: 500,
                   mx: "auto",
                   lineHeight: 1.6,
+                  color: "#546E7A", // Medical text color
                 }}
               >
                 Điền thông tin của bạn để trải nghiệm dịch vụ chăm sóc sức khỏe
               </Typography>
             </Box>
 
-            <Divider sx={{ mb: 3, opacity: 0.3 }} />
+            <Divider sx={{ mb: 3, opacity: 0.3, borderColor: "#4A90E2" }} />
 
             {/* Form Section */}
             <Box component="form" onSubmit={handleSubmit}>
-              {/* Thông tin tài khoản */}
+              {/* Thông tin tài khoản với màu y tế */}
               <Box
                 sx={{
                   mb: 3,
                   p: 3,
                   borderRadius: 3,
-                  background: `linear-gradient(135deg, ${alpha(
-                    theme.palette.primary.main,
-                    0.05
-                  )} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
-                  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                  background:
+                    "linear-gradient(135deg, rgba(74, 144, 226, 0.05) 0%, rgba(26, 188, 156, 0.05) 100%)",
+                  border: "1px solid rgba(74, 144, 226, 0.2)",
                 }}
               >
                 <Typography
                   variant="h6"
                   gutterBottom
                   sx={{
-                    color: theme.palette.primary.main,
+                    color: "#4A90E2", // Medical blue
                     fontWeight: "bold",
                     mb: 2,
                     display: "flex",
@@ -415,7 +532,7 @@ const RegisterPage = () => {
                   Thông tin tài khoản
                 </Typography>
 
-                {/* Username */}
+                {/* Username với màu y tế */}
                 <TextField
                   label="Username"
                   name="username"
@@ -425,35 +542,38 @@ const RegisterPage = () => {
                   variant="outlined"
                   required
                   autoFocus
+                  error={!!errors.username}
+                  helperText={errors.username}
                   sx={{
                     mb: 3,
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 2,
                       transition: "all 0.3s ease",
                       "&:hover": {
-                        boxShadow: `0 0 0 2px ${alpha(
-                          theme.palette.primary.main,
-                          0.1
-                        )}`,
+                        boxShadow: "0 0 0 2px rgba(74, 144, 226, 0.1)",
                       },
                       "&.Mui-focused": {
-                        boxShadow: `0 0 0 2px ${alpha(
-                          theme.palette.primary.main,
-                          0.2
-                        )}`,
+                        boxShadow: "0 0 0 2px rgba(74, 144, 226, 0.2)",
                       },
                     },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#4A90E2",
+                    },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#4A90E2",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <PersonIcon color="primary" />
+                        <PersonIcon sx={{ color: "#4A90E2" }} />
                       </InputAdornment>
                     ),
                   }}
                 />
 
-                {/* Mật khẩu */}
+                {/* Mật khẩu với màu y tế */}
                 <TextField
                   label="Mật khẩu"
                   name="password"
@@ -463,26 +583,35 @@ const RegisterPage = () => {
                   onChange={handleOnChange}
                   variant="outlined"
                   required
+                  error={!!errors.password}
+                  helperText={errors.password}
                   sx={{
                     mb: 3,
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 2,
                       transition: "all 0.3s ease",
                     },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#4A90E2",
+                    },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#4A90E2",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <VpnKeyIcon color="primary" />
+                        <VpnKeyIcon sx={{ color: "#4A90E2" }} />
                       </InputAdornment>
                     ),
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton onClick={handleTogglePassword} edge="end">
                           {showPassword ? (
-                            <VisibilityOffIcon />
+                            <VisibilityOffIcon sx={{ color: "#4A90E2" }} />
                           ) : (
-                            <VisibilityIcon />
+                            <VisibilityIcon sx={{ color: "#4A90E2" }} />
                           )}
                         </IconButton>
                       </InputAdornment>
@@ -490,7 +619,7 @@ const RegisterPage = () => {
                   }}
                 />
 
-                {/* Xác nhận mật khẩu */}
+                {/* Xác nhận mật khẩu với màu y tế */}
                 <TextField
                   label="Xác nhận mật khẩu"
                   name="confirmPassword"
@@ -507,11 +636,18 @@ const RegisterPage = () => {
                       borderRadius: 2,
                       transition: "all 0.3s ease",
                     },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#4A90E2",
+                    },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#4A90E2",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <VpnKeyIcon color="primary" />
+                        <VpnKeyIcon sx={{ color: "#4A90E2" }} />
                       </InputAdornment>
                     ),
                     endAdornment: (
@@ -521,9 +657,9 @@ const RegisterPage = () => {
                           edge="end"
                         >
                           {showConfirmPassword ? (
-                            <VisibilityOffIcon />
+                            <VisibilityOffIcon sx={{ color: "#4A90E2" }} />
                           ) : (
-                            <VisibilityIcon />
+                            <VisibilityIcon sx={{ color: "#4A90E2" }} />
                           )}
                         </IconButton>
                       </InputAdornment>
@@ -532,24 +668,22 @@ const RegisterPage = () => {
                 />
               </Box>
 
-              {/* Thông tin cá nhân */}
+              {/* Thông tin cá nhân với màu y tế */}
               <Box
                 sx={{
                   mb: 3,
                   p: 3,
                   borderRadius: 3,
-                  background: `linear-gradient(135deg, ${alpha(
-                    theme.palette.success.main,
-                    0.05
-                  )} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
-                  border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
+                  background:
+                    "linear-gradient(135deg, rgba(26, 188, 156, 0.05) 0%, rgba(74, 144, 226, 0.05) 100%)",
+                  border: "1px solid rgba(26, 188, 156, 0.2)",
                 }}
               >
                 <Typography
                   variant="h6"
                   gutterBottom
                   sx={{
-                    color: theme.palette.success.main,
+                    color: "#1ABC9C", // Medical green
                     fontWeight: "bold",
                     mb: 2,
                     display: "flex",
@@ -575,17 +709,179 @@ const RegisterPage = () => {
                       borderRadius: 2,
                       transition: "all 0.3s ease",
                     },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#1ABC9C",
+                    },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#1ABC9C",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <PersonIcon color="success" />
+                        <PersonIcon sx={{ color: "#1ABC9C" }} />
                       </InputAdornment>
                     ),
                   }}
                 />
 
-                {/* Email và nút gửi mã */}
+                {/* Giới tính với màu y tế */}
+                <FormControl
+                  fullWidth
+                  variant="outlined"
+                  required
+                  sx={{
+                    mb: 3,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                      transition: "all 0.3s ease",
+                    },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#1ABC9C",
+                    },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#1ABC9C",
+                      },
+                  }}
+                >
+                  <InputLabel>Giới tính</InputLabel>
+                  <Select
+                    label="Giới tính"
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleOnChange}
+                    displayEmpty={false}
+                    renderValue={(selected) => {
+                      if (!selected || selected === "") {
+                        return <em>Chọn giới tính</em>;
+                      }
+                      switch (selected) {
+                        case "MALE":
+                          return "Nam";
+                        case "FEMALE":
+                          return "Nữ";
+                        case "OTHER":
+                          return "Khác";
+                        default:
+                          return selected;
+                      }
+                    }}
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <WcIcon sx={{ color: "#1ABC9C" }} />
+                      </InputAdornment>
+                    }
+                  >
+                    <MenuItem value="MALE">Nam</MenuItem>
+                    <MenuItem value="FEMALE">Nữ</MenuItem>
+                    <MenuItem value="OTHER">Khác</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* Số điện thoại với màu y tế */}
+                <TextField
+                  label="Số điện thoại"
+                  name="phone"
+                  fullWidth
+                  value={formData.phone}
+                  onChange={handleOnChange}
+                  variant="outlined"
+                  placeholder="Ví dụ: 0123456789"
+                  sx={{
+                    mb: 3,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                      transition: "all 0.3s ease",
+                    },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#1ABC9C",
+                    },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#1ABC9C",
+                      },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneIcon sx={{ color: "#1ABC9C" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                {/* Ngày sinh với màu y tế */}
+                <TextField
+                  label="Ngày sinh"
+                  name="birthDay"
+                  type="date"
+                  fullWidth
+                  value={formData.birthDay}
+                  onChange={handleOnChange}
+                  variant="outlined"
+                  sx={{
+                    mb: 3,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                      transition: "all 0.3s ease",
+                    },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#1ABC9C",
+                    },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#1ABC9C",
+                      },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <CalendarTodayIcon sx={{ color: "#1ABC9C" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+
+                {/* Địa chỉ nhà với màu y tế */}
+                <TextField
+                  label="Địa chỉ nhà"
+                  name="address"
+                  fullWidth
+                  multiline
+                  rows={2}
+                  value={formData.address}
+                  onChange={handleOnChange}
+                  variant="outlined"
+                  placeholder="Ví dụ: 123 Đường ABC, Phường XYZ, Quận DEF, TP.HCM"
+                  sx={{
+                    mb: 3,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                      transition: "all 0.3s ease",
+                    },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#1ABC9C",
+                    },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#1ABC9C",
+                      },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <HomeIcon sx={{ color: "#1ABC9C" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                {/* Email và nút gửi mã với màu y tế */}
                 <Grid container spacing={2} sx={{ mb: 3 }}>
                   <Grid item size={8}>
                     <TextField
@@ -601,11 +897,18 @@ const RegisterPage = () => {
                           borderRadius: 2,
                           transition: "all 0.3s ease",
                         },
+                        "& .MuiInputLabel-root.Mui-focused": {
+                          color: "#1ABC9C",
+                        },
+                        "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                          {
+                            borderColor: "#1ABC9C",
+                          },
                       }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <EmailIcon color="success" />
+                            <EmailIcon sx={{ color: "#1ABC9C" }} />
                           </InputAdornment>
                         ),
                       }}
@@ -622,17 +925,12 @@ const RegisterPage = () => {
                         fontWeight: "bold",
                         borderRadius: 2,
                         background: isCodeButtonDisabled
-                          ? `linear-gradient(135deg, ${alpha(
-                              theme.palette.grey[400],
-                              0.8
-                            )} 0%, ${alpha(theme.palette.grey[500], 0.8)} 100%)`
-                          : `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
+                          ? "linear-gradient(45deg, #B0BEC5, #90A4AE)"
+                          : "linear-gradient(45deg, #1ABC9C, #16A085)",
+                        color: "#fff",
                         boxShadow: isCodeButtonDisabled
                           ? "none"
-                          : `0 6px 20px ${alpha(
-                              theme.palette.success.main,
-                              0.4
-                            )}`,
+                          : "0 2px 8px rgba(26, 188, 156, 0.25)",
                         textTransform: "none",
                         transition: "all 0.3s ease",
                         "&:hover": {
@@ -641,10 +939,10 @@ const RegisterPage = () => {
                             : "translateY(-2px)",
                           boxShadow: isCodeButtonDisabled
                             ? "none"
-                            : `0 8px 25px ${alpha(
-                                theme.palette.success.main,
-                                0.5
-                              )}`,
+                            : "0 4px 12px rgba(26, 188, 156, 0.35)",
+                          background: isCodeButtonDisabled
+                            ? "linear-gradient(45deg, #B0BEC5, #90A4AE)"
+                            : "linear-gradient(45deg, #17A2B8, #138496)",
                         },
                       }}
                     >
@@ -653,7 +951,7 @@ const RegisterPage = () => {
                   </Grid>
                 </Grid>
 
-                {/* Mã xác nhận */}
+                {/* Mã xác nhận với màu y tế */}
                 <TextField
                   label="Mã xác nhận"
                   name="verificationCode"
@@ -667,18 +965,25 @@ const RegisterPage = () => {
                       borderRadius: 2,
                       transition: "all 0.3s ease",
                     },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#1ABC9C",
+                    },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#1ABC9C",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <VerifiedUserIcon color="success" />
+                        <VerifiedUserIcon sx={{ color: "#1ABC9C" }} />
                       </InputAdornment>
                     ),
                   }}
                 />
               </Box>
 
-              {/* Nút đăng ký */}
+              {/* Nút đăng ký với màu y tế */}
               <Button
                 type="submit"
                 variant="contained"
@@ -688,20 +993,17 @@ const RegisterPage = () => {
                   py: 2,
                   fontWeight: "bold",
                   borderRadius: 3,
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                  boxShadow: `0 6px 20px ${alpha(
-                    theme.palette.primary.main,
-                    0.4
-                  )}`,
+                  background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
+                  color: "#fff",
+                  fontWeight: 600,
+                  boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
                   textTransform: "none",
                   fontSize: "1.1rem",
                   transition: "all 0.3s ease",
                   "&:hover": {
                     transform: "translateY(-2px)",
-                    boxShadow: `0 8px 25px ${alpha(
-                      theme.palette.primary.main,
-                      0.5
-                    )}`,
+                    boxShadow: "0 4px 12px rgba(74, 144, 226, 0.35)",
+                    background: "linear-gradient(45deg, #357ABD, #17A085)",
                   },
                 }}
               >
@@ -709,9 +1011,9 @@ const RegisterPage = () => {
                 Đăng Ký
               </Button>
 
-              <Divider sx={{ my: 3, opacity: 0.3 }} />
+              <Divider sx={{ my: 3, opacity: 0.3, borderColor: "#4A90E2" }} />
 
-              {/* Link đăng nhập */}
+              {/* Link đăng nhập với màu y tế */}
               <Box sx={{ textAlign: "center" }}>
                 <Link
                   to="/login"
@@ -723,11 +1025,11 @@ const RegisterPage = () => {
                     variant="body1"
                     sx={{
                       fontWeight: 500,
-                      color: theme.palette.primary.main,
+                      color: "#4A90E2", // Medical blue
                       transition: "all 0.3s ease",
                       "&:hover": {
                         textDecoration: "underline",
-                        color: theme.palette.primary.dark,
+                        color: "#357ABD",
                       },
                     }}
                   >

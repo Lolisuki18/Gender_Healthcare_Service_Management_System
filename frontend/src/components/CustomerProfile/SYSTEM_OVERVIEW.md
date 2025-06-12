@@ -186,6 +186,7 @@
 - - **Testing**: Unit tests cho critical functions
 - - **Performance**: Optimized re-renders và memory usage
 -
+<<<<<<< HEAD
 - ## BẢNG MÀU HƯỚNG DẪN Y TẾ
 -
 - Hệ thống sử dụng bảng màu y tế chuyên nghiệp để tạo cảm giác tin cậy và an tâm cho người dùng.
@@ -251,6 +252,46 @@
 ---
 
 > Các thay đổi này giúp hệ thống quản lý hồ sơ khách hàng thân thiện, dễ sử dụng, chuyên nghiệp và phù hợp với tiêu chuẩn giao diện y tế hiện đại.
+=======
+- ## BẢNG MÀU Y TẾ MEDICAL GRADIENT
+-
+- Hệ thống sử dụng bảng màu y tế chuyên nghiệp với medical gradient để tạo cảm giác tin cậy và an tâm cho người dùng.
+-
+- ### Màu chính (Primary Medical Colors)
+- - **Medical Blue** (#4A90E2) - Primary color cho buttons, headers, icons
+- - **Medical Teal** (#1ABC9C) - Secondary color cho accent, success states
+- - **Medical Green** (#4CAF50) - Success, health, positive status
+- - **Medical Orange** (#F39C12) - Warning, pending, attention
+-
+- ### Gradients Y Tế
+- - **Primary Gradient**: linear-gradient(45deg, #4A90E2, #1ABC9C)
+- - **Success Gradient**: linear-gradient(45deg, #4CAF50, #2ECC71)
+- - **Warning Gradient**: linear-gradient(45deg, #F39C12, #E67E22)
+- - **Background Gradient**: linear-gradient(135deg, #F5F7FA 0%, #E3F2FD 50%, #F5F7FA 100%)
+-
+- ### Text Colors (Medical Theme)
+- - **Primary Text**: #2D3748 (Dark blue-gray for maximum readability)
+- - **Secondary Text**: #4A5568 (Medium blue-gray for descriptions)
+- - **Muted Text**: #718096 (Light blue-gray for disabled states)
+-
+- ### Medical Component Styling
+- - **Glass Morphism**: rgba(255, 255, 255, 0.95) background with blur(20px)
+- - **Borders**: 1px solid rgba(74, 144, 226, 0.15)
+- - **Shadows**: 0 8px 32px rgba(74, 144, 226, 0.1)
+- - **Hover Effects**: Medical blue shadow with transform
+-
+- ### Quy tắc sử dụng Medical Theme
+- - Medical Blue (#4A90E2) cho primary actions, selected states, icons chính
+- - Medical Teal (#1ABC9C) cho secondary actions, refresh buttons, online status
+- - Medical Green (#4CAF50) cho success states, completed status, verified badges
+- - Medical Orange (#F39C12) cho warning states, pending status, attention
+- - Gradient backgrounds cho buttons, avatars, status indicators
+- - Light medical backgrounds cho cards và containers
+- - Dark text (#2D3748) cho maximum readability trên nền sáng
+- ***
+
+> Medical theme này đảm bảo tính nhất quán, chuyên nghiệp và dễ đọc trong toàn bộ hệ thống CustomerProfile.
+>>>>>>> feature/consultant-management-ninh-vy
 
 ## TỔNG QUAN CHỨC NĂNG & CÔNG NGHỆ - CUSTOMER PROFILE
 

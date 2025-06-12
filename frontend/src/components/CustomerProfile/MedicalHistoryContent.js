@@ -42,6 +42,8 @@ import {
   CalendarToday as CalendarIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
+// Import dateUtils for consistent date formatting
+import { formatDateDisplay } from "../../utils/dateUtils.js";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: "rgba(255, 255, 255, 0.95)", // Light glass background for medical
@@ -216,9 +218,10 @@ const MedicalHistoryContent = () => {
                       alignItems: "center",
                     }}
                   >
+                    {" "}
                     <TimeIcon sx={{ color: "#4A90E2", mr: 1, fontSize: 18 }} />
                     <Typography variant="body2" sx={{ color: "#4A5568" }}>
-                      {new Date(record.date).toLocaleDateString("vi-VN")}
+                      {formatDateDisplay(record.date)}
                     </Typography>
                   </Box>
                 </Box>
@@ -363,7 +366,7 @@ const MedicalHistoryContent = () => {
                 variant="h6"
                 sx={{ color: "#3b82f6", fontWeight: 600 }}
               >
-                {new Date(medicalRecords[0]?.date).toLocaleDateString("vi-VN")}
+                {formatDateDisplay(medicalRecords[0]?.date)}
               </Typography>
             </Box>
           </Grid>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -30,6 +30,8 @@ import {
   Tabs,
   LinearProgress,
   Badge,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -38,23 +40,17 @@ import {
   LocationOn as LocationIcon,
   School as SchoolIcon,
   Work as WorkIcon,
-  Language as LanguageIcon,
-  Star as StarIcon,
   Edit as EditIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  Verified as VerifiedIcon,
-  Schedule as ScheduleIcon,
-  AttachMoney as MoneyIcon,
-  Notifications as NotificationsIcon,
-  Security as SecurityIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
   Camera as CameraIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
+import { consultantService } from "../../services/consultantService";
+import localStorageUtil from "../../utils/localStorage";
+import { userService } from "../../services/userService";
+import notify from "../../utils/notification";
+import { confirmDialog } from "../../utils/confirmDialog";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: "rgba(255, 255, 255, 0.95)",
@@ -79,121 +75,289 @@ const ProfileAvatar = styled(Avatar)(({ theme }) => ({
   boxShadow: "0 8px 32px rgba(16, 185, 129, 0.3)",
 }));
 
-const ConsultantProfileContent = () => {
+const ConsultantProfileContent = ({ consultantId }) => {
   const [selectedTab, setSelectedTab] = useState(0);
-  const [editMode, setEditMode] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [openCertDialog, setOpenCertDialog] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Tách riêng edit mode cho từng phần
+  const [editPersonalInfo, setEditPersonalInfo] = useState(false);
+  const [editProfessionalInfo, setEditProfessionalInfo] = useState(false);
+  const [savingPersonal, setSavingPersonal] = useState(false);
+  const [savingProfessional, setSavingProfessional] = useState(false);
+
+  // Simplified data structure based on API response
   const [profileData, setProfileData] = useState({
-    personalInfo: {
-      fullName: "Dr. Nguyễn Văn Đức",
-      email: "dr.nguyenvanduc@healthcare.com",
-      phone: "+84 901234567",
-      dateOfBirth: "1985-03-15",
-      gender: "Nam",
-      address: "123 Đường ABC, Quận 1, TP.HCM",
-      bio: "Bác sĩ chuyên khoa tâm lý và tư vấn chuyển đổi giới tính với hơn 8 năm kinh nghiệm trong lĩnh vực chăm sóc sức khỏe LGBT+.",
-    },
-    professionalInfo: {
-      specialization: "Tâm lý học & Tư vấn chuyển đổi giới tính",
-      licenseNumber: "BS-12345678",
-      yearsOfExperience: 8,
-      workplace: "Trung tâm Y tế Gender Health",
-      consultationFee: 500000,
-      languages: ["Tiếng Việt", "English", "日本語"],
-      rating: 4.8,
-      totalReviews: 156,
-      successRate: 95,
-    },
-    education: [
-      {
-        degree: "Thạc sĩ Tâm lý học",
-        institution: "Đại học Y Hà Nội",
-        year: "2018",
-        type: "master",
-      },
-      {
-        degree: "Bác sĩ Đa khoa",
-        institution: "Đại học Y Dược TP.HCM",
-        year: "2015",
-        type: "bachelor",
-      },
-    ],
-    certifications: [
-      {
-        name: "Chứng chỉ Tư vấn Chuyển đổi Giới tính",
-        issuer: "World Professional Association for Transgender Health",
-        date: "2020",
-        verified: true,
-      },
-      {
-        name: "Chứng chỉ Tâm lý trị liệu",
-        issuer: "Hiệp hội Tâm lý Việt Nam",
-        date: "2019",
-        verified: true,
-      },
-    ],
-    workingHours: {
-      monday: { start: "08:00", end: "17:00", available: true },
-      tuesday: { start: "08:00", end: "17:00", available: true },
-      wednesday: { start: "08:00", end: "17:00", available: true },
-      thursday: { start: "08:00", end: "17:00", available: true },
-      friday: { start: "08:00", end: "17:00", available: true },
-      saturday: { start: "09:00", end: "15:00", available: true },
-      sunday: { start: "", end: "", available: false },
-    },
-    preferences: {
-      emailNotifications: true,
-      smsNotifications: false,
-      appointmentReminders: true,
-      marketingEmails: false,
-      twoFactorAuth: true,
-      profileVisibility: "public",
-    },
+    profileId: null,
+    userId: null,
+    fullName: "",
+    username: "", // chỉ hiện khi admin xem
+    email: "",
+    address: "",
+    gender: "",
+    isActive: true,
+    phone: "",
+    avatar: null, // URL avatar nếu có
+    qualifications: "",
+    experience: "",
+    bio: "",
+    updatedAt: "",
   });
-
   const [tempData, setTempData] = useState({ ...profileData });
 
-  const handleEdit = () => {
-    setEditMode(true);
-    setTempData({ ...profileData });
+  // Helper function để hiển thị giới tính
+  const getGenderDisplay = (gender) => {
+    switch (gender) {
+      case "MALE":
+        return "Nam";
+      case "FEMALE":
+        return "Nữ";
+      case "OTHER":
+        return "Khác";
+      default:
+        return "Chưa cập nhật";
+    }
   };
 
-  const handleSave = () => {
-    setProfileData({ ...tempData });
-    setEditMode(false);
-    // TODO: Save to backend
-    alert("Đã lưu thông tin hồ sơ!");
-  };
-
-  const handleCancel = () => {
-    setTempData({ ...profileData });
-    setEditMode(false);
-  };
-
-  const handleInputChange = (section, field, value) => {
+  // Handle input changes - THÊM FUNCTION NÀY
+  const handleInputChange = (field, value) => {
     setTempData((prev) => ({
       ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value,
-      },
+      [field]: value,
     }));
   };
 
-  const getDayName = (day) => {
-    const days = {
-      monday: "Thứ 2",
-      tuesday: "Thứ 3",
-      wednesday: "Thứ 4",
-      thursday: "Thứ 5",
-      friday: "Thứ 6",
-      saturday: "Thứ 7",
-      sunday: "Chủ nhật",
+  // Fetch consultant profile data
+  useEffect(() => {
+    const fetchConsultantProfile = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const userData = localStorageUtil.get("user");
+        const response = await consultantService.getConsultantDetails(
+          userData.userId
+        );
+        console.log("Consultant Profile Response:", response);
+
+        const responseData = response?.data || response;
+        console.log("Response Data:", responseData);
+
+        const mappedData = {
+          profileId: responseData.profileId || null,
+          userId: responseData.userId || null,
+          fullName: responseData.fullName || "",
+          username: responseData.username || "",
+          email: responseData.email || "",
+          address: responseData.address || "",
+          gender: responseData.gender || "",
+          isActive:
+            responseData.active !== undefined ? responseData.active : true,
+          phone: responseData.phone || "",
+          avatar: responseData.avatar || null,
+          qualifications: responseData.qualifications || "",
+          experience: responseData.experience || "",
+          bio: responseData.bio || "",
+          updatedAt: responseData.updatedAt || new Date().toISOString(),
+        };
+
+        console.log("Mapped Data:", mappedData);
+        setProfileData(mappedData);
+        setTempData(mappedData);
+      } catch (err) {
+        console.error("Error fetching consultant profile:", err);
+        setError("Không thể tải thông tin hồ sơ. Vui lòng thử lại sau.");
+      } finally {
+        setLoading(false);
+      }
     };
-    return days[day];
+
+    fetchConsultantProfile();
+  }, [consultantId]);
+
+  // Handlers for Personal Info
+  const handleEditPersonal = () => {
+    setEditPersonalInfo(true);
+    setTempData({ ...profileData });
   };
+  const handleSavePersonal = async () => {
+    try {
+      setSavingPersonal(true);
+
+      const personalData = {
+        fullName: tempData.fullName,
+        email: tempData.email,
+        phone: tempData.phone,
+        address: tempData.address,
+        gender: tempData.gender,
+      };
+
+      await userService.updateProfile(personalData);
+
+      setProfileData((prev) => ({
+        ...prev,
+        ...personalData,
+        updatedAt: new Date().toISOString(),
+      }));
+
+      setEditPersonalInfo(false);
+
+      // Hiển thị thông báo thành công
+      notify.success(
+        "Cập nhật thành công!",
+        "Thông tin cá nhân đã được cập nhật thành công."
+      );
+    } catch (err) {
+      console.error("Error saving personal info:", err);
+
+      // Hiển thị thông báo lỗi
+      notify.error(
+        "Cập nhật thất bại!",
+        "Có lỗi xảy ra khi cập nhật thông tin cá nhân. Vui lòng thử lại."
+      );
+    } finally {
+      setSavingPersonal(false);
+    }
+  };
+
+  const handleCancelPersonal = async () => {
+    // Hiển thị dialog xác nhận nếu có thay đổi
+    const hasChanges = JSON.stringify(tempData) !== JSON.stringify(profileData);
+
+    if (hasChanges) {
+      const confirmed = await confirmDialog.warning(
+        "Bạn có chắc chắn muốn hủy các thay đổi chưa lưu?",
+        {
+          title: "Xác nhận hủy",
+          confirmText: "Hủy thay đổi",
+          cancelText: "Tiếp tục chỉnh sửa",
+        }
+      );
+
+      if (!confirmed) return;
+    }
+
+    setTempData({ ...profileData });
+    setEditPersonalInfo(false);
+
+    // Hiển thị thông báo hủy
+    notify.info("Đã hủy", "Các thay đổi đã được hủy.");
+  };
+
+  // Handlers for Professional Info
+  const handleEditProfessional = () => {
+    setEditProfessionalInfo(true);
+    setTempData({ ...profileData });
+  };
+  const handleSaveProfessional = async () => {
+    try {
+      setSavingProfessional(true);
+
+      const professionalData = {
+        bio: tempData.bio,
+        qualifications: tempData.qualifications,
+        experience: tempData.experience,
+      };
+
+      const userData = localStorageUtil.get("user");
+      await consultantService.updateProfessionalInfo(
+        userData.userId,
+        professionalData
+      );
+
+      setProfileData((prev) => ({
+        ...prev,
+        ...professionalData,
+        updatedAt: new Date().toISOString(),
+      }));
+
+      setEditProfessionalInfo(false);
+
+      // Hiển thị thông báo thành công
+      notify.success(
+        "Cập nhật thành công!",
+        "Thông tin nghề nghiệp đã được cập nhật thành công."
+      );
+    } catch (err) {
+      console.error("Error saving professional info:", err);
+
+      // Hiển thị thông báo lỗi
+      notify.error(
+        "Cập nhật thất bại!",
+        "Có lỗi xảy ra khi cập nhật thông tin nghề nghiệp. Vui lòng thử lại."
+      );
+    } finally {
+      setSavingProfessional(false);
+    }
+  };
+
+  const handleCancelProfessional = async () => {
+    // Hiển thị dialog xác nhận nếu có thay đổi
+    const hasChanges = JSON.stringify(tempData) !== JSON.stringify(profileData);
+
+    if (hasChanges) {
+      const confirmed = await confirmDialog.warning(
+        "Bạn có chắc chắn muốn hủy các thay đổi chưa lưu?",
+        {
+          title: "Xác nhận hủy",
+          confirmText: "Hủy thay đổi",
+          cancelText: "Tiếp tục chỉnh sửa",
+        }
+      );
+
+      if (!confirmed) return;
+    }
+
+    setTempData({ ...profileData });
+    setEditProfessionalInfo(false);
+
+    // Hiển thị thông báo hủy
+    notify.info("Đã hủy", "Các thay đổi đã được hủy.");
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "400px",
+          flexDirection: "column",
+          gap: 2,
+        }}
+      >
+        <CircularProgress size={60} sx={{ color: "#10b981" }} />
+        <Typography variant="h6" component="div" sx={{ color: "#64748b" }}>
+          Đang tải thông tin hồ sơ...
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => window.location.reload()}
+            >
+              Thử lại
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
+      </Box>
+    );
+  }
 
   const renderPersonalInfo = () => (
     <StyledPaper sx={{ p: 3 }}>
@@ -205,13 +369,17 @@ const ConsultantProfileContent = () => {
           mb: 3,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b" }}>
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{ fontWeight: 600, color: "#1e293b" }}
+        >
           Thông tin cá nhân
         </Typography>
-        {!editMode ? (
+        {!editPersonalInfo ? (
           <Button
             startIcon={<EditIcon />}
-            onClick={handleEdit}
+            onClick={handleEditPersonal}
             sx={{ color: "#10b981" }}
           >
             Chỉnh sửa
@@ -221,19 +389,28 @@ const ConsultantProfileContent = () => {
             <Button
               startIcon={<SaveIcon />}
               variant="contained"
-              onClick={handleSave}
+              onClick={handleSavePersonal}
+              disabled={savingPersonal}
               sx={{
                 background: "linear-gradient(45deg, #10b981, #059669)",
                 "&:hover": {
                   background: "linear-gradient(45deg, #059669, #047857)",
                 },
+                "&:disabled": {
+                  background: "#94a3b8",
+                },
               }}
             >
-              Lưu
+              {savingPersonal ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                "Lưu"
+              )}
             </Button>
             <Button
               startIcon={<CancelIcon />}
-              onClick={handleCancel}
+              onClick={handleCancelPersonal}
+              disabled={savingPersonal}
               sx={{ color: "#ef4444" }}
             >
               Hủy
@@ -245,10 +422,12 @@ const ConsultantProfileContent = () => {
       {/* Profile Header */}
       <Box sx={{ textAlign: "center", mb: 4 }}>
         <Box sx={{ position: "relative", display: "inline-block" }}>
-          <ProfileAvatar>
-            {tempData.personalInfo.fullName.charAt(0)}
+          <ProfileAvatar src={tempData.avatar}>
+            {!tempData.avatar &&
+              tempData.fullName &&
+              tempData.fullName.charAt(0)}
           </ProfileAvatar>
-          {editMode && (
+          {editPersonalInfo && (
             <IconButton
               sx={{
                 position: "absolute",
@@ -267,12 +446,17 @@ const ConsultantProfileContent = () => {
         </Box>
         <Typography
           variant="h5"
+          component="div"
           sx={{ fontWeight: 600, mt: 2, color: "#1e293b" }}
         >
-          {tempData.personalInfo.fullName}
+          {tempData.fullName || "Chưa cập nhật"}
         </Typography>
-        <Typography variant="body1" sx={{ color: "#64748b", mb: 2 }}>
-          {tempData.professionalInfo.specialization}
+        <Typography
+          variant="body1"
+          component="div"
+          sx={{ color: "#64748b", mb: 2 }}
+        >
+          Bác sĩ tư vấn
         </Typography>
         <Box
           sx={{
@@ -282,776 +466,269 @@ const ConsultantProfileContent = () => {
             gap: 1,
           }}
         >
-          <Badge
-            badgeContent={<VerifiedIcon sx={{ fontSize: 12 }} />}
-            color="primary"
-          >
-            <Chip label="Bác sĩ được xác minh" color="success" size="small" />
-          </Badge>
+          <Chip
+            label={tempData.isActive ? "Đang hoạt động" : "Không hoạt động"}
+            color={tempData.isActive ? "success" : "error"}
+            size="small"
+          />
         </Box>
       </Box>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid item size={12} md={6}>
           <TextField
             fullWidth
             label="Họ và tên"
-            value={tempData.personalInfo.fullName}
-            onChange={(e) =>
-              handleInputChange("personalInfo", "fullName", e.target.value)
-            }
-            disabled={!editMode}
+            value={tempData.fullName}
+            onChange={(e) => handleInputChange("fullName", e.target.value)}
+            disabled={!editPersonalInfo}
             margin="normal"
           />
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid item size={6} md={6}>
           <TextField
             fullWidth
             label="Email"
-            value={tempData.personalInfo.email}
-            onChange={(e) =>
-              handleInputChange("personalInfo", "email", e.target.value)
-            }
-            disabled={!editMode}
+            value={tempData.email}
+            onChange={(e) => handleInputChange("email", e.target.value)}
+            disabled={!editPersonalInfo}
             margin="normal"
             InputProps={{
               endAdornment: <EmailIcon sx={{ color: "#64748b" }} />,
             }}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
+
+        <Grid item size={6} md={6}>
           <TextField
             fullWidth
             label="Số điện thoại"
-            value={tempData.personalInfo.phone}
-            onChange={(e) =>
-              handleInputChange("personalInfo", "phone", e.target.value)
-            }
-            disabled={!editMode}
+            value={tempData.phone}
+            onChange={(e) => handleInputChange("phone", e.target.value)}
+            disabled={!editPersonalInfo}
             margin="normal"
             InputProps={{
               endAdornment: <PhoneIcon sx={{ color: "#64748b" }} />,
             }}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Ngày sinh"
-            type="date"
-            value={tempData.personalInfo.dateOfBirth}
-            onChange={(e) =>
-              handleInputChange("personalInfo", "dateOfBirth", e.target.value)
-            }
-            disabled={!editMode}
-            margin="normal"
-            InputLabelProps={{
-              shrink: true,
-            }}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Giới tính</InputLabel>
-            <Select
-              value={tempData.personalInfo.gender}
-              onChange={(e) =>
-                handleInputChange("personalInfo", "gender", e.target.value)
-              }
-              disabled={!editMode}
+
+        <Grid item size={4} md={6}>
+          {editPersonalInfo ? (
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Giới tính</InputLabel>
+              <Select
+                value={tempData.gender}
+                onChange={(e) => handleInputChange("gender", e.target.value)}
+                label="Giới tính"
+              >
+                <MenuItem value="MALE">Nam</MenuItem>
+                <MenuItem value="FEMALE">Nữ</MenuItem>
+                <MenuItem value="OTHER">Khác</MenuItem>
+              </Select>
+            </FormControl>
+          ) : (
+            <TextField
+              fullWidth
               label="Giới tính"
-            >
-              <MenuItem value="Nam">Nam</MenuItem>
-              <MenuItem value="Nữ">Nữ</MenuItem>
-              <MenuItem value="Khác">Khác</MenuItem>
-            </Select>
-          </FormControl>
+              value={getGenderDisplay(tempData.gender)}
+              disabled={true}
+              margin="normal"
+            />
+          )}
         </Grid>
-        <Grid item xs={12} md={6}>
+
+        <Grid item size={4} md={6}>
           <TextField
             fullWidth
             label="Địa chỉ"
-            value={tempData.personalInfo.address}
-            onChange={(e) =>
-              handleInputChange("personalInfo", "address", e.target.value)
-            }
-            disabled={!editMode}
+            value={tempData.address}
+            onChange={(e) => handleInputChange("address", e.target.value)}
+            disabled={!editPersonalInfo}
             margin="normal"
             InputProps={{
               endAdornment: <LocationIcon sx={{ color: "#64748b" }} />,
             }}
           />
         </Grid>
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="Giới thiệu bản thân"
-            multiline
-            rows={4}
-            value={tempData.personalInfo.bio}
-            onChange={(e) =>
-              handleInputChange("personalInfo", "bio", e.target.value)
-            }
-            disabled={!editMode}
-            margin="normal"
-          />
-        </Grid>
+
+        {/* Hiển thị username chỉ khi admin xem */}
+        {tempData.username && (
+          <Grid item size={4} md={6}>
+            <TextField
+              fullWidth
+              label="Tên đăng nhập"
+              value={tempData.username}
+              disabled={true} // Admin không được sửa username
+              margin="normal"
+              InputProps={{
+                endAdornment: <PersonIcon sx={{ color: "#64748b" }} />,
+              }}
+            />
+          </Grid>
+        )}
       </Grid>
     </StyledPaper>
   );
 
   const renderProfessionalInfo = () => (
     <StyledPaper sx={{ p: 3 }}>
-      <Typography
-        variant="h6"
-        sx={{ fontWeight: 600, color: "#1e293b", mb: 3 }}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
       >
-        Thông tin nghề nghiệp
-      </Typography>
-
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={6} md={3}>
-          <Card
-            sx={{
-              textAlign: "center",
-              p: 2,
-              background:
-                "linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.1))",
-            }}
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{ fontWeight: 600, color: "#1e293b" }}
+        >
+          Thông tin nghề nghiệp
+        </Typography>
+        {!editProfessionalInfo ? (
+          <Button
+            startIcon={<EditIcon />}
+            onClick={handleEditProfessional}
+            sx={{ color: "#10b981" }}
           >
-            <Typography variant="h4" sx={{ fontWeight: 700, color: "#3b82f6" }}>
-              {tempData.professionalInfo.rating}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#64748b" }}>
-              Đánh giá TB
-            </Typography>
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
-              {[...Array(5)].map((_, index) => (
-                <StarIcon
-                  key={index}
-                  sx={{
-                    fontSize: 16,
-                    color:
-                      index < Math.floor(tempData.professionalInfo.rating)
-                        ? "#fbbf24"
-                        : "#e5e7eb",
-                  }}
-                />
-              ))}
-            </Box>
-          </Card>
-        </Grid>
-        <Grid item xs={6} md={3}>
-          <Card
-            sx={{
-              textAlign: "center",
-              p: 2,
-              background:
-                "linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.1))",
-            }}
-          >
-            <Typography variant="h4" sx={{ fontWeight: 700, color: "#10b981" }}>
-              {tempData.professionalInfo.totalReviews}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#64748b" }}>
-              Đánh giá
-            </Typography>
-          </Card>
-        </Grid>
-        <Grid item xs={6} md={3}>
-          <Card
-            sx={{
-              textAlign: "center",
-              p: 2,
-              background:
-                "linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.1))",
-            }}
-          >
-            <Typography variant="h4" sx={{ fontWeight: 700, color: "#f59e0b" }}>
-              {tempData.professionalInfo.yearsOfExperience}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#64748b" }}>
-              Năm KN
-            </Typography>
-          </Card>
-        </Grid>
-        <Grid item xs={6} md={3}>
-          <Card
-            sx={{
-              textAlign: "center",
-              p: 2,
-              background:
-                "linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(167, 139, 250, 0.1))",
-            }}
-          >
-            <Typography variant="h4" sx={{ fontWeight: 700, color: "#8b5cf6" }}>
-              {tempData.professionalInfo.successRate}%
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#64748b" }}>
-              Thành công
-            </Typography>
-          </Card>
-        </Grid>
-      </Grid>
+            Chỉnh sửa
+          </Button>
+        ) : (
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              startIcon={<SaveIcon />}
+              variant="contained"
+              onClick={handleSaveProfessional}
+              disabled={savingProfessional}
+              sx={{
+                background: "linear-gradient(45deg, #10b981, #059669)",
+                "&:hover": {
+                  background: "linear-gradient(45deg, #059669, #047857)",
+                },
+                "&:disabled": {
+                  background: "#94a3b8",
+                },
+              }}
+            >
+              {savingProfessional ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                "Lưu"
+              )}
+            </Button>
+            <Button
+              startIcon={<CancelIcon />}
+              onClick={handleCancelProfessional}
+              disabled={savingProfessional}
+              sx={{ color: "#ef4444" }}
+            >
+              Hủy
+            </Button>
+          </Box>
+        )}
+      </Box>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid item size={12} md={6}>
           <TextField
             fullWidth
-            label="Chuyên khoa"
-            value={tempData.professionalInfo.specialization}
+            label="Giới thiệu bản thân"
+            multiline
+            rows={4}
+            value={tempData.bio}
+            onChange={(e) => handleInputChange("bio", e.target.value)}
+            disabled={!editProfessionalInfo}
+            margin="normal"
+            helperText="Giới thiệu ngắn gọn về bản thân, chuyên môn và kinh nghiệm"
+          />
+        </Grid>
+        <Grid item size={12} md={6}>
+          <TextField
+            fullWidth
+            label="Trình độ chuyên môn"
+            multiline
+            rows={3}
+            value={tempData.qualifications}
             onChange={(e) =>
-              handleInputChange(
-                "professionalInfo",
-                "specialization",
-                e.target.value
-              )
+              handleInputChange("qualifications", e.target.value)
             }
-            disabled={!editMode}
+            disabled={!editProfessionalInfo}
             margin="normal"
             InputProps={{
               endAdornment: <SchoolIcon sx={{ color: "#64748b" }} />,
             }}
+            helperText="Ví dụ: Thạc sĩ Tâm lý học - Đại học Y Hà Nội (2018), Bác sĩ Đa khoa - Đại học Y Dược TP.HCM (2015)"
           />
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid item size={12} md={6}>
           <TextField
             fullWidth
-            label="Số giấy phép hành nghề"
-            value={tempData.professionalInfo.licenseNumber}
-            onChange={(e) =>
-              handleInputChange(
-                "professionalInfo",
-                "licenseNumber",
-                e.target.value
-              )
-            }
-            disabled={!editMode}
-            margin="normal"
-            InputProps={{
-              endAdornment: <VerifiedIcon sx={{ color: "#64748b" }} />,
-            }}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Số năm kinh nghiệm"
-            type="number"
-            value={tempData.professionalInfo.yearsOfExperience}
-            onChange={(e) =>
-              handleInputChange(
-                "professionalInfo",
-                "yearsOfExperience",
-                parseInt(e.target.value)
-              )
-            }
-            disabled={!editMode}
-            margin="normal"
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Nơi làm việc"
-            value={tempData.professionalInfo.workplace}
-            onChange={(e) =>
-              handleInputChange("professionalInfo", "workplace", e.target.value)
-            }
-            disabled={!editMode}
+            label="Kinh nghiệm làm việc"
+            multiline
+            rows={3}
+            value={tempData.experience}
+            onChange={(e) => handleInputChange("experience", e.target.value)}
+            disabled={!editProfessionalInfo}
             margin="normal"
             InputProps={{
               endAdornment: <WorkIcon sx={{ color: "#64748b" }} />,
             }}
+            helperText="Mô tả kinh nghiệm làm việc, số năm, lĩnh vực chuyên môn"
           />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Phí tư vấn (VNĐ)"
-            type="number"
-            value={tempData.professionalInfo.consultationFee}
-            onChange={(e) =>
-              handleInputChange(
-                "professionalInfo",
-                "consultationFee",
-                parseInt(e.target.value)
-              )
-            }
-            disabled={!editMode}
-            margin="normal"
-            InputProps={{
-              endAdornment: <MoneyIcon sx={{ color: "#64748b" }} />,
-            }}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="subtitle2" sx={{ color: "#4A5568", mb: 1 }}>
-              Ngôn ngữ
-            </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-              {tempData.professionalInfo.languages.map((language, index) => (
-                <Chip
-                  key={index}
-                  label={language}
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                  deleteIcon={editMode ? <DeleteIcon /> : undefined}
-                  onDelete={
-                    editMode
-                      ? () => {
-                          const newLanguages =
-                            tempData.professionalInfo.languages.filter(
-                              (_, i) => i !== index
-                            );
-                          handleInputChange(
-                            "professionalInfo",
-                            "languages",
-                            newLanguages
-                          );
-                        }
-                      : undefined
-                  }
-                />
-              ))}
-              {editMode && (
-                <Button
-                  size="small"
-                  startIcon={<AddIcon />}
-                  onClick={() => {
-                    const newLanguage = prompt("Nhập ngôn ngữ mới:");
-                    if (newLanguage) {
-                      const newLanguages = [
-                        ...tempData.professionalInfo.languages,
-                        newLanguage,
-                      ];
-                      handleInputChange(
-                        "professionalInfo",
-                        "languages",
-                        newLanguages
-                      );
-                    }
-                  }}
-                  sx={{ color: "#10b981" }}
-                >
-                  Thêm ngôn ngữ
-                </Button>
-              )}
-            </Box>
-          </Box>
         </Grid>
       </Grid>
 
       <Divider sx={{ my: 3 }} />
 
-      {/* Education */}
-      <Box sx={{ mb: 3 }}>
+      {/* Profile Stats */}
+      <Box sx={{ mt: 3 }}>
         <Typography
           variant="subtitle1"
+          component="div"
           sx={{ fontWeight: 600, color: "#1e293b", mb: 2 }}
         >
-          Học vấn
+          Thông tin hồ sơ
         </Typography>
-        {tempData.education.map((edu, index) => (
-          <Card
-            key={index}
-            sx={{ mb: 2, p: 2, background: "rgba(16, 185, 129, 0.05)" }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <SchoolIcon sx={{ color: "#10b981", mr: 1 }} />
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    {edu.degree}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "#64748b" }}>
-                    {edu.institution} • {edu.year}
-                  </Typography>
-                </Box>
-              </Box>
-              {editMode && (
-                <IconButton size="small" sx={{ color: "#ef4444" }}>
-                  <DeleteIcon />
-                </IconButton>
-              )}
-            </Box>
-          </Card>
-        ))}
-        {editMode && (
-          <Button startIcon={<AddIcon />} sx={{ color: "#10b981" }}>
-            Thêm học vấn
-          </Button>
-        )}
-      </Box>
-
-      {/* Certifications */}
-      <Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 2,
-          }}
-        >
-          <Typography
-            variant="subtitle1"
-            sx={{ fontWeight: 600, color: "#1e293b" }}
-          >
-            Chứng chỉ
-          </Typography>
-          <Button
-            startIcon={<AddIcon />}
-            onClick={() => setOpenCertDialog(true)}
-            sx={{ color: "#10b981" }}
-          >
-            Thêm chứng chỉ
-          </Button>
-        </Box>
-        {tempData.certifications.map((cert, index) => (
-          <Card
-            key={index}
-            sx={{ mb: 2, p: 2, background: "rgba(59, 130, 246, 0.05)" }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Box sx={{ mr: 2 }}>
-                  {cert.verified ? (
-                    <VerifiedIcon sx={{ color: "#10b981" }} />
-                  ) : (
-                    <VerifiedIcon sx={{ color: "#94a3b8" }} />
-                  )}
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    {cert.name}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "#64748b" }}>
-                    {cert.issuer} • {cert.date}
-                  </Typography>
-                  {cert.verified && (
-                    <Chip
-                      label="Đã xác minh"
-                      size="small"
-                      color="success"
-                      sx={{ mt: 1 }}
-                    />
-                  )}
-                </Box>
-              </Box>
-              {editMode && (
-                <IconButton size="small" sx={{ color: "#ef4444" }}>
-                  <DeleteIcon />
-                </IconButton>
-              )}
-            </Box>
-          </Card>
-        ))}
-      </Box>
-    </StyledPaper>
-  );
-
-  const renderWorkingHours = () => (
-    <StyledPaper sx={{ p: 3 }}>
-      <Typography
-        variant="h6"
-        sx={{ fontWeight: 600, color: "#1e293b", mb: 3 }}
-      >
-        Giờ làm việc
-      </Typography>
-
-      {Object.entries(tempData.workingHours).map(([day, hours]) => (
-        <Box
-          key={day}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            mb: 2,
-            p: 2,
-            backgroundColor: "rgba(16, 185, 129, 0.05)",
-            borderRadius: "8px",
-          }}
-        >
-          <Typography
-            variant="body1"
-            sx={{ fontWeight: 500, minWidth: "100px" }}
-          >
-            {getDayName(day)}
-          </Typography>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={hours.available}
-                onChange={(e) => {
-                  const newHours = {
-                    ...tempData.workingHours,
-                    [day]: { ...hours, available: e.target.checked },
-                  };
-                  setTempData((prev) => ({ ...prev, workingHours: newHours }));
-                }}
-                disabled={!editMode}
-              />
-            }
-            label="Có sẵn"
-          />
-          {hours.available && (
-            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-              <TextField
-                type="time"
-                value={hours.start}
-                onChange={(e) => {
-                  const newHours = {
-                    ...tempData.workingHours,
-                    [day]: { ...hours, start: e.target.value },
-                  };
-                  setTempData((prev) => ({ ...prev, workingHours: newHours }));
-                }}
-                disabled={!editMode}
-                size="small"
-                InputLabelProps={{ shrink: true }}
-              />
-              <Typography variant="body2">đến</Typography>
-              <TextField
-                type="time"
-                value={hours.end}
-                onChange={(e) => {
-                  const newHours = {
-                    ...tempData.workingHours,
-                    [day]: { ...hours, end: e.target.value },
-                  };
-                  setTempData((prev) => ({ ...prev, workingHours: newHours }));
-                }}
-                disabled={!editMode}
-                size="small"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Box>
-          )}
-        </Box>
-      ))}
-    </StyledPaper>
-  );
-
-  const renderSettings = () => (
-    <StyledPaper sx={{ p: 3 }}>
-      <Typography
-        variant="h6"
-        sx={{ fontWeight: 600, color: "#1e293b", mb: 3 }}
-      >
-        Cài đặt tài khoản
-      </Typography>
-
-      {/* Notification Preferences */}
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="subtitle1"
-          sx={{ fontWeight: 600, color: "#1e293b", mb: 2 }}
-        >
-          Tùy chọn thông báo
-        </Typography>
-        <List>
-          <ListItem>
-            <ListItemIcon>
-              <EmailIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Thông báo qua Email"
-              secondary="Nhận thông báo về lịch hẹn và tin nhắn"
-            />
-            <Switch
-              checked={tempData.preferences.emailNotifications}
-              onChange={(e) =>
-                handleInputChange(
-                  "preferences",
-                  "emailNotifications",
-                  e.target.checked
-                )
-              }
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon>
-              <PhoneIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Thông báo SMS"
-              secondary="Nhận tin nhắn SMS về lịch hẹn khẩn cấp"
-            />
-            <Switch
-              checked={tempData.preferences.smsNotifications}
-              onChange={(e) =>
-                handleInputChange(
-                  "preferences",
-                  "smsNotifications",
-                  e.target.checked
-                )
-              }
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon>
-              <ScheduleIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Nhắc nhở lịch hẹn"
-              secondary="Nhận thông báo trước 24h và 1h"
-            />
-            <Switch
-              checked={tempData.preferences.appointmentReminders}
-              onChange={(e) =>
-                handleInputChange(
-                  "preferences",
-                  "appointmentReminders",
-                  e.target.checked
-                )
-              }
-            />
-          </ListItem>
-        </List>
-      </Box>
-
-      <Divider sx={{ my: 3 }} />
-
-      {/* Security Settings */}
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="subtitle1"
-          sx={{ fontWeight: 600, color: "#1e293b", mb: 2 }}
-        >
-          Bảo mật
-        </Typography>
-        <List>
-          <ListItem>
-            <ListItemIcon>
-              <SecurityIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Xác thực 2 yếu tố"
-              secondary="Tăng cường bảo mật cho tài khoản"
-            />
-            <Switch
-              checked={tempData.preferences.twoFactorAuth}
-              onChange={(e) =>
-                handleInputChange(
-                  "preferences",
-                  "twoFactorAuth",
-                  e.target.checked
-                )
-              }
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon>
-              <VisibilityIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Hiển thị hồ sơ"
-              secondary="Cho phép bệnh nhân tìm thấy hồ sơ của bạn"
-            />
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <Select
-                value={tempData.preferences.profileVisibility}
-                onChange={(e) =>
-                  handleInputChange(
-                    "preferences",
-                    "profileVisibility",
-                    e.target.value
-                  )
-                }
+        <Grid container spacing={2}>
+          <Grid item size={6} md={6}>
+            <Card sx={{ p: 2, background: "rgba(16, 185, 129, 0.05)" }}>
+              <Typography
+                variant="body2"
+                component="div"
+                sx={{ color: "#64748b" }}
               >
-                <MenuItem value="public">Công khai</MenuItem>
-                <MenuItem value="limited">Hạn chế</MenuItem>
-                <MenuItem value="private">Riêng tư</MenuItem>
-              </Select>
-            </FormControl>
-          </ListItem>
-        </List>
-      </Box>
-
-      <Divider sx={{ my: 3 }} />
-
-      {/* Change Password */}
-      <Box>
-        <Typography
-          variant="subtitle1"
-          sx={{ fontWeight: 600, color: "#1e293b", mb: 2 }}
-        >
-          Đổi mật khẩu
-        </Typography>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Mật khẩu hiện tại"
-              type={showPassword ? "text" : "password"}
-              margin="normal"
-              InputProps={{
-                endAdornment: (
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  </IconButton>
-                ),
-              }}
-            />
+                ID Hồ sơ
+              </Typography>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+                #{tempData.profileId || "N/A"}
+              </Typography>
+            </Card>
           </Grid>
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Mật khẩu mới"
-              type={showPassword ? "text" : "password"}
-              margin="normal"
-            />
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Xác nhận mật khẩu mới"
-              type={showPassword ? "text" : "password"}
-              margin="normal"
-            />
+          <Grid item size={6} md={6}>
+            <Card sx={{ p: 2, background: "rgba(59, 130, 246, 0.05)" }}>
+              <Typography
+                variant="body2"
+                component="div"
+                sx={{ color: "#64748b" }}
+              >
+                Cập nhật lần cuối
+              </Typography>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+                {tempData.updatedAt
+                  ? new Date(tempData.updatedAt).toLocaleDateString("vi-VN")
+                  : "Chưa cập nhật"}
+              </Typography>
+            </Card>
           </Grid>
         </Grid>
-        <Button
-          variant="contained"
-          sx={{
-            mt: 2,
-            background: "linear-gradient(45deg, #10b981, #059669)",
-            "&:hover": {
-              background: "linear-gradient(45deg, #059669, #047857)",
-            },
-          }}
-        >
-          Cập nhật mật khẩu
-        </Button>
       </Box>
     </StyledPaper>
   );
 
-  const tabLabels = [
-    "Thông tin cá nhân",
-    "Thông tin nghề nghiệp",
-    "Giờ làm việc",
-    "Cài đặt",
-  ];
+  const tabLabels = ["Thông tin cá nhân", "Thông tin nghề nghiệp"];
 
   return (
     <Box sx={{ p: 3 }}>
@@ -1059,6 +736,7 @@ const ConsultantProfileContent = () => {
       <Box sx={{ mb: 4 }}>
         <Typography
           variant="h4"
+          component="h1"
           sx={{
             fontWeight: 700,
             background: "linear-gradient(45deg, #2563eb, #3b82f6)",
@@ -1070,11 +748,10 @@ const ConsultantProfileContent = () => {
         >
           Hồ sơ cá nhân
         </Typography>
-        <Typography variant="body1" sx={{ color: "#64748b" }}>
-          Quản lý thông tin cá nhân và cài đặt tài khoản
+        <Typography variant="body1" component="div" sx={{ color: "#64748b" }}>
+          Quản lý thông tin cá nhân và nghề nghiệp
         </Typography>
       </Box>
-
       {/* Tabs */}
       <StyledPaper sx={{ mb: 3 }}>
         <Tabs
@@ -1098,44 +775,12 @@ const ConsultantProfileContent = () => {
             <Tab key={index} label={label} />
           ))}
         </Tabs>
-      </StyledPaper>
-
+      </StyledPaper>{" "}
       {/* Content */}
       <Box>
         {selectedTab === 0 && renderPersonalInfo()}
         {selectedTab === 1 && renderProfessionalInfo()}
-        {selectedTab === 2 && renderWorkingHours()}
-        {selectedTab === 3 && renderSettings()}
       </Box>
-
-      {/* Certification Dialog */}
-      <Dialog
-        open={openCertDialog}
-        onClose={() => setOpenCertDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Thêm chứng chỉ mới</DialogTitle>
-        <DialogContent>
-          <TextField fullWidth label="Tên chứng chỉ" margin="normal" />
-          <TextField fullWidth label="Tổ chức cấp" margin="normal" />
-          <TextField fullWidth label="Năm cấp" type="number" margin="normal" />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenCertDialog(false)}>Hủy</Button>
-          <Button
-            variant="contained"
-            sx={{
-              background: "linear-gradient(45deg, #10b981, #059669)",
-              "&:hover": {
-                background: "linear-gradient(45deg, #059669, #047857)",
-              },
-            }}
-          >
-            Thêm
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

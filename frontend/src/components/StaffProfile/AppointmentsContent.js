@@ -39,6 +39,8 @@ import {
   CheckCircle as CheckIcon,
   Cancel as CancelIcon,
 } from "@mui/icons-material";
+// Import dateUtils for consistent date formatting
+import { formatDateDisplay } from "../../utils/dateUtils.js";
 
 const AppointmentsContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -163,10 +165,11 @@ const AppointmentsContent = () => {
               {appointment.service}
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+              {" "}
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <CalendarIcon sx={{ fontSize: 16, color: "#64748B" }} />
                 <Typography variant="body2" sx={{ color: "#64748B" }}>
-                  {appointment.date}
+                  {formatDateDisplay(appointment.date)}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -376,11 +379,12 @@ const AppointmentsContent = () => {
                   />
                 </Grid>
                 <Grid item xs={6}>
+                  {" "}
                   <Typography variant="body2" color="textSecondary">
                     Ngày:
                   </Typography>
                   <Typography variant="body1">
-                    {selectedAppointment.date}
+                    {formatDateDisplay(selectedAppointment.date)}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>

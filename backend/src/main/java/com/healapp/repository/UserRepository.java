@@ -29,6 +29,15 @@ public interface UserRepository extends JpaRepository<UserDtls, Long> {
     @Query("SELECT u FROM UserDtls u WHERE u.role.roleName = :roleName")
     List<UserDtls> findByRoleName(@Param("roleName") String roleName);
 
+    @Query("SELECT u FROM UserDtls u WHERE u.role.roleName = :roleName AND u.isActive = :isActive")
+    List<UserDtls> findByRoleNameAndIsActive(@Param("roleName") String roleName, @Param("isActive") boolean isActive);
+
+    @Query("SELECT u FROM UserDtls u WHERE u.role.roleName = :roleName AND (u.fullName LIKE CONCAT('%', :query, '%') OR u.email LIKE CONCAT('%', :query, '%'))")
+    List<UserDtls> findByRoleNameAndFullNameContainingOrEmailContaining(@Param("roleName") String roleName, @Param("query") String query);
+
+    @Query("SELECT u FROM UserDtls u WHERE u.role.roleName = :roleName AND u.isActive = :isActive AND u.fullName LIKE CONCAT('%', :name, '%')")
+    List<UserDtls> findByRoleNameAndIsActiveAndFullNameContaining(@Param("isActive") Boolean isActive, @Param("roleName") String roleName, @Param("name") String name);
+
     Iterable<UserDtls> findByIsActive(Boolean isActive);
 
     Iterable<UserDtls> findByFullNameContainingIgnoreCase(String name);

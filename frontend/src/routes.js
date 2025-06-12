@@ -1,23 +1,9 @@
 /**
  * routes.js - Cấu hình định tuyến của ứng dụng
- *
- * File này đảm nhiệm việc thiết lập và quản lý các đường dẫn URL trong ứng dụng.
- * Sử dụng React Router DOM để tạo hệ thống điều hướng đa trang mà không cần tải lại trang.
- *
- * Lý do tạo file:
- * - Tách biệt logic điều hướng khỏi các component khác, giúp dễ quản lý và mở rộng
- * - Cung cấp cấu trúc tập trung cho việc thêm trang mới và quản lý layout
- * - Áp dụng mô hình layout lồng nhau với Outlet từ React Router
- *
- * Cấu trúc route hiện tại:
- * - Layout chính bọc tất cả các trang con
- * - Trang chủ (HomePage) là trang mặc định
- * - Customer routes cho khách hàng đã đăng nhập
- * - NotFoundPage xử lý các URL không hợp lệ
  */
 
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { HomePage } from "@/pages/HomePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import MainLayout from "@layouts/MainLayout";
@@ -25,7 +11,6 @@ import LoginPage from "@/pages/LoginPage";
 import RegisterForm from "@/pages/RegisterPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ProfilePage from "@/pages/ProfilePage";
-// import AdminTestPage from "@/pages/AdminTestPage";
 
 // Import Profile Components
 import CustomerProfile from "@/components/CustomerProfile/CustomerProfile";
@@ -33,27 +18,78 @@ import AdminProfile from "@/components/AdminProfile/AdminProfile";
 import ConsultantProfile from "@/components/ConsultantProfile/ConsultantProfile";
 import StaffProfile from "@/components/StaffProfile/StaffProfile";
 import AdminLayout from "./components/layouts/AdminLayout";
+import localStorageUtil from "./utils/localStorage";
 
 const AppRoutes = () => {
+  // Lấy thông tin user từ localStorage
+  const userData = localStorageUtil.get("user");
+
+  // Component để redirect đến trang phù hợp khi truy cập "/"
+  const AutoRedirectToProfile = () => {
+    if (!userData || !userData.role) {
+      return <Navigate to="/login" replace />;
+    }
+
+    switch (userData.role) {
+      case "ADMIN":
+        return <Navigate to="/admin/profile" replace />; // Admin vào admin profile
+      case "CUSTOMER":
+      case "CONSULTANT":
+      case "STAFF":
+        return <HomePage />; // Các role khác vào homepage
+      default:
+        return <Navigate to="/login" replace />;
+    }
+  };
+
   return (
     <Routes>
+      {/* Route chính cho trang chủ */}
       <Route path="/" element={<MainLayout />}>
-        <Route index element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterForm />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        {/* Profile Routes for Different User Types
-        <Route path="/customer-profile" element={<CustomerProfile />} />
-        
-        {/* <Route path="/admin-test" element={<AdminTestPage />} /> */}
-        {/* <Route path="/consultant-profile" element={<ConsultantProfile />} />
-        <Route path="/staff-profile" element={<StaffProfile />} /> */}
+        {/* Trang chủ - Auto redirect admin, hiển thị homepage cho user thường */}
+        <Route
+          index
+          element={userData ? <AutoRedirectToProfile /> : <HomePage />}
+        />
+
+        {/* Homepage cho các role đã đăng nhập (trừ admin) */}
+        <Route path="home" element={<HomePage />} />
+
+        {/* Profile Page chung - sẽ render component phù hợp với role */}
+        <Route
+          path="profile"
+          element={
+            userData && userData.role !== "ADMIN" ? (
+              <ProfilePage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+
+        {/* Public routes */}
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterForm />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+
+        {/* 404 Page */}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
+      {/* Admin Routes riêng với AdminLayout */}
       <Route path="/admin" element={<AdminLayout />}>
-        <Route path="profile" element={<AdminProfile />} />
+        <Route
+          path="profile"
+          element={
+            userData?.role === "ADMIN" ? (
+              <AdminProfile />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        {/* Auto redirect /admin to /admin/profile */}
+        <Route index element={<Navigate to="/admin/profile" replace />} />
       </Route>
     </Routes>
   );

@@ -23,5 +23,7 @@ public class UserResponse {
     private Boolean isActive;
     private Gender gender;
     private String role;
+    private String address;
+    private String gender;
     private LocalDateTime createdDate;
 }

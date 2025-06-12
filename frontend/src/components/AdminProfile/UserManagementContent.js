@@ -3,7 +3,7 @@
  *
  * Trang quản lý người dùng cho Admin
  */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -28,15 +28,6 @@ import {
   Select,
   Grid,
   MenuItem,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -51,27 +42,13 @@ import {
   Visibility as VisibilityIcon,
   Add as AddIcon,
 } from "@mui/icons-material";
-import AddUserModal from "./modals/AddUserModal";
-import ViewUserModal from "./modals/ViewUserModal";
-import EditUserModal from "./modals/EditUserModal";
 
 const UserManagementContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState(0);
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  // State cho modal
-  const [openModal, setOpenModal] = useState(false);
-  const [modalType, setModalType] = useState("");
-  // State cho view modal
-  const [openViewModal, setOpenViewModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
 
-  // State cho edit modal
-  const [openEditModal, setOpenEditModal] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  // State cho role selection modal
-  const [openRoleSelection, setOpenRoleSelection] = useState(false);
   // Mock data với nhiều người dùng hơn
   const users = [
     {
@@ -84,9 +61,6 @@ const UserManagementContent = () => {
       joinDate: "2024-01-15",
       avatar: null,
       lastLogin: "2024-06-05 09:30",
-      gender: "male",
-      dateOfBirth: "1990-05-15",
-      address: "123 Nguyễn Huệ, Quận 1, TP.HCM",
     },
     {
       id: 2,
@@ -98,13 +72,6 @@ const UserManagementContent = () => {
       joinDate: "2024-02-10",
       avatar: null,
       lastLogin: "2024-06-05 08:15",
-      gender: "female",
-      dateOfBirth: "1985-08-20",
-      address: "456 Lê Lợi, Quận 3, TP.HCM",
-      specialization: "Sức khỏe sinh sản nữ",
-      experience: "8",
-      certification:
-        "- Bác sĩ Chuyên khoa I Sản Phụ khoa\n- Chứng chỉ tư vấn sức khỏe sinh sản\n- Thạc sĩ Y học cộng đồng",
     },
     {
       id: 3,
@@ -116,9 +83,6 @@ const UserManagementContent = () => {
       joinDate: "2024-03-05",
       avatar: null,
       lastLogin: "2024-06-01 14:20",
-      gender: "male",
-      dateOfBirth: "1995-12-10",
-      address: "789 Trần Hưng Đạo, Quận 5, TP.HCM",
     },
     {
       id: 4,
@@ -130,9 +94,6 @@ const UserManagementContent = () => {
       joinDate: "2023-12-01",
       avatar: null,
       lastLogin: "2024-06-05 10:45",
-      gender: "female",
-      dateOfBirth: "1988-03-25",
-      address: "321 Võ Văn Tần, Quận 3, TP.HCM",
     },
     {
       id: 5,
@@ -144,13 +105,10 @@ const UserManagementContent = () => {
       joinDate: "2024-04-20",
       avatar: null,
       lastLogin: "2024-06-04 16:30",
-      gender: "male",
-      dateOfBirth: "1992-07-08",
-      address: "654 Hai Bà Trưng, Quận 1, TP.HCM",
     },
   ];
 
-  // Tabs cho phân loại người dùng - SỬA LẠI
+  // ✅ Cập nhật userCategories để sử dụng role từ API
   const userCategories = [
     {
       label: "Tất cả",
@@ -159,26 +117,26 @@ const UserManagementContent = () => {
       count: users.length,
     },
     {
-      label: "Quản trị viên", // ✅ Tiếng Việt
-      value: "Admin", // ✅ Tiếng Anh cho database
+      label: "Quản trị viên",
+      value: "ADMIN",
       icon: <SecurityIcon />,
-      count: users.filter((u) => u.role === "Admin").length,
+      count: users.filter((u) => u.role === "ADMIN").length,
     },
     {
-      label: "Nhân viên", // ✅ Tiếng Việt
-      value: "Staff", // ✅ Tiếng Anh cho database
+      label: "Nhân viên",
+      value: "STAFF",
       icon: <BusinessIcon />,
-      count: users.filter((u) => u.role === "Staff").length,
+      count: users.filter((u) => u.role === "STAFF").length,
     },
     {
-      label: "Khách hàng", // ✅ Tiếng Việt
-      value: "Customer", // ✅ Tiếng Anh cho database
+      label: "Khách hàng",
+      value: "CUSTOMER",
       icon: <PersonIcon />,
-      count: users.filter((u) => u.role === "Customer").length,
+      count: users.filter((u) => u.role === "CUSTOMER").length,
     },
     {
-      label: "Tư vấn viên", // ✅ Tiếng Việt
-      value: "Consultant", // ✅ Tiếng Anh cho database
+      label: "Tư vấn viên",
+      value: "CONSULTANT",
       icon: <SupportIcon />,
       count: users.filter((u) => u.role === "Consultant").length,
     },
@@ -186,11 +144,10 @@ const UserManagementContent = () => {
 
   // ✅ THÊM các function mới cho Edit và Delete
   const handleEdit = (userId) => {
-    const user = users.find((u) => u.id === userId);
-    if (user) {
-      setEditingUser(user);
-      setOpenEditModal(true);
-    }
+    console.log("Chỉnh sửa người dùng ID:", userId);
+    // TODO: Implement edit functionality
+    // Có thể mở dialog hoặc navigate đến trang edit
+    alert(`Chỉnh sửa người dùng ID: ${userId}`);
   };
 
   const handleDelete = (userId) => {
@@ -252,163 +209,267 @@ const UserManagementContent = () => {
     }
   };
 
-  // ✅ Function chuyển đổi role từ tiếng Anh sang tiếng Việt để hiển thị
+  // ✅ Thêm state mới cho loading create user
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+
+  // ✅ Cập nhật handleModalSubmit
+  const handleModalSubmit = async (formData, userType) => {
+    setIsCreatingUser(true); // ✅ Sử dụng state riêng
+
+    try {
+      console.log("Đang tạo người dùng mới:", formData);
+      console.log("Loại người dùng:", userType);
+
+      const result = await adminService.addNewUserAccount(formData);
+
+      if (result && result.success) {
+        notify.success(
+          "Tạo thành công!",
+          `Tạo ${getRoleDisplayName(userType)} thành công!`
+        );
+
+        // ✅ Refresh data
+        await fetchUsers();
+
+        // Đóng modal
+        setOpenModal(false);
+        setModalType("");
+
+        console.log("Tạo người dùng thành công:", result);
+      }
+    } catch (error) {
+      console.error("Lỗi khi tạo người dùng:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi tạo người dùng";
+
+      notify.error("Lỗi tạo người dùng", errorMessage);
+    } finally {
+      setIsCreatingUser(false); // ✅ Clear loading state
+    }
+  };
+
+  // ✅ Cập nhật getModalTitle
+  const getModalTitle = (userType) => {
+    switch (userType) {
+      case "ADMIN":
+        return "Quản trị viên";
+      case "STAFF":
+        return "Nhân viên";
+      case "CUSTOMER":
+        return "Khách hàng";
+      case "CONSULTANT":
+        return "Tư vấn viên";
+      default:
+        return "Người dùng";
+    }
+  };
+
+  // ✅ Cập nhật getRoleDisplayName
   const getRoleDisplayName = (role) => {
     switch (role) {
-      case "Admin":
+      case "ADMIN":
         return "Quản trị viên";
-      case "Staff":
+      case "STAFF":
         return "Nhân viên";
-      case "Customer":
+      case "CUSTOMER":
         return "Khách hàng";
-      case "Consultant":
+      case "CONSULTANT":
         return "Tư vấn viên";
       default:
         return role;
     }
   };
 
-  // ✅ Function chuyển đổi status từ tiếng Anh sang tiếng Việt (nếu cần)
-  const getStatusDisplayName = (status) => {
-    switch (status) {
-      case "Active":
-        return "Hoạt động";
-      case "Inactive":
-        return "Tạm khóa";
-      case "Blocked":
-        return "Bị chặn";
-      default:
-        return status; // Nếu đã là tiếng Việt thì giữ nguyên
-    }
-  };
-
-  // ✅ Function để lấy text cho nút Add - hiển thị chung cho tất cả
   const getAddButtonText = () => {
     return "Thêm người dùng mới";
   };
 
-  // ✅ Function xử lý mở role selection dialog
   const handleAddNew = () => {
     setOpenRoleSelection(true);
   };
 
-  // ✅ Function xử lý chọn role và mở modal thêm mới
   const handleRoleSelect = (userType) => {
     setOpenRoleSelection(false);
     setModalType(userType);
     setOpenModal(true);
   };
 
-  // ✅ Danh sách roles để chọn
-  const roleOptions = [
-    {
-      value: "Admin",
-      label: "Quản trị viên",
-      icon: <SecurityIcon />,
-      description: "Có quyền quản lý toàn bộ hệ thống",
-      color: "#E53E3E",
-    },
-    {
-      value: "Staff",
-      label: "Nhân viên",
-      icon: <BusinessIcon />,
-      description: "Nhân viên hỗ trợ khách hàng",
-      color: "#3182CE",
-    },
-    {
-      value: "Consultant",
-      label: "Tư vấn viên",
-      icon: <SupportIcon />,
-      description: "Chuyên gia tư vấn sức khỏe",
-      color: "#D69E2E",
-    },
-    {
-      value: "Customer",
-      label: "Khách hàng",
-      icon: <PersonIcon />,
-      description: "Người dùng sử dụng dịch vụ",
-      color: "#4A90E2",
-    },
-  ];
-
-  // ✅ Cập nhật getFilteredUsers để reset roleFilter khi chọn tab cụ thể
-  const getFilteredUsers = () => {
-    let filtered = users;
-
-    // Lọc theo tab
-    switch (userCategories[selectedTab]?.value) {
+  // ✅ Function để lấy text cho nút Add - hiển thị tiếng Việt
+  const getAddButtonText = (tabValue) => {
+    switch (tabValue) {
       case "Admin":
-        filtered = filtered.filter((u) => u.role === "Admin");
+        return "Thêm Quản trị viên";
+      case "Staff":
+        return "Thêm Nhân viên";
+      case "Customer":
+        return "Thêm Khách hàng";
+      case "Consultant":
+        return "Thêm Tư vấn viên";
+      default:
+        return "Thêm mới";
+    }
+  };
+
+  // ✅ Function xử lý thêm mới - log bằng tiếng Anh, alert tiếng Việt
+  const handleAddNew = (userType) => {
+    console.log("Thêm mới người dùng loại:", userType); // Log database value
+
+    switch (userType) {
+      case "Admin":
+        alert("Mở form thêm Quản trị viên mới");
+        // TODO: Mở dialog/form thêm Admin
         break;
       case "Staff":
-        filtered = filtered.filter((u) => u.role === "Staff");
+        alert("Mở form thêm Nhân viên mới");
+        // TODO: Mở dialog/form thêm Staff
         break;
       case "Customer":
-        filtered = filtered.filter((u) => u.role === "Customer");
+        alert("Mở form thêm Khách hàng mới");
+        // TODO: Mở dialog/form thêm Customer
         break;
       case "Consultant":
-        filtered = filtered.filter((u) => u.role === "Consultant");
+        alert("Mở form thêm Tư vấn viên mới");
+        // TODO: Mở dialog/form thêm Consultant
         break;
       default:
-        // Chỉ apply roleFilter khi ở tab "Tất cả"
-        if (roleFilter !== "all") {
-          filtered = filtered.filter((u) => u.role === roleFilter);
-        }
+        alert("Mở form thêm người dùng mới");
+        // TODO: Mở dialog/form thêm người dùng chung
         break;
+    }
+  };
+
+  // ✅ Cập nhật getFilteredUsers
+  const getFilteredUsers = () => {
+    console.log("=== FILTERING USERS ===");
+    console.log("Original users count:", users.length);
+    console.log("Search term:", searchTerm);
+    console.log("Selected tab:", userCategories[selectedTab]?.value);
+    console.log("Role filter:", roleFilter);
+    console.log("Status filter:", statusFilter);
+
+    let filtered = [...users];
+
+    // Lọc theo tab
+    const currentTab = userCategories[selectedTab]?.value;
+    if (currentTab && currentTab !== "all") {
+      filtered = filtered.filter((u) => u.role === currentTab);
+      console.log("After tab filter:", filtered.length);
+    }
+
+    // Lọc theo role filter (chỉ khi ở tab "Tất cả")
+    if (currentTab === "all" && roleFilter !== "all") {
+      filtered = filtered.filter((u) => u.role === roleFilter);
+      console.log("After role filter:", filtered.length);
     }
 
     // Lọc theo status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter((u) => u.status === statusFilter);
+      if (statusFilter === "Hoạt động") {
+        filtered = filtered.filter((u) => u.isActive === true);
+      } else if (statusFilter === "Tạm khóa") {
+        filtered = filtered.filter((u) => u.isActive === false);
+      }
+      console.log("After status filter:", filtered.length);
     }
 
     // Lọc theo search term
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (u) =>
-          u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.phone.includes(searchTerm)
-      );
+    if (searchTerm && searchTerm.trim() !== "") {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter((u) => {
+        const nameMatch = (u.fullName || u.username || "")
+          .toLowerCase()
+          .includes(searchLower);
+        const emailMatch = (u.email || "").toLowerCase().includes(searchLower);
+        const phoneMatch = (u.phone || "").includes(searchTerm.trim());
+
+        return nameMatch || emailMatch || phoneMatch;
+      });
+      console.log("After search filter:", filtered.length);
     }
 
+    console.log("Final filtered users:", filtered.length);
     return filtered;
   };
 
-  // ✅ Reset roleFilter khi chuyển tab
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    console.log("Search input changed to:", value);
+    setSearchTerm(value);
+  };
+
+  useEffect(() => {
+    console.log("Search term changed:", searchTerm);
+    console.log("Filtered users:", getFilteredUsers());
+  }, [searchTerm, selectedTab, roleFilter, statusFilter]);
+
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
-    // Reset role filter khi chuyển sang tab cụ thể
     if (userCategories[newValue]?.value !== "all") {
       setRoleFilter("all");
     }
   };
 
-  // ✅ Cập nhật getRoleColor để match với role tiếng Anh
+  // ✅ Cập nhật getRoleColor
   const getRoleColor = (role) => {
     switch (role) {
-      case "Admin":
+      case "ADMIN":
         return "error";
-      case "Consultant":
+      case "CONSULTANT":
         return "warning";
-      case "Staff":
+      case "STAFF":
         return "info";
-      case "Customer":
+      case "CUSTOMER":
         return "primary";
       default:
         return "default";
     }
   };
 
-  // ✅ Cập nhật getStatusColor
-  const getStatusColor = (status) => {
-    // Support cả tiếng Anh và tiếng Việt
-    return status === "Hoạt động" || status === "Active"
-      ? "success"
-      : "default";
-  };
-
   const filteredUsers = getFilteredUsers();
+
+  // ✅ Hiển thị loading khi đang tải
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: 400,
+        }}
+      >
+        <CircularProgress size={60} sx={{ color: "#4A90E2" }} />
+        <Typography variant="h6" sx={{ ml: 2, color: "#4A5568" }}>
+          Đang tải danh sách người dùng...
+        </Typography>
+      </Box>
+    );
+  }
+
+  // ✅ Hiển thị error khi có lỗi
+  if (error) {
+    return (
+      <Box sx={{ textAlign: "center", py: 4 }}>
+        <Typography variant="h6" sx={{ color: "#E53E3E", mb: 2 }}>
+          {error}
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={fetchUsers}
+          sx={{
+            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+            "&:hover": {
+              background: "linear-gradient(45deg, #357ABD, #17A2B8)",
+            },
+          }}
+        >
+          Thử lại
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -437,6 +498,7 @@ const UserManagementContent = () => {
       >
         Quản lý tài khoản và phân quyền người dùng trong hệ thống
       </Typography>
+
       {/* User Category Tabs với integrated filters */}
       <Card
         sx={{
@@ -447,7 +509,6 @@ const UserManagementContent = () => {
           mb: 3,
         }}
       >
-        {/* Tabs Section */}
         <Tabs
           value={selectedTab}
           onChange={handleTabChange}
@@ -491,38 +552,23 @@ const UserManagementContent = () => {
           ))}
         </Tabs>
 
-        {/* Header Section - Remove Add Button */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "flex-start",
-            alignItems: "center",
-            px: 3,
-            pt: 3,
-            pb: 2,
-          }}
-        >
-          <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
-            {userCategories[selectedTab]?.label === "Tất cả"
-              ? "Danh sách người dùng"
-              : `Danh sách ${userCategories[selectedTab]?.label}`}
-          </Typography>
-        </Box>
-
-        {/* Search and Filters Section */}
-        <CardContent sx={{ pt: 0, p: 3 }}>
+        {/* Integrated Search and Filters Section */}
+        <CardContent sx={{ p: 3 }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={6}>
               <TextField
-                placeholder="Tìm kiếm người dùng..."
+                placeholder="Tìm kiếm theo tên, email hoặc số điện thoại..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
                 size="small"
                 fullWidth
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     backgroundColor: "rgba(255, 255, 255, 0.9)",
                     "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#4A90E2",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                       borderColor: "#4A90E2",
                     },
                   },
@@ -533,9 +579,22 @@ const UserManagementContent = () => {
                   ),
                 }}
               />
+              {searchTerm && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "#718096",
+                    mt: 0.5,
+                    display: "block",
+                  }}
+                >
+                  Đang tìm: "{searchTerm}" - Kết quả:{" "}
+                  {getFilteredUsers().length} người dùng
+                </Typography>
+              )}
             </Grid>
 
-            {/* Conditional Role Filter - hiển thị tiếng Việt, value tiếng Anh */}
+            {/* Role Filter */}
             {userCategories[selectedTab]?.value === "all" && (
               <Grid item xs={12} md={3}>
                 <FormControl size="small" fullWidth>
@@ -546,10 +605,14 @@ const UserManagementContent = () => {
                     onChange={(e) => setRoleFilter(e.target.value)}
                   >
                     <MenuItem value="all">Tất cả</MenuItem>
-                    <MenuItem value="Admin">Quản trị viên</MenuItem>
-                    <MenuItem value="Consultant">Tư vấn viên</MenuItem>
-                    <MenuItem value="Staff">Nhân viên</MenuItem>
-                    <MenuItem value="Customer">Khách hàng</MenuItem>
+                    <MenuItem value="Admin">Quản trị viên</MenuItem>{" "}
+                    {/* ✅ Hiển thị tiếng Việt */}
+                    <MenuItem value="Consultant">Tư vấn viên</MenuItem>{" "}
+                    {/* ✅ Hiển thị tiếng Việt */}
+                    <MenuItem value="Staff">Nhân viên</MenuItem>{" "}
+                    {/* ✅ Hiển thị tiếng Việt */}
+                    <MenuItem value="Customer">Khách hàng</MenuItem>{" "}
+                    {/* ✅ Hiển thị tiếng Việt */}
                   </Select>
                 </FormControl>
               </Grid>
@@ -579,9 +642,10 @@ const UserManagementContent = () => {
       {/* Results Summary */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="body2" sx={{ color: "#4A5568" }}>
-          Hiển thị {filteredUsers.length} / {users.length} người dùng
+          Hiển thị {getFilteredUsers().length} / {users.length} người dùng
           {userCategories[selectedTab]?.label !== "Tất cả" &&
             ` trong danh mục "${userCategories[selectedTab]?.label}"`}
+          {searchTerm && ` (tìm kiếm: "${searchTerm}")`}
         </Typography>
       </Box>
       {/* Users Table */}
@@ -610,9 +674,6 @@ const UserManagementContent = () => {
                   Trạng thái
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600, color: "#2D3748" }}>
-                  Lần cuối đăng nhập
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#2D3748" }}>
                   Thao tác
                 </TableCell>
               </TableRow>
@@ -634,14 +695,16 @@ const UserManagementContent = () => {
                               "linear-gradient(45deg, #4A90E2, #1ABC9C)",
                           }}
                         >
-                          {user.name.charAt(0)}
+                          {user.fullName?.charAt(0) ||
+                            user.username?.charAt(0) ||
+                            "?"}
                         </Avatar>
                         <Box>
                           <Typography
                             variant="body2"
                             sx={{ fontWeight: 500, color: "#2D3748" }}
                           >
-                            {user.name}
+                            {user.fullName || user.username || "Không có tên"}
                           </Typography>
                           <Typography
                             variant="caption"
@@ -658,7 +721,7 @@ const UserManagementContent = () => {
                           {user.email}
                         </Typography>
                         <Typography variant="caption" sx={{ color: "#718096" }}>
-                          {user.phone}
+                          {user.phone || "Chưa cập nhật"}
                         </Typography>
                       </Box>
                     </TableCell>
@@ -672,8 +735,8 @@ const UserManagementContent = () => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={getStatusDisplayName(user.status)}
-                        color={getStatusColor(user.status)}
+                        label={user.isActive ? "Hoạt động" : "Tạm khóa"}
+                        color={user.isActive ? "success" : "default"}
                         size="small"
                       />
                     </TableCell>
@@ -681,25 +744,9 @@ const UserManagementContent = () => {
                       <Typography variant="body2" sx={{ color: "#718096" }}>
                         {user.lastLogin}
                       </Typography>
-                    </TableCell>{" "}
+                    </TableCell>
                     <TableCell>
                       <Box sx={{ display: "flex", gap: 1 }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleViewUser(user.id)}
-                          sx={{
-                            color: "#48BB78",
-                            backgroundColor: "rgba(72, 187, 120, 0.1)",
-                            "&:hover": {
-                              backgroundColor: "rgba(72, 187, 120, 0.2)",
-                              transform: "scale(1.1)",
-                            },
-                            transition: "all 0.2s ease",
-                          }}
-                        >
-                          <VisibilityIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-
                         <IconButton
                           size="small"
                           onClick={() => handleEdit(user.id)}
@@ -715,7 +762,7 @@ const UserManagementContent = () => {
                         >
                           <EditIcon sx={{ fontSize: 16 }} />
                         </IconButton>
-
+                        {/* delete button */}
                         <IconButton
                           size="small"
                           onClick={() => handleDelete(user.id)}
@@ -737,7 +784,7 @@ const UserManagementContent = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
                     <Typography variant="body2" sx={{ color: "#718096" }}>
                       Không tìm thấy người dùng nào phù hợp
                     </Typography>
@@ -748,130 +795,6 @@ const UserManagementContent = () => {
           </Table>
         </TableContainer>
       </Card>
-      {/* Standalone Add User Button Section - Moved to bottom after table */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
-        <Button
-          variant="contained"
-          onClick={handleAddNew}
-          startIcon={<AddIcon />}
-          sx={{
-            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-            borderRadius: 2,
-            px: 4,
-            py: 1.5,
-            fontSize: "1rem",
-            fontWeight: 600,
-            boxShadow: "0 4px 12px rgba(74, 144, 226, 0.3)",
-            "&:hover": {
-              background: "linear-gradient(45deg, #357ABD, #17A2B8)",
-              transform: "translateY(-2px)",
-              boxShadow: "0 6px 20px rgba(74, 144, 226, 0.4)",
-            },
-            transition: "all 0.3s ease",
-          }}
-        >
-          {getAddButtonText()}
-        </Button>
-      </Box>
-      {/* Role Selection Dialog */}
-      <Dialog
-        open={openRoleSelection}
-        onClose={() => setOpenRoleSelection(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            background: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(20px)",
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            textAlign: "center",
-            pb: 1,
-            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-            backgroundClip: "text",
-            WebkitBackgroundClip: "text",
-            color: "transparent",
-            fontWeight: 700,
-          }}
-        >
-          Chọn loại người dùng cần thêm
-        </DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
-          <List sx={{ py: 2 }}>
-            {roleOptions.map((role) => (
-              <ListItem key={role.value} sx={{ px: 3 }}>
-                <ListItemButton
-                  onClick={() => handleRoleSelect(role.value)}
-                  sx={{
-                    borderRadius: 2,
-                    mb: 1,
-                    border: "1px solid rgba(74, 144, 226, 0.15)",
-                    "&:hover": {
-                      backgroundColor: "rgba(74, 144, 226, 0.05)",
-                      borderColor: role.color,
-                    },
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  <ListItemIcon sx={{ color: role.color }}>
-                    {role.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Typography
-                        variant="body1"
-                        sx={{ fontWeight: 600, color: "#2D3748" }}
-                      >
-                        {role.label}
-                      </Typography>
-                    }
-                    secondary={
-                      <Typography variant="body2" sx={{ color: "#718096" }}>
-                        {role.description}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 0 }}>
-          <Button
-            onClick={() => setOpenRoleSelection(false)}
-            sx={{ color: "#718096" }}
-          >
-            Hủy
-          </Button>
-        </DialogActions>
-      </Dialog>
-      {/* Add User Modal */}
-      <AddUserModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        userType={modalType}
-        onSubmit={handleModalSubmit}
-      />{" "}
-      {/* View User Modal */}
-      <ViewUserModal
-        open={openViewModal}
-        onClose={() => setOpenViewModal(false)}
-        user={selectedUser}
-      />
-      {/* Edit User Modal */}
-      <EditUserModal
-        open={openEditModal}
-        onClose={() => {
-          setOpenEditModal(false);
-          setEditingUser(null);
-        }}
-        user={editingUser}
-        onSubmit={handleEditSubmit}
-      />
     </Box>
   );
 };
