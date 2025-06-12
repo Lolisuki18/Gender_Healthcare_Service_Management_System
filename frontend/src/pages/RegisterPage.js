@@ -108,7 +108,7 @@ const RegisterPage = () => {
     // Cleanup function khi component unmount
     return () => {
       // Xóa tất cả các interval để tránh memory leak
-      const intervalId = setInterval(() => { }, 100);
+      const intervalId = setInterval(() => {}, 100);
       for (let i = 1; i <= intervalId; i++) {
         clearInterval(i);
       }
@@ -270,7 +270,7 @@ const RegisterPage = () => {
     if (!formData.verificationCode) {
       notify.error("Lỗi đăng ký", "Vui lòng nhập mã xác nhận");
       return;
-    }    // Kiểm tra confirm password có trùng khớp không
+    } // Kiểm tra confirm password có trùng khớp không
     if (confirmPassword !== formData.password) {
       notify.error("Lỗi đăng ký", "Mật khẩu xác nhận không trùng khớp");
       return;
@@ -279,9 +279,9 @@ const RegisterPage = () => {
     // ✅ CHUYỂN ĐỔI GENDER SANG TIẾNG VIỆT
     const convertGenderToVietnamese = (genderValue) => {
       const genderMapping = {
-        'MALE': 'Nam',
-        'FEMALE': 'Nữ',
-        'OTHER': 'Khác'
+        MALE: "Nam",
+        FEMALE: "Nữ",
+        OTHER: "Khác",
       };
       return genderMapping[genderValue] || genderValue;
     };
@@ -568,9 +568,9 @@ const RegisterPage = () => {
                       color: "#4A90E2",
                     },
                     "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                    {
-                      borderColor: "#4A90E2",
-                    },
+                      {
+                        borderColor: "#4A90E2",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -603,9 +603,9 @@ const RegisterPage = () => {
                       color: "#4A90E2",
                     },
                     "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                    {
-                      borderColor: "#4A90E2",
-                    },
+                      {
+                        borderColor: "#4A90E2",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -648,9 +648,9 @@ const RegisterPage = () => {
                       color: "#4A90E2",
                     },
                     "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                    {
-                      borderColor: "#4A90E2",
-                    },
+                      {
+                        borderColor: "#4A90E2",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -721,9 +721,9 @@ const RegisterPage = () => {
                       color: "#1ABC9C",
                     },
                     "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                    {
-                      borderColor: "#1ABC9C",
-                    },
+                      {
+                        borderColor: "#1ABC9C",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -749,9 +749,9 @@ const RegisterPage = () => {
                       color: "#1ABC9C",
                     },
                     "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                    {
-                      borderColor: "#1ABC9C",
-                    },
+                      {
+                        borderColor: "#1ABC9C",
+                      },
                   }}
                 >
                   <InputLabel>Giới tính</InputLabel>
@@ -765,7 +765,16 @@ const RegisterPage = () => {
                       if (!selected || selected === "") {
                         return <em>Chọn giới tính</em>;
                       }
-                      return selected;
+                      switch (selected) {
+                        case "MALE":
+                          return "Nam";
+                        case "FEMALE":
+                          return "Nữ";
+                        case "OTHER":
+                          return "Khác";
+                        default:
+                          return selected;
+                      }
                     }}
                     startAdornment={
                       <InputAdornment position="start">
@@ -773,9 +782,9 @@ const RegisterPage = () => {
                       </InputAdornment>
                     }
                   >
-                    <MenuItem value="Nam">Nam</MenuItem>
-                    <MenuItem value="Nữ">Nữ</MenuItem>
-                    <MenuItem value="Khác">Khác</MenuItem>
+                    <MenuItem value="MALE">Nam</MenuItem>
+                    <MenuItem value="FEMALE">Nữ</MenuItem>
+                    <MenuItem value="OTHER">Khác</MenuItem>
                   </Select>
                 </FormControl>
 
@@ -798,9 +807,9 @@ const RegisterPage = () => {
                       color: "#1ABC9C",
                     },
                     "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                    {
-                      borderColor: "#1ABC9C",
-                    },
+                      {
+                        borderColor: "#1ABC9C",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -830,9 +839,9 @@ const RegisterPage = () => {
                       color: "#1ABC9C",
                     },
                     "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                    {
-                      borderColor: "#1ABC9C",
-                    },
+                      {
+                        borderColor: "#1ABC9C",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -867,9 +876,9 @@ const RegisterPage = () => {
                       color: "#1ABC9C",
                     },
                     "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                    {
-                      borderColor: "#1ABC9C",
-                    },
+                      {
+                        borderColor: "#1ABC9C",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -900,9 +909,9 @@ const RegisterPage = () => {
                           color: "#1ABC9C",
                         },
                         "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                        {
-                          borderColor: "#1ABC9C",
-                        },
+                          {
+                            borderColor: "#1ABC9C",
+                          },
                       }}
                       InputProps={{
                         startAdornment: (
@@ -968,9 +977,9 @@ const RegisterPage = () => {
                       color: "#1ABC9C",
                     },
                     "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                    {
-                      borderColor: "#1ABC9C",
-                    },
+                      {
+                        borderColor: "#1ABC9C",
+                      },
                   }}
                   InputProps={{
                     startAdornment: (

@@ -90,12 +90,16 @@ const LoginPage = () => {
       return;
     }
 
-    setLoading(true);    // Chuẩn bị dữ liệu để gửi đến server
+    setLoading(true);
+
+    // Chuẩn bị dữ liệu để gửi đến server
     const loginData = {
       // Gửi username (backend sẽ tự động xử lý username hoặc email)
       username: formData.usernameOrEmail,
       password: formData.password,
-    };    userService
+    };
+
+    userService
       .login(loginData)
       .then((response) => {
         console.log("Login response:", response); // ✅ Debug log
@@ -130,7 +134,7 @@ const LoginPage = () => {
             window.location.href = "/";
           }
         } else {
-          notify.error("Đăng nhập thất bại", response.message || "Có lỗi xảy ra");
+          notify.error("Đăng nhập thất bại", response.message);
         }
       })
       .catch((error) => {

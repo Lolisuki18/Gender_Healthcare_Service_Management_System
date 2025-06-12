@@ -22,23 +22,11 @@ export const userService = {
       throw error.response?.data || error;
     }
   },
-  
   // Đăng nhập
+
   login: async (credentials) => {
     try {
       const response = await apiClient.post("/auth/login", credentials);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  // Refresh token
-  refreshToken: async (refreshToken) => {
-    try {
-      const response = await apiClient.post("/auth/refresh-token", {
-        refreshToken: refreshToken
-      });
       return response.data;
     } catch (error) {
       throw error.response?.data || error;

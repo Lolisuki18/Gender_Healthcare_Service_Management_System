@@ -32,12 +32,12 @@ const apiClient = axios.create(config);
 apiClient.interceptors.request.use(
   (config) => {
     var userData = localStorageUtil.get("user");
-    
+
     // Nếu có userData và có accessToken, thêm Bearer token vào header
     if (userData && userData.accessToken) {
       config.headers.Authorization = `Bearer ${userData.accessToken}`;
     }
-    
+
     console.log("API Request:", {
       url: config.baseURL + config.url,
       method: config.method.toUpperCase(),
@@ -74,23 +74,25 @@ apiClient.interceptors.response.use(
     // Xử lý token hết hạn (401 Unauthorized)
     if (error.response?.status === 401) {
       const userData = localStorageUtil.get("user");
-      
+
       // Nếu có refresh token, thử refresh
       if (userData && userData.refreshToken) {
         try {
           const { userService } = await import("./userService");
-          const refreshResponse = await userService.refreshToken(userData.refreshToken);
-          
+          const refreshResponse = await userService.refreshToken(
+            userData.refreshToken
+          );
+
           if (refreshResponse.success || refreshResponse.accessToken) {
             // Cập nhật token mới vào localStorage
             const newTokenData = refreshResponse.data || refreshResponse;
             const newUserData = {
               ...userData,
               accessToken: newTokenData.accessToken,
-              refreshToken: newTokenData.refreshToken
+              refreshToken: newTokenData.refreshToken,
             };
             localStorageUtil.set("user", newUserData);
-            
+
             // Retry request với token mới
             error.config.headers.Authorization = `Bearer ${newTokenData.accessToken}`;
             return apiClient.request(error.config);
