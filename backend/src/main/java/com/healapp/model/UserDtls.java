@@ -46,9 +46,9 @@ public class UserDtls {
     @Column(columnDefinition = "NVARCHAR(MAX)")
     private String address;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private Gender gender;
+    // @Column(nullable = false)
+    // @Enumerated(EnumType.STRING)
+    // private Gender gender;
 
     @Column(columnDefinition = "NVARCHAR(MAX)")
     private String avatar;
