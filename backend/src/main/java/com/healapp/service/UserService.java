@@ -117,11 +117,15 @@ public class UserService {
             UserDtls user = new UserDtls();
             user.setFullName(request.getFullName());
             user.setBirthDay(request.getBirthDay());
+            try {
+                user.setGender(Gender.fromDisplayName(request.getGender()));
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error("Giới tính không hợp lệ");
+            }
             user.setPhone(request.getPhone());
             user.setEmail(request.getEmail());
             user.setUsername(request.getUsername());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
-            user.setGender(request.getGender() != null ? request.getGender() : Gender.OTHER);
             user.setAvatar(defaultAvatarPath);
             user.setIsActive(true);
             user.setAddress(request.getAddress());
@@ -259,6 +263,10 @@ public class UserService {
     public Long getUserIdFromUsername(String username) {
         UserDtls user = userRepository.findByUsername(username).orElse(null);
         return user != null ? user.getId() : null;
+    }
+
+    public UserDtls getUserByUsername(String username) {
+        return userRepository.findByUsername(username).orElse(null);
     }
 
     // For Admin
@@ -418,8 +426,12 @@ public class UserService {
             user.setPhone(request.getPhone());
             user.setBirthDay(request.getBirthDay());
 
-            if (request.getGender() != null) {
-                user.setGender(request.getGender());
+            if (request.getGender() != null && !request.getGender().trim().isEmpty()) {
+                try {
+                    user.setGender(Gender.fromDisplayName(request.getGender()));
+                } catch (IllegalArgumentException e) {
+                    return ApiResponse.error("Giới tính không hợp lệ");
+                }
             }
 
             UserDtls updatedUser = userRepository.save(user);
@@ -600,12 +612,12 @@ public class UserService {
         response.setId(user.getId());
         response.setFullName(user.getFullName());
         response.setBirthDay(user.getBirthDay());
+        response.setGender(user.getGenderDisplayName());
         response.setPhone(user.getPhone());
         response.setEmail(user.getEmail());
         response.setUsername(user.getUsername());
         response.setAvatar(user.getAvatar());
         response.setIsActive(user.getIsActive());
-        response.setGender(user.getGender());
         response.setRole(user.getRoleName());
         response.setAddress(user.getAddress());
         response.setCreatedDate(user.getCreatedDate());

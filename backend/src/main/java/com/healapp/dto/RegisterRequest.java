@@ -4,8 +4,6 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.healapp.model.Gender;
-
 import java.time.LocalDate;
 
 @Data
@@ -33,7 +31,9 @@ public class RegisterRequest {
 
     private LocalDate birthDay;
 
-    private Gender gender;
+    @NotBlank(message = "Giới tính không được để trống")
+    @Pattern(regexp = "^(Nam|Nữ|Khác)$", message = "Giới tính phải là: Nam, Nữ, hoặc Khác")
+    private String gender;
 
     private MultipartFile avatar;
 
