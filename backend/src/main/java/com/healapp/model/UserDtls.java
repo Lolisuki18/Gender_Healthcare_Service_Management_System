@@ -48,13 +48,8 @@ public class UserDtls {
 
     @Column(columnDefinition = "NVARCHAR(MAX)")
     private String avatar;
-
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "gender")
-    private Gender gender;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)

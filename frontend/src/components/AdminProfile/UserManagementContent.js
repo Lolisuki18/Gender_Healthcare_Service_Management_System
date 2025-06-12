@@ -28,6 +28,16 @@ import {
   Select,
   Grid,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  CircularProgress,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -42,71 +52,63 @@ import {
   Visibility as VisibilityIcon,
   Add as AddIcon,
 } from "@mui/icons-material";
+import AddUserModal from "./modals/AddUserModal";
+import ViewUserModal from "./modals/ViewUserModal";
+import EditUserModal from "./modals/EditUserModal";
+import { confirmDialog } from "@/utils/confirmDialog";
+import { userService } from "@/services/userService";
+import { adminService } from "@/services/adminService";
+import notify from "@/utils/notification";
 
 const UserManagementContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState(0);
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [openModal, setOpenModal] = useState(false);
+  const [modalType, setModalType] = useState("");
+  const [openViewModal, setOpenViewModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [openRoleSelection, setOpenRoleSelection] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [loadingUserDetails, setLoadingUserDetails] = useState(false);
 
-  // Mock data với nhiều người dùng hơn
-  const users = [
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      email: "nguyenvana@example.com",
-      phone: "0901234567",
-      role: "Customer",
-      status: "Hoạt động",
-      joinDate: "2024-01-15",
-      avatar: null,
-      lastLogin: "2024-06-05 09:30",
-    },
-    {
-      id: 2,
-      name: "Trần Thị B",
-      email: "tranthib@example.com",
-      phone: "0907654321",
-      role: "Consultant",
-      status: "Hoạt động",
-      joinDate: "2024-02-10",
-      avatar: null,
-      lastLogin: "2024-06-05 08:15",
-    },
-    {
-      id: 3,
-      name: "Lê Văn C",
-      email: "levanc@example.com",
-      phone: "0909876543",
-      role: "Staff",
-      status: "Tạm khóa",
-      joinDate: "2024-03-05",
-      avatar: null,
-      lastLogin: "2024-06-01 14:20",
-    },
-    {
-      id: 4,
-      name: "Phạm Thị D",
-      email: "phamthid@example.com",
-      phone: "0908765432",
-      role: "Admin",
-      status: "Hoạt động",
-      joinDate: "2023-12-01",
-      avatar: null,
-      lastLogin: "2024-06-05 10:45",
-    },
-    {
-      id: 5,
-      name: "Hoàng Văn E",
-      email: "hoangvane@example.com",
-      phone: "0905432109",
-      role: "Customer",
-      status: "Hoạt động",
-      joinDate: "2024-04-20",
-      avatar: null,
-      lastLogin: "2024-06-04 16:30",
-    },
-  ];
+  // ✅ Fetch users từ API khi component mount
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // ✅ Function để fetch users từ API
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log("Đang tải danh sách người dùng...");
+      const response = await adminService.getAllUsers();
+      console.log("Response từ API:", response);
+
+      if (response && response.data) {
+        setUsers(response.data);
+        console.log("Đã tải thành công:", response.data.length, "người dùng");
+      } else if (Array.isArray(response)) {
+        setUsers(response);
+        console.log("Đã tải thành công:", response.length, "người dùng");
+      } else {
+        console.warn("Format response không như mong đợi:", response);
+        setUsers([]);
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách người dùng:", error);
+      setError("Không thể tải danh sách người dùng. Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ✅ Cập nhật userCategories để sử dụng role từ API
   const userCategories = [
@@ -138,74 +140,376 @@ const UserManagementContent = () => {
       label: "Tư vấn viên",
       value: "CONSULTANT",
       icon: <SupportIcon />,
-      count: users.filter((u) => u.role === "Consultant").length,
+      count: users.filter((u) => u.role === "CONSULTANT").length,
     },
   ];
 
-  // ✅ THÊM các function mới cho Edit và Delete
-  const handleEdit = (userId) => {
-    console.log("Chỉnh sửa người dùng ID:", userId);
-    // TODO: Implement edit functionality
-    // Có thể mở dialog hoặc navigate đến trang edit
-    alert(`Chỉnh sửa người dùng ID: ${userId}`);
-  };
+  // ✅ Cập nhật handleEdit
+  const handleEdit = async (userId) => {
+    const user = users.find((u) => u.id === userId);
+    console.log("🔍 User found for edit:", user);
+    console.log("🔍 User role:", user?.role);
 
-  const handleDelete = (userId) => {
-    console.log("Xóa người dùng ID:", userId);
-    // TODO: Implement delete functionality
-    // Hiển thị confirmation dialog
-    if (window.confirm("Bạn có chắc chắn muốn xóa người dùng này?")) {
-      // Xử lý xóa user ở đây
-      alert(`Đã xóa người dùng ID: ${userId}`);
-      // Có thể update state để remove user khỏi danh sách
+    if (!user) return;
+
+    if (user.role === "ADMIN") {
+      const isConfirmed = await confirmDialog.warning(
+        `Bạn đang sửa thông tin Quản trị viên "${
+          user.fullName || user.username || "Không có tên"
+        }". Hãy cẩn thận với các thay đổi!`,
+        {
+          title: "⚠️ Chỉnh sửa Quản trị viên",
+          confirmText: "Tiếp tục chỉnh sửa",
+          cancelText: "Hủy",
+        }
+      );
+
+      if (!isConfirmed) return;
+    }
+
+    // ✅ Đảm bảo user object có đầy đủ thông tin role
+    const userToEdit = {
+      ...user,
+      role: user.role || user.Role || "", // Đảm bảo role luôn có giá trị
+    };
+
+    console.log("🔍 User to edit prepared:", userToEdit);
+
+    setEditingUser(userToEdit);
+    setOpenEditModal(true);
+  };
+  // * ✅ Thêm handler riêng cho cập nhật thông tin cơ bản
+  //Hàm này chưa gắn API
+  const handleUpdateBasicInfo = async (formData) => {
+    try {
+      console.log("🔄 Đang cập nhật thông tin cơ bản:", formData);
+
+      // Gọi API riêng cho thông tin cơ bản
+      const response = await userService.updateBasicInfo(formData.id, {
+        fullName: formData.fullName,
+        username: formData.username,
+        email: formData.email,
+        phone: formData.phone,
+      });
+
+      // Cập nhật state local
+      setUsers((prevUsers) =>
+        prevUsers.map((u) => (u.id === formData.id ? { ...u, ...formData } : u))
+      );
+
+      notify.success(
+        "Cập nhật thành công!",
+        `Đã cập nhật thông tin cơ bản của ${
+          formData.fullName || formData.username
+        }`
+      );
+
+      // Refresh data từ server
+
+      console.log("✅ Cập nhật thông tin cơ bản thành công");
+      await fetchUsers();
+    } catch (error) {
+      console.error("❌ Lỗi khi cập nhật thông tin cơ bản:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi cập nhật thông tin cơ bản";
+
+      notify.error("Lỗi cập nhật", errorMessage);
     }
   };
 
-  // ✅ Function xử lý xem thông tin chi tiết
-  const handleViewUser = (userId) => {
+  /**
+   * ✅ Thêm handler riêng cho cập nhật vai trò & trạng thái
+   */
+  const handleUpdateRole = async (formData) => {
+    const user = editingUser;
+
+    // Xác nhận thay đổi vai trò
+    if (formData.role !== user.role) {
+      const isConfirmed = await confirmDialog.warning(
+        `Bạn đang thay đổi vai trò từ "${getRoleDisplayName(
+          user.role
+        )}" thành "${getRoleDisplayName(
+          formData.role
+        )}". Điều này có thể ảnh hưởng đến quyền truy cập của người dùng.`,
+        {
+          title: "🔄 Thay đổi vai trò",
+          confirmText: "Xác nhận thay đổi",
+          cancelText: "Giữ nguyên",
+        }
+      );
+
+      if (!isConfirmed) return;
+    }
+
+    try {
+      console.log("🔐 Đang cập nhật vai trò & trạng thái:", formData);
+
+      // Gọi API riêng cho vai trò & trạng thái
+      const response = await adminService.updateUserStatus(formData.id, {
+        role: formData.role,
+        isActive: formData.isActive,
+      });
+
+      // Cập nhật state local
+      setUsers((prevUsers) =>
+        prevUsers.map((u) =>
+          u.id === formData.id
+            ? { ...u, role: formData.role, isActive: formData.isActive }
+            : u
+        )
+      );
+
+      notify.success(
+        "Cập nhật thành công!",
+        `Đã cập nhật vai trò & trạng thái của ${user.fullName || user.username}`
+      );
+
+      // Refresh data từ server
+      await fetchUsers();
+
+      console.log("✅ Cập nhật vai trò & trạng thái thành công");
+    } catch (error) {
+      console.error("❌ Lỗi khi cập nhật vai trò & trạng thái:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi cập nhật vai trò & trạng thái";
+
+      notify.error("Lỗi cập nhật", errorMessage);
+    }
+  };
+
+  // ✅ Cập nhật handleDelete
+  const handleDelete = async (userId) => {
     const user = users.find((u) => u.id === userId);
-    if (user) {
+    if (!user) return;
+
+    const isConfirmed = await confirmDialog.danger(
+      `Bạn có chắc chắn muốn xóa người dùng "${
+        user.fullName || user.username || "Không có tên"
+      }"?`,
+      {
+        title: "Xác nhận xóa người dùng",
+        confirmText: "Xóa",
+        cancelText: "Hủy",
+      }
+    );
+
+    if (isConfirmed) {
+      try {
+        if (user.role === "CONSULTANT") {
+          console.log("Đang xóa người dùng ID:", userId);
+          await adminService.deleteConsultant(userId);
+        }
+        if (user.role === "STAFF") {
+          console.log("Đang xóa nhân viên ID:", userId);
+          await adminService.deleteStaff(userId); // ✅ Sửa từ deleteUser thành deleteStaff
+        }
+        if (user.role === "CUSTOMER") {
+          console.log("Đang xóa khách hàng ID:", userId);
+          await adminService.deleteCustomer(userId);
+        }
+        if (user.role === "ADMIN") {
+          console.log("Đang xóa quản trị viên ID:", userId);
+          await adminService.deleteAdmin(userId);
+        }
+
+        // ✅ Refresh lại danh sách người dùng sau khi xóa thành công
+        await fetchUsers();
+
+        notify.success(
+          "Xóa người dùng thành công",
+          `Đã xóa người dùng "${user.fullName || user.username}" thành công!`
+        );
+        console.log("Xóa người dùng thành công");
+      } catch (error) {
+        console.error("Lỗi khi xóa người dùng:", error);
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "Có lỗi xảy ra khi xóa người dùng";
+
+        notify.error("Lỗi xóa người dùng", errorMessage);
+      }
+    }
+  };
+
+  // ✅ Thêm state để quản lý loading consultant details
+  const [loadingConsultantDetails, setLoadingConsultantDetails] =
+    useState(false);
+
+  // ✅ Cập nhật Function xử lý xem thông tin chi tiết với API call
+  const handleViewUser = async (userId) => {
+    try {
+      setLoadingUserDetails(true);
+
+      // Tìm user trong state để lấy thông tin cơ bản
+      const user = users.find((u) => u.id === userId);
+      if (!user) {
+        notify.error("Lỗi", "Không tìm thấy thông tin người dùng");
+        return;
+      }
+
+      console.log("🔍 User từ state:", user);
+
+      // ✅ Hiển thị modal ngay với thông tin cơ bản
       setSelectedUser(user);
       setOpenViewModal(true);
+
+      // ✅ Nếu là Consultant, gọi API để lấy thêm thông tin
+      if (user.role === "CONSULTANT") {
+        console.log("📞 Đang gọi API getConsultantDetails cho userId:", userId);
+
+        // Gọi API để lấy consultant profile
+        const response = await adminService.getConsultantDetails(userId);
+
+        console.log("📋 Raw response từ API:", response);
+
+        // ✅ Extract data từ response structure
+        const consultantDetails = response.data || response;
+        console.log("📋 Consultant details:", consultantDetails);
+
+        // ✅ Map response từ ConsultantProfileResponse
+        const mappedUser = {
+          // Thông tin cơ bản từ user hiện tại
+          id: user.id,
+          role: user.role,
+
+          // Thông tin chi tiết từ API response
+          profileId: consultantDetails.profileId,
+          full_name:
+            consultantDetails.fullName || user.fullName || user.full_name,
+          username: consultantDetails.username || user.username,
+          email: consultantDetails.email || user.email,
+          phone: consultantDetails.phone || user.phone,
+          address: consultantDetails.address || user.address,
+          gender: consultantDetails.gender || user.gender,
+          is_active:
+            consultantDetails.active !== undefined
+              ? consultantDetails.active
+              : consultantDetails.isActive !== undefined
+              ? consultantDetails.isActive
+              : user.is_active,
+          avatar: consultantDetails.avatar || user.avatar,
+
+          // Thông tin từ state (có thể API không trả về)
+          birth_day: user.birth_day,
+          created_date: user.created_date,
+
+          // Thông tin chuyên môn từ API
+          qualifications: consultantDetails.qualifications,
+          experience: consultantDetails.experience,
+          bio: consultantDetails.bio,
+          updated_at: consultantDetails.updatedAt,
+
+          // Flag để biết đã load thông tin chi tiết
+          _hasDetailedInfo: true,
+        };
+
+        console.log("🔄 Mapped user data:", mappedUser);
+        setSelectedUser(mappedUser);
+
+        // notify.success("Thành công", "Đã tải thông tin chi tiết tư vấn viên");
+      } else {
+        console.log("ℹ️ Không phải consultant, chỉ hiển thị thông tin cơ bản");
+      }
+    } catch (error) {
+      console.error("❌ Lỗi khi lấy thông tin chi tiết:", error);
+      console.error("❌ Error response:", error.response?.data);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi tải thông tin người dùng";
+
+      notify.error("Lỗi tải thông tin", errorMessage);
+
+      // Fallback: giữ thông tin cơ bản và đánh dấu load failed
+      const user = users.find((u) => u.id === userId);
+      if (user) {
+        setSelectedUser({
+          ...user,
+          _detailsLoadFailed: true,
+        });
+      }
+    } finally {
+      setLoadingUserDetails(false);
     }
   };
+  // ✅ Cập nhật handleEditSubmit
+  const handleEditSubmit = async (formData) => {
+    const user = editingUser;
 
-  // Hàm xử lý submit form edit user
-  const handleEditSubmit = (formData) => {
-    console.log("Cập nhật thông tin người dùng:", formData);
-    // TODO: Implement API call to update user
-    // Tạm thời chỉ log và đóng modal
-    alert(`Đã cập nhật thông tin người dùng: ${formData.name}`);
-    setOpenEditModal(false);
-    setEditingUser(null);
-  };
+    console.log("🔍 Edit submit - Original user:", user);
+    console.log("🔍 Edit submit - Form data:", formData);
+    console.log("🔍 Edit submit - Role comparison:", {
+      originalRole: user?.role,
+      newRole: formData?.role,
+      isRoleChanged: formData?.role !== user?.role,
+    });
 
-  // ✅ Function xử lý submit từ modal
-  const handleModalSubmit = (formData, userType) => {
-    console.log("Dữ liệu form:", formData);
-    console.log("Loại người dùng:", userType);
+    // ✅ Xác nhận thay đổi vai trò nếu có - KIỂM TRA AN TOÀN
+    if (formData.role && user.role && formData.role !== user.role) {
+      const isConfirmed = await confirmDialog.warning(
+        `Bạn đang thay đổi vai trò từ "${getRoleDisplayName(
+          user.role
+        )}" thành "${getRoleDisplayName(
+          formData.role
+        )}". Điều này có thể ảnh hưởng đến quyền truy cập của người dùng.`,
+        {
+          title: "🔄 Thay đổi vai trò",
+          confirmText: "Xác nhận thay đổi",
+          cancelText: "Giữ nguyên",
+        }
+      );
 
-    // TODO: Gửi data đến API
-    // Simulate API call
-    alert(`Đã thêm ${getModalTitle(userType)} thành công!`);
+      if (!isConfirmed) return;
+    }
 
-    // Có thể thêm user mới vào danh sách (nếu muốn update UI ngay lập tức)
-    // setUsers(prev => [...prev, { ...formData, id: Date.now(), role: userType }]);
-  };
+    try {
+      console.log("🔄 Đang cập nhật thông tin người dùng:", formData);
 
-  // Get modal title based on user type
-  const getModalTitle = (userType) => {
-    switch (userType) {
-      case "Admin":
-        return "Quản trị viên";
-      case "Staff":
-        return "Nhân viên";
-      case "Customer":
-        return "Khách hàng";
-      case "Consultant":
-        return "Tư vấn viên";
-      default:
-        return "Người dùng";
+      // ✅ Gọi API thống nhất
+      const response = await adminService.updateUser(formData.id, user.role, {
+        fullName: formData.fullName,
+        username: formData.username,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        gender: formData.gender,
+        birthDay: formData.birthDay,
+        role: formData.role,
+        password: formData.password,
+        isActive: formData.isActive,
+      });
+
+      // Cập nhật state local
+      setUsers((prevUsers) =>
+        prevUsers.map((u) => (u.id === formData.id ? { ...u, ...formData } : u))
+      );
+
+      notify.success(
+        "Cập nhật thành công!",
+        `Đã cập nhật thông tin của ${formData.fullName || formData.username}`
+      );
+
+      // Refresh data từ server
+      await fetchUsers();
+
+      setOpenEditModal(false);
+      setEditingUser(null);
+
+      console.log("✅ Cập nhật người dùng thành công");
+    } catch (error) {
+      console.error("❌ Lỗi khi cập nhật người dùng:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi cập nhật thông tin người dùng";
+
+      notify.error("Lỗi cập nhật", errorMessage);
     }
   };
 
@@ -296,49 +600,37 @@ const UserManagementContent = () => {
     setOpenModal(true);
   };
 
-  // ✅ Function để lấy text cho nút Add - hiển thị tiếng Việt
-  const getAddButtonText = (tabValue) => {
-    switch (tabValue) {
-      case "Admin":
-        return "Thêm Quản trị viên";
-      case "Staff":
-        return "Thêm Nhân viên";
-      case "Customer":
-        return "Thêm Khách hàng";
-      case "Consultant":
-        return "Thêm Tư vấn viên";
-      default:
-        return "Thêm mới";
-    }
-  };
-
-  // ✅ Function xử lý thêm mới - log bằng tiếng Anh, alert tiếng Việt
-  const handleAddNew = (userType) => {
-    console.log("Thêm mới người dùng loại:", userType); // Log database value
-
-    switch (userType) {
-      case "Admin":
-        alert("Mở form thêm Quản trị viên mới");
-        // TODO: Mở dialog/form thêm Admin
-        break;
-      case "Staff":
-        alert("Mở form thêm Nhân viên mới");
-        // TODO: Mở dialog/form thêm Staff
-        break;
-      case "Customer":
-        alert("Mở form thêm Khách hàng mới");
-        // TODO: Mở dialog/form thêm Customer
-        break;
-      case "Consultant":
-        alert("Mở form thêm Tư vấn viên mới");
-        // TODO: Mở dialog/form thêm Consultant
-        break;
-      default:
-        alert("Mở form thêm người dùng mới");
-        // TODO: Mở dialog/form thêm người dùng chung
-        break;
-    }
-  };
+  // ✅ Cập nhật roleOptions
+  const roleOptions = [
+    {
+      value: "ADMIN",
+      label: "Quản trị viên",
+      icon: <SecurityIcon />,
+      description: "Có quyền quản lý toàn bộ hệ thống",
+      color: "#E53E3E",
+    },
+    {
+      value: "STAFF",
+      label: "Nhân viên",
+      icon: <BusinessIcon />,
+      description: "Nhân viên hỗ trợ khách hàng",
+      color: "#3182CE",
+    },
+    {
+      value: "CONSULTANT",
+      label: "Tư vấn viên",
+      icon: <SupportIcon />,
+      description: "Chuyên gia tư vấn sức khỏe",
+      color: "#D69E2E",
+    },
+    {
+      value: "CUSTOMER",
+      label: "Khách hàng",
+      icon: <PersonIcon />,
+      description: "Người dùng sử dụng dịch vụ",
+      color: "#4A90E2",
+    },
+  ];
 
   // ✅ Cập nhật getFilteredUsers
   const getFilteredUsers = () => {
@@ -499,7 +791,7 @@ const UserManagementContent = () => {
         Quản lý tài khoản và phân quyền người dùng trong hệ thống
       </Typography>
 
-      {/* User Category Tabs với integrated filters */}
+      {/* User Category Tabs */}
       <Card
         sx={{
           background: "rgba(255, 255, 255, 0.95)",
@@ -552,8 +844,25 @@ const UserManagementContent = () => {
           ))}
         </Tabs>
 
-        {/* Integrated Search and Filters Section */}
-        <CardContent sx={{ p: 3 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-start",
+            alignItems: "center",
+            px: 3,
+            pt: 3,
+            pb: 2,
+          }}
+        >
+          <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
+            {userCategories[selectedTab]?.label === "Tất cả"
+              ? "Danh sách người dùng"
+              : `Danh sách ${userCategories[selectedTab]?.label}`}
+          </Typography>
+        </Box>
+
+        {/* Search and Filters */}
+        <CardContent sx={{ pt: 0, p: 3 }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={6}>
               <TextField
@@ -605,14 +914,10 @@ const UserManagementContent = () => {
                     onChange={(e) => setRoleFilter(e.target.value)}
                   >
                     <MenuItem value="all">Tất cả</MenuItem>
-                    <MenuItem value="Admin">Quản trị viên</MenuItem>{" "}
-                    {/* ✅ Hiển thị tiếng Việt */}
-                    <MenuItem value="Consultant">Tư vấn viên</MenuItem>{" "}
-                    {/* ✅ Hiển thị tiếng Việt */}
-                    <MenuItem value="Staff">Nhân viên</MenuItem>{" "}
-                    {/* ✅ Hiển thị tiếng Việt */}
-                    <MenuItem value="Customer">Khách hàng</MenuItem>{" "}
-                    {/* ✅ Hiển thị tiếng Việt */}
+                    <MenuItem value="ADMIN">Quản trị viên</MenuItem>
+                    <MenuItem value="CONSULTANT">Tư vấn viên</MenuItem>
+                    <MenuItem value="STAFF">Nhân viên</MenuItem>
+                    <MenuItem value="CUSTOMER">Khách hàng</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -741,12 +1046,35 @@ const UserManagementContent = () => {
                       />
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ color: "#718096" }}>
-                        {user.lastLogin}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
                       <Box sx={{ display: "flex", gap: 1 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleViewUser(user.id)}
+                          disabled={loadingUserDetails}
+                          sx={{
+                            color: "#48BB78",
+                            backgroundColor: "rgba(72, 187, 120, 0.1)",
+                            "&:hover": {
+                              backgroundColor: "rgba(72, 187, 120, 0.2)",
+                              transform: "scale(1.1)",
+                            },
+                            "&:disabled": {
+                              opacity: 0.6,
+                              transform: "none",
+                            },
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          {loadingUserDetails ? (
+                            <CircularProgress
+                              size={16}
+                              sx={{ color: "#48BB78" }}
+                            />
+                          ) : (
+                            <VisibilityIcon sx={{ fontSize: 16 }} />
+                          )}
+                        </IconButton>
+
                         <IconButton
                           size="small"
                           onClick={() => handleEdit(user.id)}
@@ -795,6 +1123,132 @@ const UserManagementContent = () => {
           </Table>
         </TableContainer>
       </Card>
+
+      {/* Add User Button */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+        <Button
+          variant="contained"
+          onClick={handleAddNew}
+          startIcon={<AddIcon />}
+          sx={{
+            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+            borderRadius: 2,
+            px: 4,
+            py: 1.5,
+            fontSize: "1rem",
+            fontWeight: 600,
+            boxShadow: "0 4px 12px rgba(74, 144, 226, 0.3)",
+            "&:hover": {
+              background: "linear-gradient(45deg, #357ABD, #17A2B8)",
+              transform: "translateY(-2px)",
+              boxShadow: "0 6px 20px rgba(74, 144, 226, 0.4)",
+            },
+            transition: "all 0.3s ease",
+          }}
+        >
+          {getAddButtonText()}
+        </Button>
+      </Box>
+      {/* Role Selection Dialog */}
+      <Dialog
+        open={openRoleSelection}
+        onClose={() => setOpenRoleSelection(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(20px)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            textAlign: "center",
+            pb: 1,
+            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+            backgroundClip: "text",
+            WebkitBackgroundClip: "text",
+            color: "transparent",
+            fontWeight: 700,
+          }}
+        >
+          Chọn loại người dùng cần thêm
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <List sx={{ py: 2 }}>
+            {roleOptions.map((role) => (
+              <ListItem key={role.value} sx={{ px: 3 }}>
+                <ListItemButton
+                  onClick={() => handleRoleSelect(role.value)}
+                  sx={{
+                    borderRadius: 2,
+                    mb: 1,
+                    border: "1px solid rgba(74, 144, 226, 0.15)",
+                    "&:hover": {
+                      backgroundColor: "rgba(74, 144, 226, 0.05)",
+                      borderColor: role.color,
+                    },
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <ListItemIcon sx={{ color: role.color }}>
+                    {role.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Typography
+                        variant="body1"
+                        sx={{ fontWeight: 600, color: "#2D3748" }}
+                      >
+                        {role.label}
+                      </Typography>
+                    }
+                    secondary={
+                      <Typography variant="body2" sx={{ color: "#718096" }}>
+                        {role.description}
+                      </Typography>
+                    }
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button
+            onClick={() => setOpenRoleSelection(false)}
+            sx={{ color: "#718096" }}
+          >
+            Hủy
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modals */}
+      <AddUserModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        userType={modalType}
+        onSubmit={handleModalSubmit}
+      />
+
+      <ViewUserModal
+        open={openViewModal}
+        onClose={() => setOpenViewModal(false)}
+        user={selectedUser}
+        loadingConsultantDetails={loadingUserDetails}
+      />
+
+      <EditUserModal
+        open={openEditModal}
+        onClose={() => {
+          setOpenEditModal(false);
+          setEditingUser(null);
+        }}
+        user={editingUser}
+        onSubmit={handleEditSubmit} // ✅ Chỉ còn 1 callback
+      />
     </Box>
   );
 };

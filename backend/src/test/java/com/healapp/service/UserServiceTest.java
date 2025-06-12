@@ -550,7 +550,7 @@ class UserServiceTest {
         when(roleRepository.findByRoleName("STAFF")).thenReturn(Optional.of(staffRole));
         when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
 
-        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
+        ApiResponse<UserResponse> response = userService.updateUserInfomation(1L, request);
 
         assertTrue(response.isSuccess());
         assertEquals("User update successful", response.getMessage());
@@ -575,7 +575,7 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(roleService.isValidRole("INVALID_ROLE")).thenReturn(false);
 
-        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
+        ApiResponse<UserResponse> response = userService.updateUserInfomation(1L, request);
         assertFalse(response.isSuccess());
         assertEquals("Invalid role. Role must be CUSTOMER, CONSULTANT, STAFF or ADMIN", response.getMessage());
 
@@ -601,7 +601,7 @@ class UserServiceTest {
         when(consultantProfileRepository.findByUser(sampleUser)).thenReturn(Optional.of(profile));
         when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
 
-        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
+        ApiResponse<UserResponse> response = userService.updateUserInfomation(1L, request);
 
         assertTrue(response.isSuccess());
 
@@ -622,7 +622,7 @@ class UserServiceTest {
         when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
         when(consultantProfileRepository.save(any(ConsultantProfile.class))).thenReturn(new ConsultantProfile());
 
-        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
+        ApiResponse<UserResponse> response = userService.updateUserInfomation(1L, request);
 
         assertTrue(response.isSuccess());
 

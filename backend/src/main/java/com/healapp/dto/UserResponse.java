@@ -24,6 +24,5 @@ public class UserResponse {
     private Gender gender;
     private String role;
     private String address;
-    private String gender;
     private LocalDateTime createdDate;
 }

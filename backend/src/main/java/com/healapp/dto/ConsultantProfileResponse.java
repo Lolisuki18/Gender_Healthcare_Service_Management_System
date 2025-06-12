@@ -14,7 +14,7 @@ public class ConsultantProfileResponse {
     private String username;
     private String email;
     private String address;
-    private String gender;
+
     private boolean isActive;
     private String phone;
     private String avatar;

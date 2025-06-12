@@ -3,7 +3,6 @@ package com.healapp.service;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ChangePasswordRequest;
 import com.healapp.dto.CreateAccountRequest;
-import com.healapp.dto.CreateConsultantAccRequest;
 import com.healapp.dto.LoginRequest;
 import com.healapp.dto.LoginResponse;
 import com.healapp.dto.RegisterRequest;
@@ -25,7 +24,6 @@ import com.healapp.service.EmailService;
 import com.healapp.service.PasswordResetService;
 import com.healapp.service.PasswordResetService.RateLimitException;
 import jakarta.mail.MessagingException;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,14 +33,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
@@ -119,9 +113,7 @@ public class UserService {
 
             if (userRepository.existsByEmail(request.getEmail())) {
                 return ApiResponse.error("Email đã tồn tại");
-            }
-
-            // Tạo user mới
+            } // Tạo user mới
             UserDtls user = new UserDtls();
             user.setFullName(request.getFullName());
             user.setBirthDay(request.getBirthDay());
@@ -132,7 +124,6 @@ public class UserService {
             user.setGender(request.getGender() != null ? request.getGender() : Gender.OTHER);
             user.setAvatar(defaultAvatarPath);
             user.setIsActive(true);
-            user.setGender(Gender.valueOf(request.getGender()));
             user.setAddress(request.getAddress());
 
             // Set role mặc định là customer
@@ -334,7 +325,6 @@ public class UserService {
             return ApiResponse.error("Error updating user: " + e.getMessage());
         }
     }
-
 
     public ApiResponse<List<UserResponse>> getAllUsers() {
         try {
@@ -618,7 +608,6 @@ public class UserService {
         response.setGender(user.getGender());
         response.setRole(user.getRoleName());
         response.setAddress(user.getAddress());
-        response.setGender(user.getGender().toString());
         response.setCreatedDate(user.getCreatedDate());
         return response;
     }
@@ -631,13 +620,13 @@ public class UserService {
             }
 
             // Check username already exists
-            if(userRepository.existsByUsername(request.getUsername())){
+            if (userRepository.existsByUsername(request.getUsername())) {
                 throw new RuntimeException("Username already exists");
             }
 
             // Check role
             Optional<Role> roleOpt = roleRepository.findByRoleName(request.getRole().toUpperCase());
-            if(!roleRepository.existsByRoleName(request.getRole().toUpperCase())){
+            if (!roleRepository.existsByRoleName(request.getRole().toUpperCase())) {
                 throw new RuntimeException("Role not found: " + roleOpt.get());
             }
 
@@ -669,7 +658,7 @@ public class UserService {
             UserDtls savedAccount = userRepository.save(nAccount);
 
             // Create empty ConsultantProfile
-            if(request.getRole().toUpperCase().equals("CONSULTANT")){
+            if (request.getRole().toUpperCase().equals("CONSULTANT")) {
                 ConsultantProfile consultantProfile = new ConsultantProfile();
                 consultantProfile.setUser(savedAccount);
                 consultantProfile.setQualifications("");
@@ -677,16 +666,10 @@ public class UserService {
                 consultantProfile.setBio("");
                 consultantProfileRepository.save(consultantProfile);
             }
-
             return ApiResponse.success("Consultant created successfully", savedAccount);
         } catch (Exception e) {
             return ApiResponse.error("Failed to create consultant: " + e.getMessage());
         }
-    }
-
-    // kiểm tra role
-    private boolean isValidRole(String roleName) {
-        return roleService.isValidRole(roleName);
     }
 
 }
