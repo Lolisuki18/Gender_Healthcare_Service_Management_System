@@ -26,13 +26,13 @@ import { useNavigate } from "react-router-dom";
 const ProfileContainer = styled(Container)({
   minHeight: "100vh",
   width: "100vw",
-  maxWidth: "100% !important", // Ghi đè thuộc tính maxWidth của MUI
+  maxWidth: "100% !important",
   margin: 0,
   padding: 0,
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
-  background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+  background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)", // Light medical gradient
   position: "relative",
   overflow: "hidden",
   "&::before": {
@@ -43,10 +43,10 @@ const ProfileContainer = styled(Container)({
     right: 0,
     bottom: 0,
     background:
-      'url(\'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="b" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="%23fff" stop-opacity="0.1"/><stop offset="100%" stop-color="%23fff" stop-opacity="0"/></radialGradient></defs><circle cx="200" cy="200" r="150" fill="url(%23b)"/><circle cx="800" cy="800" r="200" fill="url(%23b)"/></svg>\')',
+      'url(\'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="b" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="%234A90E2" stop-opacity="0.05"/><stop offset="100%" stop-color="%231ABC9C" stop-opacity="0.03"/></radialGradient></defs><circle cx="200" cy="200" r="150" fill="url(%23b)"/><circle cx="800" cy="800" r="200" fill="url(%23b)"/></svg>\')',
     backgroundSize: "1000px 1000px",
     backgroundPosition: "center",
-    opacity: 0.3,
+    opacity: 0.6,
   },
 });
 
@@ -116,33 +116,33 @@ const NoLoggedInView = () => {
       <Zoom in={true} timeout={500}>
         <ErrorContainer
           sx={{
-            width: { xs: "95%", sm: "85%", md: "75%", lg: "65%" }, // Responsive width
-            maxWidth: "900px", // Tăng maxWidth để hiện thị rộng hơn
-            borderRadius: "20px",
+            width: { xs: "95%", sm: "85%", md: "75%", lg: "65%" },
+            maxWidth: "900px",
+            borderRadius: "24px",
             padding: 0,
             overflow: "hidden",
-            background: "rgba(30, 41, 59, 0.85)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.4)",
+            background: "rgba(255, 255, 255, 0.95)",
+            border: "1px solid rgba(74, 144, 226, 0.15)",
+            boxShadow: "0 25px 50px rgba(74, 144, 226, 0.1)",
             backdropFilter: "blur(20px)",
             position: "relative",
-            m: 0, // Reset margin
+            m: 0,
             minHeight: { xs: "auto", sm: "500px" },
           }}
         >
-          {/* Header section - Cải tiến */}
+          {/* Header section - Medical theme */}
           <Box
             sx={{
-              background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
+              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
               position: "relative",
               overflow: "hidden",
               textAlign: "center",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-              padding: { xs: "40px 20px", sm: "50px 40px", md: "60px 40px" }, // Tăng padding để có không gian nhiều hơn
-              width: "100%", // Đảm bảo lấp đầy chiều rộng
+              borderBottom: "none",
+              padding: { xs: "50px 20px", sm: "60px 40px", md: "70px 40px" },
+              width: "100%",
             }}
           >
-            {/* Hiệu ứng nền tốt hơn */}
+            {/* Medical cross pattern overlay */}
             <Box
               sx={{
                 position: "absolute",
@@ -150,10 +150,10 @@ const NoLoggedInView = () => {
                 left: "0",
                 right: "0",
                 bottom: "0",
-                opacity: 0.2,
+                opacity: 0.1,
                 backgroundImage:
-                  'url(\'data:image/svg+xml,%3Csvg width="20" height="20" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M0 0h20v20H0z" fill="none"%3E%3C/path%3E%3Cpath d="M10 10m-1 0a1 1 0 1 0 2 0 1 1 0 1 0-2 0" fill="%23FFFFFF"%3E%3C/path%3E%3C/svg%3E\')',
-                backgroundSize: "20px 20px",
+                  'url(\'data:image/svg+xml,%3Csvg width="60" height="60" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M25 5h10v50h-10zM5 25h50v10H5z" fill="%23FFFFFF"%3E%3C/path%3E%3C/svg%3E\')',
+                backgroundSize: "60px 60px",
                 zIndex: 1,
               }}
             />
@@ -165,27 +165,27 @@ const NoLoggedInView = () => {
                 zIndex: 2,
               }}
             >
-              {/* Vùng chứa biểu tượng khóa */}
+              {/* Security/Access icon container */}
               <Box
                 sx={{
-                  width: { xs: "86px", sm: "100px" },
-                  height: { xs: "86px", sm: "100px" },
-                  backgroundColor: "rgba(255, 255, 255, 0.15)",
-                  backdropFilter: "blur(5px)",
+                  width: { xs: "100px", sm: "120px" },
+                  height: { xs: "100px", sm: "120px" },
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  backdropFilter: "blur(10px)",
                   borderRadius: "50%",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  margin: "0 auto 20px",
-                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  margin: "0 auto 25px",
+                  boxShadow: "0 15px 35px rgba(0, 0, 0, 0.1)",
+                  border: "2px solid rgba(255, 255, 255, 0.3)",
                 }}
               >
-                {/* Biểu tượng */}
+                {/* Lock/Security icon */}
                 <Box
                   component="span"
                   sx={{
-                    fontSize: { xs: "40px", sm: "48px" },
+                    fontSize: { xs: "50px", sm: "60px" },
                     color: "#fff",
                     display: "flex",
                     alignItems: "center",
@@ -193,7 +193,7 @@ const NoLoggedInView = () => {
                     textShadow: "0 2px 10px rgba(0,0,0,0.1)",
                   }}
                 >
-                  🔒
+                  🔐
                 </Box>
               </Box>
 
@@ -204,10 +204,10 @@ const NoLoggedInView = () => {
                 sx={{
                   color: "#ffffff",
                   fontWeight: "700",
-                  marginBottom: "16px",
+                  marginBottom: "20px",
                   position: "relative",
                   zIndex: 2,
-                  fontSize: { xs: "28px", sm: "36px" },
+                  fontSize: { xs: "32px", sm: "40px" },
                   textShadow: "0 2px 10px rgba(0,0,0,0.2)",
                   letterSpacing: "0.5px",
                 }}
@@ -223,44 +223,45 @@ const NoLoggedInView = () => {
                   fontWeight: "400",
                   position: "relative",
                   zIndex: 2,
-                  fontSize: { xs: "16px", sm: "18px" },
+                  fontSize: { xs: "18px", sm: "20px" },
                   maxWidth: "600px",
                   margin: "0 auto",
                   letterSpacing: "0.3px",
                   lineHeight: 1.6,
-                  paddingBottom: "10px", // Thêm padding dưới
+                  paddingBottom: "10px",
                 }}
               >
-                Vui lòng đăng nhập để truy cập chức năng này
+                Bạn cần đăng nhập với quyền phù hợp để truy cập trang này
               </Typography>
             </Box>
-
-            {/* Hiệu ứng sóng ở dưới */}
           </Box>
 
           {/* Main content */}
-          <Box sx={{ padding: { xs: "30px 20px", sm: "40px 30px 30px" } }}>
+          <Box sx={{ padding: { xs: "40px 20px", sm: "50px 40px 40px" } }}>
             <Box
               sx={{
-                backgroundColor: "rgba(255, 255, 255, 0.05)",
-                borderRadius: "16px",
-                padding: { xs: "20px", sm: "25px" },
-                marginBottom: "30px",
-                border: "1px solid rgba(255, 255, 255, 0.07)",
+                backgroundColor: "rgba(74, 144, 226, 0.05)",
+                borderRadius: "20px",
+                padding: { xs: "25px", sm: "35px" },
+                marginBottom: "35px",
+                border: "1px solid rgba(74, 144, 226, 0.1)",
+                boxShadow: "0 10px 25px rgba(74, 144, 226, 0.05)",
               }}
             >
               <Typography
                 variant="body1"
                 sx={{
-                  color: "rgba(255, 255, 255, 0.9)",
+                  color: "#475569",
                   textAlign: "center",
-                  fontSize: { xs: "16px", sm: "17px" },
+                  fontSize: { xs: "16px", sm: "18px" },
                   lineHeight: 1.7,
-                  marginBottom: { xs: "20px", sm: "30px" },
+                  marginBottom: { xs: "25px", sm: "35px" },
+                  fontWeight: "400",
                 }}
               >
-                Chức năng nay chỉ hiển thị cho các thành viên đã đăng nhập. Đăng
-                nhập ngay để trải nghiệm đầy đủ các tính năng.
+                Trang này yêu cầu quyền truy cập đặc biệt. Vui lòng đăng nhập
+                với tài khoản có đủ quyền hạn hoặc liên hệ quản trị viên để được
+                hỗ trợ.
               </Typography>
 
               <Stack
@@ -275,19 +276,19 @@ const NoLoggedInView = () => {
                   fullWidth
                   startIcon={<LoginIcon />}
                   sx={{
-                    background:
-                      "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                    background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
                     color: "#fff",
-                    fontSize: { xs: "15px", sm: "16px" },
-                    padding: { xs: "10px 0", sm: "12px 0" },
+                    fontSize: { xs: "16px", sm: "17px" },
+                    padding: { xs: "14px 0", sm: "16px 0" },
                     textTransform: "none",
-                    borderRadius: "12px",
+                    borderRadius: "14px",
                     fontWeight: 600,
-                    boxShadow: "0 10px 25px -5px rgba(59, 130, 246, 0.5)",
+                    boxShadow: "0 4px 15px rgba(74, 144, 226, 0.3)",
                     transition: "all 0.3s ease",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    border: "none",
                     "&:hover": {
-                      boxShadow: "0 15px 30px -5px rgba(59, 130, 246, 0.6)",
+                      background: "linear-gradient(45deg, #357ABD, #17A2B8)",
+                      boxShadow: "0 6px 20px rgba(74, 144, 226, 0.4)",
                       transform: "translateY(-2px)",
                     },
                   }}
@@ -302,23 +303,25 @@ const NoLoggedInView = () => {
                   fullWidth
                   startIcon={<RegisterIcon />}
                   sx={{
-                    color: "#e2e8f0",
-                    borderColor: "rgba(226, 232, 240, 0.3)",
+                    color: "#4A90E2",
+                    borderColor: "rgba(74, 144, 226, 0.4)",
                     borderWidth: "2px",
-                    fontSize: { xs: "15px", sm: "16px" },
-                    padding: { xs: "10px 0", sm: "12px 0" },
+                    fontSize: { xs: "16px", sm: "17px" },
+                    padding: { xs: "14px 0", sm: "16px 0" },
                     textTransform: "none",
-                    borderRadius: "12px",
+                    borderRadius: "14px",
                     fontWeight: 600,
                     transition: "all 0.3s ease",
                     "&:hover": {
-                      borderColor: "#e2e8f0",
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      borderColor: "#4A90E2",
+                      backgroundColor: "rgba(74, 144, 226, 0.08)",
+                      color: "#357ABD",
                       transform: "translateY(-2px)",
+                      boxShadow: "0 4px 15px rgba(74, 144, 226, 0.2)",
                     },
                   }}
                 >
-                  Đăng ký tài khoản
+                  Tạo tài khoản mới
                 </Button>
               </Stack>
             </Box>
@@ -329,14 +332,15 @@ const NoLoggedInView = () => {
               onClick={handleGoBack}
               startIcon={<ArrowBackIcon />}
               sx={{
-                color: "rgba(255, 255, 255, 0.6)",
+                color: "#64748b",
                 textTransform: "none",
-                fontSize: "14px",
-                padding: "8px 16px",
-                borderRadius: "8px",
+                fontSize: "15px",
+                padding: "10px 20px",
+                borderRadius: "10px",
+                fontWeight: "500",
                 "&:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  color: "#fff",
+                  backgroundColor: "rgba(74, 144, 226, 0.08)",
+                  color: "#4A90E2",
                 },
                 width: "fit-content",
                 mx: "auto",
@@ -347,7 +351,7 @@ const NoLoggedInView = () => {
             </Button>
           </Box>
 
-          {/* Decorative dots pattern */}
+          {/* Subtle medical pattern overlay */}
           <Box
             sx={{
               position: "absolute",
@@ -355,10 +359,10 @@ const NoLoggedInView = () => {
               right: 0,
               bottom: 0,
               left: 0,
-              opacity: 0.3,
+              opacity: 0.03,
               background: `
-                radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px) 0 0 / 20px 20px,
-                radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px) 10px 10px / 20px 20px
+                radial-gradient(circle, rgba(74,144,226,0.2) 1px, transparent 1px) 0 0 / 40px 40px,
+                radial-gradient(circle, rgba(26,188,156,0.2) 1px, transparent 1px) 20px 20px / 40px 40px
               `,
               pointerEvents: "none",
             }}

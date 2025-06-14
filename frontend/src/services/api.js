@@ -11,47 +11,128 @@
  *
  * Tính năng chính:
  * - Cấu hình baseURL và headers mặc định
- * - Interceptor tự động thêm token xác thực vào các request
+ * - Interceptor tự động thêm JWT token vào các request
  * - Xử lý lỗi tập trung, bao gồm việc xử lý token hết hạn
  */
 
+import localStorageUtil from "@/utils/localStorage";
 import axios from "axios";
 
-// Tạo instance Axios với các cấu hình mặc định
-const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:8080/",
+// Tạo config object trước
+const config = {
+  baseURL: "http://localhost:8080",
   headers: {
     "Content-Type": "application/json",
   },
-});
+};
 
-// Thêm interceptor cho request
+const apiClient = axios.create(config);
+
+// ✅ Request interceptor - sử dụng JWT token
 apiClient.interceptors.request.use(
   (config) => {
-    // Lấy token từ localStorage nếu có
-    const token = localStorage.getItem("token");
+    var userData = localStorageUtil.get("user");
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Nếu có userData và có accessToken, thêm Bearer token vào header
+    if (userData && userData.accessToken) {
+      config.headers.Authorization = `Bearer ${userData.accessToken}`;
     }
+
+    console.log("API Request:", {
+      url: config.baseURL + config.url,
+      method: config.method.toUpperCase(),
+      headers: config.headers,
+    });
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error("Request interceptor error:", error);
+    return Promise.reject(error);
+  }
 );
 
-// Thêm interceptor cho response
+// ✅ Response interceptor - xử lý token hết hạn
 apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Xử lý lỗi chung
-    const { status } = error.response || {};
+  (response) => {
+    console.log("API Response:", {
+      status: response.status,
+      url: response.config.url,
+      data: response.data,
+    });
+    return response;
+  },
+  async (error) => {
+    console.error("API Error:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      data: error.response?.data,
+      message: error.message,
+    }); // Xử lý token hết hạn (401 Unauthorized)
+    if (error.response?.status === 401) {
+      const userData = localStorageUtil.get("user");
 
-    if (status === 401) {
-      // Xử lý khi token hết hạn
-      localStorage.removeItem("token");
-      // Có thể redirect tới trang login
-      // window.location.href = '/login';
+      // ✅ KIỂM TRA FLAG ĐỂ BỎ QUA AUTO-REDIRECT
+      if (error.config?.skipAutoRedirect) {
+        console.log("🔄 Skipping auto-redirect due to skipAutoRedirect flag");
+        return Promise.reject(error);
+      }
+
+      console.log("🔍 401 Error Debug:", {
+        hasUserData: !!userData,
+        hasAccessToken: !!userData?.accessToken,
+        hasRefreshToken: !!userData?.refreshToken,
+        endpoint: error.config?.url,
+        errorMessage: error.response?.data?.message,
+      });
+
+      // Nếu có refresh token, thử refresh
+      if (userData && userData.refreshToken) {
+        try {
+          console.log("🔄 Attempting token refresh...");
+          const { userService } = await import("./userService");
+          const refreshResponse = await userService.refreshToken(
+            userData.refreshToken
+          );
+
+          console.log("🔄 Refresh response:", refreshResponse);
+
+          if (refreshResponse.success || refreshResponse.accessToken) {
+            // Cập nhật token mới vào localStorage
+            const newTokenData = refreshResponse.data || refreshResponse;
+            const newUserData = {
+              ...userData,
+              accessToken: newTokenData.accessToken,
+              refreshToken: newTokenData.refreshToken,
+            };
+            localStorageUtil.set("user", newUserData);
+
+            console.log("✅ Token refreshed successfully, retrying request...");
+            // Retry request với token mới
+            error.config.headers.Authorization = `Bearer ${newTokenData.accessToken}`;
+            return apiClient.request(error.config);
+          }
+        } catch (refreshError) {
+          console.error("❌ Refresh token failed:", refreshError);
+          // Refresh token cũng hết hạn, đăng xuất user
+          localStorageUtil.remove("user");
+
+          // Chỉ redirect nếu không phải đang ở trang login
+          if (!window.location.pathname.includes("/login")) {
+            window.location.href = "/login";
+          }
+        }
+      } else {
+        console.log("❌ No refresh token available, redirecting to login");
+        // Không có refresh token, chuyển về trang login
+        localStorageUtil.remove("user");
+
+        // Chỉ redirect nếu không phải đang ở trang login
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login";
+        }
+      }
     }
 
     return Promise.reject(error);

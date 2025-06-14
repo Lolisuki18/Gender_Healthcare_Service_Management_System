@@ -1,0 +1,16 @@
+/**
+ * ThemeContext.js - Context quản lý theme cho ứng dụng
+ * 
+ * File này tạo một React Context để quản lý chủ đề giao diện (theme) của ứng dụng,
+ * cho phép người dùng chuyển đổi giữa chế độ sáng và tối.
+ * 
+ * Lý do tạo file:
+ * - Cung cấp cơ chế quản lý theme xuyên suốt ứng dụng
+ * - Lưu trữ tùy chọn theme của người dùng vào localStorage
+ * - Tích hợp với Material UI để áp dụng theme nhất quán
+ * 
+ * Các tính năng:
+ * - Tự động ghi nhớ theme người dùng đã chọn
+ * - Custom hook useTheme để truy cập theme từ bất kỳ component nào
+ * - Tích hợp với ThemeProvider của Material UI
+ */

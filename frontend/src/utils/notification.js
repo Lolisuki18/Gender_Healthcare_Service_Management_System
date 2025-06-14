@@ -11,7 +11,7 @@
  *   notify.error('Lỗi', 'Không thể kết nối đến máy chủ');
  *
  * Với tuỳ chọn:
- *   notify.info('Thông báo', 'Bạn có tin nhắn mới', { 
+ *   notify.info('Thông báo', 'Bạn có tin nhắn mới', {
  *     duration: 10000,  // Hiển thị trong 10 giây
  *     closable: false   // Không hiển thị nút đóng
  *   });
@@ -490,7 +490,7 @@ export const notify = {
    * @param {string} message - Nội dung thông báo
    * @param {object} options - Tùy chọn (duration, closable, position)
    * @returns {HTMLElement} - Phần tử thông báo đã tạo
-   * 
+   *
    * Ví dụ: notify.success('Thành công', 'Dữ liệu đã được lưu');
    */
   success: (title, message, options) =>
@@ -502,7 +502,7 @@ export const notify = {
    * @param {string} message - Nội dung thông báo
    * @param {object} options - Tùy chọn (duration, closable, position)
    * @returns {HTMLElement} - Phần tử thông báo đã tạo
-   * 
+   *
    * Ví dụ: notify.error('Lỗi', 'Không thể kết nối đến máy chủ');
    */
   error: (title, message, options) =>
@@ -514,7 +514,7 @@ export const notify = {
    * @param {string} message - Nội dung thông báo
    * @param {object} options - Tùy chọn (duration, closable, position)
    * @returns {HTMLElement} - Phần tử thông báo đã tạo
-   * 
+   *
    * Ví dụ: notify.warning('Cảnh báo', 'Bạn chưa lưu thay đổi');
    */
   warning: (title, message, options) =>
@@ -526,7 +526,7 @@ export const notify = {
    * @param {string} message - Nội dung thông báo
    * @param {object} options - Tùy chọn (duration, closable, position)
    * @returns {HTMLElement} - Phần tử thông báo đã tạo
-   * 
+   *
    * Ví dụ: notify.info('Thông báo', 'Bạn có tin nhắn mới');
    */
   info: (title, message, options) =>
@@ -534,11 +534,19 @@ export const notify = {
 
   /**
    * Xóa tất cả thông báo đang hiển thị
-   * 
+   *
    * Ví dụ: notify.clear();
    */
   clear: clearAllNotifications,
 };
+
+/**
+ * Debug notification - chỉ dùng để test
+ */
+// export const debugNotify = (message) => {
+//   console.log("DEBUG:", message);
+//   notify.info("Debug", message, { duration: 3000 });
+// };
 
 // Export default
 export default notify;
