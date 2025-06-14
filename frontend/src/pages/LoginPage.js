@@ -38,6 +38,7 @@ import { userService } from "@/services/userService";
 import localStorageUtil from "@/utils/localStorage";
 import { Link, useNavigate } from "react-router-dom";
 import notify from "@/utils/notification";
+
 import LoggedInView from "@/components/common/LoggedInView";
 import { logout } from "@/redux/slices/authSlice";
 
@@ -98,19 +99,36 @@ const LoginPage = () => {
       username: formData.usernameOrEmail,
       password: formData.password,
     };
-
     userService
       .login(loginData)
       .then((response) => {
-        console.log("Login response:", response); // ✅ Debug log
+        console.log("Login response:", response); // ✅ Debug log        // Backend trả về JwtResponse object chứa accessToken, refreshToken và user info
+        if (response && response.accessToken) {
+          // response đã là JwtResponse object từ backend
+          const userData = {
+            userId: response.userId,
+            username: response.username,
+            email: response.email,
+            role: response.role,
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+            tokenType: response.tokenType || "Bearer",
+            expiresIn: response.expiresIn,
+          };
 
-        if (response.success || response.accessToken) {
-          // Xử lý response data - có thể là response.data hoặc trực tiếp response
-          const userData = response.data || response;
           const role = userData.role;
 
-          // Lưu thông tin người dùng vào localStorage
+          // ✅ DEBUG: LOG CẤU TRÚC USER DATA
+          console.log("User data to save:", userData);
+          console.log("Access token:", userData.accessToken);
+          console.log("Refresh token:", userData.refreshToken);
+
+          // ✅ LƯU TOKEN VÀ USER DATA VÀO LOCALSTORAGE
           localStorageUtil.set("user", userData);
+
+          // ✅ XÁC NHẬN ĐÃ LƯU THÀNH CÔNG
+          const savedUser = localStorageUtil.get("user");
+          console.log("Saved user data:", savedUser);
 
           // Kiểm tra role và chuyển hướng
           if (role === "ADMIN") {
@@ -129,19 +147,21 @@ const LoginPage = () => {
               message: `Chào mừng ${userData.username} trở lại!`,
               timestamp: Date.now(),
             });
-            // Chuyển hướng về trang chủ
-
             window.location.href = "/";
           }
         } else {
-          notify.error("Đăng nhập thất bại", response.message);
+          console.error("Login failed - missing accessToken:", response);
+          notify.error(
+            "Đăng nhập thất bại",
+            response.message || "Server không trả về token xác thực"
+          );
         }
       })
       .catch((error) => {
         console.error("Login error:", error);
         notify.error(
-          "Đăng nhập thất bại",
-          error.message || "Có lỗi xảy ra khi đăng nhập"
+          "Lỗi đăng nhập",
+          error.message || "Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại."
         );
       })
       .finally(() => {
@@ -400,7 +420,6 @@ const LoginPage = () => {
                 disabled={loading}
                 sx={{
                   py: 2,
-                  fontWeight: "bold",
                   borderRadius: 3,
                   background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
                   color: "#fff",

@@ -5,5 +5,5 @@
  * trong thư mục CustomerProfile/modals
  */
 
-export { EmailChangeDialog, EmailVerificationDialog } from "./EmailChangeModal";
+export { EmailChangeDialog } from "./EmailChangeModal";
 export { PasswordChangeDialog } from "./PasswordChangeModal";

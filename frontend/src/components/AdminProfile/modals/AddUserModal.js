@@ -16,12 +16,8 @@ import {
   Grid,
   Button,
   IconButton,
-  Divider,
   FormControl,
   FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
   MenuItem,
   Select,
   InputLabel,
@@ -29,17 +25,24 @@ import {
   Card,
   CardContent,
   InputAdornment,
+  Chip,
+  Stack,
+  Divider,
+  LinearProgress,
 } from "@mui/material";
 import {
   Close as CloseIcon,
   Person as PersonIcon,
-  Security as SecurityIcon,
-  Work as WorkIcon,
-  Assignment as RoleIcon,
+  Email as EmailIcon,
+  Phone as PhoneIcon,
+  Home as HomeIcon,
+  Cake as CakeIcon,
   Visibility,
   VisibilityOff,
   Lock as LockIcon,
   AccountCircle as AccountIcon,
+  Badge as BadgeIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
 
 const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
@@ -52,7 +55,7 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
     username: "", // Required (4-50 chars)
     password: "", // Required (6-100 chars + pattern)
     birthDay: "", // Optional (LocalDate)
-    phone: "", // Optional
+    phone: "", // Required - Updated from Optional to Required
     address: "", // Optional
   };
 
@@ -108,9 +111,38 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
     };
   };
 
-  // Handle form submit - CHỈ validate và trả data, KHÔNG gọi API
+  // Calculate password strength score
+  const calculatePasswordStrength = (password) => {
+    if (!password) return 0;
+
+    const validation = validatePassword(password);
+    let score = 0;
+
+    if (validation.isValidLength) score += 1;
+    if (validation.hasUpperCase) score += 1;
+    if (validation.hasLowerCase) score += 1;
+    if (validation.hasNumbers) score += 1;
+    if (validation.hasSpecialChar) score += 1;
+
+    // Convert to percentage
+    return (score / 5) * 100;
+  };
+
+  // Get password strength label and color
+  const getPasswordStrengthInfo = (password) => {
+    const strength = calculatePasswordStrength(password);
+
+    if (strength === 0) return { label: "Chưa nhập", color: "#e0e0e0" };
+    if (strength <= 20) return { label: "Rất yếu", color: "#f44336" };
+    if (strength <= 40) return { label: "Yếu", color: "#ff9800" };
+    if (strength <= 60) return { label: "Trung bình", color: "#ffeb3b" };
+    if (strength <= 80) return { label: "Khá mạnh", color: "#2196f3" };
+    return { label: "Mạnh", color: "#4caf50" };
+  };
+
+  // Handle form submit
   const handleSubmit = async () => {
-    // Required fields validation
+    // ✅ Cập nhật required fields validation để bao gồm role và phone
     const requiredFields = [
       "role",
       "fullName",
@@ -118,6 +150,7 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
       "gender",
       "username",
       "password",
+      "phone", // Added phone to required fields
     ];
     const missingFields = requiredFields.filter(
       (field) => !formData[field] || formData[field].trim() === ""
@@ -126,7 +159,20 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
     if (missingFields.length > 0) {
       notify.warning(
         "Thông tin thiếu",
-        `Vui lòng điền đầy đủ các trường bắt buộc: ${missingFields.join(", ")}`
+        `Vui lòng điền đầy đủ các trường bắt buộc: ${missingFields
+          .map((field) => {
+            const fieldLabels = {
+              role: "Vai trò",
+              fullName: "Họ và tên",
+              email: "Email",
+              gender: "Giới tính",
+              username: "Tên đăng nhập",
+              password: "Mật khẩu",
+              phone: "Số điện thoại", // Added label for phone
+            };
+            return fieldLabels[field] || field;
+          })
+          .join(", ")}`
       );
       return;
     }
@@ -164,16 +210,14 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
       return;
     }
 
-    // Phone validation (optional)
-    if (formData.phone && formData.phone.trim() !== "") {
-      const phoneRegex = /^[0-9]{10,11}$/;
-      if (!phoneRegex.test(formData.phone)) {
-        notify.error(
-          "Số điện thoại không hợp lệ",
-          "Số điện thoại phải có 10-11 chữ số!"
-        );
-        return;
-      }
+    // Phone validation (now required)
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      notify.error(
+        "Số điện thoại không hợp lệ",
+        "Số điện thoại phải có 10-11 chữ số!"
+      );
+      return;
     }
 
     // ✅ Tất cả validation pass - trả data về parent component
@@ -194,789 +238,508 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
     onClose();
   };
 
-  // Helper function để hiển thị tên role
-  const getRoleDisplayName = (role) => {
-    const roleMap = {
-      Admin: "Quản trị viên",
-      Staff: "Nhân viên",
-      Customer: "Khách hàng",
-      Consultant: "Tư vấn viên",
-    };
-    return roleMap[role] || "người dùng";
-  };
-
-  // Get modal title based on user type
-  const getModalTitle = () => {
-    if (userType !== "all") {
-      switch (userType) {
-        case "Admin":
-          return "Thêm Quản trị viên";
-        case "Staff":
-          return "Thêm Nhân viên";
-        case "Customer":
-          return "Thêm Khách hàng";
-        case "Consultant":
-          return "Thêm Tư vấn viên";
-        default:
-          return "Thêm người dùng mới";
-      }
-    }
-    return "Thêm người dùng mới";
-  };
-
-  // Role options
+  // Role options with color & icon mapping
   const roleOptions = [
-    { value: "ADMIN", label: "Quản trị viên", color: "#E53E3E" },
-    { value: "STAFF", label: "Nhân viên", color: "#3182CE" },
-    { value: "CUSTOMER", label: "Khách hàng", color: "#38A169" },
-    { value: "CONSULTANT", label: "Tư vấn viên", color: "#D69E2E" },
+    {
+      value: "ADMIN",
+      label: "Quản trị viên",
+      color: "#D32F2F",
+      bgColor: "#FFEBEE",
+    },
+    {
+      value: "STAFF",
+      label: "Nhân viên",
+      color: "#1976D2",
+      bgColor: "#E3F2FD",
+    },
+    {
+      value: "CUSTOMER",
+      label: "Khách hàng",
+      color: "#388E3C",
+      bgColor: "#E8F5E9",
+    },
+    {
+      value: "CONSULTANT",
+      label: "Tư vấn viên",
+      color: "#F57C00",
+      bgColor: "#FFF3E0",
+    },
   ];
 
-  // Password strength indicator
+  // Find selected role details
+  const selectedRole =
+    roleOptions.find((role) => role.value === formData.role) || {};
+
+  // Password strength info
+  const passwordStrength = getPasswordStrengthInfo(formData.password);
   const passwordValidation = validatePassword(formData.password);
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="xl"
+      maxWidth="md"
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          background:
-            "linear-gradient(180deg, #f8faff 0%, #f0f7ff 50%, #e8f4ff 100%)",
-          minHeight: "80vh",
-          maxHeight: "90vh",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+          borderRadius: "16px",
+          overflow: "hidden",
+          boxShadow: "0 10px 40px rgba(0,0,0,0.12)",
         },
       }}
     >
-      {/* Dialog Header */}
+      {/* Header */}
       <DialogTitle
         sx={{
-          background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-          color: "#fff",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          py: 2.5,
-          position: "sticky",
-          top: 0,
-          zIndex: 1,
-          fontWeight: 600,
-          boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+          background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Updated to medical gradient
+          color: "white",
+          p: 2,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 2,
-              background: "rgba(255, 255, 255, 0.2)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <PersonIcon sx={{ fontSize: 20 }} />
-          </Box>
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            {getModalTitle()}
-          </Typography>
-        </Box>
-        <IconButton
-          onClick={onClose}
+        <Box
           sx={{
-            color: "white",
-            "&:hover": {
-              backgroundColor: "rgba(255,255,255,0.2)",
-              transform: "scale(1.05)",
-            },
-            transition: "all 0.2s ease",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
-          <CloseIcon sx={{ fontSize: 28 }} />
-        </IconButton>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <PersonIcon fontSize="large" />
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              Thêm người dùng mới
+            </Typography>
+          </Box>
+          <IconButton
+            onClick={onClose}
+            sx={{ color: "white" }}
+            aria-label="close"
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
-      {/* Dialog Content */}
-      <DialogContent sx={{ p: 0, backgroundColor: "transparent" }}>
-        <Box sx={{ p: 3 }}>
-          {/* Role Selection Card */}
-          {userType === "all" && (
-            <Card
+      {/* Content */}
+      <DialogContent sx={{ p: 3 }}>
+        <Grid container spacing={3}>
+          {/* Left Column */}
+          <Grid item xs={12} md={6}>
+            <Typography
+              variant="h6"
               sx={{
                 mb: 3,
-                borderRadius: 4,
-                boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
-                border: "1px solid rgba(255,255,255,0.3)",
-                background:
-                  "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,250,255,0.9))",
-                backdropFilter: "blur(20px)",
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                color: "#4A90E2", // Updated to match gradient theme
               }}
             >
-              <CardContent sx={{ p: 4 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 3,
-                    mb: 4,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 3,
-                      background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-                    }}
-                  >
-                    <RoleIcon sx={{ color: "white", fontSize: 32 }} />
-                  </Box>
-                  <Box>
-                    <Typography
-                      variant="h4"
-                      sx={{
-                        color: "#1A202C",
-                        fontWeight: 800,
-                        fontSize: 28,
-                        mb: 1,
-                        background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                      }}
-                    >
-                      Chọn vai trò
-                    </Typography>
-                    <Typography
-                      sx={{
-                        color: "#6B7280",
-                        fontSize: 16,
-                        fontWeight: 500,
-                      }}
-                    >
-                      Lựa chọn vai trò phù hợp cho người dùng mới
-                    </Typography>
-                  </Box>
-                </Box>
+              <BadgeIcon sx={{ mr: 1 }} />
+              Thông tin cơ bản
+            </Typography>
 
-                <Grid container spacing={3}>
-                  {roleOptions.map((option) => (
-                    <Grid item xs={12} sm={6} md={3} key={option.value}>
-                      <Box
-                        onClick={() =>
-                          handleInputChange({
-                            target: { name: "role", value: option.value },
-                          })
-                        }
-                        sx={{
-                          p: 3,
-                          borderRadius: 3,
-                          cursor: "pointer",
-                          position: "relative",
-                          overflow: "hidden",
-                          background:
-                            formData.role === option.value
-                              ? `linear-gradient(135deg, ${option.color}15, ${option.color}08)`
-                              : "linear-gradient(135deg, rgba(248,250,255,0.8), rgba(240,247,255,0.6))",
-                          border:
-                            formData.role === option.value
-                              ? `3px solid ${option.color}`
-                              : "3px solid transparent",
-                          backdropFilter: "blur(10px)",
-                          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                          "&:hover": {
-                            transform: "translateY(-8px) scale(1.02)",
-                            boxShadow: `0 20px 60px ${option.color}25`,
-                            border: `3px solid ${option.color}60`,
-                            background: `linear-gradient(135deg, ${option.color}20, ${option.color}10)`,
-                          },
-                        }}
-                      >
-                        <Box sx={{ textAlign: "center" }}>
-                          <Box
-                            sx={{
-                              width: 64,
-                              height: 64,
-                              borderRadius: "50%",
-                              background: `linear-gradient(135deg, ${option.color}, ${option.color}CC)`,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              margin: "0 auto 16px",
-                              boxShadow: `0 12px 40px ${option.color}30`,
-                              border: "4px solid white",
-                            }}
-                          >
-                            <PersonIcon sx={{ color: "white", fontSize: 32 }} />
-                          </Box>
-
-                          <Typography
-                            sx={{
-                              fontSize: 18,
-                              fontWeight: 800,
-                              color:
-                                formData.role === option.value
-                                  ? option.color
-                                  : "#2D3748",
-                              mb: 1,
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px",
-                              transition: "color 0.3s ease",
-                            }}
-                          >
-                            {option.label}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Grid>
-                  ))}
-                </Grid>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Basic Information Card */}
-          <Card
-            sx={{
-              mb: 3,
-              borderRadius: 4,
-              boxShadow: "0 8px 32px rgba(74, 144, 226, 0.08)",
-              border: "1px solid rgba(255,255,255,0.5)",
-              background:
-                "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,252,255,0.9))",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <CardContent sx={{ p: 4 }}>
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 3, mb: 4 }}
+            {/* Role Selection */}
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel required id="role-label">
+                Vai trò
+              </InputLabel>
+              <Select
+                labelId="role-label"
+                name="role"
+                value={formData.role}
+                onChange={handleInputChange}
+                label="Vai trò *"
               >
+                {roleOptions.map((role) => (
+                  <MenuItem key={role.value} value={role.value}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
+                          bgcolor: role.color,
+                        }}
+                      />
+                      {role.label}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Full Name */}
+            <TextField
+              required
+              fullWidth
+              label="Họ và tên"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleInputChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PersonIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2 }}
+            />
+
+            {/* Email */}
+            <TextField
+              required
+              fullWidth
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2 }}
+            />
+
+            {/* Gender */}
+            <FormControl required fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="gender-label">Giới tính</InputLabel>
+              <Select
+                labelId="gender-label"
+                name="gender"
+                value={formData.gender}
+                onChange={handleInputChange}
+                label="Giới tính *"
+              >
+                <MenuItem value="MALE">👨 Nam</MenuItem>
+                <MenuItem value="FEMALE">👩 Nữ</MenuItem>
+                <MenuItem value="OTHER">🏳️‍⚧️ Khác</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* Right Column */}
+          <Grid item xs={12} md={6}>
+            <Typography
+              variant="h6"
+              sx={{
+                mb: 3,
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                color: "#4A90E2", // Updated to match gradient theme
+              }}
+            >
+              <LockIcon sx={{ mr: 1 }} />
+              Thông tin đăng nhập
+            </Typography>
+
+            {/* Username */}
+            <TextField
+              required
+              fullWidth
+              label="Tên đăng nhập"
+              name="username"
+              value={formData.username}
+              onChange={handleInputChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AccountIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+              helperText={`${formData.username.length}/50 ký tự`}
+              sx={{ mb: 2 }}
+            />
+
+            {/* Password */}
+            <TextField
+              required
+              fullWidth
+              label="Mật khẩu"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={formData.password}
+              onChange={handleInputChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon color="primary" />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={handleTogglePasswordVisibility}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              helperText={`${formData.password.length}/100 ký tự`}
+              sx={{ mb: 1 }}
+            />
+
+            {/* Password Strength Meter */}
+            {formData.password && (
+              <Box sx={{ mb: 3 }}>
                 <Box
                   sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 3,
-                    background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+                    justifyContent: "space-between",
+                    mb: 0.5,
                   }}
                 >
-                  <PersonIcon sx={{ color: "white", fontSize: 24 }} />
-                </Box>
-                <Typography
-                  variant="h5"
-                  sx={{ color: "#4A90E2", fontWeight: 700, fontSize: 20 }}
-                >
-                  Thông tin cơ bản
-                </Typography>
-              </Box>
-
-              <Grid container spacing={3}>
-                {/* Full Name - Required */}
-                <Grid item size={12} md={6}>
-                  <TextField
-                    required
-                    fullWidth
-                    label="Họ và tên "
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    error={!formData.fullName && formData.fullName !== ""}
-                    helperText={
-                      !formData.fullName && formData.fullName !== ""
-                        ? "Họ và tên là bắt buộc"
-                        : ""
-                    }
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,252,255,0.8)",
-                        "&:hover": {
-                          backgroundColor: "rgba(248,252,255,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          backgroundColor: "rgba(248,252,255,1)",
-                          boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
-                        },
-                      },
-                      "& .MuiInputLabel-root": {
-                        fontSize: 16,
-                        fontWeight: 600,
-                        "&.Mui-focused": {
-                          color: "#4A90E2",
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-
-                {/* Email - Required */}
-                <Grid item size={12} md={6}>
-                  <TextField
-                    required
-                    fullWidth
-                    label="Email "
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    error={!formData.email && formData.email !== ""}
-                    helperText={
-                      !formData.email && formData.email !== ""
-                        ? "Email là bắt buộc"
-                        : ""
-                    }
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,252,255,0.8)",
-                        "&:hover": {
-                          backgroundColor: "rgba(248,252,255,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          backgroundColor: "rgba(248,252,255,1)",
-                          boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
-                        },
-                      },
-                      "& .MuiInputLabel-root": {
-                        fontSize: 16,
-                        fontWeight: 600,
-                        "&.Mui-focused": {
-                          color: "#4A90E2",
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-
-                {/* Username - Required (4-50 chars) */}
-                <Grid item size={12} md={6}>
-                  <TextField
-                    required
-                    fullWidth
-                    label="Tên đăng nhập "
-                    name="username"
-                    value={formData.username}
-                    onChange={handleInputChange}
-                    error={
-                      formData.username.length > 0 &&
-                      (formData.username.length < 4 ||
-                        formData.username.length > 50)
-                    }
-                    helperText={
-                      formData.username.length > 0 &&
-                      (formData.username.length < 4 ||
-                        formData.username.length > 50)
-                        ? "Username phải có từ 4-50 ký tự"
-                        : `${formData.username.length}/50 ký tự`
-                    }
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <AccountIcon sx={{ color: "#4A90E2" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,252,255,0.8)",
-                        "&:hover": {
-                          backgroundColor: "rgba(248,252,255,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          backgroundColor: "rgba(248,252,255,1)",
-                          boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
-                        },
-                      },
-                      "& .MuiInputLabel-root": {
-                        fontSize: 16,
-                        fontWeight: 600,
-                        "&.Mui-focused": {
-                          color: "#4A90E2",
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-
-                {/* Password - Required with pattern */}
-                <Grid item size={12} md={6}>
-                  <TextField
-                    required
-                    fullWidth
-                    label="Mật khẩu "
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    error={
-                      formData.password.length > 0 &&
-                      !passwordValidation.isValid
-                    }
-                    helperText={
-                      formData.password.length > 0 &&
-                      !passwordValidation.isValid
-                        ? "Mật khẩu phải có 6-100 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
-                        : `${formData.password.length}/100 ký tự`
-                    }
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <LockIcon sx={{ color: "#4A90E2" }} />
-                        </InputAdornment>
-                      ),
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={handleTogglePasswordVisibility}
-                            edge="end"
-                            sx={{ color: "#4A90E2" }}
-                          >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,252,255,0.8)",
-                        "&:hover": {
-                          backgroundColor: "rgba(248,252,255,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          backgroundColor: "rgba(248,252,255,1)",
-                          boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
-                        },
-                      },
-                      "& .MuiInputLabel-root": {
-                        fontSize: 16,
-                        fontWeight: 600,
-                        "&.Mui-focused": {
-                          color: "#4A90E2",
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-
-                {/* Gender - Required */}
-                <Grid item size={12} md={6}>
-                  <FormControl required fullWidth>
-                    <InputLabel sx={{ fontSize: 16, fontWeight: 600 }}>
-                      Giới tính
-                    </InputLabel>
-                    <Select
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleInputChange}
-                      label="Giới tính *"
-                      sx={{
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,252,255,0.8)",
-                        "&:hover": {
-                          backgroundColor: "rgba(248,252,255,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          backgroundColor: "rgba(248,252,255,1)",
-                          boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
-                        },
-                      }}
-                    >
-                      <MenuItem value="MALE">Nam</MenuItem>
-                      <MenuItem value="FEMALE">Nữ</MenuItem>
-                      <MenuItem value="OTHER">Khác</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                {/* Birth Day - Optional */}
-                <Grid item size={6} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Ngày sinh"
-                    name="birthDay"
-                    type="date"
-                    value={formData.birthDay}
-                    onChange={handleInputChange}
-                    InputLabelProps={{ shrink: true }}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,252,255,0.8)",
-                        "&:hover": {
-                          backgroundColor: "rgba(248,252,255,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          backgroundColor: "rgba(248,252,255,1)",
-                          boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
-                        },
-                      },
-                      "& .MuiInputLabel-root": {
-                        fontSize: 16,
-                        fontWeight: 600,
-                        "&.Mui-focused": {
-                          color: "#4A90E2",
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-
-                {/* Phone - Optional */}
-                <Grid item size={6} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Số điện thoại"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    placeholder="VD: 0901234567"
-                    error={
-                      formData.phone.length > 0 &&
-                      !/^[0-9]{10,11}$/.test(formData.phone)
-                    }
-                    helperText={
-                      formData.phone.length > 0 &&
-                      !/^[0-9]{10,11}$/.test(formData.phone)
-                        ? "Số điện thoại phải có 10-11 chữ số"
-                        : ""
-                    }
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,252,255,0.8)",
-                        "&:hover": {
-                          backgroundColor: "rgba(248,252,255,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          backgroundColor: "rgba(248,252,255,1)",
-                          boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
-                        },
-                      },
-                      "& .MuiInputLabel-root": {
-                        fontSize: 16,
-                        fontWeight: 600,
-                        "&.Mui-focused": {
-                          color: "#4A90E2",
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-
-                {/* Address - Optional */}
-                <Grid item size={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Địa chỉ"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        height: 56,
-                        backgroundColor: "rgba(248,252,255,0.8)",
-                        "&:hover": {
-                          backgroundColor: "rgba(248,252,255,0.95)",
-                        },
-                        "&.Mui-focused": {
-                          backgroundColor: "rgba(248,252,255,1)",
-                          boxShadow: "0 0 0 3px rgba(74, 144, 226, 0.1)",
-                        },
-                      },
-                      "& .MuiInputLabel-root": {
-                        fontSize: 16,
-                        fontWeight: 600,
-                        "&.Mui-focused": {
-                          color: "#4A90E2",
-                        },
-                      },
-                    }}
-                  />
-                </Grid>
-              </Grid>
-
-              {/* Password Strength Indicator */}
-              {formData.password && (
-                <Box sx={{ mt: 3 }}>
+                  <Typography variant="caption">Độ mạnh mật khẩu</Typography>
                   <Typography
+                    variant="caption"
                     sx={{
-                      fontSize: 14,
+                      color: passwordStrength.color,
                       fontWeight: 600,
-                      mb: 1,
-                      color: "#374151",
                     }}
                   >
-                    Độ mạnh mật khẩu:
+                    {passwordStrength.label}
                   </Typography>
-                  <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                    <Box
-                      sx={{
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: 2,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        backgroundColor: passwordValidation.isValidLength
-                          ? "#10B981"
-                          : "#EF4444",
-                        color: "white",
-                      }}
-                    >
-                      6-100 ký tự
-                    </Box>
-                    <Box
-                      sx={{
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: 2,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        backgroundColor: passwordValidation.hasUpperCase
-                          ? "#10B981"
-                          : "#EF4444",
-                        color: "white",
-                      }}
-                    >
-                      Chữ hoa
-                    </Box>
-                    <Box
-                      sx={{
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: 2,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        backgroundColor: passwordValidation.hasLowerCase
-                          ? "#10B981"
-                          : "#EF4444",
-                        color: "white",
-                      }}
-                    >
-                      Chữ thường
-                    </Box>
-                    <Box
-                      sx={{
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: 2,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        backgroundColor: passwordValidation.hasNumbers
-                          ? "#10B981"
-                          : "#EF4444",
-                        color: "white",
-                      }}
-                    >
-                      Số
-                    </Box>
-                    <Box
-                      sx={{
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: 2,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        backgroundColor: passwordValidation.hasSpecialChar
-                          ? "#10B981"
-                          : "#EF4444",
-                        color: "white",
-                      }}
-                    >
-                      Ký tự đặc biệt
-                    </Box>
-                  </Box>
                 </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={calculatePasswordStrength(formData.password)}
+                  sx={{
+                    height: 8,
+                    borderRadius: 4,
+                    mb: 1,
+                    backgroundColor: "#e0e0e0",
+                    "& .MuiLinearProgress-bar": {
+                      backgroundColor: passwordStrength.color,
+                    },
+                  }}
+                />
+
+                <Grid container spacing={1}>
+                  <Grid item xs={6}>
+                    <Chip
+                      label="6-100 ký tự"
+                      size="small"
+                      color={
+                        passwordValidation.isValidLength ? "success" : "default"
+                      }
+                      variant={
+                        passwordValidation.isValidLength ? "filled" : "outlined"
+                      }
+                      sx={{ width: "100%" }}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Chip
+                      label="Chữ hoa"
+                      size="small"
+                      color={
+                        passwordValidation.hasUpperCase ? "success" : "default"
+                      }
+                      variant={
+                        passwordValidation.hasUpperCase ? "filled" : "outlined"
+                      }
+                      sx={{ width: "100%" }}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Chip
+                      label="Chữ thường"
+                      size="small"
+                      color={
+                        passwordValidation.hasLowerCase ? "success" : "default"
+                      }
+                      variant={
+                        passwordValidation.hasLowerCase ? "filled" : "outlined"
+                      }
+                      sx={{ width: "100%" }}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Chip
+                      label="Số"
+                      size="small"
+                      color={
+                        passwordValidation.hasNumbers ? "success" : "default"
+                      }
+                      variant={
+                        passwordValidation.hasNumbers ? "filled" : "outlined"
+                      }
+                      sx={{ width: "100%" }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Chip
+                      label="Ký tự đặc biệt (@#$%^&+=)"
+                      size="small"
+                      color={
+                        passwordValidation.hasSpecialChar
+                          ? "success"
+                          : "default"
+                      }
+                      variant={
+                        passwordValidation.hasSpecialChar
+                          ? "filled"
+                          : "outlined"
+                      }
+                      sx={{ width: "100%" }}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+          </Grid>
+
+          {/* Bottom Section - Additional Info */}
+          <Grid item xs={12}>
+            <Divider sx={{ my: 2 }} />
+            <Typography
+              variant="h6"
+              sx={{
+                mb: 3,
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                color: "#4A90E2", // Updated to match gradient theme
+              }}
+            >
+              <HomeIcon sx={{ mr: 1 }} />
+              Thông tin bổ sung
+            </Typography>
+
+            <Grid container spacing={2}>
+              <Grid item size={6} md={6}>
+                <TextField
+                  fullWidth
+                  label="Ngày sinh"
+                  name="birthDay"
+                  type="date"
+                  value={formData.birthDay}
+                  onChange={handleInputChange}
+                  InputLabelProps={{ shrink: true }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <CakeIcon color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid item size={6} md={6}>
+                <TextField
+                  fullWidth
+                  required // Added required prop
+                  label="Số điện thoại"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneIcon color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  helperText="10-11 chữ số" // Added helper text for guidance
+                />
+              </Grid>
+              <Grid item size={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Địa chỉ"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  multiline
+                  rows={2}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <HomeIcon color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </Grid>
+        </Grid>
       </DialogContent>
 
-      {/* Dialog Actions */}
-      <DialogActions
-        sx={{
-          p: 4,
-          background:
-            "linear-gradient(180deg, rgba(248,252,255,0.95), rgba(240,248,255,0.9))",
-          borderTop: "1px solid rgba(74, 144, 226, 0.1)",
-          position: "sticky",
-          bottom: 0,
-          zIndex: 1,
-          boxShadow: "0 -4px 20px rgba(74, 144, 226, 0.05)",
-        }}
-      >
-        <Button
-          onClick={onClose}
-          variant="outlined"
-          size="large"
+      {/* Actions */}
+      <DialogActions sx={{ p: 3, bgcolor: "#f8f9fa" }}>
+        {" "}
+        {/* Slightly updated background */}
+        <Box
           sx={{
-            borderColor: "#90a4ae",
-            color: "#546e7a",
-            minWidth: 140,
-            height: 52,
-            borderRadius: 3,
-            px: 4,
-            fontSize: 16,
-            fontWeight: 600,
-            "&:hover": {
-              borderColor: "#4A90E2",
-              backgroundColor: "rgba(74, 144, 226, 0.05)",
-              transform: "translateY(-2px)",
-              color: "#4A90E2",
-              boxShadow: "0 8px 25px rgba(74, 144, 226, 0.15)",
-            },
-            transition: "all 0.3s ease",
+            display: "flex",
+            justifyContent: "space-between",
+            width: "100%",
           }}
         >
-          HỦY BỎ
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          size="large"
-          disabled={isLoading}
-          sx={{
-            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-            color: "#fff",
-            fontWeight: 600,
-            minWidth: 200,
-            height: 52,
-            borderRadius: 3,
-            px: 4,
-            fontSize: 16,
-            textTransform: "uppercase",
-            boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-            "&:hover": {
-              background: "linear-gradient(45deg, #357ABD, #17A2B8)",
-              transform: "translateY(-2px)",
-              boxShadow: "0 15px 40px rgba(74, 144, 226, 0.4)",
-            },
-            transition: "all 0.3s ease",
-          }}
-        >
-          {isLoading ? "ĐANG TẠO..." : "➕ THÊM NGƯỜI DÙNG"}
-        </Button>
+          <Box>
+            {formData.role && (
+              <Chip
+                label={selectedRole.label}
+                sx={{
+                  bgcolor: selectedRole.bgColor,
+                  color: selectedRole.color,
+                  fontWeight: 600,
+                }}
+              />
+            )}
+          </Box>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={onClose}
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                borderColor: "#4A90E2", // Updated to match gradient theme
+                color: "#4A90E2", // Updated to match gradient theme
+              }}
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              startIcon={<AddIcon />}
+              disabled={isLoading}
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Updated to medical gradient
+                color: "#fff",
+                fontWeight: 600,
+                boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+                "&:hover": {
+                  background: "linear-gradient(45deg, #357ABD, #159B7F)", // Slightly darker gradient for hover
+                  boxShadow: "0 4px 12px rgba(74, 144, 226, 0.35)",
+                },
+              }}
+            >
+              Thêm người dùng
+            </Button>
+          </Box>
+        </Box>
       </DialogActions>
     </Dialog>
   );

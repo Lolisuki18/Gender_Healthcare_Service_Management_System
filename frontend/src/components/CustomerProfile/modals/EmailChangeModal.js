@@ -9,7 +9,6 @@
  *
  * Features:
  * - Validation email format
- * - Confirm email matching
  * - OTP verification với countdown
  * - Resend OTP functionality
  * - Error handling và user feedback
@@ -56,7 +55,6 @@ export const EmailChangeDialog = ({
 }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [newEmail, setNewEmail] = useState("");
-  const [confirmEmail, setConfirmEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [errors, setErrors] = useState({});
   const [countdown, setCountdown] = useState(0);
@@ -72,20 +70,15 @@ export const EmailChangeDialog = ({
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  const handleEmailChange = (field) => (e) => {
+  const handleEmailChange = (e) => {
     const value = e.target.value;
-
-    if (field === "newEmail") {
-      setNewEmail(value);
-    } else if (field === "confirmEmail") {
-      setConfirmEmail(value);
-    }
+    setNewEmail(value);
 
     // Clear error when user starts typing
-    if (errors[field]) {
+    if (errors.newEmail) {
       setErrors({
         ...errors,
-        [field]: "",
+        newEmail: "",
       });
     }
   };
@@ -103,13 +96,6 @@ export const EmailChangeDialog = ({
       } else if (newEmail.trim() === currentEmail) {
         newErrors.newEmail = "Email mới phải khác email hiện tại";
       }
-    }
-
-    // Validate confirm email
-    if (!confirmEmail.trim()) {
-      newErrors.confirmEmail = "Vui lòng xác nhận email mới";
-    } else if (newEmail.trim() !== confirmEmail.trim()) {
-      newErrors.confirmEmail = "Email xác nhận không khớp";
     }
 
     setErrors(newErrors);
@@ -145,9 +131,6 @@ export const EmailChangeDialog = ({
         await onVerifyAndSave(newEmail.trim(), verificationCode.trim());
         setActiveStep(2);
         notify.success("Thành công", "Email đã được thay đổi thành công!");
-        setTimeout(() => {
-          handleClose();
-        }, 2000);
       } catch (error) {
         notify.error("Lỗi", "Mã xác nhận không đúng. Vui lòng thử lại!");
       }
@@ -156,14 +139,26 @@ export const EmailChangeDialog = ({
     }
   };
 
-  const handleClose = () => {
+  // ✅ Tạo hàm đóng modal riêng cho step thành công
+  const handleSuccessClose = () => {
+    // Reset form và đóng modal
     setActiveStep(0);
     setNewEmail("");
-    setConfirmEmail("");
     setVerificationCode("");
     setErrors({});
     setCountdown(0);
-    onClose();
+
+    // ✅ Gọi callback để parent component biết việc cập nhật đã hoàn tất
+    onClose(true); // Pass true để báo hiệu cập nhật thành công
+  };
+
+  const handleClose = () => {
+    setActiveStep(0);
+    setNewEmail("");
+    setVerificationCode("");
+    setErrors({});
+    setCountdown(0);
+    onClose(false); // Pass false cho việc đóng thông thường
   };
 
   const renderStepContent = () => {
@@ -198,7 +193,7 @@ export const EmailChangeDialog = ({
               label="Email mới"
               type="email"
               value={newEmail}
-              onChange={handleEmailChange("newEmail")}
+              onChange={handleEmailChange}
               error={!!errors.newEmail}
               helperText={errors.newEmail || "Nhập địa chỉ email mới của bạn"}
               placeholder="user@example.com"
@@ -211,37 +206,6 @@ export const EmailChangeDialog = ({
                 startAdornment: (
                   <InputAdornment position="start">
                     <EmailIcon sx={{ color: "#8b5cf6" }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Confirm Email Input */}
-            <TextField
-              fullWidth
-              label="Xác nhận email mới"
-              type="email"
-              value={confirmEmail}
-              onChange={handleEmailChange("confirmEmail")}
-              error={!!errors.confirmEmail}
-              helperText={errors.confirmEmail}
-              placeholder="Nhập lại email mới"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <VerifiedIcon
-                      sx={{
-                        color:
-                          newEmail && confirmEmail && newEmail === confirmEmail
-                            ? "#10b981"
-                            : "#ccc",
-                      }}
-                    />
                   </InputAdornment>
                 ),
               }}
@@ -389,7 +353,7 @@ export const EmailChangeDialog = ({
             <Button
               variant="contained"
               onClick={handleSendCode}
-              disabled={isSendingCode || !newEmail || !confirmEmail}
+              disabled={isSendingCode || !newEmail}
               startIcon={
                 isSendingCode ? (
                   <CircularProgress size={16} color="inherit" />
@@ -442,7 +406,7 @@ export const EmailChangeDialog = ({
         return (
           <Button
             variant="contained"
-            onClick={handleClose}
+            onClick={handleSuccessClose}
             sx={{
               background: "linear-gradient(45deg, #10b981, #059669)",
             }}
@@ -519,6 +483,3 @@ export const EmailChangeDialog = ({
     </Dialog>
   );
 };
-
-// Keep the EmailVerificationDialog for backward compatibility (optional)
-export const EmailVerificationDialog = EmailChangeDialog;

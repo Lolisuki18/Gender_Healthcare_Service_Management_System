@@ -193,8 +193,6 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
       case "gender":
         if (!stringValue || stringValue.trim() === "") {
           newErrors.gender = "Gender is required";
-        } else if (!["MALE", "FEMALE", "OTHER"].includes(stringValue)) {
-          newErrors.gender = "Gender must be MALE, FEMALE, or OTHER";
         } else {
           delete newErrors.gender;
         }
@@ -804,9 +802,9 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                           backgroundColor: "rgba(248,252,255,0.8)",
                         }}
                       >
-                        <MenuItem value="MALE">👨 Nam</MenuItem>
-                        <MenuItem value="FEMALE">👩 Nữ</MenuItem>
-                        <MenuItem value="OTHER">🏳️‍⚧️ Khác</MenuItem>
+                        <MenuItem value="Nam">👨 Nam</MenuItem>
+                        <MenuItem value="Nữ">👩 Nữ</MenuItem>
+                        <MenuItem value="Khac">🏳️‍⚧️ Khác</MenuItem>
                       </Select>
                       {errors.gender && (
                         <Typography

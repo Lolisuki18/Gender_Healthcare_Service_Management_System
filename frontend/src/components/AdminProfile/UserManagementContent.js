@@ -41,7 +41,6 @@ import {
 } from "@mui/material";
 import {
   Edit as EditIcon,
-  Delete as DeleteIcon,
   Search as SearchIcon,
   ManageAccounts as ManageAccountsIcon,
   People as PeopleIcon,
@@ -76,6 +75,7 @@ const UserManagementContent = () => {
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
+  const [newUserId, setNewUserId] = useState(null); // Add this new state
 
   // ✅ Fetch users từ API khi component mount
   useEffect(() => {
@@ -83,7 +83,7 @@ const UserManagementContent = () => {
   }, []);
 
   // ✅ Function để fetch users từ API
-  const fetchUsers = async () => {
+  const fetchUsers = async (newUserId = null) => {
     try {
       setLoading(true);
       setError(null);
@@ -93,11 +93,39 @@ const UserManagementContent = () => {
       console.log("Response từ API:", response);
 
       if (response && response.data) {
-        setUsers(response.data);
-        console.log("Đã tải thành công:", response.data.length, "người dùng");
+        let userData = response.data;
+
+        // Nếu có newUserId, sắp xếp lại để người dùng mới lên đầu tiên
+        if (newUserId) {
+          // Tìm người dùng mới trong danh sách
+          const newUser = userData.find((user) => user.id === newUserId);
+          if (newUser) {
+            // Xóa người dùng mới khỏi danh sách
+            userData = userData.filter((user) => user.id !== newUserId);
+            // Thêm người dùng mới vào đầu danh sách
+            userData = [newUser, ...userData];
+          }
+        }
+
+        setUsers(userData);
+        console.log("Đã tải thành công:", userData.length, "người dùng");
       } else if (Array.isArray(response)) {
-        setUsers(response);
-        console.log("Đã tải thành công:", response.length, "người dùng");
+        let userData = response;
+
+        // Nếu có newUserId, sắp xếp lại để người dùng mới lên đầu tiên
+        if (newUserId) {
+          // Tìm người dùng mới trong danh sách
+          const newUser = userData.find((user) => user.id === newUserId);
+          if (newUser) {
+            // Xóa người dùng mới khỏi danh sách
+            userData = userData.filter((user) => user.id !== newUserId);
+            // Thêm người dùng mới vào đầu danh sách
+            userData = [newUser, ...userData];
+          }
+        }
+
+        setUsers(userData);
+        console.log("Đã tải thành công:", userData.length, "người dùng");
       } else {
         console.warn("Format response không như mong đợi:", response);
         setUsers([]);
@@ -518,7 +546,7 @@ const UserManagementContent = () => {
 
   // ✅ Cập nhật handleModalSubmit
   const handleModalSubmit = async (formData, userType) => {
-    setIsCreatingUser(true); // ✅ Sử dụng state riêng
+    setIsCreatingUser(true);
 
     try {
       console.log("Đang tạo người dùng mới:", formData);
@@ -527,13 +555,24 @@ const UserManagementContent = () => {
       const result = await adminService.addNewUserAccount(formData);
 
       if (result && result.success) {
+        // Lấy ID của người dùng mới tạo
+        const newId = result.data?.id || result.id;
+
+        // Lưu ID người dùng mới để highlight
+        setNewUserId(newId);
+
+        // Tự động xóa highlight sau 5 giây
+        setTimeout(() => {
+          setNewUserId(null);
+        }, 5000);
+
         notify.success(
           "Tạo thành công!",
           `Tạo ${getRoleDisplayName(userType)} thành công!`
         );
 
-        // ✅ Refresh data
-        await fetchUsers();
+        // ✅ Refresh data với ID của người dùng mới để đưa lên đầu danh sách
+        await fetchUsers(newId);
 
         // Đóng modal
         setOpenModal(false);
@@ -550,7 +589,7 @@ const UserManagementContent = () => {
 
       notify.error("Lỗi tạo người dùng", errorMessage);
     } finally {
-      setIsCreatingUser(false); // ✅ Clear loading state
+      setIsCreatingUser(false);
     }
   };
 
@@ -591,14 +630,17 @@ const UserManagementContent = () => {
   };
 
   const handleAddNew = () => {
-    setOpenRoleSelection(true);
-  };
-
-  const handleRoleSelect = (userType) => {
-    setOpenRoleSelection(false);
-    setModalType(userType);
+    // ✅ Bỏ setOpenRoleSelection, mở trực tiếp AddUserModal
+    setModalType("all"); // Set "all" để hiển thị dropdown role
     setOpenModal(true);
   };
+
+  // ✅ Bỏ handleRoleSelect function vì không cần nữa
+  // const handleRoleSelect = (userType) => {
+  //   setOpenRoleSelection(false);
+  //   setModalType(userType);
+  //   setOpenModal(true);
+  // };
 
   // ✅ Cập nhật roleOptions
   const roleOptions = [
@@ -670,13 +712,16 @@ const UserManagementContent = () => {
     if (searchTerm && searchTerm.trim() !== "") {
       const searchLower = searchTerm.toLowerCase().trim();
       filtered = filtered.filter((u) => {
-        const nameMatch = (u.fullName || u.username || "")
+        const nameMatch = (u.fullName || "")
+          .toLowerCase()
+          .includes(searchLower);
+        const usernameMatch = (u.username || "")
           .toLowerCase()
           .includes(searchLower);
         const emailMatch = (u.email || "").toLowerCase().includes(searchLower);
         const phoneMatch = (u.phone || "").includes(searchTerm.trim());
 
-        return nameMatch || emailMatch || phoneMatch;
+        return nameMatch || usernameMatch || emailMatch || phoneMatch;
       });
       console.log("After search filter:", filtered.length);
     }
@@ -866,7 +911,7 @@ const UserManagementContent = () => {
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={6}>
               <TextField
-                placeholder="Tìm kiếm theo tên, email hoặc số điện thoại..."
+                placeholder="Tìm kiếm theo tên, tên đăng nhập, email hoặc số điện thoại..."
                 value={searchTerm}
                 onChange={handleSearchChange}
                 size="small"
@@ -970,6 +1015,9 @@ const UserManagementContent = () => {
                   Người dùng
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600, color: "#2D3748" }}>
+                  Tên đăng nhập
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, color: "#2D3748" }}>
                   Liên hệ
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600, color: "#2D3748" }}>
@@ -986,7 +1034,26 @@ const UserManagementContent = () => {
             <TableBody>
               {filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => (
-                  <TableRow key={user.id} hover>
+                  <TableRow
+                    key={user.id}
+                    hover
+                    sx={
+                      user.id === newUserId
+                        ? {
+                            animation: "highlight 5s",
+                            backgroundColor: "rgba(74, 144, 226, 0.08)",
+                            "@keyframes highlight": {
+                              "0%": {
+                                backgroundColor: "rgba(74, 144, 226, 0.3)",
+                              },
+                              "100%": {
+                                backgroundColor: "rgba(74, 144, 226, 0)",
+                              },
+                            },
+                          }
+                        : {}
+                    }
+                  >
                     <TableCell>
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 2 }}
@@ -997,7 +1064,13 @@ const UserManagementContent = () => {
                             width: 40,
                             height: 40,
                             background:
-                              "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                              user.id === newUserId
+                                ? "linear-gradient(45deg, #4CAF50, #8BC34A)"
+                                : "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                            border:
+                              user.id === newUserId
+                                ? "2px solid #4CAF50"
+                                : "none",
                           }}
                         >
                           {user.fullName?.charAt(0) ||
@@ -1007,9 +1080,21 @@ const UserManagementContent = () => {
                         <Box>
                           <Typography
                             variant="body2"
-                            sx={{ fontWeight: 500, color: "#2D3748" }}
+                            sx={{
+                              fontWeight: user.id === newUserId ? 700 : 500,
+                              color:
+                                user.id === newUserId ? "#2E7D32" : "#2D3748",
+                            }}
                           >
-                            {user.fullName || user.username || "Không có tên"}
+                            {user.fullName || "Không có tên"}
+                            {user.id === newUserId && (
+                              <Chip
+                                size="small"
+                                label="MỚI"
+                                color="success"
+                                sx={{ ml: 1, height: 20, fontSize: "0.6rem" }}
+                              />
+                            )}
                           </Typography>
                           <Typography
                             variant="caption"
@@ -1019,6 +1104,11 @@ const UserManagementContent = () => {
                           </Typography>
                         </Box>
                       </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ color: "#2D3748" }}>
+                        {user.username || "Chưa thiết lập"}
+                      </Typography>
                     </TableCell>
                     <TableCell>
                       <Box>
@@ -1090,29 +1180,14 @@ const UserManagementContent = () => {
                         >
                           <EditIcon sx={{ fontSize: 16 }} />
                         </IconButton>
-                        {/* delete button */}
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDelete(user.id)}
-                          sx={{
-                            color: "#E53E3E",
-                            backgroundColor: "rgba(229, 62, 62, 0.1)",
-                            "&:hover": {
-                              backgroundColor: "rgba(229, 62, 62, 0.2)",
-                              transform: "scale(1.1)",
-                            },
-                            transition: "all 0.2s ease",
-                          }}
-                        >
-                          <DeleteIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
+                        {/* Delete button removed */}
                       </Box>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
                     <Typography variant="body2" sx={{ color: "#718096" }}>
                       Không tìm thấy người dùng nào phù hợp
                     </Typography>
@@ -1149,81 +1224,6 @@ const UserManagementContent = () => {
           {getAddButtonText()}
         </Button>
       </Box>
-      {/* Role Selection Dialog */}
-      <Dialog
-        open={openRoleSelection}
-        onClose={() => setOpenRoleSelection(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            background: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(20px)",
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            textAlign: "center",
-            pb: 1,
-            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-            backgroundClip: "text",
-            WebkitBackgroundClip: "text",
-            color: "transparent",
-            fontWeight: 700,
-          }}
-        >
-          Chọn loại người dùng cần thêm
-        </DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
-          <List sx={{ py: 2 }}>
-            {roleOptions.map((role) => (
-              <ListItem key={role.value} sx={{ px: 3 }}>
-                <ListItemButton
-                  onClick={() => handleRoleSelect(role.value)}
-                  sx={{
-                    borderRadius: 2,
-                    mb: 1,
-                    border: "1px solid rgba(74, 144, 226, 0.15)",
-                    "&:hover": {
-                      backgroundColor: "rgba(74, 144, 226, 0.05)",
-                      borderColor: role.color,
-                    },
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  <ListItemIcon sx={{ color: role.color }}>
-                    {role.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Typography
-                        variant="body1"
-                        sx={{ fontWeight: 600, color: "#2D3748" }}
-                      >
-                        {role.label}
-                      </Typography>
-                    }
-                    secondary={
-                      <Typography variant="body2" sx={{ color: "#718096" }}>
-                        {role.description}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 0 }}>
-          <Button
-            onClick={() => setOpenRoleSelection(false)}
-            sx={{ color: "#718096" }}
-          >
-            Hủy
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Modals */}
       <AddUserModal

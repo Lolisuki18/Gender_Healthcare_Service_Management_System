@@ -304,7 +304,16 @@ public class UserService {
             user.setBirthDay(request.getBirthDay());
             user.setEmail(request.getEmail());
             user.setFullName(request.getFullName());
-            user.setGender(Gender.valueOf(request.getGender()));
+            try {
+                user.setGender(Gender.fromDisplayName(request.getGender()));
+            } catch (IllegalArgumentException e) {
+                // Try as enum constant if display name fails
+                try {
+                    user.setGender(Gender.valueOf(request.getGender()));
+                } catch (IllegalArgumentException ex) {
+                    throw new IllegalArgumentException("Invalid gender: " + request.getGender());
+                }
+            }
             if (StringUtils.hasText(request.getPassword())) {
                 user.setPassword(passwordEncoder.encode(request.getPassword()));
             }
@@ -663,7 +672,16 @@ public class UserService {
             nAccount.setIsActive(true);
             nAccount.setAddress(request.getAddress());
             nAccount.setBirthDay(request.getBirthDay());
-            nAccount.setGender(Gender.valueOf(request.getGender()));
+            try {
+                nAccount.setGender(Gender.fromDisplayName(request.getGender()));
+            } catch (IllegalArgumentException e) {
+                // Try as enum constant if display name fails
+                try {
+                    nAccount.setGender(Gender.valueOf(request.getGender()));
+                } catch (IllegalArgumentException ex) {
+                    throw new IllegalArgumentException("Invalid gender: " + request.getGender());
+                }
+            }
             nAccount.setPhone(request.getPhone());
 
             // Save user

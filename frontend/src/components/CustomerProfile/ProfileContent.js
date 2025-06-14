@@ -313,6 +313,10 @@ const ProfileContent = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
+  // ✅ Thêm các state còn thiếu
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ✅ User data từ API
   const [userData, setUserData] = useState(null);
@@ -404,7 +408,7 @@ const ProfileContent = () => {
         setOriginalData(formData);
 
         // ✅ Sync với localStorage để backup
-        localStorageUtil.set("user", user);
+        localStorageUtil.set("userProfile", user);
 
         // ✅ Use custom notification
         notify.success("Thành công", "Đã tải thông tin người dùng!", {
@@ -483,9 +487,9 @@ const ProfileContent = () => {
    */
   const formatGenderDisplay = (gender) => {
     const genderMap = {
-      MALE: "Nam",
-      FEMALE: "Nữ",
-      OTHER: "Khác",
+      Nam: "Nam",
+      Nữ: "Nữ",
+      Khác: "Khác",
     };
     return genderMap[gender] || gender || "Chưa cập nhật";
   };
@@ -532,9 +536,10 @@ const ProfileContent = () => {
         // ✅ Remove email from update (handled separately)
       };
 
-      const response = userService.updateProfile(updateData, userData);
+      // Fix: Wait for the API call to complete and properly handle response
+      const response = await userService.updateProfile(updateData, userData);
 
-      if (response.success) {
+      if (response && response.success) {
         // ✅ Update userData với response từ API
         const updatedUser = response.data || { ...userData, ...updateData };
         setUserData(updatedUser);
@@ -548,7 +553,7 @@ const ProfileContent = () => {
         setOriginalData(newFormData);
 
         // ✅ Sync với localStorage
-        localStorageUtil.set("user", updatedUser);
+        localStorageUtil.set("userProfile", updatedUser);
 
         // ✅ Exit edit mode
         setIsEditing(false);
@@ -561,7 +566,7 @@ const ProfileContent = () => {
 
         console.log("✅ Đã lưu thông tin thành công:", updatedUser);
       } else {
-        throw new Error(response.message || "Có lỗi xảy ra khi cập nhật");
+        throw new Error(response?.message || "Có lỗi xảy ra khi cập nhật");
       }
     } catch (error) {
       console.error("❌ Lỗi khi cập nhật thông tin:", error);
@@ -575,9 +580,9 @@ const ProfileContent = () => {
 
         localStorageUtil.remove("token");
         localStorageUtil.remove("user");
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 2000);
+        // setTimeout(() => {
+        //   window.location.href = "/login";
+        // }, 2000);
       } else {
         const errorMessage =
           error.response?.data?.message ||
@@ -621,7 +626,23 @@ const ProfileContent = () => {
    * ✅ Handle email change button click
    */
   const handleEmailChangeClick = () => {
-    setEmailChangeDialog({ open: true });
+    setIsEmailModalOpen(true);
+  };
+
+  /**
+   * ✅ Handle email modal close - Thêm hàm này
+   */
+  const handleEmailModalClose = (isSuccess = false) => {
+    setIsEmailModalOpen(false);
+
+    // ✅ Nếu cập nhật thành công, không cần refresh trang
+    if (isSuccess) {
+      console.log("✅ Email updated successfully, modal closed");
+      // Chỉ hiển thị thông báo, không refresh
+      notify.success("Hoàn tất", "Thông tin email đã được cập nhật!", {
+        duration: 3000,
+      });
+    }
   };
 
   /**
@@ -629,6 +650,8 @@ const ProfileContent = () => {
    */
   const handleSendCode = async (email) => {
     try {
+      setIsSendingCode(true); // ✅ Set loading state
+
       notify.info("Đang xử lý", "Đang gửi mã xác nhận đến email mới...", {
         duration: 2000,
       });
@@ -644,14 +667,18 @@ const ProfileContent = () => {
     } catch (error) {
       console.error("❌ Error sending verification code:", error);
       throw error; // Let modal handle the error
+    } finally {
+      setIsSendingCode(false); // ✅ Reset loading state
     }
   };
 
   /**
-   * ✅ Handle verify and save email - New function for EmailChangeDialog
+   * ✅ Handle verify and save email - Updated function
    */
   const handleVerifyAndSave = async (email, verificationCode) => {
     try {
+      setIsVerifying(true); // ✅ Set loading state
+
       notify.info("Đang xác nhận", "Đang xác nhận mã và cập nhật email...", {
         duration: 2000,
       });
@@ -678,14 +705,16 @@ const ProfileContent = () => {
           email: email,
         };
         setUserData(updatedUser);
+
+        // ✅ Cập nhật localStorage để tránh lỗi khi refresh
         localStorageUtil.set("user", updatedUser);
+        localStorageUtil.set("userProfile", updatedUser);
 
         console.log("✅ Email updated successfully:", updatedUser);
 
-        // ✅ Refresh trang sau khi thay đổi email thành công
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000); // Delay 2s để user thấy thông báo thành công
+        notify.success("Thành công!", "Email đã được cập nhật thành công!", {
+          duration: 4000,
+        });
 
         return Promise.resolve(); // Success for modal to handle
       } else {
@@ -694,6 +723,8 @@ const ProfileContent = () => {
     } catch (error) {
       console.error("❌ Error verifying email:", error);
       throw error; // Let modal handle the error
+    } finally {
+      setIsVerifying(false); // ✅ Reset loading state
     }
   };
 
@@ -1024,7 +1055,9 @@ const ProfileContent = () => {
         {/* ============================================================== */}
         {/* DETAILS SECTION - INLINE EDITING */}
         {/* ============================================================== */}
-        <StyledPaper sx={{ p: { xs: 3, md: 4 }, overflow: "hidden", position: "relative" }}>
+        <StyledPaper
+          sx={{ p: { xs: 3, md: 4 }, overflow: "hidden", position: "relative" }}
+        >
           {/* Background Decoration */}
           <Box
             sx={{
@@ -1034,7 +1067,8 @@ const ProfileContent = () => {
               width: 150,
               height: 150,
               borderRadius: "50%",
-              background: "linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.04))",
+              background:
+                "linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.04))",
               zIndex: 0,
             }}
           />
@@ -1046,7 +1080,8 @@ const ProfileContent = () => {
               width: 100,
               height: 100,
               borderRadius: "50%",
-              background: "linear-gradient(45deg, rgba(26, 188, 156, 0.06), rgba(74, 144, 226, 0.03))",
+              background:
+                "linear-gradient(45deg, rgba(26, 188, 156, 0.06), rgba(74, 144, 226, 0.03))",
               zIndex: 0,
             }}
           />
@@ -1070,7 +1105,8 @@ const ProfileContent = () => {
                   sx={{
                     p: 2,
                     borderRadius: "16px",
-                    background: "linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))",
+                    background:
+                      "linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))",
                     border: "1px solid rgba(74, 144, 226, 0.2)",
                     display: "flex",
                     alignItems: "center",
@@ -1202,9 +1238,9 @@ const ProfileContent = () => {
                         isEditing={isEditing}
                         disabled={false}
                         options={[
-                          { value: "MALE", label: "Nam" },
-                          { value: "FEMALE", label: "Nữ" },
-                          { value: "OTHER", label: "Khác" },
+                          { value: "Nam", label: "Nam" },
+                          { value: "Nữ", label: "Nữ" },
+                          { value: "Khác", label: "Khác" },
                         ]}
                         backgroundColor="linear-gradient(45deg, rgba(155, 89, 182, 0.08), rgba(142, 68, 173, 0.04))"
                         iconColor="#9B59B6"
@@ -1417,7 +1453,8 @@ const ProfileContent = () => {
                   sx={{
                     p: 4,
                     borderRadius: "20px",
-                    background: "linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.04))",
+                    background:
+                      "linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.04))",
                     border: "2px solid rgba(74, 144, 226, 0.15)",
                     mt: 4,
                     position: "relative",
@@ -1504,7 +1541,8 @@ const ProfileContent = () => {
                         textTransform: "none",
                         boxShadow: "0 8px 25px rgba(74, 144, 226, 0.4)",
                         "&:hover": {
-                          background: "linear-gradient(45deg, #357ABD, #16A085)",
+                          background:
+                            "linear-gradient(45deg, #357ABD, #16A085)",
                           transform: "translateY(-2px)",
                           boxShadow: "0 12px 30px rgba(74, 144, 226, 0.5)",
                         },
@@ -1529,13 +1567,14 @@ const ProfileContent = () => {
         {/* EMAIL CHANGE DIALOG - Updated to use new modal */}
         {/* ============================================================== */}
         <EmailChangeDialog
-          open={emailChangeDialog.open}
-          onClose={handleCloseEmailChangeDialog}
+          open={isEmailModalOpen}
+          onClose={handleEmailModalClose} // ✅ Hàm đã được định nghĩa
           onSendCode={handleSendCode}
           onVerifyAndSave={handleVerifyAndSave}
+          isSubmitting={isSubmitting} // ✅ State đã được định nghĩa
           isSendingCode={isSendingCode}
           isVerifying={isVerifying}
-          currentEmail={formDataUpdate.email}
+          currentEmail={userData?.email || ""}
         />
 
         {/* ============================================================== */}

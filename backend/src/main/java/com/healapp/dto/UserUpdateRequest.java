@@ -26,15 +26,13 @@ public class UserUpdateRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @Pattern(regexp = "^$|^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).{6,100}$",
-            message = "Password must be empty or contain at least 1 uppercase letter, 1 lowercase letter, 1 number, 1 special character and be 6-100 characters long")
+    @Pattern(regexp = "^$|^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).{6,100}$", message = "Password must be empty or contain at least 1 uppercase letter, 1 lowercase letter, 1 number, 1 special character and be 6-100 characters long")
     private String password;
 
     @Size(max = 255, message = "Address must not exceed 255 characters")
     private String address;
-
     @NotBlank(message = "Gender is required")
-    @Pattern(regexp = "MALE|FEMALE|OTHER", message = "Gender must be MALE, FEMALE, or OTHER")
+    @Pattern(regexp = "MALE|FEMALE|OTHER|Nam|Nữ|Khác", message = "Gender must be MALE, FEMALE, OTHER, Nam, Nữ, or Khác")
     private String gender;
 
     @NotNull(message = "isActive flag is required")

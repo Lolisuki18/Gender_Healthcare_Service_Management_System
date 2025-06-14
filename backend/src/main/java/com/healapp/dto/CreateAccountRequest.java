@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateAccountRequest {
-    
+
     @NotBlank(message = "Role is required!")
     private String role;
 
@@ -25,8 +25,8 @@ public class CreateAccountRequest {
 
     @NotBlank(message = "Email is required!")
     private String email;
-
     @NotBlank(message = "Gender is required!")
+    @Pattern(regexp = "^(Nam|Nữ|Khác|MALE|FEMALE|OTHER)$", message = "Giới tính phải là: Nam, Nữ, Khác, MALE, FEMALE, hoặc OTHER")
     private String gender;
 
     @Size(min = 4, max = 50, message = "Username must be between 4 and 50 characters")

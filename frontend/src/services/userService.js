@@ -1,6 +1,6 @@
 import apiClient from "@services/api";
 import axios from "axios";
-import localStorageUtil from "@utils/localStorage"; // Giả sử đường dẫn đến file util là như này
+import localStorageUtil from "@utils/localStorage";
 
 // Service cho các API liên quan đến người dùng
 export const userService = {
@@ -9,25 +9,21 @@ export const userService = {
     try {
       const response = await apiClient.post("/auth/logout");
 
-      // Xóa token và user data khỏi localStorage
-      localStorageUtil.remove("token");
       localStorageUtil.remove("user");
 
       return response.data;
     } catch (error) {
-      // Dù có lỗi, vẫn xóa token local
-      localStorageUtil.remove("token");
       localStorageUtil.remove("user");
 
       throw error.response?.data || error;
     }
-  },
-  // Đăng nhập
-
+  }, // Đăng nhập
   login: async (credentials) => {
     try {
       const response = await apiClient.post("/auth/login", credentials);
-      return response.data;
+      console.log("Raw API response:", response); // Debug log
+      console.log("Response data:", response.data); // Debug log
+      return response.data; // JwtResponse từ backend
     } catch (error) {
       throw error.response?.data || error;
     }
@@ -152,13 +148,20 @@ export const userService = {
    * @param {string} data.newEmail - New email address
    * @param {string} data.verificationCode - 6-digit verification code
    * @returns {Promise<Object>} API response
-   */
-  verifyEmailChange: async (data) => {
+   */ verifyEmailChange: async (data) => {
     try {
+      console.log("🔄 Verifying email change:", {
+        newEmail: data.newEmail,
+        hasVerificationCode: !!data.verificationCode,
+        codeLength: data.verificationCode?.length,
+      });
+
       const response = await apiClient.put("/users/profile/email", {
         newEmail: data.newEmail,
         verificationCode: data.verificationCode,
       });
+
+      console.log("✅ Email change response:", response);
 
       return {
         success: true,
@@ -166,11 +169,35 @@ export const userService = {
         message: "Email đã được thay đổi thành công",
       };
     } catch (error) {
-      console.error("❌ Error verifying email change:", error);
+      console.error("❌ Error verifying email change:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        errorData: error.response?.data,
+        endpoint: "/users/profile/email",
+        requestData: {
+          newEmail: data.newEmail,
+          hasVerificationCode: !!data.verificationCode,
+        },
+      });
+
+      // Xử lý các loại lỗi khác nhau
+      let errorMessage = "Mã xác nhận không đúng";
+
+      if (error.response?.status === 401) {
+        errorMessage = "Phiên đăng nhập hết hạn, vui lòng đăng nhập lại";
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.message || "Dữ liệu không hợp lệ";
+      } else if (error.response?.status === 404) {
+        errorMessage = "Không tìm thấy người dùng";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
       return {
         success: false,
-        message: error.response?.data?.message || "Mã xác nhận không đúng",
+        message: errorMessage,
         error: error,
+        statusCode: error.response?.status,
       };
     }
   },
@@ -202,6 +229,18 @@ export const userService = {
         message:
           error.response?.data?.message || "Có lỗi xảy ra khi đổi mật khẩu",
       };
+    }
+  },
+
+  // Refresh token
+  refreshToken: async (refreshTokenValue) => {
+    try {
+      const response = await apiClient.post("/auth/refresh-token", {
+        refreshToken: refreshTokenValue,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
     }
   },
 };

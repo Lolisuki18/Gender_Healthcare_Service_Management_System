@@ -69,19 +69,34 @@ apiClient.interceptors.response.use(
       url: error.config?.url,
       data: error.response?.data,
       message: error.message,
-    });
-
-    // Xử lý token hết hạn (401 Unauthorized)
+    });    // Xử lý token hết hạn (401 Unauthorized)
     if (error.response?.status === 401) {
       const userData = localStorageUtil.get("user");
+
+      // ✅ KIỂM TRA FLAG ĐỂ BỎ QUA AUTO-REDIRECT
+      if (error.config?.skipAutoRedirect) {
+        console.log("🔄 Skipping auto-redirect due to skipAutoRedirect flag");
+        return Promise.reject(error);
+      }
+
+      console.log("🔍 401 Error Debug:", {
+        hasUserData: !!userData,
+        hasAccessToken: !!userData?.accessToken,
+        hasRefreshToken: !!userData?.refreshToken,
+        endpoint: error.config?.url,
+        errorMessage: error.response?.data?.message,
+      });
 
       // Nếu có refresh token, thử refresh
       if (userData && userData.refreshToken) {
         try {
+          console.log("🔄 Attempting token refresh...");
           const { userService } = await import("./userService");
           const refreshResponse = await userService.refreshToken(
             userData.refreshToken
           );
+
+          console.log("🔄 Refresh response:", refreshResponse);
 
           if (refreshResponse.success || refreshResponse.accessToken) {
             // Cập nhật token mới vào localStorage
@@ -93,19 +108,30 @@ apiClient.interceptors.response.use(
             };
             localStorageUtil.set("user", newUserData);
 
+            console.log("✅ Token refreshed successfully, retrying request...");
             // Retry request với token mới
             error.config.headers.Authorization = `Bearer ${newTokenData.accessToken}`;
             return apiClient.request(error.config);
           }
         } catch (refreshError) {
+          console.error("❌ Refresh token failed:", refreshError);
           // Refresh token cũng hết hạn, đăng xuất user
           localStorageUtil.remove("user");
-          window.location.href = "/login";
+
+          // Chỉ redirect nếu không phải đang ở trang login
+          if (!window.location.pathname.includes("/login")) {
+            window.location.href = "/login";
+          }
         }
       } else {
+        console.log("❌ No refresh token available, redirecting to login");
         // Không có refresh token, chuyển về trang login
         localStorageUtil.remove("user");
-        window.location.href = "/login";
+
+        // Chỉ redirect nếu không phải đang ở trang login
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login";
+        }
       }
     }
 
