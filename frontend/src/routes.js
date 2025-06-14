@@ -11,7 +11,8 @@ import LoginPage from "@/pages/LoginPage";
 import RegisterForm from "@/pages/RegisterPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ProfilePage from "@/pages/ProfilePage";
-
+// import AdminTestPage from "@/pages/AdminTestPage";
+import StiPage from "@/pages/StiPage";
 // Import Profile Components
 import CustomerProfile from "@/components/CustomerProfile/CustomerProfile";
 import AdminProfile from "@/components/AdminProfile/AdminProfile";
@@ -51,7 +52,7 @@ const AppRoutes = () => {
           index
           element={userData ? <AutoRedirectToProfile /> : <HomePage />}
         />
-
+        <Route path="/sti-test" element={<StiPage />} /> {/* Trang STI Test */}
         {/* Homepage cho các role đã đăng nhập (trừ admin) */}
         <Route path="home" element={<HomePage />} />
 

@@ -1,0 +1,59 @@
+.servicesSection {
+  margin-bottom: 40px;
+}
+
+.servicesSection h2 {
+  text-align: center;
+  margin-bottom: 32px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.servicesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.cardWrapper {
+  background: linear-gradient(180deg, #f8faff 0%, #f0f7ff 50%, #e8f4ff 100%);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 48px 24px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.emptyIcon {
+  margin-bottom: 16px;
+  color: #666;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  background: linear-gradient(45deg, #2196F3, #00BFA5);
+  color: white;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btnPrimary:hover {
+  background: linear-gradient(45deg, #00BFA5, #2196F3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}

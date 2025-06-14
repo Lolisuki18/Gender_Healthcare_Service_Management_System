@@ -21,10 +21,12 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.1",
     "react-scripts": "5.0.1",
+    "react-slick": "^0.30.3",
     "recharts": "^2.15.3",
     "redux": "^5.0.1",
     "redux-persist": "^6.0.0",
     "redux-thunk": "^3.1.0",
+    "slick-carousel": "^1.8.1",
     "styled-components": "^6.1.18",
     "web-vitals": "^2.1.4"
   },

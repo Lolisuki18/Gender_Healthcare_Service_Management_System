@@ -1,0 +1,261 @@
+.card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 0.75rem; /* Giảm padding */
+  height: auto; /* Thay đổi height thành auto */
+  min-height: 0; /* Đặt chiều cao tối thiểu là 0 */
+  margin: 0; /* Loại bỏ margin */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* Tăng gap để các phần tử cách đều nhau */
+  text-align: center;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(45deg, #4A90E2, #1ABC9C);
+}
+
+.card:nth-child(2n)::before {
+  background: linear-gradient(45deg, #1ABC9C, #9B59B6);
+}
+
+.card:nth-child(3n)::before {
+  background: linear-gradient(45deg, #9B59B6, #4A90E2);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(74, 144, 226, 0.15);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.card:hover::before {
+  height: 8px;
+  transition: height 0.3s ease;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.title {
+  font-size: 1.125rem;
+  margin: 0;
+  padding-top: 0.25rem; /* Thêm padding top cho title */
+}
+
+.card:nth-child(2n) .title {
+  background: linear-gradient(45deg, #1ABC9C, #9B59B6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card:nth-child(3n) .title {
+  background: linear-gradient(45deg, #9B59B6, #4A90E2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.description {
+  color: #666;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* Tăng khoảng cách giữa các phần trong content */
+}
+
+.infoList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* Tăng khoảng cách giữa các thông tin */
+  margin: 0; /* Bỏ margin bottom */
+}
+
+.infoItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Khoảng cách giữa icon và text */
+  gap: 1rem;
+  /* Độ cao của mỗi dòng */
+  padding: 0.125rem 0;
+}
+
+.infoLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+  font-size: 0.8125rem;
+  justify-content: center;
+  flex: 1;
+}
+
+.infoValue {
+  color: #4A90E2;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  flex: 1;
+  text-align: left;
+}
+
+.price {
+  /* Khoảng cách bên trong khung giá */
+  padding: 0.5rem;
+  /* Khoảng cách trên dưới của phần giá */
+  margin: 1rem auto; /* Điều chỉnh margin trên dưới của giá */
+  width: 80%;
+  background: linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1));
+  border-radius: 12px;
+  text-align: center;
+}
+
+.priceAmount {
+  font-size: 1.5rem; /* Điều chỉnh kích thước chữ giá */
+  font-weight: 700;
+  line-height: 1.5; /* Điều chỉnh chiều cao dòng của giá */
+  background: linear-gradient(45deg, #4A90E2, #1ABC9C);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card:nth-child(2n) .priceAmount {
+  background: linear-gradient(45deg, #1ABC9C, #9B59B6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card:nth-child(3n) .priceAmount {
+  background: linear-gradient(45deg, #9B59B6, #4A90E2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.footer {
+  margin-top: 0.5rem; /* Thêm margin top cho footer */
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  /* Khoảng cách giữa 2 nút */
+  gap: 0.375rem;
+  margin: 0;
+  gap: 0.5rem; /* Điều chỉnh khoảng cách giữa các nút */
+  justify-content: center;
+}
+
+.btnOutline {
+  padding: 0.4375rem 0.625rem;
+  border: 2px solid transparent;
+  background: linear-gradient(#fff, #fff) padding-box,
+              linear-gradient(45deg, #4A90E2, #1ABC9C) border-box;
+  color: #4A90E2;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnOutline:hover {
+  background: rgba(33, 150, 243, 0.1);
+}
+
+.btnPrimary {
+  background: linear-gradient(45deg, #4A90E2, #1ABC9C);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.4375rem 0.625rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.card:nth-child(2n) .btnPrimary {
+  background: linear-gradient(45deg, #1ABC9C, #9B59B6);
+}
+
+.card:nth-child(3n) .btnPrimary {
+  background: linear-gradient(45deg, #9B59B6, #4A90E2);
+}
+
+.btnPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(74, 144, 226, 0.25);
+}
+
+.servicesSection {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  border-radius: 20px;
+  text-align: center; /* Căn giữa toàn bộ section */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem; /* Giảm khoảng cách giữa tiêu đề và grid */
+}
+
+.servicesSection h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1rem; /* Giảm margin dưới của tiêu đề */
+  background: linear-gradient(45deg, #4A90E2, #1ABC9C);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+  position: relative;
+  display: inline-block;
+}
+
+.servicesSection h2::after {
+  content: '';
+  position: absolute;
+  bottom: -0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 3px;
+  background: linear-gradient(45deg, #4A90E2, #1ABC9C);
+  border-radius: 2px;
+}
+
+/* Thiết lập grid cho danh sách gói */
+.servicesGrid {
+  display: grid;
+  /* Thay đổi grid-template-columns để hiển thị 3 cột cố định */
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1rem 0;
+  align-items: start;
+  justify-content: center;
+}
+
+/* Đảm bảo card có chiều rộng bằng nhau */
+.card {
+  /* ...existing code... */
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
+/* Thêm media query để responsive trên màn hình nhỏ */
+@media (max-width: 1024px) {
+  .servicesGrid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
