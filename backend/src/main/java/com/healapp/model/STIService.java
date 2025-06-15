@@ -33,7 +33,7 @@ public class STIService {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", columnDefinition = "NVARCHAR(100)", nullable = false)
+    @Column(name = "name", columnDefinition = "NVARCHAR(100)", nullable = false, unique = true)
     private String name;
 
     @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")

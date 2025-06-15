@@ -16,13 +16,15 @@ public class STIServiceRequest {
 
     @NotBlank(message = "Service name is required")
     @Size(max = 100, message = "Service name must not exceed 100 characters")
-    public String name;
+    private String name;
 
-    public String description;
+    private String description;
 
     @NotNull(message = "Price is required")
-    public double price;
-    
-    public List<ServiceTestComponentRequest> components;
+    private double price;
+
+    private boolean active;
+
+    private List<ServiceTestComponentRequest> components;
 }
 
