@@ -27,8 +27,14 @@ public class ServiceTestComponent {
     @Column(name = "test_name", nullable = false, length = 100)
     private String testName;
 
+    @Column(name = "unit", length = 50)
+    private String unit;
+
     @Column(name = "reference_range", length = 100)
     private String referenceRange;
+
+    @Column(name = "interpretation", length = 200)
+    private String interpretation;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

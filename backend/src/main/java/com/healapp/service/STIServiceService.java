@@ -16,7 +16,7 @@ import com.healapp.repository.STIServiceRepository;
 
 @Service
 public class STIServiceService {
-    
+
     @Autowired
     private STIServiceRepository stiServiceRepository;
 
@@ -25,7 +25,8 @@ public class STIServiceService {
     public ApiResponse<STIServiceResponse> createSTIService(STIServiceRequest request) {
         try {
             // Validate request
-            if (request == null || request.getName() == null || request.getPrice() == null || request.getPrice().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            if (request == null || request.getName() == null || request.getPrice() == null
+                    || request.getPrice().compareTo(java.math.BigDecimal.ZERO) <= 0) {
                 return ApiResponse.error("Invalid STI Service request");
             }
 
@@ -39,16 +40,15 @@ public class STIServiceService {
             newService.setDescription(request.getDescription());
             newService.setPrice(request.getPrice());
             newService.setIsActive(true);
-
-
-            List<ServiceTestComponent> components = request.components.stream().map(c -> {
+            List<ServiceTestComponent> components = request.getComponents().stream().map(c -> {
                 ServiceTestComponent component = new ServiceTestComponent();
-                component.setTestName(c.testName);
-                component.setReferenceRange(c.referenceRange);
+                component.setTestName(c.getTestName());
+                component.setReferenceRange(c.getReferenceRange());
+                component.setUnit(c.getUnit());
+                component.setInterpretation(c.getInterpretation());
                 component.setStiService(newService);
                 return component;
             }).collect(Collectors.toList());
-
 
             newService.setTestComponents(components);
 
@@ -58,62 +58,49 @@ public class STIServiceService {
         } catch (Exception e) {
             return ApiResponse.error("Error creating STI Service: " + e.getMessage());
         }
-    }
+    } // Lấy thông tin tất cả dịch vụ STI
 
-    // Lấy thông tin tất cả dịch vụ STI
     public ApiResponse<List<STIServiceResponse>> getAllSTIServices(String role) {
         try {
             List<STIService> services = stiServiceRepository.findAll();
             if (services.isEmpty()) {
-                return ApiResponse.error("No STI Services found");      
+                return ApiResponse.error("No STI Services found");
             }
 
-<<<<<<< HEAD
-            List<STIServiceResponse> responses = services.stream()
-                    .map(service -> convertToResponse(service, service.getTestComponents()))
-=======
             List<STIServiceResponse> responses;
             // Kiểm tra role người truy cập
             // Nếu không phải STAFF, chỉ lấy các dịch vụ đang hoạt động
-            if(role == null || !role.equals("ROLE_STAFF")) {
+            if (role == null || !role.equals("ROLE_STAFF")) {
                 responses = services.stream()
-                    .map(service -> convertToResponse(service, service.getComponents()))
-                    .filter(response -> response.isActive()) // Chỉ lấy các dịch vụ đang hoạt động
-                    .collect(Collectors.toList());
+                        .map(service -> convertToResponse(service, service.getTestComponents()))
+                        .filter(response -> response.isActive()) // Chỉ lấy các dịch vụ đang hoạt động
+                        .collect(Collectors.toList());
             } else {
                 responses = services.stream()
-                    .map(service -> convertToResponse(service, service.getComponents()))
->>>>>>> 6022e33c3a9237c5e39df4a11afcbcedee414d2e
-                    .collect(Collectors.toList());
+                        .map(service -> convertToResponse(service, service.getTestComponents()))
+                        .collect(Collectors.toList());
             }
-            
+
             return ApiResponse.success("STI Services retrieved successfully", responses);
         } catch (Exception e) {
             return ApiResponse.error("Error retrieving STI Services: " + e.getMessage());
         }
-    }
+    } // Lấy thông tin dịch vụ STI theo ID
 
-    // Lấy thông tin dịch vụ STI theo ID
     public ApiResponse<STIServiceResponse> getSTIServiceById(Long id) {
         try {
             STIService service = stiServiceRepository.findById(id).orElse(null);
             if (service == null) {
                 return ApiResponse.error("STI Service not found");
             }
-<<<<<<< HEAD
 
             List<ServiceTestComponent> components = service.getTestComponents();
-=======
-            List<ServiceTestComponent> components = service.getComponents();
->>>>>>> 6022e33c3a9237c5e39df4a11afcbcedee414d2e
             return ApiResponse.success("STI Service retrieved successfully", convertToResponse(service, components));
         } catch (Exception e) {
             return ApiResponse.error("Error retrieving STI Service: " + e.getMessage());
         }
     }
 
-<<<<<<< HEAD
-=======
     // Cập nhật thông tin dịch vụ STI
     public ApiResponse<STIServiceResponse> updateSTIService(Long id, STIServiceRequest request) {
         try {
@@ -125,20 +112,22 @@ public class STIServiceService {
             // Cập nhật thông tin dịch vụ
             existingService.setName(request.getName());
             existingService.setDescription(request.getDescription());
-            existingService.setPrice(request.getPrice());
-            existingService.setActive(request.isActive());
+            existingService.setPrice(request.getPrice()); // Keep the current active status if not provided in request
+            if (request.getIsActive() != null) {
+                existingService.setIsActive(request.getIsActive());
+            }
 
             // Cập nhật các thành phần xét nghiệm liên quan đến dịch vụ
-            List<ServiceTestComponent> oldComponents = existingService.getComponents();
-            
+            List<ServiceTestComponent> oldComponents = existingService.getTestComponents();
+
             // kiểm tra xem thành phần mới có cùng id với thành phần cũ không
             // nếu cùng thì cập nhật, nếu không thì thêm mới
             for (ServiceTestComponentRequest componentRequest : request.getComponents()) {
                 ServiceTestComponent existingComponent = oldComponents.stream()
-                        .filter(c -> c.getId().equals(componentRequest.getComponentId()))
+                        .filter(c -> c.getComponentId().equals(componentRequest.getComponentId()))
                         .findFirst()
                         .orElse(null);
-                
+
                 if (existingComponent != null) {
                     // Cập nhật thông tin thành phần
                     existingComponent.setTestName(componentRequest.getTestName());
@@ -157,11 +146,12 @@ public class STIServiceService {
                 }
             }
             // Lưu lại các thành phần đã cập nhật
-            existingService.setComponents(oldComponents);
+            existingService.setTestComponents(oldComponents);
 
             STIService updatedService = stiServiceRepository.save(existingService);
 
-            return ApiResponse.success("STI Service updated successfully", convertToResponse(updatedService, oldComponents));
+            return ApiResponse.success("STI Service updated successfully",
+                    convertToResponse(updatedService, oldComponents));
         } catch (Exception e) {
             return ApiResponse.error("Error updating STI Service: " + e.getMessage());
         }
@@ -176,7 +166,7 @@ public class STIServiceService {
             }
 
             // chinh sửa trạng thái của dịch vụ thành không hoạt động
-            existingService.setActive(false);
+            existingService.setIsActive(false);
 
             // Lưu lại trạng thái đã chỉnh sửa
             stiServiceRepository.save(existingService);
@@ -187,7 +177,6 @@ public class STIServiceService {
         }
     }
 
->>>>>>> 6022e33c3a9237c5e39df4a11afcbcedee414d2e
     /**
      * Chuyển đổi STIService sang STIServiceResponse
      */
@@ -220,5 +209,4 @@ public class STIServiceService {
         response.setComponents(serviceComponents);
         return response;
     }
-
 }
