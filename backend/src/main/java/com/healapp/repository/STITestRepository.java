@@ -1,5 +1,11 @@
 package com.healapp.repository;
 
-public interface STITestRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.healapp.model.STITest;
+
+@Repository
+public interface STITestRepository extends JpaRepository<STITest, Long> {
 
 }
