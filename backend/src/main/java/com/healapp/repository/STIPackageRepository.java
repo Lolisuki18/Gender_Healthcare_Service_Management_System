@@ -41,17 +41,13 @@ public interface STIPackageRepository extends JpaRepository<STIPackage, Long> {
     // Tìm package theo khoảng giá
     @Query("SELECT p FROM STIPackage p WHERE p.isActive = true AND p.packagePrice BETWEEN :minPrice AND :maxPrice")
     List<STIPackage> findByPriceRange(@Param("minPrice") BigDecimal minPrice,
-            @Param("maxPrice") BigDecimal maxPrice);
-
-    // Tìm package chứa service cụ thể
-    @Query("SELECT DISTINCT p FROM STIPackage p JOIN p.services s WHERE s.serviceId = :serviceId AND p.isActive = true")
-    List<STIPackage> findByServiceId(@Param("serviceId") Long serviceId);
-
-    @Query("SELECT DISTINCT p FROM STIPackage p " +
+            @Param("maxPrice") BigDecimal maxPrice);    // Tìm package chứa service cụ thể
+    @Query("SELECT DISTINCT p FROM STIPackage p JOIN p.services s WHERE s.id = :serviceId AND p.isActive = true")
+    List<STIPackage> findByServiceId(@Param("serviceId") Long serviceId);    @Query("SELECT DISTINCT p FROM STIPackage p " +
             "JOIN p.services s " +
-            "WHERE p.isActive = true AND s.serviceId IN :serviceIds " +
+            "WHERE p.isActive = true AND s.id IN :serviceIds " +
             "GROUP BY p " +
-            "HAVING COUNT(DISTINCT s.serviceId) = :serviceCount")
+            "HAVING COUNT(DISTINCT s.id) = :serviceCount")
     List<STIPackage> findByContainingAllServices(@Param("serviceIds") List<Long> serviceIds,
             @Param("serviceCount") Long serviceCount);
 

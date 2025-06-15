@@ -15,9 +15,8 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class STITest {
-
-    // Lưu thông tin các đơn xét nghiệm STIs của khách hàng @Id
+public class STITest { // Lưu thông tin các đơn xét nghiệm STIs của khách hàng
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long testId;
 
