@@ -16,9 +16,14 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 
@@ -58,8 +63,13 @@ public class STIServiceController {
      * method: GET
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getAllSTIServices() {
-        ApiResponse<List<STIServiceResponse>> response = stiServiceService.getAllSTIServices();
+    public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getAllSTIServices(@AuthenticationPrincipal UserDetails userDetails) {
+        // Kiểm tra role người truy cập
+        String role = userDetails.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .findFirst()
+            .orElse("ROLE_STAFF");
+        ApiResponse<List<STIServiceResponse>> response = stiServiceService.getAllSTIServices(role);
         return ResponseEntity.ok(response);
     }
 
@@ -71,6 +81,42 @@ public class STIServiceController {
     @GetMapping("/{serviceId}")
     public ResponseEntity<ApiResponse<STIServiceResponse>> getSTIServiceById(@PathVariable Long serviceId) {
         ApiResponse<STIServiceResponse> response = stiServiceService.getSTIServiceById(serviceId);
+        return ResponseEntity.ok(response);
+    }
+
+    /*
+     * description: Cập nhật thông tin một dịch vụ xét nghiệm STI   
+     * path: /sti-services/{serviceId}
+     * method: PUT
+     * body:
+    {
+    String name *
+    String description
+    double price *
+    components  {
+                String testName *
+                String unit *
+                String referenceRange *
+                String interpretation *
+                }
+    }
+     */
+    @PutMapping("/{serviceId}")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
+    public ResponseEntity<ApiResponse<STIServiceResponse>> updateSTIService(@PathVariable Long serviceId, @Valid @RequestBody STIServiceRequest request) {
+        ApiResponse<STIServiceResponse> response = stiServiceService.updateSTIService(serviceId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /*
+     * description: Xóa một dịch vụ xét nghiệm STI theo ID
+     * path: /sti-services/{serviceId}
+     * method: DELETE
+     */
+    @DeleteMapping("/{serviceId}")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
+    public ResponseEntity<ApiResponse<String>> deleteSTIService(@PathVariable Long serviceId) {
+        ApiResponse<String> response = stiServiceService.deleteSTIService(serviceId);
         return ResponseEntity.ok(response);
     }
 

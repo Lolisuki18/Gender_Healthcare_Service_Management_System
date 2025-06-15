@@ -69,4 +69,5 @@ public interface STIPackageRepository extends JpaRepository<STIPackage, Long> {
             "LEFT JOIN FETCH p.services " +
             "ORDER BY p.packageName")
     List<STIPackage> findAllWithServices();
+
 }
