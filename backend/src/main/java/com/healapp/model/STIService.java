@@ -1,5 +1,6 @@
 package com.healapp.model;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +20,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Entity
 @Table(name = "sti_services")
 @Data
@@ -27,7 +27,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class STIService {
 
-    //Lưu thông tin các dịch vụ xét nghiệm: HIV, HPV, STIs,...
+    // Lưu thông tin các dịch vụ xét nghiệm: HIV, HPV, STIs,...
     @Id
     @Column(name = "service_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,13 +40,13 @@ public class STIService {
     private String description;
 
     @Column(name = "price", nullable = false)
-    private double price;
+    private BigDecimal price;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive;
+    private Boolean isActive = true;
 
     @OneToMany(mappedBy = "stiService", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ServiceTestComponent> components = new ArrayList<>();
+    private List<ServiceTestComponent> testComponents = new ArrayList<>();
 
     @OneToMany(mappedBy = "stiService", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<STITest> stiTests;

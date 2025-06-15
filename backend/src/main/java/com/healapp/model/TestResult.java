@@ -26,7 +26,7 @@ public class TestResult {
 
     @ManyToOne
     @JoinColumn(name = "component_id", nullable = false)
-    private ServiceTestComponent component;
+    private ServiceTestComponent testComponent;
 
     @ManyToOne
     @JoinColumn(name = "service_id", nullable = false)
@@ -43,7 +43,7 @@ public class TestResult {
 
     @ManyToOne
     @JoinColumn(name = "reviewed_by")
-    private UserDtls reviewedBy;
+    private Long reviewedBy;
 
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;

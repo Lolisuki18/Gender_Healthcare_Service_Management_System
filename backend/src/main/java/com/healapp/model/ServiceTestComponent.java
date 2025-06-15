@@ -4,35 +4,31 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "service_test_components")
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
+@Table(name = "service_test_components")
 public class ServiceTestComponent {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "component_id")
-    private Long id;
+    private Long componentId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_id", nullable = false)
     private STIService stiService;
 
-    @Column(name = "test_name", columnDefinition = "NVARCHAR(100)", nullable = false)
+    @Column(name = "test_name", nullable = false, length = 100)
     private String testName;
-
-    @Column(name = "unit", length = 50)
-    private String unit;
 
     @Column(name = "reference_range", length = 100)
     private String referenceRange;
-
-    @Column(name = "interpretation", columnDefinition = "NVARCHAR(200)")
-    private String interpretation;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -40,16 +36,18 @@ public class ServiceTestComponent {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    // Quan hệ 1-N với TestResult
+    @OneToMany(mappedBy = "testComponent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<TestResult> testResults;
+
     @PrePersist
     protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        createdAt = now;
-        updatedAt = now;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
-
 }

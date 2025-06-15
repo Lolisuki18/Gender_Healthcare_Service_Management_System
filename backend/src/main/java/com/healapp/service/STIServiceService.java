@@ -21,9 +21,9 @@ public class STIServiceService {
     // tạo mới dịch vụ STI
     // Thêm các thành phần xét nghiệm liên quan đến dịch vụ
     public ApiResponse<STIServiceResponse> createSTIService(STIServiceRequest request) {
-        try{
+        try {
             // Validate request
-            if (request == null || request.getName() == null || request.getPrice() <= 0) {
+            if (request == null || request.getName() == null || request.getPrice() == null || request.getPrice().compareTo(java.math.BigDecimal.ZERO) <= 0) {
                 return ApiResponse.error("Invalid STI Service request");
             }
 
@@ -31,19 +31,17 @@ public class STIServiceService {
             newService.setName(request.getName());
             newService.setDescription(request.getDescription());
             newService.setPrice(request.getPrice());
-            newService.setActive(true);
+            newService.setIsActive(true);
 
             List<ServiceTestComponent> components = request.components.stream().map(c -> {
                 ServiceTestComponent component = new ServiceTestComponent();
                 component.setTestName(c.testName);
-                component.setUnit(c.unit);
                 component.setReferenceRange(c.referenceRange);
-                component.setInterpretation(c.interpretation);
                 component.setStiService(newService);
                 return component;
             }).collect(Collectors.toList());
 
-            newService.setComponents(components);
+            newService.setTestComponents(components);
 
             STIService savedService = stiServiceRepository.save(newService);
 
@@ -58,11 +56,11 @@ public class STIServiceService {
         try {
             List<STIService> services = stiServiceRepository.findAll();
             if (services.isEmpty()) {
-                return ApiResponse.error("No STI Services found");
+                return ApiResponse.error("No STI Services found");      
             }
 
             List<STIServiceResponse> responses = services.stream()
-                    .map(service -> convertToResponse(service, service.getComponents()))
+                    .map(service -> convertToResponse(service, service.getTestComponents()))
                     .collect(Collectors.toList());
 
             return ApiResponse.success("STI Services retrieved successfully", responses);
@@ -70,7 +68,6 @@ public class STIServiceService {
             return ApiResponse.error("Error retrieving STI Services: " + e.getMessage());
         }
     }
-
 
     // Lấy thông tin dịch vụ STI theo ID
     public ApiResponse<STIServiceResponse> getSTIServiceById(Long id) {
@@ -80,14 +77,12 @@ public class STIServiceService {
                 return ApiResponse.error("STI Service not found");
             }
 
-            List<ServiceTestComponent> components = service.getComponents();
+            List<ServiceTestComponent> components = service.getTestComponents();
             return ApiResponse.success("STI Service retrieved successfully", convertToResponse(service, components));
         } catch (Exception e) {
             return ApiResponse.error("Error retrieving STI Service: " + e.getMessage());
         }
     }
-
-
 
     /**
      * Chuyển đổi STIService sang STIServiceResponse
@@ -98,13 +93,13 @@ public class STIServiceService {
         response.setName(service.getName());
         response.setDescription(service.getDescription());
         response.setPrice(service.getPrice());
-        response.setActive(service.isActive());
+        response.setActive(service.getIsActive());
         response.setCreatedAt(service.getCreatedAt());
         response.setUpdatedAt(service.getUpdatedAt());
 
         // Đếm số components
-        if (service.getComponents() != null) {
-            response.setComponentCount(service.getComponents().size());
+        if (service.getTestComponents() != null) {
+            response.setComponentCount(service.getTestComponents().size());
         } else {
             response.setComponentCount(0);
         }
@@ -112,11 +107,9 @@ public class STIServiceService {
         // Lưu thông tin các thành phần của dịch vụ
         List<STIServiceResponse.ServiceComponent> serviceComponents = components.stream().map(c -> {
             STIServiceResponse.ServiceComponent component = new STIServiceResponse.ServiceComponent();
-            component.setComponentId(c.getId());
+            component.setComponentId(c.getComponentId());
             component.setComponentName(c.getTestName());
-            component.setUnit(c.getUnit());
             component.setNormalRange(c.getReferenceRange());
-            component.setDescription(c.getInterpretation());
             return component;
         }).collect(Collectors.toList());
 

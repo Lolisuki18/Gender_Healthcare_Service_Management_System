@@ -2,22 +2,24 @@ package com.healapp.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "sti_tests")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class STITest {
 
-    //Lưu thông tin các đơn xét nghiệm STIs của khách hàng
-    @Id
+    // Lưu thông tin các đơn xét nghiệm STIs của khách hàng @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long testId;
 
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
@@ -43,7 +45,7 @@ public class STITest {
     private LocalDateTime appointmentDate;
 
     @Column(name = "total_price")
-    private Double totalPrice;
+    private BigDecimal totalPrice;
 
     @Column(name = "customer_notes", columnDefinition = "NVARCHAR(4000)")
     private String customerNotes;
