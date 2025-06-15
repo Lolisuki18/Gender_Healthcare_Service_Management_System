@@ -41,8 +41,8 @@ public interface ServiceTestComponentRepository extends JpaRepository<ServiceTes
 
     // Cập nhật thông tin của ServiceTestComponent
     @Query("UPDATE ServiceTestComponent c SET c.testName = :testName, c.unit = :unit, " +
-            "c.referenceRange = :referenceRange, c.interpretation = :interpretation " +
-            "WHERE c.componentId = :componentId")
+           "c.referenceRange = :referenceRange, c.interpretation = :interpretation " +
+           "WHERE c.componentId = :componentId")
     @Modifying
     @Transactional
     void updateServiceTestComponent(

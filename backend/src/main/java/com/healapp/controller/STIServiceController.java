@@ -6,8 +6,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.STIServiceRequest;
 import com.healapp.dto.STIServiceResponse;
+import com.healapp.dto.STITestRequest;
+import com.healapp.dto.STITestResponse;
+import com.healapp.dto.STITestStatusUpdateRequest;
+import com.healapp.dto.TestResultResponse;
 import com.healapp.model.STIService;
 import com.healapp.service.STIServiceService;
+import com.healapp.service.STITestService;
+import com.healapp.service.UserService;
 
 import jakarta.validation.Valid;
 
@@ -18,6 +24,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,33 +34,39 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-
 @RestController
 @RequestMapping("/sti-services")
 public class STIServiceController {
     @Autowired
     private STIServiceService stiServiceService;
 
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private STITestService stiTestService;
+
     /*
      * description: Tạo mới một dịch vụ xét nghiệm STI
      * path: /sti-services
      * method: POST
      * body:
-    {
-    String name *
-    String description
-    double price *
-    components  {
-                String testName *
-                String unit *
-                String referenceRange *
-                String interpretation *
-                }
-    }
+     * {
+     * String name *
+     * String description
+     * double price *
+     * components {
+     * String testName *
+     * String unit *
+     * String referenceRange *
+     * String interpretation *
+     * }
+     * }
      */
     @PostMapping
     @PreAuthorize("hasRole('ROLE_STAFF')")
-    public ResponseEntity<ApiResponse<STIServiceResponse>> createSTIService(@Valid @RequestBody STIServiceRequest request) {
+    public ResponseEntity<ApiResponse<STIServiceResponse>> createSTIService(
+            @Valid @RequestBody STIServiceRequest request) {
         ApiResponse<STIServiceResponse> response = stiServiceService.createSTIService(request);
         return ResponseEntity.ok(response);
     }
@@ -63,12 +77,13 @@ public class STIServiceController {
      * method: GET
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getAllSTIServices(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getAllSTIServices(
+            @AuthenticationPrincipal UserDetails userDetails) {
         // Kiểm tra role người truy cập
         String role = userDetails.getAuthorities().stream()
-            .map(GrantedAuthority::getAuthority)
-            .findFirst()
-            .orElse("ROLE_STAFF");
+                .map(GrantedAuthority::getAuthority)
+                .findFirst()
+                .orElse("ROLE_STAFF");
         ApiResponse<List<STIServiceResponse>> response = stiServiceService.getAllSTIServices(role);
         return ResponseEntity.ok(response);
     }
@@ -85,25 +100,26 @@ public class STIServiceController {
     }
 
     /*
-     * description: Cập nhật thông tin một dịch vụ xét nghiệm STI   
+     * description: Cập nhật thông tin một dịch vụ xét nghiệm STI
      * path: /sti-services/{serviceId}
      * method: PUT
      * body:
-    {
-    String name *
-    String description
-    double price *
-    components  {
-                String testName *
-                String unit *
-                String referenceRange *
-                String interpretation *
-                }
-    }
+     * {
+     * String name *
+     * String description
+     * double price *
+     * components {
+     * String testName *
+     * String unit *
+     * String referenceRange *
+     * String interpretation *
+     * }
+     * }
      */
     @PutMapping("/{serviceId}")
     @PreAuthorize("hasRole('ROLE_STAFF')")
-    public ResponseEntity<ApiResponse<STIServiceResponse>> updateSTIService(@PathVariable Long serviceId, @Valid @RequestBody STIServiceRequest request) {
+    public ResponseEntity<ApiResponse<STIServiceResponse>> updateSTIService(@PathVariable Long serviceId,
+            @Valid @RequestBody STIServiceRequest request) {
         ApiResponse<STIServiceResponse> response = stiServiceService.updateSTIService(serviceId, request);
         return ResponseEntity.ok(response);
     }
@@ -118,6 +134,140 @@ public class STIServiceController {
     public ResponseEntity<ApiResponse<String>> deleteSTIService(@PathVariable Long serviceId) {
         ApiResponse<String> response = stiServiceService.deleteSTIService(serviceId);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/book-test")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<STITestResponse>> bookSTITest(
+            @Valid @RequestBody STITestRequest request) {
+
+        Long customerId = getCurrentUserId();
+        ApiResponse<STITestResponse> response = stiTestService.bookTest(request, customerId);
+        return getResponseEntity(response);
+    }
+
+    @GetMapping("/my-tests")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<List<STITestResponse>>> getMySTITests() {
+
+        Long customerId = getCurrentUserId();
+        ApiResponse<List<STITestResponse>> response = stiTestService.getMyTests(customerId);
+        return getResponseEntity(response);
+    }
+
+    @GetMapping("/tests/{testId}")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<STITestResponse>> getSTITestDetails(@PathVariable Long testId) {
+
+        Long userId = getCurrentUserId();
+        ApiResponse<STITestResponse> response = stiTestService.getTestDetails(testId, userId);
+        return getResponseEntity(response);
+    }
+
+    @PutMapping("/tests/{testId}/cancel")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<STITestResponse>> cancelSTITest(@PathVariable Long testId) {
+
+        Long userId = getCurrentUserId();
+        ApiResponse<STITestResponse> response = stiTestService.cancelTest(testId, userId);
+        return getResponseEntity(response);
+    }
+
+    @GetMapping("/staff/pending-tests")
+    @PreAuthorize("hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<List<STITestResponse>>> getPendingTests() {
+        ApiResponse<List<STITestResponse>> response = stiTestService.getPendingTests();
+        return getResponseEntity(response);
+    }
+
+    @PutMapping("/staff/tests/{testId}/confirm")
+    @PreAuthorize("hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<STITestResponse>> confirmTest(@PathVariable Long testId) {
+        Long staffId = getCurrentUserId();
+
+        STITestStatusUpdateRequest request = new STITestStatusUpdateRequest();
+        request.setStatus(com.healapp.model.STITestStatus.CONFIRMED);
+
+        ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(testId, request, staffId);
+        return getResponseEntity(response);
+    }
+
+    @GetMapping("/staff/confirmed-tests")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
+    public ResponseEntity<ApiResponse<List<STITestResponse>>> getConfirmedTests() {
+        ApiResponse<List<STITestResponse>> response = stiTestService.getConfirmedTests();
+        return getResponseEntity(response);
+    }
+
+    @PutMapping("/staff/tests/{testId}/sample")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
+    public ResponseEntity<ApiResponse<STITestResponse>> sampleTest(@PathVariable Long testId) {
+        Long staffId = getCurrentUserId();
+
+        STITestStatusUpdateRequest request = new STITestStatusUpdateRequest();
+        request.setStatus(com.healapp.model.STITestStatus.SAMPLED);
+
+        ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(testId, request, staffId);
+        return getResponseEntity(response);
+    }
+
+    @GetMapping("/staff/my-tests")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
+    public ResponseEntity<ApiResponse<List<STITestResponse>>> getStaffTests() {
+        Long staffId = getCurrentUserId();
+        ApiResponse<List<STITestResponse>> response = stiTestService.getStaffTests(staffId);
+        return getResponseEntity(response);
+    }
+
+    @PutMapping("/staff/tests/{testId}/result")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
+    public ResponseEntity<ApiResponse<STITestResponse>> addTestResults(
+            @PathVariable Long testId,
+            @Valid @RequestBody STITestStatusUpdateRequest request) {
+
+        Long staffId = getCurrentUserId();
+
+        // Đảm bảo status là RESULTED
+        request.setStatus(com.healapp.model.STITestStatus.RESULTED);
+
+        ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(testId, request, staffId);
+        return getResponseEntity(response);
+    }
+
+    @PutMapping("/staff/tests/{testId}/complete")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
+    public ResponseEntity<ApiResponse<STITestResponse>> completeTest(
+            @PathVariable Long testId) {
+
+        Long staffId = getCurrentUserId();
+
+        STITestStatusUpdateRequest request = new STITestStatusUpdateRequest();
+        request.setStatus(com.healapp.model.STITestStatus.COMPLETED);
+
+        ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(testId, request, staffId);
+        return getResponseEntity(response);
+    }
+
+    @GetMapping("/tests/{testId}/results")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<List<TestResultResponse>>> getTestResults(@PathVariable Long testId) {
+        Long userId = getCurrentUserId();
+        ApiResponse<List<TestResultResponse>> response = stiTestService.getTestResults(testId, userId);
+        return getResponseEntity(response);
+    }
+
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userService.getUserIdFromUsername(username);
+    }
+
+    private <T> ResponseEntity<ApiResponse<T>> getResponseEntity(ApiResponse<T> response) {
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
 }
