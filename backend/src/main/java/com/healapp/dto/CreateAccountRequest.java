@@ -2,9 +2,6 @@ package com.healapp.dto;
 
 import java.time.LocalDate;
 
-import com.healapp.model.Gender;
-import com.healapp.model.Role;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
