@@ -28,6 +28,7 @@ import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
+  Alert,
   Paper,
   TextField,
   Button,
@@ -40,28 +41,30 @@ import {
   Container,
   Divider,
   Chip,
-  Grid, // Added Grid import
+  Grid,
+  Modal, // For avatar modal
 } from "@mui/material";
-import {
-  Edit as EditIcon,
-  Person as PersonIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
-  Cake as CakeIcon,
-  LocationOn as LocationIcon,
-  Wc as GenderIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  Refresh as RefreshIcon,
-  Verified as VerifiedIcon,
-  Lock as LockIcon,
-} from "@mui/icons-material";
+import AvatarUpload from "../common/AvatarUpload"; // Import AvatarUpload component
+import EditIcon from "@mui/icons-material/Edit"; // For edit button
+import AccountCircleIcon from "@mui/icons-material/AccountCircle"; // For avatar icon
+import VerifiedIcon from "@mui/icons-material/Verified";
+import PersonIcon from "@mui/icons-material/Person";
+import CakeIcon from "@mui/icons-material/Cake";
+import WcIcon from "@mui/icons-material/Wc"; // Gender icon
+import PhoneIcon from "@mui/icons-material/Phone";
+import EmailIcon from "@mui/icons-material/Email";
+import LocationOnIcon from "@mui/icons-material/LocationOn"; // Location icon
+import LockIcon from "@mui/icons-material/Lock"; // Lock icon
+import CancelIcon from "@mui/icons-material/Cancel"; // Cancel icon
+import RefreshIcon from "@mui/icons-material/Refresh"; // Refresh icon
+import SaveIcon from "@mui/icons-material/Save"; // Save icon
 import { styled } from "@mui/material/styles";
 import { userService } from "@/services/userService";
 import localStorageUtil from "@/utils/localStorage";
 import { notify } from "@/utils/notification";
 import { formatDateForInput, formatDateDisplay } from "@/utils/dateUtils";
 import { EmailChangeDialog, PasswordChangeDialog } from "./modals";
+import imageUrl from "../../utils/imageUrl"; // Import với đường dẫn tương đối
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: "rgba(255, 255, 255, 0.95)",
@@ -315,6 +318,10 @@ const ProfileContent = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
+  // Avatar change states
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+
   // ✅ Thêm các state còn thiếu
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -323,12 +330,14 @@ const ProfileContent = () => {
 
   // ✅ Form data để edit
   const [formDataUpdate, setFormDataUpdate] = useState({
-    fullName: "",
-    phone: "",
-    birthDay: "",
-    email: "",
-    gender: "",
-    address: "",
+    data: {
+      fullName: "",
+      phone: "",
+      birthDay: "",
+      email: "",
+      gender: "",
+      address: "",
+    },
   });
 
   // ✅ Original data để reset khi cancel
@@ -809,785 +818,728 @@ const ProfileContent = () => {
     setPasswordChangeDialog({ open: false });
   };
 
+  // ====================================================================
+  // AVATAR CHANGE FUNCTIONS
+  // ====================================================================
+
+  /**
+   * Mở modal thay đổi avatar
+   */
+  const handleAvatarChangeClick = () => {
+    setIsAvatarModalOpen(true);
+  };
+
+  /**
+   * Đóng modal thay đổi avatar
+   */
+  const handleCloseAvatarModal = () => {
+    setIsAvatarModalOpen(false);
+    setAvatarError("");
+  };
+
+  /**
+   * Xử lý khi upload avatar thành công
+   * @param {string} avatarPath - Đường dẫn avatar mới
+   */
+  const handleAvatarUploadSuccess = (avatarPath) => {
+    console.log("Avatar uploaded successfully:", avatarPath);
+    // Cập nhật UI ngay lập tức với avatar mới
+    if (userData && avatarPath) {
+      setUserData((prev) => ({
+        ...prev,
+        avatar: avatarPath,
+      }));
+    }
+
+    // Đóng modal sau một lúc
+    setTimeout(() => {
+      handleCloseAvatarModal();
+    }, 1500);
+  };
+
+  /**
+   * Xử lý khi có lỗi upload avatar
+   * @param {string} errorMessage - Thông báo lỗi
+   */
+  const handleAvatarUploadError = (errorMessage) => {
+    setAvatarError(errorMessage);
+  };
+
+  // Render component
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Stack spacing={4}>
-        {/* ============================================================== */}
-        {/* PROFILE CARD */}
-        {/* ============================================================== */}
-        <ProfileCard>
-          <CardContent sx={{ p: 4 }}>
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={4}
-              alignItems="center"
-            >
-              {/* Avatar Section */}
-              <Stack alignItems="center" spacing={2}>
-                <Box sx={{ position: "relative" }}>
-                  <Avatar
+    <>
+      {/* Modal thay đổi avatar */}
+      <Modal
+        open={isAvatarModalOpen}
+        onClose={handleCloseAvatarModal}
+        aria-labelledby="avatar-modal-title"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: { xs: "90%", sm: 500 },
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            p: 4,
+            borderRadius: "16px",
+          }}
+        >
+          <Typography
+            id="avatar-modal-title"
+            variant="h6"
+            component="h2"
+            sx={{ mb: 3, fontWeight: 700, textAlign: "center" }}
+          >
+            Cập nhật ảnh đại diện
+          </Typography>
+
+          {avatarError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {avatarError}
+            </Alert>
+          )}
+
+          <AvatarUpload
+            currentImage={userData?.avatar}
+            onUploadSuccess={handleAvatarUploadSuccess}
+            onUploadError={handleAvatarUploadError}
+            onClose={handleCloseAvatarModal}
+          />
+        </Box>
+      </Modal>
+
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Stack spacing={4}>
+          {/* ============================================================== */}
+          {/* PROFILE CARD */}
+          {/* ============================================================== */}
+          <ProfileCard>
+            <CardContent sx={{ p: 4 }}>
+              <Stack
+                direction={{ xs: "column", md: "row" }}
+                spacing={4}
+                alignItems="center"
+              >
+                {" "}
+                {/* Avatar Section */}
+                <Stack alignItems="center" spacing={2}>
+                  <Box sx={{ position: "relative" }}>
+                    <Avatar
+                      src={
+                        userData?.avatar
+                          ? imageUrl.getFullImageUrl(userData.avatar)
+                          : undefined
+                      }
+                      alt={formDataUpdate.fullName || "User"}
+                      sx={{
+                        width: { xs: 120, md: 140 },
+                        height: { xs: 120, md: 140 },
+                        background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                        fontSize: { xs: "48px", md: "56px" },
+                        fontWeight: 700,
+                        boxShadow: "0 12px 40px rgba(74, 144, 226, 0.4)",
+                        border: "4px solid rgba(255, 255, 255, 0.1)",
+                      }}
+                    >
+                      {formDataUpdate.fullName?.charAt(0)?.toUpperCase() || "U"}
+                    </Avatar>
+
+                    {/* Edit Avatar Button */}
+                    <Box
+                      onClick={handleAvatarChangeClick}
+                      sx={{
+                        position: "absolute",
+                        bottom: 5,
+                        right: 5,
+                        width: 36,
+                        height: 36,
+                        borderRadius: "50%",
+                        background: "linear-gradient(45deg, #4A90E2, #3498db)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: "4px solid rgba(255, 255, 255, 0.2)",
+                        boxShadow: "0 4px 12px rgba(74, 144, 226, 0.4)",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          transform: "scale(1.1)",
+                          boxShadow: "0 6px 16px rgba(74, 144, 226, 0.6)",
+                        },
+                      }}
+                    >
+                      <EditIcon sx={{ width: 16, height: 16, color: "#fff" }} />
+                    </Box>
+                  </Box>
+
+                  {/* Avatar Change Button */}
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={handleAvatarChangeClick}
                     sx={{
-                      width: { xs: 120, md: 140 },
-                      height: { xs: 120, md: 140 },
-                      background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                      fontSize: { xs: "48px", md: "56px" },
-                      fontWeight: 700,
-                      boxShadow: "0 12px 40px rgba(74, 144, 226, 0.4)",
-                      border: "4px solid rgba(255, 255, 255, 0.1)",
+                      borderRadius: "20px",
+                      textTransform: "none",
+                      fontSize: "0.8rem",
+                      borderColor: "rgba(74, 144, 226, 0.5)",
+                      color: "#4A90E2",
+                      "&:hover": {
+                        borderColor: "#4A90E2",
+                        backgroundColor: "rgba(74, 144, 226, 0.08)",
+                      },
                     }}
                   >
-                    {formDataUpdate.fullName?.charAt(0)?.toUpperCase() || "U"}
-                  </Avatar>
+                    Đổi ảnh đại diện
+                  </Button>
+                </Stack>
+                {/* User Info */}
+                <Stack
+                  spacing={2}
+                  sx={{ flex: 1, textAlign: { xs: "center", md: "left" } }}
+                >
+                  <Stack spacing={1}>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 700,
+                        color: "#2D3748",
+                        fontSize: { xs: "1.5rem", md: "2rem" },
+                      }}
+                    >
+                      {formDataUpdate.fullName || "Chưa có tên"}
+                    </Typography>
 
-                  {/* Online Status */}
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: "#4A5568",
+                        fontSize: "18px",
+                        fontWeight: 500,
+                      }}
+                    >
+                      Khách hàng
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#718096",
+                        fontSize: "14px",
+                      }}
+                    >
+                      ID: {userData?.id || "GUEST"}
+                    </Typography>
+                  </Stack>
+
+                  {/* Quick Info */}
+                  <Stack direction="row" spacing={2}>
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        flex: 1,
+                        p: 2,
+                        borderRadius: "12px",
+                        background:
+                          "linear-gradient(45deg, rgba(26, 188, 156, 0.1), rgba(22, 160, 133, 0.1))",
+                        border: "1px solid rgba(26, 188, 156, 0.2)",
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "#4A5568", mb: 0.5 }}
+                      >
+                        Ngày sinh
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{ color: "#2D3748", fontWeight: 600 }}
+                      >
+                        {formatDateDisplay(formDataUpdate.birthDay)}
+                      </Typography>
+                    </Paper>
+
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        flex: 1,
+                        p: 2,
+                        borderRadius: "12px",
+                        background:
+                          "linear-gradient(45deg, rgba(155, 89, 182, 0.1), rgba(142, 68, 173, 0.1))",
+                        border: "1px solid rgba(155, 89, 182, 0.2)",
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "#4A5568", mb: 0.5 }}
+                      >
+                        Giới tính
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{ color: "#2D3748", fontWeight: 600 }}
+                      >
+                        {formatGenderDisplay(formDataUpdate.gender)}
+                      </Typography>
+                    </Paper>
+                  </Stack>
+                </Stack>
+                {/* Action Buttons */}
+                <Stack spacing={2} sx={{ minWidth: { md: 200 } }}>
+                  <Button
+                    variant={isEditing ? "outlined" : "contained"}
+                    startIcon={
+                      isSaving ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : isEditing ? (
+                        <CancelIcon />
+                      ) : (
+                        <EditIcon />
+                      )
+                    }
+                    onClick={handleToggleEdit}
+                    disabled={isSaving}
+                    fullWidth
+                    sx={{
+                      py: 2,
+                      borderRadius: "16px",
+                      fontWeight: 600,
+                      fontSize: "16px",
+                      textTransform: "none",
+                      ...(isEditing
+                        ? {
+                            color: "#e74c3c",
+                            borderColor: "#e74c3c",
+                            borderWidth: "2px",
+                            "&:hover": {
+                              backgroundColor: "rgba(231, 76, 60, 0.1)",
+                              borderColor: "#e74c3c",
+                              transform: "translateY(-2px)",
+                            },
+                          }
+                        : {
+                            background:
+                              "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                            color: "#fff",
+                            fontWeight: 600,
+                            boxShadow: "0 6px 20px rgba(74, 144, 226, 0.4)",
+                            "&:hover": {
+                              background:
+                                "linear-gradient(45deg, #357ABD, #16A085)",
+                              transform: "translateY(-2px)",
+                              boxShadow: "0 8px 25px rgba(74, 144, 226, 0.5)",
+                            },
+                          }),
+                      transition: "all 0.3s ease",
+                    }}
+                  >
+                    {isSaving
+                      ? "Đang lưu..."
+                      : isEditing
+                      ? "Hủy chỉnh sửa"
+                      : "Chỉnh sửa hồ sơ"}
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    startIcon={
+                      isRefreshing ? (
+                        <CircularProgress size={16} color="inherit" />
+                      ) : (
+                        <RefreshIcon />
+                      )
+                    }
+                    onClick={handleRefreshData}
+                    disabled={isRefreshing || isEditing}
+                    fullWidth
+                    sx={{
+                      py: 1.5,
+                      borderRadius: "12px",
+                      fontWeight: 500,
+                      fontSize: "14px",
+                      textTransform: "none",
+                      color: "#1ABC9C",
+                      borderColor: "#1ABC9C",
+                      "&:hover": {
+                        backgroundColor: "rgba(26, 188, 156, 0.1)",
+                        borderColor: "#1ABC9C",
+                      },
+                    }}
+                  >
+                    {isRefreshing ? "Đang tải..." : "Làm mới"}
+                  </Button>
+                </Stack>
+              </Stack>
+            </CardContent>
+          </ProfileCard>
+
+          {/* ============================================================== */}
+          {/* DETAILS SECTION - INLINE EDITING */}
+          {/* ============================================================== */}
+          <StyledPaper
+            sx={{
+              p: { xs: 3, md: 4 },
+              overflow: "hidden",
+              position: "relative",
+            }}
+          >
+            {/* Background Decoration */}
+            <Box
+              sx={{
+                position: "absolute",
+                top: -50,
+                right: -50,
+                width: 150,
+                height: 150,
+                borderRadius: "50%",
+                background:
+                  "linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.04))",
+                zIndex: 0,
+              }}
+            />
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: -30,
+                left: -30,
+                width: 100,
+                height: 100,
+                borderRadius: "50%",
+                background:
+                  "linear-gradient(45deg, rgba(26, 188, 156, 0.06), rgba(74, 144, 226, 0.03))",
+                zIndex: 0,
+              }}
+            />
+
+            <Stack spacing={4} sx={{ position: "relative", zIndex: 1 }}>
+              {/* Enhanced Header */}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                  alignItems: { xs: "flex-start", sm: "center" },
+                  justifyContent: "space-between",
+                  gap: 2,
+                  pb: 3,
+                  borderBottom: "2px solid rgba(74, 144, 226, 0.1)",
+                  position: "relative",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Box
                     sx={{
-                      position: "absolute",
-                      bottom: 5,
-                      right: 5,
-                      width: 36,
-                      height: 36,
-                      borderRadius: "50%",
-                      background: "linear-gradient(45deg, #1ABC9C, #16A085)",
+                      p: 2,
+                      borderRadius: "16px",
+                      background:
+                        "linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))",
+                      border: "1px solid rgba(74, 144, 226, 0.2)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      border: "4px solid rgba(255, 255, 255, 0.2)",
-                      boxShadow: "0 4px 12px rgba(26, 188, 156, 0.4)",
                     }}
                   >
-                    <Box
+                    <PersonIcon sx={{ color: "#4A90E2", fontSize: 32 }} />
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="h4"
                       sx={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: "50%",
-                        background: "#fff",
+                        fontWeight: 700,
+                        color: "#2D3748",
+                        fontSize: { xs: "1.5rem", md: "2rem" },
+                        lineHeight: 1.2,
+                        mb: 0.5,
                       }}
-                    />
+                    >
+                      Thông tin chi tiết
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: "#4A5568",
+                        fontSize: "16px",
+                        fontWeight: 500,
+                      }}
+                    >
+                      Quản lý và cập nhật thông tin cá nhân của bạn
+                    </Typography>
                   </Box>
                 </Box>
-              </Stack>
 
-              {/* User Info */}
-              <Stack
-                spacing={2}
-                sx={{ flex: 1, textAlign: { xs: "center", md: "left" } }}
-              >
-                <Stack spacing={1}>
-                  <Typography
-                    variant="h4"
+                {isEditing && (
+                  <Chip
+                    icon={<EditIcon />}
+                    label="Đang chỉnh sửa"
                     sx={{
-                      fontWeight: 700,
-                      color: "#2D3748",
-                      fontSize: { xs: "1.5rem", md: "2rem" },
-                    }}
-                  >
-                    {formDataUpdate.fullName || "Chưa có tên"}
-                  </Typography>
-
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: "#4A5568",
-                      fontSize: "18px",
-                      fontWeight: 500,
-                    }}
-                  >
-                    Khách hàng
-                  </Typography>
-
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "#718096",
-                      fontSize: "14px",
-                    }}
-                  >
-                    ID: {userData?.id || "GUEST"}
-                  </Typography>
-                </Stack>
-
-                {/* Quick Info */}
-                <Stack direction="row" spacing={2}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      flex: 1,
-                      p: 2,
-                      borderRadius: "12px",
-                      background:
-                        "linear-gradient(45deg, rgba(26, 188, 156, 0.1), rgba(22, 160, 133, 0.1))",
-                      border: "1px solid rgba(26, 188, 156, 0.2)",
-                      textAlign: "center",
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "#4A5568", mb: 0.5 }}
-                    >
-                      Ngày sinh
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ color: "#2D3748", fontWeight: 600 }}
-                    >
-                      {formatDateDisplay(formDataUpdate.birthDay)}
-                    </Typography>
-                  </Paper>
-
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      flex: 1,
-                      p: 2,
-                      borderRadius: "12px",
-                      background:
-                        "linear-gradient(45deg, rgba(155, 89, 182, 0.1), rgba(142, 68, 173, 0.1))",
-                      border: "1px solid rgba(155, 89, 182, 0.2)",
-                      textAlign: "center",
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "#4A5568", mb: 0.5 }}
-                    >
-                      Giới tính
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ color: "#2D3748", fontWeight: 600 }}
-                    >
-                      {formatGenderDisplay(formDataUpdate.gender)}
-                    </Typography>
-                  </Paper>
-                </Stack>
-              </Stack>
-
-              {/* Action Buttons */}
-              <Stack spacing={2} sx={{ minWidth: { md: 200 } }}>
-                <Button
-                  variant={isEditing ? "outlined" : "contained"}
-                  startIcon={
-                    isSaving ? (
-                      <CircularProgress size={20} color="inherit" />
-                    ) : isEditing ? (
-                      <CancelIcon />
-                    ) : (
-                      <EditIcon />
-                    )
-                  }
-                  onClick={handleToggleEdit}
-                  disabled={isSaving}
-                  fullWidth
-                  sx={{
-                    py: 2,
-                    borderRadius: "16px",
-                    fontWeight: 600,
-                    fontSize: "16px",
-                    textTransform: "none",
-                    ...(isEditing
-                      ? {
-                          color: "#e74c3c",
-                          borderColor: "#e74c3c",
-                          borderWidth: "2px",
-                          "&:hover": {
-                            backgroundColor: "rgba(231, 76, 60, 0.1)",
-                            borderColor: "#e74c3c",
-                            transform: "translateY(-2px)",
-                          },
-                        }
-                      : {
-                          background:
-                            "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                          color: "#fff",
-                          fontWeight: 600,
-                          boxShadow: "0 6px 20px rgba(74, 144, 226, 0.4)",
-                          "&:hover": {
-                            background:
-                              "linear-gradient(45deg, #357ABD, #16A085)",
-                            transform: "translateY(-2px)",
-                            boxShadow: "0 8px 25px rgba(74, 144, 226, 0.5)",
-                          },
-                        }),
-                    transition: "all 0.3s ease",
-                  }}
-                >
-                  {isSaving
-                    ? "Đang lưu..."
-                    : isEditing
-                    ? "Hủy chỉnh sửa"
-                    : "Chỉnh sửa hồ sơ"}
-                </Button>
-
-                <Button
-                  variant="outlined"
-                  startIcon={
-                    isRefreshing ? (
-                      <CircularProgress size={16} color="inherit" />
-                    ) : (
-                      <RefreshIcon />
-                    )
-                  }
-                  onClick={handleRefreshData}
-                  disabled={isRefreshing || isEditing}
-                  fullWidth
-                  sx={{
-                    py: 1.5,
-                    borderRadius: "12px",
-                    fontWeight: 500,
-                    fontSize: "14px",
-                    textTransform: "none",
-                    color: "#1ABC9C",
-                    borderColor: "#1ABC9C",
-                    "&:hover": {
-                      backgroundColor: "rgba(26, 188, 156, 0.1)",
-                      borderColor: "#1ABC9C",
-                    },
-                  }}
-                >
-                  {isRefreshing ? "Đang tải..." : "Làm mới"}
-                </Button>
-              </Stack>
-            </Stack>
-          </CardContent>
-        </ProfileCard>
-
-        {/* ============================================================== */}
-        {/* DETAILS SECTION - INLINE EDITING */}
-        {/* ============================================================== */}
-        <StyledPaper
-          sx={{ p: { xs: 3, md: 4 }, overflow: "hidden", position: "relative" }}
-        >
-          {/* Background Decoration */}
-          <Box
-            sx={{
-              position: "absolute",
-              top: -50,
-              right: -50,
-              width: 150,
-              height: 150,
-              borderRadius: "50%",
-              background:
-                "linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.04))",
-              zIndex: 0,
-            }}
-          />
-          <Box
-            sx={{
-              position: "absolute",
-              bottom: -30,
-              left: -30,
-              width: 100,
-              height: 100,
-              borderRadius: "50%",
-              background:
-                "linear-gradient(45deg, rgba(26, 188, 156, 0.06), rgba(74, 144, 226, 0.03))",
-              zIndex: 0,
-            }}
-          />
-
-          <Stack spacing={4} sx={{ position: "relative", zIndex: 1 }}>
-            {/* Enhanced Header */}
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: { xs: "column", sm: "row" },
-                alignItems: { xs: "flex-start", sm: "center" },
-                justifyContent: "space-between",
-                gap: 2,
-                pb: 3,
-                borderBottom: "2px solid rgba(74, 144, 226, 0.1)",
-                position: "relative",
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: "16px",
-                    background:
-                      "linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))",
-                    border: "1px solid rgba(74, 144, 226, 0.2)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <PersonIcon sx={{ color: "#4A90E2", fontSize: 32 }} />
-                </Box>
-                <Box>
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      fontWeight: 700,
-                      color: "#2D3748",
-                      fontSize: { xs: "1.5rem", md: "2rem" },
-                      lineHeight: 1.2,
-                      mb: 0.5,
-                    }}
-                  >
-                    Thông tin chi tiết
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: "#4A5568",
-                      fontSize: "16px",
-                      fontWeight: 500,
-                    }}
-                  >
-                    Quản lý và cập nhật thông tin cá nhân của bạn
-                  </Typography>
-                </Box>
-              </Box>
-
-              {isEditing && (
-                <Chip
-                  icon={<EditIcon />}
-                  label="Đang chỉnh sửa"
-                  sx={{
-                    background: "linear-gradient(45deg, #1ABC9C, #16A085)",
-                    color: "#fff",
-                    fontSize: "0.9rem",
-                    fontWeight: 600,
-                    padding: "8px 16px",
-                    height: "40px",
-                    borderRadius: "20px",
-                    boxShadow: "0 4px 12px rgba(26, 188, 156, 0.3)",
-                    "& .MuiChip-icon": {
+                      background: "linear-gradient(45deg, #1ABC9C, #16A085)",
                       color: "#fff",
-                    },
-                  }}
-                />
-              )}
-            </Box>
-
-            {/* Form Fields with Enhanced Layout */}
-            <Stack spacing={4}>
-              {/* Personal Information Section */}
-              <Box>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "#2D3748",
-                    fontWeight: 600,
-                    fontSize: "18px",
-                    mb: 3,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 4,
-                      height: 20,
-                      background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                      borderRadius: 2,
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                      padding: "8px 16px",
+                      height: "40px",
+                      borderRadius: "20px",
+                      boxShadow: "0 4px 12px rgba(26, 188, 156, 0.3)",
+                      "& .MuiChip-icon": {
+                        color: "#fff",
+                      },
                     }}
                   />
-                  Thông tin cá nhân
-                </Typography>
-
-                <Stack spacing={3}>
-                  {/* Họ và tên */}
-                  <FieldInfoBox
-                    icon={<PersonIcon />}
-                    label="Họ và tên"
-                    name="fullName"
-                    value={formDataUpdate.fullName}
-                    onChange={handleChangeUpdate}
-                    isEditing={isEditing}
-                    disabled={false}
-                    backgroundColor="linear-gradient(45deg, rgba(74, 144, 226, 0.06), rgba(26, 188, 156, 0.04))"
-                    iconColor="#4A90E2"
-                  />
-
-                  {/* Personal Info Stack */}
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
-                      <FieldInfoBox
-                        icon={<CakeIcon />}
-                        label="Ngày sinh"
-                        name="birthDay"
-                        value={
-                          isEditing
-                            ? formatDateForInput(formDataUpdate.birthDay)
-                            : formatDateDisplay(formDataUpdate.birthDay)
-                        }
-                        onChange={handleChangeUpdate}
-                        isEditing={isEditing}
-                        disabled={false}
-                        type="date"
-                        backgroundColor="linear-gradient(45deg, rgba(241, 196, 15, 0.08), rgba(230, 126, 34, 0.04))"
-                        iconColor="#F1C40F"
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <FieldInfoBox
-                        icon={<GenderIcon />}
-                        label="Giới tính"
-                        name="gender"
-                        value={
-                          isEditing
-                            ? formDataUpdate.gender
-                            : formatGenderDisplay(formDataUpdate.gender)
-                        }
-                        onChange={handleChangeUpdate}
-                        isEditing={isEditing}
-                        disabled={false}
-                        options={[
-                          { value: "Nam", label: "Nam" },
-                          { value: "Nữ", label: "Nữ" },
-                          { value: "Khác", label: "Khác" },
-                        ]}
-                        backgroundColor="linear-gradient(45deg, rgba(155, 89, 182, 0.08), rgba(142, 68, 173, 0.04))"
-                        iconColor="#9B59B6"
-                      />
-                    </Grid>
-                  </Grid>
-                </Stack>
+                )}
               </Box>
 
-              {/* Contact Information Section */}
-              <Box>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "#2D3748",
-                    fontWeight: 600,
-                    fontSize: "18px",
-                    mb: 3,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 4,
-                      height: 20,
-                      background: "linear-gradient(45deg, #1ABC9C, #4CAF50)",
-                      borderRadius: 2,
-                    }}
-                  />
-                  Thông tin liên hệ
-                </Typography>
-
-                <Stack spacing={3}>
-                  {/* Contact Fields Stack */}
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
-                      <FieldInfoBox
-                        icon={<PhoneIcon />}
-                        label="Số điện thoại"
-                        name="phone"
-                        value={formDataUpdate.phone}
-                        onChange={handleChangeUpdate}
-                        isEditing={isEditing}
-                        disabled={false}
-                        type="tel"
-                        backgroundColor="linear-gradient(45deg, rgba(26, 188, 156, 0.08), rgba(22, 160, 133, 0.04))"
-                        iconColor="#1ABC9C"
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <FieldInfoBox
-                        icon={<EmailIcon />}
-                        label="Email"
-                        name="email"
-                        value={formDataUpdate.email}
-                        onChange={handleChangeUpdate}
-                        isEditing={isEditing}
-                        disabled={true}
-                        type="email"
-                        backgroundColor="linear-gradient(45deg, rgba(52, 152, 219, 0.08), rgba(41, 128, 185, 0.04))"
-                        iconColor="#3498DB"
-                        actionButton={
-                          !isEditing && (
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={handleEmailChangeClick}
-                              startIcon={<EditIcon />}
-                              sx={{
-                                borderRadius: "10px",
-                                fontSize: "0.8rem",
-                                py: 1,
-                                px: 2.5,
-                                color: "#3498DB",
-                                borderColor: "#3498DB",
-                                fontWeight: 600,
-                                textTransform: "none",
-                                "&:hover": {
-                                  backgroundColor: "rgba(52, 152, 219, 0.1)",
-                                  borderColor: "#2980B9",
-                                  transform: "translateY(-1px)",
-                                },
-                                transition: "all 0.3s ease",
-                              }}
-                            >
-                              Đổi Email
-                            </Button>
-                          )
-                        }
-                      />
-                    </Grid>
-                  </Grid>
-                </Stack>
-              </Box>
-
-              {/* Address Information Section */}
-              <Box>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "#2D3748",
-                    fontWeight: 600,
-                    fontSize: "18px",
-                    mb: 3,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 4,
-                      height: 20,
-                      background: "linear-gradient(45deg, #E74C3C, #C0392B)",
-                      borderRadius: 2,
-                    }}
-                  />
-                  Địa chỉ
-                </Typography>
-
-                <FieldInfoBox
-                  icon={<LocationIcon />}
-                  label="Địa chỉ hiện tại"
-                  name="address"
-                  value={formDataUpdate.address}
-                  onChange={handleChangeUpdate}
-                  isEditing={isEditing}
-                  disabled={false}
-                  multiline={true}
-                  rows={3}
-                  backgroundColor="linear-gradient(45deg, rgba(231, 76, 60, 0.08), rgba(192, 57, 43, 0.04))"
-                  iconColor="#E74C3C"
-                />
-              </Box>
-
-              {/* Security Section */}
-              <Box>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "#2D3748",
-                    fontWeight: 600,
-                    fontSize: "18px",
-                    mb: 3,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 4,
-                      height: 20,
-                      background: "linear-gradient(45deg, #E74C3C, #8E44AD)",
-                      borderRadius: 2,
-                    }}
-                  />
-                  Bảo mật
-                </Typography>
-
-                <FieldInfoBox
-                  icon={<LockIcon />}
-                  label="Mật khẩu"
-                  name="password"
-                  value="••••••••"
-                  onChange={() => {}}
-                  isEditing={false}
-                  disabled={true}
-                  type="password"
-                  backgroundColor="linear-gradient(45deg, rgba(142, 68, 173, 0.08), rgba(155, 89, 182, 0.04))"
-                  iconColor="#8E44AD"
-                  actionButton={
-                    !isEditing && (
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={handlePasswordChangeClick}
-                        startIcon={<LockIcon />}
-                        sx={{
-                          borderRadius: "10px",
-                          fontSize: "0.8rem",
-                          py: 1,
-                          px: 2.5,
-                          color: "#8E44AD",
-                          borderColor: "#8E44AD",
-                          fontWeight: 600,
-                          textTransform: "none",
-                          "&:hover": {
-                            backgroundColor: "rgba(142, 68, 173, 0.1)",
-                            borderColor: "#9B59B6",
-                            transform: "translateY(-1px)",
-                          },
-                          transition: "all 0.3s ease",
-                        }}
-                      >
-                        Đổi mật khẩu
-                      </Button>
-                    )
-                  }
-                />
-              </Box>
-
-              {/* Action Buttons - Enhanced Design */}
-              {isEditing && (
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 4,
-                    borderRadius: "20px",
-                    background:
-                      "linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.04))",
-                    border: "2px solid rgba(74, 144, 226, 0.15)",
-                    mt: 4,
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 4,
-                      background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                    }}
-                  />
-
+              {/* Form Fields with Enhanced Layout */}
+              <Stack spacing={4}>
+                {/* Personal Information Section */}
+                <Box>
                   <Typography
                     variant="h6"
                     sx={{
                       color: "#2D3748",
                       fontWeight: 600,
+                      fontSize: "18px",
                       mb: 3,
-                      textAlign: "center",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
                     }}
                   >
-                    Xác nhận thay đổi thông tin
+                    <Box
+                      sx={{
+                        width: 4,
+                        height: 20,
+                        background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                        borderRadius: 2,
+                      }}
+                    />
+                    Thông tin cá nhân
                   </Typography>
 
-                  <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={3}
-                    justifyContent="center"
-                    alignItems="center"
-                  >
-                    <Button
-                      variant="outlined"
-                      onClick={handleCancel}
-                      disabled={isSaving}
-                      startIcon={<CancelIcon />}
-                      sx={{
-                        px: 5,
-                        py: 2.5,
-                        borderRadius: "15px",
-                        fontWeight: 600,
-                        fontSize: "16px",
-                        color: "#e74c3c",
-                        borderColor: "#e74c3c",
-                        borderWidth: "2px",
-                        minWidth: "160px",
-                        textTransform: "none",
-                        "&:hover": {
-                          backgroundColor: "rgba(231, 76, 60, 0.1)",
-                          borderColor: "#e74c3c",
-                          transform: "translateY(-2px)",
-                          boxShadow: "0 6px 20px rgba(231, 76, 60, 0.3)",
-                        },
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      Hủy bỏ
-                    </Button>
+                  <Stack spacing={3}>
+                    {/* Họ và tên */}
+                    <FieldInfoBox
+                      icon={<PersonIcon />}
+                      label="Họ và tên"
+                      name="fullName"
+                      value={formDataUpdate.fullName}
+                      onChange={handleChangeUpdate}
+                      isEditing={isEditing}
+                      disabled={false}
+                      backgroundColor="linear-gradient(45deg, rgba(74, 144, 226, 0.06), rgba(26, 188, 156, 0.04))"
+                      iconColor="#4A90E2"
+                    />
 
-                    <Button
-                      variant="contained"
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      startIcon={
-                        isSaving ? (
-                          <CircularProgress size={20} color="inherit" />
-                        ) : (
-                          <SaveIcon />
-                        )
-                      }
-                      sx={{
-                        px: 5,
-                        py: 2.5,
-                        borderRadius: "15px",
-                        fontWeight: 600,
-                        fontSize: "16px",
-                        background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                        color: "#fff",
-                        minWidth: "160px",
-                        textTransform: "none",
-                        boxShadow: "0 8px 25px rgba(74, 144, 226, 0.4)",
-                        "&:hover": {
-                          background:
-                            "linear-gradient(45deg, #357ABD, #16A085)",
-                          transform: "translateY(-2px)",
-                          boxShadow: "0 12px 30px rgba(74, 144, 226, 0.5)",
-                        },
-                        "&:disabled": {
-                          background: "#ccc",
-                          transform: "none",
-                          boxShadow: "none",
-                        },
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
-                    </Button>
+                    {/* Personal Info Stack */}
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={6}>
+                        <FieldInfoBox
+                          icon={<CakeIcon />}
+                          label="Ngày sinh"
+                          name="birthDay"
+                          value={
+                            isEditing
+                              ? formatDateForInput(formDataUpdate.birthDay)
+                              : formatDateDisplay(formDataUpdate.birthDay)
+                          }
+                          onChange={handleChangeUpdate}
+                          isEditing={isEditing}
+                          disabled={false}
+                          type="date"
+                          backgroundColor="linear-gradient(45deg, rgba(241, 196, 15, 0.08), rgba(230, 126, 34, 0.04))"
+                          iconColor="#F1C40F"
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} md={6}>
+                        <FieldInfoBox
+                          icon={<WcIcon />}
+                          label="Giới tính"
+                          name="gender"
+                          value={
+                            isEditing
+                              ? formDataUpdate.gender
+                              : formatGenderDisplay(formDataUpdate.gender)
+                          }
+                          onChange={handleChangeUpdate}
+                          isEditing={isEditing}
+                          disabled={false}
+                          options={[
+                            { value: "Nam", label: "Nam" },
+                            { value: "Nữ", label: "Nữ" },
+                            { value: "Khác", label: "Khác" },
+                          ]}
+                          backgroundColor="linear-gradient(45deg, rgba(155, 89, 182, 0.08), rgba(142, 68, 173, 0.04))"
+                          iconColor="#9B59B6"
+                        />
+                      </Grid>
+                    </Grid>
                   </Stack>
-                </Paper>
-              )}
+                </Box>
+
+                {/* Address Information Section */}
+                <Box>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "#2D3748",
+                      fontWeight: 600,
+                      fontSize: "18px",
+                      mb: 3,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 4,
+                        height: 20,
+                        background: "linear-gradient(45deg, #E74C3C, #C0392B)",
+                        borderRadius: 2,
+                      }}
+                    />
+                    Địa chỉ
+                  </Typography>
+
+                  <FieldInfoBox
+                    icon={<LocationOnIcon />}
+                    label="Địa chỉ hiện tại"
+                    name="address"
+                    value={formDataUpdate.address}
+                    onChange={handleChangeUpdate}
+                    isEditing={isEditing}
+                    disabled={false}
+                    multiline={true}
+                    rows={3}
+                    backgroundColor="linear-gradient(45deg, rgba(231, 76, 60, 0.08), rgba(192, 57, 43, 0.04))"
+                    iconColor="#E74C3C"
+                  />
+                </Box>
+
+                {/* Action Buttons - Enhanced Design */}
+                {isEditing && (
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 4,
+                      borderRadius: "20px",
+                      background:
+                        "linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.04))",
+                      border: "2px solid rgba(74, 144, 226, 0.15)",
+                      mt: 4,
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: 4,
+                        background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                      }}
+                    />
+
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: "#2D3748",
+                        fontWeight: 600,
+                        mb: 3,
+                        textAlign: "center",
+                      }}
+                    >
+                      Xác nhận thay đổi thông tin
+                    </Typography>
+
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={3}
+                      justifyContent="center"
+                      alignItems="center"
+                    >
+                      <Button
+                        variant="outlined"
+                        onClick={handleCancel}
+                        disabled={isSaving}
+                        startIcon={<CancelIcon />}
+                        sx={{
+                          px: 5,
+                          py: 2.5,
+                          borderRadius: "15px",
+                          fontWeight: 600,
+                          fontSize: "16px",
+                          color: "#e74c3c",
+                          borderColor: "#e74c3c",
+                          borderWidth: "2px",
+                          minWidth: "160px",
+                          textTransform: "none",
+                          "&:hover": {
+                            backgroundColor: "rgba(231, 76, 60, 0.1)",
+                            borderColor: "#e74c3c",
+                            transform: "translateY(-2px)",
+                            boxShadow: "0 6px 20px rgba(231, 76, 60, 0.3)",
+                          },
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        Hủy bỏ
+                      </Button>
+
+                      <Button
+                        variant="contained"
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        startIcon={
+                          isSaving ? (
+                            <CircularProgress size={20} color="inherit" />
+                          ) : (
+                            <SaveIcon />
+                          )
+                        }
+                        sx={{
+                          px: 5,
+                          py: 2.5,
+                          borderRadius: "15px",
+                          fontWeight: 600,
+                          fontSize: "16px",
+                          background:
+                            "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+                          color: "#fff",
+                          minWidth: "160px",
+                          textTransform: "none",
+                          boxShadow: "0 8px 25px rgba(74, 144, 226, 0.4)",
+                          "&:hover": {
+                            background:
+                              "linear-gradient(45deg, #357ABD, #16A085)",
+                            transform: "translateY(-2px)",
+                            boxShadow: "0 12px 30px rgba(74, 144, 226, 0.5)",
+                          },
+                          "&:disabled": {
+                            background: "#ccc",
+                            transform: "none",
+                            boxShadow: "none",
+                          },
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+                      </Button>
+                    </Stack>
+                  </Paper>
+                )}
+              </Stack>
             </Stack>
-          </Stack>
-        </StyledPaper>
-
-        {/* ============================================================== */}
-        {/* EMAIL CHANGE DIALOG - Updated to use new modal */}
-        {/* ============================================================== */}
-        <EmailChangeDialog
-          open={isEmailModalOpen}
-          onClose={handleEmailModalClose} // ✅ Hàm đã được định nghĩa
-          onSendCode={handleSendCode}
-          onVerifyAndSave={handleVerifyAndSave}
-          isSubmitting={isSubmitting} // ✅ State đã được định nghĩa
-          isSendingCode={isSendingCode}
-          isVerifying={isVerifying}
-          currentEmail={userData?.email || ""}
-        />
-
-        {/* ============================================================== */}
-        {/* PASSWORD CHANGE DIALOG */}
-        {/* ============================================================== */}
-        <PasswordChangeDialog
-          open={passwordChangeDialog.open}
-          onClose={handleClosePasswordDialog}
-          onChangePassword={handlePasswordChange}
-          isChanging={isChangingPassword}
-        />
-      </Stack>
-    </Container>
+          </StyledPaper>
+        </Stack>
+      </Container>
+    </>
   );
 };
 

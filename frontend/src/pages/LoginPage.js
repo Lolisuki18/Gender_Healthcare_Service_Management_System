@@ -114,6 +114,7 @@ const LoginPage = () => {
             refreshToken: response.refreshToken,
             tokenType: response.tokenType || "Bearer",
             expiresIn: response.expiresIn,
+            // avatar: response.avatar || null, // Thêm avatar nếu có
           };
 
           const role = userData.role;
@@ -130,25 +131,57 @@ const LoginPage = () => {
           const savedUser = localStorageUtil.get("user");
           console.log("Saved user data:", savedUser);
 
-          // Kiểm tra role và chuyển hướng
-          if (role === "ADMIN") {
-            // Nếu là admin, chuyển hướng đến trang quản trị
-            notify.success(
-              "Đăng nhập thành công",
-              `Chào mừng Admin ${userData.username}!`
-            );
-            navigate("/admin/profile");
-            return;
-          } else {
-            // Nếu không phải admin, chuyển về trang chủ
-            // Lưu thông báo đăng nhập thành công vào localStorage để hiển thị ở homepage
-            localStorageUtil.set("loginSuccessMessage", {
-              title: "Đăng nhập thành công",
-              message: `Chào mừng ${userData.username} trở lại!`,
-              timestamp: Date.now(),
+          // Lấy thông tin profile đầy đủ của người dùng
+
+          userService
+            .getCurrentUser()
+            .then((profileData) => {
+              console.log("User profile loaded:", profileData);
+
+              // Lưu thông tin profile vào localStorage
+              localStorageUtil.set("userProfile", profileData);
+
+              // Kiểm tra role và chuyển hướng
+              if (role === "ADMIN") {
+                // Nếu là admin, chuyển hướng đến trang quản trị
+                notify.success(
+                  "Đăng nhập thành công",
+                  `Chào mừng Admin ${userData.username}!`
+                );
+                navigate("/admin/profile");
+                return;
+              } else {
+                // Nếu không phải admin, chuyển về trang chủ
+                // Lưu thông báo đăng nhập thành công vào localStorage để hiển thị ở homepage
+                localStorageUtil.set("loginSuccessMessage", {
+                  title: "Đăng nhập thành công",
+                  message: `Chào mừng ${userData.username} trở lại!`,
+                  timestamp: Date.now(),
+                });
+                window.location.href = "/";
+              }
+            })
+            .catch((error) => {
+              console.error("Error loading user profile:", error);
+              // Vẫn cho phép đăng nhập thành công ngay cả khi không lấy được profile
+
+              // Kiểm tra role và chuyển hướng
+              if (role === "ADMIN") {
+                notify.success(
+                  "Đăng nhập thành công",
+                  `Chào mừng Admin ${userData.username}!`
+                );
+                navigate("/admin/profile");
+                return;
+              } else {
+                localStorageUtil.set("loginSuccessMessage", {
+                  title: "Đăng nhập thành công",
+                  message: `Chào mừng ${userData.username} trở lại!`,
+                  timestamp: Date.now(),
+                });
+                window.location.href = "/";
+              }
             });
-            window.location.href = "/";
-          }
         } else {
           console.error("Login failed - missing accessToken:", response);
           notify.error(

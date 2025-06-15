@@ -27,6 +27,7 @@ import {
   Lock as LockIcon,
   Visibility,
   VisibilityOff,
+  Shield as ShieldIcon,
 } from "@mui/icons-material";
 
 // ✅ Password Change Dialog Component
@@ -125,7 +126,7 @@ export const PasswordChangeDialog = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={2}>
-          <LockIcon sx={{ color: "#ef4444" }} />
+          <LockIcon sx={{ color: "#4A90E2" }} />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Đổi mật khẩu
           </Typography>
@@ -149,7 +150,7 @@ export const PasswordChangeDialog = ({
                   <Button
                     onClick={() => toggleShowPassword("current")}
                     edge="end"
-                    sx={{ minWidth: "auto", p: 1 }}
+                    sx={{ minWidth: "auto", p: 1, color: "#4A90E2" }}
                   >
                     {showPasswords.current ? <VisibilityOff /> : <Visibility />}
                   </Button>
@@ -180,7 +181,7 @@ export const PasswordChangeDialog = ({
                   <Button
                     onClick={() => toggleShowPassword("new")}
                     edge="end"
-                    sx={{ minWidth: "auto", p: 1 }}
+                    sx={{ minWidth: "auto", p: 1, color: "#4A90E2" }}
                   >
                     {showPasswords.new ? <VisibilityOff /> : <Visibility />}
                   </Button>
@@ -209,7 +210,7 @@ export const PasswordChangeDialog = ({
                   <Button
                     onClick={() => toggleShowPassword("confirm")}
                     edge="end"
-                    sx={{ minWidth: "auto", p: 1 }}
+                    sx={{ minWidth: "auto", p: 1, color: "#4A90E2" }}
                   >
                     {showPasswords.confirm ? <VisibilityOff /> : <Visibility />}
                   </Button>
@@ -227,14 +228,20 @@ export const PasswordChangeDialog = ({
           <Paper
             elevation={0}
             sx={{
-              p: 2,
+              p: 3,
               borderRadius: "12px",
-              background: "rgba(59, 130, 246, 0.05)",
-              border: "1px solid rgba(59, 130, 246, 0.1)",
+              background: "rgba(74, 144, 226, 0.05)",
+              border: "1px solid rgba(74, 144, 226, 0.1)",
             }}
           >
-            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Lời khuyên bảo mật:
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 600, mb: 1, color: "#4A90E2" }}
+            >
+              <ShieldIcon
+                sx={{ fontSize: 16, mr: 0.5, verticalAlign: "text-bottom" }}
+              />
+              Lời khuyên bảo mật:
             </Typography>
             <Typography
               variant="body2"
@@ -269,7 +276,10 @@ export const PasswordChangeDialog = ({
             )
           }
           sx={{
-            background: "linear-gradient(45deg, #ef4444, #dc2626)",
+            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+            color: "#fff",
+            fontWeight: 600,
+            boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
             "&:disabled": { background: "#ccc" },
           }}
         >

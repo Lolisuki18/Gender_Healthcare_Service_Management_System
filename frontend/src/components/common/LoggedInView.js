@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   alpha,
   Avatar,
@@ -11,9 +11,31 @@ import {
 import HomeIcon from "@mui/icons-material/Home";
 import notify from "@/utils/notification";
 import localStorageUtil from "@/utils/localStorage";
+import imageUrl from "@/utils/imageUrl";
+import { listenToAvatarUpdates } from "@/utils/storageEvent";
 
 const LoggedInView = ({ user, onLogout }) => {
   const theme = useTheme();
+  const [avatarSrc, setAvatarSrc] = useState(
+    imageUrl.getFullImageUrl(user.avatar || user.avatarUrl) || undefined
+  );
+
+  // Thiết lập listener cho sự kiện cập nhật avatar
+  useEffect(() => {
+    const unsubscribe = listenToAvatarUpdates((newAvatarUrl) => {
+      if (newAvatarUrl) {
+        console.log(
+          "LoggedInView nhận được sự kiện cập nhật avatar:",
+          newAvatarUrl
+        );
+        setAvatarSrc(imageUrl.getFullImageUrl(newAvatarUrl));
+      }
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   const handleLogout = () => {
     onLogout();
@@ -39,6 +61,7 @@ const LoggedInView = ({ user, onLogout }) => {
           boxShadow: `0 8px 24px ${alpha(theme.palette.primary.dark, 0.15)}`,
         }}
       >
+        {" "}
         <Avatar
           sx={{
             m: 1,
@@ -47,9 +70,9 @@ const LoggedInView = ({ user, onLogout }) => {
             height: 90,
             boxShadow: `0 4px 12px ${alpha(theme.palette.success.main, 0.4)}`,
           }}
-          src={user.avatarUrl || undefined}
+          src={avatarSrc}
         >
-          {!user.avatarUrl && user.username?.charAt(0).toUpperCase()}
+          {!avatarSrc && user.username?.charAt(0).toUpperCase()}
         </Avatar>
         <Typography
           variant="h4"
@@ -68,7 +91,6 @@ const LoggedInView = ({ user, onLogout }) => {
           Bạn đã đăng nhập rồi. Bạn có thể tiếp tục sử dụng các tính năng của hệ
           thống.
         </Typography>
-
         <Button
           variant="contained"
           color="primary"
@@ -89,7 +111,6 @@ const LoggedInView = ({ user, onLogout }) => {
         >
           Đi đến trang chủ
         </Button>
-
         <Button
           variant="outlined"
           color="error"

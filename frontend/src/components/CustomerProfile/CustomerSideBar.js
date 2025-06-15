@@ -24,7 +24,7 @@
  * - expandedItems: object - Trạng thái mở/đóng của sub-menus
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Drawer,
   List,
@@ -52,9 +52,12 @@ import {
   ExpandLess,
   ExpandMore,
   Close as CloseIcon,
+  Lock as LockIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import localStorageUtil from "@/utils/localStorage";
+import imageUrl from "@/utils/imageUrl";
+import { listenToAvatarUpdates } from "@/utils/storageEvent";
 
 // Constants
 const drawerWidth = 280; // Chiều rộng cố định của sidebar
@@ -121,6 +124,9 @@ const LogoSection = styled(Box)(({ theme }) => ({
 const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
   // State để quản lý việc mở/đóng sub-menus
   const [expandedItems, setExpandedItems] = useState({});
+  const [userData, setUserData] = useState({});
+  const [userProfile, setUserProfile] = useState({});
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   // Handler để toggle sub-menu expansion
   const handleExpandClick = (item) => {
@@ -144,6 +150,12 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       label: "Hồ sơ cá nhân",
       icon: <PersonIcon />,
       path: "/customer/profile",
+    },
+    {
+      id: "security",
+      label: "Bảo mật",
+      icon: <LockIcon />,
+      path: "/customer/security",
     },
     {
       id: "appointments",
@@ -193,10 +205,110 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       icon: <QuestionIcon />,
       path: "/customer/questions",
     },
-  ];
+  ]; // Lấy thông tin user từ localStorage    // Lấy thông tin user từ localStorage mỗi khi component được mount
+  useEffect(() => {
+    const refreshUserData = () => {
+      const userDataFromStorage = localStorageUtil.get("user");
+      const userProfileFromStorage = localStorageUtil.get("userProfile");
 
-  // Lấy thông tin user từ localStorage
-  const userData = localStorageUtil.get("user");
+      setUserData(userDataFromStorage || {});
+      setUserProfile(userProfileFromStorage || {});
+
+      // Khởi tạo avatar URL
+      if (userProfileFromStorage?.avatar) {
+        setAvatarUrl(imageUrl.getFullImageUrl(userProfileFromStorage.avatar));
+      } else if (userDataFromStorage?.data?.avatar) {
+        setAvatarUrl(imageUrl.getFullImageUrl(userDataFromStorage.data.avatar));
+      }
+
+      // Debug logs
+      console.log("CustomerSideBar - Refresh userData:", userDataFromStorage);
+      console.log(
+        "CustomerSideBar - Refresh avatar path:",
+        userProfileFromStorage?.avatar
+      );
+    };
+
+    refreshUserData();
+
+    // Lắng nghe sự kiện storage để cập nhật khi localStorage thay đổi
+    const handleStorageChange = (e) => {
+      if (e.key === "userProfile" || e.key === "avatar_sync_trigger") {
+        console.log("CustomerSideBar - Detected storage change:", e.key);
+        refreshUserData();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // Đăng ký lắng nghe sự kiện cập nhật avatar
+    const unsubscribe = listenToAvatarUpdates((newAvatarUrl) => {
+      console.log(
+        "CustomerSidebar nhận được sự kiện cập nhật avatar:",
+        newAvatarUrl
+      );
+      if (newAvatarUrl) {
+        // Cập nhật avatar URL state
+        setAvatarUrl(imageUrl.getFullImageUrl(newAvatarUrl));
+
+        // Cập nhật userProfile state
+        setUserProfile((prev) => ({
+          ...prev,
+          avatar: newAvatarUrl,
+        }));
+
+        // Force a re-render
+        setTimeout(() => {
+          console.log(
+            "CustomerSidebar re-render forced with avatar:",
+            newAvatarUrl
+          );
+        }, 100);
+      }
+    });
+
+    // Kiểm tra và sử dụng avatar từ sessionStorage (từ các lần cập nhật trước)
+    const lastUpdatedAvatar = sessionStorage.getItem("last_updated_avatar");
+    if (lastUpdatedAvatar) {
+      console.log(
+        "CustomerSideBar đọc avatar từ sessionStorage:",
+        lastUpdatedAvatar
+      );
+      setAvatarUrl(imageUrl.getFullImageUrl(lastUpdatedAvatar));
+      setUserProfile((prev) => ({
+        ...prev,
+        avatar: lastUpdatedAvatar,
+      }));
+    }
+
+    // Cleanup function để hủy đăng ký listener khi component unmount
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  // Debug logs
+  console.log("CustomerSideBar - userData:", userData);
+  console.log(
+    "CustomerSideBar - avatar path from userData:",
+    userProfile?.avatar
+  );
+  console.log(
+    "CustomerSideBar - avatar full URL:",
+    userProfile?.avatar ? imageUrl.getFullImageUrl(userProfile.avatar) : "none"
+  );
+
+  // // If no avatar in userData but exists in userProfile, sync it
+  // if (userProfile?.avatar && userData) {
+  //   console.log("Syncing avatar from userProfile to user data");
+  //   const updatedUserData = {
+  //     ...userProfile,
+  //     avatar: userProfile.avatar,
+  //   };
+  //   localStorageUtil.set("userProfile", updatedUserData);
+  //   console.log("Updated user data with avatar from profile:", updatedUserData);
+  // }
 
   // Handler cho việc click menu item
   // Phân biệt giữa item có sub-menu và item thường
@@ -212,6 +324,7 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       if (window.innerWidth < 900) {
         onClose();
       }
+      // window.location.reload(); // Tải lại trang để cập nhật avatar mới
     }
   };
 
@@ -287,18 +400,37 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
         <Box sx={{ position: "relative", display: "inline-block", mb: 2 }}>
           {" "}
           <Avatar
+            src={
+              avatarUrl ||
+              (userProfile?.avatar
+                ? imageUrl.getFullImageUrl(userProfile.avatar)
+                : undefined) ||
+              (userProfile?.data?.avatar
+                ? imageUrl.getFullImageUrl(userProfile.data.avatar)
+                : undefined)
+            }
+            alt={userProfile?.fullName || "User"}
+            imgProps={{
+              onError: () =>
+                console.log("CustomerSideBar avatar image failed to load"),
+              onLoad: () =>
+                console.log("CustomerSideBar avatar image loaded successfully"),
+              loading: "eager",
+            }}
             sx={{
               width: { xs: 60, md: 80 },
               height: { xs: 60, md: 80 },
               margin: "0 auto",
-              background: "linear-gradient(135deg, #4A90E2, #1ABC9C)", // Medical blue to teal gradient
+              background: "linear-gradient(135deg, #4A90E2, #1ABC9C)",
               fontSize: { xs: "24px", md: "32px" },
               fontWeight: 700,
               boxShadow: "0 8px 32px rgba(74, 144, 226, 0.3)",
               border: "3px solid rgba(255, 255, 255, 0.6)", // Light border for medical theme
             }}
           >
-            K
+            {!avatarUrl && !userProfile?.avatar
+              ? userProfile?.fullName?.[0] || userProfile?.email?.[0] || "U"
+              : null}
           </Avatar>
           <Box
             sx={{

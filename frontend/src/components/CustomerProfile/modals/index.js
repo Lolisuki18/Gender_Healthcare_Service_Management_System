@@ -7,3 +7,4 @@
 
 export { EmailChangeDialog } from "./EmailChangeModal";
 export { PasswordChangeDialog } from "./PasswordChangeModal";
+export { PhoneChangeDialog } from "./PhoneChangeModal";

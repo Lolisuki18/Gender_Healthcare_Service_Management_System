@@ -160,7 +160,10 @@ export const userService = {
         newEmail: data.newEmail,
         verificationCode: data.verificationCode,
       });
-
+      // Lưu lại token mới nếu server cung cấp
+      if (response.data.token) {
+        localStorageUtil.set("token", response.data.token);
+      }
       console.log("✅ Email change response:", response);
 
       return {
@@ -231,16 +234,200 @@ export const userService = {
       };
     }
   },
-
   // Refresh token
   refreshToken: async (refreshTokenValue) => {
     try {
-      const response = await apiClient.post("/auth/refresh-token", {
+      console.log("Attempting to refresh token...");
+
+      // Tạo một instance axios riêng không có interceptor để tránh vòng lặp vô hạn
+      const noInterceptorClient = axios.create({
+        baseURL: process.env.REACT_APP_API_URL || "http://localhost:8080",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const response = await noInterceptorClient.post("/auth/refresh-token", {
         refreshToken: refreshTokenValue,
       });
+
+      console.log("Token refresh successful:", response.data);
+
+      // Cập nhật token vào localStorage ngay tại đây để đảm bảo token mới được lưu
+      if (
+        response.data &&
+        (response.data.accessToken ||
+          (response.data.data && response.data.data.accessToken))
+      ) {
+        const userData = localStorageUtil.get("user");
+        if (userData) {
+          const tokenData = response.data.data || response.data;
+          userData.accessToken = tokenData.accessToken;
+
+          // Chỉ cập nhật refreshToken nếu có trong response
+          if (tokenData.refreshToken) {
+            userData.refreshToken = tokenData.refreshToken;
+          }
+
+          localStorageUtil.set("user", userData);
+          console.log("✅ User data updated with new tokens in localStorage");
+        }
+      }
+
       return response.data;
     } catch (error) {
+      console.error("Token refresh failed:", error);
       throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * ✅ Upload avatar image
+   * @param {File} file - Image file to upload
+   * @returns {Promise<Object>} API response with uploaded image URL
+   */
+  uploadAvatar: async (file) => {
+    try {
+      // Đảm bảo token hợp lệ trước khi upload
+      const isTokenValid = await userService.ensureValidToken();
+      if (!isTokenValid) {
+        return {
+          success: false,
+          message:
+            "Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.",
+        };
+      }
+
+      // Lấy token mới nhất từ localStorage
+      const userData = localStorageUtil.get("user");
+      if (!userData || !userData.accessToken) {
+        return {
+          success: false,
+          message: "Không tìm thấy token xác thực. Vui lòng đăng nhập lại.",
+        };
+      }
+
+      // Create form data object for file upload
+      const formData = new FormData();
+      formData.append("file", file); // Sử dụng key "file" theo yêu cầu của backend
+
+      console.log("Sending avatar upload request with form data...", {
+        fileSize: file.size,
+        fileType: file.type,
+        fileName: file.name,
+        hasToken: !!userData.accessToken,
+        tokenFirstChars: userData.accessToken.substring(0, 15) + "...", // Hiện token một phần để debug
+      });
+
+      const response = await apiClient.post("/users/profile/avatar", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${userData.accessToken}`, // Đảm bảo token được gửi đi
+        },
+      });
+
+      console.log("Avatar upload response:", response.data);
+
+      return {
+        success: true,
+        data: response.data,
+        message: "Cập nhật avatar thành công",
+      };
+    } catch (error) {
+      console.error("❌ Error uploading avatar:", error);
+
+      // Kiểm tra lỗi token hết hạn
+      if (error.response?.status === 401) {
+        console.log("Token hết hạn, thử refresh token...");
+        try {
+          // Thử làm mới token và gửi lại yêu cầu
+          const userData = localStorageUtil.get("user");
+          if (userData?.refreshToken) {
+            const refreshResponse = await userService.refreshToken(
+              userData.refreshToken
+            );
+            if (refreshResponse.accessToken) {
+              // Update token và thử lại
+              localStorageUtil.set("user", {
+                ...userData,
+                accessToken: refreshResponse.accessToken,
+                refreshToken:
+                  refreshResponse.refreshToken || userData.refreshToken,
+              });
+
+              // Đệ quy gọi lại hàm upload sau khi refresh token
+              return userService.uploadAvatar(file);
+            }
+          }
+        } catch (refreshError) {
+          console.error("Không thể làm mới token:", refreshError);
+          return {
+            success: false,
+            message: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+            error: refreshError,
+          };
+        }
+      }
+
+      return {
+        success: false,
+        message: error.response?.data?.message || "Không thể cập nhật avatar",
+        error: error,
+      };
+    }
+  },
+
+  /**
+   * ✅ Kiểm tra và làm mới token nếu cần
+   * @returns {Promise<boolean>} Trả về true nếu token hợp lệ hoặc đã được làm mới thành công
+   */
+  ensureValidToken: async () => {
+    try {
+      const userData = localStorageUtil.get("user");
+      if (!userData || !userData.accessToken) {
+        console.error("Không tìm thấy token xác thực");
+        return false;
+      }
+
+      // Phân tích JWT token để kiểm tra hết hạn
+      const tokenParts = userData.accessToken.split(".");
+      if (tokenParts.length !== 3) {
+        console.error("Token không hợp lệ");
+        return false;
+      }
+
+      try {
+        // Giải mã phần payload của token
+        const payload = JSON.parse(atob(tokenParts[1]));
+        const expiryTime = payload.exp * 1000; // Chuyển sang milliseconds
+        const currentTime = Date.now();
+
+        // Kiểm tra nếu token sắp hết hạn (còn dưới 5 phút)
+        if (expiryTime - currentTime < 5 * 60 * 1000) {
+          console.log("Token sắp hết hạn, tiến hành làm mới...");
+
+          // Gọi hàm refreshToken
+          const refreshResult = await userService.refreshToken(
+            userData.refreshToken
+          );
+          return (
+            !!refreshResult &&
+            (refreshResult.success ||
+              refreshResult.accessToken ||
+              (refreshResult.data &&
+                (refreshResult.data.accessToken || refreshResult.data.success)))
+          );
+        }
+
+        // Token vẫn còn hiệu lực
+        return true;
+      } catch (error) {
+        console.error("Lỗi khi phân tích token:", error);
+        return false;
+      }
+    } catch (error) {
+      console.error("Lỗi khi kiểm tra token:", error);
+      return false;
     }
   },
 };

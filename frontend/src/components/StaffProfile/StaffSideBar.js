@@ -48,6 +48,7 @@ import {
   Close as CloseIcon,
   Badge as BadgeIcon,
 } from "@mui/icons-material";
+import imageUrl from "@/utils/imageUrl";
 
 // Cấu hình menu items cho Staff
 const staffMenuItems = [
@@ -179,8 +180,12 @@ const StaffSidebar = ({ open, onClose, selectedItem, onItemSelect, user }) => {
           borderBottom: "1px solid rgba(74, 144, 226, 0.08)",
         }}
       >
+        {" "}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
           <Avatar
+            src={
+              user?.avatar ? imageUrl.getFullImageUrl(user.avatar) : undefined
+            }
             sx={{
               width: 48,
               height: 48,
@@ -212,7 +217,6 @@ const StaffSidebar = ({ open, onClose, selectedItem, onItemSelect, user }) => {
             </Typography>
           </Box>
         </Box>
-
         <Chip
           label="Nhân viên"
           size="small"
