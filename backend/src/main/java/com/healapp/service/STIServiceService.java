@@ -38,7 +38,7 @@ public class STIServiceService {
             newService.setPrice(request.getPrice());
             newService.setIsActive(true);
 
-            List<ServiceTestComponent> components = request.components.stream().map(c -> {
+            List<ServiceTestComponent> components = request.getComponents().stream().map(c -> {
                 ServiceTestComponent component = new ServiceTestComponent();
                 component.setTestName(c.getTestName());
                 component.setUnit(c.getUnit());
