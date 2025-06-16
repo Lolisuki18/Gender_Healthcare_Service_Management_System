@@ -72,6 +72,9 @@ const Header = () => {
     try {
       console.log("Checking login status in Header component");
 
+      // Clear any previous avatar data from sessionStorage to avoid persistence between accounts
+      sessionStorage.removeItem("last_updated_avatar");
+
       // Đảm bảo đọc đúng khóa từ localStorage
       const userData = localStorageUtil.get("userProfile");
 
@@ -79,6 +82,9 @@ const Header = () => {
         console.log("User is logged in, updating user data in Header");
         setIsLoggedIn(true);
         setUser(userData);
+
+        // Reset avatar first to clear any previous avatar
+        setAvatarUrl(null);
 
         // Lấy avatar từ userData (userProfile)
         if (userData.data && userData.data.avatar) {
@@ -110,6 +116,7 @@ const Header = () => {
       setIsLoggedIn(false);
       setUser(null);
       setAvatarUrl(null);
+      sessionStorage.removeItem("last_updated_avatar");
     }
   };
 
@@ -122,22 +129,32 @@ const Header = () => {
   const handleCloseMenu = () => {
     setDropdownOpen(null);
   };
-
   //xử lý khi sử dụng đăng xuất
   const handleLogout = async () => {
-    // Đảm bảo xóa đúng khóa
+    // Đảm bảo xóa đúng khóa từ localStorage
     localStorageUtil.remove("userProfile");
     localStorageUtil.remove("loginSuccessMessage");
     localStorageUtil.remove("token");
+    localStorageUtil.remove("user");
 
+    // Xóa dữ liệu từ sessionStorage
+    sessionStorage.removeItem("last_updated_avatar");
+    sessionStorage.clear();
+
+    // Cập nhật state
     setIsLoggedIn(false);
     setUser(null);
     setAvatarUrl(null);
     handleCloseMenu();
+
     try {
       await userService.logout();
       notify.success("Đăng xuất thành công", "Bạn đã đăng xuất khỏi hệ thống");
-      navigate("/");
+
+      // Thêm small delay để đảm bảo mọi thứ được xóa hoàn toàn trước khi chuyển hướng
+      setTimeout(() => {
+        navigate("/");
+      }, 100);
     } catch (error) {
       console.error("Error during logout:", error);
       notify.error(
@@ -154,19 +171,47 @@ const Header = () => {
     handleCloseMenu();
     navigate("/profile");
   };
-
   // Add a polling mechanism to check for avatar updates
   useEffect(() => {
     const intervalId = setInterval(() => {
+      // Get user data first to check if we're logged in
+      const userData = localStorageUtil.get("userProfile");
+
+      // If no user data, clear avatar
+      if (!userData) {
+        if (avatarUrl) {
+          setAvatarUrl(null);
+          forceRefresh();
+        }
+        return;
+      }
+
+      // Get the most up-to-date avatar
       const lastUpdatedAvatar = sessionStorage.getItem("last_updated_avatar");
-      if (lastUpdatedAvatar) {
-        const fullUrl = imageUrl.getFullImageUrl(lastUpdatedAvatar);
+
+      // Determine current avatar path from user data
+      let currentAvatarPath = null;
+      if (userData.data && userData.data.avatar) {
+        currentAvatarPath = userData.data.avatar;
+      } else if (userData.avatar) {
+        currentAvatarPath = userData.avatar;
+      }
+
+      // Use either the session stored avatar or the one from user data
+      const avatarToUse = lastUpdatedAvatar || currentAvatarPath;
+
+      if (avatarToUse) {
+        const fullUrl = imageUrl.getFullImageUrl(avatarToUse);
         // Only update if different from current avatar URL
         if (fullUrl && fullUrl !== avatarUrl) {
           console.log("Polling detected avatar update:", fullUrl);
           setAvatarUrl(fullUrl);
           forceRefresh();
         }
+      } else if (avatarUrl) {
+        // If no avatar in storage but we have one in state, clear it
+        setAvatarUrl(null);
+        forceRefresh();
       }
     }, 1000); // Check every second
 

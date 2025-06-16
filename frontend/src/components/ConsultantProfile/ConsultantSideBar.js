@@ -10,6 +10,8 @@
  * - Expandable menu items with smooth animations
  * - User profile section with medical styling
  * - Consistent with CustomerProfile and AdminProfile themes
+ *
+ * Updated to match the menu in the attachment
  */
 
 import React, { useState } from "react";
@@ -29,22 +31,16 @@ import {
   Chip,
 } from "@mui/material";
 import {
-  Dashboard as DashboardIcon,
   Person as PersonIcon,
   CalendarToday as CalendarIcon,
-  People as PeopleIcon,
   MedicalServices as MedicalIcon,
-  Chat as ChatIcon,
-  Assessment as ReportsIcon,
-  Settings as SettingsIcon,
-  Payment as PaymentIcon,
-  LocalHospital as HospitalIcon,
-  Psychology as PsychologyIcon,
-  Medication as MedicationIcon,
-  MonitorHeart as MonitorIcon,
+  QuestionAnswer as QuestionAnswerIcon,
+  Science as ScienceIcon,
+  Help as HelpIcon,
+  Close as CloseIcon,
+  Star as StarIcon,
   ExpandLess,
   ExpandMore,
-  Close as CloseIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import localStorageUtil from "@/utils/localStorage";
@@ -117,282 +113,43 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       ...prev,
       [item]: !prev[item],
     }));
-  };
-
+  }; // Updated menu items to match the menu in attachment
   const menuItems = [
     {
-      id: "dashboard",
-      label: "Tổng quan",
-      icon: <DashboardIcon />,
-      path: "/consultant/dashboard",
+      id: "my-questions",
+      label: "Câu hỏi của tôi",
+      icon: <HelpIcon />,
+      path: "/consultant/my-questions",
     },
     {
-      id: "appointments",
-      label: "Lịch khám",
-      icon: <CalendarIcon />,
-      subItems: [
-        {
-          id: "today-appointments",
-          label: "Lịch hôm nay",
-          path: "/consultant/appointments/today",
-        },
-        {
-          id: "upcoming-appointments",
-          label: "Lịch sắp tới",
-          path: "/consultant/appointments/upcoming",
-        },
-        {
-          id: "appointment-history",
-          label: "Lịch sử khám",
-          path: "/consultant/appointments/history",
-        },
-        {
-          id: "schedule-management",
-          label: "Quản lý lịch trình",
-          path: "/consultant/appointments/schedule",
-        },
-      ],
-    },
-    {
-      id: "patients",
-      label: "Bệnh nhân",
-      icon: <PeopleIcon />,
-      subItems: [
-        {
-          id: "my-patients",
-          label: "Bệnh nhân của tôi",
-          path: "/consultant/patients/my-patients",
-        },
-        {
-          id: "patient-records",
-          label: "Hồ sơ bệnh án",
-          path: "/consultant/patients/records",
-        },
-        {
-          id: "patient-notes",
-          label: "Ghi chú điều trị",
-          path: "/consultant/patients/notes",
-        },
-        {
-          id: "follow-up",
-          label: "Theo dõi sau điều trị",
-          path: "/consultant/patients/follow-up",
-        },
-      ],
-    },
-    {
-      id: "consultations",
-      label: "Tư vấn",
-      icon: <MedicalIcon />,
-      subItems: [
-        {
-          id: "online-consultation",
-          label: "Tư vấn trực tuyến",
-          path: "/consultant/consultations/online",
-        },
-        {
-          id: "video-calls",
-          label: "Video call",
-          path: "/consultant/consultations/video",
-        },
-        {
-          id: "chat-support",
-          label: "Chat hỗ trợ",
-          path: "/consultant/consultations/chat",
-        },
-        {
-          id: "consultation-history",
-          label: "Lịch sử tư vấn",
-          path: "/consultant/consultations/history",
-        },
-      ],
-    },
-    {
-      id: "medical-services",
-      label: "Dịch vụ y tế",
-      icon: <HospitalIcon />,
-      subItems: [
-        {
-          id: "health-checkup",
-          label: "Khám sức khỏe",
-          path: "/consultant/services/checkup",
-        },
-        {
-          id: "specialized-care",
-          label: "Chuyên khoa",
-          path: "/consultant/services/specialized",
-        },
-        {
-          id: "preventive-care",
-          label: "Chăm sóc dự phòng",
-          path: "/consultant/services/preventive",
-        },
-        {
-          id: "health-monitoring",
-          label: "Theo dõi sức khỏe",
-          path: "/consultant/services/monitoring",
-        },
-      ],
-    },
-    {
-      id: "prescriptions",
-      label: "Đơn thuốc",
-      icon: <MedicationIcon />,
-      subItems: [
-        {
-          id: "create-prescription",
-          label: "Tạo đơn thuốc",
-          path: "/consultant/prescriptions/create",
-        },
-        {
-          id: "prescription-history",
-          label: "Lịch sử đơn thuốc",
-          path: "/consultant/prescriptions/history",
-        },
-        {
-          id: "medication-interaction",
-          label: "Kiểm tra tương tác thuốc",
-          path: "/consultant/prescriptions/interaction",
-        },
-      ],
-    },
-    {
-      id: "health-monitoring",
-      label: "Giám sát sức khỏe",
-      icon: <MonitorIcon />,
-      subItems: [
-        {
-          id: "vital-signs",
-          label: "Chỉ số sinh hiệu",
-          path: "/consultant/monitoring/vitals",
-        },
-        {
-          id: "health-trends",
-          label: "Xu hướng sức khỏe",
-          path: "/consultant/monitoring/trends",
-        },
-        {
-          id: "alerts",
-          label: "Cảnh báo y tế",
-          path: "/consultant/monitoring/alerts",
-        },
-      ],
-    },
-    {
-      id: "psychology",
-      label: "Tâm lý học",
-      icon: <PsychologyIcon />,
-      subItems: [
-        {
-          id: "mental-health",
-          label: "Sức khỏe tinh thần",
-          path: "/consultant/psychology/mental-health",
-        },
-        {
-          id: "counseling",
-          label: "Tư vấn tâm lý",
-          path: "/consultant/psychology/counseling",
-        },
-        {
-          id: "therapy-sessions",
-          label: "Phiên trị liệu",
-          path: "/consultant/psychology/therapy",
-        },
-      ],
-    },
-    {
-      id: "reports",
-      label: "Báo cáo",
-      icon: <ReportsIcon />,
-      subItems: [
-        {
-          id: "patient-reports",
-          label: "Báo cáo bệnh nhân",
-          path: "/consultant/reports/patients",
-        },
-        {
-          id: "consultation-reports",
-          label: "Báo cáo tư vấn",
-          path: "/consultant/reports/consultations",
-        },
-        {
-          id: "performance-reports",
-          label: "Báo cáo hiệu suất",
-          path: "/consultant/reports/performance",
-        },
-      ],
-    },
-    {
-      id: "earnings",
-      label: "Thu nhập",
-      icon: <PaymentIcon />,
-      subItems: [
-        {
-          id: "consultation-fees",
-          label: "Phí tư vấn",
-          path: "/consultant/earnings/fees",
-        },
-        {
-          id: "payment-history",
-          label: "Lịch sử thanh toán",
-          path: "/consultant/earnings/history",
-        },
-        {
-          id: "financial-reports",
-          label: "Báo cáo tài chính",
-          path: "/consultant/earnings/reports",
-        },
-      ],
-    },
-    {
-      id: "communications",
-      label: "Liên lạc",
-      icon: <ChatIcon />,
-      subItems: [
-        {
-          id: "messages",
-          label: "Tin nhắn",
-          path: "/consultant/communications/messages",
-        },
-        {
-          id: "video-calls-management",
-          label: "Quản lý video call",
-          path: "/consultant/communications/video",
-        },
-        {
-          id: "notifications-management",
-          label: "Quản lý thông báo",
-          path: "/consultant/communications/notifications",
-        },
-      ],
-    },
-    {
-      id: "settings",
-      label: "Cài đặt",
-      icon: <SettingsIcon />,
-      subItems: [
-        {
-          id: "availability",
-          label: "Thời gian làm việc",
-          path: "/consultant/settings/availability",
-        },
-        {
-          id: "consultation-rates",
-          label: "Mức phí tư vấn",
-          path: "/consultant/settings/rates",
-        },
-        {
-          id: "notification-preferences",
-          label: "Tùy chọn thông báo",
-          path: "/consultant/settings/notifications",
-        },
-      ],
-    },
-    {
-      id: "profile",
-      label: "Hồ sơ cá nhân",
+      id: "consultant-profile",
+      label: "Hồ sơ chuyên gia",
       icon: <PersonIcon />,
       path: "/consultant/profile",
+    },
+    {
+      id: "answer-questions",
+      label: "Trả lời câu hỏi",
+      icon: <QuestionAnswerIcon />,
+      path: "/consultant/answer-questions",
+    },
+    {
+      id: "my-consultations",
+      label: "Lịch tư vấn của tôi",
+      icon: <CalendarIcon />,
+      path: "/consultant/my-consultations",
+    },
+    {
+      id: "sti-tests",
+      label: "Quản lý STI Tests",
+      icon: <ScienceIcon />,
+      path: "/consultant/sti-tests",
+    },
+    {
+      id: "my-reviews",
+      label: "Đánh giá của tôi",
+      icon: <StarIcon />,
+      path: "/consultant/my-reviews",
     },
   ];
 

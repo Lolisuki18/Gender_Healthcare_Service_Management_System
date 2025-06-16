@@ -31,15 +31,14 @@ import { styled } from "@mui/material/styles";
 import ConsultantSidebar from "./ConsultantSideBar";
 
 // Import content components
-import DashboardContent from "./DashboardContent";
-import ProfileContent from "./ProfileContent";
-import AppointmentsContent from "./AppointmentsContent";
-import PatientsContent from "./PatientsContent";
-import ConsultationsContent from "./ConsultationsContent";
-import MedicalServicesContent from "./MedicalServicesContent";
-import PrescriptionsContent from "./PrescriptionsContent";
-import ReportsContent from "./ReportsContent";
-import SettingsContent from "./SettingsContent";
+import MyQuestionsContent from "./MyQuestionsContent";
+// New components to be created
+// The following components will be created in this task
+import ConsultantProfileContent from "./ConsultantProfileContent";
+import AnswerQuestionsContent from "./AnswerQuestionsContent";
+import MyConsultationsContent from "./MyConsultationsContent";
+import STITestsContent from "./STITestsContent";
+import MyReviewsContent from "./MyReviewsContent";
 
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
   flexGrow: 1,
@@ -64,57 +63,42 @@ const ConsultantProfile = ({ user = {} }) => {
   };
   const handleMenuItemSelect = (itemId) => {
     setSelectedMenuItem(itemId);
-  };
-
-  // Hàm để lấy tiêu đề trang dựa trên menu item
+  }; // Updated function to get page title based on menu item
   const getPageTitle = () => {
     switch (selectedMenuItem) {
-      case "dashboard":
-        return "Bảng điều khiển";
-      case "profile":
-        return "Hồ sơ bác sĩ";
-      case "appointments":
-        return "Lịch hẹn";
-      case "patients":
-        return "Bệnh nhân";
-      case "consultations":
-        return "Tư vấn";
-      case "medical-services":
-        return "Dịch vụ y tế";
-      case "prescriptions":
-        return "Đơn thuốc";
-      case "reports":
-        return "Báo cáo";
-      case "settings":
-        return "Cài đặt";
+      case "my-questions":
+        return "Câu hỏi của tôi";
+      case "consultant-profile":
+        return "Hồ sơ chuyên gia";
+      case "answer-questions":
+        return "Trả lời câu hỏi";
+      case "my-consultations":
+        return "Lịch tư vấn của tôi";
+      case "sti-tests":
+        return "Quản lý STI Tests";
+      case "my-reviews":
+        return "Đánh giá của tôi";
       default:
-        return "Bảng điều khiển";
+        return "Câu hỏi của tôi";
     }
   };
-
-  // Navigation content rendering
+  // Updated navigation content rendering based on the new menu items
   const renderContent = () => {
     switch (selectedMenuItem) {
-      case "dashboard":
-        return <DashboardContent />;
-      case "profile":
-        return <ProfileContent />;
-      case "appointments":
-        return <AppointmentsContent />;
-      case "patients":
-        return <PatientsContent />;
-      case "consultations":
-        return <ConsultationsContent />;
-      case "medical-services":
-        return <MedicalServicesContent />;
-      case "prescriptions":
-        return <PrescriptionsContent />;
-      case "reports":
-        return <ReportsContent />;
-      case "settings":
-        return <SettingsContent />;
+      case "my-questions":
+        return <MyQuestionsContent />;
+      case "consultant-profile":
+        return <ConsultantProfileContent />;
+      case "answer-questions":
+        return <AnswerQuestionsContent />;
+      case "my-consultations":
+        return <MyConsultationsContent />;
+      case "sti-tests":
+        return <STITestsContent />;
+      case "my-reviews":
+        return <MyReviewsContent />;
       default:
-        return <DashboardContent />;
+        return <MyQuestionsContent />;
     }
   };
   return (

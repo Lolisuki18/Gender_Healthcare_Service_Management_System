@@ -35,14 +35,13 @@ import { styled } from "@mui/material/styles";
 import StaffSidebar from "./StaffSideBar";
 
 // Import content components
-import DashboardContent from "./DashboardContent";
-import AppointmentsContent from "./AppointmentsContent";
-import PatientsContent from "./PatientsContent";
-import ServicesContent from "./ServicesContent";
-import ProfileContent from "./ProfileContent";
-import ScheduleContent from "./ScheduleContent";
-import NotificationsContent from "./NotificationsContent";
-import SettingsContent from "./SettingsContent";
+import StaffManagementContent from "./StaffManagementContent";
+import QuestionResponseContent from "./QuestionResponseContent";
+import STIServiceManagementContent from "./STIServiceManagementContent";
+import STITestManagementContent from "./STITestManagementContent";
+import STIPackageManagementContent from "./STIPackageManagementContent";
+import BlogManagementContent from "./BlogManagementContent";
+import ReviewManagementContent from "./ReviewManagementContent";
 
 // Styled component cho nội dung chính
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
@@ -61,10 +60,9 @@ const StaffProfile = ({ user = {} }) => {
   // Hook để detect responsive breakpoints
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
   // State management
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Mặc định mở trên desktop, đóng trên mobile
-  const [selectedMenuItem, setSelectedMenuItem] = useState("dashboard"); // Tab mặc định
+  const [selectedMenuItem, setSelectedMenuItem] = useState("staffManagement"); // Tab mặc định
 
   // Handler functions
   const handleSidebarToggle = () => {
@@ -74,28 +72,25 @@ const StaffProfile = ({ user = {} }) => {
   const handleMenuItemSelect = (itemId) => {
     setSelectedMenuItem(itemId);
   };
-
   // Hàm render nội dung động dựa trên menu item được chọn
   const renderContent = () => {
     switch (selectedMenuItem) {
-      case "dashboard":
-        return <DashboardContent />;
-      case "appointments":
-        return <AppointmentsContent />;
-      case "patients":
-        return <PatientsContent />;
-      case "services":
-        return <ServicesContent />;
-      case "profile":
-        return <ProfileContent />;
-      case "schedule":
-        return <ScheduleContent />;
-      case "notifications":
-        return <NotificationsContent />;
-      case "settings":
-        return <SettingsContent />;
+      case "staffManagement":
+        return <StaffManagementContent />;
+      case "questionResponse":
+        return <QuestionResponseContent />;
+      case "stiService":
+        return <STIServiceManagementContent />;
+      case "stiTest":
+        return <STITestManagementContent />;
+      case "stiPackage":
+        return <STIPackageManagementContent />;
+      case "blog":
+        return <BlogManagementContent />;
+      case "review":
+        return <ReviewManagementContent />;
       default:
-        return <DashboardContent />;
+        return <StaffManagementContent />;
     }
   };
 

@@ -37,12 +37,10 @@ import {
   useTheme,
 } from "@mui/material";
 import {
-  Dashboard as DashboardIcon,
   CalendarToday as CalendarIcon,
   People as PeopleIcon,
   LocalHospital as HospitalIcon,
-  Person as PersonIcon,
-  Schedule as ScheduleIcon,
+  Reply as ReplyIcon,
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
   Close as CloseIcon,
@@ -50,53 +48,47 @@ import {
 } from "@mui/icons-material";
 import imageUrl from "@/utils/imageUrl";
 
-// Cấu hình menu items cho Staff
+// Cấu hình menu items cho Staff dựa trên ảnh
 const staffMenuItems = [
   {
-    id: "dashboard",
-    label: "Bảng điều khiển",
-    icon: DashboardIcon,
-    description: "Tổng quan hoạt động",
-  },
-  {
-    id: "appointments",
-    label: "Lịch hẹn",
-    icon: CalendarIcon,
-    description: "Quản lý lịch hẹn",
-  },
-  {
-    id: "patients",
-    label: "Bệnh nhân",
+    id: "staffManagement",
+    label: "Quản lý nhân viên",
     icon: PeopleIcon,
-    description: "Danh sách bệnh nhân",
+    description: "Quản lý nhân viên hệ thống",
   },
   {
-    id: "services",
-    label: "Dịch vụ",
+    id: "questionResponse",
+    label: "Trả lời câu hỏi",
+    icon: ReplyIcon,
+    description: "Trả lời câu hỏi của khách hàng",
+  },
+  {
+    id: "stiService",
+    label: "Quản lý dịch vụ STI",
     icon: HospitalIcon,
-    description: "Dịch vụ y tế",
+    description: "Quản lý các dịch vụ STI",
   },
   {
-    id: "profile",
-    label: "Hồ sơ cá nhân",
-    icon: PersonIcon,
-    description: "Thông tin cá nhân",
+    id: "stiTest",
+    label: "Quản lý STI Test",
+    icon: BadgeIcon,
+    description: "Quản lý các xét nghiệm STI",
   },
   {
-    id: "schedule",
-    label: "Lịch làm việc",
-    icon: ScheduleIcon,
-    description: "Lịch trình làm việc",
+    id: "stiPackage",
+    label: "Quản lý STI Packages",
+    icon: CalendarIcon,
+    description: "Quản lý gói STI",
   },
   {
-    id: "notifications",
-    label: "Thông báo",
+    id: "blog",
+    label: "Quản lý Blog",
     icon: NotificationsIcon,
-    description: "Thông báo hệ thống",
+    description: "Quản lý bài viết blog",
   },
   {
-    id: "settings",
-    label: "Cài đặt",
+    id: "review",
+    label: "Quản lý đánh giá",
     icon: SettingsIcon,
     description: "Cài đặt tài khoản",
   },
