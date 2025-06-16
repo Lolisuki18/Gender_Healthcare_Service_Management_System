@@ -137,20 +137,13 @@ const UserManagementContent = () => {
       setLoading(false);
     }
   };
-
-  // ✅ Cập nhật userCategories để sử dụng role từ API
+  // ✅ Cập nhật userCategories để sử dụng role từ API - đã loại bỏ ADMIN vì chỉ có 1 tài khoản ADMIN duy nhất
   const userCategories = [
     {
       label: "Tất cả",
       value: "all",
       icon: <PeopleIcon />,
-      count: users.length,
-    },
-    {
-      label: "Quản trị viên",
-      value: "ADMIN",
-      icon: <SecurityIcon />,
-      count: users.filter((u) => u.role === "ADMIN").length,
+      count: users.filter((u) => u.role !== "ADMIN").length,
     },
     {
       label: "Nhân viên",
@@ -641,16 +634,8 @@ const UserManagementContent = () => {
   //   setModalType(userType);
   //   setOpenModal(true);
   // };
-
-  // ✅ Cập nhật roleOptions
+  // ✅ Cập nhật roleOptions - đã loại bỏ ADMIN
   const roleOptions = [
-    {
-      value: "ADMIN",
-      label: "Quản trị viên",
-      icon: <SecurityIcon />,
-      description: "Có quyền quản lý toàn bộ hệ thống",
-      color: "#E53E3E",
-    },
     {
       value: "STAFF",
       label: "Nhân viên",
@@ -673,8 +658,7 @@ const UserManagementContent = () => {
       color: "#4A90E2",
     },
   ];
-
-  // ✅ Cập nhật getFilteredUsers
+  // ✅ Cập nhật getFilteredUsers - đã loại bỏ ADMIN
   const getFilteredUsers = () => {
     console.log("=== FILTERING USERS ===");
     console.log("Original users count:", users.length);
@@ -683,7 +667,8 @@ const UserManagementContent = () => {
     console.log("Role filter:", roleFilter);
     console.log("Status filter:", statusFilter);
 
-    let filtered = [...users];
+    // Loại bỏ người dùng ADMIN khỏi danh sách hiển thị
+    let filtered = users.filter((user) => user.role !== "ADMIN");
 
     // Lọc theo tab
     const currentTab = userCategories[selectedTab]?.value;
@@ -952,14 +937,13 @@ const UserManagementContent = () => {
             {userCategories[selectedTab]?.value === "all" && (
               <Grid item xs={12} md={3}>
                 <FormControl size="small" fullWidth>
-                  <InputLabel>Vai trò</InputLabel>
+                  <InputLabel>Vai trò</InputLabel>{" "}
                   <Select
                     value={roleFilter}
                     label="Vai trò"
                     onChange={(e) => setRoleFilter(e.target.value)}
                   >
                     <MenuItem value="all">Tất cả</MenuItem>
-                    <MenuItem value="ADMIN">Quản trị viên</MenuItem>
                     <MenuItem value="CONSULTANT">Tư vấn viên</MenuItem>
                     <MenuItem value="STAFF">Nhân viên</MenuItem>
                     <MenuItem value="CUSTOMER">Khách hàng</MenuItem>
@@ -992,7 +976,9 @@ const UserManagementContent = () => {
       {/* Results Summary */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="body2" sx={{ color: "#4A5568" }}>
-          Hiển thị {getFilteredUsers().length} / {users.length} người dùng
+          {" "}
+          Hiển thị {getFilteredUsers().length} /{" "}
+          {users.filter((user) => user.role !== "ADMIN").length} người dùng
           {userCategories[selectedTab]?.label !== "Tất cả" &&
             ` trong danh mục "${userCategories[selectedTab]?.label}"`}
           {searchTerm && ` (tìm kiếm: "${searchTerm}")`}

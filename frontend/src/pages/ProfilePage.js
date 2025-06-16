@@ -43,9 +43,16 @@ const ProfilePage = () => {
         // Lấy thông tin user từ localStorage
         const userData = localStorageUtil.get("userProfile");
 
+        console.log(
+          "ProfilePage - Retrieved user data from localStorage:",
+          userData
+        );
+
         // Kiểm tra xem userData có tồn tại không
         if (userData) {
           setUser(userData);
+        } else {
+          console.log("ProfilePage - No user data found in localStorage");
         }
       } catch (error) {
         console.error("Error parsing user data:", error);
@@ -96,9 +103,16 @@ const ProfilePage = () => {
     if (user.data?.role) {
       // Nếu dữ liệu theo cấu trúc {data: {...}}
       role = user.data.role.toLowerCase();
+      console.log(
+        "Role from user.data.role:",
+        user.data.role,
+        "-> lowercase:",
+        role
+      );
     } else if (user.role) {
       // Nếu dữ liệu trực tiếp không có data
       role = user.role.toLowerCase();
+      console.log("Role from user.role:", user.role, "-> lowercase:", role);
     }
 
     if (!role) {
@@ -124,16 +138,23 @@ const ProfilePage = () => {
     }
 
     // Kiểm tra với cả lowercase và uppercase
+    console.log("Checking role matches for:", role);
+
+    // Convert role to lowercase and handle both case formats
     switch (role) {
       // case "admin":
       //   return <AdminProfile user={user} />;
       case "consultant":
+        console.log("Rendering ConsultantProfile");
         return <ConsultantProfile user={user} />;
       case "staff":
+        console.log("Rendering StaffProfile");
         return <StaffProfile user={user} />;
       case "customer":
+        console.log("Rendering CustomerProfile");
         return <CustomerProfile user={user} />;
       default:
+        console.log("Role not recognized, showing error view. Role:", role);
         return (
           <ErrorContainer>
             <Typography
@@ -157,7 +178,7 @@ const ProfilePage = () => {
                 mb: 2,
               }}
             >
-              Vai trò "{user.data.role}" không được hỗ trợ.
+              Vai trò "{user.data?.role || user.role}" không được hỗ trợ.
             </Typography>
             <Typography
               variant="body2"

@@ -237,15 +237,8 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
     // ✅ Close modal
     onClose();
   };
-
-  // Role options with color & icon mapping
+  // Role options with color & icon mapping - đã loại bỏ ADMIN
   const roleOptions = [
-    {
-      value: "ADMIN",
-      label: "Quản trị viên",
-      color: "#D32F2F",
-      bgColor: "#FFEBEE",
-    },
     {
       value: "STAFF",
       label: "Nhân viên",

@@ -251,26 +251,32 @@ export const userService = {
         refreshToken: refreshTokenValue,
       });
 
-      console.log("Token refresh successful:", response.data);
-
-      // Cập nhật token vào localStorage ngay tại đây để đảm bảo token mới được lưu
+      console.log("Token refresh successful:", response.data); // Cập nhật token vào localStorage ngay tại đây để đảm bảo token mới được lưu
       if (
         response.data &&
         (response.data.accessToken ||
           (response.data.data && response.data.data.accessToken))
       ) {
+        const tokenData = response.data.data || response.data;
+
+        // Tạo object token mới
+        const newToken = {
+          accessToken: tokenData.accessToken,
+          refreshToken: tokenData.refreshToken || refreshTokenValue,
+        };
+
+        // Lưu token mới vào biến token trong localStorage
+        localStorageUtil.set("token", newToken);
+        console.log("✅ Token updated in localStorage", newToken);
+
+        // Cập nhật cả trong user data nếu có
         const userData = localStorageUtil.get("user");
         if (userData) {
-          const tokenData = response.data.data || response.data;
           userData.accessToken = tokenData.accessToken;
-
-          // Chỉ cập nhật refreshToken nếu có trong response
           if (tokenData.refreshToken) {
             userData.refreshToken = tokenData.refreshToken;
           }
-
           localStorageUtil.set("user", userData);
-          console.log("✅ User data updated with new tokens in localStorage");
         }
       }
 

@@ -42,6 +42,7 @@ import STITestManagementContent from "./STITestManagementContent";
 import STIPackageManagementContent from "./STIPackageManagementContent";
 import BlogManagementContent from "./BlogManagementContent";
 import ReviewManagementContent from "./ReviewManagementContent";
+import ProfileContent from "./ProfileContent";
 
 // Styled component cho nội dung chính
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
@@ -59,10 +60,9 @@ const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
 const StaffProfile = ({ user = {} }) => {
   // Hook để detect responsive breakpoints
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  // State management
+  const isMobile = useMediaQuery(theme.breakpoints.down("md")); // State management
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Mặc định mở trên desktop, đóng trên mobile
-  const [selectedMenuItem, setSelectedMenuItem] = useState("staffManagement"); // Tab mặc định
+  const [selectedMenuItem, setSelectedMenuItem] = useState("profile"); // Mặc định hiển thị hồ sơ cá nhân
 
   // Handler functions
   const handleSidebarToggle = () => {
@@ -71,8 +71,7 @@ const StaffProfile = ({ user = {} }) => {
 
   const handleMenuItemSelect = (itemId) => {
     setSelectedMenuItem(itemId);
-  };
-  // Hàm render nội dung động dựa trên menu item được chọn
+  }; // Hàm render nội dung động dựa trên menu item được chọn
   const renderContent = () => {
     switch (selectedMenuItem) {
       case "staffManagement":
@@ -89,32 +88,33 @@ const StaffProfile = ({ user = {} }) => {
         return <BlogManagementContent />;
       case "review":
         return <ReviewManagementContent />;
+      case "profile":
+        return <ProfileContent />;
       default:
-        return <StaffManagementContent />;
+        return <ProfileContent />;
     }
   };
-
   // Hàm để lấy tiêu đề trang dựa trên menu item
   const getPageTitle = () => {
     switch (selectedMenuItem) {
-      case "dashboard":
-        return "Bảng điều khiển";
-      case "appointments":
-        return "Quản lý lịch hẹn";
-      case "patients":
-        return "Bệnh nhân";
-      case "services":
-        return "Dịch vụ";
+      case "staffManagement":
+        return "Quản lý nhân viên";
+      case "questionResponse":
+        return "Trả lời câu hỏi";
+      case "stiService":
+        return "Quản lý dịch vụ STI";
+      case "stiTest":
+        return "Quản lý STI Test";
+      case "stiPackage":
+        return "Quản lý STI Packages";
+      case "blog":
+        return "Quản lý Blog";
+      case "review":
+        return "Quản lý đánh giá";
       case "profile":
         return "Hồ sơ cá nhân";
-      case "schedule":
-        return "Lịch làm việc";
-      case "notifications":
-        return "Thông báo";
-      case "settings":
-        return "Cài đặt";
       default:
-        return "Bảng điều khiển";
+        return "Hồ sơ cá nhân";
     }
   };
 

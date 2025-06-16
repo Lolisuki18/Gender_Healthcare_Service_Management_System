@@ -45,11 +45,18 @@ import {
   Settings as SettingsIcon,
   Close as CloseIcon,
   Badge as BadgeIcon,
+  Person as PersonIcon,
 } from "@mui/icons-material";
 import imageUrl from "@/utils/imageUrl";
 
 // Cấu hình menu items cho Staff dựa trên ảnh
 const staffMenuItems = [
+  {
+    id: "profile",
+    label: "Hồ sơ cá nhân",
+    icon: PersonIcon,
+    description: "Quản lý thông tin cá nhân",
+  },
   {
     id: "staffManagement",
     label: "Quản lý nhân viên",
@@ -90,7 +97,7 @@ const staffMenuItems = [
     id: "review",
     label: "Quản lý đánh giá",
     icon: SettingsIcon,
-    description: "Cài đặt tài khoản",
+    description: "Quản lý đánh giá",
   },
 ];
 
