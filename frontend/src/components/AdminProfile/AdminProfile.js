@@ -82,8 +82,9 @@ const AdminProfile = () => {
   // Hàm xử lý logout
   const handleLogout = () => {
     // Xóa dữ liệu user khỏi localStorage
-    localStorageUtil.remove("user");
+    localStorageUtil.remove("token");
     localStorageUtil.remove("loginSuccessMessage");
+    localStorageUtil.remove("userProfile");
 
     // Hiển thị thông báo
     notify.success("Đăng xuất thành công", "Hẹn gặp lại bạn!");
@@ -134,9 +135,9 @@ const AdminProfile = () => {
   };
 
   // Kiểm tra đăng nhập và quyền admin
-  const user = localStorageUtil.get("user");
+  const user = localStorageUtil.get("userProfile");
 
-  if (!user || user.role !== "ADMIN") {
+  if (!user || user.data.role !== "ADMIN") {
     return <NoLoggedInView />;
   }
 
