@@ -1,5 +1,6 @@
 package com.healapp.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
@@ -21,7 +22,7 @@ public class STIPackageResquest{
     private String description;
     
     @NotNull(message = "Price name is request")
-    private Double price;
+    private BigDecimal price;
     
     private List<Long> stiService;
 }

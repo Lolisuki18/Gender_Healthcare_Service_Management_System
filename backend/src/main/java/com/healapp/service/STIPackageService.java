@@ -1,5 +1,6 @@
 package com.healapp.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,11 +43,11 @@ public class STIPackageService {
     //STIPackageResponse cho package
     private STIPackageResponse mapToResponse(STIPackage pkg) {
         STIPackageResponse response = new STIPackageResponse();
-        response.setId(pkg.getId());
-        response.setName(pkg.getName());
+        response.setId(pkg.getPackageId());
+        response.setName(pkg.getPackageName());
         response.setDescription(pkg.getDescription());
-        response.setPrice(pkg.getPrice());
-        response.setActive(pkg.isActive());
+        response.setPrice(pkg.getPackagePrice());
+        response.setActive(pkg.getIsActive());
         response.setCreatedAt(pkg.getCreatedAt());
         response.setUpdatedAt(pkg.getUpdatedAt());
         return response;
@@ -55,15 +56,15 @@ public class STIPackageService {
     public ApiResponse<STIPackageResponse> createSTIPackage(STIPackageResquest resquest){
         try {
             // Validate input
-            if (resquest == null || resquest.getName() == null || resquest.getPrice() <= 0){
+            if (resquest == null || resquest.getName() == null || resquest.getPrice().compareTo(BigDecimal.ZERO) <= 0){
                 return ApiResponse.error("Invalid STI Package request");
             }
             //Tạo đối tượng stiPackage
             STIPackage newPackage = new STIPackage();
-            newPackage.setName(resquest.getName());
+            newPackage.setPackageName(resquest.getName());
             newPackage.setDescription(resquest.getDescription());
-            newPackage.setPrice(resquest.getPrice());
-            newPackage.setActive(true);
+            newPackage.setPackagePrice(resquest.getPrice());
+            newPackage.setIsActive(true);
             //Lưa tạm gói vào database
             STIPackage savedPackage = stiPackageRepository.save(newPackage);
             //Gán cái dịch vụ vào gói 

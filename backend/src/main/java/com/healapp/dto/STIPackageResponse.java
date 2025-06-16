@@ -1,6 +1,7 @@
 package com.healapp.dto;
 
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,7 +16,7 @@ public class STIPackageResponse {
       private Long id;
       private String name;
       private String description;
-      private double price;
+      private BigDecimal price;
       private String recommended_for;
       private boolean isActive;
       private LocalDateTime createdAt;

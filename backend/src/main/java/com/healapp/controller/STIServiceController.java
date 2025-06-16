@@ -76,17 +76,17 @@ public class STIServiceController {
      * path: /sti-services
      * method: GET
      */
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getAllSTIServices(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        // Kiểm tra role người truy cập
-        String role = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .findFirst()
-                .orElse("ROLE_STAFF");
-        ApiResponse<List<STIServiceResponse>> response = stiServiceService.getAllSTIServices(role);
-        return ResponseEntity.ok(response);
-    }
+    // @GetMapping
+    // public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getAllSTIServices(
+    //         @AuthenticationPrincipal UserDetails userDetails) {
+    //     // Kiểm tra role người truy cập
+    //     String role = userDetails.getAuthorities().stream()
+    //             .map(GrantedAuthority::getAuthority)
+    //             .findFirst()
+    //             .orElse("ROLE_STAFF");
+    //     ApiResponse<List<STIServiceResponse>> response = stiServiceService.getAllSTIServices(role);
+    //     return ResponseEntity.ok(response);
+    // }
 
     /*
      * description: Lấy thông tin một dịch vụ xét nghiệm STI theo ID
@@ -116,25 +116,25 @@ public class STIServiceController {
      * }
      * }
      */
-    @PutMapping("/{serviceId}")
-    @PreAuthorize("hasRole('ROLE_STAFF')")
-    public ResponseEntity<ApiResponse<STIServiceResponse>> updateSTIService(@PathVariable Long serviceId,
-            @Valid @RequestBody STIServiceRequest request) {
-        ApiResponse<STIServiceResponse> response = stiServiceService.updateSTIService(serviceId, request);
-        return ResponseEntity.ok(response);
-    }
+    // @PutMapping("/{serviceId}")
+    // @PreAuthorize("hasRole('ROLE_STAFF')")
+    // public ResponseEntity<ApiResponse<STIServiceResponse>> updateSTIService(@PathVariable Long serviceId,
+    //         @Valid @RequestBody STIServiceRequest request) {
+    //     ApiResponse<STIServiceResponse> response = stiServiceService.updateSTIService(serviceId, request);
+    //     return ResponseEntity.ok(response);
+    // }
 
     /*
      * description: Xóa một dịch vụ xét nghiệm STI theo ID
      * path: /sti-services/{serviceId}
      * method: DELETE
      */
-    @DeleteMapping("/{serviceId}")
-    @PreAuthorize("hasRole('ROLE_STAFF')")
-    public ResponseEntity<ApiResponse<String>> deleteSTIService(@PathVariable Long serviceId) {
-        ApiResponse<String> response = stiServiceService.deleteSTIService(serviceId);
-        return ResponseEntity.ok(response);
-    }
+    // @DeleteMapping("/{serviceId}")
+    // @PreAuthorize("hasRole('ROLE_STAFF')")
+    // public ResponseEntity<ApiResponse<String>> deleteSTIService(@PathVariable Long serviceId) {
+    //     ApiResponse<String> response = stiServiceService.deleteSTIService(serviceId);
+    //     return ResponseEntity.ok(response);
+    // }
 
     @PostMapping("/book-test")
     @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")

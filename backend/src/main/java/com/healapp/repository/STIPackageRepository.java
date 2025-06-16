@@ -1,15 +1,13 @@
 package com.healapp.repository;
 
-<<<<<<< HEAD
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import com.healapp.model.STIPackage;
 
-@Repository
-public interface STIPackageRepository extends JpaRepository<STIPackage, Long>{
-=======
+
 import com.healapp.model.STIPackage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -75,6 +73,6 @@ public interface STIPackageRepository extends JpaRepository<STIPackage, Long> {
             "LEFT JOIN FETCH p.services " +
             "ORDER BY p.packageName")
     List<STIPackage> findAllWithServices();
->>>>>>> a8fb73edd8df6a73d758989b6b86be2f2b46698d
+
 
 }
