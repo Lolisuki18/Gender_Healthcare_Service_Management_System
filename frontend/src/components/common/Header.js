@@ -19,24 +19,43 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  Container,
-  Avatar,
-  MenuItem,
-  Menu,
-  IconButton,
   Box,
+  Toolbar,
+  Button,
+  IconButton,
+  Typography,
+  Menu,
+  MenuItem,
+  Fade,
+  Avatar,
+  Container,
+  useMediaQuery,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
+import HomeIcon from "@mui/icons-material/Home";
+import InfoIcon from "@mui/icons-material/Info";
+import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import ContactSupportIcon from "@mui/icons-material/ContactSupport";
+import LogoutIcon from "@mui/icons-material/Logout";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import localStorageUtil from "@utils/localStorage";
-import axios from "axios";
-import { userService } from "@services/userService";
-import notify from "@utils/notification";
+import { useUserContext } from "@/context/UserContext";
+import { userService } from "@/services/userService";
+import localStorageUtil from "@/utils/localStorage";
+import { notify } from "@/utils/notification";
+import imageUrl from "@/utils/imageUrl";
+import { listenToAvatarUpdates } from "@/utils/storageEvent";
 import "@styles/Header.css";
 
 const Header = () => {
+  // Avatar state
+  const [avatarUrl, setAvatarUrl] = useState(null);
   //check xem đã đăng nhập hay chưa
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   //state cho người dùng
@@ -48,20 +67,78 @@ const Header = () => {
   //kiểm tra trạng thái đăng nhập khi component được mount lần đầu tiên
   useEffect(() => {
     checkLoginStatus();
+
+    // Lắng nghe sự kiện cập nhật avatar từ localStorage
+    const handleStorageChange = (e) => {
+      if (e.key === "userProfile") {
+        checkLoginStatus();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange); // Thêm listener cho sự kiện cập nhật avatar
+    const unsubscribe = listenToAvatarUpdates((newAvatarUrl) => {
+      console.log("Header nhận được sự kiện cập nhật avatar:", newAvatarUrl);
+      if (newAvatarUrl) {
+        // Cập nhật avatarUrl state trực tiếp với URL đầy đủ
+        setAvatarUrl(imageUrl.getFullImageUrl(newAvatarUrl));
+        console.log(
+          "Header đã cập nhật avatarUrl:",
+          imageUrl.getFullImageUrl(newAvatarUrl)
+        );
+
+        // Cập nhật user state với avatar mới
+        setUser((prevUser) => {
+          if (prevUser) {
+            const updatedUser = { ...prevUser, avatar: newAvatarUrl };
+            console.log("Header đã cập nhật user state:", updatedUser);
+            return updatedUser;
+          }
+          return prevUser;
+        });
+      }
+    });
+
+    // Kiểm tra và sử dụng avatar từ sessionStorage (từ các lần cập nhật trước)
+    const lastUpdatedAvatar = sessionStorage.getItem("last_updated_avatar");
+    if (lastUpdatedAvatar) {
+      console.log("Header đọc avatar từ sessionStorage:", lastUpdatedAvatar);
+      setAvatarUrl(imageUrl.getFullImageUrl(lastUpdatedAvatar));
+    }
+
+    // Cleanup function để hủy đăng ký listener khi component unmount
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   const checkLoginStatus = () => {
     try {
-      const user = localStorageUtil.get("user");
-      if (user) {
+      // Đảm bảo đọc đúng khóa - cần thống nhất giữa lưu và đọc
+      const userData = localStorageUtil.get("userProfile");
+      if (userData) {
         setIsLoggedIn(true);
-        setUser(user);
+        setUser(userData);
+
+        // Log để debug
+        console.log("User data from localStorage:", userData);
+
+        // Đặt avatar URL nếu có
+        if (userData.avatar) {
+          setAvatarUrl(imageUrl.getFullImageUrl(userData.avatar));
+        } else if (userData.data && userData.data.avatar) {
+          setAvatarUrl(imageUrl.getFullImageUrl(userData.data.avatar));
+        }
       } else {
         setIsLoggedIn(false);
         setUser(null);
+        setAvatarUrl(null);
       }
     } catch (error) {
       console.error("Error checking login status:", error);
+      setIsLoggedIn(false);
+      setUser(null);
+      setAvatarUrl(null);
     }
   };
 
@@ -77,10 +154,14 @@ const Header = () => {
 
   //xử lý khi sử dụng đăng xuất
   const handleLogout = async () => {
-    localStorageUtil.remove("user");
+    // Đảm bảo xóa đúng khóa
+    localStorageUtil.remove("userProfile");
     localStorageUtil.remove("loginSuccessMessage");
+    localStorageUtil.remove("user");
+
     setIsLoggedIn(false);
     setUser(null);
+    setAvatarUrl(null);
     handleCloseMenu();
     try {
       await userService.logout();
@@ -184,21 +265,29 @@ const Header = () => {
                   },
                 }}
               >
-                {user && user.avatarUrl ? (
+                {" "}
+                {/* Avatar display for logged in users */}
+                {user ? (
                   <Avatar
-                    src={user.avatarUrl}
-                    alt={user.name || "User"}
+                    src={avatarUrl}
                     sx={{
                       width: 40,
                       height: 40,
-                      border: "2px solid rgba(255, 255, 255, 0.3)",
                       transition: "all 0.3s ease",
                       "&:hover": {
-                        border: "2px solid rgba(255, 255, 255, 0.6)",
-                        transform: "scale(1.05)",
+                        transform: "scale(1.1)",
                       },
                     }}
-                  />
+                    imgProps={{
+                      onError: () =>
+                        console.log("Header avatar image failed to load"),
+                      onLoad: () =>
+                        console.log("Header avatar image loaded successfully"),
+                    }}
+                  >
+                    {!avatarUrl &&
+                      (user?.fullName?.[0] || user?.email?.[0] || "U")}
+                  </Avatar>
                 ) : (
                   <AccountCircleIcon
                     sx={{

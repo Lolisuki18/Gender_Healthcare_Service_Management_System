@@ -16,6 +16,7 @@ import {
 import { Edit as EditIcon } from "@mui/icons-material";
 import { userService } from "@/services/userService";
 import localStorageUtil from "@/utils/localStorage";
+import imageUrl from "../../utils/imageUrl";
 
 const ProfileContent = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -105,7 +106,13 @@ const ProfileContent = () => {
             }}
           >
             <CardContent sx={{ p: 3 }}>
+              {" "}
               <Avatar
+                src={
+                  formData.avatar
+                    ? imageUrl.getFullImageUrl(formData.avatar)
+                    : undefined
+                }
                 sx={{
                   background: "linear-gradient(135deg, #4A90E2, #1ABC9C)",
                   width: 100,
@@ -115,7 +122,7 @@ const ProfileContent = () => {
                   fontSize: 40,
                 }}
               >
-                S
+                {formData.fullName?.[0] || "S"}
               </Avatar>{" "}
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
                 {formData.fullName}

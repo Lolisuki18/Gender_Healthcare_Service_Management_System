@@ -1,46 +1,37 @@
 package com.healapp.model;
 
-import java.time.LocalDateTime;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity
-@Table(name = "sti_packages")
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
+@Table(name = "sti_packages")
 public class STIPackage {
 
-    // Lưu thông tin các gói dịch vụ xét nghiệm
     @Id
-    @Column(name = "package_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "package_id")
+    private Long packageId;
 
-    @Column(name = "package_name", columnDefinition = "NVARCHAR(100)", nullable = false)
-    private String name;
+    @Column(name = "package_name", nullable = false, length = 200)
+    private String packageName;
 
-    @Column(name = "description", columnDefinition = "NVARCHAR(4000)")
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
-    @Column(name = "package_price", nullable = false)
-    private double price;
-
-    @Column(name = "recommended_for", columnDefinition = "NVARCHAR(200)")
-    private String recommendedFor;
+    @Column(name = "package_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal packagePrice;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive;
+    private Boolean isActive = true;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -48,16 +39,26 @@ public class STIPackage {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    // Quan hệ Many-to-Many với STIService
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "package_services", joinColumns = @JoinColumn(name = "package_id"), inverseJoinColumns = @JoinColumn(name = "service_id"))
+    private List<STIService> services;
+
+    // Quan hệ One-to-Many với STITest
+    @OneToMany(mappedBy = "stiPackage", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<STITest> stiTests;
+
     @PrePersist
     protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        createdAt = now;
-        updatedAt = now;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
-
 }

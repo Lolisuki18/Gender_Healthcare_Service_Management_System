@@ -1,14 +1,8 @@
 /**
- * EmailChangeModal.js - Modal components cho việc thay đổi email
- *
- * Bao gồm:
- * - EmailChangeDialog: Form nhập email mới với step-by-step workflow
- * - Step 1: Nhập email mới
- * - Step 2: Xác nhận mã OTP
- * - Step 3: Lưu thay đổi
+ * PhoneChangeModal.js - Modal component cho việc thay đổi số điện thoại
  *
  * Features:
- * - Validation email format
+ * - Form validation cho số điện thoại mới
  * - OTP verification với countdown
  * - Resend OTP functionality
  * - Error handling và user feedback
@@ -34,7 +28,7 @@ import {
   StepLabel,
 } from "@mui/material";
 import {
-  Email as EmailIcon,
+  Phone as PhoneIcon,
   Verified as VerifiedIcon,
   Send as SendIcon,
   Timer as TimerIcon,
@@ -42,8 +36,8 @@ import {
 } from "@mui/icons-material";
 import { notify } from "@/utils/notification";
 
-// ✅ Email Change Dialog Component with Steps
-export const EmailChangeDialog = ({
+// ✅ Phone Change Dialog Component with Steps
+export const PhoneChangeDialog = ({
   open,
   onClose,
   onSendCode,
@@ -51,15 +45,15 @@ export const EmailChangeDialog = ({
   isSubmitting,
   isSendingCode,
   isVerifying,
-  currentEmail,
+  currentPhone,
 }) => {
   const [activeStep, setActiveStep] = useState(0);
-  const [newEmail, setNewEmail] = useState("");
+  const [newPhone, setNewPhone] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [errors, setErrors] = useState({});
   const [countdown, setCountdown] = useState(0);
 
-  const steps = ["Nhập email mới", "Xác nhận mã", "Hoàn tất"];
+  const steps = ["Nhập số điện thoại mới", "Xác nhận mã", "Hoàn tất"];
 
   // Countdown timer for resend code
   useEffect(() => {
@@ -70,32 +64,29 @@ export const EmailChangeDialog = ({
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  const handleEmailChange = (e) => {
-    const value = e.target.value;
-    setNewEmail(value);
+  const handlePhoneChange = (e) => {
+    const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 11);
+    setNewPhone(value);
 
     // Clear error when user starts typing
-    if (errors.newEmail) {
+    if (errors.newPhone) {
       setErrors({
         ...errors,
-        newEmail: "",
+        newPhone: "",
       });
     }
   };
 
-  const validateEmailForm = () => {
+  const validatePhoneForm = () => {
     const newErrors = {};
 
-    // Validate new email
-    if (!newEmail.trim()) {
-      newErrors.newEmail = "Vui lòng nhập email mới";
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(newEmail.trim())) {
-        newErrors.newEmail = "Email không đúng định dạng";
-      } else if (newEmail.trim() === currentEmail) {
-        newErrors.newEmail = "Email mới phải khác email hiện tại";
-      }
+    // Validate new phone number
+    if (!newPhone.trim()) {
+      newErrors.newPhone = "Vui lòng nhập số điện thoại mới";
+    } else if (!/^\d{9,11}$/.test(newPhone.trim())) {
+      newErrors.newPhone = "Số điện thoại không hợp lệ (9-11 chữ số)";
+    } else if (newPhone.trim() === currentPhone) {
+      newErrors.newPhone = "Số điện thoại mới phải khác số hiện tại";
     }
 
     setErrors(newErrors);
@@ -103,12 +94,15 @@ export const EmailChangeDialog = ({
   };
 
   const handleSendCode = async () => {
-    if (validateEmailForm()) {
+    if (validatePhoneForm()) {
       try {
-        await onSendCode(newEmail.trim());
+        await onSendCode(newPhone.trim());
         setActiveStep(1);
         setCountdown(60);
-        notify.success("Thành công", "Mã xác nhận đã được gửi đến email mới!");
+        notify.success(
+          "Thành công",
+          "Mã xác nhận đã được gửi đến số điện thoại mới!"
+        );
       } catch (error) {
         notify.error("Lỗi", "Không thể gửi mã xác nhận. Vui lòng thử lại!");
       }
@@ -117,7 +111,7 @@ export const EmailChangeDialog = ({
 
   const handleResendCode = async () => {
     try {
-      await onSendCode(newEmail.trim());
+      await onSendCode(newPhone.trim());
       setCountdown(60);
       notify.success("Thành công", "Mã xác nhận mới đã được gửi!");
     } catch (error) {
@@ -128,9 +122,12 @@ export const EmailChangeDialog = ({
   const handleVerifyAndSave = async () => {
     if (verificationCode.trim().length === 6) {
       try {
-        await onVerifyAndSave(newEmail.trim(), verificationCode.trim());
+        await onVerifyAndSave(newPhone.trim(), verificationCode.trim());
         setActiveStep(2);
-        notify.success("Thành công", "Email đã được thay đổi thành công!");
+        notify.success(
+          "Thành công",
+          "Số điện thoại đã được thay đổi thành công!"
+        );
       } catch (error) {
         notify.error("Lỗi", "Mã xác nhận không đúng. Vui lòng thử lại!");
       }
@@ -143,7 +140,7 @@ export const EmailChangeDialog = ({
   const handleSuccessClose = () => {
     // Reset form và đóng modal
     setActiveStep(0);
-    setNewEmail("");
+    setNewPhone("");
     setVerificationCode("");
     setErrors({});
     setCountdown(0);
@@ -154,7 +151,7 @@ export const EmailChangeDialog = ({
 
   const handleClose = () => {
     setActiveStep(0);
-    setNewEmail("");
+    setNewPhone("");
     setVerificationCode("");
     setErrors({});
     setCountdown(0);
@@ -166,7 +163,7 @@ export const EmailChangeDialog = ({
       case 0:
         return (
           <Stack spacing={3}>
-            {/* Current Email Display */}
+            {/* Current Phone Display */}
             <Paper
               elevation={0}
               sx={{
@@ -177,26 +174,26 @@ export const EmailChangeDialog = ({
               }}
             >
               <Typography variant="body2" sx={{ mb: 1, color: "#6b7280" }}>
-                Email hiện tại:
+                Số điện thoại hiện tại:
               </Typography>
               <Typography
                 variant="body1"
                 sx={{ color: "#4A90E2", fontWeight: 600 }}
               >
-                {currentEmail}
+                {currentPhone}
               </Typography>
             </Paper>
 
-            {/* New Email Input */}
+            {/* New Phone Input */}
             <TextField
               fullWidth
-              label="Email mới"
-              type="email"
-              value={newEmail}
-              onChange={handleEmailChange}
-              error={!!errors.newEmail}
-              helperText={errors.newEmail || "Nhập địa chỉ email mới của bạn"}
-              placeholder="user@example.com"
+              label="Số điện thoại mới"
+              type="tel"
+              value={newPhone}
+              onChange={handlePhoneChange}
+              error={!!errors.newPhone}
+              helperText={errors.newPhone || "Nhập số điện thoại mới của bạn"}
+              placeholder="0912345678"
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: "12px",
@@ -205,7 +202,7 @@ export const EmailChangeDialog = ({
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <EmailIcon sx={{ color: "#4A90E2" }} />
+                    <PhoneIcon sx={{ color: "#4A90E2" }} />
                   </InputAdornment>
                 ),
               }}
@@ -226,13 +223,13 @@ export const EmailChangeDialog = ({
               }}
             >
               <Typography variant="body1" sx={{ mb: 2 }}>
-                Chúng tôi đã gửi mã xác nhận đến:
+                Chúng tôi đã gửi mã xác nhận đến số:
               </Typography>
               <Typography
                 variant="h6"
                 sx={{ color: "#4A90E2", fontWeight: 600 }}
               >
-                {newEmail}
+                {newPhone}
               </Typography>
             </Paper>
 
@@ -327,11 +324,11 @@ export const EmailChangeDialog = ({
                 variant="h6"
                 sx={{ color: "#1ABC9C", fontWeight: 600, mb: 1 }}
               >
-                Thay đổi email thành công!
+                Thay đổi số điện thoại thành công!
               </Typography>
               <Typography variant="body2" sx={{ color: "#6b7280" }}>
-                Email của bạn đã được cập nhật thành:{" "}
-                <strong>{newEmail}</strong>
+                Số điện thoại của bạn đã được cập nhật thành:{" "}
+                <strong>{newPhone}</strong>
               </Typography>
             </Paper>
           </Stack>
@@ -357,7 +354,7 @@ export const EmailChangeDialog = ({
             <Button
               variant="contained"
               onClick={handleSendCode}
-              disabled={isSendingCode || !newEmail}
+              disabled={isSendingCode || !newPhone}
               startIcon={
                 isSendingCode ? (
                   <CircularProgress size={16} color="inherit" />
@@ -437,9 +434,9 @@ export const EmailChangeDialog = ({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={2}>
-          <EmailIcon sx={{ color: "#4A90E2" }} />
+          <PhoneIcon sx={{ color: "#4A90E2" }} />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Thay đổi Email
+            Thay đổi Số điện thoại
           </Typography>
         </Stack>
       </DialogTitle>
@@ -479,11 +476,11 @@ export const EmailChangeDialog = ({
                 variant="body2"
                 sx={{ color: "#92400e", fontSize: "0.9rem" }}
               >
-                • Chúng tôi sẽ gửi mã xác nhận đến email mới
+                • Chúng tôi sẽ gửi mã xác nhận đến số điện thoại mới
                 <br />
                 • Bạn cần xác nhận mã để hoàn tất thay đổi
-                <br />• Email hiện tại vẫn hoạt động cho đến khi xác nhận thành
-                công
+                <br />• Số điện thoại hiện tại vẫn hoạt động cho đến khi xác
+                nhận thành công
               </Typography>
             </Paper>
           )}

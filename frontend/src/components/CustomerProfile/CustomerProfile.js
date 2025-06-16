@@ -42,6 +42,7 @@ import InvoicesContent from "@/components/CustomerProfile/InvoicesContent";
 import NotificationsContent from "@/components/CustomerProfile/NotificationsContent";
 import HelpContent from "@/components/CustomerProfile/HelpContent";
 import QuestionsContent from "@/components/CustomerProfile/QuestionsContent";
+import SecurityContent from "@/components/CustomerProfile/SecurityContent";
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
@@ -96,6 +97,8 @@ const CustomerProfile = () => {
         return <HelpContent />; // Hỗ trợ, FAQ
       case "questions":
         return <QuestionsContent />; // Câu hỏi đã đặt
+      case "security":
+        return <SecurityContent />; // Bảo mật
       default:
         return <ProfileContent />; // Fallback về profile
     }
@@ -170,6 +173,7 @@ const CustomerProfile = () => {
               {selectedMenuItem === "settings" && "Cài đặt"}
               {selectedMenuItem === "help" && "Trợ giúp"}
               {selectedMenuItem === "questions" && "Câu hỏi đã đặt"}
+              {selectedMenuItem === "security" && "Bảo mật"}
             </Typography>
           </Box>{" "}
           <Chip

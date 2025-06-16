@@ -48,6 +48,7 @@ import {
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import localStorageUtil from "@/utils/localStorage";
+import imageUrl from "@/utils/imageUrl";
 
 const drawerWidth = 280;
 
@@ -478,6 +479,11 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       <UserProfile>
         <Box sx={{ position: "relative", display: "inline-block", mb: 2 }}>
           <Avatar
+            src={
+              userData?.avatar
+                ? imageUrl.getFullImageUrl(userData.avatar)
+                : undefined
+            }
             sx={{
               width: { xs: 60, md: 80 },
               height: { xs: 60, md: 80 },
@@ -489,9 +495,16 @@ const ConsultantSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
               border: "3px solid rgba(74, 144, 226, 0.1)",
             }}
           >
-            <MedicalIcon
-              sx={{ fontSize: { xs: "24px", md: "32px" }, color: "#ffffff" }}
-            />
+            {userData?.avatar
+              ? ""
+              : userData?.fullName?.[0] || (
+                  <MedicalIcon
+                    sx={{
+                      fontSize: { xs: "24px", md: "32px" },
+                      color: "#ffffff",
+                    }}
+                  />
+                )}
           </Avatar>
           <Box
             sx={{

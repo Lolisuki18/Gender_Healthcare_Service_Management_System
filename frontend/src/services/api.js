@@ -85,38 +85,88 @@ apiClient.interceptors.response.use(
         hasRefreshToken: !!userData?.refreshToken,
         endpoint: error.config?.url,
         errorMessage: error.response?.data?.message,
-      });
-
-      // Nếu có refresh token, thử refresh
+      }); // Nếu có refresh token, thử refresh
       if (userData && userData.refreshToken) {
         try {
           console.log("🔄 Attempting token refresh...");
-          const { userService } = await import("./userService");
-          const refreshResponse = await userService.refreshToken(
-            userData.refreshToken
-          );
 
-          console.log("🔄 Refresh response:", refreshResponse);
+          // Đảm bảo chỉ có một yêu cầu refresh token được gửi đi cùng một lúc
+          if (!window.isRefreshingToken) {
+            window.isRefreshingToken = true;
 
-          if (refreshResponse.success || refreshResponse.accessToken) {
-            // Cập nhật token mới vào localStorage
-            const newTokenData = refreshResponse.data || refreshResponse;
-            const newUserData = {
-              ...userData,
-              accessToken: newTokenData.accessToken,
-              refreshToken: newTokenData.refreshToken,
-            };
-            localStorageUtil.set("user", newUserData);
+            const { userService } = await import("./userService");
+            const refreshResponse = await userService.refreshToken(
+              userData.refreshToken
+            );
 
-            console.log("✅ Token refreshed successfully, retrying request...");
-            // Retry request với token mới
-            error.config.headers.Authorization = `Bearer ${newTokenData.accessToken}`;
-            return apiClient.request(error.config);
+            console.log("🔄 Refresh response:", refreshResponse);
+            window.isRefreshingToken = false;
+
+            // Kiểm tra cả trường hợp response trực tiếp hoặc nằm trong .data
+            if (
+              refreshResponse.success ||
+              refreshResponse.accessToken ||
+              (refreshResponse.data &&
+                (refreshResponse.data.accessToken ||
+                  refreshResponse.data.success))
+            ) {
+              // Lấy token từ response
+              const newTokenData = refreshResponse.data || refreshResponse;
+              const newAccessToken =
+                newTokenData.accessToken ||
+                (newTokenData.data && newTokenData.data.accessToken);
+
+              // Chỉ cập nhật refreshToken nếu có trong response
+              const newRefreshToken =
+                newTokenData.refreshToken ||
+                (newTokenData.data && newTokenData.data.refreshToken) ||
+                userData.refreshToken;
+
+              // Cập nhật token mới vào localStorage
+              const newUserData = {
+                ...userData,
+                accessToken: newAccessToken,
+                refreshToken: newRefreshToken,
+              };
+              localStorageUtil.set("user", newUserData);
+
+              console.log(
+                "✅ Token refreshed successfully, retrying request with new token"
+              );
+
+              // Thêm header authorization mới và thử lại request
+              error.config.headers.Authorization = `Bearer ${newAccessToken}`;
+
+              // Tránh vòng lặp vô hạn nếu token mới cũng không hợp lệ
+              error.config._retry = true;
+
+              return apiClient.request(error.config);
+            }
+          } else {
+            console.log("🔄 Token refresh already in progress, waiting...");
+            // Chờ một chút và thử lại nếu một quá trình refresh đang diễn ra
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            if (
+              localStorageUtil.get("user")?.accessToken !== userData.accessToken
+            ) {
+              // Token đã được làm mới bởi một request khác
+              console.log(
+                "✅ Token has been refreshed by another request, retrying..."
+              );
+              const newUserData = localStorageUtil.get("user");
+              error.config.headers.Authorization = `Bearer ${newUserData.accessToken}`;
+              return apiClient.request(error.config);
+            }
           }
         } catch (refreshError) {
           console.error("❌ Refresh token failed:", refreshError);
+          window.isRefreshingToken = false;
+
           // Refresh token cũng hết hạn, đăng xuất user
           localStorageUtil.remove("user");
+
+          // Thông báo cho người dùng
+          alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
 
           // Chỉ redirect nếu không phải đang ở trang login
           if (!window.location.pathname.includes("/login")) {

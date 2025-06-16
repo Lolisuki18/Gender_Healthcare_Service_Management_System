@@ -1,5 +1,6 @@
 package com.healapp.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
@@ -16,13 +17,14 @@ public class STIServiceRequest {
 
     @NotBlank(message = "Service name is required")
     @Size(max = 100, message = "Service name must not exceed 100 characters")
-    public String name;
-
-    public String description;
+    private String name;
+    private String description;
 
     @NotNull(message = "Price is required")
-    public double price;
-    
-    public List<ServiceTestComponentRequest> components;
-}
+    private BigDecimal price;
 
+    private Boolean isActive;
+
+    private List<ServiceTestComponentRequest> components;
+
+}

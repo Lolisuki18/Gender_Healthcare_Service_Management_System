@@ -26,7 +26,7 @@ public class TestResult {
 
     @ManyToOne
     @JoinColumn(name = "component_id", nullable = false)
-    private ServiceTestComponent component;
+    private ServiceTestComponent testComponent;
 
     @ManyToOne
     @JoinColumn(name = "service_id", nullable = false)
@@ -41,9 +41,8 @@ public class TestResult {
     @Column(name = "normal_range", columnDefinition = "NVARCHAR(100)")
     private String normalRange;
 
-    @ManyToOne
-    @JoinColumn(name = "reviewed_by")
-    private UserDtls reviewedBy;
+    @Column(name = "reviewed_by")
+    private Long reviewedBy;
 
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
