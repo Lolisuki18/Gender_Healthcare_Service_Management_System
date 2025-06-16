@@ -66,10 +66,10 @@ const LoginPage = () => {
    */
   useEffect(() => {
     // Kiểm tra xem có dữ liệu người dùng trong localStorage không
-    const userData = localStorageUtil.get("user");
-    if (userData) {
+    const userProfile = localStorageUtil.get("userProfile");
+    if (userProfile) {
       setIsLoggedIn(true);
-      setUser(userData);
+      setUser(userProfile);
     }
   }, []);
 
@@ -105,7 +105,7 @@ const LoginPage = () => {
         console.log("Login response:", response); // ✅ Debug log        // Backend trả về JwtResponse object chứa accessToken, refreshToken và user info
         if (response && response.accessToken) {
           // response đã là JwtResponse object từ backend
-          const userData = {
+          const token = {
             userId: response.userId,
             username: response.username,
             email: response.email,
@@ -117,15 +117,15 @@ const LoginPage = () => {
             // avatar: response.avatar || null, // Thêm avatar nếu có
           };
 
-          const role = userData.role;
+          const role = token.role;
 
           // ✅ DEBUG: LOG CẤU TRÚC USER DATA
-          console.log("User data to save:", userData);
-          console.log("Access token:", userData.accessToken);
-          console.log("Refresh token:", userData.refreshToken);
+          console.log("User data to save:", token);
+          console.log("Access token:", token.accessToken);
+          console.log("Refresh token:", token.refreshToken);
 
           // ✅ LƯU TOKEN VÀ USER DATA VÀO LOCALSTORAGE
-          localStorageUtil.set("user", userData);
+          localStorageUtil.set("token", token);
 
           // ✅ XÁC NHẬN ĐÃ LƯU THÀNH CÔNG
           const savedUser = localStorageUtil.get("user");
@@ -146,7 +146,7 @@ const LoginPage = () => {
                 // Nếu là admin, chuyển hướng đến trang quản trị
                 notify.success(
                   "Đăng nhập thành công",
-                  `Chào mừng Admin ${userData.username}!`
+                  `Chào mừng Admin ${profileData.data.username}!`
                 );
                 navigate("/admin/profile");
                 return;
@@ -155,7 +155,7 @@ const LoginPage = () => {
                 // Lưu thông báo đăng nhập thành công vào localStorage để hiển thị ở homepage
                 localStorageUtil.set("loginSuccessMessage", {
                   title: "Đăng nhập thành công",
-                  message: `Chào mừng ${userData.username} trở lại!`,
+                  message: `Chào mừng ${profileData.data.username} trở lại!`,
                   timestamp: Date.now(),
                 });
                 window.location.href = "/";
@@ -169,14 +169,14 @@ const LoginPage = () => {
               if (role === "ADMIN") {
                 notify.success(
                   "Đăng nhập thành công",
-                  `Chào mừng Admin ${userData.username}!`
+                  `Chào mừng Admin ${token.username}!`
                 );
                 navigate("/admin/profile");
                 return;
               } else {
                 localStorageUtil.set("loginSuccessMessage", {
                   title: "Đăng nhập thành công",
-                  message: `Chào mừng ${userData.username} trở lại!`,
+                  message: `Chào mừng ${token.username} trở lại!`,
                   timestamp: Date.now(),
                 });
                 window.location.href = "/";

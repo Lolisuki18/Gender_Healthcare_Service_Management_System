@@ -205,110 +205,143 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       icon: <QuestionIcon />,
       path: "/customer/questions",
     },
-  ]; // Lấy thông tin user từ localStorage    // Lấy thông tin user từ localStorage mỗi khi component được mount
+  ]; // Thêm useState để quản lý key để force re-render component
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Hàm force refresh component khi cần
+  const forceRefresh = () => setRefreshKey((old) => old + 1);
   useEffect(() => {
     const refreshUserData = () => {
-      const userDataFromStorage = localStorageUtil.get("user");
-      const userProfileFromStorage = localStorageUtil.get("userProfile");
+      try {
+        const userProfileFromStorage = localStorageUtil.get("userProfile");
+        const userDataFromStorage = localStorageUtil.get("user");
 
-      setUserData(userDataFromStorage || {});
-      setUserProfile(userProfileFromStorage || {});
+        setUserProfile(userProfileFromStorage || {});
+        setUserData(userDataFromStorage || {});
 
-      // Khởi tạo avatar URL
-      if (userProfileFromStorage?.avatar) {
-        setAvatarUrl(imageUrl.getFullImageUrl(userProfileFromStorage.avatar));
-      } else if (userDataFromStorage?.data?.avatar) {
-        setAvatarUrl(imageUrl.getFullImageUrl(userDataFromStorage.data.avatar));
+        // Ưu tiên lấy avatar từ userProfile theo thứ tự
+        if (userProfileFromStorage?.data?.avatar) {
+          const fullAvatarUrl = imageUrl.getFullImageUrl(
+            userProfileFromStorage.data.avatar
+          );
+          console.log(
+            "CustomerSidebar: Setting avatar from userProfile.data:",
+            fullAvatarUrl
+          );
+          setAvatarUrl(fullAvatarUrl);
+
+          // Lưu vào sessionStorage để đồng bộ giữa các component
+          sessionStorage.setItem(
+            "last_updated_avatar",
+            userProfileFromStorage.data.avatar
+          );
+        } else if (userProfileFromStorage?.avatar) {
+          const fullAvatarUrl = imageUrl.getFullImageUrl(
+            userProfileFromStorage.avatar
+          );
+          console.log(
+            "CustomerSidebar: Setting avatar from userProfile root:",
+            fullAvatarUrl
+          );
+          setAvatarUrl(fullAvatarUrl);
+
+          // Lưu vào sessionStorage để đồng bộ
+          sessionStorage.setItem(
+            "last_updated_avatar",
+            userProfileFromStorage.avatar
+          );
+        } else if (userDataFromStorage?.avatar) {
+          const fullAvatarUrl = imageUrl.getFullImageUrl(
+            userDataFromStorage.avatar
+          );
+          console.log(
+            "CustomerSidebar: Setting avatar from userData:",
+            fullAvatarUrl
+          );
+          setAvatarUrl(fullAvatarUrl);
+        }
+
+        // Force refresh để đảm bảo UI cập nhật
+        forceRefresh();
+      } catch (error) {
+        console.error("Error refreshing user data in CustomerSidebar:", error);
       }
-
-      // Debug logs
-      console.log("CustomerSideBar - Refresh userData:", userDataFromStorage);
-      console.log(
-        "CustomerSideBar - Refresh avatar path:",
-        userProfileFromStorage?.avatar
-      );
     };
 
     refreshUserData();
 
     // Lắng nghe sự kiện storage để cập nhật khi localStorage thay đổi
     const handleStorageChange = (e) => {
-      if (e.key === "userProfile" || e.key === "avatar_sync_trigger") {
-        console.log("CustomerSideBar - Detected storage change:", e.key);
+      console.log("Storage event detected in CustomerSidebar:", e.key);
+      if (
+        e.key === "userProfile" ||
+        e.key === "avatar_sync_trigger" ||
+        e.key === "last_updated_avatar" ||
+        e.key === "user"
+      ) {
+        console.log(
+          "Avatar update detected via storage event in CustomerSidebar"
+        );
         refreshUserData();
       }
     };
 
     window.addEventListener("storage", handleStorageChange);
 
-    // Đăng ký lắng nghe sự kiện cập nhật avatar
+    // Lắng nghe sự kiện direct update
+    const handleDirectAvatarUpdate = (event) => {
+      console.log(
+        "Direct avatar update event received in CustomerSidebar:",
+        event.detail
+      );
+      if (event.detail && event.detail.avatarUrl) {
+        refreshUserData();
+      }
+    };
+
+    window.addEventListener("avatar_updated", handleDirectAvatarUpdate);
+
+    // Đăng ký lắng nghe sự kiện cập nhật avatar từ hệ thống event
     const unsubscribe = listenToAvatarUpdates((newAvatarUrl) => {
       console.log(
-        "CustomerSidebar nhận được sự kiện cập nhật avatar:",
+        "Avatar update from listenToAvatarUpdates in CustomerSidebar:",
         newAvatarUrl
       );
-      if (newAvatarUrl) {
-        // Cập nhật avatar URL state
-        setAvatarUrl(imageUrl.getFullImageUrl(newAvatarUrl));
-
-        // Cập nhật userProfile state
-        setUserProfile((prev) => ({
-          ...prev,
-          avatar: newAvatarUrl,
-        }));
-
-        // Force a re-render
-        setTimeout(() => {
-          console.log(
-            "CustomerSidebar re-render forced with avatar:",
-            newAvatarUrl
-          );
-        }, 100);
-      }
+      refreshUserData();
     });
 
-    // Kiểm tra và sử dụng avatar từ sessionStorage (từ các lần cập nhật trước)
-    const lastUpdatedAvatar = sessionStorage.getItem("last_updated_avatar");
-    if (lastUpdatedAvatar) {
-      console.log(
-        "CustomerSideBar đọc avatar từ sessionStorage:",
-        lastUpdatedAvatar
-      );
-      setAvatarUrl(imageUrl.getFullImageUrl(lastUpdatedAvatar));
-      setUserProfile((prev) => ({
-        ...prev,
-        avatar: lastUpdatedAvatar,
-      }));
-    }
-
-    // Cleanup function để hủy đăng ký listener khi component unmount
+    // Cleanup function
     return () => {
+      console.log("Cleaning up event listeners in CustomerSidebar");
       window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("avatar_updated", handleDirectAvatarUpdate);
       if (unsubscribe) unsubscribe();
     };
   }, []);
 
-  // Debug logs
-  console.log("CustomerSideBar - userData:", userData);
-  console.log(
-    "CustomerSideBar - avatar path from userData:",
-    userProfile?.avatar
-  );
-  console.log(
-    "CustomerSideBar - avatar full URL:",
-    userProfile?.avatar ? imageUrl.getFullImageUrl(userProfile.avatar) : "none"
-  );
+  // Thêm dòng trống này để tách các hooks ra
 
-  // // If no avatar in userData but exists in userProfile, sync it
-  // if (userProfile?.avatar && userData) {
-  //   console.log("Syncing avatar from userProfile to user data");
-  //   const updatedUserData = {
-  //     ...userProfile,
-  //     avatar: userProfile.avatar,
-  //   };
-  //   localStorageUtil.set("userProfile", updatedUserData);
-  //   console.log("Updated user data with avatar from profile:", updatedUserData);
-  // }
+  // Final check for avatar data from localStorage after component mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const freshUserProfile = localStorageUtil.get("userProfile");
+
+      // Update if we have fresh data with avatar
+      if (freshUserProfile?.data?.avatar || freshUserProfile?.avatar) {
+        setUserProfile(freshUserProfile);
+
+        if (freshUserProfile?.data?.avatar) {
+          setAvatarUrl(imageUrl.getFullImageUrl(freshUserProfile.data.avatar));
+        } else if (freshUserProfile?.avatar) {
+          setAvatarUrl(imageUrl.getFullImageUrl(freshUserProfile.avatar));
+        }
+      }
+    }, 500); // Reduced timeout for faster UI update
+
+    return () => clearTimeout(timer);
+  }, []);
+  // This commented section has been removed as it's no longer needed
+  // The avatar synchronization is now handled by the storageEvent.js utility
 
   // Handler cho việc click menu item
   // Phân biệt giữa item có sub-menu và item thường
@@ -400,22 +433,30 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
         <Box sx={{ position: "relative", display: "inline-block", mb: 2 }}>
           {" "}
           <Avatar
-            src={
-              avatarUrl ||
-              (userProfile?.avatar
-                ? imageUrl.getFullImageUrl(userProfile.avatar)
-                : undefined) ||
-              (userProfile?.data?.avatar
-                ? imageUrl.getFullImageUrl(userProfile.data.avatar)
-                : undefined)
-            }
-            alt={userProfile?.fullName || "User"}
+            src={(() => {
+              // Ưu tiên lấy trực tiếp từ userProfile mới nhất trong localStorage
+              const freshUserProfile = localStorageUtil.get("userProfile");
+              if (freshUserProfile?.data?.avatar) {
+                return imageUrl.getFullImageUrl(freshUserProfile.data.avatar);
+              } else if (freshUserProfile?.avatar) {
+                return imageUrl.getFullImageUrl(freshUserProfile.avatar);
+              }
+
+              // Nếu không có trong localStorage thì dùng state
+              return avatarUrl;
+            })()}
+            alt={userProfile?.data?.fullName || userProfile?.fullName || "User"}
             imgProps={{
-              onError: () =>
-                console.log("CustomerSideBar avatar image failed to load"),
-              onLoad: () =>
-                console.log("CustomerSideBar avatar image loaded successfully"),
               loading: "eager",
+              // Force refresh avatar on each render by adding timestamp
+              key: `sidebar-avatar-${Date.now()}-${refreshKey}`,
+              onError: () => {
+                console.log("CustomerSidebar avatar failed to load");
+                forceRefresh();
+              },
+              onLoad: () => {
+                console.log("CustomerSidebar avatar loaded successfully");
+              },
             }}
             sx={{
               width: { xs: 60, md: 80 },
@@ -428,8 +469,12 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
               border: "3px solid rgba(255, 255, 255, 0.6)", // Light border for medical theme
             }}
           >
-            {!avatarUrl && !userProfile?.avatar
-              ? userProfile?.fullName?.[0] || userProfile?.email?.[0] || "U"
+            {!avatarUrl && !userProfile?.avatar && !userProfile?.data?.avatar
+              ? userProfile?.data?.fullName?.[0] ||
+                userProfile?.fullName?.[0] ||
+                userProfile?.data?.email?.[0] ||
+                userProfile?.email?.[0] ||
+                "U"
               : null}
           </Avatar>
           <Box
@@ -468,7 +513,7 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
             color: "#2D3748", // Dark text for medical theme
           }}
         >
-          Khách hàng
+          {userProfile?.data?.fullName || userProfile?.fullName || "Khách hàng"}
         </Typography>
         <Typography
           variant="body2"
@@ -479,7 +524,10 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
             wordBreak: "break-all",
           }}
         >
-          {userData.email}
+          {userProfile?.data?.email ||
+            userProfile?.email ||
+            userData?.email ||
+            "email@example.com"}
         </Typography>{" "}
         <Chip
           label="Đã xác thực"
@@ -604,36 +652,6 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       </List>
 
       <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)", mx: 2 }} />
-
-      {/* Logout Button */}
-      {/* <List sx={{ px: 1, py: 2 }}>
-        <ListItem disablePadding>
-          <StyledListItem
-            onClick={handleLogout}
-            sx={{
-              "&:hover": {
-                backgroundColor: "rgba(239, 68, 68, 0.1)",
-                transform: "translateX(4px)",
-                boxShadow: "0 4px 12px rgba(239, 68, 68, 0.2)",
-              },
-            }}
-          >
-            <ListItemIcon sx={{ color: "#ef4444", minWidth: 40 }}>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Đăng xuất"
-              sx={{
-                "& .MuiTypography-root": {
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  color: "#ef4444",
-                },
-              }}
-            />
-          </StyledListItem>
-        </ListItem>
-      </List> */}
     </StyledDrawer>
   );
 };

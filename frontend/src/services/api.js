@@ -31,11 +31,11 @@ const apiClient = axios.create(config);
 // ✅ Request interceptor - sử dụng JWT token
 apiClient.interceptors.request.use(
   (config) => {
-    var userData = localStorageUtil.get("user");
+    var token = localStorageUtil.get("token");
 
     // Nếu có userData và có accessToken, thêm Bearer token vào header
-    if (userData && userData.accessToken) {
-      config.headers.Authorization = `Bearer ${userData.accessToken}`;
+    if (token && token.accessToken) {
+      config.headers.Authorization = `Bearer ${token.accessToken}`;
     }
 
     console.log("API Request:", {

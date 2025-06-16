@@ -36,11 +36,13 @@ const LoggedInView = ({ user, onLogout }) => {
       if (unsubscribe) unsubscribe();
     };
   }, []);
-
   const handleLogout = () => {
     onLogout();
     notify.info("Đăng xuất", "Bạn đã đăng xuất khỏi hệ thống");
-    localStorageUtil.remove("user"); // Xóa thông tin user khỏi localStorage
+    // Xóa tất cả thông tin người dùng khỏi localStorage
+    localStorageUtil.remove("user");
+    localStorageUtil.remove("userProfile");
+    localStorageUtil.remove("token");
     window.location.href = "/login"; // Redirect to login page after logout
   };
 

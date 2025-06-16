@@ -23,15 +23,15 @@ import localStorageUtil from "./utils/localStorage";
 
 const AppRoutes = () => {
   // Lấy thông tin user từ localStorage
-  const userData = localStorageUtil.get("user");
-
-  // Component để redirect đến trang phù hợp khi truy cập "/"
+  const userData = localStorageUtil.get("userProfile");
+  const tokenData = localStorageUtil.get("token"); // Component để redirect đến trang phù hợp khi truy cập "/"
   const AutoRedirectToProfile = () => {
-    if (!userData || !userData.role) {
+    // Kiểm tra cả token và userProfile
+    if (!userData || !userData.data || !userData.data.role || !tokenData) {
       return <Navigate to="/login" replace />;
     }
 
-    switch (userData.role) {
+    switch (userData.data.role) {
       case "ADMIN":
         return <Navigate to="/admin/profile" replace />; // Admin vào admin profile
       case "CUSTOMER":
@@ -47,42 +47,46 @@ const AppRoutes = () => {
     <Routes>
       {/* Route chính cho trang chủ */}
       <Route path="/" element={<MainLayout />}>
+        {" "}
         {/* Trang chủ - Auto redirect admin, hiển thị homepage cho user thường */}
         <Route
           index
-          element={userData ? <AutoRedirectToProfile /> : <HomePage />}
+          element={
+            userData && tokenData ? <AutoRedirectToProfile /> : <HomePage />
+          }
         />
         <Route path="/sti-test" element={<StiPage />} /> {/* Trang STI Test */}
         {/* Homepage cho các role đã đăng nhập (trừ admin) */}
-        <Route path="home" element={<HomePage />} />
-
+        <Route path="home" element={<HomePage />} />{" "}
         {/* Profile Page chung - sẽ render component phù hợp với role */}
         <Route
           path="profile"
           element={
-            userData && userData.role !== "ADMIN" ? (
+            userData &&
+            userData.data &&
+            userData.data.role !== "ADMIN" &&
+            tokenData ? (
               <ProfilePage />
             ) : (
               <Navigate to="/login" replace />
             )
           }
         />
-
         {/* Public routes */}
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterForm />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
-
         {/* 404 Page */}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
       {/* Admin Routes riêng với AdminLayout */}
       <Route path="/admin" element={<AdminLayout />}>
+        {" "}
         <Route
           path="profile"
           element={
-            userData?.role === "ADMIN" ? (
+            userData?.data?.role === "ADMIN" && tokenData ? (
               <AdminProfile />
             ) : (
               <Navigate to="/login" replace />

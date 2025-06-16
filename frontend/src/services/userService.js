@@ -282,8 +282,7 @@ export const userService = {
   },
 
   /**
-   * ✅ Upload avatar image
-   * @param {File} file - Image file to upload
+   * ✅ Upload avatar image   * @param {File} file - Image file to upload
    * @returns {Promise<Object>} API response with uploaded image URL
    */
   uploadAvatar: async (file) => {
@@ -299,15 +298,13 @@ export const userService = {
       }
 
       // Lấy token mới nhất từ localStorage
-      const userData = localStorageUtil.get("user");
-      if (!userData || !userData.accessToken) {
+      const tokenData = localStorageUtil.get("token");
+      if (!tokenData || !tokenData.accessToken) {
         return {
           success: false,
           message: "Không tìm thấy token xác thực. Vui lòng đăng nhập lại.",
         };
-      }
-
-      // Create form data object for file upload
+      } // Create form data object for file upload
       const formData = new FormData();
       formData.append("file", file); // Sử dụng key "file" theo yêu cầu của backend
 
@@ -315,14 +312,14 @@ export const userService = {
         fileSize: file.size,
         fileType: file.type,
         fileName: file.name,
-        hasToken: !!userData.accessToken,
-        tokenFirstChars: userData.accessToken.substring(0, 15) + "...", // Hiện token một phần để debug
+        hasToken: !!tokenData.accessToken,
+        tokenFirstChars: tokenData.accessToken.substring(0, 15) + "...", // Hiện token một phần để debug
       });
 
       const response = await apiClient.post("/users/profile/avatar", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${userData.accessToken}`, // Đảm bảo token được gửi đi
+          Authorization: `Bearer ${tokenData.accessToken}`, // Đảm bảo token được gửi đi
         },
       });
 
@@ -341,18 +338,18 @@ export const userService = {
         console.log("Token hết hạn, thử refresh token...");
         try {
           // Thử làm mới token và gửi lại yêu cầu
-          const userData = localStorageUtil.get("user");
-          if (userData?.refreshToken) {
+          const tokenData = localStorageUtil.get("token");
+          if (tokenData?.refreshToken) {
             const refreshResponse = await userService.refreshToken(
-              userData.refreshToken
+              tokenData.refreshToken
             );
             if (refreshResponse.accessToken) {
               // Update token và thử lại
-              localStorageUtil.set("user", {
-                ...userData,
+              localStorageUtil.set("token", {
+                ...tokenData,
                 accessToken: refreshResponse.accessToken,
                 refreshToken:
-                  refreshResponse.refreshToken || userData.refreshToken,
+                  refreshResponse.refreshToken || tokenData.refreshToken,
               });
 
               // Đệ quy gọi lại hàm upload sau khi refresh token
@@ -376,21 +373,20 @@ export const userService = {
       };
     }
   },
-
   /**
    * ✅ Kiểm tra và làm mới token nếu cần
    * @returns {Promise<boolean>} Trả về true nếu token hợp lệ hoặc đã được làm mới thành công
    */
   ensureValidToken: async () => {
     try {
-      const userData = localStorageUtil.get("user");
-      if (!userData || !userData.accessToken) {
+      const tokenData = localStorageUtil.get("token");
+      if (!tokenData || !tokenData.accessToken) {
         console.error("Không tìm thấy token xác thực");
         return false;
       }
 
       // Phân tích JWT token để kiểm tra hết hạn
-      const tokenParts = userData.accessToken.split(".");
+      const tokenParts = tokenData.accessToken.split(".");
       if (tokenParts.length !== 3) {
         console.error("Token không hợp lệ");
         return false;
@@ -404,11 +400,9 @@ export const userService = {
 
         // Kiểm tra nếu token sắp hết hạn (còn dưới 5 phút)
         if (expiryTime - currentTime < 5 * 60 * 1000) {
-          console.log("Token sắp hết hạn, tiến hành làm mới...");
-
-          // Gọi hàm refreshToken
+          console.log("Token sắp hết hạn, tiến hành làm mới..."); // Gọi hàm refreshToken
           const refreshResult = await userService.refreshToken(
-            userData.refreshToken
+            tokenData.refreshToken
           );
           return (
             !!refreshResult &&

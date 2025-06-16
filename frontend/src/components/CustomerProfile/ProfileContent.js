@@ -414,10 +414,14 @@ const ProfileContent = () => {
         };
 
         setFormDataUpdate(formData);
-        setOriginalData(formData);
-
-        // ✅ Sync với localStorage để backup
-        localStorageUtil.set("userProfile", user);
+        setOriginalData(formData); // ✅ Sync với localStorage để backup
+        // Duy trì cấu trúc nhất quán {success, message, data} khi lưu vào localStorage
+        const userProfileData = {
+          success: true,
+          message: "Get user information successfully",
+          data: user.data || user, // Giữ cấu trúc dữ liệu hiện tại nếu đã có data, nếu không thì lấy toàn bộ user
+        };
+        localStorageUtil.set("userProfile", userProfileData);
 
         // ✅ Use custom notification
         notify.success("Thành công", "Đã tải thông tin người dùng!", {
@@ -440,7 +444,7 @@ const ProfileContent = () => {
         );
       } else {
         // ✅ Fallback to localStorage nếu API fail
-        const localUser = localStorageUtil.get("user");
+        const localUser = localStorageUtil.get("userProfile");
         if (localUser) {
           console.log("📦 Sử dụng dữ liệu từ localStorage làm fallback");
           setUserData(localUser);
@@ -559,10 +563,14 @@ const ProfileContent = () => {
           ...updateData,
         };
         setFormDataUpdate(newFormData);
-        setOriginalData(newFormData);
-
-        // ✅ Sync với localStorage
-        localStorageUtil.set("userProfile", updatedUser);
+        setOriginalData(newFormData); // ✅ Sync với localStorage
+        // Duy trì cấu trúc nhất quán {success, message, data} khi lưu vào localStorage
+        const userProfileData = {
+          success: true,
+          message: "Update user information successfully",
+          data: updatedUser.data || updatedUser,
+        };
+        localStorageUtil.set("userProfile", userProfileData);
 
         // ✅ Exit edit mode
         setIsEditing(false);
@@ -713,11 +721,16 @@ const ProfileContent = () => {
           ...userData,
           email: email,
         };
-        setUserData(updatedUser);
-
-        // ✅ Cập nhật localStorage để tránh lỗi khi refresh
+        setUserData(updatedUser); // ✅ Cập nhật localStorage để tránh lỗi khi refresh
         localStorageUtil.set("user", updatedUser);
-        localStorageUtil.set("userProfile", updatedUser);
+
+        // Duy trì cấu trúc nhất quán {success, message, data} khi lưu vào localStorage
+        const userProfileData = {
+          success: true,
+          message: "Email updated successfully",
+          data: updatedUser.data || updatedUser,
+        };
+        localStorageUtil.set("userProfile", userProfileData);
 
         console.log("✅ Email updated successfully:", updatedUser);
 

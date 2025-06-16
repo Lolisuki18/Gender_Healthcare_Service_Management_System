@@ -72,11 +72,12 @@ function AvatarUpload({
     if (!selectedFile) {
       setError("Vui lòng chọn một file hình ảnh");
       return;
-    }
+    } // Kiểm tra đăng nhập qua localStorage
+    const tokenData = localStorageUtil.get("token");
+    const userProfileData = localStorageUtil.get("userProfile");
 
-    // Kiểm tra đăng nhập qua localStorage
-    const userData = localStorageUtil.get("user");
-    if (!userData || !userData.accessToken) {
+    // Kiểm tra cả token và userProfile
+    if (!tokenData || !userProfileData) {
       setError("Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.");
       return;
     }
@@ -85,7 +86,7 @@ function AvatarUpload({
     setError("");
     try {
       // Kiểm tra accessToken có thể đã hết hạn
-      if (userData.accessToken) {
+      if (tokenData.accessToken) {
         console.log("Token tìm thấy, tiếp tục upload avatar...");
       }
 
@@ -106,27 +107,33 @@ function AvatarUpload({
         }
 
         console.log("Trích xuất đường dẫn avatar từ response:", avatarPath);
-
         if (avatarPath) {
-          // Cập nhật userProfile nếu có
-          const userProfile = localStorageUtil.get("userProfile");
-          if (userProfile) {
-            userProfile.avatar = avatarPath;
-            localStorageUtil.set("userProfile", userProfile);
-            console.log("Đã cập nhật avatar trong userProfile:", avatarPath);
+          // Sử dụng localStorageUtil để cập nhật userProfile một cách an toàn
+          localStorageUtil.updateUserProfile({ avatar: avatarPath }, true);
+          console.log("Đã cập nhật avatar trong userProfile:", avatarPath);
+
+          // Cập nhật cả đối tượng user trong localStorage nếu có
+          const user = localStorageUtil.get("user");
+          if (user) {
+            user.avatar = avatarPath;
+            localStorageUtil.set("user", user);
+            console.log("Đã cập nhật avatar trong user:", avatarPath);
           }
 
-          // Kích hoạt sự kiện để cập nhật avatar trên toàn trang - LUÔN GỌI BẤT KỂ CÓ USER PROFILE HAY KHÔNG
-          console.log("ĐANG KÍCH HOẠT SỰ KIỆN CẬP NHẬT AVATAR:", avatarPath);
+          // Lưu vào sessionStorage để các component có thể truy cập ngay lập tức
+          sessionStorage.setItem("last_updated_avatar", avatarPath);
+
+          // Kích hoạt sự kiện để cập nhật avatar trên toàn trang
           triggerAvatarUpdate(avatarPath);
 
-          // Trigger sự kiện một lần nữa sau một khoảng thời gian ngắn để đảm bảo các component đều nhận được
+          // Trigger sự kiện một lần nữa sau 200ms để đảm bảo các component đều nhận được
           setTimeout(() => {
-            console.log(
-              "KÍCH HOẠT LẠI SỰ KIỆN CẬP NHẬT AVATAR (SAU 200ms):",
-              avatarPath
-            );
             triggerAvatarUpdate(avatarPath);
+
+            // Kích hoạt callback nếu có
+            if (onUploadSuccess) {
+              onUploadSuccess(avatarPath);
+            }
           }, 200);
 
           // Gọi callback thành công nếu có

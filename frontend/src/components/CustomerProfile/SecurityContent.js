@@ -4,7 +4,6 @@ import {
   Typography,
   Button,
   Stack,
-  useTheme,
   Paper,
   Divider,
   Card,
@@ -33,18 +32,21 @@ import { userService } from "@/services/userService";
 
 // Component quản lý bảo mật: email, sđt, mật khẩu
 const SecurityContent = () => {
-  const user = localStorageUtil.get("userProfile");
-  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  // Đảm bảo lấy thông tin người dùng với cấu trúc chuẩn {success, message, data}
+  const userProfileRaw = localStorageUtil.get("userProfile");
+  // Chuẩn hóa dữ liệu người dùng - đảm bảo đang làm việc với cấu trúc data
+  const user = userProfileRaw?.data || userProfileRaw || {};
+
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userData, setUserData] = useState(null);
-  const [originalData, setOriginalData] = useState({});
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
-  const theme = useTheme();
+  // Log để debug cấu trúc dữ liệu
+  console.log("UserProfile structure:", userProfileRaw);
   const [formDataUpdate, setFormDataUpdate] = useState({
     fullName: "",
     phone: "",
@@ -104,32 +106,39 @@ const SecurityContent = () => {
           email: email,
         };
 
-        setFormDataUpdate(updatedFormData);
-        setOriginalData(updatedFormData);
-
-        // Bảo toàn tất cả thông tin người dùng hiện tại
-        // Chỉ cập nhật trường email, giữ nguyên token và các thông tin khác
-        const currentUser = localStorageUtil.get("user") || {};
+        setFormDataUpdate(updatedFormData); // Đảm bảo dữ liệu userProfile giữ đúng cấu trúc {success, message, data}
         const currentProfile = localStorageUtil.get("userProfile") || {};
 
-        // Cập nhật email trong khi giữ nguyên các thông tin khác
-        const updatedUser = {
-          ...currentUser,
-          email: email,
-        };
-
-        const updatedProfile = {
-          ...currentProfile,
-          email: email,
-        };
-
-        setUserData(updatedProfile);
-
-        // Cập nhật localStorage
-        localStorageUtil.set("user", updatedUser);
-        localStorageUtil.set("userProfile", updatedProfile);
-
-        console.log("✅ Email updated successfully:", updatedProfile);
+        // Nếu userProfile đã có cấu trúc data, cập nhật trong data
+        if (currentProfile.data) {
+          const updatedProfile = {
+            ...currentProfile,
+            data: {
+              ...currentProfile.data,
+              email: email,
+            },
+          };
+          localStorageUtil.set("userProfile", updatedProfile);
+          console.log(
+            "✅ Email updated successfully in data structure:",
+            updatedProfile
+          );
+        } else {
+          // Nếu userProfile là object trực tiếp, chuyển đổi sang cấu trúc chuẩn
+          const updatedProfile = {
+            success: true,
+            message: "User data updated",
+            data: {
+              ...currentProfile,
+              email: email,
+            },
+          };
+          localStorageUtil.set("userProfile", updatedProfile);
+          console.log(
+            "✅ Email updated and structure normalized:",
+            updatedProfile
+          );
+        }
 
         notify.success("Thành công!", "Email đã được cập nhật thành công!", {
           duration: 4000,
@@ -200,29 +209,39 @@ const SecurityContent = () => {
       });
 
       if (response.success) {
-        // Bảo toàn tất cả thông tin người dùng hiện tại
-        // Chỉ cập nhật trường phone, giữ nguyên token và các thông tin khác
-        const currentUser = localStorageUtil.get("user") || {};
+        // Đảm bảo dữ liệu userProfile giữ đúng cấu trúc {success, message, data}
         const currentProfile = localStorageUtil.get("userProfile") || {};
 
-        // Cập nhật phone trong khi giữ nguyên các thông tin khác
-        const updatedUser = {
-          ...currentUser,
-          phone: phone,
-        };
-
-        const updatedProfile = {
-          ...currentProfile,
-          phone: phone,
-        };
-
-        setUserData(updatedProfile);
-
-        // Cập nhật localStorage
-        localStorageUtil.set("user", updatedUser);
-        localStorageUtil.set("userProfile", updatedProfile);
-
-        console.log("✅ Phone updated successfully:", updatedProfile);
+        // Nếu userProfile đã có cấu trúc data, cập nhật trong data
+        if (currentProfile.data) {
+          const updatedProfile = {
+            ...currentProfile,
+            data: {
+              ...currentProfile.data,
+              phone: phone,
+            },
+          };
+          localStorageUtil.set("userProfile", updatedProfile);
+          console.log(
+            "✅ Phone updated successfully in data structure:",
+            updatedProfile
+          );
+        } else {
+          // Nếu userProfile là object trực tiếp, chuyển đổi sang cấu trúc chuẩn
+          const updatedProfile = {
+            success: true,
+            message: "User data updated",
+            data: {
+              ...currentProfile,
+              phone: phone,
+            },
+          };
+          localStorageUtil.set("userProfile", updatedProfile);
+          console.log(
+            "✅ Phone updated and structure normalized:",
+            updatedProfile
+          );
+        }
 
         notify.success(
           "Thành công!",
@@ -247,8 +266,6 @@ const SecurityContent = () => {
   const handleClosePasswordDialog = () => {
     setIsPasswordDialogOpen(false);
   };
-
-  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const handlePasswordChange = async (passwordData) => {
     try {
       setIsChangingPassword(true);
@@ -260,24 +277,35 @@ const SecurityContent = () => {
       if (response.success) {
         setIsPasswordDialogOpen(false);
 
-        // Kiểm tra xem response có token mới hay không
+        // Cập nhật token nếu API trả về
         if (response.data?.token) {
-          // Nếu API trả về token mới sau khi đổi mật khẩu
-          const currentUser = localStorageUtil.get("user") || {};
+          // Lưu token mới vào localStorage
+          localStorageUtil.set("token", response.data.token);
+
+          // Đảm bảo dữ liệu userProfile giữ đúng cấu trúc {success, message, data}
           const currentProfile = localStorageUtil.get("userProfile") || {};
 
-          // Cập nhật token trong localStorage nếu có
-          localStorageUtil.set("user", {
-            ...currentUser,
-            token: response.data.token,
-          });
-
-          // Cập nhật token trong userProfile nếu userProfile có lưu token
-          if (currentProfile.token) {
-            localStorageUtil.set("userProfile", {
-              ...currentProfile,
+          // Nếu userProfile đã có cấu trúc data, cập nhật token nếu cần
+          if (currentProfile.data) {
+            // Chỉ cập nhật token nếu token được lưu trong userProfile
+            if (currentProfile.token) {
+              const updatedProfile = {
+                ...currentProfile,
+                token: response.data.token,
+              };
+              localStorageUtil.set("userProfile", updatedProfile);
+            }
+          } else if (currentProfile.token) {
+            // Nếu là object trực tiếp và có token, chuyển đổi sang cấu trúc chuẩn
+            const updatedProfile = {
+              success: true,
+              message: "User data updated",
+              data: {
+                ...currentProfile,
+              },
               token: response.data.token,
-            });
+            };
+            localStorageUtil.set("userProfile", updatedProfile);
           }
         }
 

@@ -41,7 +41,7 @@ const ProfilePage = () => {
     const timer = setTimeout(() => {
       try {
         // Lấy thông tin user từ localStorage
-        const userData = localStorageUtil.get("user");
+        const userData = localStorageUtil.get("userProfile");
 
         // Kiểm tra xem userData có tồn tại không
         if (userData) {
@@ -50,7 +50,7 @@ const ProfilePage = () => {
       } catch (error) {
         console.error("Error parsing user data:", error);
         // Nếu có lỗi, clear localStorage và redirect
-        localStorageUtil.remove("user");
+        localStorageUtil.remove("userProfile");
         setUser(null);
       } finally {
         setLoading(false);
@@ -82,14 +82,48 @@ const ProfilePage = () => {
       </LoadingContainer>
     );
   }
-
   if (!user) {
     return <NoLoggedInView />;
   }
 
   // Render component tương ứng với role
   const renderProfileByRole = () => {
-    const role = user.role?.toLowerCase();
+    // Kiểm tra định dạng dữ liệu user trước khi truy cập role
+    console.log("User data structure:", user); // Kiểm tra hai cấu trúc dữ liệu có thể có (hoặc là {data: {...}} hoặc là trực tiếp object)
+    console.log("Kiểm tra cấu trúc dữ liệu user:", user);
+    let role = null;
+
+    if (user.data?.role) {
+      // Nếu dữ liệu theo cấu trúc {data: {...}}
+      role = user.data.role.toLowerCase();
+    } else if (user.role) {
+      // Nếu dữ liệu trực tiếp không có data
+      role = user.role.toLowerCase();
+    }
+
+    if (!role) {
+      console.error("User role is undefined:", user);
+      return (
+        <ErrorContainer>
+          <Typography
+            variant="h4"
+            component="h2"
+            gutterBottom
+            sx={{ color: "#f59e0b", fontWeight: "bold", textAlign: "center" }}
+          >
+            Không tìm thấy vai trò người dùng
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{ color: "rgba(255, 255, 255, 0.8)", textAlign: "center" }}
+          >
+            Vui lòng đăng nhập lại để tiếp tục.
+          </Typography>
+        </ErrorContainer>
+      );
+    }
+
+    // Kiểm tra với cả lowercase và uppercase
     switch (role) {
       // case "admin":
       //   return <AdminProfile user={user} />;
@@ -123,7 +157,7 @@ const ProfilePage = () => {
                 mb: 2,
               }}
             >
-              Vai trò "{user.role}" không được hỗ trợ.
+              Vai trò "{user.data.role}" không được hỗ trợ.
             </Typography>
             <Typography
               variant="body2"

@@ -62,77 +62,48 @@ const Header = () => {
   const [user, setUser] = useState(null);
   //State cho menu dropdown khi người dùng đăng nhập -> dùng khi ấn vào avt
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  // State để force re-render khi cần
+  const [refreshKey, setRefreshKey] = useState(0);
   const open = Boolean(dropdownOpen);
-
-  //kiểm tra trạng thái đăng nhập khi component được mount lần đầu tiên
-  useEffect(() => {
-    checkLoginStatus();
-
-    // Lắng nghe sự kiện cập nhật avatar từ localStorage
-    const handleStorageChange = (e) => {
-      if (e.key === "userProfile") {
-        checkLoginStatus();
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange); // Thêm listener cho sự kiện cập nhật avatar
-    const unsubscribe = listenToAvatarUpdates((newAvatarUrl) => {
-      console.log("Header nhận được sự kiện cập nhật avatar:", newAvatarUrl);
-      if (newAvatarUrl) {
-        // Cập nhật avatarUrl state trực tiếp với URL đầy đủ
-        setAvatarUrl(imageUrl.getFullImageUrl(newAvatarUrl));
-        console.log(
-          "Header đã cập nhật avatarUrl:",
-          imageUrl.getFullImageUrl(newAvatarUrl)
-        );
-
-        // Cập nhật user state với avatar mới
-        setUser((prevUser) => {
-          if (prevUser) {
-            const updatedUser = { ...prevUser, avatar: newAvatarUrl };
-            console.log("Header đã cập nhật user state:", updatedUser);
-            return updatedUser;
-          }
-          return prevUser;
-        });
-      }
-    });
-
-    // Kiểm tra và sử dụng avatar từ sessionStorage (từ các lần cập nhật trước)
-    const lastUpdatedAvatar = sessionStorage.getItem("last_updated_avatar");
-    if (lastUpdatedAvatar) {
-      console.log("Header đọc avatar từ sessionStorage:", lastUpdatedAvatar);
-      setAvatarUrl(imageUrl.getFullImageUrl(lastUpdatedAvatar));
-    }
-
-    // Cleanup function để hủy đăng ký listener khi component unmount
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      if (unsubscribe) unsubscribe();
-    };
-  }, []);
-
+  // Hàm force refresh component khi cần
+  const forceRefresh = () => setRefreshKey((prevKey) => prevKey + 1);
+  // Khai báo hàm checkLoginStatus trước khi sử dụng trong useEffect
   const checkLoginStatus = () => {
     try {
-      // Đảm bảo đọc đúng khóa - cần thống nhất giữa lưu và đọc
+      console.log("Checking login status in Header component");
+
+      // Đảm bảo đọc đúng khóa từ localStorage
       const userData = localStorageUtil.get("userProfile");
+
       if (userData) {
+        console.log("User is logged in, updating user data in Header");
         setIsLoggedIn(true);
         setUser(userData);
 
-        // Log để debug
-        console.log("User data from localStorage:", userData);
+        // Lấy avatar từ userData (userProfile)
+        if (userData.data && userData.data.avatar) {
+          const fullAvatarUrl = imageUrl.getFullImageUrl(userData.data.avatar);
+          console.log("Setting avatar from userProfile.data:", fullAvatarUrl);
+          setAvatarUrl(fullAvatarUrl);
 
-        // Đặt avatar URL nếu có
-        if (userData.avatar) {
-          setAvatarUrl(imageUrl.getFullImageUrl(userData.avatar));
-        } else if (userData.data && userData.data.avatar) {
-          setAvatarUrl(imageUrl.getFullImageUrl(userData.data.avatar));
+          // Cập nhật vào sessionStorage để đồng bộ giữa các component
+          sessionStorage.setItem("last_updated_avatar", userData.data.avatar);
+        } else if (userData.avatar) {
+          const fullAvatarUrl = imageUrl.getFullImageUrl(userData.avatar);
+          console.log("Setting avatar from userProfile root:", fullAvatarUrl);
+          setAvatarUrl(fullAvatarUrl);
+
+          // Cập nhật vào sessionStorage để đồng bộ giữa các component
+          sessionStorage.setItem("last_updated_avatar", userData.avatar);
         }
+
+        forceRefresh();
       } else {
+        console.log("User is not logged in");
         setIsLoggedIn(false);
         setUser(null);
         setAvatarUrl(null);
+        sessionStorage.removeItem("last_updated_avatar");
       }
     } catch (error) {
       console.error("Error checking login status:", error);
@@ -157,7 +128,7 @@ const Header = () => {
     // Đảm bảo xóa đúng khóa
     localStorageUtil.remove("userProfile");
     localStorageUtil.remove("loginSuccessMessage");
-    localStorageUtil.remove("user");
+    localStorageUtil.remove("token");
 
     setIsLoggedIn(false);
     setUser(null);
@@ -183,6 +154,94 @@ const Header = () => {
     handleCloseMenu();
     navigate("/profile");
   };
+
+  // Add a polling mechanism to check for avatar updates
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const lastUpdatedAvatar = sessionStorage.getItem("last_updated_avatar");
+      if (lastUpdatedAvatar) {
+        const fullUrl = imageUrl.getFullImageUrl(lastUpdatedAvatar);
+        // Only update if different from current avatar URL
+        if (fullUrl && fullUrl !== avatarUrl) {
+          console.log("Polling detected avatar update:", fullUrl);
+          setAvatarUrl(fullUrl);
+          forceRefresh();
+        }
+      }
+    }, 1000); // Check every second
+
+    return () => clearInterval(intervalId);
+  }, [avatarUrl]);
+
+  useEffect(() => {
+    console.log(
+      "Header component mounted - kiểm tra trạng thái đăng nhập và khởi tạo listeners"
+    );
+    checkLoginStatus();
+
+    // Lắng nghe sự kiện cập nhật avatar từ localStorage và sessionStorage
+    const handleStorageChange = (e) => {
+      console.log("Storage event detected in Header:", e.key);
+      if (
+        e.key === "userProfile" ||
+        e.key === "avatar_sync_trigger" ||
+        e.key === "last_updated_avatar" ||
+        e.key === "user"
+      ) {
+        console.log("Avatar update detected via storage event in Header");
+        checkLoginStatus();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // Lắng nghe trực tiếp sự kiện avatar_updated từ cùng tab
+    const handleDirectAvatarUpdate = (event) => {
+      console.log(
+        "Direct avatar update event received in Header:",
+        event.detail
+      );
+      if (event.detail && event.detail.avatarUrl) {
+        const newAvatarUrl = event.detail.avatarUrl;
+        console.log("Setting new avatar URL:", newAvatarUrl);
+        setAvatarUrl(imageUrl.getFullImageUrl(newAvatarUrl));
+        forceRefresh();
+        // Cập nhật lại thông tin người dùng
+        checkLoginStatus();
+      }
+    };
+
+    // Đăng ký lắng nghe sự kiện trực tiếp
+    window.addEventListener("avatar_updated", handleDirectAvatarUpdate);
+
+    // Đăng ký lắng nghe sự kiện cập nhật avatar từ hệ thống event tùy chỉnh
+    const unsubscribe = listenToAvatarUpdates((newAvatarUrl) => {
+      console.log(
+        "Avatar update event received in Header from listenToAvatarUpdates:",
+        newAvatarUrl
+      );
+      if (newAvatarUrl) {
+        setAvatarUrl(imageUrl.getFullImageUrl(newAvatarUrl));
+        forceRefresh();
+      }
+      checkLoginStatus();
+    });
+
+    // Kiểm tra và sử dụng avatar từ sessionStorage (từ các lần cập nhật trước)
+    const lastUpdatedAvatar = sessionStorage.getItem("last_updated_avatar");
+    if (lastUpdatedAvatar) {
+      console.log("Found cached avatar in sessionStorage:", lastUpdatedAvatar);
+      setAvatarUrl(imageUrl.getFullImageUrl(lastUpdatedAvatar));
+    }
+
+    // Cleanup function để hủy đăng ký listener khi component unmount
+    return () => {
+      console.log("Cleaning up event listeners in Header");
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("avatar_updated", handleDirectAvatarUpdate);
+      if (unsubscribe) unsubscribe();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <AppBar
@@ -266,10 +325,21 @@ const Header = () => {
                 }}
               >
                 {" "}
-                {/* Avatar display for logged in users */}
+                {/* Avatar display for logged in users */}{" "}
                 {user ? (
                   <Avatar
-                    src={avatarUrl}
+                    key={`header-avatar-${refreshKey}-${Date.now()}`}
+                    src={(() => {
+                      // Ưu tiên lấy trực tiếp từ userProfile
+                      const userData = localStorageUtil.get("userProfile");
+                      if (userData?.data?.avatar) {
+                        return imageUrl.getFullImageUrl(userData.data.avatar);
+                      } else if (userData?.avatar) {
+                        return imageUrl.getFullImageUrl(userData.avatar);
+                      }
+                      // Nếu không có trong userProfile thì mới dùng state
+                      return avatarUrl;
+                    })()}
                     sx={{
                       width: 40,
                       height: 40,
@@ -277,12 +347,16 @@ const Header = () => {
                       "&:hover": {
                         transform: "scale(1.1)",
                       },
+                      border: "2px solid rgba(255, 255, 255, 0.8)",
                     }}
                     imgProps={{
-                      onError: () =>
-                        console.log("Header avatar image failed to load"),
-                      onLoad: () =>
-                        console.log("Header avatar image loaded successfully"),
+                      onError: () => {
+                        console.log("Header avatar image failed to load");
+                        forceRefresh();
+                      },
+                      onLoad: () => {
+                        console.log("Header avatar image loaded successfully");
+                      },
                     }}
                   >
                     {!avatarUrl &&
