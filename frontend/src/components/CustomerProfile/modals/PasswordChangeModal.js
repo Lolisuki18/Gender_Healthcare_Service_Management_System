@@ -1,12 +1,12 @@
 /**
- * PasswordChangeModal.js - Modal component cho việc thay đổi mật khẩu
+ * PasswordChangeModal.js - Thành phần phương thức để thay đổi mật khẩu
  *
- * Features:
- * - Form validation cho mật khẩu hiện tại và mật khẩu mới
- * - Confirm password matching
- * - Show/hide password functionality
- * - Security tips cho user
- * - Error handling và user feedback
+ * Đặc trưng:
+ * - Xác thực biểu mẫu cho mật khẩu hiện tại và mật khẩu mới
+ * - Xác nhận khớp mật khẩu
+ * - Chức năng hiển thị/ẩn mật khẩu
+ * - Lời khuyên bảo mật cho người dùng
+ * - Xử lý lỗi và phản hồi của người dùng
  */
 
 import React, { useState } from "react";
@@ -30,31 +30,36 @@ import {
   Shield as ShieldIcon,
 } from "@mui/icons-material";
 
-// ✅ Password Change Dialog Component
+//Password Change Dialog Component
 export const PasswordChangeDialog = ({
-  open,
-  onClose,
-  onChangePassword,
-  isChanging,
+  open, //dùng để mở dialog
+  onClose, //dùng để đóng dialog
+  onChangePassword, //dùng để gọi hàm khi người dùng muốn thay đổi mật khẩu
+  isChanging, //dùng để xác định trạng thái đang thay đổi mật khẩu hay không
 }) => {
+  //State quản lý mật khẩu
   const [passwords, setPasswords] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
+  //State quản lý hiển thị mật khẩu
+  //Mặc định là ẩn mật khẩu
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
     confirm: false,
   });
+  //State quản lý lỗi
   const [errors, setErrors] = useState({});
 
+  // Hàm xử lý thay đổi giá trị mật khẩu
   const handleChange = (field) => (e) => {
     setPasswords({
       ...passwords,
       [field]: e.target.value,
     });
-    // Clear error when user starts typing
+    // Xóa lỗi khi người dùng bắt đầu nhập
     if (errors[field]) {
       setErrors({
         ...errors,
@@ -63,6 +68,8 @@ export const PasswordChangeDialog = ({
     }
   };
 
+  // Hàm để hiển thị/ẩn mật khẩu
+  // Nhận vào tên trường (current, new, confirm) để xác định trường nào
   const toggleShowPassword = (field) => {
     setShowPasswords({
       ...showPasswords,
@@ -70,13 +77,17 @@ export const PasswordChangeDialog = ({
     });
   };
 
+  // Hàm xác thực biểu mẫu
+  // Kiểm tra các trường mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu
+  // Trả về true nếu tất cả các trường hợp lệ, false nếu có lỗi
   const validateForm = () => {
     const newErrors = {};
-
+    //Kiểm tra xem password hiện tại có được nhập hay không ?
     if (!passwords.currentPassword) {
       newErrors.currentPassword = "Vui lòng nhập mật khẩu hiện tại";
     }
-
+    //Kiểm tra xem mật khẩu mới có được nhập hay không ?
+    //Nếu có thì kiểm tra độ dài của mật khẩu mới
     if (!passwords.newPassword) {
       newErrors.newPassword = "Vui lòng nhập mật khẩu mới";
     } else if (passwords.newPassword.length < 6) {
@@ -88,17 +99,23 @@ export const PasswordChangeDialog = ({
     } else if (passwords.newPassword !== passwords.confirmPassword) {
       newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
     }
-
+    // Kiểm tra xem mật khẩu mới có khác mật khẩu hiện tại không
+    // Nếu giống nhau thì báo lỗi
     if (passwords.currentPassword === passwords.newPassword) {
       newErrors.newPassword = "Mật khẩu mới phải khác mật khẩu hiện tại";
     }
-
+    // Cập nhật state lỗi với các lỗi mới
+    // Nếu không có lỗi thì trả về true
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // Hàm xử lý gửi biểu mẫu
+  // Gọi validateForm để kiểm tra tính hợp lệ của biểu mẫu
   const handleSubmit = () => {
     if (validateForm()) {
+      // Nếu biểu mẫu hợp lệ, gọi hàm onChangePassword với các giá trị mật khẩu
+      // Truyền vào mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu
       onChangePassword({
         currentPassword: passwords.currentPassword,
         newPassword: passwords.newPassword,
@@ -107,22 +124,42 @@ export const PasswordChangeDialog = ({
     }
   };
 
+  // Hàm xử lý đóng dialog
+  // Reset lại các giá trị mật khẩu, hiển thị mật khẩu và lỗi
   const handleClose = () => {
+    // Reset lại các giá trị mật khẩu
+    // Đặt lại mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu về
     setPasswords({
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     });
+    // Đặt lại hiển thị mật khẩu về false
+    // Đặt lại hiển thị mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu về false
+    // Điều này sẽ ẩn các trường mật khẩu khi đóng dialog
     setShowPasswords({
       current: false,
       new: false,
       confirm: false,
     });
+    // Đặt lại lỗi về một đối tượng rỗng
+    // Điều này sẽ xóa tất cả các thông báo lỗi hiển thị trong dialog
     setErrors({});
+    // Gọi hàm onClose để đóng dialog
+    // Hàm này sẽ được truyền vào từ component cha để xử lý việc đóng dialog
     onClose();
   };
 
+  // Trả về giao diện của dialog
+
   return (
+    // title của dialog
+    // Dialog component từ Material UI
+    // Mở dialog khi prop open là true
+    // onClose sẽ gọi hàm handleClose khi người dùng đóng dialog
+    // maxWidth là kích thước tối đa của dialog
+    // fullWidth sẽ làm cho dialog chiếm toàn bộ chiều rộng
+    // Sử dụng Stack để căn chỉnh các thành phần bên trong dialog
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={2}>
@@ -255,7 +292,7 @@ export const PasswordChangeDialog = ({
           </Paper>
         </Stack>
       </DialogContent>
-
+      {/* Nút huỷ */}
       <DialogActions sx={{ p: 3, pt: 0 }}>
         <Button
           onClick={handleClose}

@@ -1,10 +1,10 @@
 /**
  * StaffManagementContent.js
  *
- * Mục đích: Hiển thị và quản lý danh sách nhân viên
- * - Hiển thị danh sách nhân viên
- * - Thêm/sửa/xóa thông tin nhân viên
- * - Phân quyền và quản lý vai trò
+ * Mục đích: Hiển thị danh sách người dùng trong hệ thống
+ * - Hiển thị danh sách khách hàng, tư vấn viên, nhân viên
+ * - Xem thông tin và trạng thái của người dùng
+ * - Chức năng xem-only, không có chỉnh sửa
  */
 
 import React, { useState, useEffect } from "react";
@@ -12,7 +12,6 @@ import {
   Box,
   Typography,
   Paper,
-  Button,
   Table,
   TableBody,
   TableCell,
@@ -20,89 +19,154 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  IconButton,
   TextField,
   InputAdornment,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
+  Tab,
+  Tabs,
+  Avatar,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress,
-  Alert,
+  // Uncomment when API is implemented
+  // CircularProgress,
+  // Alert,
 } from "@mui/material";
 import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Search as SearchIcon,
-  FilterList as FilterIcon,
+  Person as PersonIcon,
+  Psychology as PsychologyIcon,
+  MedicalServices as MedicalServicesIcon,
 } from "@mui/icons-material";
-// import staffService from "../../services/staffService"; // Uncomment khi có API
+// import userService from "../../services/userService"; // Uncomment khi có API
 
 const StaffManagementContent = () => {
+  // Tab state
+  const [tabValue, setTabValue] = useState(0);
   // Mock data - sẽ được thay thế bằng API calls
-  const [staffMembers, setStaffMembers] = useState([
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      position: "Bác sĩ",
-      specialization: "Da liễu",
-      status: "active",
-    },
-    {
-      id: 2,
-      name: "Trần Thị B",
-      position: "Y tá",
-      specialization: "Sản phụ khoa",
-      status: "active",
-    },
-    {
-      id: 3,
-      name: "Lê Văn C",
-      position: "Bác sĩ",
-      specialization: "Nam khoa",
-      status: "inactive",
-    },
-  ]);
+  const [users] = useState({
+    customers: [
+      {
+        id: 1,
+        name: "Đỗ Thị Trang",
+        email: "trangdo@example.com",
+        phone: "0901234567",
+        joinDate: "2023-11-20",
+        status: "active",
+        userType: "customer",
+      },
+      {
+        id: 2,
+        name: "Nguyễn Hoàng Minh",
+        email: "minhnh@example.com",
+        phone: "0912345678",
+        joinDate: "2024-01-15",
+        status: "active",
+        userType: "customer",
+      },
+      {
+        id: 3,
+        name: "Phạm Thị Lan",
+        email: "lanpt@example.com",
+        phone: "0987654321",
+        joinDate: "2023-09-05",
+        status: "inactive",
+        userType: "customer",
+      },
+    ],
+    consultants: [
+      {
+        id: 4,
+        name: "TS. Nguyễn Văn Tâm",
+        email: "tamnv@example.com",
+        phone: "0923456789",
+        specialization: "Tâm lý giới tính",
+        joinDate: "2023-06-10",
+        status: "active",
+        userType: "consultant",
+      },
+      {
+        id: 5,
+        name: "ThS. Lê Mai Anh",
+        email: "anhml@example.com",
+        phone: "0934567890",
+        specialization: "Tư vấn tình cảm",
+        joinDate: "2023-08-18",
+        status: "active",
+        userType: "consultant",
+      },
+    ],
+    staff: [
+      {
+        id: 6,
+        name: "Nguyễn Văn A",
+        email: "anv@example.com",
+        phone: "0945678901",
+        position: "Bác sĩ",
+        specialization: "Da liễu",
+        joinDate: "2023-05-15",
+        status: "active",
+        userType: "staff",
+      },
+      {
+        id: 7,
+        name: "Trần Thị B",
+        email: "btt@example.com",
+        phone: "0956789012",
+        position: "Y tá",
+        specialization: "Sản phụ khoa",
+        joinDate: "2023-07-20",
+        status: "active",
+        userType: "staff",
+      },
+      {
+        id: 8,
+        name: "Lê Văn C",
+        email: "clv@example.com",
+        phone: "0967890123",
+        position: "Bác sĩ",
+        specialization: "Nam khoa",
+        joinDate: "2023-04-10",
+        status: "inactive",
+        userType: "staff",
+      },
+    ],
+  });
 
   // State cho API calls - comment lại cho đến khi có API
   // const [isLoading, setIsLoading] = useState(false);
   // const [error, setError] = useState(null);
-  // const [formData, setFormData] = useState({
-  //   name: "",
-  //   position: "",
-  //   specialization: "",
-  //   status: "active"
-  // });
 
   // useEffect(() => {
-  //   const fetchStaffMembers = async () => {
+  //   const fetchUsers = async () => {
   //     setIsLoading(true);
   //     try {
-  //       const response = await staffService.getAllStaff();
-  //       setStaffMembers(response.data);
+  //       const customersResponse = await userService.getAllCustomers();
+  //       const consultantsResponse = await userService.getAllConsultants();
+  //       const staffResponse = await userService.getAllStaff();
+  //
+  //       setUsers({
+  //         customers: customersResponse.data,
+  //         consultants: consultantsResponse.data,
+  //         staff: staffResponse.data
+  //       });
   //       setError(null);
   //     } catch (err) {
-  //       setError("Không thể tải danh sách nhân viên: " + err.message);
+  //       setError("Không thể tải danh sách người dùng: " + err.message);
   //     } finally {
   //       setIsLoading(false);
   //     }
   //   };
   //
-  //   fetchStaffMembers();
+  //   fetchUsers();
   // }, []);
 
   // State management
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [openDialog, setOpenDialog] = useState(false);
-  const [currentStaff, setCurrentStaff] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Handlers
   const handleChangePage = (event, newPage) => {
@@ -119,112 +183,103 @@ const StaffManagementContent = () => {
     setPage(0);
   };
 
-  const handleOpenAddDialog = () => {
-    setCurrentStaff(null);
-    setOpenDialog(true);
-
-    // Khi có API, uncomment đoạn code sau:
-    // setFormData({
-    //   name: "",
-    //   position: "",
-    //   specialization: "",
-    //   status: "active"
-    // });
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+    setPage(0);
+    setSearchTerm("");
+    setStatusFilter("all");
   };
 
-  const handleOpenEditDialog = (staff) => {
-    setCurrentStaff(staff);
-    setOpenDialog(true);
-
-    // Khi có API, uncomment đoạn code sau:
-    // setFormData({
-    //   name: staff.name,
-    //   position: staff.position,
-    //   specialization: staff.specialization,
-    //   status: staff.status
-    // });
+  const handleStatusFilterChange = (event) => {
+    setStatusFilter(event.target.value);
+    setPage(0);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-  };
-
-  // Khi có API, comment đoạn code hiện tại và uncomment đoạn code bên dưới
-  const handleSaveStaff = () => {
-    // Logic lưu thông tin nhân viên
-    setOpenDialog(false);
-  };
-
-  // const handleSaveStaff = async () => {
-  //   setIsLoading(true);
-  //   try {
-  //     if (currentStaff) {
-  //       // Cập nhật nhân viên
-  //       await staffService.updateStaff(currentStaff.id, formData);
-  //     } else {
-  //       // Thêm mới nhân viên
-  //       await staffService.createStaff(formData);
-  //     }
-  //
-  //     // Refresh data
-  //     const response = await staffService.getAllStaff();
-  //     setStaffMembers(response.data);
-  //     setError(null);
-  //     setOpenDialog(false);
-  //   } catch (err) {
-  //     setError("Không thể lưu thông tin nhân viên: " + err.message);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
-  // Khi có API, comment đoạn code hiện tại và uncomment đoạn code bên dưới
-  const handleDeleteStaff = (id) => {
-    // Logic xóa nhân viên
-    if (window.confirm("Bạn có chắc chắn muốn xóa nhân viên này?")) {
-      setStaffMembers(staffMembers.filter((staff) => staff.id !== id));
+  // Lấy danh sách người dùng theo tab hiện tại
+  const getCurrentUsers = () => {
+    switch (tabValue) {
+      case 0: // All users
+        return [...users.customers, ...users.consultants, ...users.staff];
+      case 1: // Customers
+        return users.customers;
+      case 2: // Consultants
+        return users.consultants;
+      case 3: // Staff
+        return users.staff;
+      default:
+        return [];
     }
   };
 
-  // const handleDeleteStaff = async (id) => {
-  //   if (window.confirm("Bạn có chắc chắn muốn xóa nhân viên này?")) {
-  //     setIsLoading(true);
-  //     try {
-  //       await staffService.deleteStaff(id);
-  //
-  //       // Refresh data
-  //       const response = await staffService.getAllStaff();
-  //       setStaffMembers(response.data);
-  //       setError(null);
-  //     } catch (err) {
-  //       setError("Không thể xóa nhân viên: " + err.message);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   }
-  // };
+  // Filter users dựa trên searchTerm và statusFilter
+  const filteredUsers = getCurrentUsers().filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.phone && user.phone.includes(searchTerm)) ||
+      (user.specialization &&
+        user.specialization.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user.position &&
+        user.position.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // Khi có API, uncomment đoạn code sau:
-  // const handleFormChange = (e) => {
-  //   const { name, value } = e.target;
-  //   setFormData(prev => ({
-  //     ...prev,
-  //     [name]: value
-  //   }));
-  // };
+    const matchesStatus =
+      statusFilter === "all" || user.status === statusFilter;
 
-  // Filter staffMembers dựa trên searchTerm
-  const filteredStaffMembers = staffMembers.filter(
-    (staff) =>
-      staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.specialization.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    return matchesSearch && matchesStatus;
+  });
+
+  // Helper function để hiển thị icon theo loại người dùng
+  const getUserTypeIcon = (userType) => {
+    switch (userType) {
+      case "customer":
+        return <PersonIcon fontSize="small" sx={{ color: "#4A90E2" }} />;
+      case "consultant":
+        return <PsychologyIcon fontSize="small" sx={{ color: "#9C27B0" }} />;
+      case "staff":
+        return (
+          <MedicalServicesIcon fontSize="small" sx={{ color: "#1ABC9C" }} />
+        );
+      default:
+        return <PersonIcon fontSize="small" />;
+    }
+  };
+
+  // Helper function để hiển thị tên loại người dùng
+  const getUserTypeName = (userType) => {
+    switch (userType) {
+      case "customer":
+        return "Khách hàng";
+      case "consultant":
+        return "Tư vấn viên";
+      case "staff":
+        return "Nhân viên";
+      default:
+        return "Không xác định";
+    }
+  };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Quản lý nhân viên
+    <Box
+      sx={{
+        p: 3,
+        bgcolor: "#f8fafc",
+        borderRadius: 2,
+        boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
+      }}
+    >
+      <Typography
+        variant="h5"
+        gutterBottom
+        sx={{
+          fontWeight: 700,
+          color: "#1e293b",
+          display: "flex",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
+        <PersonIcon sx={{ mr: 1, color: "#4A90E2", fontSize: 28 }} />
+        Danh sách người dùng trong hệ thống
       </Typography>
 
       {/* Khi có API, uncomment đoạn code sau */}
@@ -240,166 +295,269 @@ const StaffManagementContent = () => {
         </Box>
       )} */}
 
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          sx={{
+            "& .MuiTab-root": {
+              fontWeight: 600,
+              textTransform: "none",
+              minHeight: 48,
+            },
+            "& .Mui-selected": {
+              color: "#4A90E2 !important",
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: "#4A90E2",
+              height: 3,
+            },
+          }}
+        >
+          <Tab
+            label={
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <PersonIcon sx={{ mr: 1 }} />
+                <span>Tất cả người dùng</span>
+                <Chip
+                  label={
+                    users.customers.length +
+                    users.consultants.length +
+                    users.staff.length
+                  }
+                  size="small"
+                  sx={{ ml: 1, height: 20, fontSize: "0.7rem" }}
+                />
+              </Box>
+            }
+          />
+          <Tab
+            label={
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <PersonIcon sx={{ mr: 1 }} />
+                <span>Khách hàng</span>
+                <Chip
+                  label={users.customers.length}
+                  size="small"
+                  sx={{ ml: 1, height: 20, fontSize: "0.7rem" }}
+                />
+              </Box>
+            }
+          />
+          <Tab
+            label={
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <PsychologyIcon sx={{ mr: 1 }} />
+                <span>Tư vấn viên</span>
+                <Chip
+                  label={users.consultants.length}
+                  size="small"
+                  sx={{ ml: 1, height: 20, fontSize: "0.7rem" }}
+                />
+              </Box>
+            }
+          />
+          <Tab
+            label={
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <MedicalServicesIcon sx={{ mr: 1 }} />
+                <span>Nhân viên</span>
+                <Chip
+                  label={users.staff.length}
+                  size="small"
+                  sx={{ ml: 1, height: 20, fontSize: "0.7rem" }}
+                />
+              </Box>
+            }
+          />
+        </Tabs>
+      </Box>
+
       {/* Toolbar */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <TextField
           size="small"
-          placeholder="Tìm kiếm nhân viên..."
+          placeholder="Tìm kiếm người dùng..."
           value={searchTerm}
           onChange={handleSearch}
-          sx={{ width: "40%" }}
+          sx={{
+            width: "40%",
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 2,
+              bgcolor: "#fff",
+              "& fieldset": {
+                borderColor: "rgba(203, 213, 225, 0.8)",
+              },
+              "&:hover fieldset": {
+                borderColor: "#4A90E2",
+              },
+            },
+          }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon />
+                <SearchIcon sx={{ color: "#64748b" }} />
               </InputAdornment>
             ),
           }}
         />
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAddDialog}
-        >
-          Thêm nhân viên
-        </Button>
+
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Trạng thái</InputLabel>
+          <Select
+            value={statusFilter}
+            onChange={handleStatusFilterChange}
+            label="Trạng thái"
+            sx={{
+              bgcolor: "#fff",
+              borderRadius: 2,
+            }}
+          >
+            <MenuItem value="all">Tất cả</MenuItem>
+            <MenuItem value="active">Đang hoạt động</MenuItem>
+            <MenuItem value="inactive">Không hoạt động</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
 
-      {/* Staff Table */}
-      <TableContainer component={Paper}>
+      {/* Users Table */}
+      <TableContainer
+        component={Paper}
+        sx={{
+          boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
+          borderRadius: 2,
+          overflow: "hidden",
+        }}
+      >
         <Table sx={{ minWidth: 650 }}>
-          <TableHead>
+          <TableHead sx={{ bgcolor: "#f1f5f9" }}>
             <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Tên</TableCell>
-              <TableCell>Chức vụ</TableCell>
-              <TableCell>Chuyên môn</TableCell>
-              <TableCell>Trạng thái</TableCell>
-              <TableCell align="right">Thao tác</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Tên</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Loại tài khoản</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Số điện thoại</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Chuyên môn/Vị trí</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Ngày tham gia</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Trạng thái</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredStaffMembers
+            {filteredUsers
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((staff) => (
-                <TableRow key={staff.id}>
-                  <TableCell>{staff.id}</TableCell>
-                  <TableCell>{staff.name}</TableCell>
-                  <TableCell>{staff.position}</TableCell>
-                  <TableCell>{staff.specialization}</TableCell>
+              .map((user) => (
+                <TableRow
+                  key={user.id}
+                  sx={{
+                    "&:hover": { bgcolor: "rgba(74, 144, 226, 0.04)" },
+                    "&:last-child td, &:last-child th": { border: 0 },
+                  }}
+                >
+                  <TableCell>{user.id}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          mr: 1.5,
+                          bgcolor:
+                            user.userType === "customer"
+                              ? "#4A90E2"
+                              : user.userType === "consultant"
+                              ? "#9C27B0"
+                              : "#1ABC9C",
+                        }}
+                      >
+                        {user.name.charAt(0)}
+                      </Avatar>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {user.name}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      icon={getUserTypeIcon(user.userType)}
+                      label={getUserTypeName(user.userType)}
+                      size="small"
+                      sx={{
+                        bgcolor:
+                          user.userType === "customer"
+                            ? "rgba(74, 144, 226, 0.1)"
+                            : user.userType === "consultant"
+                            ? "rgba(156, 39, 176, 0.1)"
+                            : "rgba(26, 188, 156, 0.1)",
+                        color:
+                          user.userType === "customer"
+                            ? "#2c5282"
+                            : user.userType === "consultant"
+                            ? "#6b1b9a"
+                            : "#1a7268",
+                        fontWeight: 500,
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.phone}</TableCell>
+                  <TableCell>
+                    {user.userType === "staff"
+                      ? `${user.position} (${user.specialization})`
+                      : user.userType === "consultant"
+                      ? user.specialization
+                      : "-"}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(user.joinDate).toLocaleDateString("vi-VN")}
+                  </TableCell>
                   <TableCell>
                     <Chip
                       label={
-                        staff.status === "active"
-                          ? "Đang làm việc"
-                          : "Nghỉ việc"
+                        user.status === "active"
+                          ? "Đang hoạt động"
+                          : "Không hoạt động"
                       }
-                      color={staff.status === "active" ? "success" : "default"}
+                      color={user.status === "active" ? "success" : "default"}
                       size="small"
+                      sx={{
+                        fontWeight: 500,
+                      }}
                     />
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => handleOpenEditDialog(staff)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteStaff(staff.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))}
+
+            {filteredUsers.length === 0 && (
+              <TableRow style={{ height: 53 }}>
+                <TableCell colSpan={8} align="center">
+                  Không tìm thấy người dùng nào phù hợp
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={filteredStaffMembers.length}
+          count={filteredUsers.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Số hàng mỗi trang:"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} của ${count}`
+          }
         />
       </TableContainer>
-
-      {/* Add/Edit Staff Dialog */}
-      <Dialog
-        open={openDialog}
-        onClose={handleCloseDialog}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          {currentStaff
-            ? "Chỉnh sửa thông tin nhân viên"
-            : "Thêm nhân viên mới"}
-        </DialogTitle>
-        <DialogContent>
-          <Box component="form" sx={{ mt: 2 }}>
-            {/* Khi có API, thay đổi defaultValue thành value và thêm onChange handler 
-                Form fields hiện tại: */}
-            <TextField
-              fullWidth
-              label="Họ và tên"
-              margin="normal"
-              name="name"
-              defaultValue={currentStaff?.name || ""}
-              // value={formData.name}
-              // onChange={handleFormChange}
-            />
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Chức vụ</InputLabel>
-              <Select
-                name="position"
-                defaultValue={currentStaff?.position || ""}
-                label="Chức vụ"
-                // value={formData.position}
-                // onChange={handleFormChange}
-              >
-                <MenuItem value="Bác sĩ">Bác sĩ</MenuItem>
-                <MenuItem value="Y tá">Y tá</MenuItem>
-                <MenuItem value="Nhân viên hỗ trợ">Nhân viên hỗ trợ</MenuItem>
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              label="Chuyên môn"
-              margin="normal"
-              name="specialization"
-              defaultValue={currentStaff?.specialization || ""}
-              // value={formData.specialization}
-              // onChange={handleFormChange}
-            />
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Trạng thái</InputLabel>
-              <Select
-                name="status"
-                defaultValue={currentStaff?.status || "active"}
-                label="Trạng thái"
-                // value={formData.status}
-                // onChange={handleFormChange}
-              >
-                <MenuItem value="active">Đang làm việc</MenuItem>
-                <MenuItem value="inactive">Nghỉ việc</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Hủy</Button>
-          <Button variant="contained" onClick={handleSaveStaff}>
-            Lưu
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

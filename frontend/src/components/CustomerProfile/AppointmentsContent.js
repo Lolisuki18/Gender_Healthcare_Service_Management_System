@@ -8,22 +8,22 @@
  * - Status indicators với color coding
  * - Responsive card layout
  *
- * Features:
- * - Filter theo trạng thái lịch hẹn
- * - Card-based design cho easy scanning
- * - Color-coded status chips
- * - Doctor và clinic information
- * - Date/time formatting
+ * Tính năng:
+ * - Lọc theo trạng thái lịch hẹn
+ * - Thiết kế dạng thẻ để dễ dàng quét
+ * - Chip trạng thái được mã hóa màu
+ * - Thông tin bác sĩ và phòng khám
+ * - Định dạng ngày/giờ
  *
- * Design Pattern:
- * - Grid system cho responsive layout
- * - Card components với glass morphism
- * - Status chips với conditional styling
- * - Icon integration cho visual cues
+ * Mẫu thiết kế:
+ * - Hệ thống lưới cho bố cục đáp ứng
+ * - Thành phần thẻ với hình thái thủy tinh
+ * - Chip trạng thái với kiểu dáng có điều kiện
+ * - Tích hợp biểu tượng cho tín hiệu trực quan
  *
- * Data Structure:
- * - appointmentData: Array của appointment objects
- * - Mỗi appointment có: id, date, time, doctor, status, location
+ * Cấu trúc dữ liệu:
+ * - appointmentData: Mảng các đối tượng cuộc hẹn
+ * - Mỗi cuộc hẹn có: id, ngày, giờ, bác sĩ, trạng thái, vị trí
  */
 
 import React from "react";
@@ -43,8 +43,8 @@ import {
   LocationOn as LocationIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
-// Import dateUtils for consistent date formatting
-import { formatDateDisplay } from "../../utils/dateUtils.js";
+
+import { formatDateDisplay } from "@/utils/dateUtils.js";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: "rgba(255, 255, 255, 0.95)",

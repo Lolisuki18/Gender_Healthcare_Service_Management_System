@@ -321,19 +321,73 @@ export const userService = {
         hasToken: !!tokenData.accessToken,
         tokenFirstChars: tokenData.accessToken.substring(0, 15) + "...", // Hiện token một phần để debug
       });
+      console.log("Sending avatar upload request to:", "/users/profile/avatar");
 
       const response = await apiClient.post("/users/profile/avatar", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${tokenData.accessToken}`, // Đảm bảo token được gửi đi
         },
+        timeout: 30000, // Tăng timeout lên 30 giây cho upload file lớn
       });
 
-      console.log("Avatar upload response:", response.data);
+      console.log("Avatar upload API response:", response);
+      console.log("Avatar upload response data:", response.data);
+      console.log("Avatar upload response status:", response.status);
+
+      // Kiểm tra cấu trúc response từ API
+      if (!response.data) {
+        console.error("Không nhận được dữ liệu từ API response");
+        return {
+          success: false,
+          message: "Không nhận được dữ liệu từ API",
+        };
+      } // Xử lý nhiều định dạng response khác nhau
+      let responseData = response.data;
+      let avatarData = responseData;
+
+      console.log("Phân tích cấu trúc responseData:", responseData);
+
+      // Nếu response là { success, data, message } format
+      if (
+        responseData &&
+        responseData.success !== undefined &&
+        responseData.data
+      ) {
+        avatarData = responseData.data;
+        console.log("Trích xuất data từ format chuẩn:", avatarData);
+      }
+
+      // Kiểm tra nếu avatar nằm trực tiếp trong data và là string
+      if (
+        typeof responseData === "string" &&
+        (responseData.includes("/img/") ||
+          responseData.includes("/avatar/") ||
+          responseData.includes("/images/"))
+      ) {
+        avatarData = responseData;
+        console.log("Avatar là đường dẫn trực tiếp:", avatarData);
+      }
+
+      // Trường hợp data.avatar hoặc data là object có chứa avatar
+      if (typeof avatarData === "object") {
+        if (avatarData.avatar) {
+          console.log("Tìm thấy avatar trong data.avatar", avatarData.avatar);
+          avatarData = { avatar: avatarData.avatar };
+        } else if (responseData.avatar) {
+          console.log(
+            "Tìm thấy avatar trong responseData.avatar",
+            responseData.avatar
+          );
+          avatarData = { avatar: responseData.avatar };
+        }
+      }
+
+      console.log("Dữ liệu avatar cuối cùng trước khi trả về:", avatarData);
 
       return {
         success: true,
-        data: response.data,
+        data: avatarData,
         message: "Cập nhật avatar thành công",
       };
     } catch (error) {

@@ -20,6 +20,7 @@ import ConsultantProfile from "@/components/ConsultantProfile/ConsultantProfile"
 import StaffProfile from "@/components/StaffProfile/StaffProfile";
 import AdminLayout from "./components/layouts/AdminLayout";
 import localStorageUtil from "./utils/localStorage";
+import ConsultationPage from "./pages/ConsultantionPage";
 
 const AppRoutes = () => {
   // Lấy thông tin user từ localStorage
@@ -38,7 +39,7 @@ const AppRoutes = () => {
       case "CONSULTANT":
       case "STAFF":
         return <HomePage />; // Các role khác vào homepage
-      default:
+      default: //nếu là role không hợp lệ thì sẽ vào trang login
         return <Navigate to="/login" replace />;
     }
   };
@@ -53,8 +54,11 @@ const AppRoutes = () => {
           index
           element={
             userData && tokenData ? <AutoRedirectToProfile /> : <HomePage />
+            //nếu có token và userData thì sẽ redirect đến trang phù hợp , còn hok thì sẽ
+            //đến trang HomePage
           }
         />
+        <Route path="/appointment" element={<ConsultationPage />}></Route>
         <Route path="/sti-test" element={<StiPage />} /> {/* Trang STI Test */}
         {/* Homepage cho các role đã đăng nhập (trừ admin) */}
         <Route path="home" element={<HomePage />} />{" "}
@@ -66,17 +70,20 @@ const AppRoutes = () => {
             userData.data &&
             userData.data.role !== "ADMIN" &&
             tokenData ? (
-              <ProfilePage />
+              <ProfilePage /> // Chỉ cho phép truy cập nếu có userData và token
             ) : (
-              <Navigate to="/login" replace />
+              <Navigate to="/login" replace /> // còn hoặc không có thì sẽ redirect đến trang login
             )
           }
         />
         {/* Public routes */}
+        {/* Trang đăng nhập */}
         <Route path="login" element={<LoginPage />} />
+        {/* Các route đăng ký và quên mật khẩu */}
         <Route path="register" element={<RegisterForm />} />
+        {/* Trang quên mật khẩu */}
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
-        {/* 404 Page */}
+        {/* 404 Page -> sẽ được hiện ra khi truy cập những path không hợp lệ */}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
@@ -86,9 +93,11 @@ const AppRoutes = () => {
         <Route
           path="profile"
           element={
+            // Chỉ cho phép truy cập nếu user là admin và có token
             userData?.data?.role === "ADMIN" && tokenData ? (
               <AdminProfile />
             ) : (
+              // Nếu không phải admin hoặc không có token, redirect đến trang đăng nhập
               <Navigate to="/login" replace />
             )
           }

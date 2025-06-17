@@ -1,12 +1,4 @@
-/**
- * Trang Đăng Nhập
- *
- * Component này xử lý quá trình đăng nhập người dùng, bao gồm:
- * - Đăng nhập bằng username hoặe email
- * - Xác thực thông tin người dùng
- * - Lưu trữ thông tin phiên đăng nhập
- */
-
+// LoginPage.js
 // --- IMPORTS ---
 import React, { useState, useEffect } from "react";
 import {
@@ -15,12 +7,8 @@ import {
   Container,
   Typography,
   Box,
-  Paper,
   Avatar,
-  Grid,
   Divider,
-  useTheme,
-  alpha,
   InputAdornment,
   IconButton,
   Card,
@@ -43,21 +31,24 @@ import LoggedInView from "@/components/common/LoggedInView";
 import { logout } from "@/redux/slices/authSlice";
 
 const LoginPage = () => {
-  // --- THEME & STYLES ---
-  const theme = useTheme();
-
   // --- STATE MANAGEMENT ---
   // Form data state
+  //Form data state để lưu trữ thông tin đăng nhập -> sẽ gửi về Server
   const [formData, setFormData] = useState({
     usernameOrEmail: "", // Hỗ trợ cả username và email
     password: "",
   });
 
   // UI states
+  //xem người dùng đã đăng nhập hay chưa
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  //lưu trữ thông tin người dùng đã đăng nhập
   const [user, setUser] = useState(null);
+  // Trạng thái hiển thị mật khẩu
   const [showPassword, setShowPassword] = useState(false);
+  // Trạng thái loading khi đang gửi yêu cầu đăng nhập
   const [loading, setLoading] = useState(false);
+  // Sử dụng useNavigate để chuyển hướng
   const navigate = useNavigate();
 
   // --- LIFECYCLE HOOKS ---
@@ -68,7 +59,9 @@ const LoginPage = () => {
     // Kiểm tra xem có dữ liệu người dùng trong localStorage không
     const userProfile = localStorageUtil.get("userProfile");
     if (userProfile) {
+      //nếu có dữ liệu người dùng thì sẽ set trạng thái đăng nhập là true
       setIsLoggedIn(true);
+      // và lưu trữ thông tin người dùng
       setUser(userProfile);
     }
   }, []);
@@ -81,16 +74,17 @@ const LoginPage = () => {
     e.preventDefault();
 
     // Validation
+    // Kiểm tra xem người dùng đã nhập username hoặc email chưa
     if (!formData.usernameOrEmail) {
       notify.error("Lỗi đăng nhập", "Vui lòng nhập username hoặc email");
       return;
     }
-
+    // Kiểm tra xem người dùng đã nhập mật khẩu chưa
     if (!formData.password) {
       notify.error("Lỗi đăng nhập", "Vui lòng nhập mật khẩu");
       return;
     }
-
+    // Đặt trạng thái loading để hiển thị spinner hoặc disable nút
     setLoading(true);
 
     // Chuẩn bị dữ liệu để gửi đến server
@@ -99,10 +93,14 @@ const LoginPage = () => {
       username: formData.usernameOrEmail,
       password: formData.password,
     };
+    //Call API để cập nhập
     userService
-      .login(loginData)
+      .login(loginData) // nếu thành công thì sẽ trả về JwtResponse object
       .then((response) => {
-        console.log("Login response:", response); // ✅ Debug log        // Backend trả về JwtResponse object chứa accessToken, refreshToken và user info
+        // xử lý response từ server
+        //*DEBUG: log ra thử để Debug xem thử response có đúng không có gì
+        console.log("Login response:", response);
+        // Backend trả về JwtResponse object chứa accessToken, refreshToken và user info
         if (response && response.accessToken) {
           // response đã là JwtResponse object từ backend
           const token = {
@@ -117,25 +115,26 @@ const LoginPage = () => {
             // avatar: response.avatar || null, // Thêm avatar nếu có
           };
 
-          const role = token.role;
+          const role = token.role; // lấy role từ token để xác định chuyển hướng
 
-          // ✅ DEBUG: LOG CẤU TRÚC USER DATA
+          //*DEBUG: LOG CẤU TRÚC USER DATA
           console.log("User data to save:", token);
           console.log("Access token:", token.accessToken);
           console.log("Refresh token:", token.refreshToken);
 
-          // ✅ LƯU TOKEN VÀ USER DATA VÀO LOCALSTORAGE
+          //lưu token vào localStorage
           localStorageUtil.set("token", token);
 
-          // ✅ XÁC NHẬN ĐÃ LƯU THÀNH CÔNG
-          const savedUser = localStorageUtil.get("user");
+          //*DEBUG: log ra thử để Debug xem thử token đã được lưu chưa
+          const savedUser = localStorageUtil.get("token");
           console.log("Saved user data:", savedUser);
 
           // Lấy thông tin profile đầy đủ của người dùng
-
           userService
             .getCurrentUser()
             .then((profileData) => {
+              // nếu thành công thì xử lý profileData
+              //*DEBUG: log ra thử để Debug xem thử profileData có đúng không
               console.log("User profile loaded:", profileData);
 
               // Lưu thông tin profile vào localStorage
@@ -148,6 +147,7 @@ const LoginPage = () => {
                   "Đăng nhập thành công",
                   `Chào mừng Admin ${profileData.data.username}!`
                 );
+                // Chuyển hướng đến trang quản trị admin
                 navigate("/admin/profile");
                 return;
               } else {
@@ -158,13 +158,16 @@ const LoginPage = () => {
                   message: `Chào mừng ${profileData.data.username} trở lại!`,
                   timestamp: Date.now(),
                 });
+                // Chuyển hướng về trang chủ
                 window.location.href = "/";
               }
             })
             .catch((error) => {
+              // nếu có lỗi khi lấy profile
+              //*DEBUG: log ra thử để Debug xem thử lỗi có đúng không
               console.error("Error loading user profile:", error);
-              // Vẫn cho phép đăng nhập thành công ngay cả khi không lấy được profile
 
+              // Vẫn cho phép đăng nhập thành công ngay cả khi không lấy được profile
               // Kiểm tra role và chuyển hướng
               if (role === "ADMIN") {
                 notify.success(
@@ -179,10 +182,12 @@ const LoginPage = () => {
                   message: `Chào mừng ${token.username} trở lại!`,
                   timestamp: Date.now(),
                 });
+                // Chuyển hướng về trang chủ
                 window.location.href = "/";
               }
             });
         } else {
+          // Nếu không có accessToken trong response, thông báo lỗi
           console.error("Login failed - missing accessToken:", response);
           notify.error(
             "Đăng nhập thất bại",
@@ -191,6 +196,7 @@ const LoginPage = () => {
         }
       })
       .catch((error) => {
+        // nếu có lỗi khi đăng nhập
         console.error("Login error:", error);
         notify.error(
           "Lỗi đăng nhập",
@@ -198,6 +204,7 @@ const LoginPage = () => {
         );
       })
       .finally(() => {
+        // khi kết thúc quá trình đăng nhập, dù thành công hay thất bại
         setLoading(false);
       });
   };
@@ -222,6 +229,7 @@ const LoginPage = () => {
    */
   // Nếu người dùng đã đăng nhập
   if (isLoggedIn && user) {
+    //nếu người dùng đã đăng nhập và có thông tin user
     return <LoggedInView user={user} onLogout={logout} />;
   }
 
@@ -252,9 +260,11 @@ const LoginPage = () => {
             boxShadow: "0 8px 32px rgba(74, 144, 226, 0.15)",
           }}
         >
+          {/* Nội dung của Card */}
           <CardContent sx={{ p: 4 }}>
             {/* Header Section với màu y tế */}
             <Box sx={{ textAlign: "center", mb: 4 }}>
+              {/* Hiện thị Avatar */}
               <Avatar
                 sx={{
                   width: 80,
@@ -267,6 +277,7 @@ const LoginPage = () => {
               >
                 <LockOutlinedIcon fontSize="large" />
               </Avatar>
+              {/* Title */}
               <Typography
                 variant="h4"
                 component="h1"
@@ -326,7 +337,7 @@ const LoginPage = () => {
                   Thông tin đăng nhập
                 </Typography>
 
-                {/* Username hoặc Email với màu y tế */}
+                {/* Username hoặc Email */}
                 <TextField
                   label="Username hoặc Email"
                   name="usernameOrEmail"
@@ -366,7 +377,7 @@ const LoginPage = () => {
                   }}
                 />
 
-                {/* Mật khẩu với màu y tế */}
+                {/* Mật khẩu*/}
                 <TextField
                   label="Mật khẩu"
                   name="password"
@@ -444,7 +455,7 @@ const LoginPage = () => {
                 </Box>
               </Box>
 
-              {/* Nút đăng nhập với màu y tế */}
+              {/* Nút đăng nhập  */}
               <Button
                 type="submit"
                 variant="contained"
@@ -483,7 +494,7 @@ const LoginPage = () => {
 
               <Divider sx={{ my: 3, opacity: 0.3, borderColor: "#4A90E2" }} />
 
-              {/* Link đăng ký với màu y tế */}
+              {/* Link đăng ký */}
               <Box sx={{ textAlign: "center" }}>
                 <Link
                   to="/register"

@@ -1,12 +1,4 @@
-/**
- * Form Đăng Ký Người Dùng
- *
- * Component này xử lý quá trình đăng ký người dùng mới, bao gồm:
- * - Nhập thông tin cá nhân và tài khoản
- * - Xác thực email bằng mã xác nhận
- * - Gửi dữ liệu đăng ký đến server
- */
-
+// RegisterPage.js
 // --- IMPORTS ---
 import localStorageUtil from "@/utils/localStorage";
 import {
@@ -15,12 +7,10 @@ import {
   Button,
   Container,
   Grid,
-  Paper,
   TextField,
   Typography,
   Divider,
   useTheme,
-  alpha,
   Card,
   CardContent,
   InputAdornment,
@@ -41,7 +31,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import PersonIcon from "@mui/icons-material/Person";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import VpnKeyIcon from "@mui/icons-material/VpnKey";
-import AlternateEmailIcon from "@mui/icons-material/AlternateEmail";
+
 import HomeIcon from "@mui/icons-material/Home";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
@@ -50,7 +40,7 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 
 // --- SERVICES & UTILS ---
-import { styled } from "@mui/material/styles";
+
 import { userService } from "@/services/userService";
 import LoggedInView from "@common/LoggedInView";
 import { logout } from "@/redux/slices/authSlice";
@@ -59,38 +49,47 @@ import { logout } from "@/redux/slices/authSlice";
  * Component chính Form Đăng Ký
  */
 const RegisterPage = () => {
-  // --- THEME & STYLES ---
-  const theme = useTheme();
-
   // --- STATE MANAGEMENT ---
   // Form data state
+  // Sử dụng useState để quản lý dữ liệu form
+  // formData chứa tất cả các trường cần thiết cho đăng ký
   const [formData, setFormData] = useState({
     username: "",
     password: "",
     fullName: "",
     email: "",
     verificationCode: "",
-    gender: "", // Ensure this starts as empty string
+    gender: "",
     phone: "",
-    birthDay: "", // Đổi từ dateOfBirth thành birthDay
-    address: "", // ✅ Thêm trường address
+    birthDay: "",
+    address: "",
   });
 
   // UI states
+  // Các state để quản lý giao diện và tương tác người dùng
+  // isCodeButtonDisabled để vô hiệu hóa nút gửi mã xác nhận trong 60 giây
   const [isCodeButtonDisabled, setCodeButtonDisabled] = useState(false);
+  // countdown để đếm ngược thời gian gửi mã xác nhận -> 60s
   const [countdown, setCountdown] = useState(60);
+  // confirmPassword để lưu giá trị xác nhận mật khẩu
   const [confirmPassword, setConfirmPassword] = useState("");
+  // isLoggedIn để kiểm tra trạng thái đăng nhập của người dùng
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // user để lưu thông tin người dùng đã đăng nhập
   const [user, setUser] = useState(null);
+  // showPassword và showConfirmPassword để quản lý hiển thị/ẩn mật khẩu
   const [showPassword, setShowPassword] = useState(false);
+  // showConfirmPassword để quản lý hiển thị/ẩn xác nhận mật khẩu
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Validation states
+  //các state để quản lý lỗi validation cho từng trường
+  // errors chứa thông báo lỗi cho từng trường trong form
   const [errors, setErrors] = useState({
     username: "",
     email: "",
     confirmPassword: "",
-    password: "", // Thêm password error
+    password: "",
   });
 
   // --- LIFECYCLE HOOKS ---
@@ -101,14 +100,16 @@ const RegisterPage = () => {
     // Lấy thông tin user từ localStorage
     const userData = localStorageUtil.get("user");
     if (userData) {
+      // Nếu có thông tin người dùng, đặt trạng thái đăng nhập
       setIsLoggedIn(true);
       setUser(userData);
     }
 
-    // Cleanup function khi component unmount
     return () => {
       // Xóa tất cả các interval để tránh memory leak
+      // Sử dụng clearInterval để xóa tất cả các interval đã tạo
       const intervalId = setInterval(() => {}, 100);
+      // clearInterval sẽ xóa tất cả các interval đã tạo
       for (let i = 1; i <= intervalId; i++) {
         clearInterval(i);
       }
@@ -120,6 +121,7 @@ const RegisterPage = () => {
    * Validation mật khẩu theo yêu cầu backend
    */
   const validatePassword = (password) => {
+    //sử dụng Regex để kiểm tra mật khẩu
     const pattern = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).*$/;
 
     if (password.length < 6) {
@@ -133,7 +135,6 @@ const RegisterPage = () => {
     if (!pattern.test(password)) {
       return "Mật khẩu phải chứa ít nhất: 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt (@#$%^&+=)";
     }
-
     return "";
   };
 
@@ -142,6 +143,7 @@ const RegisterPage = () => {
    * Xử lý thay đổi giá trị của các trường input
    */
   const handleOnChange = (e) => {
+    // Lấy tên và giá trị của trường input
     const { name, value } = e.target;
 
     // Cập nhật formData
@@ -258,7 +260,8 @@ const RegisterPage = () => {
       formData.gender === undefined
     ) {
       notify.error("Lỗi đăng ký", "Vui lòng chọn giới tính");
-      console.log("Gender value:", formData.gender); // Debug log
+      //*DEBUG : Log ra gender coi thử
+      console.log("Gender value:", formData.gender);
       return;
     }
 
@@ -276,7 +279,7 @@ const RegisterPage = () => {
       return;
     }
 
-    // ✅ CHUYỂN ĐỔI GENDER SANG TIẾNG VIỆT
+    //Chuyển đổi Gender sang tiếng việt
     const convertGenderToVietnamese = (genderValue) => {
       const genderMapping = {
         MALE: "Nam",
@@ -286,25 +289,25 @@ const RegisterPage = () => {
       return genderMapping[genderValue] || genderValue;
     };
 
-    // ✅ Tạo object dữ liệu đầy đủ để gửi lên server
+    // Tạo object dữ liệu đầy đủ để gửi lên server
     const registrationData = {
       username: formData.username,
       password: formData.password,
       fullName: formData.fullName,
       email: formData.email,
-      gender: convertGenderToVietnamese(formData.gender), // ✅ Chuyển đổi gender sang tiếng Việt
+      gender: convertGenderToVietnamese(formData.gender), //Chuyển đổi gender sang tiếng Việt
       phone: formData.phone || null, // Optional field
       birthDay: formData.birthDay || null, // Optional field
-      address: formData.address || null, // ✅ Thêm address
+      address: formData.address || null, // Optional field
       verificationCode: formData.verificationCode,
     };
 
-    // Debug: Log dữ liệu trước khi gửi
+    // *Debug: Log dữ liệu trước khi gửi
     console.log("Registration data being sent:", registrationData);
 
     // Gửi form đăng ký đến server
     userService
-      .register(registrationData) // ✅ Gửi registrationData thay vì formData
+      .register(registrationData) // Gửi registrationData thay vì formData
       .then((response) => {
         if (response.success) {
           notify.success(
@@ -382,6 +385,7 @@ const RegisterPage = () => {
 
     // Disable nút và bắt đầu đếm ngược
     setCodeButtonDisabled(true);
+    // Đặt countdown về 60 giây
     setCountdown(60);
 
     // Tạo interval để đếm ngược
@@ -396,11 +400,13 @@ const RegisterPage = () => {
       });
     }, 1000);
 
-    // ✅ CHỈ KIỂM TRA EMAIL - không cần kiểm tra các trường khác khi gửi mã
+    // CHỈ KIỂM TRA EMAIL - không cần kiểm tra các trường khác khi gửi mã
     // Vì mã xác nhận chỉ cần email để gửi
     if (!formData.email) {
       notify.error("Lỗi", "Vui lòng nhập email để gửi mã xác nhận");
+      // Dừng interval nếu không có email
       clearInterval(intervalId);
+      // Bật lại nút gửi mã
       setCodeButtonDisabled(false);
       return;
     }
@@ -409,23 +415,27 @@ const RegisterPage = () => {
     userService
       .sendCode(formData.email)
       .then((response) => {
+        // nếu thành công
         if (response.success) {
           notify.success(
             "Gửi mã thành công",
             "Mã xác nhận đã được gửi đến email của bạn"
           );
         } else {
+          // nếu không thành công
           notify.error("Gửi mã thất bại", response.message || "Có lỗi xảy ra");
           clearInterval(intervalId);
           setCodeButtonDisabled(false);
         }
       })
       .catch((error) => {
+        // nếu gửi thất bại
         console.error("Send code error:", error);
         notify.error(
           "Lỗi kết nối",
           "Không thể kết nối đến máy chủ. Vui lòng thử lại sau."
         );
+        // Dừng interval và bật lại nút gửi mã
         clearInterval(intervalId);
         setCodeButtonDisabled(false);
       });
@@ -437,6 +447,7 @@ const RegisterPage = () => {
    */
   // Nếu người dùng đã đăng nhập
   if (isLoggedIn && user) {
+    // Hiển thị giao diện đã đăng nhập
     return <LoggedInView user={user} onLogout={logout} />;
   }
   /**
@@ -467,7 +478,7 @@ const RegisterPage = () => {
           }}
         >
           <CardContent sx={{ p: 4 }}>
-            {/* Header Section với màu y tế */}
+            {/* Header Section*/}
             <Box sx={{ textAlign: "center", mb: 4 }}>
               <Avatar
                 sx={{
@@ -503,7 +514,7 @@ const RegisterPage = () => {
                   maxWidth: 500,
                   mx: "auto",
                   lineHeight: 1.6,
-                  color: "#546E7A", // Medical text color
+                  color: "#546E7A", // Medical gray
                 }}
               >
                 Điền thông tin của bạn để trải nghiệm dịch vụ chăm sóc sức khỏe
@@ -514,7 +525,7 @@ const RegisterPage = () => {
 
             {/* Form Section */}
             <Box component="form" onSubmit={handleSubmit}>
-              {/* Thông tin tài khoản với màu y tế */}
+              {/* Thông tin tài khoản*/}
               <Box
                 sx={{
                   mb: 3,
@@ -540,7 +551,7 @@ const RegisterPage = () => {
                   Thông tin tài khoản
                 </Typography>
 
-                {/* Username với màu y tế */}
+                {/* Username  */}
                 <TextField
                   label="Username"
                   name="username"
@@ -581,7 +592,7 @@ const RegisterPage = () => {
                   }}
                 />
 
-                {/* Mật khẩu với màu y tế */}
+                {/* Mật khẩu*/}
                 <TextField
                   label="Mật khẩu"
                   name="password"
@@ -594,11 +605,13 @@ const RegisterPage = () => {
                   error={!!errors.password}
                   helperText={errors.password}
                   sx={{
+                    // MUI styles for password field
                     mb: 3,
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 2,
                       transition: "all 0.3s ease",
                     },
+                    // Focus styles
                     "& .MuiInputLabel-root.Mui-focused": {
                       color: "#4A90E2",
                     },
@@ -627,7 +640,7 @@ const RegisterPage = () => {
                   }}
                 />
 
-                {/* Xác nhận mật khẩu với màu y tế */}
+                {/* Xác nhận mật khẩu */}
                 <TextField
                   label="Xác nhận mật khẩu"
                   name="confirmPassword"
@@ -676,7 +689,7 @@ const RegisterPage = () => {
                 />
               </Box>
 
-              {/* Thông tin cá nhân với màu y tế */}
+              {/* Thông tin cá nhân */}
               <Box
                 sx={{
                   mb: 3,
@@ -734,7 +747,7 @@ const RegisterPage = () => {
                   }}
                 />
 
-                {/* Giới tính với màu y tế */}
+                {/* Giới tính */}
                 <FormControl
                   fullWidth
                   variant="outlined"
@@ -788,7 +801,7 @@ const RegisterPage = () => {
                   </Select>
                 </FormControl>
 
-                {/* Số điện thoại với màu y tế */}
+                {/* Số điện thoại*/}
                 <TextField
                   label="Số điện thoại"
                   name="phone"
@@ -820,7 +833,7 @@ const RegisterPage = () => {
                   }}
                 />
 
-                {/* Ngày sinh với màu y tế */}
+                {/* Ngày sinh*/}
                 <TextField
                   label="Ngày sinh"
                   name="birthDay"
@@ -855,7 +868,7 @@ const RegisterPage = () => {
                   }}
                 />
 
-                {/* Địa chỉ nhà với màu y tế */}
+                {/* Địa chỉ nhà */}
                 <TextField
                   label="Địa chỉ nhà"
                   name="address"
@@ -889,7 +902,7 @@ const RegisterPage = () => {
                   }}
                 />
 
-                {/* Email và nút gửi mã với màu y tế */}
+                {/* Email và nút gửi mã */}
                 <Grid container spacing={2} sx={{ mb: 3 }}>
                   <Grid item size={8}>
                     <TextField
@@ -959,7 +972,7 @@ const RegisterPage = () => {
                   </Grid>
                 </Grid>
 
-                {/* Mã xác nhận với màu y tế */}
+                {/* Mã xác nhận */}
                 <TextField
                   label="Mã xác nhận"
                   name="verificationCode"
@@ -991,7 +1004,7 @@ const RegisterPage = () => {
                 />
               </Box>
 
-              {/* Nút đăng ký với màu y tế */}
+              {/* Nút đăng ký */}
               <Button
                 type="submit"
                 variant="contained"
@@ -1021,7 +1034,7 @@ const RegisterPage = () => {
 
               <Divider sx={{ my: 3, opacity: 0.3, borderColor: "#4A90E2" }} />
 
-              {/* Link đăng nhập với màu y tế */}
+              {/* Link đăng nhập */}
               <Box sx={{ textAlign: "center" }}>
                 <Link
                   to="/login"

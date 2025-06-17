@@ -1,9 +1,8 @@
 import { userService } from "@/services/userService";
 import notify from "@/utils/notification";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import useAuthCheck from "@/hooks/useAuthCheck";
 import LoggedInView from "@/components/common/LoggedInView";
-import NotLoggedInView from "@/components/common/NoLoggedInView";
 
 import {
   Avatar,
@@ -11,39 +10,28 @@ import {
   Button,
   Container,
   Grid,
-  Paper,
   TextField,
   Typography,
   Divider,
-  useTheme,
-  alpha,
   Card,
   CardContent,
   InputAdornment,
-  IconButton,
 } from "@mui/material";
 // --- ICONS ---
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import EmailIcon from "@mui/icons-material/Email";
-import PersonIcon from "@mui/icons-material/Person";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import VpnKeyIcon from "@mui/icons-material/VpnKey";
-import AlternateEmailIcon from "@mui/icons-material/AlternateEmail";
 import HomeIcon from "@mui/icons-material/Home";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import localStorageUtil from "@/utils/localStorage";
-const ForgotPasswordPage = () => {
-  const theme = useTheme();
 
+const ForgotPasswordPage = () => {
   // Sử dụng custom hook để kiểm tra auth
   const { isLoggedIn, user, logout } = useAuthCheck();
 
   const [formDataForgotPassword, setformDataForgotPassword] = useState({
     email: "",
   });
-  const [error, setError] = useState("");
+
   const [formDataResetPassword, setformDataResetPassword] = useState({
     email: "",
     code: "",
@@ -54,8 +42,6 @@ const ForgotPasswordPage = () => {
   const [isCodeButtonDisabled, setCodeButtonDisabled] = useState(false);
   const [countdown, setCountdown] = useState(60);
 
-  // Kiểm tra đăng nhập qua localStorage
-  const [isLoggedInLocal, setIsLoggedInLocal] = useState(false);
   //hàm handleChange để cập nhật giá trị email trong form
   const handleChangeEmail = (e) => {
     setformDataForgotPassword({
@@ -100,7 +86,7 @@ const ForgotPasswordPage = () => {
         return prevCount - 1;
       });
     }, 1000);
-
+    //call service gửi mã xác nhận
     userService
       .sendCodeForgotPassword(formDataForgotPassword.email)
       .then((response) => {
@@ -203,7 +189,7 @@ const ForgotPasswordPage = () => {
     return <LoggedInView user={user} onLogout={logout} />;
   }
 
-  // Form quên mật khẩu với màu y tế
+  // Form quên mật khẩu
   return (
     <Box
       sx={{
@@ -229,7 +215,7 @@ const ForgotPasswordPage = () => {
           }}
         >
           <CardContent sx={{ p: 4 }}>
-            {/* Header Section với màu y tế */}
+            {/* Header Section với màu*/}
             <Box sx={{ textAlign: "center", mb: 4 }}>
               <Avatar
                 sx={{
@@ -373,6 +359,7 @@ const ForgotPasswordPage = () => {
                         },
                       }}
                     >
+                      {/* Hiển thị thời gian đếm ngược hoặc nút gửi mã */}
                       {isCodeButtonDisabled && countdown > 0
                         ? `Đợi ${countdown}s`
                         : checksendCode
@@ -383,7 +370,7 @@ const ForgotPasswordPage = () => {
                 </Grid>
               </Box>
 
-              {/* Reset Password Section */}
+              {/*Gửi yêu cầu gửi mã*/}
               {checksendCode && (
                 <Box
                   sx={{

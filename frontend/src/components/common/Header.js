@@ -26,26 +26,10 @@ import {
   Typography,
   Menu,
   MenuItem,
-  Fade,
   Avatar,
   Container,
-  useMediaQuery,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import MenuIcon from "@mui/icons-material/Menu";
-import CloseIcon from "@mui/icons-material/Close";
-import HomeIcon from "@mui/icons-material/Home";
-import InfoIcon from "@mui/icons-material/Info";
-import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
-import ContactSupportIcon from "@mui/icons-material/ContactSupport";
-import LogoutIcon from "@mui/icons-material/Logout";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import { useUserContext } from "@/context/UserContext";
 import { userService } from "@/services/userService";
 import localStorageUtil from "@/utils/localStorage";
 import { notify } from "@/utils/notification";
@@ -135,7 +119,6 @@ const Header = () => {
     localStorageUtil.remove("userProfile");
     localStorageUtil.remove("loginSuccessMessage");
     localStorageUtil.remove("token");
-    localStorageUtil.remove("user");
 
     // Xóa dữ liệu từ sessionStorage
     sessionStorage.removeItem("last_updated_avatar");
@@ -171,13 +154,14 @@ const Header = () => {
     handleCloseMenu();
     navigate("/profile");
   };
-  // Add a polling mechanism to check for avatar updates
+  // Kiểm tra trạng thái đăng nhập và cập nhật avatar mỗi giây
   useEffect(() => {
     const intervalId = setInterval(() => {
-      // Get user data first to check if we're logged in
+      // Check login status and update avatar every second
+      console.log("Checking login status and updating avatar in Header");
       const userData = localStorageUtil.get("userProfile");
 
-      // If no user data, clear avatar
+      //nếu không có userData thì không cần làm gì cả
       if (!userData) {
         if (avatarUrl) {
           setAvatarUrl(null);
@@ -186,10 +170,10 @@ const Header = () => {
         return;
       }
 
-      // Get the most up-to-date avatar
+      //lấy avatar đã cập nhật từ sessionStorage
       const lastUpdatedAvatar = sessionStorage.getItem("last_updated_avatar");
 
-      // Determine current avatar path from user data
+      // Nếu có avatar đã cập nhật trong sessionStorage, ưu tiên sử dụng nó
       let currentAvatarPath = null;
       if (userData.data && userData.data.avatar) {
         currentAvatarPath = userData.data.avatar;
@@ -197,23 +181,24 @@ const Header = () => {
         currentAvatarPath = userData.avatar;
       }
 
-      // Use either the session stored avatar or the one from user data
+      //Sử dụng ảnh đại diện được lưu trữ trong phiên hoặc ảnh đại diện từ dữ liệu người dùng
       const avatarToUse = lastUpdatedAvatar || currentAvatarPath;
 
       if (avatarToUse) {
         const fullUrl = imageUrl.getFullImageUrl(avatarToUse);
-        // Only update if different from current avatar URL
+        // Chỉ cập nhật nếu khác với URL avatar hiện tại
         if (fullUrl && fullUrl !== avatarUrl) {
           console.log("Polling detected avatar update:", fullUrl);
           setAvatarUrl(fullUrl);
           forceRefresh();
         }
       } else if (avatarUrl) {
-        // If no avatar in storage but we have one in state, clear it
+        //Nếu không có avatar trong kho lưu trữ nhưng chúng ta
+        //có một avatar trong trạng thái, hãy xóa nó
         setAvatarUrl(null);
         forceRefresh();
       }
-    }, 1000); // Check every second
+    }, 1000); // check mỗi giây
 
     return () => clearInterval(intervalId);
   }, [avatarUrl]);
@@ -279,7 +264,7 @@ const Header = () => {
       setAvatarUrl(imageUrl.getFullImageUrl(lastUpdatedAvatar));
     }
 
-    // Cleanup function để hủy đăng ký listener khi component unmount
+    // Chức năng dọn dẹp để hủy đăng ký trình nghe khi ngắt kết nối thành phần
     return () => {
       console.log("Cleaning up event listeners in Header");
       window.removeEventListener("storage", handleStorageChange);
@@ -292,38 +277,102 @@ const Header = () => {
     <AppBar
       position="static"
       sx={{
-        background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-        boxShadow: "0 2px 12px rgba(74, 144, 226, 0.25)",
+        boxShadow: "0 4px 20px rgba(74, 144, 226, 0.3)",
+        backdropFilter: "blur(10px)",
+        background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
+        borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         zIndex: (theme) => theme.zIndex.appBar,
+        transition: "all 0.3s ease",
       }}
+      elevation={0}
     >
       <Container maxWidth="xl">
-        <Toolbar disableGutters sx={{ minHeight: 70 }}>
-          {/* Logo */}
+        <Toolbar
+          disableGutters
+          sx={{
+            minHeight: { xs: 64, md: 70 },
+            justifyContent: "space-between",
+          }}
+        >
+          {/* Logo */}{" "}
           <Typography
             variant="h6"
             noWrap
             component={Link}
             to="/"
             sx={{
-              mr: 4,
-              fontFamily: "monospace",
+              mr: { xs: 1, md: 4 },
+              fontFamily:
+                "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
               fontWeight: 700,
-              letterSpacing: ".1rem",
-              color: "inherit",
+              letterSpacing: ".05rem",
+              color:
+                "#FFFFFF" /* Changed from inherit to explicit white color */,
               textDecoration: "none",
-              fontSize: "1.4rem",
+              fontSize: { xs: "1.2rem", md: "1.4rem" },
+              display: "flex",
+              alignItems: "center",
+              position: "relative",
               "&:hover": {
-                color: "rgba(255, 255, 255, 0.9)",
+                color: "rgba(255, 255, 255, 0.95)",
+                "&::after": {
+                  width: "100%",
+                  opacity: 1,
+                },
+              },
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                bottom: -4,
+                left: 0,
+                width: "0%",
+                height: "2px",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                transition: "all 0.3s ease",
+                opacity: 0,
               },
             }}
           >
+            <Box
+              component="span"
+              sx={{
+                borderRadius: "50%",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                mr: 1,
+                background: "rgba(255, 255, 255, 0.2)",
+                p: 0.5,
+              }}
+            >
+              <Box
+                component="span"
+                sx={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  background: "rgba(255, 255, 255, 0.9)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "0.75rem",
+                  fontWeight: "bold",
+                  color: "#4A90E2",
+                }}
+              >
+                G
+              </Box>
+            </Box>
             Gender Health Care
-          </Typography>
-
+          </Typography>{" "}
           {/* Navigation Links */}
           <Box
-            sx={{ flexGrow: 1, display: { xs: "none", md: "flex" }, gap: 1 }}
+            sx={{
+              flexGrow: 1,
+              display: { xs: "none", md: "flex" },
+              justifyContent: "center",
+              gap: 1,
+            }}
           >
             {[
               { to: "/", label: "Trang chủ" },
@@ -342,35 +391,66 @@ const Header = () => {
                   fontWeight: 500,
                   textTransform: "none",
                   fontSize: "0.95rem",
-                  px: 2,
+                  px: 2.5,
                   py: 1,
                   borderRadius: 2,
+                  position: "relative",
                   transition: "all 0.3s ease",
+                  overflow: "hidden",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    bottom: 0,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: "0%",
+                    height: "3px",
+                    backgroundColor: "rgba(255, 255, 255, 0.8)",
+                    transition: "width 0.3s ease",
+                    borderRadius: "3px 3px 0 0",
+                  },
                   "&:hover": {
                     backgroundColor: "rgba(255, 255, 255, 0.15)",
-                    transform: "translateY(-1px)",
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+                    "&::before": {
+                      width: "70%",
+                    },
+                  },
+                  "&:active": {
+                    transform: "translateY(0)",
                   },
                 }}
               >
                 {item.label}
               </Button>
             ))}
-          </Box>
-
+          </Box>{" "}
           {/* User Section */}
           {isLoggedIn ? (
             <Box sx={{ flexShrink: 0 }}>
               <IconButton
+                aria-label="account of current user"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
                 onClick={handleAvatarClick}
                 sx={{
-                  p: 1,
+                  p: 0.5,
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  borderRadius: "50%",
+                  transition: "all 0.3s ease",
                   "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.15)",
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                  },
+                  "&:active": {
+                    transform: "translateY(0px)",
                   },
                 }}
               >
-                {" "}
-                {/* Avatar display for logged in users */}{" "}
                 {user ? (
                   <Avatar
                     key={`header-avatar-${refreshKey}-${Date.now()}`}
@@ -386,13 +466,12 @@ const Header = () => {
                       return avatarUrl;
                     })()}
                     sx={{
-                      width: 40,
-                      height: 40,
+                      width: 38,
+                      height: 38,
                       transition: "all 0.3s ease",
-                      "&:hover": {
-                        transform: "scale(1.1)",
-                      },
-                      border: "2px solid rgba(255, 255, 255, 0.8)",
+                      border: "2px solid rgba(255, 255, 255, 0.9)",
+                      boxShadow: "0 2px 10px rgba(0, 0, 0, 0.15)",
+                      backgroundColor: "#1ABC9C20",
                     }}
                     imgProps={{
                       onError: () => {
@@ -411,31 +490,46 @@ const Header = () => {
                   <AccountCircleIcon
                     sx={{
                       color: "white",
-                      fontSize: 40,
+                      fontSize: 38,
                       transition: "all 0.3s ease",
-                      "&:hover": {
-                        transform: "scale(1.1)",
-                      },
+                      filter: "drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2))",
                     }}
                   />
                 )}
-              </IconButton>
+              </IconButton>{" "}
               <Menu
                 id="account-menu"
                 anchorEl={dropdownOpen}
                 open={open}
                 onClose={handleCloseMenu}
                 sx={{
-                  mt: 1,
+                  mt: 1.5,
                   "& .MuiPaper-root": {
-                    borderRadius: 2,
-                    minWidth: 180,
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-                    border: "1px solid rgba(74, 144, 226, 0.1)",
+                    borderRadius: 3,
+                    minWidth: 200,
+                    boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    backgroundColor: "rgba(255, 255, 255, 0.98)",
+                    backdropFilter: "blur(8px)",
+                    overflow: "visible",
+                    "&:before": {
+                      content: '""',
+                      display: "block",
+                      position: "absolute",
+                      top: -6,
+                      right: 14,
+                      width: 12,
+                      height: 12,
+                      backgroundColor: "white",
+                      transform: "rotate(45deg)",
+                      boxShadow: "-3px -3px 5px rgba(0,0,0,0.04)",
+                      zIndex: 0,
+                    },
                   },
                 }}
                 MenuListProps={{
                   "aria-labelledby": "account-button",
+                  sx: { py: 1 },
                 }}
                 anchorOrigin={{
                   vertical: "bottom",
@@ -445,12 +539,35 @@ const Header = () => {
                   vertical: "top",
                   horizontal: "right",
                 }}
+                disableScrollLock={true}
               >
+                {/* User info */}
+                <Box
+                  sx={{
+                    pt: 1,
+                    pb: 1.5,
+                    px: 2,
+                    borderBottom: "1px solid rgba(0,0,0,0.05)",
+                  }}
+                >
+                  <Typography component="div" sx={{ fontWeight: 600, mb: 0.5 }}>
+                    {user?.fullName || user?.email || "Người dùng"}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {user?.email || ""}
+                  </Typography>
+                </Box>
+
+                {/* Truy cập vào profile */}
                 <MenuItem
                   onClick={handleProfile}
                   sx={{
                     py: 1.5,
                     px: 2,
+                    mt: 0.5,
+                    borderRadius: "8px",
+                    mx: 1,
+                    transition: "all 0.2s ease",
                     "&:hover": {
                       backgroundColor: "rgba(74, 144, 226, 0.1)",
                     },
@@ -458,14 +575,21 @@ const Header = () => {
                 >
                   Hồ sơ
                 </MenuItem>
+
+                {/* Đăng xuất khỏi hệ thống */}
                 <MenuItem
                   onClick={handleLogout}
                   sx={{
                     py: 1.5,
                     px: 2,
                     color: "#d32f2f",
+                    borderRadius: "8px",
+                    mx: 1,
+                    mb: 0.5,
+                    mt: 0.5,
+                    transition: "all 0.2s ease",
                     "&:hover": {
-                      backgroundColor: "rgba(211, 47, 47, 0.1)",
+                      backgroundColor: "rgba(211, 47, 47, 0.08)",
                     },
                   }}
                 >
@@ -474,24 +598,51 @@ const Header = () => {
               </Menu>
             </Box>
           ) : (
+            // Nếu người dùng chưa đăng nhập, hiển thị nút đăng nhập
             <Button
               color="inherit"
               component={Link}
               to="/login"
               variant="outlined"
               sx={{
-                borderColor: "rgba(255, 255, 255, 0.5)",
-                color: "white",
+                borderColor: "rgba(255, 255, 255, 0.6)",
+                color: "#fff",
                 fontWeight: 600,
                 textTransform: "none",
-                px: 3,
+                px: { xs: 2, md: 3.5 },
                 py: 1,
-                borderRadius: 2,
-                transition: "all 0.3s ease",
+                borderRadius: 50,
+                letterSpacing: "0.02em",
+                fontSize: "0.95rem",
+                backgroundColor: "rgba(255, 255, 255, 0.15)",
+                backdropFilter: "blur(10px)",
+                transition: "all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1.0)",
+                boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+                position: "relative",
+                overflow: "hidden",
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  background: "rgba(255,255,255,0.1)",
+                  clipPath: "polygon(0 0, 0% 0, 0% 100%, 0% 100%)",
+                  transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                },
                 "&:hover": {
                   borderColor: "white",
-                  backgroundColor: "rgba(255, 255, 255, 0.15)",
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  transform: "translateY(-3px)",
+                  boxShadow: "0 6px 15px rgba(0,0,0,0.1)",
+                  "&::before": {
+                    clipPath: "polygon(0 0, 100% 0, 100% 100%, 0% 100%)",
+                  },
+                },
+                "&:active": {
                   transform: "translateY(-1px)",
+                  boxShadow: "0 4px 8px rgba(74, 144, 226, 0.25)",
                 },
               }}
             >

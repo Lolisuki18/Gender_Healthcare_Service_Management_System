@@ -17,6 +17,7 @@
     "craco": "^0.0.3",
     "date-fns": "^4.1.0",
     "react": "^19.1.0",
+    "react-countup": "^6.5.3",
     "react-dom": "^19.1.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.1",

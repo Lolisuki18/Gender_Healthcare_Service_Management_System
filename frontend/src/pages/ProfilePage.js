@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Box, Container, Typography, CircularProgress } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import NoLoggedInView from "@components/common/NoLoggedInView";
-import AdminProfile from "@components/AdminProfile/AdminProfile";
 import ConsultantProfile from "@components/ConsultantProfile/ConsultantProfile";
 import StaffProfile from "@components/StaffProfile/StaffProfile";
 import CustomerProfile from "@components/CustomerProfile/CustomerProfile";
 import localStorageUtil from "@utils/localStorage";
 import styled from "styled-components";
 
+// Styled components
+// LoadingContainer: Hiển thị khi đang tải thông tin người dùng
 const LoadingContainer = styled(Box)`
   display: flex;
   flex-direction: column;
@@ -16,12 +16,12 @@ const LoadingContainer = styled(Box)`
   justify-content: center;
   min-height: 60vh;
 `;
-
+// ProfileContainer: Container chính cho trang profile
 const ProfileContainer = styled(Container)`
   padding-top: 32px;
   padding-bottom: 32px;
 `;
-
+// ErrorContainer: Hiển thị khi có lỗi trong quá trình tải thông tin người dùng
 const ErrorContainer = styled(Box)`
   margin: 48px auto;
   max-width: 480px;
@@ -30,19 +30,19 @@ const ErrorContainer = styled(Box)`
   border-radius: 16px;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12);
 `;
-
+// ProfilePage: Component chính cho trang profile
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    // Simulate a small delay for better UX
+    // Giả lập thời gian tải dữ liệu từ localStorage
     const timer = setTimeout(() => {
       try {
         // Lấy thông tin user từ localStorage
         const userData = localStorageUtil.get("userProfile");
 
+        //*Debugging: In ra thông tin userData để kiểm tra
         console.log(
           "ProfilePage - Retrieved user data from localStorage:",
           userData
@@ -50,11 +50,15 @@ const ProfilePage = () => {
 
         // Kiểm tra xem userData có tồn tại không
         if (userData) {
+          // nếu có dữ liệu user
           setUser(userData);
         } else {
+          // nếu không có dữ liệu user
+          //*Debugging: In ra kiểm tra thử
           console.log("ProfilePage - No user data found in localStorage");
         }
       } catch (error) {
+        // nếu không lấy thành công dữ liệu từ localStorage
         console.error("Error parsing user data:", error);
         // Nếu có lỗi, clear localStorage và redirect
         localStorageUtil.remove("userProfile");
@@ -64,9 +68,10 @@ const ProfilePage = () => {
       }
     }, 800);
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timer); // Dọn dẹp timer khi component unmount
   }, []);
 
+  // Kiểm tra trạng thái loading và hiển thị thông báo tương ứng
   if (loading) {
     return (
       <LoadingContainer>
@@ -89,6 +94,7 @@ const ProfilePage = () => {
       </LoadingContainer>
     );
   }
+  // Nếu không có user, hiển thị NoLoggedInView
   if (!user) {
     return <NoLoggedInView />;
   }
@@ -97,12 +103,13 @@ const ProfilePage = () => {
   const renderProfileByRole = () => {
     // Kiểm tra định dạng dữ liệu user trước khi truy cập role
     console.log("User data structure:", user); // Kiểm tra hai cấu trúc dữ liệu có thể có (hoặc là {data: {...}} hoặc là trực tiếp object)
-    console.log("Kiểm tra cấu trúc dữ liệu user:", user);
+    console.log("Kiểm tra cấu trúc dữ liệu user:", user); // In ra cấu trúc dữ liệu user để kiểm tra
     let role = null;
-
+    // Kiểm tra xem user có thuộc dạng {data: {...}} hay không
     if (user.data?.role) {
       // Nếu dữ liệu theo cấu trúc {data: {...}}
       role = user.data.role.toLowerCase();
+      //*Debugging: In ra role để kiểm tra
       console.log(
         "Role from user.data.role:",
         user.data.role,
@@ -116,6 +123,8 @@ const ProfilePage = () => {
     }
 
     if (!role) {
+      // nếu hok có role
+      // Nếu role không được xác định, hiển thị thông báo lỗi
       console.error("User role is undefined:", user);
       return (
         <ErrorContainer>
@@ -144,16 +153,25 @@ const ProfilePage = () => {
     switch (role) {
       // case "admin":
       //   return <AdminProfile user={user} />;
-      case "consultant":
+      case "consultant": // nếu role là consultant
         console.log("Rendering ConsultantProfile");
+        //truyển user vào ConsultantProfile
+        // và hiển thị ConsultantProfile
         return <ConsultantProfile user={user} />;
       case "staff":
+        // nếu role là staff
         console.log("Rendering StaffProfile");
+        // truyền user vào StaffProfile
+        // và hiển thị StaffProfile
         return <StaffProfile user={user} />;
       case "customer":
+        //nếu role là customer
         console.log("Rendering CustomerProfile");
+        // truyền user vào CustomerProfile
+        // và hiển thị CustomerProfile
         return <CustomerProfile user={user} />;
       default:
+        //con nếu role không khớp với bất kỳ trường hợp nào
         console.log("Role not recognized, showing error view. Role:", role);
         return (
           <ErrorContainer>
@@ -196,6 +214,7 @@ const ProfilePage = () => {
   };
 
   return (
+    // Hiển thị container chính với các component đã render
     <ProfileContainer maxWidth={false} disableGutters>
       {renderProfileByRole()}
     </ProfileContainer>

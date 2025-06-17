@@ -20,7 +20,7 @@
  * - user: object - Thông tin user hiện tại
  */
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Drawer,
   List,
@@ -48,6 +48,8 @@ import {
   Person as PersonIcon,
 } from "@mui/icons-material";
 import imageUrl from "@/utils/imageUrl";
+import { listenToAvatarUpdates } from "@/utils/storageEvent";
+import localStorageUtil from "@/utils/localStorage";
 
 // Cấu hình menu items cho Staff dựa trên ảnh
 const staffMenuItems = [
@@ -104,6 +106,38 @@ const staffMenuItems = [
 const StaffSidebar = ({ open, onClose, selectedItem, onItemSelect, user }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  // State để kiểm soát việc cập nhật avatar
+  const [avatarUrl, setAvatarUrl] = useState(
+    user?.avatar ? imageUrl.getFullImageUrl(user.avatar) : undefined
+  );
+
+  // Lắng nghe sự kiện cập nhật avatar
+  useEffect(() => {
+    // Khi user prop thay đổi, cập nhật avatar
+    if (user?.avatar) {
+      setAvatarUrl(imageUrl.getFullImageUrl(user.avatar));
+    }
+
+    // Kiểm tra xem có avatar mới trong sessionStorage
+    const lastUpdatedAvatar = sessionStorage.getItem("last_updated_avatar");
+    if (lastUpdatedAvatar) {
+      setAvatarUrl(imageUrl.getFullImageUrl(lastUpdatedAvatar));
+    }
+
+    // Sử dụng hàm listenToAvatarUpdates để lắng nghe cập nhật avatar
+    const unsubscribe = listenToAvatarUpdates((newAvatarPath) => {
+      console.log("Sidebar: Avatar được cập nhật:", newAvatarPath);
+      setAvatarUrl(imageUrl.getFullImageUrl(newAvatarPath));
+    });
+
+    // Hủy đăng ký khi component unmount
+    return () => {
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, [user]);
 
   // Sidebar content component
   const SidebarContent = () => (
@@ -182,14 +216,23 @@ const StaffSidebar = ({ open, onClose, selectedItem, onItemSelect, user }) => {
         {" "}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
           <Avatar
-            src={
-              user?.avatar ? imageUrl.getFullImageUrl(user.avatar) : undefined
-            }
+            src={avatarUrl}
+            alt={user?.fullName || "Staff"}
+            onError={(e) => {
+              console.error("Lỗi tải avatar trong sidebar:", e);
+              e.target.src = ""; // Xóa src lỗi để hiển thị chữ cái đầu
+            }}
             sx={{
               width: 48,
               height: 48,
               background: "linear-gradient(135deg, #4A90E2, #1ABC9C)",
               boxShadow: "0 4px 12px rgba(74, 144, 226, 0.3)",
+              border: "2px solid white",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "scale(1.05)",
+                boxShadow: "0 6px 16px rgba(74, 144, 226, 0.4)",
+              },
             }}
           >
             {user?.fullName?.[0] || "S"}

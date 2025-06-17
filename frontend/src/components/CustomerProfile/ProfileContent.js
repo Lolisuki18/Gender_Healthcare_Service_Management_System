@@ -42,7 +42,10 @@ import {
   Divider,
   Chip,
   Grid,
-  Modal, // For avatar modal
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import AvatarUpload from "../common/AvatarUpload"; // Import AvatarUpload component
 import EditIcon from "@mui/icons-material/Edit"; // For edit button
@@ -881,34 +884,29 @@ const ProfileContent = () => {
   // Render component
   return (
     <>
-      {/* Modal thay đổi avatar */}
-      <Modal
+      {" "}
+      {/* Dialog thay đổi avatar */}
+      <Dialog
         open={isAvatarModalOpen}
         onClose={handleCloseAvatarModal}
-        aria-labelledby="avatar-modal-title"
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: { xs: "90%", sm: 500 },
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: 4,
+        aria-labelledby="avatar-dialog-title"
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
             borderRadius: "16px",
-          }}
+            boxShadow: 24,
+          },
+        }}
+      >
+        <DialogTitle
+          id="avatar-dialog-title"
+          sx={{ fontWeight: 700, textAlign: "center" }}
         >
-          <Typography
-            id="avatar-modal-title"
-            variant="h6"
-            component="h2"
-            sx={{ mb: 3, fontWeight: 700, textAlign: "center" }}
-          >
-            Cập nhật ảnh đại diện
-          </Typography>
+          Cập nhật ảnh đại diện
+        </DialogTitle>
 
+        <DialogContent>
           {avatarError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {avatarError}
@@ -921,9 +919,8 @@ const ProfileContent = () => {
             onUploadError={handleAvatarUploadError}
             onClose={handleCloseAvatarModal}
           />
-        </Box>
-      </Modal>
-
+        </DialogContent>
+      </Dialog>
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Stack spacing={4}>
           {/* ============================================================== */}

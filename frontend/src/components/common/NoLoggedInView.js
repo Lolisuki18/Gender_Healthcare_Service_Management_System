@@ -1,19 +1,6 @@
 import { styled } from "@mui/material/styles";
-import AdminProfile from "../AdminProfile/AdminProfile";
-import ConsultantProfile from "../ConsultantProfile/ConsultantProfile";
-import CustomerProfile from "../CustomerProfile/CustomerProfile";
-import StaffProfile from "../StaffProfile/StaffProfile";
-import {
-  Button,
-  Stack,
-  Alert,
-  AlertTitle,
-  Zoom,
-  Divider,
-  Box,
-  Container,
-  Typography,
-} from "@mui/material";
+
+import { Button, Stack, Zoom, Box, Container, Typography } from "@mui/material";
 import {
   Login as LoginIcon,
   ArrowBack as ArrowBackIcon,
@@ -50,16 +37,6 @@ const ProfileContainer = styled(Container)({
   },
 });
 
-const LoadingContainer = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "center",
-  alignItems: "center",
-  minHeight: "100vh",
-  background: "var(--glass-bg)",
-  backdropFilter: "blur(20px)",
-});
-
 const ErrorContainer = styled(Box)({
   display: "flex",
   flexDirection: "column",
@@ -76,27 +53,6 @@ const ErrorContainer = styled(Box)({
   maxWidth: "600px",
 });
 
-const ActionButton = styled(Button)(({ theme }) => ({
-  borderRadius: "var(--border-radius-lg)",
-  padding: "var(--spacing-3) var(--spacing-6)",
-  fontWeight: 600,
-  boxShadow: "var(--shadow-elevation-medium)",
-  transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-  "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: "var(--shadow-elevation-high)",
-  },
-}));
-
-const GlassPaper = styled(Box)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.1)",
-  backdropFilter: "blur(10px)",
-  borderRadius: "var(--border-radius-xl)",
-  border: "1px solid rgba(255, 255, 255, 0.2)",
-  padding: "var(--spacing-6)",
-  marginTop: "var(--spacing-6)",
-  boxShadow: "var(--shadow-elevation-medium)",
-}));
 const NoLoggedInView = () => {
   const navigate = useNavigate();
 
@@ -130,7 +86,6 @@ const NoLoggedInView = () => {
             minHeight: { xs: "auto", sm: "500px" },
           }}
         >
-          {/* Header section - Medical theme */}
           <Box
             sx={{
               background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
@@ -269,6 +224,7 @@ const NoLoggedInView = () => {
                 spacing={3}
                 sx={{ mb: 1 }}
               >
+                {/*Đi đến trang đăng nhập */}
                 <Button
                   variant="contained"
                   size="large"
@@ -295,7 +251,7 @@ const NoLoggedInView = () => {
                 >
                   Đăng nhập
                 </Button>
-
+                {/*Đi đến trang đăng ký */}
                 <Button
                   variant="outlined"
                   size="large"
@@ -325,7 +281,7 @@ const NoLoggedInView = () => {
                 </Button>
               </Stack>
             </Box>
-
+            {/*Đi lại trang trước */}
             <Button
               variant="text"
               color="inherit"

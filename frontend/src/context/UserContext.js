@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { getWithExpiry, setWithExpiry } from "@utils/helpers";
-import { listenToAvatarUpdates } from "@/utils/storageEvent";
+import { useDispatch, useSelector } from "react-redux";
+import { getWithExpiry } from "@utils/helpers";
+import {
+  selectUser,
+  selectAvatar,
+  selectIsAuthenticated,
+} from "@/redux/slices/authSlice";
+import { fetchCurrentUser, logoutUser } from "@/redux/thunks/userThunks";
+import { loginUser } from "@/redux/thunks/userThunks";
 
 // Tạo context cho thông tin người dùng
 const UserContext = createContext();
@@ -16,111 +23,55 @@ export const useUser = () => {
 
 // Provider Component để quản lý trạng thái người dùng
 export const UserProvider = ({ children }) => {
-  // Trạng thái người dùng
-  const [user, setUser] = useState(null);
+  const dispatch = useDispatch();
+
+  // Lấy thông tin user từ Redux store
+  const user = useSelector(selectUser);
+  const avatarUrl = useSelector(selectAvatar);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+
+  // Trạng thái local
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [userAvatar, setUserAvatar] = useState(null);
+  const [userAvatar, setUserAvatar] = useState(avatarUrl);
 
-  // Lắng nghe sự kiện cập nhật avatar
+  // Cập nhật avatar local khi avatar trong Redux thay đổi
   useEffect(() => {
-    const unsubscribe = listenToAvatarUpdates((newAvatarUrl) => {
-      if (newAvatarUrl) {
-        setUserAvatar(newAvatarUrl);
-
-        // Cập nhật trạng thái user nếu có, đảm bảo giữ cấu trúc dữ liệu đúng
-        setUser((prevUser) => {
-          if (!prevUser) return prevUser;
-
-          // Nếu user có cấu trúc data (cấu trúc chuẩn)
-          if (prevUser.data) {
-            return {
-              ...prevUser,
-              data: {
-                ...prevUser.data,
-                avatar: newAvatarUrl,
-              },
-            };
-          }
-          // Nếu user là object trực tiếp
-          else {
-            return { ...prevUser, avatar: newAvatarUrl };
-          }
-        });
-
-        // Force a re-render with a small delay
-        setTimeout(() => {
-          // This will force components to re-check localStorage
-          window.dispatchEvent(new Event("storage"));
-        }, 100);
-      }
-    });
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, []);
+    setUserAvatar(avatarUrl);
+  }, [avatarUrl]);
 
   // Kiểm tra xem người dùng đã đăng nhập chưa khi tải trang
   useEffect(() => {
     const checkUserLoggedIn = async () => {
       try {
-        // Kiểm tra cả userProfile và token trong localStorage
-        const userProfile = localStorage.getItem("userProfile");
+        // Kiểm tra token trong localStorage
         const token = localStorage.getItem("token");
 
-        if (userProfile && token) {
-          // Parse userProfile từ JSON string
-          const parsedUserProfile = JSON.parse(userProfile);
-          setUser(parsedUserProfile);
-
-          console.log(
-            "UserContext: Đã tải thông tin người dùng từ localStorage",
-            parsedUserProfile
-          );
+        if (token) {
+          // Nếu có token, lấy thông tin người dùng từ API
+          await dispatch(fetchCurrentUser()).unwrap();
+          console.log("UserContext: Đã tải thông tin người dùng từ API");
         } else {
-          console.log(
-            "UserContext: Không tìm thấy thông tin đăng nhập trong localStorage"
-          );
-          setUser(null);
+          console.log("UserContext: Không tìm thấy token trong localStorage");
         }
       } catch (err) {
         setError("Không thể xác thực người dùng");
         console.error("Error checking authentication:", err);
-        // Nếu có lỗi, xóa dữ liệu người dùng để tránh lỗi lặp lại
-        localStorage.removeItem("userProfile");
-        localStorage.removeItem("token");
       } finally {
         setIsLoading(false);
       }
     };
 
     checkUserLoggedIn();
-  }, []);
-
-  // Hàm đăng nhập
-  const login = async (userData) => {
+  }, [dispatch]);
+  // Hàm đăng nhập sử dụng Redux
+  const login = async (credentials) => {
     try {
       setIsLoading(true);
+      setError(null);
 
-      // Giả lập gọi API đăng nhập
-      // Thay thế bằng cuộc gọi API thực khi có backend
-      // const response = await apiClient.post('/auth/login', userData);
-      // const { user, token } = response.data;
-
-      // Mô phỏng response
-      const mockUser = {
-        id: "1",
-        name: "Người dùng mẫu",
-        email: userData.email,
-        role: "user",
-      };
-
-      const mockToken = "fake-jwt-token";
-
-      // Lưu thông tin người dùng vào state và localStorage
-      setUser(mockUser);
-      setWithExpiry("user", mockUser, 60); // Lưu trong 60 phút
-      localStorage.setItem("token", mockToken);
+      // Dispatch action đăng nhập từ Redux thunk
+      await dispatch(loginUser(credentials)).unwrap();
 
       return { success: true };
     } catch (err) {
@@ -134,16 +85,17 @@ export const UserProvider = ({ children }) => {
       setIsLoading(false);
     }
   };
-  // Hàm đăng xuất
-  const logout = () => {
-    setUser(null);
-    // Xóa tất cả dữ liệu người dùng khỏi localStorage
-    localStorage.removeItem("user");
-    localStorage.removeItem("userProfile");
-    localStorage.removeItem("token");
-    console.log("UserContext: Đã đăng xuất và xóa dữ liệu khỏi localStorage");
-  };
 
+  // Hàm đăng xuất sử dụng Redux
+  const logout = async () => {
+    try {
+      // Dispatch action đăng xuất từ Redux thunk
+      await dispatch(logoutUser()).unwrap();
+      console.log("UserContext: Đã đăng xuất thành công");
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  };
   // Giá trị sẽ được cung cấp cho context
   const value = {
     user,
@@ -152,7 +104,7 @@ export const UserProvider = ({ children }) => {
     error,
     login,
     logout,
-    isAuthenticated: !!user,
+    isAuthenticated,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

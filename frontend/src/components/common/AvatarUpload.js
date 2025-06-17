@@ -8,10 +8,11 @@ import {
 } from "@mui/material";
 import { CloudUpload as CloudUploadIcon } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
-import localStorageUtil from "@/utils/localStorage";
-import { userService } from "@/services/userService";
+import { useDispatch, useSelector } from "react-redux";
+import { uploadUserAvatar } from "@/redux/thunks/userThunks";
+import { selectAvatar } from "@/redux/slices/authSlice";
 import { notify } from "@/utils/notification";
-import { triggerAvatarUpdate } from "@/utils/storageEvent";
+import localStorageUtil from "@/utils/localStorage";
 import imageUrl from "@/utils/imageUrl";
 
 // Styled component cho input file
@@ -66,101 +67,52 @@ function AvatarUpload({
     setSelectedFile(file);
     setError("");
   };
-
-  // Xử lý upload file
+  // Xử lý upload file sử dụng Redux
+  const dispatch = useDispatch();
+  const avatarFromStore = useSelector(selectAvatar);
   const handleUpload = async () => {
     if (!selectedFile) {
       setError("Vui lòng chọn một file hình ảnh");
       return;
-    } // Kiểm tra đăng nhập qua localStorage
-    const tokenData = localStorageUtil.get("token");
-    const userProfileData = localStorageUtil.get("userProfile");
+    }
 
-    // Kiểm tra cả token và userProfile
-    if (!tokenData || !userProfileData) {
+    // Kiểm tra đăng nhập qua localStorage
+    const tokenData = localStorageUtil.get("token");
+    if (!tokenData) {
       setError("Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.");
       return;
     }
 
     setIsLoading(true);
     setError("");
+
     try {
-      // Kiểm tra accessToken có thể đã hết hạn
-      if (tokenData.accessToken) {
-        console.log("Token tìm thấy, tiếp tục upload avatar...");
-      }
+      // Sử dụng Redux thunk để upload avatar
+      const resultAction = await dispatch(uploadUserAvatar(selectedFile));
 
-      // Sử dụng userService để upload avatar
-      const response = await userService.uploadAvatar(selectedFile);
+      // Kiểm tra kết quả từ thunk action
+      if (uploadUserAvatar.fulfilled.match(resultAction)) {
+        const avatarPath = resultAction.payload;
 
-      console.log("Upload response:", response);
-      if (response.success) {
-        // Trích xuất avatar path từ response
-        let avatarPath = null;
+        console.log("Avatar uploaded successfully:", avatarPath);
 
-        // Xử lý các cấu trúc response khác nhau
-        if (response.data && response.data.data) {
-          avatarPath =
-            response.data.data.avatarUrl || response.data.data.avatar;
-        } else if (response.data) {
-          avatarPath = response.data.avatarUrl || response.data.avatar;
+        // Reset file selection state
+        setSelectedFile(null);
+
+        // Kích hoạt callback nếu có
+        if (onUploadSuccess) {
+          onUploadSuccess(avatarPath);
+          console.log("onUploadSuccess callback executed with:", avatarPath);
         }
 
-        console.log("Trích xuất đường dẫn avatar từ response:", avatarPath);
-        if (avatarPath) {
-          // Sử dụng localStorageUtil để cập nhật userProfile một cách an toàn
-          localStorageUtil.updateUserProfile({ avatar: avatarPath }, true);
-          console.log("Đã cập nhật avatar trong userProfile:", avatarPath);
+        // Đóng modal nếu có
+        onClose?.();
 
-          // Cập nhật cả đối tượng user trong localStorage nếu có
-          const user = localStorageUtil.get("user");
-          if (user) {
-            user.avatar = avatarPath;
-            localStorageUtil.set("user", user);
-            console.log("Đã cập nhật avatar trong user:", avatarPath);
-          }
-
-          // Lưu vào sessionStorage để các component có thể truy cập ngay lập tức
-          sessionStorage.setItem("last_updated_avatar", avatarPath);
-
-          // Kích hoạt sự kiện để cập nhật avatar trên toàn trang
-          triggerAvatarUpdate(avatarPath);
-
-          // Trigger sự kiện một lần nữa sau 200ms để đảm bảo các component đều nhận được
-          setTimeout(() => {
-            triggerAvatarUpdate(avatarPath);
-
-            // Kích hoạt callback nếu có
-            if (onUploadSuccess) {
-              onUploadSuccess(avatarPath);
-            }
-          }, 200);
-
-          // Gọi callback thành công nếu có
-          if (onUploadSuccess) {
-            onUploadSuccess(avatarPath);
-          } // Hiển thị thông báo thành công
-          notify.success(
-            "Cập nhật thành công",
-            "Avatar đã được cập nhật thành công",
-            { duration: 2000 }
-          );
-
-          // Reset file selection state
-          setSelectedFile(null);
-
-          // Không reload trang để cho phép event system hoạt động
-        } else {
-          console.warn(
-            "Không tìm thấy đường dẫn avatar trong response:",
-            response
-          );
-          if (onUploadSuccess) {
-            onUploadSuccess("/img/avatar/default.jpg"); // Fallback nếu không tìm thấy
-          } // Không reload trang để cho phép event system hoạt động
-        }
-      } else {
-        throw new Error(response.message || "Không thể tải avatar lên");
+        // Không cần reload trang, Redux sẽ cập nhật UI
+        console.log("UI sẽ được cập nhật qua Redux dispatcher");
+      } else if (uploadUserAvatar.rejected.match(resultAction)) {
+        // Xử lý lỗi từ thunk
+        throw resultAction.error;
       }
     } catch (error) {
       console.error("Lỗi khi tải avatar:", error);
@@ -187,18 +139,13 @@ function AvatarUpload({
         return;
       }
 
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Không thể tải avatar lên";
+      const errorMessage = error.message || "Không thể tải avatar lên";
       setError(errorMessage);
 
       // Gọi callback lỗi nếu có
       if (onUploadError) {
         onUploadError(errorMessage);
       }
-
-      notify.error("Lỗi upload", errorMessage, { duration: 3000 });
     } finally {
       setIsLoading(false);
     }

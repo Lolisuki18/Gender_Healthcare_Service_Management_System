@@ -22,6 +22,7 @@ import storage from "redux-persist/lib/storage";
 
 // Import các reducers
 import authReducer from "./slices/authSlice";
+import localStorageMiddleware from "./middleware/localStorageMiddleware";
 
 // Cấu hình Redux Persist
 const persistConfig = {
@@ -47,7 +48,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: ["persist/PERSIST"],
       },
-    }),
+    }).concat(localStorageMiddleware),
   devTools: process.env.NODE_ENV !== "production",
 });
 

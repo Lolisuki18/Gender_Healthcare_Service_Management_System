@@ -1,3 +1,6 @@
+// Description: Hiển thị giao diện người dùng đã đăng nhập với thông tin người dùng và nút đăng xuất
+//LoggedInView.js
+//Mục đích : Nếu người dùng đã đăng nhập rồi mà cố gắng truy cập vào trang đăng nhập thì sẽ redirect đến trang này
 import React, { useState, useEffect } from "react";
 import {
   alpha,
@@ -40,7 +43,6 @@ const LoggedInView = ({ user, onLogout }) => {
     onLogout();
     notify.info("Đăng xuất", "Bạn đã đăng xuất khỏi hệ thống");
     // Xóa tất cả thông tin người dùng khỏi localStorage
-    localStorageUtil.remove("user");
     localStorageUtil.remove("userProfile");
     localStorageUtil.remove("token");
     window.location.href = "/login"; // Redirect to login page after logout
