@@ -51,11 +51,15 @@ public class ConsultationService {
             if (userOpt.isEmpty()) {
                 return ApiResponse.error("Consultant not found");
             }
-
             UserDtls user = userOpt.get();
             // Cập nhật: Sử dụng getRoleName() thay vì getRole()
             if (!"CONSULTANT".equals(user.getRoleName())) {
                 return ApiResponse.error("Selected user is not a consultant");
+            }
+
+            // Kiểm tra consultant có active không
+            if (!Boolean.TRUE.equals(user.getIsActive())) {
+                return ApiResponse.error("Consultant is not currently active");
             }
 
             // Ngày bắt đầu và kết thúc tìm kiếm
@@ -108,13 +112,17 @@ public class ConsultationService {
             if (consultantOpt.isEmpty()) {
                 return ApiResponse.error("Consultant not found");
             }
-
             UserDtls customer = customerOpt.get();
             UserDtls consultant = consultantOpt.get();
 
             // Cập nhật: Sử dụng getRoleName() thay vì getRole()
             if (!"CONSULTANT".equals(consultant.getRoleName())) {
                 return ApiResponse.error("Selected user is not a consultant");
+            }
+
+            // Kiểm tra consultant có active không
+            if (!Boolean.TRUE.equals(consultant.getIsActive())) {
+                return ApiResponse.error("Consultant is not currently active");
             }
 
             if (customer.getId().equals(consultant.getId())) {
@@ -193,7 +201,7 @@ public class ConsultationService {
                 if (!consultation.getCustomer().getId().equals(userId) &&
                         !consultation.getConsultant().getId().equals(userId)) {
                     return ApiResponse.error("You don't have permission to cancel this consultation");
-                }                // No payment processing required for cancellation
+                } // No payment processing required for cancellation
             } else if (newStatus == ConsultationStatus.COMPLETED) {
                 if (!consultation.getConsultant().getId().equals(userId)) {
                     return ApiResponse.error("Only assigned consultant can mark the consultation as completed");
