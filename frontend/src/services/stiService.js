@@ -1,4 +1,5 @@
 // src/services/stiService.js
+import notify from "@/utils/notification";
 import apiClient from "./api";
 
 export const stiService = {
@@ -312,6 +313,34 @@ export const stiService = {
     } catch (error) {
       console.error(`Error deleting STI package ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+  // Get test results for a specific test
+  getTestResults: async (testId) => {
+    try {
+      console.log(`Calling API: GET /tests/${testId}/results`);
+      const res = await apiClient.get(`/tests/${testId}/results`);
+      console.log("API Response:", res.data);
+      notify("info", "Đang tải kết quả xét nghiệm...");
+      // Validate response structure
+      if (!res.data || !res.data.success) {
+        console.warn("API returned unsuccessful response:", res.data);
+        throw new Error(res.data?.message || "Failed to fetch test results");
+      }
+
+      if (!res.data.data || res.data.data.length === 0) {
+        console.log("No test results found in response");
+        return []; // Return empty array for proper handling in component
+      }
+
+      return res.data.data;
+    } catch (error) {
+      console.error(`Error fetching test results for test ${testId}:`, error);
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to load test results"
+      );
     }
   },
 };

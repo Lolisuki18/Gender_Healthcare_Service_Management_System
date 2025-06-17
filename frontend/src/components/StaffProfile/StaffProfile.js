@@ -35,7 +35,6 @@ import { styled } from "@mui/material/styles";
 import StaffSidebar from "./StaffSideBar";
 
 // Import content components
-import StaffManagementContent from "./StaffManagementContent";
 import QuestionResponseContent from "./QuestionResponseContent";
 import STIServiceManagementContent from "./STIServiceManagementContent";
 import STITestManagementContent from "./STITestManagementContent";
@@ -74,8 +73,6 @@ const StaffProfile = ({ user = {} }) => {
   }; // Hàm render nội dung động dựa trên menu item được chọn
   const renderContent = () => {
     switch (selectedMenuItem) {
-      case "staffManagement":
-        return <StaffManagementContent />;
       case "questionResponse":
         return <QuestionResponseContent />;
       case "stiService":
@@ -93,12 +90,9 @@ const StaffProfile = ({ user = {} }) => {
       default:
         return <ProfileContent />;
     }
-  };
-  // Hàm để lấy tiêu đề trang dựa trên menu item
+  }; // Hàm để lấy tiêu đề trang dựa trên menu item
   const getPageTitle = () => {
     switch (selectedMenuItem) {
-      case "staffManagement":
-        return "Quản lý nhân viên";
       case "questionResponse":
         return "Trả lời câu hỏi";
       case "stiService":

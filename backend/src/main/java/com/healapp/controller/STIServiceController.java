@@ -124,7 +124,6 @@ public class STIServiceController {
         return ResponseEntity.ok(response);
     }
 
-
     /*
      * description: Xóa một dịch vụ xét nghiệm STI theo ID
      * path: /sti-services/{serviceId}

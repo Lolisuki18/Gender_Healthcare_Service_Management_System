@@ -289,3 +289,46 @@ export const formatDateForAPI = (dateString) => {
     return "";
   }
 };
+
+/**
+ * ✅ Format ISO datetime to DD/MM/YYYY HH:MM format for display
+ *
+ * @param {string|Date} dateTimeString - Input datetime (ISO or Date object)
+ * @returns {string} Formatted datetime in DD/MM/YYYY HH:MM format
+ *
+ * @example
+ * formatDateTime("2025-06-13T14:30:00.000Z") // "13/06/2025 21:30"
+ * formatDateTime(new Date()) // "11/06/2025 15:45"
+ */
+export const formatDateTime = (dateTimeString) => {
+  if (!dateTimeString) return "Chưa cập nhật";
+
+  try {
+    const date = new Date(dateTimeString);
+
+    // Validate date
+    if (isNaN(date.getTime())) {
+      console.warn("⚠️ Invalid datetime after parsing:", dateTimeString);
+      return "Thời gian không hợp lệ";
+    }
+
+    // Format date part: DD/MM/YYYY
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+
+    // Format time part: HH:MM
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  } catch (error) {
+    console.error(
+      "❌ Error formatting datetime:",
+      error,
+      "Input:",
+      dateTimeString
+    );
+    return "Lỗi định dạng thời gian";
+  }
+};

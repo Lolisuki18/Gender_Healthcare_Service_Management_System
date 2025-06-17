@@ -38,7 +38,6 @@ import {
 } from "@mui/material";
 import {
   CalendarToday as CalendarIcon,
-  People as PeopleIcon,
   LocalHospital as HospitalIcon,
   Reply as ReplyIcon,
   Notifications as NotificationsIcon,
@@ -58,12 +57,6 @@ const staffMenuItems = [
     label: "Hồ sơ cá nhân",
     icon: PersonIcon,
     description: "Quản lý thông tin cá nhân",
-  },
-  {
-    id: "staffManagement",
-    label: "Quản lý nhân viên",
-    icon: PeopleIcon,
-    description: "Quản lý nhân viên hệ thống",
   },
   {
     id: "questionResponse",
