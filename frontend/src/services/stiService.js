@@ -1,317 +1,193 @@
-// src/services/stiService.js
-import apiClient from "./api";
+import axios from 'axios';
 
-export const stiService = {
-  // Lấy tất cả gói đang hoạt động - Public endpoint
-  getActiveSTIServices: async () => {
+const API_URL = '/api/sti-services';
+
+// Create a new STI service (Staff only)
+export const createSTIService = async (serviceData) => {
     try {
-      const res = await apiClient.get("/sti-services?include=testComponents");
-      if (!res.data.success) {
-        throw new Error(res.data.message || "Failed to fetch STI services");
-      }
-      return res.data.data;
+        const response = await axios.post(API_URL, serviceData);
+        return response.data;
     } catch (error) {
-      console.error("Error fetching STI services:", error);
-      if (error.message === "Authentication required") {
-        return []; // Return empty array for unauthenticated users
-      }
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  // STAFF MANAGEMENT API - Uncomment khi cần sử dụng
-  // ==== STI SERVICE MANAGEMENT API ====
-
-  // getAllServices: async () => {
-  //   try {
-  //     const res = await apiClient.get("/admin/sti-services");
-  //     if (!res.data.success) {
-  //       throw new Error(res.data.message || 'Failed to fetch STI services');
-  //     }
-  //     return res.data.data;
-  //   } catch (error) {
-  //     console.error('Error fetching STI services:', error);
-  //     throw new Error(error.response?.data?.message || error.message);
-  //   }
-  // },
-
-  // getServiceById: async (id) => {
-  //   try {
-  //     const res = await apiClient.get(`/admin/sti-services/${id}`);
-  //     if (!res.data.success) {
-  //       throw new Error(res.data.message || 'Failed to fetch STI service');
-  //     }
-  //     return res.data.data;
-  //   } catch (error) {
-  //     console.error(`Error fetching STI service ${id}:`, error);
-  //     throw new Error(error.response?.data?.message || error.message);
-  //   }
-  // },
-
-  // createService: async (serviceData) => {
-  //   try {
-  //     const res = await apiClient.post('/admin/sti-services', serviceData);
-  //     if (!res.data.success) {
-  //       throw new Error(res.data.message || 'Failed to create STI service');
-  //     }
-  //     return res.data.data;
-  //   } catch (error) {
-  //     console.error('Error creating STI service:', error);
-  //     throw new Error(error.response?.data?.message || error.message);
-  //   }
-  // },
-
-  // updateService: async (id, serviceData) => {
-  //   try {
-  //     const res = await apiClient.put(`/admin/sti-services/${id}`, serviceData);
-  //     if (!res.data.success) {
-  //       throw new Error(res.data.message || 'Failed to update STI service');
-  //     }
-  //     return res.data.data;
-  //   } catch (error) {
-  //     console.error(`Error updating STI service ${id}:`, error);
-  //     throw new Error(error.response?.data?.message || error.message);
-  //   }
-  // },
-
-  // deleteService: async (id) => {
-  //   try {
-  //     const res = await apiClient.delete(`/admin/sti-services/${id}`);
-  //     if (!res.data.success) {
-  //       throw new Error(res.data.message || 'Failed to delete STI service');
-  //     }
-  //     return true;
-  //   } catch (error) {
-  //     console.error(`Error deleting STI service ${id}:`, error);
-  //     throw new Error(error.response?.data?.message || error.message);
-  //   }
-  // },
-
-  // Get package detail - Public endpoint
-  getPackageDetail: async (id) => {
+// Get all STI services
+export const getAllSTIServices = async () => {
     try {
-      if (!id) {
-        throw new Error("Service ID is required");
-      }
-      const response = await apiClient.get(`/sti-services/${id}`);
-      if (!response.data.success) {
-        throw new Error(
-          response.data.message || "Failed to fetch package details"
-        );
-      }
-      return response.data.data;
+        const response = await axios.get('/api/sti-services');
+        return response.data;
     } catch (error) {
-      console.error("Error fetching package details:", error);
-      if (error.message === "Authentication required") {
-        return null; // Return null for unauthenticated users
-      }
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  // Đặt lịch xét nghiệm STI
-  bookTest: async (testData) => {
+// Get STI service by ID
+export const getSTIServiceById = async (serviceId) => {
     try {
-      if (!testData || !testData.serviceId) {
-        throw new Error("Invalid booking data");
-      }
-      const response = await apiClient.post(
-        "/sti-services/book-test",
-        testData
-      );
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to book test");
-      }
-      return response.data.data;
+        const response = await axios.get(`${API_URL}/${serviceId}`);
+        return response.data;
     } catch (error) {
-      console.error("Error booking test:", error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  // Lấy danh sách xét nghiệm của người dùng
-  getMyTests: async () => {
+// Update STI service (Staff only)
+export const updateSTIService = async (serviceId, serviceData) => {
     try {
-      const response = await apiClient.get("/sti-services/my-tests");
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch tests");
-      }
-      return response.data.data;
+        const response = await axios.put(`${API_URL}/${serviceId}`, serviceData);
+        return response.data;
     } catch (error) {
-      console.error("Error fetching my tests:", error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  // Tạo QR thanh toán
-  createQRPayment: async (testId) => {
+// Delete STI service (Staff only)
+export const deleteSTIService = async (serviceId) => {
     try {
-      if (!testId) {
-        throw new Error("Test ID is required");
-      }
-      const response = await apiClient.post("/payments/qr/create", { testId });
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to create QR payment");
-      }
-      return response.data.data;
+        const response = await axios.delete(`${API_URL}/${serviceId}`);
+        return response.data;
     } catch (error) {
-      console.error("Error creating QR payment:", error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  // Kiểm tra trạng thái thanh toán QR
-  checkQRPaymentStatus: async (qrReference) => {
+// Book a new STI test
+export const bookSTITest = async (testData) => {
     try {
-      if (!qrReference) {
-        throw new Error("QR reference is required");
-      }
-      const response = await apiClient.post(
-        `/payments/qr/${qrReference}/check`
-      );
-      if (!response.data.success) {
-        throw new Error(
-          response.data.message || "Failed to check payment status"
-        );
-      }
-      return response.data.data;
+        const response = await axios.post(`${API_URL}/book-test`, testData);
+        return response.data;
     } catch (error) {
-      console.error("Error checking QR payment:", error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  // ==== STI TEST MANAGEMENT API ===
-
-  getAllTests: async () => {
+// Get all tests for current user
+export const getMySTITests = async () => {
     try {
-      const res = await apiClient.get("/admin/sti-tests");
-      if (!res.data.success) {
-        throw new Error(res.data.message || "Failed to fetch STI tests");
-      }
-      return res.data.data;
+        const response = await axios.get(`${API_URL}/my-tests`);
+        return response.data;
     } catch (error) {
-      console.error("Error fetching STI tests:", error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  getTestById: async (id) => {
+// Get test details by ID
+export const getSTITestDetails = async (testId) => {
     try {
-      const res = await apiClient.get(`/admin/sti-tests/${id}`);
-      if (!res.data.success) {
-        throw new Error(res.data.message || "Failed to fetch STI test");
-      }
-      return res.data.data;
+        const response = await axios.get(`${API_URL}/tests/${testId}`);
+        return response.data;
     } catch (error) {
-      console.error(`Error fetching STI test ${id}:`, error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  createTest: async (testData) => {
+// Cancel a test
+export const cancelSTITest = async (testId) => {
     try {
-      const res = await apiClient.post("/admin/sti-tests", testData);
-      if (!res.data.success) {
-        throw new Error(res.data.message || "Failed to create STI test");
-      }
-      return res.data.data;
+        const response = await axios.put(`${API_URL}/tests/${testId}/cancel`);
+        return response.data;
     } catch (error) {
-      console.error("Error creating STI test:", error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  updateTest: async (id, testData) => {
+// Get pending tests (Staff only)
+export const getPendingTests = async () => {
     try {
-      const res = await apiClient.put(`/admin/sti-tests/${id}`, testData);
-      if (!res.data.success) {
-        throw new Error(res.data.message || "Failed to update STI test");
-      }
-      return res.data.data;
+        const response = await axios.get(`${API_URL}/staff/pending-tests`);
+        return response.data;
     } catch (error) {
-      console.error(`Error updating STI test ${id}:`, error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  deleteTest: async (id) => {
+// Confirm a test (Staff only)
+export const confirmTest = async (testId) => {
     try {
-      const res = await apiClient.delete(`/admin/sti-tests/${id}`);
-      if (!res.data.success) {
-        throw new Error(res.data.message || "Failed to delete STI test");
-      }
-      return true;
+        const response = await axios.put(`${API_URL}/staff/tests/${testId}/confirm`);
+        return response.data;
     } catch (error) {
-      console.error(`Error deleting STI test ${id}:`, error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  // ==== STI PACKAGE MANAGEMENT API ===
-
-  getAllPackages: async () => {
+// Get confirmed tests (Staff only)
+export const getConfirmedTests = async () => {
     try {
-      const res = await apiClient.get("/admin/sti-packages");
-      if (!res.data.success) {
-        throw new Error(res.data.message || "Failed to fetch STI packages");
-      }
-      return res.data.data;
+        const response = await axios.get(`${API_URL}/staff/confirmed-tests`);
+        return response.data;
     } catch (error) {
-      console.error("Error fetching STI packages:", error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  getPackageById: async (id) => {
+// Mark test as sampled (Staff only)
+export const sampleTest = async (testId) => {
     try {
-      const res = await apiClient.get(`/admin/sti-packages/${id}`);
-      if (!res.data.success) {
-        throw new Error(res.data.message || "Failed to fetch STI package");
-      }
-      return res.data.data;
+        const response = await axios.put(`${API_URL}/staff/tests/${testId}/sample`);
+        return response.data;
     } catch (error) {
-      console.error(`Error fetching STI package ${id}:`, error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  createPackage: async (packageData) => {
+// Get tests assigned to staff member (Staff only)
+export const getStaffTests = async () => {
     try {
-      const res = await apiClient.post("/admin/sti-packages", packageData);
-      if (!res.data.success) {
-        throw new Error(res.data.message || "Failed to create STI package");
-      }
-      return res.data.data;
+        const response = await axios.get(`${API_URL}/staff/my-tests`);
+        return response.data;
     } catch (error) {
-      console.error("Error creating STI package:", error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  updatePackage: async (id, packageData) => {
+// Add test results (Staff only)
+export const addTestResults = async (testId, resultsData) => {
     try {
-      const res = await apiClient.put(`/admin/sti-packages/${id}`, packageData);
-      if (!res.data.success) {
-        throw new Error(res.data.message || "Failed to update STI package");
-      }
-      return res.data.data;
+        const response = await axios.put(`${API_URL}/staff/tests/${testId}/result`, resultsData);
+        return response.data;
     } catch (error) {
-      console.error(`Error updating STI package ${id}:`, error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
 
-  deletePackage: async (id) => {
+// Complete a test (Staff only)
+export const completeTest = async (testId) => {
     try {
-      const res = await apiClient.delete(`/admin/sti-packages/${id}`);
-      if (!res.data.success) {
-        throw new Error(res.data.message || "Failed to delete STI package");
-      }
-      return true;
+        const response = await axios.put(`${API_URL}/staff/tests/${testId}/complete`);
+        return response.data;
     } catch (error) {
-      console.error(`Error deleting STI package ${id}:`, error);
-      throw new Error(error.response?.data?.message || error.message);
+        throw error.response?.data || error.message;
     }
-  },
+};
+
+// Get test results
+export const getTestResults = async (testId) => {
+    try {
+        const response = await axios.get(`${API_URL}/tests/${testId}/results`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+// Get all STI packages
+export const getAllSTIPackages = async () => {
+    try {
+        const response = await axios.get('/api/sti-packages');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+// Create a new STI package (Staff only)
+export const createSTIPackage = async (packageData) => {
+    try {
+        const response = await axios.post('/api/sti-packages', packageData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
 };
