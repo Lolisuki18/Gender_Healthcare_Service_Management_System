@@ -23,6 +23,8 @@ public class STIPackageResquest{
     
     @NotNull(message = "Price name is request")
     private BigDecimal price;
+
+    private Boolean isActive;
     
     private List<Long> stiService;
 }

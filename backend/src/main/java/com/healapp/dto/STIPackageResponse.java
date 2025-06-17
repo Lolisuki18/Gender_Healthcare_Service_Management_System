@@ -31,7 +31,7 @@ public class STIPackageResponse {
           private Long id;
           private String name;
           private String description;
-          private double price;
+          private BigDecimal price;
           private boolean isActive;
       }
 
