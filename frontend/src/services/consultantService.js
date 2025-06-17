@@ -326,6 +326,89 @@ const consultantService = {
       throw error.response?.data || error;
     }
   },
+
+  //===================================== Trang ConsultationPage =====================================
+  // Lấy danh sách tư vấn viên
+  getAllConsultants: async () => {
+    try {
+      const response = await apiClient.get("/consultants");
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error fetching consultants:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          "Không thể lấy danh sách tư vấn viên",
+        error,
+      };
+    }
+  },
+
+  // Đặt lịch hẹn với tư vấn viên
+  scheduleAppointment: async (appointmentData) => {
+    try {
+      const response = await apiClient.post(
+        "/consultations/schedule",
+        appointmentData
+      );
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error scheduling appointment:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Không thể đặt lịch hẹn",
+        error,
+      };
+    }
+  },
+
+  // Lấy các khung giờ có sẵn của tư vấn viên cho ngày cụ thể
+  getAvailableTimeSlots: async (consultantId, date) => {
+    try {
+      const response = await apiClient.get(
+        `/consultants/${consultantId}/availability?date=${date}`
+      );
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error fetching available time slots:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          "Không thể lấy thông tin khung giờ trống",
+        error,
+      };
+    }
+  },
+
+  // Lấy các lịch hẹn đã đặt của người dùng
+  getUserAppointments: async () => {
+    try {
+      const response = await apiClient.get("/consultations/user");
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error fetching user appointments:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Không thể lấy thông tin lịch hẹn",
+        error,
+      };
+    }
+  },
 };
 
 export default consultantService;

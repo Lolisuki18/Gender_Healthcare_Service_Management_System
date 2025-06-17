@@ -36,7 +36,6 @@ import {
   CardContent,
   FormControl,
   Stack,
-  Divider,
   Chip,
   Grid,
   Dialog, // Using Dialog instead of Modal
@@ -121,16 +120,6 @@ const ProfileCard = styled(Card)(({ theme }) => ({
   },
   position: "relative",
   border: "1px solid rgba(226, 232, 240, 0.9)",
-  "&::before": {
-    content: '""',
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "5px",
-    background: "linear-gradient(90deg, #4A90E2, #1ABC9C)",
-    borderRadius: "5px 5px 0 0",
-  },
   zIndex: 1,
 }));
 
@@ -1208,11 +1197,9 @@ const ProfileContent = (props) => {
                     >
                       {isSaving ? "Đang lưu..." : "Lưu"}
                     </Button>
-                  )}
+                  )}{" "}
                 </Box>
               </Box>
-
-              <Divider sx={{ mb: 3, display: { xs: "block", md: "none" } }} />
 
               {/* Contact Info Grid */}
               <Grid container spacing={2}>
