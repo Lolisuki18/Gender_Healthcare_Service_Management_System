@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -42,7 +43,7 @@ public class STIPackage {
     // Quan hệ Many-to-Many với STIService
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "package_services", joinColumns = @JoinColumn(name = "package_id"), inverseJoinColumns = @JoinColumn(name = "service_id"))
-    private List<STIService> services;
+    private List<STIService> services = new ArrayList<>();
 
     // Quan hệ One-to-Many với STITest
     @OneToMany(mappedBy = "stiPackage", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
