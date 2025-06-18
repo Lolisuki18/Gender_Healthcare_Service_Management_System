@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.STIPackageResponse;
-import com.healapp.dto.STIPackageResquest;
+import com.healapp.dto.STIPackageRequest;
 import com.healapp.model.PackageService;
 import com.healapp.model.STIPackage;
 import com.healapp.model.STIService;
@@ -29,7 +29,7 @@ public class STIPackageService {
     @Autowired
     private STIServiceRepository stiServiceRepository;
     
-    
+    //Lấy tất cả các
     public ApiResponse<List<STIPackageResponse>> getAllSTIPackage(String role) {
         try {
             List<STIPackage> packages = stiPackageRepository.findAll();
@@ -66,7 +66,7 @@ public class STIPackageService {
     
     
     //Tạo gói dịch vụ xét nghiệm
-    public ApiResponse<STIPackageResponse> createSTIPackage(STIPackageResquest resquest){
+    public ApiResponse<STIPackageResponse> createSTIPackage(STIPackageRequest resquest){
         try {
             // Validate input
             if (resquest == null || resquest.getName() == null || resquest.getPrice().compareTo(BigDecimal.ZERO) <= 0){
@@ -133,7 +133,7 @@ public class STIPackageService {
 
     //Cập nhật thông tin của gói dịch vụ STI
     @Transactional
-    public ApiResponse<STIPackageResponse> updateSTIPackage(Long id, STIPackageResquest request) {
+    public ApiResponse<STIPackageResponse> updateSTIPackage(Long id, STIPackageRequest request) {
     try {
         STIPackage updatePackage = stiPackageRepository.findById(id).orElse(null);
         if (updatePackage == null) {

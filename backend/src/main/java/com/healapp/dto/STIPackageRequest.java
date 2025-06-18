@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class STIPackageResquest{
+public class STIPackageRequest{
 
     @NotBlank(message = "Package name is request")
     @Size(max = 200, message = "Package must not exceed 100 characters")
