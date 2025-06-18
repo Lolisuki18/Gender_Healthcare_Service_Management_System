@@ -200,7 +200,7 @@ export const HomePage = () => {
                   variant="outlined"
                   size="large"
                   startIcon={<MedicalServicesIcon />}
-                  onClick={() => navigate("/sti-test")}
+                  onClick={() => navigate("/test-registration")}
                   sx={{
                     borderColor: "#1ABC9C",
                     color: "#fff",

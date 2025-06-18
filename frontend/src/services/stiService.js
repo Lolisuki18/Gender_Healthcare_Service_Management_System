@@ -1,5 +1,4 @@
-import axios from 'axios';
-import apiClient from './api';
+import apiClient from '@services/api';
 
 const API_URL = '/sti-services';
 
@@ -110,10 +109,7 @@ export const getPendingTests = async () => {
 export const confirmTest = async (testId) => {
   try {
     const response = await apiClient.put(
-      `${API_URL}/staff/tests/${testId}/confirm`,
-      {
-        status: 'CONFIRMED',
-      }
+      `${API_URL}/staff/tests/${testId}/confirm`
     );
     return response.data;
   } catch (error) {
@@ -135,10 +131,7 @@ export const getConfirmedTests = async () => {
 export const sampleTest = async (testId) => {
   try {
     const response = await apiClient.put(
-      `${API_URL}/staff/tests/${testId}/sample`,
-      {
-        status: 'SAMPLED',
-      }
+      `${API_URL}/staff/tests/${testId}/sample`
     );
     return response.data;
   } catch (error) {
@@ -150,23 +143,18 @@ export const sampleTest = async (testId) => {
 export const getStaffTests = async () => {
   try {
     const response = await apiClient.get(`${API_URL}/staff/my-tests`);
-    console.log('Raw API response:', response);
     return response.data;
   } catch (error) {
-    console.error('Error in getStaffTests:', error);
     throw error.response?.data || error.message;
   }
 };
 
 // Add test results (Staff only)
-export const addTestResults = async (testId, testResults) => {
+export const addTestResults = async (testId, resultsData) => {
   try {
     const response = await apiClient.put(
       `${API_URL}/staff/tests/${testId}/result`,
-      {
-        status: 'RESULTED',
-        results: testResults,
-      }
+      resultsData
     );
     return response.data;
   } catch (error) {
@@ -178,10 +166,7 @@ export const addTestResults = async (testId, testResults) => {
 export const completeTest = async (testId) => {
   try {
     const response = await apiClient.put(
-      `${API_URL}/staff/tests/${testId}/complete`,
-      {
-        status: 'COMPLETED',
-      }
+      `${API_URL}/staff/tests/${testId}/complete`
     );
     return response.data;
   } catch (error) {
@@ -202,7 +187,7 @@ export const getTestResults = async (testId) => {
 // Get all STI packages
 export const getAllSTIPackages = async () => {
   try {
-    const response = await apiClient.get('/api/sti-packages');
+    const response = await apiClient.get('/sti-packages');
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -212,7 +197,7 @@ export const getAllSTIPackages = async () => {
 // Create a new STI package (Staff only)
 export const createSTIPackage = async (packageData) => {
   try {
-    const response = await axios.post('/api/sti-packages', packageData);
+    const response = await apiClient.post('/sti-packages', packageData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;

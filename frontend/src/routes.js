@@ -13,6 +13,7 @@ import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ProfilePage from "@/pages/ProfilePage";
 // import AdminTestPage from "@/pages/AdminTestPage";
 import StiPage from "@/pages/StiPage";
+import StiDetailPage from "@/pages/StiDetailPage";
 // Import Profile Components
 import CustomerProfile from "@/components/CustomerProfile/CustomerProfile";
 import AdminProfile from "@/components/AdminProfile/AdminProfile";
@@ -21,6 +22,7 @@ import StaffProfile from "@/components/StaffProfile/StaffProfile";
 import AdminLayout from "./components/layouts/AdminLayout";
 import localStorageUtil from "./utils/localStorage";
 import ConsultationPage from "./pages/ConsultantionPage";
+import TestRegistrationPage from "@/pages/TestRegistrationPage";
 
 const AppRoutes = () => {
   // Lấy thông tin user từ localStorage
@@ -83,6 +85,8 @@ const AppRoutes = () => {
         <Route path="register" element={<RegisterForm />} />
         {/* Trang quên mật khẩu */}
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        {/* Trang đăng ký xét nghiệm */}
+        <Route path="/test-registration" element={<TestRegistrationPage />} />
         {/* 404 Page -> sẽ được hiện ra khi truy cập những path không hợp lệ */}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
@@ -105,6 +109,8 @@ const AppRoutes = () => {
         {/* Auto redirect /admin to /admin/profile */}
         <Route index element={<Navigate to="/admin/profile" replace />} />
       </Route>
+
+      <Route path="/services/sti-testing" element={<StiDetailPage />} />
     </Routes>
   );
 };
