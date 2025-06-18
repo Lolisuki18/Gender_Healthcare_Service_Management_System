@@ -239,25 +239,15 @@ export const userService = {
     try {
       console.log("Attempting to refresh token...");
 
-      // Tạo một instance axios riêng không có interceptor để tránh vòng lặp vô hạn
-      const noInterceptorClient = axios.create({
-        baseURL: process.env.REACT_APP_API_URL || "http://localhost:8080",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const response = await noInterceptorClient.post("/auth/refresh-token", {
+      // Sử dụng apiClient chính thay vì tạo instance mới
+      const response = await apiClient.post("/auth/refresh-token", {
         refreshToken: refreshTokenValue,
       });
 
-      console.log("Token refresh successful:", response.data); // Cập nhật token vào localStorage ngay tại đây để đảm bảo token mới được lưu
-      if (
-        response.data &&
-        (response.data.accessToken ||
-          (response.data.data && response.data.data.accessToken))
-      ) {
-        const tokenData = response.data.data || response.data;
+      console.log("Token refresh successful:", response.data);
+
+      if (response.data && response.data.accessToken) {
+        const tokenData = response.data;
 
         // Tạo object token mới
         const newToken = {
@@ -265,7 +255,7 @@ export const userService = {
           refreshToken: tokenData.refreshToken || refreshTokenValue,
         };
 
-        // Lưu token mới vào biến token trong localStorage
+        // Lưu token mới vào localStorage
         localStorageUtil.set("token", newToken);
         console.log("✅ Token updated in localStorage", newToken);
 
@@ -278,11 +268,25 @@ export const userService = {
           }
           localStorageUtil.set("user", userData);
         }
+
+        return tokenData;
       }
 
-      return response.data;
+      throw new Error("Invalid refresh token response");
     } catch (error) {
       console.error("Token refresh failed:", error);
+      
+      // Xử lý lỗi authentication
+      if (error.response?.status === 401) {
+        localStorageUtil.remove("token");
+        localStorageUtil.remove("user");
+        
+        // Chỉ redirect nếu không phải đang ở trang login
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login";
+        }
+      }
+      
       throw error.response?.data || error;
     }
   },
