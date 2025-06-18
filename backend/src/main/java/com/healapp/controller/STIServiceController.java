@@ -77,16 +77,23 @@ public class STIServiceController {
      * method: GET
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getAllSTIServices(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        // Kiểm tra role người truy cập
-        String role = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .findFirst()
-                .orElse("ROLE_STAFF");
+    public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getAllSTIServices() {
+        String role = null;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        // Kiểm tra xem có thông tin xác thực và principal có phải là UserDetails không
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            role = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .findFirst()
+                    .orElse(null); // Nếu có userDetails, lấy role; nếu không thì role là null
+        }
+        // Gọi service với role đã xác định (có thể là null nếu không đăng nhập)
         ApiResponse<List<STIServiceResponse>> response = stiServiceService.getAllSTIServices(role);
         return ResponseEntity.ok(response);
     }
+
 
     /*
      * description: Lấy thông tin một dịch vụ xét nghiệm STI theo ID
