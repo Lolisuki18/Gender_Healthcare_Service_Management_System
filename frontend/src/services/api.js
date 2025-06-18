@@ -15,14 +15,14 @@
  * - Xử lý lỗi tập trung, bao gồm việc xử lý token hết hạn
  */
 
-import localStorageUtil from "@/utils/localStorage";
-import axios from "axios";
+import localStorageUtil from '@/utils/localStorage';
+import axios from 'axios';
 
 // Tạo config object trước
 const config = {
-  baseURL: "http://localhost:8080",
+  baseURL: 'http://localhost:8080',
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
 };
 
@@ -32,14 +32,14 @@ const apiClient = axios.create(config);
 apiClient.interceptors.request.use(
   (config) => {
     // Chỉ sử dụng token từ biến token trong localStorage
-    var token = localStorageUtil.get("token");
+    var token = localStorageUtil.get('token');
 
     // Thêm token vào header Authorization nếu có
     if (token && token.accessToken) {
       config.headers.Authorization = `Bearer ${token.accessToken}`;
     }
 
-    console.log("API Request:", {
+    console.log('API Request:', {
       url: config.baseURL + config.url,
       method: config.method.toUpperCase(),
       headers: config.headers,
@@ -48,7 +48,7 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error("Request interceptor error:", error);
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -56,7 +56,7 @@ apiClient.interceptors.request.use(
 // ✅ Response interceptor - xử lý token hết hạn
 apiClient.interceptors.response.use(
   (response) => {
-    console.log("API Response:", {
+    console.log('API Response:', {
       status: response.status,
       url: response.config.url,
       data: response.data,
@@ -64,7 +64,7 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
-    console.error("API Error:", {
+    console.error('API Error:', {
       status: error.response?.status,
       statusText: error.response?.statusText,
       url: error.config?.url,
@@ -76,17 +76,17 @@ apiClient.interceptors.response.use(
     if (
       error.response?.status === 401 ||
       (error.response?.data?.message &&
-        error.response?.data?.message.includes("JWT expired"))
+        error.response?.data?.message.includes('JWT expired'))
     ) {
-      const token = localStorageUtil.get("token");
+      const token = localStorageUtil.get('token');
 
       // ✅ KIỂM TRA FLAG ĐỂ BỎ QUA AUTO-REDIRECT
       if (error.config?.skipAutoRedirect) {
-        console.log("🔄 Skipping auto-redirect due to skipAutoRedirect flag");
+        console.log('🔄 Skipping auto-redirect due to skipAutoRedirect flag');
         return Promise.reject(error);
       }
 
-      console.log("🔍 401 Error Debug:", {
+      console.log('🔍 401 Error Debug:', {
         hasToken: !!token,
         hasAccessToken: !!token?.accessToken,
         hasRefreshToken: !!token?.refreshToken,
@@ -97,18 +97,25 @@ apiClient.interceptors.response.use(
       // Nếu có refresh token, thử refresh
       if (token && token.refreshToken) {
         try {
-          console.log("🔄 Attempting token refresh...");
-
-          // Đảm bảo chỉ có một yêu cầu refresh token được gửi đi cùng một lúc
+          console.log('🔄 Attempting token refresh...'); // Đảm bảo chỉ có một yêu cầu refresh token được gửi đi cùng một lúc
           if (!window.isRefreshingToken) {
             window.isRefreshingToken = true;
 
-            const { userService } = await import("./userService");
-            const refreshResponse = await userService.refreshToken(
-              token.refreshToken
-            );
+            // Sử dụng axios trực tiếp thay vì import userService để tránh vòng lặp tham chiếu
+            const noInterceptorClient = axios.create({
+              baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
 
-            console.log("🔄 Refresh response:", refreshResponse);
+            const refreshResponse = await noInterceptorClient
+              .post('/auth/refresh-token', {
+                refreshToken: token.refreshToken,
+              })
+              .then((res) => res.data);
+
+            console.log('🔄 Refresh response:', refreshResponse);
             window.isRefreshingToken = false;
 
             // Kiểm tra cả trường hợp response trực tiếp hoặc nằm trong .data
@@ -136,10 +143,10 @@ apiClient.interceptors.response.use(
                 accessToken: newAccessToken,
                 refreshToken: newRefreshToken,
               };
-              localStorageUtil.set("token", newTokenObject);
+              localStorageUtil.set('token', newTokenObject);
 
               console.log(
-                "✅ Token refreshed successfully, retrying request with new token"
+                '✅ Token refreshed successfully, retrying request with new token'
               );
 
               // Thêm header authorization mới và thử lại request
@@ -151,46 +158,46 @@ apiClient.interceptors.response.use(
               return apiClient.request(error.config);
             }
           } else {
-            console.log("🔄 Token refresh already in progress, waiting...");
+            console.log('🔄 Token refresh already in progress, waiting...');
             // Chờ một chút và thử lại nếu một quá trình refresh đang diễn ra
             await new Promise((resolve) => setTimeout(resolve, 1000));
 
-            const updatedToken = localStorageUtil.get("token");
+            const updatedToken = localStorageUtil.get('token');
             if (
               updatedToken &&
               updatedToken.accessToken !== token.accessToken
             ) {
               // Token đã được làm mới bởi một request khác
               console.log(
-                "✅ Token has been refreshed by another request, retrying..."
+                '✅ Token has been refreshed by another request, retrying...'
               );
               error.config.headers.Authorization = `Bearer ${updatedToken.accessToken}`;
               return apiClient.request(error.config);
             }
           }
         } catch (refreshError) {
-          console.error("❌ Refresh token failed:", refreshError);
+          console.error('❌ Refresh token failed:', refreshError);
           window.isRefreshingToken = false;
 
           // Refresh token cũng hết hạn, đăng xuất user
-          localStorageUtil.remove("token");
+          localStorageUtil.remove('token');
 
           // Thông báo cho người dùng
-          alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
 
           // Chỉ redirect nếu không phải đang ở trang login
-          if (!window.location.pathname.includes("/login")) {
-            window.location.href = "/login";
+          if (!window.location.pathname.includes('/login')) {
+            window.location.href = '/login';
           }
         }
       } else {
-        console.log("❌ No refresh token available, redirecting to login");
+        console.log('❌ No refresh token available, redirecting to login');
         // Không có refresh token, chuyển về trang login
-        localStorageUtil.remove("token");
+        localStorageUtil.remove('token');
 
         // Chỉ redirect nếu không phải đang ở trang login
-        if (!window.location.pathname.includes("/login")) {
-          window.location.href = "/login";
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
         }
       }
     }

@@ -1,0 +1,73 @@
+// Test Results Component
+const TestResults = ({ testId }) => {
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    const fetchTestResults = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        console.log(`Fetching test results for test ID: ${testId}`);
+        
+        const response = await stiService.getTestResults(testId);
+        console.log("Test results response:", response);
+        
+        const data = response && response.data ? response.data : response;
+        console.log("Test results data:", data);
+
+        if (!data || 
+            (Array.isArray(data) && data.length === 0) || 
+            (data.data && Array.isArray(data.data) && data.data.length === 0)) {
+          setError("Không có dữ liệu kết quả xét nghiệm cho lần khám này.");
+          setResults([]);
+        } else {
+          // Handle various response formats
+          if (data.data && Array.isArray(data.data)) {
+            setResults(data.data);
+          } else if (Array.isArray(data)) {
+            setResults(data);
+          } else {
+            setError("Định dạng dữ liệu không hợp lệ, vui lòng liên hệ quản trị viên.");
+            setResults([]);
+          }
+        }
+      } catch (error) {
+        console.error("API Error:", error);
+        setError(`Lỗi khi tải dữ liệu: ${error.message || 'Không xác định'}`);
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (testId) {
+      fetchTestResults();
+    }
+  }, [testId]);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+        <CircularProgress color="primary" />
+      </Box>
+    );
+  }
+  
+  if (!results || results.length === 0) {
+    return (
+      <Alert severity="info" sx={{ my: 2 }}>
+        Chưa có kết quả xét nghiệm cho lần khám này.
+      </Alert>
+    );
+  }
+
+  // Group results by test name
+  const groupedResults = results.reduce((acc, result) => {
+    if (!acc[result.testName]) {
+      acc[result.testName] = [];
+    }
+    acc[result.testName].push(result);
+    return acc;
+  }, {});

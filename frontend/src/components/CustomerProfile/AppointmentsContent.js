@@ -50,7 +50,6 @@ import {
   CalendarToday as CalendarIcon,
   AccessTime as TimeIcon,
   Person as DoctorIcon,
-  LocationOn as LocationIcon,
   Cancel as CancelIcon,
   MoreVert as MoreVertIcon,
   Visibility as VisibilityIcon,

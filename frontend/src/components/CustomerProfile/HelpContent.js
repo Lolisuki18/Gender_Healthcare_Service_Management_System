@@ -16,7 +16,7 @@
  * - Rating system cho help articles
  */
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -38,8 +38,7 @@ import {
   Chip,
   Card,
   CardContent,
-  IconButton,
-} from "@mui/material";
+} from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   Help as HelpIcon,
@@ -55,210 +54,210 @@ import {
   Security as SecurityIcon,
   Settings as SettingsIcon,
   Send as SendIcon,
-} from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.95)",
-  backdropFilter: "blur(20px)",
-  borderRadius: "20px",
-  border: "1px solid rgba(74, 144, 226, 0.15)",
-  color: "#2D3748",
-  boxShadow: "0 8px 32px 0 rgba(74, 144, 226, 0.1)",
+  background: 'rgba(255, 255, 255, 0.95)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  border: '1px solid rgba(74, 144, 226, 0.15)',
+  color: '#2D3748',
+  boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.1)',
 }));
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.9)",
-  backdropFilter: "blur(10px)",
-  borderRadius: "12px !important",
-  border: "1px solid rgba(74, 144, 226, 0.1)",
-  color: "#2D3748",
-  marginBottom: "12px",
-  "&:before": {
-    display: "none",
+  background: 'rgba(255, 255, 255, 0.9)',
+  backdropFilter: 'blur(10px)',
+  borderRadius: '12px !important',
+  border: '1px solid rgba(74, 144, 226, 0.1)',
+  color: '#2D3748',
+  marginBottom: '12px',
+  '&:before': {
+    display: 'none',
   },
-  "&.Mui-expanded": {
-    margin: "0 0 12px 0",
+  '&.Mui-expanded': {
+    margin: '0 0 12px 0',
   },
 }));
 
 const HelpContent = () => {
   const [openContactDialog, setOpenContactDialog] = useState(false);
   const [contactForm, setContactForm] = useState({
-    subject: "",
-    message: "",
-    category: "general",
+    subject: '',
+    message: '',
+    category: 'general',
   });
 
   // FAQ data
   const faqs = [
     {
-      category: "booking",
-      question: "Làm thế nào để đặt lịch hẹn khám?",
+      category: 'booking',
+      question: 'Làm thế nào để đặt lịch hẹn khám?',
       answer:
-        "Bạn có thể đặt lịch hẹn khám qua website, ứng dụng di động hoặc gọi trực tiếp đến tổng đài. Chọn chuyên khoa, bác sĩ, ngày giờ phù hợp và xác nhận thông tin.",
-      icon: <ScheduleIcon sx={{ color: "#4A90E2" }} />,
+        'Bạn có thể đặt lịch hẹn khám qua website, ứng dụng di động hoặc gọi trực tiếp đến tổng đài. Chọn chuyên khoa, bác sĩ, ngày giờ phù hợp và xác nhận thông tin.',
+      icon: <ScheduleIcon sx={{ color: '#4A90E2' }} />,
     },
     {
-      category: "booking",
-      question: "Có thể hủy hoặc thay đổi lịch hẹn không?",
+      category: 'booking',
+      question: 'Có thể hủy hoặc thay đổi lịch hẹn không?',
       answer:
         'Bạn có thể hủy hoặc thay đổi lịch hẹn trước 24 giờ. Truy cập vào mục "Lịch hẹn" trong tài khoản để thực hiện thay đổi.',
-      icon: <ScheduleIcon sx={{ color: "#4A90E2" }} />,
+      icon: <ScheduleIcon sx={{ color: '#4A90E2' }} />,
     },
     {
-      category: "payment",
-      question: "Các phương thức thanh toán được hỗ trợ?",
+      category: 'payment',
+      question: 'Các phương thức thanh toán được hỗ trợ?',
       answer:
-        "Chúng tôi hỗ trợ thanh toán bằng tiền mặt, thẻ tín dụng/ghi nợ, chuyển khoản ngân hàng, ví điện tử (Momo, ZaloPay, VNPay).",
-      icon: <PaymentIcon sx={{ color: "#4CAF50" }} />,
+        'Chúng tôi hỗ trợ thanh toán bằng tiền mặt, thẻ tín dụng/ghi nợ, chuyển khoản ngân hàng, ví điện tử (Momo, ZaloPay, VNPay).',
+      icon: <PaymentIcon sx={{ color: '#4CAF50' }} />,
     },
     {
-      category: "payment",
-      question: "Làm thế nào để xem hóa đơn và lịch sử thanh toán?",
+      category: 'payment',
+      question: 'Làm thế nào để xem hóa đơn và lịch sử thanh toán?',
       answer:
         'Truy cập vào mục "Hóa đơn" và "Lịch sử thanh toán" trong tài khoản của bạn. Bạn có thể tải xuống hóa đơn dưới dạng PDF.',
-      icon: <PaymentIcon sx={{ color: "#4CAF50" }} />,
+      icon: <PaymentIcon sx={{ color: '#4CAF50' }} />,
     },
     {
-      category: "medical",
-      question: "Khi nào có thể xem kết quả xét nghiệm?",
+      category: 'medical',
+      question: 'Khi nào có thể xem kết quả xét nghiệm?',
       answer:
         'Kết quả xét nghiệm thường có trong 1-3 ngày làm việc. Bạn sẽ nhận thông báo qua email/SMS khi có kết quả và có thể xem trong mục "Lịch sử khám".',
-      icon: <DescriptionIcon sx={{ color: "#F39C12" }} />,
+      icon: <DescriptionIcon sx={{ color: '#F39C12' }} />,
     },
     {
-      category: "medical",
-      question: "Làm thế nào để tải xuống kết quả khám?",
+      category: 'medical',
+      question: 'Làm thế nào để tải xuống kết quả khám?',
       answer:
         'Trong mục "Lịch sử khám", click vào biểu tượng tải xuống bên cạnh mỗi lần khám để tải file PDF kết quả.',
-      icon: <DescriptionIcon sx={{ color: "#F39C12" }} />,
+      icon: <DescriptionIcon sx={{ color: '#F39C12' }} />,
     },
     {
-      category: "account",
-      question: "Cách thay đổi thông tin cá nhân?",
+      category: 'account',
+      question: 'Cách thay đổi thông tin cá nhân?',
       answer:
         'Truy cập vào mục "Hồ sơ cá nhân", click "Chỉnh sửa" để cập nhật thông tin. Lưu ý một số thông tin có thể cần xác thực bổ sung.',
-      icon: <SettingsIcon sx={{ color: "#607D8B" }} />,
+      icon: <SettingsIcon sx={{ color: '#607D8B' }} />,
     },
     {
-      category: "account",
-      question: "Làm thế nào để đổi mật khẩu?",
+      category: 'account',
+      question: 'Làm thế nào để đổi mật khẩu?',
       answer:
         'Vào mục "Cài đặt" > "Bảo mật", nhập mật khẩu hiện tại và mật khẩu mới. Mật khẩu cần có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số.',
-      icon: <SecurityIcon sx={{ color: "#1ABC9C" }} />,
+      icon: <SecurityIcon sx={{ color: '#1ABC9C' }} />,
     },
   ];
 
   // Support options
   const supportOptions = [
     {
-      title: "Tổng đài hỗ trợ",
-      description: "24/7 - Miễn phí",
-      contact: "1900-1234",
-      icon: <PhoneIcon sx={{ color: "#4A90E2", fontSize: 32 }} />,
-      action: () => window.open("tel:19001234"),
+      title: 'Tổng đài hỗ trợ',
+      description: '24/7 - Miễn phí',
+      contact: '1900-1234',
+      icon: <PhoneIcon sx={{ color: '#4A90E2', fontSize: 32 }} />,
+      action: () => window.open('tel:19001234'),
     },
     {
-      title: "Email hỗ trợ",
-      description: "Phản hồi trong 2-4 giờ",
-      contact: "support@healthcare.vn",
-      icon: <EmailIcon sx={{ color: "#1ABC9C", fontSize: 32 }} />,
+      title: 'Email hỗ trợ',
+      description: 'Phản hồi trong 2-4 giờ',
+      contact: 'support@healthcare.vn',
+      icon: <EmailIcon sx={{ color: '#1ABC9C', fontSize: 32 }} />,
       action: () => setOpenContactDialog(true),
     },
     {
-      title: "Chat trực tuyến",
-      description: "Thời gian: 8:00 - 22:00",
-      contact: "Bắt đầu chat",
-      icon: <ChatIcon sx={{ color: "#4CAF50", fontSize: 32 }} />,
-      action: () => console.log("Start chat"),
+      title: 'Chat trực tuyến',
+      description: 'Thời gian: 8:00 - 22:00',
+      contact: 'Bắt đầu chat',
+      icon: <ChatIcon sx={{ color: '#4CAF50', fontSize: 32 }} />,
+      action: () => console.log('Start chat'),
     },
     {
-      title: "Video call hỗ trợ",
-      description: "Hẹn trước 30 phút",
-      contact: "Đặt lịch hẹn",
-      icon: <VideoCallIcon sx={{ color: "#F39C12", fontSize: 32 }} />,
-      action: () => console.log("Schedule video call"),
+      title: 'Video call hỗ trợ',
+      description: 'Hẹn trước 30 phút',
+      contact: 'Đặt lịch hẹn',
+      icon: <VideoCallIcon sx={{ color: '#F39C12', fontSize: 32 }} />,
+      action: () => console.log('Schedule video call'),
     },
   ];
 
   const handleContactSubmit = () => {
-    console.log("Contact form submitted:", contactForm);
+    console.log('Contact form submitted:', contactForm);
     setOpenContactDialog(false);
-    setContactForm({ subject: "", message: "", category: "general" });
+    setContactForm({ subject: '', message: '', category: 'general' });
   };
 
   const getCategoryName = (category) => {
     const categories = {
-      booking: "Đặt lịch hẹn",
-      payment: "Thanh toán",
-      medical: "Y tế",
-      account: "Tài khoản",
+      booking: 'Đặt lịch hẹn',
+      payment: 'Thanh toán',
+      medical: 'Y tế',
+      account: 'Tài khoản',
     };
-    return categories[category] || "Khác";
+    return categories[category] || 'Khác';
   };
   const getCategoryColor = (category) => {
     const colors = {
-      booking: "#4A90E2",
-      payment: "#4CAF50",
-      medical: "#F39C12",
-      account: "#607D8B",
+      booking: '#4A90E2',
+      payment: '#4CAF50',
+      medical: '#F39C12',
+      account: '#607D8B',
     };
-    return colors[category] || "#607D8B";
+    return colors[category] || '#607D8B';
   };
 
   return (
     <Box>
       {/* Quick Stats */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {" "}
+        {' '}
         <Grid item xs={12} sm={6} md={3}>
-          <StyledPaper sx={{ p: 3, textAlign: "center" }}>
-            <HelpIcon sx={{ fontSize: 40, color: "#4A90E2", mb: 1 }} />
-            <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
+          <StyledPaper sx={{ p: 3, textAlign: 'center' }}>
+            <HelpIcon sx={{ fontSize: 40, color: '#4A90E2', mb: 1 }} />
+            <Typography variant="h6" sx={{ color: '#2D3748', fontWeight: 600 }}>
               {faqs.length}
             </Typography>
-            <Typography variant="body2" sx={{ color: "#4A5568" }}>
+            <Typography variant="body2" sx={{ color: '#4A5568' }}>
               Câu hỏi thường gặp
             </Typography>
           </StyledPaper>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          {" "}
-          <StyledPaper sx={{ p: 3, textAlign: "center" }}>
+          {' '}
+          <StyledPaper sx={{ p: 3, textAlign: 'center' }}>
             <ContactSupportIcon
-              sx={{ fontSize: 40, color: "#4CAF50", mb: 1 }}
+              sx={{ fontSize: 40, color: '#4CAF50', mb: 1 }}
             />
-            <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ color: '#2D3748', fontWeight: 600 }}>
               24/7
             </Typography>
-            <Typography variant="body2" sx={{ color: "#4A5568" }}>
+            <Typography variant="body2" sx={{ color: '#4A5568' }}>
               Hỗ trợ tổng đài
             </Typography>
           </StyledPaper>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          {" "}
-          <StyledPaper sx={{ p: 3, textAlign: "center" }}>
+          {' '}
+          <StyledPaper sx={{ p: 3, textAlign: 'center' }}>
             <QuestionAnswerIcon
-              sx={{ fontSize: 40, color: "#F39C12", mb: 1 }}
+              sx={{ fontSize: 40, color: '#F39C12', mb: 1 }}
             />
-            <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ color: '#2D3748', fontWeight: 600 }}>
               2-4h
             </Typography>
-            <Typography variant="body2" sx={{ color: "#4A5568" }}>
+            <Typography variant="body2" sx={{ color: '#4A5568' }}>
               Thời gian phản hồi
             </Typography>
           </StyledPaper>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <StyledPaper sx={{ p: 3, textAlign: "center" }}>
-            {" "}
-            <ChatIcon sx={{ fontSize: 40, color: "#1ABC9C", mb: 1 }} />
-            <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
+          <StyledPaper sx={{ p: 3, textAlign: 'center' }}>
+            {' '}
+            <ChatIcon sx={{ fontSize: 40, color: '#1ABC9C', mb: 1 }} />
+            <Typography variant="h6" sx={{ color: '#2D3748', fontWeight: 600 }}>
               4
             </Typography>
-            <Typography variant="body2" sx={{ color: "#4A5568" }}>
+            <Typography variant="body2" sx={{ color: '#4A5568' }}>
               Kênh hỗ trợ
             </Typography>
           </StyledPaper>
@@ -269,32 +268,32 @@ const HelpContent = () => {
         {/* FAQ Section */}
         <Grid item xs={12} md={8}>
           <StyledPaper sx={{ p: 3, mb: 3 }}>
-            {" "}
+            {' '}
             <Typography
               variant="h6"
-              sx={{ color: "#2D3748", fontWeight: 600, mb: 3 }}
+              sx={{ color: '#2D3748', fontWeight: 600, mb: 3 }}
             >
               Câu hỏi thường gặp
             </Typography>
             {faqs.map((faq, index) => (
               <StyledAccordion key={index}>
                 <AccordionSummary
-                  expandIcon={<ExpandMoreIcon sx={{ color: "#fff" }} />}
+                  expandIcon={<ExpandMoreIcon sx={{ color: '#fff' }} />}
                   sx={{ py: 1 }}
                 >
                   <Box
                     sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
+                      display: 'flex',
+                      alignItems: 'center',
+                      width: '100%',
                     }}
                   >
                     <Box sx={{ mr: 2 }}>{faq.icon}</Box>
                     <Box sx={{ flexGrow: 1 }}>
-                      {" "}
+                      {' '}
                       <Typography
                         variant="subtitle1"
-                        sx={{ color: "#2D3748", fontWeight: 500 }}
+                        sx={{ color: '#2D3748', fontWeight: 500 }}
                       >
                         {faq.question}
                       </Typography>
@@ -304,19 +303,19 @@ const HelpContent = () => {
                       size="small"
                       sx={{
                         backgroundColor: getCategoryColor(faq.category),
-                        color: "#fff",
-                        fontSize: "0.75rem",
+                        color: '#fff',
+                        fontSize: '0.75rem',
                         mr: 2,
                       }}
                     />
                   </Box>
                 </AccordionSummary>
                 <AccordionDetails sx={{ pt: 0 }}>
-                  {" "}
+                  {' '}
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#4A5568",
+                      color: '#4A5568',
                       lineHeight: 1.6,
                       pl: 6,
                     }}
@@ -332,10 +331,10 @@ const HelpContent = () => {
         {/* Support Options */}
         <Grid item xs={12} md={4}>
           <StyledPaper sx={{ p: 3 }}>
-            {" "}
+            {' '}
             <Typography
               variant="h6"
-              sx={{ color: "#2D3748", fontWeight: 600, mb: 3 }}
+              sx={{ color: '#2D3748', fontWeight: 600, mb: 3 }}
             >
               Liên hệ hỗ trợ
             </Typography>
@@ -344,39 +343,39 @@ const HelpContent = () => {
                 <Grid item xs={12} key={index}>
                   <Card
                     sx={{
-                      background: "rgba(255, 255, 255, 0.05)",
-                      backdropFilter: "blur(10px)",
-                      borderRadius: "12px",
-                      border: "1px solid rgba(255, 255, 255, 0.08)",
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                      "&:hover": {
-                        background: "rgba(255, 255, 255, 0.1)",
-                        transform: "translateY(-2px)",
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        transform: 'translateY(-2px)',
                       },
                     }}
                     onClick={option.action}
                   >
                     <CardContent sx={{ p: 2 }}>
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Box sx={{ mr: 2 }}>{option.icon}</Box>
                         <Box sx={{ flexGrow: 1 }}>
-                          {" "}
+                          {' '}
                           <Typography
                             variant="subtitle2"
-                            sx={{ color: "#2D3748", fontWeight: 600, mb: 0.5 }}
+                            sx={{ color: '#2D3748', fontWeight: 600, mb: 0.5 }}
                           >
                             {option.title}
-                          </Typography>{" "}
+                          </Typography>{' '}
                           <Typography
                             variant="caption"
-                            sx={{ color: "#4A5568", display: "block", mb: 0.5 }}
+                            sx={{ color: '#4A5568', display: 'block', mb: 0.5 }}
                           >
                             {option.description}
-                          </Typography>{" "}
+                          </Typography>{' '}
                           <Typography
                             variant="body2"
-                            sx={{ color: "#4A90E2", fontWeight: 500 }}
+                            sx={{ color: '#4A90E2', fontWeight: 500 }}
                           >
                             {option.contact}
                           </Typography>
@@ -393,57 +392,57 @@ const HelpContent = () => {
           <StyledPaper sx={{ p: 3, mt: 3 }}>
             <Typography
               variant="h6"
-              sx={{ color: "#2D3748", fontWeight: 600, mb: 2 }}
+              sx={{ color: '#2D3748', fontWeight: 600, mb: 2 }}
             >
               Liên kết hữu ích
             </Typography>
 
             <List sx={{ p: 0 }}>
-              <ListItem button sx={{ borderRadius: "8px", mb: 1 }}>
+              <ListItem button sx={{ borderRadius: '8px', mb: 1 }}>
                 <ListItemIcon>
-                  <DescriptionIcon sx={{ color: "#3b82f6" }} />
+                  <DescriptionIcon sx={{ color: '#3b82f6' }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Hướng dẫn sử dụng"
                   primaryTypographyProps={{
-                    color: "#2D3748",
-                    fontSize: "0.875rem",
+                    color: '#2D3748',
+                    fontSize: '0.875rem',
                   }}
                 />
               </ListItem>
-              <ListItem button sx={{ borderRadius: "8px", mb: 1 }}>
+              <ListItem button sx={{ borderRadius: '8px', mb: 1 }}>
                 <ListItemIcon>
-                  <SecurityIcon sx={{ color: "#10b981" }} />
+                  <SecurityIcon sx={{ color: '#10b981' }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Chính sách bảo mật"
                   primaryTypographyProps={{
-                    color: "#2D3748",
-                    fontSize: "0.875rem",
+                    color: '#2D3748',
+                    fontSize: '0.875rem',
                   }}
                 />
               </ListItem>
-              <ListItem button sx={{ borderRadius: "8px", mb: 1 }}>
+              <ListItem button sx={{ borderRadius: '8px', mb: 1 }}>
                 <ListItemIcon>
-                  <DescriptionIcon sx={{ color: "#f59e0b" }} />
+                  <DescriptionIcon sx={{ color: '#f59e0b' }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Điều khoản sử dụng"
                   primaryTypographyProps={{
-                    color: "#2D3748",
-                    fontSize: "0.875rem",
+                    color: '#2D3748',
+                    fontSize: '0.875rem',
                   }}
                 />
               </ListItem>
-              <ListItem button sx={{ borderRadius: "8px" }}>
+              <ListItem button sx={{ borderRadius: '8px' }}>
                 <ListItemIcon>
-                  <ContactSupportIcon sx={{ color: "#8b5cf6" }} />
+                  <ContactSupportIcon sx={{ color: '#8b5cf6' }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Góp ý & Phản hồi"
                   primaryTypographyProps={{
-                    color: "#2D3748",
-                    fontSize: "0.875rem",
+                    color: '#2D3748',
+                    fontSize: '0.875rem',
                   }}
                 />
               </ListItem>
@@ -460,17 +459,17 @@ const HelpContent = () => {
         fullWidth
         PaperProps={{
           sx: {
-            background: "rgba(15, 23, 42, 0.95)",
-            backdropFilter: "blur(20px)",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
-            color: "#fff",
+            background: 'rgba(15, 23, 42, 0.95)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            color: '#fff',
           },
         }}
       >
         <DialogTitle
           sx={{
-            color: "#fff",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+            color: '#fff',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
           }}
         >
           Gửi yêu cầu hỗ trợ
@@ -486,22 +485,22 @@ const HelpContent = () => {
               setContactForm((prev) => ({ ...prev, subject: e.target.value }))
             }
             sx={{
-              "& .MuiOutlinedInput-root": {
-                color: "#fff",
-                "& fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.3)",
+              '& .MuiOutlinedInput-root': {
+                color: '#fff',
+                '& fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
                 },
-                "&:hover fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.5)",
+                '&:hover fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.5)',
                 },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#3b82f6",
+                '&.Mui-focused fieldset': {
+                  borderColor: '#3b82f6',
                 },
               },
-              "& .MuiInputLabel-root": {
-                color: "rgba(255, 255, 255, 0.7)",
-                "&.Mui-focused": {
-                  color: "#3b82f6",
+              '& .MuiInputLabel-root': {
+                color: 'rgba(255, 255, 255, 0.7)',
+                '&.Mui-focused': {
+                  color: '#3b82f6',
                 },
               },
             }}
@@ -518,33 +517,33 @@ const HelpContent = () => {
               setContactForm((prev) => ({ ...prev, message: e.target.value }))
             }
             sx={{
-              "& .MuiOutlinedInput-root": {
-                color: "#fff",
-                "& fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.3)",
+              '& .MuiOutlinedInput-root': {
+                color: '#fff',
+                '& fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
                 },
-                "&:hover fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.5)",
+                '&:hover fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.5)',
                 },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#3b82f6",
+                '&.Mui-focused fieldset': {
+                  borderColor: '#3b82f6',
                 },
               },
-              "& .MuiInputLabel-root": {
-                color: "rgba(255, 255, 255, 0.7)",
-                "&.Mui-focused": {
-                  color: "#3b82f6",
+              '& .MuiInputLabel-root': {
+                color: 'rgba(255, 255, 255, 0.7)',
+                '&.Mui-focused': {
+                  color: '#3b82f6',
                 },
               },
             }}
           />
         </DialogContent>
         <DialogActions
-          sx={{ p: 3, borderTop: "1px solid rgba(255, 255, 255, 0.12)" }}
+          sx={{ p: 3, borderTop: '1px solid rgba(255, 255, 255, 0.12)' }}
         >
           <Button
             onClick={() => setOpenContactDialog(false)}
-            sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+            sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
           >
             Hủy
           </Button>
@@ -553,9 +552,9 @@ const HelpContent = () => {
             variant="contained"
             startIcon={<SendIcon />}
             sx={{
-              background: "linear-gradient(45deg, #3b82f6, #1d4ed8)",
-              "&:hover": {
-                background: "linear-gradient(45deg, #1d4ed8, #1e40af)",
+              background: 'linear-gradient(45deg, #3b82f6, #1d4ed8)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #1d4ed8, #1e40af)',
               },
             }}
           >
