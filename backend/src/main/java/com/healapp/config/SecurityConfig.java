@@ -78,6 +78,10 @@ public class SecurityConfig {
                         // STI Services public endpoints
                         .requestMatchers(HttpMethod.GET, "/sti-services").permitAll()
                         .requestMatchers(HttpMethod.GET, "/sti-services/{serviceId}").permitAll()
+                        
+                        // STI Packages public endpoints
+                        .requestMatchers(HttpMethod.GET, "/sti-packages").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/sti-packages/{packageId}").permitAll()
 
                         // ========= AUTHENTICATED USER ENDPOINTS =========
                         // USER PROFILE MANAGEMENT
