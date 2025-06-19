@@ -2,32 +2,30 @@
  * routes.js - Cấu hình định tuyến của ứng dụng
  */
 
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { HomePage } from "@/pages/HomePage";
-import { NotFoundPage } from "@/pages/NotFoundPage";
-import MainLayout from "@layouts/MainLayout";
-import LoginPage from "@/pages/LoginPage";
-import RegisterForm from "@/pages/RegisterPage";
-import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
-import ProfilePage from "@/pages/ProfilePage";
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { HomePage } from '@/pages/HomePage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
+import MainLayout from '@layouts/MainLayout';
+import LoginPage from '@/pages/LoginPage';
+import RegisterForm from '@/pages/RegisterPage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import ProfilePage from '@/pages/ProfilePage';
 // import AdminTestPage from "@/pages/AdminTestPage";
-import StiPage from "@/pages/StiPage";
-import StiDetailPage from "@/pages/StiDetailPage";
+import StiPage from '@/pages/StiPage';
+import StiDetailPage from '@/pages/StiDetailPage';
 // Import Profile Components
-import CustomerProfile from "@/components/CustomerProfile/CustomerProfile";
-import AdminProfile from "@/components/AdminProfile/AdminProfile";
-import ConsultantProfile from "@/components/ConsultantProfile/ConsultantProfile";
-import StaffProfile from "@/components/StaffProfile/StaffProfile";
-import AdminLayout from "./components/layouts/AdminLayout";
-import localStorageUtil from "./utils/localStorage";
-import ConsultationPage from "./pages/ConsultantionPage";
-import TestRegistrationPage from "@/pages/TestRegistrationPage";
+import AdminProfile from '@/components/AdminProfile/AdminProfile';
+
+import AdminLayout from './components/layouts/AdminLayout';
+import localStorageUtil from './utils/localStorage';
+import ConsultationPage from './pages/ConsultantionPage';
+import TestRegistrationPage from '@/pages/TestRegistrationPage';
 
 const AppRoutes = () => {
   // Lấy thông tin user từ localStorage
-  const userData = localStorageUtil.get("userProfile");
-  const tokenData = localStorageUtil.get("token"); // Component để redirect đến trang phù hợp khi truy cập "/"
+  const userData = localStorageUtil.get('userProfile');
+  const tokenData = localStorageUtil.get('token'); // Component để redirect đến trang phù hợp khi truy cập "/"
   const AutoRedirectToProfile = () => {
     // Kiểm tra cả token và userProfile
     if (!userData || !userData.data || !userData.data.role || !tokenData) {
@@ -35,11 +33,11 @@ const AppRoutes = () => {
     }
 
     switch (userData.data.role) {
-      case "ADMIN":
+      case 'ADMIN':
         return <Navigate to="/admin/profile" replace />; // Admin vào admin profile
-      case "CUSTOMER":
-      case "CONSULTANT":
-      case "STAFF":
+      case 'CUSTOMER':
+      case 'CONSULTANT':
+      case 'STAFF':
         return <HomePage />; // Các role khác vào homepage
       default: //nếu là role không hợp lệ thì sẽ vào trang login
         return <Navigate to="/login" replace />;
@@ -50,7 +48,7 @@ const AppRoutes = () => {
     <Routes>
       {/* Route chính cho trang chủ */}
       <Route path="/" element={<MainLayout />}>
-        {" "}
+        {' '}
         {/* Trang chủ - Auto redirect admin, hiển thị homepage cho user thường */}
         <Route
           index
@@ -63,14 +61,14 @@ const AppRoutes = () => {
         <Route path="/appointment" element={<ConsultationPage />}></Route>
         <Route path="/sti-test" element={<StiPage />} /> {/* Trang STI Test */}
         {/* Homepage cho các role đã đăng nhập (trừ admin) */}
-        <Route path="home" element={<HomePage />} />{" "}
+        <Route path="home" element={<HomePage />} />{' '}
         {/* Profile Page chung - sẽ render component phù hợp với role */}
         <Route
           path="profile"
           element={
             userData &&
             userData.data &&
-            userData.data.role !== "ADMIN" &&
+            userData.data.role !== 'ADMIN' &&
             tokenData ? (
               <ProfilePage /> // Chỉ cho phép truy cập nếu có userData và token
             ) : (
@@ -93,12 +91,12 @@ const AppRoutes = () => {
 
       {/* Admin Routes riêng với AdminLayout */}
       <Route path="/admin" element={<AdminLayout />}>
-        {" "}
+        {' '}
         <Route
           path="profile"
           element={
             // Chỉ cho phép truy cập nếu user là admin và có token
-            userData?.data?.role === "ADMIN" && tokenData ? (
+            userData?.data?.role === 'ADMIN' && tokenData ? (
               <AdminProfile />
             ) : (
               // Nếu không phải admin hoặc không có token, redirect đến trang đăng nhập

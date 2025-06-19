@@ -30,6 +30,11 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  Tab,
+  Tabs,
+  CircularProgress,
+  Alert,
+  Tooltip,
 } from '@mui/material';
 import {
   getStaffTests,
@@ -37,1420 +42,1464 @@ import {
   addTestResults,
   sampleTest,
   completeTest,
+  getPendingTests,
+  getConfirmedTests,
+  getPackageTestDetails,
+  cancelSTITest,
+  getTestResultsByTestId,
 } from '../../services/stiService';
-import apiClient from '../../services/api';
-import { formatDateDisplay, formatDateTime } from '../../utils/dateUtils';
+import { formatDateDisplay } from '../../utils/dateUtils';
+
+// Import icons
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import BiotechIcon from '@mui/icons-material/Biotech';
+import ScienceIcon from '@mui/icons-material/Science';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import SearchIcon from '@mui/icons-material/Search';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import PaymentIcon from '@mui/icons-material/Payment';
+import CancelIcon from '@mui/icons-material/Cancel';
+// PDF icon removed
 
 // Import the modal components
 import SingleTestResultModal from './modals/SingleTestResultModal';
 import PackageManagementModal from './modals/PackageManagementModal';
 import TestInPackageModal from './modals/TestInPackageModal';
 
+// TabPanel component for tab content
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`test-tabpanel-${index}`}
+      aria-labelledby={`test-tab-${index}`}
+      {...other}
+      style={{ width: '100%' }}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
 const STITestManagementContent = () => {
-  // Hằng số cho hiển thị trạng thái (sử dụng useMemo để tránh vấn đề phụ thuộc)
-  const TEST_STATUSES = useMemo(
+  // Status constants for display
+  const STATUS_COLORS = useMemo(
     () => ({
-      PENDING: {
-        value: 'PENDING',
-        label: 'Chờ xác nhận',
-        color: 'warning',
-      },
-      CONFIRMED: { value: 'CONFIRMED', label: 'Đã xác nhận', color: 'info' },
-      SAMPLED: {
-        value: 'SAMPLED',
-        label: 'Đã lấy mẫu',
-        color: 'primary',
-      },
-      RESULTED: {
-        value: 'RESULTED',
-        label: 'Có kết quả',
-        color: 'secondary',
-      },
-      COMPLETED: { value: 'COMPLETED', label: 'Hoàn thành', color: 'success' },
-      CANCELED: { value: 'CANCELED', label: 'Đã hủy', color: 'error' },
+      PENDING: '#FFA726', // Orange
+      CONFIRMED: '#42A5F5', // Blue
+      SAMPLED: '#7E57C2', // Purple
+      RESULTED: '#66BB6A', // Green
+      COMPLETED: '#26A69A', // Teal
+      CANCELED: '#EF5350', // Red
     }),
     []
   );
 
-  // State cho danh sách test và packages
-  const [userTests, setUserTests] = useState([]);
-  const [userPackages, setUserPackages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [useMockData, setUseMockData] = useState(false);
-
-  // State cho quản lý giao diện
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('all'); // all, single, package
-  const [statusFilter, setStatusFilter] = useState('all'); // all, PENDING, CONFIRMED, SAMPLED, RESULTED, COMPLETED, CANCELED
-
-  // State cho dialog cập nhật kết quả
-  const [openResultDialog, setOpenResultDialog] = useState(false);
-  const [currentUserTest, setCurrentUserTest] = useState(null);
-  const [resultUpdating, setResultUpdating] = useState(false);
-  // State cho dialog cập nhật kết quả gói xét nghiệm
-  const [openPackageDialog, setOpenPackageDialog] = useState(false);
-  const [openTestInPackageDialog, setOpenTestInPackageDialog] = useState(false);
-  const [currentPackage, setCurrentPackage] = useState(null);
-  const [currentTestInPackage, setCurrentTestInPackage] = useState(null);
-  const [packageResultUpdating, setPackageResultUpdating] = useState(false); // Không sử dụng State cho file upload
-
-  // Định nghĩa fetchStaffTests với useCallback để có thể tái sử dụng và tránh re-render
-  const fetchStaffTests = useCallback(async () => {
-    setLoading(true);
-
-    // If mock data is explicitly requested, use it directly
-    if (useMockData) {
-      console.log('Using mock data as requested');
-      // setUserTests(MOCK_SINGLE_TESTS);
-      // setUserPackages(MOCK_TEST_PACKAGES);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // /sti-services/staff/my-tests
-      const response = await getStaffTests();
-      console.log('API Response:', response);
-      if (response && response.success) {
-        const tests = response.data || [];
-        console.log('Tests data:', tests);
-
-        const processedTests = tests.map((test) => {
-          // Handle date fields that might be arrays
-          const processAppointmentDate = (dateVal) => {
-            if (Array.isArray(dateVal) && dateVal.length >= 3) {
-              const [year, month, day, hour = 0, minute = 0] = dateVal;
-              return new Date(year, month - 1, day, hour, minute).toISOString();
-            }
-            return dateVal;
-          };
-
-          return {
-            ...test,
-            // Ensure these fields are always available
-            paymentMethod:
-              test.paymentMethod === null
-                ? 'DIRECT_TRANSFER'
-                : test.paymentMethod === 'UNKNOWN'
-                  ? 'UNKNOWN'
-                  : test.paymentMethod || 'UNKNOWN',
-            isPaid: !!test.isPaid,
-            customerName: test.customerName || 'Không có tên',
-            serviceName:
-              test.serviceName || test.packageName || 'Không xác định',
-            status: test.status || 'PENDING',
-            // Process date fields
-            appointmentDate: processAppointmentDate(test.appointmentDate),
-            requestDate: processAppointmentDate(test.requestDate),
-            resultDate: processAppointmentDate(test.resultDate),
-            sampleDate: processAppointmentDate(test.sampleDate),
-            completionDate: processAppointmentDate(test.completionDate),
-          };
-        });
-
-        // Separate single tests and test packages
-        const singleTests = processedTests.filter((test) => !test.packageId);
-        const packagesTests = processedTests.filter((test) => test.packageId);
-
-        console.log('Single tests:', singleTests);
-        console.log('Package tests before grouping:', packagesTests);
-
-        // Group tests by packageId and create proper package objects
-        const packagesMap = {};
-        packagesTests.forEach((test) => {
-          if (!packagesMap[test.packageId]) {
-            // Create a new package entry if it doesn't exist
-            packagesMap[test.packageId] = {
-              packageId: test.packageId,
-              packageName:
-                test.packageName || `Gói xét nghiệm #${test.packageId}`,
-              customerName: test.customerName,
-              customerId: test.customerId,
-              status: test.status,
-              appointmentDate: test.appointmentDate,
-              paymentMethod: test.paymentMethod,
-              isPaid: test.isPaid,
-              consultantNotes: test.consultantNotes || '',
-              tests: [], // Initialize an empty array for tests
-            };
-          }
-
-          // Add this test to the package's tests array
-          packagesMap[test.packageId].tests.push({
-            ...test,
-            testItemId:
-              test.id ||
-              `test-${test.packageId}-${Math.floor(Math.random() * 1000)}`,
-          });
-        });
-
-        // Convert the map to an array of package objects
-        const packages = Object.values(packagesMap);
-
-        console.log('Grouped packages with tests:', packages);
-
-        setUserTests(singleTests);
-        setUserPackages(packages);
-      } else {
-        setError((response && response.message) || 'Failed to fetch tests');
-      }
-    } catch (err) {
-      console.error('Error fetching staff tests:', err);
-      setError(err.response?.data?.message || err.message || 'Network error');
-    } finally {
-      setLoading(false);
-    }
-  }, [useMockData]);
-
-  // Gọi API lấy dữ liệu khi component mount
-  useEffect(() => {
-    fetchStaffTests();
-  }, [fetchStaffTests]); // fetchStaffTests includes useMockData in its dependencies
-
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-    setPage(0);
-  };
-
-  // Filter các xét nghiệm theo loại hiển thị
-  const handleChangeViewMode = (mode) => {
-    setViewMode(mode);
-    setPage(0);
-  };
-  // Xử lý mở dialog cập nhật kết quả xét nghiệm đơn lẻ
-  const handleOpenResultDialog = (userTest) => {
-    // Kiểm tra và tạo components nếu chưa có
-    let testWithComponents = { ...userTest };
-
-    // Nếu là xét nghiệm có thể đến trạng thái RESULTED, nhưng chưa có components
-    if (
-      (userTest.status === 'SAMPLED' || userTest.status === 'CONFIRMED') &&
-      (!userTest.components || userTest.components.length === 0)
-    ) {
-      // Tạo mẫu components dựa trên thông tin xét nghiệm
-      testWithComponents.components = [
-        {
-          componentId: userTest.serviceId,
-          componentName: userTest.serviceName || 'Xét nghiệm STI',
-          resultValue: '',
-          normalRange: '',
-          unit: '',
-        },
-      ];
-    }
-
-    // Đánh dấu nếu đã hoàn thành để modal hiển thị ở chế độ chỉ đọc
-    if (userTest.status === 'COMPLETED') {
-      testWithComponents.isReadOnly = true;
-    } else {
-      testWithComponents.isReadOnly = false;
-    }
-
-    setCurrentUserTest(testWithComponents);
-    setOpenResultDialog(true);
-  };
-
-  // Đóng dialog cập nhật kết quả xét nghiệm đơn lẻ
-  const handleCloseResultDialog = () => {
-    setOpenResultDialog(false);
-    setCurrentUserTest(null);
-  };
-  // Xử lý mở dialog cập nhật kết quả gói xét nghiệm
-  const handleOpenPackageDialog = (packageTest) => {
-    console.log('Opening package dialog with data:', packageTest);
-
-    // Ensure the package has a tests array
-    if (!packageTest.tests) {
-      packageTest.tests = [];
-    }
-
-    // Đánh dấu nếu đã hoàn thành để modal hiển thị ở chế độ chỉ đọc
-    const packageWithReadOnlyFlag = {
-      ...packageTest,
-      isReadOnly: packageTest.status === 'COMPLETED',
-    };
-
-    setCurrentPackage(packageWithReadOnlyFlag);
-    setOpenPackageDialog(true);
-  };
-
-  // Đóng dialog cập nhật kết quả gói xét nghiệm
-  const handleClosePackageDialog = () => {
-    setOpenPackageDialog(false);
-    setCurrentPackage(null);
-  };
-
-  // Đóng dialog cập nhật xét nghiệm trong gói
-  const handleCloseTestInPackageDialog = () => {
-    setOpenTestInPackageDialog(false);
-    setCurrentTestInPackage(null);
-  };
-  // Xử lý mở dialog cập nhật kết quả cho một xét nghiệm cụ thể trong gói
-  const handleOpenTestInPackageDialog = (packageItem, testItem) => {
-    console.log(
-      'Opening test-in-package dialog with data:',
-      packageItem,
-      testItem
-    );
-
-    // Ensure the package has a tests array
-    if (!packageItem.tests) {
-      packageItem.tests = [];
-    }
-
-    // Ensure the test item has required fields
-    if (testItem && !testItem.testItemId) {
-      testItem.testItemId = testItem.id || `test-${Date.now()}`;
-    }
-
-    // Đánh dấu nếu đã hoàn thành để modal hiển thị ở chế độ chỉ đọc
-    const isCompleted =
-      packageItem.status === 'COMPLETED' || testItem.status === 'COMPLETED';
-    const packageWithReadOnlyFlag = {
-      ...packageItem,
-      isReadOnly: isCompleted,
-    };
-
-    const testWithReadOnlyFlag = {
-      ...testItem,
-      isReadOnly: isCompleted,
-    };
-
-    setCurrentPackage(packageWithReadOnlyFlag);
-    setCurrentTestInPackage(testWithReadOnlyFlag);
-    setOpenTestInPackageDialog(true); // This should open the specific test dialog instead of general package dialog
-  };
-
-  // Xử lý xác nhận xét nghiệm
-  const handleConfirmTest = async (testId) => {
-    if (!testId) {
-      alert('Không tìm thấy ID của xét nghiệm');
-      return;
-    }
-
-    try {
-      // Gọi API xác nhận xét nghiệm
-      const response = await confirmTest(testId);
-
-      if (response && response.success) {
-        // Cập nhật danh sách xét nghiệm
-        await fetchStaffTests();
-
-        // Thông báo thành công
-        alert('Đã xác nhận xét nghiệm thành công!');
-      } else {
-        alert(response?.message || 'Không thể xác nhận xét nghiệm');
-      }
-    } catch (err) {
-      console.error('Lỗi khi xác nhận xét nghiệm:', err);
-      alert(err.response?.data?.message || err.message || 'Lỗi kết nối');
-    }
-  };
-
-  // Xử lý lấy mẫu xét nghiệm
-  const handleSampleTest = async (testId) => {
-    if (!testId) {
-      alert('Không tìm thấy ID của xét nghiệm');
-      return;
-    }
-
-    try {
-      // Gọi API lấy mẫu xét nghiệm
-      const response = await sampleTest(testId);
-
-      if (response && response.success) {
-        // Cập nhật danh sách xét nghiệm
-        await fetchStaffTests();
-
-        // Thông báo thành công
-        alert('Đã cập nhật trạng thái lấy mẫu thành công!');
-      } else {
-        alert(response?.message || 'Không thể cập nhật trạng thái lấy mẫu');
-      }
-    } catch (err) {
-      console.error('Lỗi khi cập nhật trạng thái lấy mẫu:', err);
-      alert(err.response?.data?.message || err.message || 'Lỗi kết nối');
-    }
-  };
-
-  // Xử lý hoàn thành xét nghiệm
-  const handleCompleteTest = async (testId) => {
-    if (!testId) {
-      alert('Không tìm thấy ID của xét nghiệm');
-      return;
-    }
-
-    try {
-      // Gọi API hoàn thành xét nghiệm
-      const response = await completeTest(testId);
-
-      if (response && response.success) {
-        // Cập nhật danh sách xét nghiệm
-        await fetchStaffTests();
-
-        // Thông báo thành công
-        alert('Đã hoàn thành xét nghiệm thành công!');
-      } else {
-        alert(response?.message || 'Không thể hoàn thành xét nghiệm');
-      }
-    } catch (err) {
-      console.error('Lỗi khi hoàn thành xét nghiệm:', err);
-      alert(err.response?.data?.message || err.message || 'Lỗi kết nối');
-    }
-  };
-
-  // Xử lý thay đổi giá trị kết quả xét nghiệm
-  const handleResultChange = (field, value) => {
-    if (currentUserTest) {
-      if (field.startsWith('component_')) {
-        // Handle component field updates
-        const [, componentIndex, componentField] = field.split('_');
-        const updatedComponents = [...currentUserTest.components];
-        updatedComponents[componentIndex] = {
-          ...updatedComponents[componentIndex],
-          [componentField]: value,
-        };
-
-        setCurrentUserTest({
-          ...currentUserTest,
-          components: updatedComponents,
-        });
-      } else {
-        // Handle direct test field updates
-        setCurrentUserTest({
-          ...currentUserTest,
-          [field]: value,
-        });
-      }
-    }
-  };
-
-  // Xử lý lưu kết quả xét nghiệm đơn lẻ
-  const handleSaveResult = async () => {
-    if (!currentUserTest) return;
-
-    setResultUpdating(true);
-    try {
-      // Prepare the test results in the required format
-      const testResults = currentUserTest.components
-        ? currentUserTest.components.map((component) => ({
-            componentId: component.componentId,
-            resultValue: component.resultValue || '',
-            normalRange: component.normalRange || '',
-            unit: component.unit || '',
-          }))
-        : [
-            {
-              componentId: currentUserTest.serviceId,
-              resultValue: currentUserTest.result || 'negative',
-              normalRange: currentUserTest.normalRange || 'Negative',
-              unit: currentUserTest.unit || '',
-            },
-          ];
-
-      // Call the addTestResults function with the new format
-      const response = await addTestResults(
-        currentUserTest.testId,
-        testResults
-      );
-
-      if (response && response.success) {
-        // Update local state
-        setUserTests((prevTests) =>
-          prevTests.map((test) =>
-            test.testId === currentUserTest.testId
-              ? {
-                  ...test,
-                  status: 'RESULTED',
-                  result: currentUserTest.result || 'negative',
-                  resultLabel: currentUserTest.resultLabel || 'Âm tính',
-                  resultDetails: currentUserTest.resultDetails || '',
-                  resultDate: new Date().toISOString(),
-                  components: currentUserTest.components,
-                }
-              : test
-          )
-        );
-
-        handleCloseResultDialog();
-        // Show success message
-        alert('Kết quả xét nghiệm đã được lưu thành công!');
-      } else {
-        alert(response?.message || 'Không thể lưu kết quả xét nghiệm');
-      }
-    } catch (err) {
-      console.error('Error saving test result:', err);
-      alert(err.response?.data?.message || err.message || 'Network error');
-    } finally {
-      setResultUpdating(false);
-    }
-  };
-
-  // Xử lý lưu kết quả một xét nghiệm trong gói xét nghiệm
-  const handleSaveTestInPackage = async () => {
-    if (!currentPackage || !currentTestInPackage) return;
-
-    setPackageResultUpdating(true);
-    try {
-      // Prepare the test results in the required format
-      const testResults = [
-        {
-          componentId:
-            currentTestInPackage.componentId || currentTestInPackage.serviceId,
-          resultValue: currentTestInPackage.result || 'negative',
-          normalRange: currentTestInPackage.normalRange || 'Negative',
-          unit: currentTestInPackage.unit || '',
-        },
-      ];
-
-      // Call the addTestResults function with the new format
-      const response = await addTestResults(
-        currentTestInPackage.testItemId,
-        testResults
-      );
-
-      if (response && response.success) {
-        // Update local state
-        setUserPackages((prevPackages) =>
-          prevPackages.map((pack) => {
-            if (pack.testId === currentPackage.testId) {
-              return {
-                ...pack,
-                tests: pack.tests.map((test) =>
-                  test.testItemId === currentTestInPackage.testItemId
-                    ? {
-                        ...test,
-                        status: 'RESULTED',
-                        result: currentTestInPackage.result || 'negative',
-                        resultLabel:
-                          currentTestInPackage.resultLabel || 'Âm tính',
-                        resultDetails: currentTestInPackage.resultDetails || '',
-                        resultDate: new Date().toISOString(),
-                      }
-                    : test
-                ),
-              };
-            }
-            return pack;
-          })
-        );
-
-        handleCloseTestInPackageDialog();
-        // Show success message
-        alert('Kết quả xét nghiệm đã được lưu thành công!');
-      } else {
-        alert(response?.message || 'Không thể lưu kết quả xét nghiệm');
-      }
-    } catch (err) {
-      console.error('Error saving test result in package:', err);
-      alert(err.response?.data?.message || err.message || 'Network error');
-    } finally {
-      setPackageResultUpdating(false);
-    }
-  };
-
-  // Xử lý lưu kết quả và ghi chú cho cả gói xét nghiệm
-  const handleSavePackage = async () => {
-    if (!currentPackage) return;
-
-    setPackageResultUpdating(true);
-    try {
-      const response = await apiClient.put(
-        `/sti-services/staff/packages/${currentPackage.testId}`,
-        {
-          consultantNotes: currentPackage.consultantNotes || '',
-          status: currentPackage.status,
-        }
-      );
-
-      if (response.data && response.data.success) {
-        // Update local state
-        setUserPackages((prevPackages) =>
-          prevPackages.map((pack) =>
-            pack.testId === currentPackage.testId
-              ? {
-                  ...pack,
-                  consultantNotes: currentPackage.consultantNotes || '',
-                  status: currentPackage.status,
-                }
-              : pack
-          )
-        );
-
-        handleClosePackageDialog();
-      } else {
-        alert(response.data.message || 'Failed to save package information');
-      }
-    } catch (err) {
-      console.error('Error saving package information:', err);
-      alert(err.response?.data?.message || err.message || 'Network error');
-    } finally {
-      setPackageResultUpdating(false);
-    }
-  };
-
-  // Xử lý xác nhận tất cả xét nghiệm trong gói
-  const handleConfirmPackage = async (packageData) => {
-    if (!packageData || !packageData.tests || packageData.tests.length === 0) {
-      alert('Không có xét nghiệm nào trong gói để xác nhận');
-      return;
-    }
-
-    try {
-      // Hiển thị thông báo xác nhận
-      if (
-        !window.confirm(
-          `Bạn có chắc chắn muốn xác nhận tất cả ${packageData.tests.length} xét nghiệm trong gói này không?`
-        )
-      ) {
-        return;
-      }
-
-      // Đếm số xét nghiệm đã xác nhận thành công
-      let confirmedCount = 0;
-      let failedTests = [];
-
-      // Tạo một bản sao của danh sách tests để cập nhật
-      const updatedTests = [...packageData.tests];
-
-      // Xác nhận từng xét nghiệm trong gói
-      for (let i = 0; i < packageData.tests.length; i++) {
-        const test = packageData.tests[i];
-
-        // Chỉ xác nhận các xét nghiệm có trạng thái PENDING
-        if (test.status === 'PENDING' && test.id) {
-          try {
-            const response = await confirmTest(test.id);
-
-            if (response && response.success) {
-              confirmedCount++;
-              // Cập nhật trạng thái trong danh sách
-              updatedTests[i] = { ...test, status: 'CONFIRMED' };
-            } else {
-              failedTests.push(test.serviceName || `Xét nghiệm #${i + 1}`);
-            }
-          } catch (error) {
-            console.error(`Lỗi khi xác nhận xét nghiệm ${test.id}:`, error);
-            failedTests.push(test.serviceName || `Xét nghiệm #${i + 1}`);
-          }
-        }
-      }
-
-      // Cập nhật trạng thái gói trong UI
-      if (packageData === currentPackage) {
-        setCurrentPackage({
-          ...currentPackage,
-          tests: updatedTests,
-        });
-      }
-
-      // Cập nhật danh sách xét nghiệm và gói
-      await fetchStaffTests();
-
-      // Hiển thị kết quả
-      if (confirmedCount > 0) {
-        const message =
-          failedTests.length > 0
-            ? `Đã xác nhận thành công ${confirmedCount} xét nghiệm. Tuy nhiên, ${failedTests.length} xét nghiệm không thể xác nhận: ${failedTests.join(', ')}`
-            : `Đã xác nhận thành công ${confirmedCount} xét nghiệm!`;
-        alert(message);
-      } else {
-        alert('Không thể xác nhận bất kỳ xét nghiệm nào trong gói');
-      }
-    } catch (err) {
-      console.error('Lỗi khi xác nhận gói xét nghiệm:', err);
-      alert(err.response?.data?.message || err.message || 'Lỗi kết nối');
-    }
-  };
-
-  // Xử lý thay đổi thông tin của một xét nghiệm trong gói
-  const handleTestInPackageChange = (field, value) => {
-    if (currentTestInPackage) {
-      setCurrentTestInPackage({
-        ...currentTestInPackage,
-        [field]: value,
-      });
-    }
-  };
-
-  // Tiện ích chuyển đổi trạng thái hiển thị từ backend DTO sang hiển thị UI
-  const getStatusDisplayText = useCallback(
-    (status) => {
-      if (!status) return 'Unknown';
-
-      const statusObj = TEST_STATUSES[status];
-      return statusObj ? statusObj.label : status;
-    },
-    [TEST_STATUSES]
+  const STATUS_LABELS = useMemo(
+    () => ({
+      PENDING: 'Chờ xử lý',
+      CONFIRMED: 'Đã xác nhận',
+      SAMPLED: 'Đã lấy mẫu',
+      RESULTED: 'Có kết quả',
+      COMPLETED: 'Hoàn thành',
+      CANCELED: 'Đã hủy',
+    }),
+    []
   );
 
-  // Tiện ích chuyển đổi loại thanh toán từ backend DTO sang hiển thị UI
-  const getPaymentDisplayText = useCallback((paymentMethod) => {
-    if (paymentMethod === null || paymentMethod === 'NULL' || !paymentMethod)
-      return 'Chuyển khoản trực tiếp';
+  const PAYMENT_LABELS = useMemo(
+    () => ({
+      COD: 'Tiền mặt',
+      VISA: 'Thẻ tín dụng',
+      QR_CODE: 'Chuyển khoản QR',
+    }),
+    []
+  ); // State variables
+  const [tests, setTests] = useState([]);
+  const [filteredTests, setFilteredTests] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [tabValue, setTabValue] = useState(0);
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [paymentFilter, setPaymentFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTest, setSelectedTest] = useState(null);
+  const [dateFilter, setDateFilter] = useState('');
+  const [pendingCount, setPendingCount] = useState(0);
 
-    if (paymentMethod === 'UNKNOWN') return 'Chưa thanh toán';
-
-    switch (paymentMethod) {
-      case 'COD':
-        return 'Thanh toán tại chỗ';
-      case 'VISA':
-        return 'Thẻ tín dụng';
-      case 'QR_CODE':
-        return 'Chuyển khoản QR';
-      case 'BANKING':
-        return 'Chuyển khoản';
-      case 'CASH':
-        return 'Tiền mặt';
-      case 'DIRECT_TRANSFER':
-        return 'Chuyển khoản trực tiếp';
-      default:
-        // If the value is something we don't recognize, return "Chưa thanh toán"
-        console.log('Unknown payment method:', paymentMethod);
-        return 'Chưa thanh toán';
-    }
-  }, []);
-  // Xử lý thay đổi thông tin chung của gói xét nghiệm
-  const handlePackageChange = (field, value) => {
-    if (currentPackage) {
-      setCurrentPackage({
-        ...currentPackage,
-        [field]: value,
-      });
-    }
-  };
-
-  // Helpers
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-
+  // Modals state
+  const [openSingleModal, setOpenSingleModal] = useState(false);
+  const [openPackageModal, setOpenPackageModal] = useState(false);
+  const [openTestInPackageModal, setOpenTestInPackageModal] = useState(false);
+  const [selectedTestComponent, setSelectedTestComponent] = useState(null); // Fetch tests based on the active tab
+  const fetchTests = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      // Handle array date format from the API (e.g., [2025, 6, 19, 15, 30])
-      if (Array.isArray(dateString)) {
-        console.log('Handling array date format:', dateString);
-        // Check if the array contains at least year, month, day
-        if (dateString.length >= 3) {
-          const [year, month, day, hour = 0, minute = 0] = dateString;
-          const date = new Date(year, month - 1, day, hour, minute);
-
-          if (!isNaN(date.getTime())) {
-            return date.toLocaleString('vi-VN');
-          }
-        }
-        return 'N/A';
+      let response;
+      switch (tabValue) {
+        case 0: // All tests
+          response = await getStaffTests();
+          break;
+        case 1: // Pending tests
+          response = await getPendingTests();
+          break;
+        case 2: // Confirmed tests
+          response = await getConfirmedTests();
+          break;
+        case 3: // Sampled tests
+        case 4: // Resulted tests
+        case 5: // Completed tests
+          // Lấy tất cả các xét nghiệm của staff, sau đó lọc theo trạng thái
+          response = await getStaffTests();
+          break;
+        default:
+          response = await getStaffTests();
       }
 
-      // Check if it's SQL DateTime format with milliseconds (e.g., 2025-06-18 13:20:24.8233330)
-      if (
-        typeof dateString === 'string' &&
-        dateString.includes(' ') &&
-        dateString.includes(':')
-      ) {
-        return formatDateTime(dateString);
+      console.log('API response:', response);
+      if (response && response.status === 'SUCCESS') {
+        console.log('Setting tests data:', response.data);
+        const testsData = response.data || [];
+        setTests(testsData);
+        setFilteredTests(testsData);
+
+        // Count pending tests
+        const pendingTests = testsData.filter(
+          (test) => test && test.status === 'PENDING'
+        );
+        setPendingCount(pendingTests.length);
+      } else if (response && response.data) {
+        // Trường hợp API trả về đúng định dạng nhưng không có status SUCCESS
+        console.log('Đang thiết lập dữ liệu thô:', response.data);
+        const testsData = response.data || [];
+        setTests(testsData);
+        setFilteredTests(testsData);
+
+        // Đếm số lượng xét nghiệm đang chờ xử lý
+        const pendingTests = testsData.filter(
+          (test) => test && test.status === 'PENDING'
+        );
+        setPendingCount(pendingTests.length);
       } else {
-        return formatDateDisplay(dateString);
+        setError(response?.message || 'Không thể lấy danh sách xét nghiệm');
       }
     } catch (err) {
-      console.error('Error formatting date:', err, dateString);
-      return 'N/A';
-    }
-  };
-
-  // Lấy màu cho kết quả
-  const getResultColor = (result) => {
-    if (!result) return 'default';
-
-    switch (result.toLowerCase()) {
-      case 'negative':
-        return 'success';
-      case 'positive':
-        return 'error';
-      case 'indeterminate':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
-
-  // Filter kết quả xét nghiệm dựa trên searchTerm, viewMode và statusFilter
-  const getFilteredTests = () => {
-    let filteredTests = [];
-
-    // Apply view mode filter
-    if (viewMode === 'all' || viewMode === 'single') {
-      filteredTests = filteredTests.concat(userTests);
-    }
-
-    if (viewMode === 'all' || viewMode === 'package') {
-      filteredTests = filteredTests.concat(userPackages);
-    }
-
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filteredTests = filteredTests.filter(
-        (test) => test.status === statusFilter
+      setError(
+        'Đã xảy ra lỗi khi tải dữ liệu: ' +
+          (err.message || 'Lỗi không xác định')
       );
+      console.error('Error fetching tests:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [tabValue]);
+
+  // Initial data load
+  useEffect(() => {
+    fetchTests();
+  }, [fetchTests]); // Filter function
+  useEffect(() => {
+    if (!tests || !Array.isArray(tests) || tests.length === 0) {
+      console.warn('Dữ liệu xét nghiệm trống hoặc không phải mảng:', tests);
+      setFilteredTests([]);
+      return;
     }
 
-    // Apply search term
-    if (searchTerm) {
+    console.log('Đang lọc từ dữ liệu xét nghiệm:', tests.length, tests);
+    let result = [...tests];
+
+    // Auto-filter based on tab
+    if (tabValue === 3) {
+      // Filter for SAMPLED tests in tab 3
+      result = result.filter((test) => test && test.status === 'SAMPLED');
+    } else if (tabValue === 4) {
+      // Filter for RESULTED tests in tab 4
+      result = result.filter((test) => test && test.status === 'RESULTED');
+    } else if (tabValue === 5) {
+      // Filter for COMPLETED tests in tab 5
+      result = result.filter((test) => test && test.status === 'COMPLETED');
+    }
+
+    // Filter by status
+    if (statusFilter !== 'ALL') {
+      result = result.filter((test) => test && test.status === statusFilter);
+      console.log('Sau khi lọc theo trạng thái:', result.length);
+    }
+
+    // Filter by payment method
+    if (paymentFilter !== 'ALL') {
+      result = result.filter(
+        (test) => test && test.paymentMethod === paymentFilter
+      );
+      console.log('Sau khi lọc theo phương thức thanh toán:', result.length);
+    } // Filter by search term
+    if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      filteredTests = filteredTests.filter(
+      result = result.filter(
         (test) =>
           (test.customerName &&
             test.customerName.toLowerCase().includes(term)) ||
-          (test.customerEmail &&
-            test.customerEmail.toLowerCase().includes(term)) ||
-          (test.serviceName && test.serviceName.toLowerCase().includes(term)) ||
-          (test.packageName && test.packageName.toLowerCase().includes(term))
+          (test.testId && test.testId.toString().includes(term)) ||
+          (test.serviceName && test.serviceName.toLowerCase().includes(term))
       );
+      console.log('Sau khi lọc theo từ khóa:', result.length);
     }
 
-    return filteredTests;
+    // Filter by date
+    if (dateFilter) {
+      const filterDate = new Date(dateFilter);
+      filterDate.setHours(0, 0, 0, 0); // Đầu ngày
+
+      result = result.filter((test) => {
+        if (!test.appointmentDate) return false;
+
+        const testDate = new Date(test.appointmentDate);
+        testDate.setHours(0, 0, 0, 0); // Start of day
+
+        return testDate.getTime() === filterDate.getTime();
+      });
+      console.log('Sau khi lọc theo ngày:', result.length);
+    }
+
+    console.log('Kết quả lọc cuối cùng:', result.length, result);
+    setFilteredTests(result);
+    setPage(0); // Reset to first page when filters change
+  }, [tests, statusFilter, paymentFilter, searchTerm, dateFilter, tabValue]);
+
+  // Handle tab change
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
   };
-  // Render table UI
-  const renderTestsTable = () => {
-    const filteredTests = getFilteredTests();
+
+  // Handle pagination
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+  // Open modals
+  const handleOpenTestModal = async (test) => {
+    console.log('Đang mở modal kết quả xét nghiệm cho:', test);
+    setSelectedTest(test);
+
+    // Đảm bảo có các thành phần xét nghiệm để hiển thị
+    if (
+      !test.testComponents ||
+      !Array.isArray(test.testComponents) ||
+      test.testComponents.length === 0
+    ) {
+      // Đối với xét nghiệm đơn lẻ, tạo một thành phần mặc định nếu chưa có
+      if (!test.packageId) {
+        // Use proper numeric componentId value - use testId as a base for the component
+        const componentId = test.testId ? parseInt(test.testId) : 1;
+
+        test.testComponents = [
+          {
+            id: componentId, // Use numeric ID
+            componentId: componentId, // Use numeric ID
+            componentName: test.serviceName || 'Xét nghiệm',
+            status: test.status,
+            unit: '',
+            normalRange: '',
+            resultValue: '',
+            // If this appears to be an HIV test, set testType accordingly
+            testType:
+              test.serviceName && test.serviceName.toLowerCase().includes('hiv')
+                ? 'BINARY'
+                : undefined,
+          },
+        ];
+        console.log(
+          'Đã tạo thành phần xét nghiệm mặc định với ID số:',
+          test.testComponents[0]
+        );
+      }
+    }
+
+    // Tải kết quả xét nghiệm nếu đang xem một xét nghiệm đã có kết quả
+    if (test.status === 'RESULTED' || test.status === 'COMPLETED') {
+      try {
+        setLoading(true);
+        console.log('Fetching test results for test:', test.testId);
+        const results = await getTestResultsByTestId(test.testId);
+        console.log('Got test results:', results);
+        if (results) {
+          test.testResults = results.data || results;
+
+          // Map test results to component structure if needed
+          if (
+            test.testResults &&
+            Array.isArray(test.testResults) &&
+            test.testResults.length > 0 &&
+            test.testComponents
+          ) {
+            test.testComponents.forEach((component) => {
+              const matchingResult = test.testResults.find(
+                (r) =>
+                  r.componentId === component.componentId ||
+                  r.componentId === component.id
+              );
+              if (matchingResult) {
+                component.resultValue = matchingResult.resultValue;
+                component.unit = matchingResult.unit;
+                component.normalRange = matchingResult.normalRange;
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching test results:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (test.packageId) {
+      // If this is a package test, first try to get complete package details
+      try {
+        setLoading(true);
+        console.log('Fetching package details for:', test.testId);
+        const response = await getPackageTestDetails(test.testId);
+
+        if (response && (response.status === 'SUCCESS' || response.data)) {
+          const packageData = response.data || response;
+          console.log('Got package details:', packageData);
+
+          // If we have valid data, use that instead of the basic test data
+          if (packageData) {
+            // Check if we have components in the package data
+            if (
+              packageData.testComponents &&
+              packageData.testComponents.length > 0
+            ) {
+              console.log(
+                `Found ${packageData.testComponents.length} components in package data`
+              );
+            } else {
+              console.warn(
+                'No components found in package data, will create dummies if needed'
+              );
+            }
+            setSelectedTest(packageData);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching package details:', err);
+        // Continue with the basic test data we already have
+
+        // If there was an error, make sure we have at least some dummy components
+        if (
+          !test.testComponents ||
+          !Array.isArray(test.testComponents) ||
+          test.testComponents.length === 0
+        ) {
+          test.testComponents = [
+            {
+              id: `component-1-${test.testId}`,
+              componentId: `component-1-${test.testId}`,
+              componentName: `${test.serviceName || 'Xét nghiệm'} - Thành phần 1`,
+              status: test.status || 'PENDING',
+            },
+            {
+              id: `component-2-${test.testId}`,
+              componentId: `component-2-${test.testId}`,
+              componentName: `${test.serviceName || 'Xét nghiệm'} - Thành phần 2`,
+              status: test.status || 'PENDING',
+            },
+          ];
+          console.log('Created dummy components:', test.testComponents);
+        }
+      } finally {
+        setLoading(false);
+      }
+      setOpenPackageModal(true);
+    } else {
+      setOpenSingleModal(true);
+    }
+  };
+
+  const handleOpenTestInPackageModal = (packageTest, testComponent) => {
+    setSelectedTest(packageTest);
+    setSelectedTestComponent(testComponent);
+    setOpenTestInPackageModal(true);
+  };
+
+  // Test status update handlers
+  const handleConfirmTestAction = async (testId) => {
+    try {
+      setLoading(true);
+      console.log(`Đang gọi API xác nhận xét nghiệm ${testId}...`);
+      const response = await confirmTest(testId);
+      console.log(`Kết quả API xác nhận:`, response);
+
+      if (response && (response.status === 'SUCCESS' || response.data)) {
+        // Xác định dữ liệu hợp lệ từ response
+        const updatedData = response.data || response;
+        console.log(`Dữ liệu cập nhật từ API:`, updatedData);
+
+        // Update the test in state
+        updateTestInState(updatedData);
+
+        // Hiển thị thông báo thành công
+        setSuccess(`Đã xác nhận xét nghiệm #${testId} thành công`);
+        setTimeout(() => setSuccess(null), 3000);
+
+        return true;
+      } else {
+        setError(response?.message || 'Không thể xác nhận xét nghiệm');
+        setTimeout(() => setError(null), 3000);
+        return false;
+      }
+    } catch (err) {
+      setError(
+        'Lỗi khi xác nhận xét nghiệm: ' + (err.message || 'Lỗi không xác định')
+      );
+      console.error('Error confirming test:', err);
+      setTimeout(() => setError(null), 3000);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleSampleTestAction = async (testId) => {
+    try {
+      setLoading(true);
+      console.log(`Đang gọi API lấy mẫu xét nghiệm ${testId}...`);
+      const response = await sampleTest(testId);
+      console.log(`Kết quả API lấy mẫu:`, response);
+
+      if (response && (response.status === 'SUCCESS' || response.data)) {
+        // Xác định dữ liệu hợp lệ từ response
+        const updatedData = response.data || response;
+        console.log(`Dữ liệu cập nhật từ API:`, updatedData);
+
+        // Update the test in state
+        updateTestInState(updatedData);
+
+        // Hiển thị thông báo thành công
+        setSuccess(
+          `Đã cập nhật trạng thái lấy mẫu cho xét nghiệm #${testId} thành công`
+        );
+        setTimeout(() => setSuccess(null), 3000);
+
+        return true;
+      } else {
+        setError(response?.message || 'Không thể cập nhật trạng thái lấy mẫu');
+        setTimeout(() => setError(null), 3000);
+        return false;
+      }
+    } catch (err) {
+      setError(
+        'Lỗi khi cập nhật trạng thái lấy mẫu: ' +
+          (err.message || 'Lỗi không xác định')
+      );
+      console.error('Error sampling test:', err);
+      setTimeout(() => setError(null), 3000);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleAddResultsAction = async (testId, resultData) => {
+    try {
+      setLoading(true);
+      console.log(
+        'Đã nhận dữ liệu kết quả trong handleAddResultsAction:',
+        resultData
+      );
+
+      // Check if resultData is already properly formatted
+      let apiRequestBody;
+
+      // If resultData already has status and results properties, use it directly
+      if (resultData.status && Array.isArray(resultData.results)) {
+        apiRequestBody = resultData;
+      } else {
+        // Otherwise, assume resultData is the results array
+        // Additional validation to ensure we have valid data
+        if (
+          !resultData ||
+          !Array.isArray(resultData) ||
+          resultData.length === 0
+        ) {
+          setError('Không có dữ liệu kết quả để lưu');
+          setTimeout(() => setError(null), 5000);
+          return false;
+        }
+
+        // Check if all results have values
+        const emptyResults = resultData.filter(
+          (result) =>
+            result.resultValue === undefined ||
+            result.resultValue === null ||
+            result.resultValue === ''
+        );
+
+        if (emptyResults.length > 0) {
+          setError('Kết quả xét nghiệm không được để trống');
+          setTimeout(() => setError(null), 5000);
+          return false;
+        } // Check if any results are binary (like HIV tests with positive/negative)
+        // Not directly used but retained for debugging purposes
+        console.log(
+          'Có kết quả xét nghiệm nhị phân:',
+          resultData.some(
+            (result) =>
+              result.resultValue === 'POSITIVE' ||
+              result.resultValue === 'NEGATIVE' ||
+              result.resultValue === 'INCONCLUSIVE'
+          )
+        );
+
+        // Format according to TestResultRequest and ensure componentId is numeric
+        const formattedResults = resultData.map((result) => {
+          // Ensure componentId is a valid number for the Java backend
+          let componentId;
+          if (typeof result.componentId === 'number') {
+            componentId = result.componentId;
+          } else if (
+            result.componentId &&
+            !isNaN(parseInt(result.componentId))
+          ) {
+            // Try to parse as integer if it's a string containing a number
+            componentId = parseInt(result.componentId);
+          } else if (testId && !isNaN(parseInt(testId))) {
+            // Fallback: use test ID as a base
+            componentId = parseInt(testId);
+          } else {
+            // Last resort fallback
+            componentId = 1;
+          }
+
+          return {
+            componentId: componentId, // Use the numeric value
+            resultValue: result.resultValue,
+            normalRange: result.normalRange || '',
+            unit: result.unit || '',
+          };
+        });
+
+        // Prepare the API request body
+        apiRequestBody = {
+          status: 'RESULTED',
+          results: formattedResults,
+        };
+      }
+      console.log(
+        'Nội dung yêu cầu API cuối cùng:',
+        JSON.stringify(apiRequestBody)
+      );
+
+      // Cập nhật UI lạc quan trước khi gọi API
+      // Tìm xét nghiệm trong trạng thái và cập nhật nó lạc quan
+      const testToUpdate = tests.find((t) => t.testId === testId);
+      if (testToUpdate) {
+        console.log('Áp dụng cập nhật UI lạc quan cho xét nghiệm:', testId);
+
+        // Make a copy of the test with updated status
+        const optimisticUpdatedTest = {
+          ...testToUpdate,
+          status: 'RESULTED', // Change status to RESULTED
+        };
+
+        // Apply optimistic update to UI
+        const optimisticUpdatedTests = tests.map((t) =>
+          t.testId === testId ? optimisticUpdatedTest : t
+        );
+        setTests(optimisticUpdatedTests);
+
+        // Update filtered tests based on tab
+        if (tabValue === 3) {
+          // If in "Đã lấy mẫu" tab
+          const newFilteredTests = filteredTests.filter(
+            (t) => t.testId !== testId
+          );
+          setFilteredTests(newFilteredTests);
+        } // Hiển thị thông báo thành công trong khi xử lý
+        setSuccess(`Đang cập nhật kết quả xét nghiệm #${testId}...`);
+      }
+
+      let response;
+      try {
+        // Lần thử đầu tiên thêm kết quả xét nghiệm
+        response = await addTestResults(testId, apiRequestBody);
+        console.log('Phản hồi API cho kết quả xét nghiệm:', response);
+      } catch (apiError) {
+        console.error('Lỗi API trong lần thử đầu tiên:', apiError);
+
+        // Nếu nhận được lỗi 401, token có thể đã được làm mới
+        if (
+          apiError.status === 401 ||
+          (apiError.response && apiError.response.status === 401)
+        ) {
+          console.log(
+            'Nhận lỗi 401, đang đợi quá trình làm mới token hoàn tất'
+          );
+          // Đợi quá trình làm mới token hoàn tất
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+
+          // Try again after token refresh
+          try {
+            console.log('Retrying API call after token refresh');
+            response = await addTestResults(testId, apiRequestBody);
+            console.log('Retry API response:', response);
+          } catch (retryError) {
+            console.error('Error in retry attempt:', retryError);
+            throw retryError;
+          }
+        } else {
+          throw apiError;
+        }
+      } // Xử lý phản hồi
+      if (
+        response &&
+        (response.status === 'SUCCESS' || response.success === true)
+      ) {
+        // Cập nhật xét nghiệm trong trạng thái của chúng ta với dữ liệu phản hồi thực tế
+        if (response.data) {
+          updateTestInState(response.data);
+        }
+        setSuccess(`Cập nhật kết quả xét nghiệm #${testId} thành công`);
+        setTimeout(() => setSuccess(null), 3000);
+        // Làm mới dữ liệu để lấy trạng thái mới nhất từ máy chủ
+        setTimeout(() => {
+          fetchTests();
+        }, 500);
+
+        return response;
+      } else if (response && response.data) {
+        // We have data even without explicit success status
+        console.log(
+          'Response has data but no success status, treating as success'
+        );
+        if (response.data) {
+          updateTestInState(response.data);
+        }
+        setSuccess(`Cập nhật kết quả xét nghiệm #${testId} thành công`);
+        setTimeout(() => {
+          fetchTests();
+        }, 500);
+
+        return response;
+      } else {
+        // Revert optimistic update on error
+        fetchTests(); // Refresh data to revert changes
+
+        setError(response?.message || 'Không thể cập nhật kết quả xét nghiệm');
+        setTimeout(() => setError(null), 5000);
+        return false;
+      }
+    } catch (err) {
+      // Revert optimistic update on error
+      fetchTests(); // Refresh data to revert changes
+
+      setError(
+        'Lỗi khi cập nhật kết quả: ' + (err.message || 'Lỗi không xác định')
+      );
+      setTimeout(() => setError(null), 5000);
+      console.error('Error adding results:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteTestAction = async (testId) => {
+    try {
+      setLoading(true);
+      const response = await completeTest(testId);
+      if (response.status === 'SUCCESS') {
+        updateTestInState(response.data);
+        return true;
+      } else {
+        setError(response.message || 'Không thể hoàn thành xét nghiệm');
+        return false;
+      }
+    } catch (err) {
+      setError(
+        'Lỗi khi hoàn thành xét nghiệm: ' +
+          (err.message || 'Lỗi không xác định')
+      );
+      console.error('Error completing test:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleCancelTestAction = async (testId) => {
+    try {
+      setLoading(true);
+      const response = await cancelSTITest(testId);
+      if (response.status === 'SUCCESS') {
+        updateTestInState(response.data);
+        return true;
+      } else {
+        setError(response.message || 'Không thể hủy xét nghiệm');
+        return false;
+      }
+    } catch (err) {
+      setError(
+        'Lỗi khi hủy xét nghiệm: ' + (err.message || 'Lỗi không xác định')
+      );
+      console.error('Error canceling test:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }; // Update test in state
+  const updateTestInState = (updatedTest) => {
+    if (!updatedTest || !updatedTest.testId) {
+      console.error('Invalid updated test:', updatedTest);
+      return;
+    }
+
+    console.log('Updating test in state:', updatedTest);
+
+    // Handle if we were given an array of tests (rare case)
+    if (Array.isArray(updatedTest)) {
+      setTests(updatedTest);
+
+      // Cập nhật filteredTests ngay lập tức để UI hiển thị đúng
+      if (tabValue === 0) {
+        // Nếu đang ở tab "Tất cả xét nghiệm", cập nhật toàn bộ
+        setFilteredTests(updatedTest);
+      } else {
+        // Lọc lại theo tab hiện tại
+        let filtered = updatedTest;
+        if (tabValue === 1) {
+          filtered = filtered.filter((t) => t && t.status === 'PENDING');
+        } else if (tabValue === 2) {
+          filtered = filtered.filter((t) => t && t.status === 'CONFIRMED');
+        } else if (tabValue === 3) {
+          filtered = filtered.filter((t) => t && t.status === 'SAMPLED');
+        } else if (tabValue === 4) {
+          filtered = filtered.filter((t) => t && t.status === 'RESULTED');
+        } else if (tabValue === 5) {
+          filtered = filtered.filter((t) => t && t.status === 'COMPLETED');
+        }
+        setFilteredTests(filtered);
+      }
+    } else {
+      // Handle single test update
+      const updatedTests = tests.map((test) =>
+        test && test.testId === updatedTest.testId ? updatedTest : test
+      );
+      console.log('Updated tests array:', updatedTests);
+      setTests(updatedTests);
+
+      // Cập nhật filteredTests ngay lập tức để hiển thị UI đúng
+      const updatedFilteredTests = filteredTests
+        .map((test) => {
+          if (test && test.testId === updatedTest.testId) {
+            return updatedTest;
+          }
+          return test;
+        })
+        .filter((test) => {
+          // Nếu trạng thái xét nghiệm thay đổi, kiểm tra xem nó có còn phù hợp với tab hiện tại không
+          if (tabValue === 1 && test && test.status !== 'PENDING') {
+            return false;
+          } else if (tabValue === 2 && test && test.status !== 'CONFIRMED') {
+            return false;
+          } else if (tabValue === 3 && test && test.status !== 'SAMPLED') {
+            return false;
+          } else if (tabValue === 4 && test && test.status !== 'RESULTED') {
+            return false;
+          } else if (tabValue === 5 && test && test.status !== 'COMPLETED') {
+            return false;
+          }
+          return true;
+        });
+
+      console.log('Updated filtered tests array:', updatedFilteredTests);
+      setFilteredTests(updatedFilteredTests);
+    }
+
+    // Recalculate pending count whenever a test is updated
+    const pendingTests = tests.filter(
+      (test) => test && test.status === 'PENDING'
+    );
+    setPendingCount(pendingTests.length);
+
+    // Show success message and auto-hide it after 3 seconds
+    setSuccess(`Cập nhật xét nghiệm #${updatedTest.testId} thành công`);
+    setTimeout(() => setSuccess(null), 3000);
+  };
+  // Reset filters
+  const handleResetFilters = () => {
+    setStatusFilter('ALL');
+    setPaymentFilter('ALL');
+    setSearchTerm('');
+    setDateFilter('');
+  };
+
+  // Render status chip
+  const renderStatusChip = (status) => {
+    return (
+      <Chip
+        label={STATUS_LABELS[status] || status}
+        sx={{
+          backgroundColor: STATUS_COLORS[status] || '#757575',
+          color: '#fff',
+          fontWeight: 500,
+          minWidth: '100px',
+        }}
+      />
+    );
+  };
+
+  // Get payment method display
+  const getPaymentMethodDisplay = (test) => {
+    const method = test.paymentMethod;
+    const status = test.paymentStatus;
 
     return (
+      <Chip
+        icon={<PaymentIcon />}
+        label={PAYMENT_LABELS[method] || method}
+        size="small"
+        color={status === 'COMPLETED' ? 'success' : 'default'}
+        variant={status === 'COMPLETED' ? 'default' : 'outlined'}
+      />
+    );
+  };
+
+  // Get button based on test status
+  const getActionButton = (test) => {
+    switch (test.status) {
+      case 'PENDING':
+        return (
+          <>
+            {' '}
+            <Tooltip title="Xác nhận">
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<CheckCircleIcon />}
+                onClick={async () => {
+                  // Lưu ID để có thể cập nhật UI trước khi API hoàn tất
+                  const testIdToUpdate = test.testId;
+
+                  // Trực tiếp cập nhật UI ngay lập tức (optimistic update)
+                  const optimisticUpdatedTests = tests.map((t) =>
+                    t.testId === testIdToUpdate
+                      ? { ...t, status: 'CONFIRMED' }
+                      : t
+                  );
+                  setTests(optimisticUpdatedTests);
+
+                  // Cập nhật filteredTests dựa theo tab hiện tại
+                  if (tabValue === 1) {
+                    // Nếu đang ở tab "Chờ xử lý"
+                    // Xóa test đã được xác nhận khỏi danh sách filteredTests
+                    const newFilteredTests = filteredTests.filter(
+                      (t) => t.testId !== testIdToUpdate
+                    );
+                    setFilteredTests(newFilteredTests);
+                  }
+
+                  // Giảm số lượng pending
+                  setPendingCount((prev) => Math.max(0, prev - 1));
+
+                  // Hiển thị thông báo thành công
+                  setSuccess(`Đang xác nhận xét nghiệm #${testIdToUpdate}...`);
+
+                  // Vẫn gọi API để xác nhận trên server
+                  const success = await handleConfirmTestAction(testIdToUpdate);
+
+                  // Nếu thành công, cập nhật lại dữ liệu từ server để đồng bộ
+                  if (success) {
+                    setTimeout(() => fetchTests(), 500);
+                  } else {
+                    // Nếu thất bại, hoàn tác UI về trạng thái cũ
+                    const revertedTests = tests.map((t) =>
+                      t.testId === testIdToUpdate
+                        ? { ...t, status: 'PENDING' }
+                        : t
+                    );
+                    setTests(revertedTests);
+
+                    // Cập nhật lại filteredTests
+                    fetchTests();
+                  }
+                }}
+                sx={{
+                  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                }}
+              >
+                Xác nhận
+              </Button>
+            </Tooltip>
+            <Tooltip title="Hủy xét nghiệm">
+              <Button
+                variant="outlined"
+                size="small"
+                color="error"
+                startIcon={<CancelIcon />}
+                onClick={() => handleCancelTestAction(test.testId)}
+              >
+                Hủy
+              </Button>
+            </Tooltip>
+          </>
+        );
+      case 'CONFIRMED':
+        return (
+          <>
+            <Tooltip title="Lấy mẫu">
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<BiotechIcon />}
+                onClick={async () => {
+                  // Lưu ID để cập nhật UI ngay lập tức
+                  const testIdToUpdate = test.testId;
+
+                  // Cập nhật UI ngay lập tức (optimistic update)
+                  const optimisticUpdatedTests = tests.map((t) =>
+                    t.testId === testIdToUpdate
+                      ? { ...t, status: 'SAMPLED' }
+                      : t
+                  );
+                  setTests(optimisticUpdatedTests);
+
+                  // Cập nhật filteredTests dựa theo tab hiện tại
+                  if (tabValue === 2) {
+                    // Nếu đang ở tab "Đã xác nhận"
+                    const newFilteredTests = filteredTests.filter(
+                      (t) => t.testId !== testIdToUpdate
+                    );
+                    setFilteredTests(newFilteredTests);
+                  }
+
+                  // Hiển thị thông báo thành công
+                  setSuccess(
+                    `Đang cập nhật trạng thái lấy mẫu cho xét nghiệm #${testIdToUpdate}...`
+                  );
+
+                  // Gọi API để cập nhật trên server
+                  const success = await handleSampleTestAction(testIdToUpdate);
+
+                  // Nếu thành công, cập nhật lại dữ liệu từ server
+                  if (success) {
+                    setTimeout(() => fetchTests(), 500);
+                  } else {
+                    // Nếu thất bại, hoàn tác UI về trạng thái cũ
+                    const revertedTests = tests.map((t) =>
+                      t.testId === testIdToUpdate
+                        ? { ...t, status: 'CONFIRMED' }
+                        : t
+                    );
+                    setTests(revertedTests);
+                    fetchTests();
+                  }
+                }}
+                sx={{
+                  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                }}
+              >
+                Lấy mẫu
+              </Button>
+            </Tooltip>
+            <Tooltip title="Hủy xét nghiệm">
+              <Button
+                variant="outlined"
+                size="small"
+                color="error"
+                startIcon={<CancelIcon />}
+                onClick={() => handleCancelTestAction(test.testId)}
+              >
+                Hủy
+              </Button>
+            </Tooltip>
+          </>
+        );
+      case 'SAMPLED':
+        return (
+          <Tooltip title="Nhập kết quả">
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<ScienceIcon />}
+              onClick={() => {
+                // Lưu ID để cập nhật UI ngay lập tức
+                const testIdToUpdate = test.testId;
+
+                // Trước khi mở modal, hiển thị thông báo đang xử lý
+                setSuccess(
+                  `Đang mở form nhập kết quả cho xét nghiệm #${testIdToUpdate}...`
+                );
+
+                // Mở modal nhập kết quả
+                handleOpenTestModal(test);
+
+                // Không cần optimistic update ở đây vì việc nhập kết quả
+                // sẽ được xử lý trong modal, và cập nhật UI sau khi đóng modal
+              }}
+              sx={{
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                color: '#fff',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+              }}
+            >
+              Nhập kết quả
+            </Button>
+          </Tooltip>
+        );
+      case 'RESULTED':
+        return (
+          <Tooltip title="Xem kết quả">
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<ScienceIcon />}
+              onClick={() => handleOpenTestModal(test)}
+              sx={{
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                color: '#fff',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+              }}
+            >
+              Xem kết quả
+            </Button>
+          </Tooltip>
+        );
+      case 'COMPLETED':
+        return (
+          <Tooltip title="Xem chi tiết">
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleOpenTestModal(test)}
+              sx={{
+                borderColor: STATUS_COLORS[test.status] || '#26A69A',
+                color: STATUS_COLORS[test.status] || '#26A69A',
+              }}
+            >
+              Xem chi tiết
+            </Button>
+          </Tooltip>
+        );
+      default:
+        return (
+          <Tooltip title="Xem chi tiết">
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleOpenTestModal(test)}
+              sx={{
+                borderColor: STATUS_COLORS[test.status] || '#757575',
+                color: STATUS_COLORS[test.status] || '#757575',
+              }}
+            >
+              Xem chi tiết
+            </Button>
+          </Tooltip>
+        );
+    }
+  };
+
+  return (
+    <Container maxWidth="xl" sx={{ mt: 3, mb: 4 }}>
       <Paper
         elevation={3}
         sx={{
-          width: '100%',
-          overflow: 'hidden',
+          p: 3,
           borderRadius: 2,
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+          background: 'linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%)',
         }}
       >
-        <Box sx={{ p: 3, backgroundColor: '#f8f9fa' }}>
-          <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} sm={4}>
-              {' '}
-              <TextField
-                fullWidth
-                label="Tìm kiếm bệnh nhân"
-                value={searchTerm}
-                onChange={handleSearch}
-                placeholder="Tên, email hoặc dịch vụ xét nghiệm..."
-                variant="outlined"
-                size="small"
-                InputProps={{
-                  sx: {
-                    borderRadius: 2,
-                    backgroundColor: '#fff',
-                    '&:hover': {
-                      backgroundColor: '#f9f9f9',
-                    },
-                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)',
-                  },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              {' '}
-              <FormControl fullWidth size="small">
-                <InputLabel>Loại xét nghiệm</InputLabel>
-                <Select
-                  value={viewMode}
-                  onChange={(e) => handleChangeViewMode(e.target.value)}
-                  label="Loại xét nghiệm"
-                  sx={{
-                    borderRadius: 2,
-                    backgroundColor: '#fff',
-                    '&:hover': {
-                      backgroundColor: '#f9f9f9',
-                    },
-                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)',
-                  }}
-                >
-                  <MenuItem value="all">Tất cả xét nghiệm</MenuItem>
-                  <MenuItem value="single">Xét nghiệm đơn lẻ</MenuItem>
-                  <MenuItem value="package">Gói xét nghiệm</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              {' '}
-              <FormControl fullWidth size="small">
-                <InputLabel>Trạng thái xử lý</InputLabel>
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  label="Trạng thái xử lý"
-                  sx={{
-                    borderRadius: 2,
-                    backgroundColor: '#fff',
-                    '&:hover': {
-                      backgroundColor: '#f9f9f9',
-                    },
-                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)',
-                  }}
-                >
-                  <MenuItem value="all">Tất cả trạng thái</MenuItem>
-                  {Object.keys(TEST_STATUSES).map((status) => (
-                    <MenuItem
-                      key={status}
-                      value={status}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                      }}
-                    >
-                      <Chip
-                        label={TEST_STATUSES[status].label}
-                        color={TEST_STATUSES[status].color}
-                        size="small"
-                        sx={{ minWidth: '90px' }}
-                      />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        </Box>
-
-        {loading ? (
-          <Box sx={{ p: 6, textAlign: 'center' }}>
-            <Box
-              sx={{
-                display: 'inline-block',
-                position: 'relative',
-                width: '50px',
-                height: '50px',
-                animation: 'spin 1.2s linear infinite',
-                '@keyframes spin': {
-                  '0%': { transform: 'rotate(0deg)' },
-                  '100%': { transform: 'rotate(360deg)' },
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  border: '3px solid rgba(0,0,0,0.1)',
-                  borderRadius: '50%',
-                  borderTopColor: '#1976d2',
-                }}
-              ></Box>
-            </Box>
-            <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
-              Đang tải dữ liệu xét nghiệm...
-            </Typography>
-          </Box>
-        ) : error ? (
-          <Box sx={{ p: 6, textAlign: 'center' }}>
-            <Box
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(211, 47, 47, 0.1)',
-                mb: 2,
-              }}
-            >
-              <span role="img" aria-label="error" style={{ fontSize: '28px' }}>
-                ⚠️
-              </span>
-            </Box>
-            <Typography variant="h6" color="error.main" sx={{ mb: 1 }}>
-              Lỗi khi tải dữ liệu
-            </Typography>
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{
-                maxWidth: '500px',
-                mx: 'auto',
-                p: 1,
-                borderRadius: 1,
-                backgroundColor: 'error.light',
-                color: 'error.dark',
-              }}
-            >
-              {error}
-            </Typography>
-            <Button
-              variant="outlined"
-              color="primary"
-              sx={{ mt: 3 }}
-              onClick={fetchStaffTests}
-            >
-              Thử lại
-            </Button>
-          </Box>
-        ) : filteredTests.length === 0 ? (
-          <Box sx={{ p: 6, textAlign: 'center' }}>
-            <Box
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '70px',
-                height: '70px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                mb: 2,
-              }}
-            >
-              <span role="img" aria-label="empty" style={{ fontSize: '32px' }}>
-                🔍
-              </span>
-            </Box>
-            <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-              Không tìm thấy kết quả phù hợp
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Vui lòng thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác
-            </Typography>
-            {searchTerm && (
-              <Button
-                variant="outlined"
-                color="primary"
-                sx={{ mt: 2 }}
-                onClick={() => setSearchTerm('')}
-              >
-                Xóa từ khóa tìm kiếm
-              </Button>
-            )}
-          </Box>
-        ) : (
-          <>
-            <TableContainer sx={{ maxHeight: 600 }}>
-              <Table stickyHeader aria-label="sticky table">
-                <TableHead>
-                  <TableRow
-                    sx={{
-                      backgroundColor: '#e3f2fd',
-                      '& .MuiTableCell-head': {
-                        fontSize: '0.875rem',
-                        fontWeight: 600,
-                        color: '#1976d2',
-                        py: 2,
-                      },
-                    }}
-                  >
-                    <TableCell sx={{ fontWeight: 'bold' }}>
-                      Mã xét nghiệm
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Bệnh nhân</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>
-                      Loại xét nghiệm
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Ngày hẹn</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>
-                      Trạng thái
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>
-                      Thanh toán
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Quản lý</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredTests
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((row) => (
-                      <TableRow
-                        hover
-                        role="checkbox"
-                        tabIndex={-1}
-                        key={row.testId}
-                        sx={{
-                          '&:hover': {
-                            backgroundColor: '#f5f9ff',
-                          },
-                          transition: 'background-color 0.2s',
-                        }}
-                      >
-                        <TableCell>{row.testId}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="medium">
-                            {row.customerName}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {row.packageName || row.serviceName}
-                        </TableCell>
-                        <TableCell>{formatDate(row.appointmentDate)}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={getStatusDisplayText(row.status)}
-                            color={
-                              TEST_STATUSES[row.status]?.color || 'default'
-                            }
-                            size="small"
-                            sx={{ fontWeight: 'medium', px: 1 }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={getPaymentDisplayText(row.paymentMethod)}
-                            color={row.isPaid ? 'success' : 'primary'}
-                            size="small"
-                            sx={{ fontWeight: 'medium', px: 1 }}
-                          />
-                        </TableCell>{' '}
-                        <TableCell>
-                          <Box
-                            sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}
-                          >
-                            {row.packageId ? (
-                              <Button
-                                size="small"
-                                variant="contained"
-                                color="info"
-                                onClick={() => handleOpenPackageDialog(row)}
-                                startIcon={
-                                  <span role="img" aria-label="package">
-                                    📋
-                                  </span>
-                                }
-                                sx={{
-                                  borderRadius: 2,
-                                  textTransform: 'none',
-                                  boxShadow: '0 2px 5px rgba(0, 0, 0, 0.08)',
-                                  fontWeight: 500,
-                                  px: 2,
-                                  '&:hover': {
-                                    boxShadow: '0 3px 10px rgba(0, 0, 0, 0.12)',
-                                    backgroundColor: '#0288d1',
-                                  },
-                                }}
-                              >
-                                Chi tiết gói
-                              </Button>
-                            ) : (
-                              <>
-                                {/* Buttons based on test status */}{' '}
-                                {row.status === 'PENDING' && (
-                                  <Button
-                                    size="small"
-                                    variant="contained"
-                                    color="warning"
-                                    onClick={() =>
-                                      handleConfirmTest(row.testId)
-                                    }
-                                    startIcon={
-                                      <span role="img" aria-label="confirm">
-                                        ✅
-                                      </span>
-                                    }
-                                    sx={{
-                                      borderRadius: 2,
-                                      textTransform: 'none',
-                                      fontWeight: 500,
-                                      boxShadow:
-                                        '0 2px 5px rgba(0, 0, 0, 0.08)',
-                                      '&:hover': {
-                                        boxShadow:
-                                          '0 3px 10px rgba(0, 0, 0, 0.12)',
-                                      },
-                                    }}
-                                  >
-                                    Xác nhận yêu cầu
-                                  </Button>
-                                )}
-                                {row.status === 'CONFIRMED' && (
-                                  <Button
-                                    size="small"
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={() => handleSampleTest(row.testId)}
-                                    startIcon={
-                                      <span role="img" aria-label="sample">
-                                        🧪
-                                      </span>
-                                    }
-                                    sx={{
-                                      borderRadius: 2,
-                                      textTransform: 'none',
-                                      fontWeight: 500,
-                                      boxShadow:
-                                        '0 2px 5px rgba(0, 0, 0, 0.08)',
-                                      '&:hover': {
-                                        boxShadow:
-                                          '0 3px 10px rgba(0, 0, 0, 0.12)',
-                                      },
-                                    }}
-                                  >
-                                    Tiến hành lấy mẫu
-                                  </Button>
-                                )}
-                                {(row.status === 'SAMPLED' ||
-                                  row.status === 'CONFIRMED') && (
-                                  <Button
-                                    size="small"
-                                    variant="contained"
-                                    color="secondary"
-                                    onClick={() => handleOpenResultDialog(row)}
-                                    startIcon={
-                                      <span role="img" aria-label="result">
-                                        📝
-                                      </span>
-                                    }
-                                    sx={{
-                                      borderRadius: 2,
-                                      textTransform: 'none',
-                                      fontWeight: 500,
-                                      boxShadow:
-                                        '0 2px 5px rgba(0, 0, 0, 0.08)',
-                                      '&:hover': {
-                                        boxShadow:
-                                          '0 3px 10px rgba(0, 0, 0, 0.12)',
-                                      },
-                                    }}
-                                  >
-                                    Cập nhật kết quả
-                                  </Button>
-                                )}
-                                {row.status === 'RESULTED' && (
-                                  <Button
-                                    size="small"
-                                    variant="contained"
-                                    color="success"
-                                    onClick={() =>
-                                      handleCompleteTest(row.testId)
-                                    }
-                                    startIcon={
-                                      <span role="img" aria-label="complete">
-                                        ✓
-                                      </span>
-                                    }
-                                    sx={{
-                                      borderRadius: 2,
-                                      textTransform: 'none',
-                                      fontWeight: 500,
-                                      boxShadow:
-                                        '0 2px 5px rgba(0, 0, 0, 0.08)',
-                                      '&:hover': {
-                                        boxShadow:
-                                          '0 3px 10px rgba(0, 0, 0, 0.12)',
-                                        backgroundColor: '#2e7d32',
-                                      },
-                                    }}
-                                  >
-                                    Hoàn tất xét nghiệm
-                                  </Button>
-                                )}{' '}
-                                {/* Always show view button, with different wording based on status */}{' '}
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  onClick={() => handleOpenResultDialog(row)}
-                                  startIcon={
-                                    <span role="img" aria-label="view">
-                                      {row.status === 'COMPLETED' ? '📋' : '👁️'}
-                                    </span>
-                                  }
-                                  sx={{
-                                    borderRadius: 2,
-                                    textTransform: 'none',
-                                    borderColor:
-                                      row.status === 'COMPLETED'
-                                        ? 'success.main'
-                                        : 'grey.400',
-                                    color:
-                                      row.status === 'COMPLETED'
-                                        ? 'success.dark'
-                                        : 'grey.700',
-                                    fontWeight: 500,
-                                    '&:hover': {
-                                      backgroundColor:
-                                        row.status === 'COMPLETED'
-                                          ? 'rgba(76, 175, 80, 0.04)'
-                                          : 'rgba(0, 0, 0, 0.04)',
-                                      borderColor:
-                                        row.status === 'COMPLETED'
-                                          ? 'success.main'
-                                          : 'grey.500',
-                                    },
-                                  }}
-                                >
-                                  {row.status === 'COMPLETED'
-                                    ? 'Xem kết quả'
-                                    : 'Xem hồ sơ'}
-                                </Button>
-                              </>
-                            )}
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 20, 50]}
-              component="div"
-              count={filteredTests.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={(event, newPage) => setPage(newPage)}
-              onRowsPerPageChange={(event) => {
-                setRowsPerPage(parseInt(event.target.value, 10));
-                setPage(0);
-              }}
-            />
-          </>
+        <Typography
+          variant="h4"
+          gutterBottom
+          sx={{ fontWeight: 600, color: '#334155', mb: 3 }}
+        >
+          Quản lý xét nghiệm STI
+        </Typography>{' '}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
         )}
-      </Paper>
-    );
-  };
-  return (
-    <Container maxWidth="xl">
-      <Box
-        sx={{
-          mb: 4,
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', md: 'center' },
-        }}
-      >
-        <Box>
+        {success && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {success}
+          </Alert>
+        )}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
           {' '}
-          <Typography
-            variant="h4"
-            component="h1"
-            gutterBottom
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            aria-label="test management tabs"
+            indicatorColor="primary"
+            textColor="primary"
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
             sx={{
-              fontWeight: 700,
-              color: 'primary.main',
-              position: 'relative',
-              '&:after': {
-                content: '""',
-                position: 'absolute',
-                bottom: '-8px',
-                left: 0,
-                width: '60px',
-                height: '4px',
-                backgroundColor: 'primary.main',
-                borderRadius: '2px',
+              '& .MuiTab-root': {
+                fontWeight: 600,
+                fontSize: '1rem',
               },
             }}
           >
-            Cập nhật kết quả xét nghiệm
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 2 }}>
-            Theo dõi và cập nhật kết quả xét nghiệm STI của bệnh nhân
-          </Typography>
+            <Tab label="Tất cả xét nghiệm" />
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  Chờ xử lý
+                  {pendingCount > 0 && (
+                    <Chip
+                      size="small"
+                      label={pendingCount}
+                      color="error"
+                      sx={{ ml: 1, height: 20, minWidth: 20 }}
+                    />
+                  )}
+                </Box>
+              }
+            />
+            <Tab label="Đã xác nhận" />
+            <Tab label="Đã lấy mẫu" />
+            <Tab label="Có kết quả" />
+            <Tab label="Hoàn thành" />
+          </Tabs>
         </Box>
-
-        {/* Toggle switch for real/mock data */}
-        <Box
-          sx={{
-            mt: { xs: 2, md: 0 },
-            p: 2,
-            backgroundColor: '#f8f9fa',
-            borderRadius: 2,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-          }}
-        >
+        {/* Filter Section */}
+        <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
           {' '}
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            Nguồn dữ liệu:
-          </Typography>
-          <Box sx={{ display: 'flex' }}>
-            <Button
-              variant={useMockData ? 'contained' : 'outlined'}
-              color="secondary"
-              onClick={() => setUseMockData(true)}
-              sx={{
-                mr: 1,
-                borderRadius: 2,
-                textTransform: 'none',
-                px: 2,
-                minWidth: '110px',
-                boxShadow: useMockData ? 2 : 0,
+          <Grid item xs={12} md={4}>
+            <TextField
+              label="Tìm kiếm theo tên/mã"
+              variant="outlined"
+              fullWidth
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <SearchIcon sx={{ color: 'action.active', mr: 1 }} />
+                ),
               }}
-              size="small"
-            >
-              <span style={{ fontWeight: useMockData ? 600 : 400 }}>
-                Giả lập
-              </span>
-            </Button>
-            <Button
-              variant={!useMockData ? 'contained' : 'outlined'}
-              color="primary"
-              onClick={() => setUseMockData(false)}
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                px: 2,
-                minWidth: '110px',
-                boxShadow: !useMockData ? 2 : 0,
+            />{' '}
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <TextField
+              label="Lọc theo ngày"
+              variant="outlined"
+              type="date"
+              fullWidth
+              value={dateFilter}
+              InputLabelProps={{
+                shrink: true,
               }}
-              size="small"
-            >
-              <span style={{ fontWeight: !useMockData ? 600 : 400 }}>
-                Dữ liệu API
-              </span>
+              onChange={(e) => setDateFilter(e.target.value)}
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <FormControl fullWidth>
+              <InputLabel>Lọc theo trạng thái</InputLabel>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                label="Lọc theo trạng thái"
+                startAdornment={
+                  <FilterListIcon sx={{ color: 'action.active', mr: 1 }} />
+                }
+              >
+                <MenuItem value="ALL">Tất cả trạng thái</MenuItem>
+                <MenuItem value="PENDING">Chờ xử lý</MenuItem>
+                <MenuItem value="CONFIRMED">Đã xác nhận</MenuItem>
+                <MenuItem value="SAMPLED">Đã lấy mẫu</MenuItem>
+                <MenuItem value="RESULTED">Có kết quả</MenuItem>
+                <MenuItem value="COMPLETED">Hoàn thành</MenuItem>
+                <MenuItem value="CANCELED">Đã hủy</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <FormControl fullWidth>
+              <InputLabel>Phương thức thanh toán</InputLabel>
+              <Select
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value)}
+                label="Phương thức thanh toán"
+              >
+                <MenuItem value="ALL">Tất cả</MenuItem>
+                <MenuItem value="COD">Tiền mặt</MenuItem>
+                <MenuItem value="VISA">Thẻ tín dụng</MenuItem>
+                <MenuItem value="QR_CODE">Chuyển khoản QR</MenuItem>
+              </Select>{' '}
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={1}>
+            <Button fullWidth variant="outlined" onClick={handleResetFilters}>
+              Đặt lại
             </Button>
-          </Box>
-        </Box>
-      </Box>
-      {renderTestsTable()}
-      {/* Dialog cập nhật kết quả xét nghiệm đơn lẻ */}{' '}
-      <SingleTestResultModal
-        open={openResultDialog}
-        onClose={handleCloseResultDialog}
-        currentTest={currentUserTest}
-        handleResultChange={handleResultChange}
-        handleSaveResult={handleSaveResult}
-        handleConfirmTest={handleConfirmTest}
-        handleSampleTest={handleSampleTest}
-        handleCompleteTest={handleCompleteTest}
-        resultUpdating={resultUpdating}
-        TEST_STATUSES={TEST_STATUSES}
-        readOnly={currentUserTest?.isReadOnly || false}
-      />{' '}
-      {/* Dialog cập nhật kết quả cho một xét nghiệm trong gói */}{' '}
-      <TestInPackageModal
-        open={openTestInPackageDialog}
-        onClose={handleCloseTestInPackageDialog}
-        currentPackage={currentPackage}
-        currentTestInPackage={currentTestInPackage}
-        handleTestInPackageChange={handleTestInPackageChange}
-        handleSaveTestInPackage={handleSaveTestInPackage}
-        packageResultUpdating={packageResultUpdating}
-        TEST_STATUSES={TEST_STATUSES}
-        readOnly={
-          currentTestInPackage?.isReadOnly ||
-          currentPackage?.isReadOnly ||
-          false
-        }
-      />
-      {/* Dialog quản lý gói xét nghiệm */}{' '}
-      <PackageManagementModal
-        open={openPackageDialog && currentPackage !== null}
-        onClose={handleClosePackageDialog}
-        currentPackage={currentPackage}
-        handlePackageChange={handlePackageChange}
-        handleSavePackage={handleSavePackage}
-        packageResultUpdating={packageResultUpdating}
-        TEST_STATUSES={TEST_STATUSES}
-        getStatusDisplayText={getStatusDisplayText}
-        getResultColor={getResultColor}
-        formatDate={formatDate}
-        handleOpenTestInPackageDialog={handleOpenTestInPackageDialog}
-        handleConfirmPackage={handleConfirmPackage}
-        handleConfirmTest={handleConfirmTest}
-        readOnly={currentPackage?.isReadOnly || false}
-      />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Button
+              fullWidth
+              variant="contained"
+              startIcon={<RefreshIcon />}
+              onClick={fetchTests}
+              sx={{
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                color: '#fff',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                height: '56px',
+              }}
+            >
+              Làm mới dữ liệu
+            </Button>
+          </Grid>
+        </Grid>
+        {/* Test Table */}
+        <TabPanel value={tabValue} index={0}>
+          {renderTestTable()}
+        </TabPanel>
+        <TabPanel value={tabValue} index={1}>
+          {renderTestTable()}
+        </TabPanel>
+        <TabPanel value={tabValue} index={2}>
+          {renderTestTable()}
+        </TabPanel>
+        <TabPanel value={tabValue} index={3}>
+          {renderTestTable()}
+        </TabPanel>
+        <TabPanel value={tabValue} index={4}>
+          {renderTestTable()}
+        </TabPanel>
+        <TabPanel value={tabValue} index={5}>
+          {renderTestTable()}
+        </TabPanel>
+        {/* Modals */}{' '}
+        <SingleTestResultModal
+          open={openSingleModal}
+          onClose={() => setOpenSingleModal(false)}
+          currentTest={selectedTest}
+          handleSaveResult={handleAddResultsAction}
+          handleConfirmTest={handleConfirmTestAction}
+          handleSampleTest={handleSampleTestAction}
+          handleCompleteTest={handleCompleteTestAction}
+          handleCancelTest={handleCancelTestAction}
+          onTestUpdated={(updatedTest) => {
+            // Update test in state and close modal with optimistic UI update
+            console.log(
+              'Test updated through modal, applying to UI',
+              updatedTest
+            );
+            updateTestInState(updatedTest);
+            setOpenSingleModal(false);
+
+            // Show success message
+            setSuccess(
+              `Đã cập nhật thành công xét nghiệm #${updatedTest.testId}`
+            );
+            setTimeout(() => setSuccess(null), 3000);
+
+            // Refresh data after a short delay to ensure backend has processed the change
+            setTimeout(() => {
+              console.log('Refreshing data after single test update');
+              fetchTests();
+            }, 500);
+          }}
+        />
+        <PackageManagementModal
+          open={openPackageModal}
+          onClose={() => setOpenPackageModal(false)}
+          packageTest={selectedTest}
+          onTestSelect={handleOpenTestInPackageModal}
+          onTestUpdated={(updatedTest) => {
+            // Update test in state and close modal
+            updateTestInState(updatedTest);
+            setOpenPackageModal(false);
+
+            // Refresh data after a short delay
+            setTimeout(() => {
+              console.log('Refreshing data after package test update');
+              fetchTests();
+            }, 500);
+          }}
+        />
+        <TestInPackageModal
+          open={openTestInPackageModal}
+          onClose={() => setOpenTestInPackageModal(false)}
+          packageTest={selectedTest}
+          testComponent={selectedTestComponent}
+          onTestUpdated={(updatedTest) => {
+            // Update test in state and close modal
+            updateTestInState(updatedTest);
+            setOpenTestInPackageModal(false);
+            // Refresh data after a short delay
+            setTimeout(() => {
+              console.log('Refreshing data after component test update');
+              fetchTests();
+            }, 500);
+          }}
+        />
+      </Paper>
     </Container>
-  );
+  ); // Function to render the test table
+  function renderTestTable() {
+    // Ensure tests and filteredTests are accessible
+    const testsData = tests || [];
+
+    console.log(
+      'renderTestTable called, loading:',
+      loading,
+      'tests length:',
+      testsData.length
+    );
+    console.log('filteredTests:', filteredTests);
+
+    if (loading) {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+          <CircularProgress />
+        </Box>
+      );
+    }
+
+    if (
+      !filteredTests ||
+      !Array.isArray(filteredTests) ||
+      filteredTests.length === 0
+    ) {
+      return (
+        <Box sx={{ textAlign: 'center', p: 3 }}>
+          {' '}
+          <Typography variant="h6" color="textSecondary">
+            Không có dữ liệu xét nghiệm
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            {testsData && testsData.length > 0
+              ? `Có ${testsData.length} xét nghiệm trước khi lọc.`
+              : 'Không có dữ liệu từ máy chủ.'}
+          </Typography>
+        </Box>
+      );
+    }
+
+    // Slice data for pagination
+    const currentPageTests = filteredTests.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
+
+    return (
+      <Box>
+        <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
+          <Table sx={{ minWidth: 650 }}>
+            <TableHead sx={{ backgroundColor: '#f1f5f9' }}>
+              <TableRow>
+                {' '}
+                <TableCell sx={{ fontWeight: 'bold' }}>Mã xét nghiệm</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Khách hàng</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Dịch vụ</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Ngày hẹn</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>
+                  {tabValue === 4 || tabValue === 5
+                    ? 'Ngày có kết quả'
+                    : 'Thanh toán'}
+                </TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Trạng thái</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Thao tác</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {currentPageTests.map((test) => (
+                <TableRow key={test.testId} hover>
+                  <TableCell>
+                    <Box sx={{ fontWeight: 500 }}>#{test.testId}</Box>
+                    <Typography variant="caption" color="textSecondary">
+                      {test.packageId ? 'Gói xét nghiệm' : 'Xét nghiệm đơn lẻ'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {test.customerName}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      {test.customerPhone}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" noWrap>
+                      {test.serviceName || 'N/A'}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      {test.totalPrice &&
+                        `${test.totalPrice.toLocaleString('vi-VN')}đ`}
+                    </Typography>
+                  </TableCell>{' '}
+                  <TableCell>
+                    {test.appointmentDate ? (
+                      formatDateDisplay(test.appointmentDate)
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        Không có ngày hẹn
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {tabValue === 4 || tabValue === 5 ? (
+                      test.resultDate ? (
+                        formatDateDisplay(test.resultDate)
+                      ) : (
+                        <Typography variant="caption" color="text.secondary">
+                          Chưa cập nhật
+                        </Typography>
+                      )
+                    ) : (
+                      getPaymentMethodDisplay(test)
+                    )}
+                  </TableCell>
+                  <TableCell>{renderStatusChip(test.status)}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      {getActionButton(test)}
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component="div"
+          count={filteredTests.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Số dòng mỗi trang:"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} của ${count}`
+          }
+        />
+      </Box>
+    );
+  }
 };
 
 export default STITestManagementContent;

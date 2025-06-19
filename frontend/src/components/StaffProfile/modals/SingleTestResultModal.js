@@ -1,432 +1,885 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Button,
   Dialog,
-  DialogActions,
-  DialogContent,
   DialogTitle,
-  Divider,
-  FormControl,
-  Grid,
-  InputLabel,
-  MenuItem,
-  Select,
+  DialogContent,
+  DialogActions,
+  Button,
   TextField,
   Typography,
   Box,
-  useTheme,
+  CircularProgress,
+  Alert,
   Paper,
+  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
-import TestResultInput from '../components/TestResultInput';
+import {
+  getSTIServiceById,
+  getTestResultsByTestId,
+} from '../../../services/stiService';
+import PreviewIcon from '@mui/icons-material/Preview';
+
+// Helper function to debug token status
+const checkTokenStatus = () => {
+  try {
+    const tokenStr = localStorage.getItem('token');
+    if (!tokenStr) {
+      console.warn('No token found in localStorage');
+      return false;
+    }
+
+    const token = JSON.parse(tokenStr);
+    if (!token || !token.accessToken) {
+      console.warn('Token found but missing accessToken');
+      return false;
+    }
+
+    // Simple check if token is expired by decoding JWT
+    // Not 100% accurate but helps debugging
+    const base64Url = token.accessToken.split('.')[1];
+    if (!base64Url) {
+      console.warn('Token appears malformed, cannot check expiration');
+      return false;
+    }
+
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(window.atob(base64));
+
+    if (payload && payload.exp) {
+      const expirationTime = payload.exp * 1000; // Convert to milliseconds
+      const currentTime = Date.now();
+      const timeLeft = expirationTime - currentTime;
+
+      console.log(`Token expires in: ${Math.floor(timeLeft / 1000)} seconds`);
+      return timeLeft > 0;
+    }
+
+    return true; // Cannot determine expiration, assume valid
+  } catch (error) {
+    console.error('Error checking token status:', error);
+    return false;
+  }
+};
 
 const SingleTestResultModal = ({
   open,
   onClose,
   currentTest,
-  handleResultChange,
   handleSaveResult,
   handleConfirmTest,
   handleSampleTest,
   handleCompleteTest,
-  resultUpdating,
-  TEST_STATUSES,
-  readOnly = false,
+  handleCancelTest,
+  onTestUpdated,
 }) => {
-  const theme = useTheme();
+  // Debug log when component mounts or updates with new test
+  useEffect(() => {
+    if (open && currentTest) {
+      console.group('SingleTestResultModal Debugging');
+      console.log('Current test full data:', currentTest);
+      console.log('Service ID:', currentTest.serviceId);
+      console.log('Components check:', {
+        testComponents: currentTest.testComponents,
+        components: currentTest.components,
+        hasTestComponents: !!(
+          currentTest.testComponents &&
+          Array.isArray(currentTest.testComponents)
+        ),
+        hasComponents: !!(
+          currentTest.components && Array.isArray(currentTest.components)
+        ),
+      });
+      console.groupEnd();
+    }
+  }, [open, currentTest]);
 
-  if (!currentTest) return null;
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [serviceData, setServiceData] = useState(null);
+  const [results, setResults] = useState([]);
+
+  // Extract testId from currentTest
+  const testId = currentTest?.testId;
+
+  // Function to fetch service data from API
+  const fetchServiceData = useCallback(
+    async (serviceId) => {
+      try {
+        console.log('Fetching service data for ID:', serviceId);
+
+        let response;
+        try {
+          response = await getSTIServiceById(serviceId);
+          console.log('API Response for service:', response);
+        } catch (apiError) {
+          console.error('API error in getSTIServiceById:', apiError);
+          // If we get a 401, we might still have data after token refresh
+          if (
+            apiError.status === 401 ||
+            (apiError.response && apiError.response.status === 401)
+          ) {
+            console.log(
+              'Received 401 but continuing as token refresh may have succeeded'
+            );
+            // Try the request again after a small delay
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            try {
+              response = await getSTIServiceById(serviceId);
+              console.log(
+                'Retry API Response for service after 401:',
+                response
+              );
+            } catch (retryError) {
+              throw retryError;
+            }
+          } else {
+            throw apiError;
+          }
+        }
+
+        // Handle different API response formats
+        let serviceInfo = null;
+
+        if (response && response.success && response.data) {
+          // Format: { success: true, message: "...", data: {...} }
+          serviceInfo = response.data;
+          console.log('Found data in success/data format');
+        } else if (response && response.status === 'SUCCESS' && response.data) {
+          // Format: { status: "SUCCESS", data: {...} }
+          serviceInfo = response.data;
+          console.log('Found data in status/data format');
+        } else if (response && response.id) {
+          // Direct object response format
+          serviceInfo = response;
+          console.log('Found direct object format');
+        } else if (response && typeof response === 'object') {
+          // Try to use the response directly as a fallback
+          serviceInfo = response;
+          console.log('Using response object directly');
+        }
+
+        console.log('Service info extracted:', serviceInfo);
+
+        if (serviceInfo) {
+          console.log('Processing service info:', serviceInfo);
+
+          // Extract components from the service data
+          const components = serviceInfo.components || [];
+
+          console.log('Found components:', components);
+
+          setServiceData({
+            id: serviceInfo.id,
+            name: serviceInfo.name,
+            description: serviceInfo.description,
+            components: components.map((comp) => ({
+              componentId: comp.componentId || comp.id,
+              componentName: comp.componentName || comp.name,
+              normalRange: comp.normalRange || comp.referenceRange || '',
+              unit: comp.unit || '',
+            })),
+          });
+
+          // Initialize results from fetched components
+          if (components.length > 0) {
+            const initialResults = components.map((comp) => {
+              // For each component, look for existing results in currentTest
+              const existingResult =
+                currentTest?.testComponents?.find(
+                  (tc) => tc.componentId === (comp.componentId || comp.id)
+                ) || {};
+
+              return {
+                componentId: comp.componentId || comp.id,
+                resultValue: existingResult.resultValue || '',
+                normalRange: comp.normalRange || comp.referenceRange || '',
+                unit: comp.unit || '',
+              };
+            });
+
+            setResults(initialResults);
+            console.log('Initialized results from API data:', initialResults);
+          } else {
+            console.warn('No components found in API response:', serviceInfo);
+          }
+        } else {
+          console.error(
+            'Failed to fetch service data or invalid response format:',
+            response
+          );
+          setError('Could not load service components. Invalid data format.');
+        }
+      } catch (err) {
+        console.error('Error fetching service data:', err);
+        setError(
+          `Failed to load service data: ${err.message || 'Unknown error'}`
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentTest]
+  );
+
+  // Add function to fetch test results
+  const fetchTestResults = useCallback(async (testId) => {
+    try {
+      console.log('Fetching test results for test ID:', testId);
+      const response = await getTestResultsByTestId(testId);
+      console.log('Test results response:', response);
+
+      if (response && (response.data || Array.isArray(response))) {
+        const resultsData = response.data || response;
+
+        if (
+          resultsData &&
+          Array.isArray(resultsData) &&
+          resultsData.length > 0
+        ) {
+          console.log('Updating results with fetched data:', resultsData);
+
+          // Update results state with fetched data
+          setResults(
+            resultsData.map((result) => ({
+              componentId: result.componentId,
+              resultValue: result.resultValue || '',
+              normalRange: result.normalRange || '',
+              unit: result.unit || '',
+            }))
+          );
+
+          return resultsData;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching test results:', error);
+      return null;
+    }
+  }, []);
+
+  // Initialize with test data and components when currentTest changes
+  useEffect(() => {
+    if (currentTest) {
+      setLoading(true);
+
+      console.log('Current test data:', currentTest);
+
+      const serviceId = currentTest.serviceId;
+      const testId = currentTest.testId;
+
+      // Check if the test already has results
+      const hasResults =
+        currentTest.status === 'RESULTED' || currentTest.status === 'COMPLETED';
+
+      // If the test has results, fetch them
+      if (hasResults && testId) {
+        fetchTestResults(testId)
+          .then((testResults) => {
+            console.log('Test results fetched:', testResults);
+          })
+          .catch((error) => {
+            console.error('Failed to fetch test results:', error);
+          });
+      }
+
+      if (serviceId) {
+        // Fetch service data with components from API
+        fetchServiceData(serviceId);
+      } else {
+        // Fallback to components in the currentTest if serviceId is not available
+        const components =
+          currentTest.testComponents &&
+          Array.isArray(currentTest.testComponents)
+            ? currentTest.testComponents
+            : currentTest.components && Array.isArray(currentTest.components)
+              ? currentTest.components
+              : [];
+
+        console.log('Found components in currentTest:', components);
+
+        if (components.length > 0) {
+          // Set service data
+          setServiceData({
+            id: currentTest.serviceId,
+            name: currentTest.serviceName || currentTest.name,
+            description:
+              currentTest.serviceDescription || currentTest.description,
+            components: components.map((comp) => ({
+              componentId: comp.componentId,
+              componentName: comp.componentName || comp.name,
+              normalRange: comp.normalRange || comp.referenceRange || '',
+              unit: comp.unit || '',
+            })),
+          });
+
+          // Initialize results from components
+          const initialResults = components.map((comp) => ({
+            componentId: comp.componentId,
+            resultValue: comp.resultValue || '',
+            normalRange: comp.normalRange || comp.referenceRange || '',
+            unit: comp.unit || '',
+          }));
+
+          setResults(initialResults);
+        } else {
+          console.warn(
+            'No components found in currentTest and no serviceId to fetch data:',
+            currentTest
+          );
+        }
+        setLoading(false);
+      }
+    }
+  }, [currentTest, fetchServiceData, fetchTestResults]);
+
+  // Reset states when modal closes
+  useEffect(() => {
+    if (!open) {
+      setError(null);
+      setSuccess(null);
+    }
+  }, [open]);
+
+  // Reset when currentTest changes
+  useEffect(() => {
+    if (currentTest) {
+      setError(null);
+      setSuccess(null);
+      setResults([]);
+    }
+  }, [currentTest]);
+
+  const handleResultChange = (componentId, field, value) => {
+    setResults((prevResults) =>
+      prevResults.map((result) =>
+        result.componentId === componentId
+          ? { ...result, [field]: value }
+          : result
+      )
+    );
+  };
+  const handleSaveResults = async () => {
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    // Validate that all results have values
+    const hasEmptyValues = results.some((result) => !result.resultValue.trim());
+
+    // Add detailed validation logging
+    console.group('Results validation');
+    console.log('Current results array:', results);
+    console.log('Has empty values:', hasEmptyValues);
+    if (hasEmptyValues) {
+      const emptyResults = results.filter((r) => !r.resultValue.trim());
+      console.log('Empty results:', emptyResults);
+    }
+
+    // Validate all component IDs
+    const invalidComponentIds = results.filter((r) => {
+      const id = r.componentId;
+      return (
+        id === undefined ||
+        id === null ||
+        (typeof id === 'string' && (!id.trim() || isNaN(parseInt(id))))
+      );
+    });
+    console.log('Invalid component IDs:', invalidComponentIds);
+    console.groupEnd();
+
+    if (hasEmptyValues) {
+      setError('Please provide values for all test components');
+      setSaving(false);
+      return;
+    }
+
+    try {
+      // Build the request data with properly formatted results
+      const formattedResults = results.map((result) => ({
+        componentId:
+          typeof result.componentId === 'number'
+            ? result.componentId
+            : parseInt(result.componentId),
+        resultValue: result.resultValue,
+        normalRange: result.normalRange || '',
+        unit: result.unit || '',
+      }));
+
+      const requestData = {
+        status: 'RESULTED', // This matches the model's STITestStatus.RESULTED value
+        results: formattedResults,
+      };
+      console.log(
+        'Request data for saving results:',
+        JSON.stringify(requestData, null, 2)
+      );
+
+      // Check token status before making API call
+      const tokenValid = checkTokenStatus();
+      console.log(
+        'Token status check before API call:',
+        tokenValid ? 'Valid' : 'Invalid/Expired'
+      );
+
+      if (!handleSaveResult) {
+        setError('Cannot save results: No handler provided');
+        setSaving(false);
+        return;
+      }
+
+      // Use the parent component's handler with improved error handling
+      try {
+        console.log(`Saving results for test ID: ${testId}`);
+        const response = await handleSaveResult(testId, requestData);
+        console.log('Save result response:', response);
+
+        // Successfully saved results
+        if (response && (response.status === 'SUCCESS' || response.success)) {
+          setSuccess('Test results saved successfully');
+
+          // Update test with the returned data
+          if (onTestUpdated && response.data) {
+            onTestUpdated(response.data);
+          }
+
+          // Try to update status to COMPLETED if handler exists
+          if (handleCompleteTest) {
+            try {
+              console.log('Updating test status to COMPLETED');
+              const completeResponse = await handleCompleteTest(testId);
+              console.log('Complete test response:', completeResponse);
+
+              if (completeResponse && completeResponse.status === 'SUCCESS') {
+                setSuccess(
+                  'Test results saved and status updated to COMPLETED'
+                );
+                if (onTestUpdated && completeResponse.data) {
+                  onTestUpdated(completeResponse.data);
+                }
+              }
+            } catch (completeError) {
+              console.error(
+                'Error updating test status to COMPLETED:',
+                completeError
+              );
+              // Error updating status, but results were saved, so still successful
+            }
+          }
+
+          // Close modal after showing success message
+          setTimeout(() => onClose(), 1500);
+          return;
+        }
+
+        // Handle case where response contains data despite error status
+        else if (response && response.data) {
+          console.log('Received data despite error status:', response);
+          setSuccess('Test results saved successfully');
+
+          if (onTestUpdated) {
+            onTestUpdated(response.data);
+          }
+
+          // Try to update status to COMPLETED
+          if (handleCompleteTest) {
+            try {
+              await handleCompleteTest(testId);
+            } catch (completeError) {
+              console.error('Error updating status after save:', completeError);
+            }
+          }
+
+          setTimeout(() => onClose(), 1500);
+          return;
+        }
+
+        // Handle explicit error case
+        else {
+          throw new Error(response?.message || 'Failed to save test results');
+        }
+      } catch (apiError) {
+        console.error('API error in handleSaveResult:', apiError);
+
+        // Check for 401 - token might have refreshed
+        if (
+          apiError.status === 401 ||
+          (apiError.response && apiError.response.status === 401)
+        ) {
+          console.log('Received 401, waiting for token refresh');
+
+          // Wait for token refresh and try again
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          try {
+            // Try one more time with refreshed token
+            console.log('Retrying save after token refresh');
+            const retryResponse = await handleSaveResult(testId, requestData);
+
+            if (
+              retryResponse &&
+              (retryResponse.status === 'SUCCESS' || retryResponse.data)
+            ) {
+              setSuccess('Test results saved successfully after token refresh');
+              if (onTestUpdated && retryResponse.data) {
+                onTestUpdated(retryResponse.data);
+              }
+              setTimeout(() => onClose(), 1500);
+              return;
+            } else {
+              throw new Error('Failed to save results after token refresh');
+            }
+          } catch (retryError) {
+            console.error('Failed retry after token refresh:', retryError);
+            throw retryError;
+          }
+        } else {
+          throw apiError; // Re-throw for the outer catch
+        }
+      }
+    } catch (err) {
+      console.error('Error saving test results:', err);
+      setError(err?.message || 'An error occurred while saving the results');
+    } finally {
+      setSaving(false);
+    }
+  }; // Function to handle viewing results (fetches both service data and test results)
+  const handleViewResults = async () => {
+    if (!currentTest || !currentTest.serviceId || !currentTest.testId) {
+      setError('Cannot view results: Missing test or service information');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Fetch service data
+      console.log(
+        'Fetching service data for viewing results. Service ID:',
+        currentTest.serviceId
+      );
+      await fetchServiceData(currentTest.serviceId);
+
+      // Fetch test results
+      console.log(
+        'Fetching test results for viewing. Test ID:',
+        currentTest.testId
+      );
+      const testResults = await fetchTestResults(currentTest.testId);
+
+      if (testResults) {
+        setSuccess('Test results loaded successfully');
+      } else {
+        console.warn('No test results found for test ID:', currentTest.testId);
+      }
+    } catch (err) {
+      console.error('Error viewing test results:', err);
+      setError(
+        `Failed to load test results: ${err.message || 'Unknown error'}`
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!open) return null;
 
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={() => !saving && onClose()}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
-          overflow: 'hidden',
-        },
-      }}
+      aria-labelledby="test-result-modal-title"
     >
-      <DialogTitle
-        sx={{
-          background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-          color: 'white',
-          py: 2.5,
-          px: 3,
-          fontSize: '1.1rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Box component="span">
-          <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
-            Cập nhật kết quả xét nghiệm
-          </Typography>
-          <Typography variant="body2" fontWeight={400} sx={{ opacity: 0.9 }}>
-            {currentTest.serviceName}
-          </Typography>
-        </Box>
+      {' '}
+      <DialogTitle id="test-result-modal-title">
+        {currentTest &&
+        (currentTest.status === 'RESULTED' ||
+          currentTest.status === 'COMPLETED')
+          ? 'View Test Results'
+          : currentTest && currentTest.status === 'SAMPLED'
+            ? 'Enter Test Results'
+            : currentTest
+              ? `Test Results - ${currentTest.status}`
+              : 'Test Results'}
       </DialogTitle>{' '}
-      <DialogContent sx={{ py: 4, px: 3 }}>
-        <Box sx={{ pt: 1 }}>
-          <Box sx={{ mb: 3 }}>
-            <Typography
-              variant="subtitle1"
-              fontWeight={500}
-              color="text.secondary"
-              sx={{ mb: 2 }}
-            >
-              Thông tin khách hàng
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Khách hàng"
-                  value={currentTest.customerName || ''}
-                  InputProps={{
-                    readOnly: true,
-                    sx: {
-                      backgroundColor: 'rgba(0,0,0,0.02)',
-                      borderRadius: 1.5,
-                    },
-                  }}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Dịch vụ xét nghiệm"
-                  value={currentTest.serviceName || ''}
-                  InputProps={{
-                    readOnly: true,
-                    sx: {
-                      backgroundColor: 'rgba(0,0,0,0.02)',
-                      borderRadius: 1.5,
-                    },
-                  }}
-                  variant="outlined"
-                />
-              </Grid>
-            </Grid>
+      <DialogContent>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <CircularProgress />
           </Box>
-          <Divider sx={{ my: 3 }} />{' '}
-          <Box sx={{ mb: 3 }}>
-            <Typography
-              variant="subtitle1"
-              fontWeight={500}
-              color="text.secondary"
-              sx={{ mb: 2 }}
-            >
-              Trạng thái xét nghiệm
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth variant="outlined">
-                  <InputLabel>Trạng thái</InputLabel>
-                  <Select
-                    value={currentTest.status || 'PENDING'}
-                    onChange={(e) =>
-                      handleResultChange('status', e.target.value)
-                    }
-                    label="Trạng thái"
-                    sx={{
-                      borderRadius: 1.5,
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: theme.palette.primary.light,
-                      },
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: theme.palette.primary.main,
-                      },
-                    }}
-                  >
-                    {Object.keys(TEST_STATUSES).map((status) => (
-                      <MenuItem key={status} value={status}>
-                        {TEST_STATUSES[status].label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-          </Box>
-          <Box sx={{ mb: 3 }}>
-            <Typography
-              variant="subtitle1"
-              fontWeight={500}
-              color="text.secondary"
-              sx={{ mb: 2 }}
-            >
-              Kết quả xét nghiệm
-            </Typography>
-
-            {/* Hiển thị danh sách thành phần xét nghiệm nếu có */}
-            {currentTest.components && currentTest.components.length > 0 ? (
-              currentTest.components.map((component, index) => (
-                <Box
-                  key={component.componentId || index}
-                  sx={{
-                    mb: 2,
-                    p: 2,
-                    border: '1px solid rgba(0,0,0,0.1)',
-                    borderRadius: 2,
-                  }}
-                >
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    {component.componentName || `Thành phần #${index + 1}`}
-                  </Typography>
-                  <Grid container spacing={2} sx={{ mt: 1 }}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Giá trị kết quả"
-                        value={component.resultValue || ''}
-                        onChange={(e) => {
-                          const updatedComponents = [...currentTest.components];
-                          updatedComponents[index].resultValue = e.target.value;
-                          handleResultChange('components', updatedComponents);
-                        }}
-                        variant="outlined"
-                        size="small"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Đơn vị đo"
-                        value={component.unit || ''}
-                        onChange={(e) => {
-                          const updatedComponents = [...currentTest.components];
-                          updatedComponents[index].unit = e.target.value;
-                          handleResultChange('components', updatedComponents);
-                        }}
-                        variant="outlined"
-                        size="small"
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Phạm vi bình thường"
-                        value={component.normalRange || ''}
-                        onChange={(e) => {
-                          const updatedComponents = [...currentTest.components];
-                          updatedComponents[index].normalRange = e.target.value;
-                          handleResultChange('components', updatedComponents);
-                        }}
-                        variant="outlined"
-                        size="small"
-                      />
-                    </Grid>
-                  </Grid>
-                </Box>
-              ))
-            ) : (
-              <TestResultInput
-                result={{
-                  resultType: currentTest.result || 'negative',
-                  isPositive: currentTest.result === 'positive',
-                  measurementValue: currentTest.measurementValue || '',
-                  measurementUnit: currentTest.measurementUnit || '',
-                  referenceRange: currentTest.referenceRange || '',
-                  testingMethod: currentTest.testingMethod || '',
-                  comments: currentTest.resultDetails || '',
-                }}
-                readOnly={readOnly}
-                onChange={(updatedResult) => {
-                  // Map the result from TestResultInput to the format expected by handleResultChange
-                  handleResultChange('result', updatedResult.resultType);
-                  handleResultChange(
-                    'isPositive',
-                    updatedResult.resultType === 'positive'
-                  );
-                  handleResultChange(
-                    'measurementValue',
-                    updatedResult.measurementValue
-                  );
-                  handleResultChange(
-                    'measurementUnit',
-                    updatedResult.measurementUnit
-                  );
-                  handleResultChange(
-                    'referenceRange',
-                    updatedResult.referenceRange
-                  );
-                  handleResultChange(
-                    'testingMethod',
-                    updatedResult.testingMethod
-                  );
-                  handleResultChange('resultDetails', updatedResult.comments);
-                }}
-              />
-            )}
-          </Box>
-          <Box>
-            <Typography
-              variant="subtitle1"
-              fontWeight={500}
-              color="text.secondary"
-              sx={{ mb: 2 }}
-            >
-              Thông tin tư vấn
-            </Typography>
-            <TextField
-              fullWidth
-              label="Ghi chú tư vấn"
-              value={currentTest.consultantNotes || ''}
-              onChange={(e) =>
-                handleResultChange('consultantNotes', e.target.value)
-              }
-              multiline
-              rows={2}
-              variant="outlined"
-              placeholder="Nhập ghi chú tư vấn cho khách hàng..."
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 1.5,
-                  '& fieldset': {
-                    borderColor: theme.palette.primary.light,
-                  },
-                  '&:hover fieldset': {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
-            />
-          </Box>
-        </Box>
-      </DialogContent>{' '}
-      <DialogActions
-        sx={{
-          px: 3,
-          pb: 3,
-          pt: 2,
-          backgroundColor: 'rgba(0,0,0,0.02)',
-          borderTop: '1px solid rgba(0,0,0,0.05)',
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 1,
-          justifyContent: 'space-between',
-        }}
-      >
-        {!readOnly ? (
+        ) : error ? (
+          <Alert severity="error" sx={{ my: 2 }} onClose={() => setError(null)}>
+            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+              <Typography variant="body1" fontWeight="medium">
+                {error}
+              </Typography>
+              {error.includes('Failed to save') && (
+                <Typography variant="caption" sx={{ mt: 1 }}>
+                  This could be due to network issues or expired authentication.
+                  Please try again or refresh the page.
+                </Typography>
+              )}
+            </Box>
+          </Alert>
+        ) : !currentTest ? (
+          <Alert severity="warning" sx={{ my: 2 }}>
+            Test data not available
+          </Alert>
+        ) : (
           <>
-            <Box>
-              {/* Left side action buttons based on status */}
-              {currentTest.status === 'PENDING' && handleConfirmTest && (
-                <Button
-                  onClick={() => handleConfirmTest(currentTest.testId)}
-                  variant="outlined"
-                  color="primary"
-                  sx={{
-                    mr: 1,
-                    borderRadius: 2,
-                    textTransform: 'none',
-                  }}
-                >
-                  Xác nhận xét nghiệm
-                </Button>
-              )}
+            {success && (
+              <Alert severity="success" sx={{ my: 2 }}>
+                {success}
+              </Alert>
+            )}
+            {serviceData && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  {serviceData.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  {serviceData.description}
+                </Typography>
 
-              {currentTest.status === 'CONFIRMED' && handleSampleTest && (
-                <Button
-                  onClick={() => handleSampleTest(currentTest.testId)}
-                  variant="outlined"
-                  color="primary"
-                  sx={{
-                    mr: 1,
-                    borderRadius: 2,
-                    textTransform: 'none',
-                  }}
-                >
-                  Lấy mẫu xét nghiệm
-                </Button>
-              )}
+                {currentTest && (
+                  <Box sx={{ my: 1 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Test ID: {currentTest.testId}
+                    </Typography>
+                    <Typography variant="body2" gutterBottom>
+                      Customer: {currentTest.customerName}
+                    </Typography>
+                    <Typography variant="body2" gutterBottom>
+                      Status: {currentTest.status}
+                    </Typography>
+                  </Box>
+                )}
 
-              {currentTest.status === 'RESULTED' && handleCompleteTest && (
-                <Button
-                  onClick={() => handleCompleteTest(currentTest.testId)}
-                  variant="outlined"
-                  color="success"
-                  sx={{
-                    mr: 1,
-                    borderRadius: 2,
-                    textTransform: 'none',
-                  }}
-                >
-                  Hoàn thành xét nghiệm
-                </Button>
-              )}
-            </Box>
+                <Divider sx={{ my: 2 }} />
 
-            <Box>
-              {/* Right side buttons */}
-              <Button
-                onClick={onClose}
-                variant="outlined"
-                sx={{
-                  mr: 1,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 500,
-                  borderColor: 'rgba(0,0,0,0.2)',
-                  '&:hover': {
-                    borderColor: theme.palette.primary.main,
-                    backgroundColor: 'rgba(0,0,0,0.02)',
-                  },
-                }}
-              >
-                Hủy
-              </Button>
+                <Typography variant="subtitle1" gutterBottom>
+                  Test Components
+                </Typography>
 
-              {(currentTest.status === 'SAMPLED' ||
-                currentTest.status === 'CONFIRMED') && (
-                <Button
-                  onClick={handleSaveResult}
-                  variant="contained"
-                  color="primary"
-                  disabled={resultUpdating}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 500,
-                    boxShadow: 2,
-                    '&:hover': {
-                      boxShadow: 4,
-                    },
-                  }}
-                >
-                  {resultUpdating ? 'Đang lưu...' : 'Lưu kết quả'}
-                </Button>
-              )}
-            </Box>
+                <TableContainer component={Paper} sx={{ mt: 2 }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Component</TableCell>
+                        <TableCell>Unit</TableCell>
+                        <TableCell>Normal Range</TableCell>
+                        <TableCell>Result Value</TableCell>
+                        <TableCell align="center">Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {' '}
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={5} align="center">
+                            <CircularProgress size={24} sx={{ my: 2 }} />
+                            <Typography variant="body2" sx={{ mt: 1 }}>
+                              Loading components...
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      ) : serviceData &&
+                        serviceData.components &&
+                        serviceData.components.length > 0 ? (
+                        serviceData.components.map((component, index) => {
+                          const result = results.find(
+                            (r) => r.componentId === component.componentId
+                          );
+
+                          return (
+                            <TableRow key={component.componentId}>
+                              <TableCell>{component.componentName}</TableCell>{' '}
+                              <TableCell>
+                                {currentTest &&
+                                (currentTest.status === 'RESULTED' ||
+                                  currentTest.status === 'COMPLETED') ? (
+                                  <Typography variant="body2">
+                                    {result?.unit || '-'}
+                                  </Typography>
+                                ) : (
+                                  <TextField
+                                    size="small"
+                                    fullWidth
+                                    value={result?.unit || ''}
+                                    onChange={(e) =>
+                                      handleResultChange(
+                                        component.componentId,
+                                        'unit',
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Unit"
+                                  />
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {currentTest &&
+                                (currentTest.status === 'RESULTED' ||
+                                  currentTest.status === 'COMPLETED') ? (
+                                  <Typography variant="body2">
+                                    {result?.normalRange || '-'}
+                                  </Typography>
+                                ) : (
+                                  <TextField
+                                    size="small"
+                                    fullWidth
+                                    value={result?.normalRange || ''}
+                                    onChange={(e) =>
+                                      handleResultChange(
+                                        component.componentId,
+                                        'normalRange',
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Normal Range"
+                                  />
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {currentTest &&
+                                (currentTest.status === 'RESULTED' ||
+                                  currentTest.status === 'COMPLETED') ? (
+                                  <Typography variant="body2">
+                                    {result?.resultValue || '-'}
+                                  </Typography>
+                                ) : (
+                                  <TextField
+                                    size="small"
+                                    fullWidth
+                                    required
+                                    value={result?.resultValue || ''}
+                                    onChange={(e) =>
+                                      handleResultChange(
+                                        component.componentId,
+                                        'resultValue',
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Enter result value"
+                                    error={result?.resultValue === ''}
+                                    helperText={
+                                      result?.resultValue === ''
+                                        ? 'Required'
+                                        : ''
+                                    }
+                                  />
+                                )}
+                              </TableCell>{' '}
+                              <TableCell align="center">
+                                {currentTest &&
+                                (currentTest.status === 'RESULTED' ||
+                                  currentTest.status === 'COMPLETED') ? (
+                                  <Box
+                                    sx={{
+                                      display: 'flex',
+                                      justifyContent: 'center',
+                                      gap: 1,
+                                    }}
+                                  >
+                                    {' '}
+                                    <Tooltip title="View Only" arrow>
+                                      <PreviewIcon
+                                        fontSize="small"
+                                        color="disabled"
+                                      />
+                                    </Tooltip>
+                                  </Box>
+                                ) : (
+                                  <Tooltip title="View Results" arrow>
+                                    <IconButton
+                                      size="small"
+                                      color="primary"
+                                      onClick={handleViewResults}
+                                    >
+                                      <PreviewIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5}>
+                            <Typography align="center">
+                              No test components available
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              align="center"
+                              sx={{ display: 'block', mt: 1 }}
+                            >
+                              {currentTest
+                                ? `Service ID: ${currentTest.serviceId || 'N/A'}, Test ID: ${currentTest.testId || 'N/A'}`
+                                : 'No test selected'}
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            )}
+          </>
+        )}
+      </DialogContent>{' '}
+      <DialogActions>
+        <Button onClick={onClose} color="inherit" disabled={saving}>
+          Cancel
+        </Button>
+
+        {currentTest &&
+        (currentTest.status === 'RESULTED' ||
+          currentTest.status === 'COMPLETED') ? (
+          <>
+            {' '}
+            <Button
+              onClick={handleViewResults}
+              color="info"
+              variant="contained"
+              disabled={loading}
+              startIcon={
+                loading ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <PreviewIcon />
+                )
+              }
+            >
+              {loading ? 'Loading...' : 'View Results'}
+            </Button>
           </>
         ) : (
-          <Box
-            sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}
+          <Button
+            onClick={handleSaveResults}
+            color="primary"
+            variant="contained"
+            disabled={loading || saving || !serviceData}
+            startIcon={saving && <CircularProgress size={20} color="inherit" />}
           >
-            <Button
-              onClick={onClose}
-              variant="outlined"
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 500,
-                borderColor: 'rgba(0,0,0,0.2)',
-                '&:hover': {
-                  borderColor: theme.palette.primary.main,
-                  backgroundColor: 'rgba(0,0,0,0.02)',
-                },
-              }}
-            >
-              Đóng
-            </Button>
-          </Box>
+            {saving ? 'Saving...' : 'Save Results'}
+          </Button>
         )}
       </DialogActions>
     </Dialog>

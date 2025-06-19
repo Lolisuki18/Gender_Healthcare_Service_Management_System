@@ -68,6 +68,24 @@ export const formatDateForInput = (dateString) => {
       } else {
         date = new Date(dateString);
       }
+    } // ✅ Special case: Array format từ API [year, month, day] hoặc [year, month, day, hour, minute]
+    else if (typeof dateString === 'object' && dateString instanceof Array) {
+      console.log('📅 Array date format detected for input:', dateString);
+
+      if (dateString.length >= 3) {
+        const year = dateString[0];
+        const month = dateString[1]; // Tháng có thể là 0-11 hoặc 1-12
+        const day = dateString[2];
+
+        // Thử với month là one-based (1-12)
+        if (month >= 1 && month <= 12) {
+          date = new Date(year, month - 1, day);
+        }
+        // Thử với month là zero-based (0-11)
+        else if (month >= 0 && month <= 11) {
+          date = new Date(year, month, day);
+        }
+      }
     }
     // ✅ Case 2: Already in YYYY-MM-DD format
     else if (str.includes('-') && str.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -140,29 +158,72 @@ export const formatDateDisplay = (dateString) => {
       'type:',
       typeof dateString
     ); // ✅ Case 1: SQL DateTime format with milliseconds (2025-06-18 13:20:24.8233330)
-    if (str.includes('-') && str.includes(':')) {
-      console.log('📅 Parsing SQL DateTime format:', str);
+    // hoặc ISO format (2025-06-19T14:00:00Z)
+    if (
+      (str.includes('-') && str.includes(':')) ||
+      (typeof dateString === 'object' && dateString instanceof Array)
+    ) {
+      console.log('📅 Parsing DateTime format or Array format:', str);
 
-      // Trích xuất chỉ phần ngày từ chuỗi SQL DateTime
-      const datePart = str.split(' ')[0]; // Lấy "2025-06-18" từ "2025-06-18 13:20:24.8233330"
+      // Trường hợp đặc biệt: dateString là array [year, month, day, hour, minute] hoặc [year, month, day]
+      if (typeof dateString === 'object' && dateString instanceof Array) {
+        console.log('📅 Array date format detected:', dateString);
+        let year, month, day;
 
-      if (datePart && datePart.includes('-')) {
-        const [year, month, day] = datePart
-          .split('-')
-          .map((part) => parseInt(part, 10));
-        console.log('📅 Extracted date parts:', year, month, day);
+        if (dateString.length >= 3) {
+          year = dateString[0];
+          month = dateString[1]; // Tháng trong mảng thường là 0-11
+          day = dateString[2];
 
-        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-          // Tạo Date object từ các phần đã trích xuất
-          date = new Date(year, month - 1, day);
-          console.log('📅 Created date object:', date);
-        } else {
-          // Nếu parse không thành công, thử cách tiếp cận khác
-          date = new Date(datePart);
+          // Một số trường hợp mảng [2025, 6, 19] thì month đã đúng với thực tế (1-12)
+          // Một số trường hợp mảng [2025, 5, 19] thì month là zero-based (0-11)
+          // Kiểm tra nếu month > 12, giả sử đã có sự hiệu chỉnh
+          if (month >= 12) {
+            date = new Date(year, month - 1, day);
+          } else {
+            // Thử cả hai trường hợp
+            const date1 = new Date(year, month, day); // month là zero-based (0-11)
+            const date2 = new Date(year, month - 1, day); // month là 1-12
+
+            // Dùng date nào hợp lệ
+            if (!isNaN(date1.getTime())) {
+              date = date1;
+              console.log('📅 Using zero-based month format');
+            } else if (!isNaN(date2.getTime())) {
+              date = date2;
+              console.log('📅 Using one-based month format');
+            } else {
+              console.warn(
+                '⚠️ Cannot create valid date from array:',
+                dateString
+              );
+            }
+          }
         }
-      } else {
-        // Fallback nếu không thể tách phần ngày
-        date = new Date(str);
+      }
+      // Trường hợp là chuỗi ISO hoặc SQL DateTime
+      else {
+        // Trích xuất chỉ phần ngày từ chuỗi DateTime
+        const datePart = str.split('T')[0].split(' ')[0]; // Lấy phần ngày từ ISO hoặc SQL format
+
+        if (datePart && datePart.includes('-')) {
+          const [year, month, day] = datePart
+            .split('-')
+            .map((part) => parseInt(part, 10));
+          console.log('📅 Extracted date parts:', year, month, day);
+
+          if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+            // Tạo Date object từ các phần đã trích xuất
+            date = new Date(year, month - 1, day);
+            console.log('📅 Created date object:', date);
+          } else {
+            // Nếu parse không thành công, thử cách tiếp cận khác
+            date = new Date(datePart);
+          }
+        } else {
+          // Fallback nếu không thể tách phần ngày
+          date = new Date(str);
+        }
       }
     }
     // ✅ Case 2: Already in YYYY-MM-DD format (from input)
@@ -221,11 +282,56 @@ export const formatDateDisplay = (dateString) => {
     // ✅ Case 4: Fallback
     else {
       date = new Date(dateString);
+    } // ✅ Special case: Fallback cho mảng [year, month, day] từ API
+    if (typeof dateString === 'object' && dateString instanceof Array) {
+      if (!date || isNaN(date.getTime())) {
+        // Thử phương pháp khác nếu vẫn chưa thành công
+        console.log('🔄 Retrying with direct array interpretation');
+        try {
+          if (dateString.length >= 3) {
+            // Trường hợp 1: Array là [year, month-1, day] (month 0-based)
+            const testDate1 = new Date(
+              dateString[0],
+              dateString[1],
+              dateString[2]
+            );
+
+            if (!isNaN(testDate1.getTime())) {
+              date = testDate1;
+              console.log('✅ Success with zero-based month format', date);
+            } else {
+              // Trường hợp 2: Array là [year, month, day] (month 1-based)
+              const testDate2 = new Date(
+                dateString[0],
+                dateString[1] - 1,
+                dateString[2]
+              );
+              if (!isNaN(testDate2.getTime())) {
+                date = testDate2;
+                console.log('✅ Success with one-based month format', date);
+              }
+            }
+          }
+        } catch (e) {
+          console.error('❌ Failed direct array interpretation:', e);
+        }
+      }
     }
 
     // ✅ Validate date
-    if (isNaN(date.getTime())) {
+    if (!date || isNaN(date.getTime())) {
       console.warn('⚠️ Invalid date after parsing:', dateString);
+      // Nếu là mảng, thử hiển thị trực tiếp các phần tử
+      if (typeof dateString === 'object' && dateString instanceof Array) {
+        try {
+          // Giả sử mảng là [year, month, day]
+          if (dateString.length >= 3) {
+            return `${dateString[2]}/${dateString[1]}/${dateString[0]}`;
+          }
+        } catch (e) {
+          console.error('❌ Failed array display fallback:', e);
+        }
+      }
       return 'Ngày không hợp lệ';
     }
 
@@ -354,5 +460,59 @@ export const formatDateTime = (dateTimeString) => {
       dateTimeString
     );
     return 'Lỗi định dạng thời gian';
+  }
+};
+
+/**
+ * ✅ Hàm trợ giúp xử lý mảng ngày tháng từ API
+ *
+ * @param {Array} dateArray - Mảng [năm, tháng, ngày] hoặc [năm, tháng, ngày, giờ, phút]
+ * @returns {Date} Đối tượng Date nếu hợp lệ, null nếu không
+ *
+ * @example
+ * arrayToDate([2025, 6, 19]) // Date object representing 2025-06-19
+ * arrayToDate([2025, 5, 19, 14, 30]) // Date object representing 2025-06-19 14:30
+ */
+export const arrayToDate = (dateArray) => {
+  if (!dateArray || !Array.isArray(dateArray) || dateArray.length < 3) {
+    console.warn('⚠️ Invalid date array:', dateArray);
+    return null;
+  }
+
+  try {
+    const year = dateArray[0];
+    const month = dateArray[1]; // Có thể là 0-11 hoặc 1-12
+    const day = dateArray[2];
+    let hours = 0;
+    let minutes = 0;
+
+    // Nếu có thêm thông tin giờ, phút
+    if (dateArray.length >= 5) {
+      hours = dateArray[3] || 0;
+      minutes = dateArray[4] || 0;
+    }
+
+    // Thử với giả định month là 1-12
+    let date1 = new Date(year, month - 1, day, hours, minutes);
+
+    // Thử với giả định month là 0-11
+    let date2 = new Date(year, month, day, hours, minutes);
+
+    // Kiểm tra xem date nào hợp lệ
+    if (!isNaN(date1.getTime())) {
+      console.log('✅ Valid date from array (month 1-12):', date1);
+      return date1;
+    }
+
+    if (!isNaN(date2.getTime())) {
+      console.log('✅ Valid date from array (month 0-11):', date2);
+      return date2;
+    }
+
+    console.warn('⚠️ Could not create valid date from array:', dateArray);
+    return null;
+  } catch (error) {
+    console.error('❌ Error converting array to date:', error);
+    return null;
   }
 };

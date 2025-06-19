@@ -22,6 +22,7 @@ import storage from "redux-persist/lib/storage";
 
 // Import các reducers
 import authReducer from "./slices/authSlice";
+import stiTestsReducer from "./slices/stiTestsSlice";
 import localStorageMiddleware from "./middleware/localStorageMiddleware";
 
 // Cấu hình Redux Persist
@@ -34,6 +35,7 @@ const persistConfig = {
 // Kết hợp các reducer
 const rootReducer = combineReducers({
   auth: authReducer,
+  stiTests: stiTestsReducer,
   // Thêm các reducers khác ở đây khi cần
 });
 

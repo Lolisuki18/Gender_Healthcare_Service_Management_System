@@ -3,9 +3,9 @@
  *
  * Modal component để thêm mới các loại người dùng trong hệ thống
  */
-import React, { useState, useEffect } from "react";
-import { adminService } from "../../../services/adminService";
-import notify from "../../../utils/notification";
+import React, { useState, useEffect } from 'react';
+import { adminService } from '../../../services/adminService';
+import notify from '../../../utils/notification';
 import {
   Dialog,
   DialogTitle,
@@ -29,7 +29,7 @@ import {
   Stack,
   Divider,
   LinearProgress,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Close as CloseIcon,
   Person as PersonIcon,
@@ -43,20 +43,20 @@ import {
   AccountCircle as AccountIcon,
   Badge as BadgeIcon,
   Add as AddIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 
-const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
+const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
   // Initial form state - Updated theo backend requirements
   const initialFormData = {
-    role: userType !== "all" ? userType : "",
-    fullName: "", // Required
-    email: "", // Required
-    gender: "", // Required
-    username: "", // Required (4-50 chars)
-    password: "", // Required (6-100 chars + pattern)
-    birthDay: "", // Optional (LocalDate)
-    phone: "", // Required - Updated from Optional to Required
-    address: "", // Optional
+    role: userType !== 'all' ? userType : '',
+    fullName: '', // Required
+    email: '', // Required
+    gender: '', // Required
+    username: '', // Required (4-50 chars)
+    password: '', // Required (6-100 chars + pattern)
+    birthDay: '', // Optional (LocalDate)
+    phone: '', // Required - Updated from Optional to Required
+    address: '', // Optional
   };
 
   // State cho form data
@@ -69,7 +69,7 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
     if (open) {
       setFormData({
         ...initialFormData,
-        role: userType !== "all" ? userType : "",
+        role: userType !== 'all' ? userType : '',
       });
     }
   }, [open, userType]);
@@ -87,9 +87,13 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
   const handleTogglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
-
   // Validate password strength
   const validatePassword = (password) => {
+    // Validation based on backend requirements:
+    // @Size(min = 6, max = 100)
+    // @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).*$")
+    // @Size(min = 6, max = 100)
+    // @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).*$")
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
@@ -132,47 +136,46 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
   const getPasswordStrengthInfo = (password) => {
     const strength = calculatePasswordStrength(password);
 
-    if (strength === 0) return { label: "Chưa nhập", color: "#e0e0e0" };
-    if (strength <= 20) return { label: "Rất yếu", color: "#f44336" };
-    if (strength <= 40) return { label: "Yếu", color: "#ff9800" };
-    if (strength <= 60) return { label: "Trung bình", color: "#ffeb3b" };
-    if (strength <= 80) return { label: "Khá mạnh", color: "#2196f3" };
-    return { label: "Mạnh", color: "#4caf50" };
+    if (strength === 0) return { label: 'Chưa nhập', color: '#e0e0e0' };
+    if (strength <= 20) return { label: 'Rất yếu', color: '#f44336' };
+    if (strength <= 40) return { label: 'Yếu', color: '#ff9800' };
+    if (strength <= 60) return { label: 'Trung bình', color: '#ffeb3b' };
+    if (strength <= 80) return { label: 'Khá mạnh', color: '#2196f3' };
+    return { label: 'Mạnh', color: '#4caf50' };
   };
-
   // Handle form submit
   const handleSubmit = async () => {
-    // ✅ Cập nhật required fields validation để bao gồm role và phone
+    // ✅ Cập nhật required fields validation
     const requiredFields = [
-      "role",
-      "fullName",
-      "email",
-      "gender",
-      "username",
-      "password",
-      "phone", // Added phone to required fields
+      'role',
+      'fullName',
+      'email',
+      'gender',
+      'username',
+      'password',
+      // 'phone' is now optional, removed from required fields
     ];
     const missingFields = requiredFields.filter(
-      (field) => !formData[field] || formData[field].trim() === ""
+      (field) => !formData[field] || formData[field].trim() === ''
     );
 
     if (missingFields.length > 0) {
       notify.warning(
-        "Thông tin thiếu",
+        'Thông tin thiếu',
         `Vui lòng điền đầy đủ các trường bắt buộc: ${missingFields
           .map((field) => {
             const fieldLabels = {
-              role: "Vai trò",
-              fullName: "Họ và tên",
-              email: "Email",
-              gender: "Giới tính",
-              username: "Tên đăng nhập",
-              password: "Mật khẩu",
-              phone: "Số điện thoại", // Added label for phone
+              role: 'Vai trò',
+              fullName: 'Họ và tên',
+              email: 'Email',
+              gender: 'Giới tính',
+              username: 'Tên đăng nhập',
+              password: 'Mật khẩu',
+              phone: 'Số điện thoại', // Added label for phone
             };
             return fieldLabels[field] || field;
           })
-          .join(", ")}`
+          .join(', ')}`
       );
       return;
     }
@@ -181,47 +184,62 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       notify.error(
-        "Email không hợp lệ",
-        "Vui lòng nhập địa chỉ email đúng định dạng!"
+        'Email không hợp lệ',
+        'Vui lòng nhập địa chỉ email đúng định dạng!'
       );
       return;
     }
 
-    // Username validation (4-50 characters)
-    if (formData.username.length < 4 || formData.username.length > 50) {
-      notify.error("Username không hợp lệ", "Username phải có từ 4-50 ký tự!");
-      return;
-    }
-
-    // Password validation
-    const passwordValidation = validatePassword(formData.password);
-    if (!passwordValidation.isValid) {
-      let errorMessage = "Mật khẩu phải có:\n";
-      if (!passwordValidation.isValidLength) errorMessage += "- 6-100 ký tự\n";
-      if (!passwordValidation.hasUpperCase)
-        errorMessage += "- Ít nhất 1 chữ hoa\n";
-      if (!passwordValidation.hasLowerCase)
-        errorMessage += "- Ít nhất 1 chữ thường\n";
-      if (!passwordValidation.hasNumbers) errorMessage += "- Ít nhất 1 số\n";
-      if (!passwordValidation.hasSpecialChar)
-        errorMessage += "- Ít nhất 1 ký tự đặc biệt (@#$%^&+=)";
-
-      notify.error("Mật khẩu không hợp lệ", errorMessage);
-      return;
-    }
-
-    // Phone validation (now required)
-    const phoneRegex = /^[0-9]{10,11}$/;
-    if (!phoneRegex.test(formData.phone)) {
+    // Gender validation
+    const genderRegex = /^(Nam|Nữ|Khác|MALE|FEMALE|OTHER)$/;
+    if (!genderRegex.test(formData.gender)) {
       notify.error(
-        "Số điện thoại không hợp lệ",
-        "Số điện thoại phải có 10-11 chữ số!"
+        'Giới tính không hợp lệ',
+        'Giới tính phải là: Nam, Nữ, Khác, MALE, FEMALE, hoặc OTHER'
+      );
+      return;
+    } // Username validation (optional but must be 4-50 characters if provided)
+    if (
+      formData.username &&
+      formData.username.trim() !== '' &&
+      (formData.username.length < 4 || formData.username.length > 50)
+    ) {
+      notify.error('Username không hợp lệ', 'Username phải có từ 4-50 ký tự!');
+      return;
+    } // Password validation (optional but must meet requirements if provided)
+    if (formData.password && formData.password.trim() !== '') {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        let errorMessage = 'Mật khẩu phải có:\n';
+        if (!passwordValidation.isValidLength)
+          errorMessage += '- 6-100 ký tự\n';
+        if (!passwordValidation.hasUpperCase)
+          errorMessage += '- Ít nhất 1 chữ hoa\n';
+        if (!passwordValidation.hasLowerCase)
+          errorMessage += '- Ít nhất 1 chữ thường\n';
+        if (!passwordValidation.hasNumbers) errorMessage += '- Ít nhất 1 số\n';
+        if (!passwordValidation.hasSpecialChar)
+          errorMessage += '- Ít nhất 1 ký tự đặc biệt (@#$%^&+=)';
+
+        notify.error('Mật khẩu không hợp lệ', errorMessage);
+        return;
+      }
+    } // Phone validation (optional but must be valid if provided)
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (
+      formData.phone &&
+      formData.phone.trim() !== '' &&
+      !phoneRegex.test(formData.phone)
+    ) {
+      notify.error(
+        'Số điện thoại không hợp lệ',
+        'Số điện thoại phải có 10-11 chữ số!'
       );
       return;
     }
 
     // ✅ Tất cả validation pass - trả data về parent component
-    console.log("Form validation passed, sending data to parent:", formData);
+    console.log('Form validation passed, sending data to parent:', formData);
 
     // Prepare data for API
     const apiData = {
@@ -240,22 +258,22 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
   // Role options with color & icon mapping - đã loại bỏ ADMIN
   const roleOptions = [
     {
-      value: "STAFF",
-      label: "Nhân viên",
-      color: "#1976D2",
-      bgColor: "#E3F2FD",
+      value: 'STAFF',
+      label: 'Nhân viên',
+      color: '#1976D2',
+      bgColor: '#E3F2FD',
     },
     {
-      value: "CUSTOMER",
-      label: "Khách hàng",
-      color: "#388E3C",
-      bgColor: "#E8F5E9",
+      value: 'CUSTOMER',
+      label: 'Khách hàng',
+      color: '#388E3C',
+      bgColor: '#E8F5E9',
     },
     {
-      value: "CONSULTANT",
-      label: "Tư vấn viên",
-      color: "#F57C00",
-      bgColor: "#FFF3E0",
+      value: 'CONSULTANT',
+      label: 'Tư vấn viên',
+      color: '#F57C00',
+      bgColor: '#FFF3E0',
     },
   ];
 
@@ -275,28 +293,28 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: "16px",
-          overflow: "hidden",
-          boxShadow: "0 10px 40px rgba(0,0,0,0.12)",
+          borderRadius: '16px',
+          overflow: 'hidden',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.12)',
         },
       }}
     >
       {/* Header */}
       <DialogTitle
         sx={{
-          background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Updated to medical gradient
-          color: "white",
+          background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)', // Updated to medical gradient
+          color: 'white',
           p: 2,
         }}
       >
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <PersonIcon fontSize="large" />
             <Typography variant="h5" sx={{ fontWeight: 600 }}>
               Thêm người dùng mới
@@ -304,7 +322,7 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
           </Box>
           <IconButton
             onClick={onClose}
-            sx={{ color: "white" }}
+            sx={{ color: 'white' }}
             aria-label="close"
           >
             <CloseIcon />
@@ -322,9 +340,9 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
               sx={{
                 mb: 3,
                 fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                color: "#4A90E2", // Updated to match gradient theme
+                display: 'flex',
+                alignItems: 'center',
+                color: '#4A90E2', // Updated to match gradient theme
               }}
             >
               <BadgeIcon sx={{ mr: 1 }} />
@@ -347,8 +365,8 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                   <MenuItem key={role.value} value={role.value}>
                     <Box
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: 1,
                       }}
                     >
@@ -356,7 +374,7 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                         sx={{
                           width: 10,
                           height: 10,
-                          borderRadius: "50%",
+                          borderRadius: '50%',
                           bgcolor: role.color,
                         }}
                       />
@@ -416,7 +434,7 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
               >
                 <MenuItem value="MALE">👨 Nam</MenuItem>
                 <MenuItem value="FEMALE">👩 Nữ</MenuItem>
-                <MenuItem value="OTHER">🏳️‍⚧️ Khác</MenuItem>
+                <MenuItem value="Khác">🏳️‍⚧️ Khác</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -428,20 +446,18 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
               sx={{
                 mb: 3,
                 fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                color: "#4A90E2", // Updated to match gradient theme
+                display: 'flex',
+                alignItems: 'center',
+                color: '#4A90E2', // Updated to match gradient theme
               }}
             >
               <LockIcon sx={{ mr: 1 }} />
               Thông tin đăng nhập
-            </Typography>
-
+            </Typography>{' '}
             {/* Username */}
             <TextField
-              required
               fullWidth
-              label="Tên đăng nhập"
+              label="Tên đăng nhập (không bắt buộc)"
               name="username"
               value={formData.username}
               onChange={handleInputChange}
@@ -452,17 +468,15 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                   </InputAdornment>
                 ),
               }}
-              helperText={`${formData.username.length}/50 ký tự`}
+              helperText={`${formData.username.length}/50 ký tự (không bắt buộc)`}
               sx={{ mb: 2 }}
-            />
-
+            />{' '}
             {/* Password */}
             <TextField
-              required
               fullWidth
-              label="Mật khẩu"
+              label="Mật khẩu (không bắt buộc)"
               name="password"
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={handleInputChange}
               InputProps={{
@@ -482,17 +496,16 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                   </InputAdornment>
                 ),
               }}
-              helperText={`${formData.password.length}/100 ký tự`}
+              helperText={`${formData.password.length}/100 ký tự (không bắt buộc)`}
               sx={{ mb: 1 }}
             />
-
             {/* Password Strength Meter */}
             {formData.password && (
               <Box sx={{ mb: 3 }}>
                 <Box
                   sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    display: 'flex',
+                    justifyContent: 'space-between',
                     mb: 0.5,
                   }}
                 >
@@ -514,8 +527,8 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                     height: 8,
                     borderRadius: 4,
                     mb: 1,
-                    backgroundColor: "#e0e0e0",
-                    "& .MuiLinearProgress-bar": {
+                    backgroundColor: '#e0e0e0',
+                    '& .MuiLinearProgress-bar': {
                       backgroundColor: passwordStrength.color,
                     },
                   }}
@@ -527,12 +540,12 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                       label="6-100 ký tự"
                       size="small"
                       color={
-                        passwordValidation.isValidLength ? "success" : "default"
+                        passwordValidation.isValidLength ? 'success' : 'default'
                       }
                       variant={
-                        passwordValidation.isValidLength ? "filled" : "outlined"
+                        passwordValidation.isValidLength ? 'filled' : 'outlined'
                       }
-                      sx={{ width: "100%" }}
+                      sx={{ width: '100%' }}
                     />
                   </Grid>
                   <Grid item xs={6}>
@@ -540,12 +553,12 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                       label="Chữ hoa"
                       size="small"
                       color={
-                        passwordValidation.hasUpperCase ? "success" : "default"
+                        passwordValidation.hasUpperCase ? 'success' : 'default'
                       }
                       variant={
-                        passwordValidation.hasUpperCase ? "filled" : "outlined"
+                        passwordValidation.hasUpperCase ? 'filled' : 'outlined'
                       }
-                      sx={{ width: "100%" }}
+                      sx={{ width: '100%' }}
                     />
                   </Grid>
                   <Grid item xs={6}>
@@ -553,12 +566,12 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                       label="Chữ thường"
                       size="small"
                       color={
-                        passwordValidation.hasLowerCase ? "success" : "default"
+                        passwordValidation.hasLowerCase ? 'success' : 'default'
                       }
                       variant={
-                        passwordValidation.hasLowerCase ? "filled" : "outlined"
+                        passwordValidation.hasLowerCase ? 'filled' : 'outlined'
                       }
-                      sx={{ width: "100%" }}
+                      sx={{ width: '100%' }}
                     />
                   </Grid>
                   <Grid item xs={6}>
@@ -566,12 +579,12 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                       label="Số"
                       size="small"
                       color={
-                        passwordValidation.hasNumbers ? "success" : "default"
+                        passwordValidation.hasNumbers ? 'success' : 'default'
                       }
                       variant={
-                        passwordValidation.hasNumbers ? "filled" : "outlined"
+                        passwordValidation.hasNumbers ? 'filled' : 'outlined'
                       }
-                      sx={{ width: "100%" }}
+                      sx={{ width: '100%' }}
                     />
                   </Grid>
                   <Grid item xs={12}>
@@ -580,15 +593,15 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                       size="small"
                       color={
                         passwordValidation.hasSpecialChar
-                          ? "success"
-                          : "default"
+                          ? 'success'
+                          : 'default'
                       }
                       variant={
                         passwordValidation.hasSpecialChar
-                          ? "filled"
-                          : "outlined"
+                          ? 'filled'
+                          : 'outlined'
                       }
-                      sx={{ width: "100%" }}
+                      sx={{ width: '100%' }}
                     />
                   </Grid>
                 </Grid>
@@ -604,9 +617,9 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
               sx={{
                 mb: 3,
                 fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                color: "#4A90E2", // Updated to match gradient theme
+                display: 'flex',
+                alignItems: 'center',
+                color: '#4A90E2', // Updated to match gradient theme
               }}
             >
               <HomeIcon sx={{ mr: 1 }} />
@@ -633,9 +646,10 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                 />
               </Grid>
               <Grid item size={6} md={6}>
+                {' '}
                 <TextField
                   fullWidth
-                  required // Added required prop
+                  // removed required prop - phone is now optional
                   label="Số điện thoại"
                   name="phone"
                   value={formData.phone}
@@ -647,7 +661,7 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                       </InputAdornment>
                     ),
                   }}
-                  helperText="10-11 chữ số" // Added helper text for guidance
+                  helperText="10-11 chữ số (không bắt buộc)" // Updated helper text
                 />
               </Grid>
               <Grid item size={12} md={6}>
@@ -674,14 +688,14 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
       </DialogContent>
 
       {/* Actions */}
-      <DialogActions sx={{ p: 3, bgcolor: "#f8f9fa" }}>
-        {" "}
+      <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
+        {' '}
         {/* Slightly updated background */}
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            width: "100%",
+            display: 'flex',
+            justifyContent: 'space-between',
+            width: '100%',
           }}
         >
           <Box>
@@ -696,7 +710,7 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
               />
             )}
           </Box>
-          <Box sx={{ display: "flex", gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
               variant="outlined"
               onClick={onClose}
@@ -704,8 +718,8 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                 borderRadius: 2,
                 px: 3,
                 py: 1,
-                borderColor: "#4A90E2", // Updated to match gradient theme
-                color: "#4A90E2", // Updated to match gradient theme
+                borderColor: '#4A90E2', // Updated to match gradient theme
+                color: '#4A90E2', // Updated to match gradient theme
               }}
             >
               Hủy bỏ
@@ -719,13 +733,13 @@ const AddUserModal = ({ open, onClose, userType = "all", onSubmit }) => {
                 borderRadius: 2,
                 px: 3,
                 py: 1,
-                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Updated to medical gradient
-                color: "#fff",
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)', // Updated to medical gradient
+                color: '#fff',
                 fontWeight: 600,
-                boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-                "&:hover": {
-                  background: "linear-gradient(45deg, #357ABD, #159B7F)", // Slightly darker gradient for hover
-                  boxShadow: "0 4px 12px rgba(74, 144, 226, 0.35)",
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #357ABD, #159B7F)', // Slightly darker gradient for hover
+                  boxShadow: '0 4px 12px rgba(74, 144, 226, 0.35)',
                 },
               }}
             >
