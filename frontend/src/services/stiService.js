@@ -53,9 +53,9 @@ export const deleteSTIService = async (serviceId) => {
 };
 
 // Book a new STI test
-export const bookSTITest = async (testData) => {
+export const bookSTITest = async (data) => {
     try {
-        const response = await apiClient.post(`${API_URL}/book-test`, testData);
+        const response = await apiClient.post('/sti-services/book-test', data);
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;
@@ -186,6 +186,16 @@ export const getAllSTIPackages = async () => {
 export const createSTIPackage = async (packageData) => {
     try {
         const response = await apiClient.post('/sti-packages', packageData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+// Get STI package details by ID
+export const getSTIPackageById = async (packageId) => {
+    try {
+        const response = await apiClient.get(`/sti-packages/${packageId}`);
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;

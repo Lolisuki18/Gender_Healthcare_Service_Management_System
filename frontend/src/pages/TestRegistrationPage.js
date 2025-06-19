@@ -1,4 +1,6 @@
+// Thư viện React và các hook cơ bản
 import React, { useState, useEffect } from 'react';
+// Import các component UI từ Material-UI (MUI)
 import {
   Box,
   Button,
@@ -26,18 +28,31 @@ import {
   Radio,
   RadioGroup,
   FormControlLabel,
-  TextField
+  TextField,
+  useTheme,
+  Container,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
+// Icon từ MUI
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import { getAllSTIServices, getAllSTIPackages, getSTITestDetails } from '@/services/stiService';
+import CheckIcon from '@mui/icons-material/Check';
+// Import các hàm gọi API liên quan đến xét nghiệm từ service
+import { getAllSTIServices, getAllSTIPackages, getSTITestDetails, getSTIPackageById, getSTIServiceById, bookSTITest } from '@/services/stiService';
+// Import các component hỗ trợ chọn ngày giờ
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import vi from 'date-fns/locale/vi';
-import { useLocation } from 'react-router-dom';
-
+// React Router
+import { useLocation, useNavigate } from 'react-router-dom';
+// Styled-components của MUI
+import { styled } from '@mui/material/styles';
+// Các bước của quy trình đặt lịch
 const steps = [
   'Chọn loại dịch vụ',
   'Chọn ngày & giờ',
@@ -45,33 +60,82 @@ const steps = [
   'Thanh toán',
 ];
 
-export default function TestRegistrationPage() {
-  const [activeStep, setActiveStep] = useState(0);
-  const [selectedService, setSelectedService] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTime, setSelectedTime] = useState('');
-  const [singleTests, setSingleTests] = useState([]);
-  const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('single');
-  const [pageSingle, setPageSingle] = useState(1);
-  const [pagePackage, setPagePackage] = useState(1);
-  const ITEMS_PER_PAGE = 5;
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [detailData, setDetailData] = useState(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [note, setNote] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('cash');
-  const [bookingSuccess, setBookingSuccess] = useState(false);
-  const location = useLocation();
+// Tạo Dialog với hiệu ứng glassmorphism
+const GlassDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiPaper-root': {
+    background: 'rgba(255,255,255,0.85)',
+    backdropFilter: 'blur(16px)',
+    borderRadius: 24,
+    boxShadow: '0 8px 32px rgba(74,144,226,0.12)',
+    border: '1px solid rgba(74,144,226,0.08)',
+  },
+}));
 
+// Tạo TextField hiện đại
+const ModernTextField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 16,
+    background: '#f7fafc',
+    fontFamily: 'inherit',
+    fontWeight: 500,
+    fontSize: 16,
+    transition: 'all 0.2s',
+    boxShadow: '0 2px 8px rgba(74,144,226,0.04)',
+    '& fieldset': {
+      borderColor: 'rgba(74,144,226,0.15)',
+    },
+    '&:hover fieldset': {
+      borderColor: theme.palette.primary.main,
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: theme.palette.primary.main,
+      boxShadow: '0 0 0 2px #4A90E233',
+    },
+  },
+  '& .MuiInputBase-input': {
+    fontFamily: 'inherit',
+    fontWeight: 500,
+    color: theme.palette.text.primary,
+  },
+}));
+
+export default function TestRegistrationPage() {
+  // --- State quản lý các bước, dữ liệu chọn dịch vụ, ngày giờ, ...
+  const [activeStep, setActiveStep] = useState(0);// Bước hiện tại
+  const [selectedService, setSelectedService] = useState(null);// Dịch vụ/gói được chọn
+  const [selectedDate, setSelectedDate] = useState(null); // Ngày chọn
+  const [selectedTime, setSelectedTime] = useState('');// Giờ chọn
+  const [singleTests, setSingleTests] = useState([]);// Danh sách xét nghiệm lẻ
+  const [packages, setPackages] = useState([]);// Danh sách gói xét nghiệm
+  const [loading, setLoading] = useState(true);// Trạng thái loading dữ liệu
+  const [error, setError] = useState(null);// Lỗi khi load dữ liệu
+  const [activeTab, setActiveTab] = useState('single');// Tab hiện tại: lẻ/gói
+  const [pageSingle, setPageSingle] = useState(1);// Trang phân trang xét nghiệm lẻ
+  const [pagePackage, setPagePackage] = useState(1);// Trang phân trang gói
+  const ITEMS_PER_PAGE = 5;// Số item mỗi trang
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);// Dialog chi tiết dịch vụ/gói
+  const [detailData, setDetailData] = useState(null);// Dữ liệu chi tiết dịch vụ/gói
+  const [loadingDetail, setLoadingDetail] = useState(false);// Loading chi tiết
+  const [note, setNote] = useState('');// Ghi chú của khách
+  const [paymentMethod, setPaymentMethod] = useState('cash');// Phương thức thanh toán
+  const [visaInfo, setVisaInfo] = useState({ cardNumber: '', cardName: '', expiry: '', cvv: '' }); // Thông tin thẻ visa
+  const [visaErrors, setVisaErrors] = useState({});// Lỗi nhập thẻ visa
+  const [bookingSuccess, setBookingSuccess] = useState(false);// Đặt lịch thành công
+  const location = useLocation(); // Lấy state truyền qua router
+  const theme = useTheme();// Chủ đề MUI
+  const navigate = useNavigate(); // Điều hướng
+  const [packageDetailLoading, setPackageDetailLoading] = useState(false);// Loading chi tiết gói
+  const [subDetailOpen, setSubDetailOpen] = useState(false);
+  const [subDetailData, setSubDetailData] = useState(null);
+  const [subDetailLoading, setSubDetailLoading] = useState(false);
+  // Các khung giờ có sẵn
   const timeSlots = [
     '08:00', '09:00', '10:00', '11:00',
     '12:00', '13:00', '14:00', '15:00',
     '16:00', '17:00'
   ];
 
+  // --- useEffect lấy dữ liệu xét nghiệm lẻ và gói khi load trang ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -95,7 +159,7 @@ export default function TestRegistrationPage() {
     fetchData();
   }, []);
 
-  // Tự động chọn gói nếu được truyền từ state
+  // --- useEffect tự động chọn gói nếu được truyền từ state (khi chuyển từ trang khác sang) ---
   useEffect(() => {
     if (location.state && location.state.selectedPackage && packages.length > 0) {
       const idx = packages.findIndex(pkg => pkg.id === location.state.selectedPackage.id);
@@ -109,425 +173,997 @@ export default function TestRegistrationPage() {
     }
   }, [location.state, packages]);
 
+  // --- Hàm chọn dịch vụ/gói ---
   const handleSelectService = (type, idx) => {
     setSelectedService({ type, idx });
   };
 
-  // Pagination logic
+  // --- Phân trang ---
   const paginatedSingleTests = singleTests.slice((pageSingle - 1) * ITEMS_PER_PAGE, pageSingle * ITEMS_PER_PAGE);
   const paginatedPackages = packages.slice((pagePackage - 1) * ITEMS_PER_PAGE, pagePackage * ITEMS_PER_PAGE);
   const totalSinglePages = Math.ceil(singleTests.length / ITEMS_PER_PAGE);
   const totalPackagePages = Math.ceil(packages.length / ITEMS_PER_PAGE);
 
+  // --- Hàm mở dialog chi tiết dịch vụ/gói ---
   const handleOpenDetail = (id, type = 'single') => {
-    let data = null;
     if (type === 'single') {
-      data = singleTests.find(item => item.id === id);
+      const data = singleTests.find(item => item.id === id);
+      setDetailData(data);
+      setDetailDialogOpen(true);
     } else if (type === 'package') {
-      data = packages.find(item => item.id === id);
+      const data = packages.find(item => item.id === id);
+      setDetailData(data);
+      setDetailDialogOpen(true);
     }
-    setDetailData(data);
-    setDetailDialogOpen(true);
+  };
+
+  // --- Hàm mở dialog chi tiết gói (gọi API lấy chi tiết gói) ---
+  const handleOpenPackageDetail = async (packageId) => {
+    setPackageDetailLoading(true);
+    try {
+      const res = await getSTIPackageById(packageId);
+      setDetailData(res.data);
+      setDetailDialogOpen(true);
+    } finally {
+      setPackageDetailLoading(false);
+    }
+  };
+
+  // --- Hàm đặt lịch xét nghiệm (gọi API bookSTITest) ---
+  const handleBookTest = async () => {
+    let serviceId = null, packageId = null;
+    if (selectedService?.type === 'single') {
+      serviceId = singleTests[selectedService.idx].id;
+    } else if (selectedService?.type === 'package') {
+      packageId = packages[selectedService.idx].id;
+    }
+    const appointmentDate = selectedDate
+      ? `${selectedDate.toISOString().split('T')[0]}T${selectedTime}:00`
+      : null;
+    let paymentMethodApi = 'COD';
+    if (paymentMethod === 'bank') paymentMethodApi = 'BANK_TRANSFER';
+    if (paymentMethod === 'visa') paymentMethodApi = 'VISA';
+    const payload = {
+      appointmentDate,
+      paymentMethod: paymentMethodApi,
+      note,
+    };
+    if (serviceId) payload.serviceId = serviceId;
+    if (packageId) payload.packageId = packageId;
+    console.log('Payload gửi đăng ký:', payload);
+    try {
+      const res = await bookSTITest(payload);
+      // Kiểm tra thành công nếu có success true hoặc có testId (hoặc data.testId)
+      if (res.data.success === true || res.data.testId || (res.data.data && res.data.data.testId)) {
+        setBookingSuccess(true);
+      } else {
+        alert((res.data.message || 'Đăng ký thất bại') + '\n' + JSON.stringify(res.data));
+      }
+    } catch (err) {
+      alert('Có lỗi xảy ra khi đăng ký: ' + (err?.response?.data?.message || err.message));
+    }
   };
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
-      <Typography variant="h4" fontWeight={700} mb={1}>
-        Đặt lịch hẹn mới
-      </Typography>
-      <Typography color="text.secondary" mb={3}>
-        Lên lịch tư vấn với các chuyên gia chăm sóc sức khỏe của chúng tôi
-      </Typography>
-      <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
-        {steps.map((label, idx) => (
-          <Step key={label}>
-            <StepLabel>{idx === 0 ? <b>{idx + 1}</b> : idx + 1}</StepLabel>
-          </Step>
-        ))}
-      </Stepper>
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
-          <CircularProgress />
+    <Box sx={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F7FAFC 100%)', minHeight: '100vh', position: 'relative', overflow: 'hidden', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>
+      {/* --- Nền trang với các hình tròn trang trí --- */}
+      <Box
+        sx={{
+          position: 'absolute',
+          width: { xs: 150, md: 300 },
+          height: { xs: 150, md: 300 },
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(74,144,226,0.10) 0%, rgba(255,255,255,0) 70%)',
+          top: { xs: -50, md: -100 },
+          left: { xs: -50, md: -100 },
+          zIndex: 0,
+        }}
+      />
+      <Box
+        sx={{
+          position: 'absolute',
+          width: { xs: 200, md: 400 },
+          height: { xs: 200, md: 400 },
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(26,188,156,0.10) 0%, rgba(255,255,255,0) 70%)',
+          bottom: { xs: -100, md: -200 },
+          right: { xs: -100, md: -200 },
+          zIndex: 0,
+        }}
+      />
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1, py: { xs: 6, md: 8 } }}>
+        {/* --- Tiêu đề trang và mô tả --- */}
+        <Box sx={{ textAlign: 'center', mb: 5 }}>
+          <Typography
+            variant="h3"
+            component="h1"
+            sx={{
+              fontWeight: 800,
+              fontSize: { xs: '2.5rem', sm: '3rem', md: '3.5rem' },
+              color: 'transparent',
+              background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textAlign: 'center',
+              lineHeight: 1.1,
+              letterSpacing: '-1px',
+              mb: 2,
+            }}
+          >
+            Đặt lịch xét nghiệm
+          </Typography>
+          <Box
+            sx={{
+              width: 120,
+              height: 6,
+              mx: 'auto',
+              mt: 2,
+              mb: 2,
+              borderRadius: 3,
+              background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+            }}
+          />
+          <Typography
+            sx={{
+              color: theme => theme.palette.text.secondary,
+              maxWidth: '700px',
+              mx: 'auto',
+              mt: 2,
+              fontSize: { xs: '1.1rem', md: '1.2rem' },
+              lineHeight: 1.7,
+              fontWeight: 400,
+              textAlign: 'center',
+            }}
+          >
+            Lên lịch tư vấn với các chuyên gia chăm sóc sức khỏe của chúng tôi
+          </Typography>
         </Box>
-      ) : error ? (
-        <Typography color="error" align="center">{error}</Typography>
-      ) : activeStep === 0 && (
-        <></>
-      )}
-      {/* Bước 1: Chọn loại dịch vụ */}
-      {activeStep === 0 && (
-        <Box sx={{ background: '#fff', borderRadius: 2, p: 3, boxShadow: 1 }}>
-          <Typography variant="h6" fontWeight={700} mb={2}>
-            Chọn loại dịch vụ
-          </Typography>
-          <Typography color="text.secondary" mb={2}>
-            Chọn loại tư vấn bạn cần
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 4, mb: 3, alignItems: 'flex-end', bgcolor: '#f4f8fc', p: 2, borderRadius: 2 }}>
-            <Box
-              sx={{
-                fontWeight: 700,
-                fontSize: 28,
-                color: activeTab === 'single' ? '#357ae8' : '#757575',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'color 0.2s',
-              }}
-              onClick={() => setActiveTab('single')}
-            >
-              Xét nghiệm lẻ
+        <Box sx={{ background: '#fff', borderRadius: 5, p: { xs: 2, md: 4 }, boxShadow: '0 8px 32px rgba(74,144,226,0.10)', mb: 4, fontFamily: 'inherit' }}>
+           {/* --- Thanh stepper các bước --- */}
+          <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
+            {steps.map((label, idx) => (
+              <Step key={label}>
+                <StepLabel sx={{
+                  '& .MuiStepLabel-label': {
+                    fontWeight: 700,
+                    fontSize: 18,
+                    color: theme => theme.palette.text.primary,
+                    fontFamily: 'inherit',
+                  }
+                }}>{idx === 0 ? <b>{idx + 1}</b> : idx + 1}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+           {/* --- Loading hoặc lỗi --- */}
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Typography color="error" align="center">{error}</Typography>
+          ) : activeStep === 0 && (
+            <Box sx={{ background: '#fff', borderRadius: 5, p: { xs: 3, md: 5 }, boxShadow: '0 8px 32px rgba(74,144,226,0.10)', mb: 4, fontFamily: 'inherit' }}>
+              <Typography
+                variant="h6"
+                fontWeight={800}
+                fontSize={32}
+                mb={2}
+                sx={{ color: '#222', fontFamily: 'inherit' }}
+              >
+                Chọn loại dịch vụ
+              </Typography>
+              <Typography
+                sx={{ color: '#757575', fontWeight: 400, fontSize: 18, fontFamily: 'inherit', mb: 2 }}
+              >
+                Chọn loại tư vấn bạn cần
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 4, mb: 3, alignItems: 'flex-end', p: 2, borderRadius: 2 }}>
+                <Box
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: 28,
+                    color: activeTab === 'single' ? '#357ae8' : '#757575',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'color 0.2s',
+                  }}
+                  onClick={() => setActiveTab('single')}
+                >
+                  Xét nghiệm lẻ
+                  {activeTab === 'single' && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        left: 0,
+                        bottom: -6,
+                        width: '100%',
+                        height: 6,
+                        borderRadius: 3,
+                        background: 'linear-gradient(90deg, #357ae8 0%, #3ec6b7 100%)',
+                      }}
+                    />
+                  )}
+                </Box>
+                <Box
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: 28,
+                    color: activeTab === 'package' ? '#357ae8' : '#757575',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'color 0.2s',
+                  }}
+                  onClick={() => setActiveTab('package')}
+                >
+                  Gói xét nghiệm
+                  {activeTab === 'package' && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        left: 0,
+                        bottom: -6,
+                        width: '100%',
+                        height: 6,
+                        borderRadius: 3,
+                        background: 'linear-gradient(90deg, #357ae8 0%, #3ec6b7 100%)',
+                      }}
+                    />
+                  )}
+                </Box>
+              </Box>
+              {/* Danh sách dịch vụ theo tab */}
               {activeTab === 'single' && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    left: 0,
-                    bottom: -6,
-                    width: '100%',
-                    height: 6,
-                    borderRadius: 3,
-                    background: 'linear-gradient(90deg, #357ae8 0%, #3ec6b7 100%)',
-                  }}
-                />
-              )}
-            </Box>
-            <Box
-              sx={{
-                fontWeight: 700,
-                fontSize: 28,
-                color: activeTab === 'package' ? '#357ae8' : '#757575',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'color 0.2s',
-              }}
-              onClick={() => setActiveTab('package')}
-            >
-              Gói xét nghiệm
-              {activeTab === 'package' && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    left: 0,
-                    bottom: -6,
-                    width: '100%',
-                    height: 6,
-                    borderRadius: 3,
-                    background: 'linear-gradient(90deg, #357ae8 0%, #3ec6b7 100%)',
-                  }}
-                />
-              )}
-            </Box>
-          </Box>
-          {/* Danh sách dịch vụ theo tab */}
-          {activeTab === 'single' && (
-            <>
-              <Box mb={2}>
-                {paginatedSingleTests.map((service, idx) => (
-                  <Card
-                    key={service.id}
-                    variant={selectedService?.type === 'single' && selectedService?.idx === ((pageSingle - 1) * ITEMS_PER_PAGE + idx) ? 'outlined' : 'elevation'}
-                    sx={{
-                      borderColor: selectedService?.type === 'single' && selectedService?.idx === ((pageSingle - 1) * ITEMS_PER_PAGE + idx) ? 'primary.main' : 'grey.200',
-                      cursor: 'pointer',
-                      '&:hover': { boxShadow: 3 },
-                      mb: 2,
-                      width: '100%',
-                    }}
-                    onClick={() => handleSelectService('single', (pageSingle - 1) * ITEMS_PER_PAGE + idx)}
-                  >
-                    <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                      <Box>
-                        <Typography fontWeight={700}>{service.name}</Typography>
-                        <Typography color="text.secondary" fontSize={14} mb={1}>{service.description}</Typography>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <AccessTimeIcon sx={{ fontSize: 18 }} />
-                          <Typography fontSize={13}>{service.duration || '30 phút'}</Typography>
-                          {service.label && <Chip label={service.label} size="small" sx={{ ml: 1 }} />}
-                        </Box>
-                      </Box>
-                      <Box display="flex" alignItems="center" gap={2}>
-                        <Typography fontWeight={700} fontSize={16}>{service.price ? service.price.toLocaleString('vi-VN') + ' đ' : ''}</Typography>
-                        <Button variant="outlined" size="small" onClick={e => { e.stopPropagation(); handleOpenDetail(service.id, 'single'); }} sx={{ ml: 2, textTransform: 'none', borderRadius: 2 }}>
-                          Xem chi tiết
+                <>
+                  <Box mb={2}>
+                    {paginatedSingleTests.map((service, idx) => (
+                      <Card
+                        key={service.id}
+                        variant={selectedService?.type === 'single' && selectedService?.idx === ((pageSingle - 1) * ITEMS_PER_PAGE + idx) ? 'outlined' : 'elevation'}
+                        sx={{
+                          borderRadius: 6,
+                          boxShadow: '0 2px 8px rgba(74,144,226,0.07)',
+                          border: selectedService?.type === 'single' && selectedService?.idx === ((pageSingle - 1) * ITEMS_PER_PAGE + idx)
+                            ? '2px solid #4A90E2'
+                            : '1.5px solid #e0e7ef',
+                          background: selectedService?.type === 'single' && selectedService?.idx === ((pageSingle - 1) * ITEMS_PER_PAGE + idx)
+                            ? 'linear-gradient(90deg, #e3f2fd 0%, #f7fafc 100%)'
+                            : '#fff',
+                          transition: 'all 0.25s cubic-bezier(.4,0,.2,1)',
+                          cursor: 'pointer',
+                          p: 1.5,
+                          '&:hover': {
+                            boxShadow: '0 12px 32px rgba(74,144,226,0.18)',
+                            border: '2px solid #1ABC9C',
+                            background: 'linear-gradient(90deg, #f0f7ff 0%, #e8f4ff 100%)',
+                            transform: 'translateY(-4px) scale(1.01)',
+                          }
+                        }}
+                        onClick={() => handleSelectService('single', (pageSingle - 1) * ITEMS_PER_PAGE + idx)}
+                      >
+                        <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', p: 2 }}>
+                          <Box>
+                            <Typography fontWeight={700} fontSize={18}>{service.name}</Typography>
+                            <Typography color="text.secondary" fontSize={14} mb={1}>
+                              {service.description && service.description.length > 55
+                                ? service.description.slice(0, 55) + '...'
+                                : service.description}
+                            </Typography>
+                            <Box display="flex" alignItems="center" gap={1} mt={1}>
+                              <AccessTimeIcon sx={{ fontSize: 18, color: '#4A90E2', mr: 0.5 }} />
+                              <Typography fontSize={15} color="text.secondary">{service.duration || '30 phút'}</Typography>
+                              {service.label && <Chip label={service.label} size="small" sx={{ ml: 1 }} />}
+                            </Box>
+                          </Box>
+                          <Box display="flex" alignItems="center" gap={2}>
+                            <Typography fontWeight={700} fontSize={18} color="primary.main">{service.price ? service.price.toLocaleString('vi-VN') + ' đ' : ''}</Typography>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={e => { e.stopPropagation(); handleOpenDetail(service.id, 'single'); }}
+                              sx={{
+                                ml: 2,
+                                textTransform: 'none',
+                                borderRadius: 50,
+                                fontWeight: 700,
+                                px: 2.5,
+                                py: 1,
+                                minWidth: 90,
+                                fontSize: '1rem',
+                                borderColor: theme => theme.palette.primary.main,
+                                color: theme => theme.palette.primary.main,
+                                background: '#fff',
+                                boxShadow: 'none',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+                                  color: '#fff',
+                                  borderColor: '#1ABC9C',
+                                  boxShadow: '0 4px 16px rgba(74,144,226,0.18)',
+                                },
+                              }}
+                            >
+                              Xem chi tiết
+                            </Button>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Box>
+                  {/* Pagination for single tests */}
+                  {totalSinglePages > 1 && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                      <Button onClick={() => setPageSingle(page => Math.max(1, page - 1))} disabled={pageSingle === 1} sx={{ minWidth: 32 }}><NavigateBeforeIcon /></Button>
+                      {[...Array(totalSinglePages)].map((_, i) => (
+                        <Button
+                          key={i}
+                          variant={pageSingle === i + 1 ? 'contained' : 'outlined'}
+                          sx={{ minWidth: 40, mx: 0.5, fontWeight: 700, fontSize: 20, borderRadius: 2, background: pageSingle === i + 1 ? '#357ae8' : undefined, color: pageSingle === i + 1 ? '#fff' : '#222' }}
+                          onClick={() => setPageSingle(i + 1)}
+                        >
+                          {i + 1}
                         </Button>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Box>
-              {/* Pagination for single tests */}
-              {totalSinglePages > 1 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                  <Button onClick={() => setPageSingle(page => Math.max(1, page - 1))} disabled={pageSingle === 1} sx={{ minWidth: 32 }}><NavigateBeforeIcon /></Button>
-                  {[...Array(totalSinglePages)].map((_, i) => (
-                    <Button
-                      key={i}
-                      variant={pageSingle === i + 1 ? 'contained' : 'outlined'}
-                      sx={{ minWidth: 40, mx: 0.5, fontWeight: 700, fontSize: 20, borderRadius: 2, background: pageSingle === i + 1 ? '#357ae8' : undefined, color: pageSingle === i + 1 ? '#fff' : '#222' }}
-                      onClick={() => setPageSingle(i + 1)}
-                    >
-                      {i + 1}
-                    </Button>
-                  ))}
-                  <Button onClick={() => setPageSingle(page => Math.min(totalSinglePages, page + 1))} disabled={pageSingle === totalSinglePages} sx={{ minWidth: 32 }}><NavigateNextIcon /></Button>
-                </Box>
-              )}
-            </>
-          )}
-          {activeTab === 'package' && (
-            <>
-              <Box mb={2}>
-                {paginatedPackages.map((service, idx) => (
-                  <Card
-                    key={service.id}
-                    variant={selectedService?.type === 'package' && selectedService?.idx === ((pagePackage - 1) * ITEMS_PER_PAGE + idx) ? 'outlined' : 'elevation'}
-                    sx={{
-                      borderColor: selectedService?.type === 'package' && selectedService?.idx === ((pagePackage - 1) * ITEMS_PER_PAGE + idx) ? 'primary.main' : 'grey.200',
-                      cursor: 'pointer',
-                      '&:hover': { boxShadow: 3 },
-                      mb: 2,
-                      width: '100%',
-                    }}
-                    onClick={() => handleSelectService('package', (pagePackage - 1) * ITEMS_PER_PAGE + idx)}
-                  >
-                    <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                      <Box>
-                        <Typography fontWeight={700}>{service.name}</Typography>
-                        <Typography color="text.secondary" fontSize={14} mb={1}>{service.description}</Typography>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <AccessTimeIcon sx={{ fontSize: 18 }} />
-                          <Typography fontSize={13}>{service.duration || '60 phút'}</Typography>
-                          {service.label && <Chip label={service.label} size="small" sx={{ ml: 1 }} />}
-                        </Box>
-                      </Box>
-                      <Typography fontWeight={700} fontSize={16}>{service.price ? service.price.toLocaleString('vi-VN') + ' đ' : ''}</Typography>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Box>
-              {/* Pagination for packages */}
-              {totalPackagePages > 1 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                  <Button onClick={() => setPagePackage(page => Math.max(1, page - 1))} disabled={pagePackage === 1} sx={{ minWidth: 32 }}><NavigateBeforeIcon /></Button>
-                  {[...Array(totalPackagePages)].map((_, i) => (
-                    <Button
-                      key={i}
-                      variant={pagePackage === i + 1 ? 'contained' : 'outlined'}
-                      sx={{ minWidth: 40, mx: 0.5, fontWeight: 700, fontSize: 20, borderRadius: 2, background: pagePackage === i + 1 ? '#357ae8' : undefined, color: pagePackage === i + 1 ? '#fff' : '#222' }}
-                      onClick={() => setPagePackage(i + 1)}
-                    >
-                      {i + 1}
-                    </Button>
-                  ))}
-                  <Button onClick={() => setPagePackage(page => Math.min(totalPackagePages, page + 1))} disabled={pagePackage === totalPackagePages} sx={{ minWidth: 32 }}><NavigateNextIcon /></Button>
-                </Box>
-              )}
-            </>
-          )}
-          <Divider sx={{ my: 3 }} />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button
-              variant="outlined"
-              color="primary"
-              disabled={activeStep === 0}
-              onClick={() => setActiveStep(activeStep - 1)}
-              sx={{ minWidth: 120 }}
-            >
-              Quay lại
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              disabled={selectedService === null}
-              onClick={() => setActiveStep(1)}
-              sx={{ minWidth: 180 }}
-            >
-              Tiếp tục
-            </Button>
-          </Box>
-        </Box>
-      )}
-      {/* Bước 2: Chọn ngày giờ */}
-      {activeStep === 1 && (
-        <Box sx={{ background: '#fff', borderRadius: 2, p: 3, boxShadow: 1, maxWidth: 700, mx: 'auto' }}>
-          <Typography variant="h5" fontWeight={700} mb={1}>
-            <span role="img" aria-label="calendar">🗓️</span> Chọn Ngày & Giờ
-          </Typography>
-          <Typography color="text.secondary" mb={3}>
-            Chọn ngày và giờ hẹn bạn muốn
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            <Box>
-              <Typography fontWeight={600} mb={1}>Chọn ngày</Typography>
-              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
-                <DatePicker
-                  value={selectedDate}
-                  onChange={setSelectedDate}
-                  disablePast
-                  renderInput={({ inputRef, inputProps, InputProps }) => (
-                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                      <input ref={inputRef} {...inputProps} style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }} />
-                      {InputProps?.endAdornment}
+                      ))}
+                      <Button onClick={() => setPageSingle(page => Math.min(totalSinglePages, page + 1))} disabled={pageSingle === totalSinglePages} sx={{ minWidth: 32 }}><NavigateNextIcon /></Button>
                     </Box>
                   )}
-                />
-              </LocalizationProvider>
-            </Box>
-            <Box>
-              <Typography fontWeight={600} mb={1}>Các khung giờ có sẵn</Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, minWidth: 180 }}>
-                {timeSlots.map(slot => (
-                  <Button
-                    key={slot}
-                    variant={selectedTime === slot ? 'contained' : 'outlined'}
-                    onClick={() => setSelectedTime(slot)}
-                    sx={{
-                      minWidth: 90,
-                      height: 40,
-                      borderRadius: 2,
-                      bgcolor: selectedTime === slot ? 'linear-gradient(45deg, #2196F3, #00BFA5)' : '#fff',
-                      color: selectedTime === slot ? '#fff' : '#1976D2',
-                      fontWeight: 600,
-                      boxShadow: selectedTime === slot ? '0 2px 8px rgba(33,150,243,0.10)' : 'none',
-                      borderColor: '#1976D2',
-                      '&:hover': {
-                        bgcolor: selectedTime === slot ? 'linear-gradient(45deg, #1976D2, #00897B)' : '#E3F2FD'
-                      }
-                    }}
-                  >
-                    {slot}
-                  </Button>
-                ))}
+                </>
+              )}
+              {activeTab === 'package' && (
+                <>
+                  <Box mb={2}>
+                    {paginatedPackages.map((service, idx) => (
+                      <Card
+                        key={service.id}
+                        variant={selectedService?.type === 'package' && selectedService?.idx === ((pagePackage - 1) * ITEMS_PER_PAGE + idx) ? 'outlined' : 'elevation'}
+                        sx={{
+                          borderRadius: 6,
+                          boxShadow: '0 2px 8px rgba(74,144,226,0.07)',
+                          border: selectedService?.type === 'package' && selectedService?.idx === ((pagePackage - 1) * ITEMS_PER_PAGE + idx)
+                            ? '2px solid #4A90E2'
+                            : '1.5px solid #e0e7ef',
+                          background: selectedService?.type === 'package' && selectedService?.idx === ((pagePackage - 1) * ITEMS_PER_PAGE + idx)
+                            ? 'linear-gradient(90deg, #e3f2fd 0%, #f7fafc 100%)'
+                            : '#fff',
+                          transition: 'all 0.25s cubic-bezier(.4,0,.2,1)',
+                          cursor: 'pointer',
+                          p: 1.5,
+                          '&:hover': {
+                            boxShadow: '0 12px 32px rgba(74,144,226,0.18)',
+                            border: '2px solid #1ABC9C',
+                            background: 'linear-gradient(90deg, #f0f7ff 0%, #e8f4ff 100%)',
+                            transform: 'translateY(-4px) scale(1.01)',
+                          }
+                        }}
+                        onClick={() => handleSelectService('package', (pagePackage - 1) * ITEMS_PER_PAGE + idx)}
+                      >
+                        <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', p: 2 }}>
+                          <Box>
+                            <Typography fontWeight={700} fontSize={18}>{service.name}</Typography>
+                            <Typography color="text.secondary" fontSize={14} mb={1}>
+                              {service.description && service.description.length > 55
+                                ? service.description.slice(0, 55) + '...'
+                                : service.description}
+                            </Typography>
+                            <Box display="flex" alignItems="center" gap={1} mt={1}>
+                              <AccessTimeIcon sx={{ fontSize: 18, color: '#4A90E2', mr: 0.5 }} />
+                              <Typography fontSize={15} color="text.secondary">{service.duration || '60 phút'}</Typography>
+                              {service.label && <Chip label={service.label} size="small" sx={{ ml: 1 }} />}
+                            </Box>
+                          </Box>
+                          <Box display="flex" alignItems="center" gap={2}>
+                            <Typography fontWeight={700} fontSize={18} color="primary.main">{service.price ? service.price.toLocaleString('vi-VN') + ' đ' : ''}</Typography>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={e => { e.stopPropagation(); handleOpenPackageDetail(service.id); }}
+                              sx={{
+                                ml: 2,
+                                textTransform: 'none',
+                                borderRadius: 50,
+                                fontWeight: 700,
+                                px: 2.5,
+                                py: 1,
+                                minWidth: 90,
+                                fontSize: '1rem',
+                                borderColor: theme => theme.palette.primary.main,
+                                color: theme => theme.palette.primary.main,
+                                background: '#fff',
+                                boxShadow: 'none',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+                                  color: '#fff',
+                                  borderColor: '#1ABC9C',
+                                  boxShadow: '0 4px 16px rgba(74,144,226,0.18)',
+                                },
+                              }}
+                            >
+                              Xem chi tiết
+                            </Button>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Box>
+                  {/* Pagination for packages */}
+                  {totalPackagePages > 1 && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                      <Button onClick={() => setPagePackage(page => Math.max(1, page - 1))} disabled={pagePackage === 1} sx={{ minWidth: 32 }}><NavigateBeforeIcon /></Button>
+                      {[...Array(totalPackagePages)].map((_, i) => (
+                        <Button
+                          key={i}
+                          variant={pagePackage === i + 1 ? 'contained' : 'outlined'}
+                          sx={{ minWidth: 40, mx: 0.5, fontWeight: 700, fontSize: 20, borderRadius: 2, background: pagePackage === i + 1 ? '#357ae8' : undefined, color: pagePackage === i + 1 ? '#fff' : '#222' }}
+                          onClick={() => setPagePackage(i + 1)}
+                        >
+                          {i + 1}
+                        </Button>
+                      ))}
+                      <Button onClick={() => setPagePackage(page => Math.min(totalPackagePages, page + 1))} disabled={pagePackage === totalPackagePages} sx={{ minWidth: 32 }}><NavigateNextIcon /></Button>
+                    </Box>
+                  )}
+                </>
+              )}
+              <Divider sx={{ my: 3 }} />
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 6 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  disabled={selectedService === null}
+                  onClick={() => setActiveStep(1)}
+                  sx={{
+                    minWidth: 180,
+                    fontWeight: 600,
+                    borderRadius: 50,
+                    px: 3,
+                    py: 1.2,
+                    fontSize: '1.1rem',
+                    background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                    color: '#fff',
+                    boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
+                    textTransform: 'none',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 10px 25px rgba(74, 144, 226, 0.25)',
+                    },
+                  }}
+                >
+                  TIẾP TỤC →
+                </Button>
               </Box>
             </Box>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={() => setActiveStep(0)}
-              sx={{ minWidth: 120 }}
-            >
-              ← Quay lại Tư vấn
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              disabled={!selectedDate || !selectedTime}
-              onClick={() => setActiveStep(2)}
-              sx={{ minWidth: 140 }}
-            >
-              Tiếp tục →
-            </Button>
-          </Box>
-        </Box>
-      )}
-      {/* Bước 3: Ghi chú */}
-      {activeStep === 2 && (
-        <Box sx={{ background: '#fff', borderRadius: 2, p: 3, boxShadow: 1, maxWidth: 700, mx: 'auto' }}>
-          <Typography variant="h5" fontWeight={700} mb={2}>Ghi chú cho lịch hẹn</Typography>
-          <TextField
-            label="Ghi chú (tuỳ chọn)"
-            multiline
-            minRows={4}
-            fullWidth
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            placeholder="Nhập ghi chú cho lịch hẹn nếu có..."
-            sx={{ mb: 4 }}
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={() => setActiveStep(1)}
-              sx={{ minWidth: 120 }}
-            >
-              ← Quay lại Ngày & Giờ
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => setActiveStep(3)}
-              sx={{ minWidth: 140 }}
-            >
-              Tiếp tục →
-            </Button>
-          </Box>
-        </Box>
-      )}
-      {/* Bước 4: Thanh toán */}
-      {activeStep === 3 && !bookingSuccess && (
-        <Box sx={{ background: '#fff', borderRadius: 2, p: 3, boxShadow: 1, maxWidth: 700, mx: 'auto' }}>
-          <Typography variant="h5" fontWeight={700} mb={2}>Chọn phương thức thanh toán</Typography>
-          <RadioGroup
-            value={paymentMethod}
-            onChange={e => setPaymentMethod(e.target.value)}
-            sx={{ mb: 4 }}
-          >
-            <FormControlLabel value="cash" control={<Radio />} label="Tiền mặt khi đến" />
-            <FormControlLabel value="bank" control={<Radio />} label="Chuyển khoản ngân hàng" />
-            {/* Có thể thêm các phương thức khác nếu cần */}
-          </RadioGroup>
-          {paymentMethod === 'bank' && (
-            <Box sx={{
-              bgcolor: '#f4f8fc',
-              border: '1px solid #b3e0ff',
-              borderRadius: 2,
-              p: 2,
-              mb: 3,
-              color: '#1976D2',
-              fontWeight: 500
-            }}>
-              <Typography fontWeight={700} color="#1976D2" mb={1}>Thông tin chuyển khoản:</Typography>
-              <Typography>Số tài khoản: <b>123456789</b></Typography>
-              <Typography>Ngân hàng: <b>Vietcombank - CN Hà Nội</b></Typography>
-              <Typography>Chủ tài khoản: <b>Nguyễn Văn A</b></Typography>
-              <Typography fontSize={13} color="text.secondary" mt={1}>
-                Vui lòng ghi rõ họ tên và số điện thoại khi chuyển khoản.
+          )}
+          {/* Bước 2: Chọn ngày giờ */}
+          {activeStep === 1 && (
+            <Box sx={{ background: '#fff', borderRadius: 5, p: { xs: 3, md: 5 }, boxShadow: '0 8px 32px rgba(74,144,226,0.10)', mb: 4, fontFamily: 'inherit' }}>
+              <Typography variant="h4" fontWeight={800} mb={1} textAlign="center" sx={{ color: 'transparent', background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: { xs: '2rem', md: '2.5rem' } }}>
+                Chọn Ngày & Giờ
               </Typography>
+              <Typography color="text.secondary" mb={3} textAlign="center" fontWeight={500}>
+                Chọn ngày và giờ hẹn bạn muốn
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'center', alignItems: { xs: 'stretch', md: 'flex-start' }, gap: 8, mt: 4, mb: 2 }}>
+                {/* Chọn ngày */}
+                <Box>
+                  <Typography fontWeight={700} mb={1} fontSize={20} textAlign="center">Chọn ngày</Typography>
+                  <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
+                    <DatePicker
+                      value={selectedDate}
+                      onChange={setSelectedDate}
+                      disablePast
+                      renderInput={({ inputRef, inputProps, InputProps }) => (
+                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                          <input
+                            ref={inputRef}
+                            {...inputProps}
+                            style={{
+                              padding: '16px 20px',
+                              borderRadius: 20,
+                              border: '2px solid #4A90E233',
+                              fontSize: 20,
+                              fontWeight: 600,
+                              background: '#fff',
+                              boxShadow: '0 2px 8px rgba(74,144,226,0.06)',
+                              outline: 'none',
+                              color: '#222',
+                              width: 220,
+                              marginRight: 12,
+                              transition: 'border 0.2s',
+                            }}
+                          />
+                          {InputProps?.endAdornment && (
+                            <Box sx={{ color: 'primary.main', fontSize: 28 }}>{InputProps.endAdornment}</Box>
+                          )}
+                        </Box>
+                      )}
+                    />
+                  </LocalizationProvider>
+                </Box>
+                {/* Chọn giờ */}
+                <Box>
+                  <Typography fontWeight={700} mb={1} fontSize={20} textAlign="center">Các khung giờ có sẵn</Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2, minWidth: 220, justifyContent: 'center' }}>
+                    {timeSlots.map(slot => (
+                      <Button
+                        key={slot}
+                        variant={selectedTime === slot ? 'contained' : 'outlined'}
+                        onClick={() => setSelectedTime(slot)}
+                        sx={{
+                          minWidth: 110,
+                          height: 54,
+                          borderRadius: 50,
+                          fontWeight: 600,
+                          fontSize: '1.1rem',
+                          px: 3,
+                          py: 1.5,
+                          borderWidth: 2,
+                          borderColor: selectedTime === slot ? 'transparent' : '#4A90E233',
+                          bgcolor: selectedTime === slot ? 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)' : '#fff',
+                          color: selectedTime === slot ? '#fff' : 'primary.main',
+                          boxShadow: selectedTime === slot ? '0 2px 8px rgba(74,144,226,0.10)' : 'none',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            bgcolor: selectedTime === slot ? 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)' : '#E3F2FD',
+                            borderColor: '#4A90E2',
+                            transform: 'scale(1.04)',
+                          },
+                        }}
+                      >
+                        {slot}
+                      </Button>
+                    ))}
+                  </Box>
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 6 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => setActiveStep(0)}
+                  sx={{
+                    minWidth: 160,
+                    fontWeight: 600,
+                    borderRadius: 50,
+                    px: 3,
+                    py: 1.2,
+                    fontSize: '1.1rem',
+                    borderWidth: 2,
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    textTransform: 'none',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      bgcolor: 'rgba(74,144,226,0.07)',
+                      borderColor: 'primary.dark',
+                    },
+                  }}
+                >
+                  ← QUAY LẠI DỊCH VỤ
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  disabled={!selectedDate || !selectedTime}
+                  onClick={() => setActiveStep(2)}
+                  sx={{
+                    minWidth: 160,
+                    fontWeight: 600,
+                    borderRadius: 50,
+                    px: 3,
+                    py: 1.2,
+                    fontSize: '1.1rem',
+                    background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                    color: '#fff',
+                    boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
+                    textTransform: 'none',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 10px 25px rgba(74, 144, 226, 0.25)',
+                    },
+                  }}
+                >
+                  TIẾP TỤC →
+                </Button>
+              </Box>
             </Box>
           )}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={() => setActiveStep(2)}
-              sx={{ minWidth: 120 }}
+          {/* Bước 3: Ghi chú */}
+          {activeStep === 2 && (
+            <Box sx={{ background: '#fff', borderRadius: 5, p: { xs: 3, md: 5 }, boxShadow: '0 8px 32px rgba(74,144,226,0.10)', mb: 4, fontFamily: 'inherit' }}>
+              <Typography variant="h4" fontWeight={800} mb={2} textAlign="center" sx={{ color: 'transparent', background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: { xs: '2rem', md: '2.5rem' } }}>
+                Ghi chú cho lịch hẹn
+              </Typography>
+              <TextField
+                label="Ghi chú (tuỳ chọn)"
+                multiline
+                minRows={4}
+                fullWidth
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                placeholder="Nhập ghi chú cho lịch hẹn nếu có..."
+                sx={{ mb: 4 }}
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 6 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => setActiveStep(1)}
+                  sx={{
+                    minWidth: 160,
+                    fontWeight: 600,
+                    borderRadius: 50,
+                    px: 3,
+                    py: 1.2,
+                    fontSize: '1.1rem',
+                    borderWidth: 2,
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    textTransform: 'none',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      bgcolor: 'rgba(74,144,226,0.07)',
+                      borderColor: 'primary.dark',
+                    },
+                  }}
+                >
+                  ← QUAY LẠI NGÀY & GIỜ
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => setActiveStep(3)}
+                  sx={{
+                    minWidth: 160,
+                    fontWeight: 600,
+                    borderRadius: 50,
+                    px: 3,
+                    py: 1.2,
+                    fontSize: '1.1rem',
+                    background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                    color: '#fff',
+                    boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
+                    textTransform: 'none',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 10px 25px rgba(74, 144, 226, 0.25)',
+                    },
+                  }}
+                >
+                  TIẾP TỤC →
+                </Button>
+              </Box>
+            </Box>
+          )}
+          {/* Bước 4: Thanh toán */}
+          {activeStep === 3 && !bookingSuccess && (
+            <Box sx={{ background: '#fff', borderRadius: 5, p: { xs: 3, md: 5 }, boxShadow: '0 8px 32px rgba(74,144,226,0.10)', mb: 4, fontFamily: 'inherit' }}>
+              <Typography variant="h4" fontWeight={800} mb={2} textAlign="center" sx={{ color: 'transparent', background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: { xs: '2rem', md: '2.5rem' } }}>
+                Chọn phương thức thanh toán
+              </Typography>
+              <RadioGroup
+                value={paymentMethod}
+                onChange={e => setPaymentMethod(e.target.value)}
+                sx={{ mb: 4 }}
+              >
+                <FormControlLabel value="cash" control={<Radio />} label="Thanh toán tiền mặt" />
+                <FormControlLabel value="bank" control={<Radio />} label="Chuyển khoản ngân hàng" />
+                <FormControlLabel value="visa" control={<Radio />} label="Thanh toán bằng thẻ Visa" />
+              </RadioGroup>
+              {paymentMethod === 'bank' && (
+                <Box sx={{
+                  bgcolor: '#f4f8fc',
+                  border: '2px solid #4A90E233',
+                  borderRadius: 4,
+                  p: 3,
+                  mb: 3,
+                  color: '#1976D2',
+                  fontWeight: 500,
+                  maxWidth: 600,
+                  mx: 'auto',
+                  boxShadow: '0 2px 8px rgba(74,144,226,0.06)',
+                  mt: 4,
+                }}>
+                  <Typography fontWeight={700} color="#1976D2" mb={1} fontSize={18}>Thông tin chuyển khoản:</Typography>
+                  <Typography fontSize={16}>Số tài khoản: <b style={{ color: '#1976D2' }}>123456789</b></Typography>
+                  <Typography fontSize={16}>Ngân hàng: <b style={{ color: '#1976D2' }}>Vietcombank - CN Hà Nội</b></Typography>
+                  <Typography fontSize={16}>Chủ tài khoản: <b style={{ color: '#1976D2' }}>Nguyễn Văn A</b></Typography>
+                  <Typography fontSize={13} color="text.secondary" mt={1}>
+                    Vui lòng ghi rõ họ tên và số điện thoại khi chuyển khoản.
+                  </Typography>
+                </Box>
+              )}
+              {paymentMethod === 'visa' && (
+                <Box sx={{
+                  bgcolor: '#f4f8fc',
+                  border: '2px solid #4A90E233',
+                  borderRadius: 4,
+                  p: 3,
+                  mb: 3,
+                  color: '#1976D2',
+                  fontWeight: 500,
+                  maxWidth: 700,
+                  mx: 'auto',
+                  boxShadow: '0 2px 8px rgba(74,144,226,0.06)',
+                  mt: 4,
+                }}>
+                  <Typography fontWeight={700} color="#1976D2" mb={2} fontSize={20}>Nhập thông tin thẻ Visa</Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        label="Số thẻ"
+                        fullWidth
+                        value={visaInfo.cardNumber}
+                        onChange={e => setVisaInfo({ ...visaInfo, cardNumber: e.target.value })}
+                        error={!!visaErrors.cardNumber}
+                        helperText={visaErrors.cardNumber}
+                        inputProps={{ maxLength: 19, inputMode: 'numeric', pattern: '[0-9 ]*' }}
+                        sx={{
+                          background: '#fff',
+                          borderRadius: 3,
+                          fontSize: 18,
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 3,
+                            fontSize: 18,
+                            fontWeight: 500,
+                            borderColor: '#4A90E233',
+                            '& fieldset': {
+                              borderColor: '#4A90E233',
+                            },
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: 'primary.main',
+                              boxShadow: '0 0 0 2px #4A90E233',
+                            },
+                          },
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        label="Tên chủ thẻ"
+                        fullWidth
+                        value={visaInfo.cardName}
+                        onChange={e => setVisaInfo({ ...visaInfo, cardName: e.target.value })}
+                        error={!!visaErrors.cardName}
+                        helperText={visaErrors.cardName}
+                        sx={{
+                          background: '#fff',
+                          borderRadius: 3,
+                          fontSize: 18,
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 3,
+                            fontSize: 18,
+                            fontWeight: 500,
+                            borderColor: '#4A90E233',
+                            '& fieldset': {
+                              borderColor: '#4A90E233',
+                            },
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: 'primary.main',
+                              boxShadow: '0 0 0 2px #4A90E233',
+                            },
+                          },
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        label="Ngày hết hạn (MM/YY)"
+                        fullWidth
+                        value={visaInfo.expiry}
+                        onChange={e => setVisaInfo({ ...visaInfo, expiry: e.target.value })}
+                        error={!!visaErrors.expiry}
+                        helperText={visaErrors.expiry}
+                        placeholder="MM/YY"
+                        sx={{
+                          background: '#fff',
+                          borderRadius: 3,
+                          fontSize: 18,
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 3,
+                            fontSize: 18,
+                            fontWeight: 500,
+                            borderColor: '#4A90E233',
+                            '& fieldset': {
+                              borderColor: '#4A90E233',
+                            },
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: 'primary.main',
+                              boxShadow: '0 0 0 2px #4A90E233',
+                            },
+                          },
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        label="CVV"
+                        fullWidth
+                        value={visaInfo.cvv}
+                        onChange={e => setVisaInfo({ ...visaInfo, cvv: e.target.value })}
+                        error={!!visaErrors.cvv}
+                        helperText={visaErrors.cvv}
+                        inputProps={{ maxLength: 4, inputMode: 'numeric', pattern: '[0-9]*' }}
+                        sx={{
+                          background: '#fff',
+                          borderRadius: 3,
+                          fontSize: 18,
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 3,
+                            fontSize: 18,
+                            fontWeight: 500,
+                            borderColor: '#4A90E233',
+                            '& fieldset': {
+                              borderColor: '#4A90E233',
+                            },
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: 'primary.main',
+                              boxShadow: '0 0 0 2px #4A90E233',
+                            },
+                          },
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 6 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => setActiveStep(2)}
+                  sx={{
+                    minWidth: 160,
+                    fontWeight: 600,
+                    borderRadius: 50,
+                    px: 3,
+                    py: 1.2,
+                    fontSize: '1.1rem',
+                    borderWidth: 2,
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    textTransform: 'none',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      bgcolor: 'rgba(74,144,226,0.07)',
+                      borderColor: 'primary.dark',
+                    },
+                  }}
+                >
+                  ← QUAY LẠI GHI CHÚ
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleBookTest}
+                  sx={{
+                    minWidth: 220,
+                    fontWeight: 600,
+                    borderRadius: 50,
+                    px: 3,
+                    py: 1.2,
+                    fontSize: '1.1rem',
+                    background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                    color: '#fff',
+                    boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
+                    textTransform: 'none',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 10px 25px rgba(74, 144, 226, 0.25)',
+                    },
+                  }}
+                >
+                  THANH TOÁN & HOÀN THÀNH ĐẶT LỊCH
+                </Button>
+              </Box>
+            </Box>
+          )}
+          {/* Thông báo thành công */}
+          {activeStep === 3 && bookingSuccess && (
+            <Box
+              sx={{
+                background: '#fff',
+                borderRadius: 5,
+                p: { xs: 4, md: 6 },
+                boxShadow: '0 8px 32px rgba(74,144,226,0.10)',
+                maxWidth: 700,
+                mx: 'auto',
+                textAlign: 'center',
+                mt: 6,
+              }}
             >
-              ← Quay lại Ghi chú
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => setBookingSuccess(true)}
-              sx={{ minWidth: 180 }}
-            >
-              Thanh toán & Hoàn thành đặt lịch
-            </Button>
-          </Box>
+              <Typography
+                variant="h3"
+                fontWeight={900}
+                sx={{
+                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  mb: 2,
+                  fontSize: { xs: '2.2rem', md: '2.8rem' },
+                  letterSpacing: '-1px',
+                }}
+              >
+                Đặt lịch thành công!
+              </Typography>
+              <Typography
+                sx={{
+                  color: '#222',
+                  fontSize: { xs: '1.1rem', md: '1.25rem' },
+                  mb: 4,
+                  fontWeight: 500,
+                }}
+              >
+                Cảm ơn bạn đã đăng ký xét nghiệm.<br />
+                Chúng tôi sẽ liên hệ xác nhận lịch hẹn sớm nhất.
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => navigate('/')}
+                sx={{
+                  borderRadius: 50,
+                  px: 4,
+                  py: 1.5,
+                  fontWeight: 700,
+                  fontSize: '1.1rem',
+                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+                  color: '#fff',
+                  boxShadow: '0 2px 8px rgba(74,144,226,0.10)',
+                  textTransform: 'none',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
+                    boxShadow: '0 6px 18px rgba(74,144,226,0.18)',
+                  },
+                }}
+              >
+                Về trang chủ
+              </Button>
+            </Box>
+          )}
         </Box>
-      )}
-      {/* Thông báo thành công */}
-      {activeStep === 3 && bookingSuccess && (
-        <Box sx={{ background: '#fff', borderRadius: 2, p: 3, boxShadow: 1, maxWidth: 700, mx: 'auto', textAlign: 'center' }}>
-          <Typography variant="h4" color="success.main" fontWeight={700} mb={2}>Đặt lịch thành công!</Typography>
-          <Typography mb={3}>Cảm ơn bạn đã đăng ký xét nghiệm. Chúng tôi sẽ liên hệ xác nhận lịch hẹn sớm nhất.</Typography>
-          <Button variant="contained" color="primary" onClick={() => window.location.reload()}>Về trang chủ</Button>
-        </Box>
-      )}
+      </Container>
       {/* Dialog chi tiết xét nghiệm */}
-      <Dialog open={detailDialogOpen} onClose={() => setDetailDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
+      <GlassDialog open={detailDialogOpen} onClose={() => setDetailDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800, fontSize: 26, color: theme => theme.palette.primary.main, fontFamily: 'inherit' }}>
           {detailData?.name || 'Chi tiết xét nghiệm'}
         </DialogTitle>
-        <DialogContent dividers>
-          {detailData ? (
+        <DialogContent dividers sx={{ bgcolor: '#f7fafc', borderRadius: 3, p: 3 }}>
+          {detailData === null ? (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight={120}>
+              <CircularProgress />
+            </Box>
+          ) : detailData.error ? (
+            <Typography color="error">{detailData.error}</Typography>
+          ) : (
             <>
-              <Typography fontWeight={600} mb={1}>Mô tả:</Typography>
-              <Typography mb={2}>{detailData.description}</Typography>
-              <Typography fontWeight={600} mb={1}>Giá:</Typography>
-              <Typography mb={2} color="primary">{detailData.price?.toLocaleString('vi-VN')} đ</Typography>
-              {detailData && Array.isArray(detailData.components) && detailData.components.length > 0 ? (
+              <Typography mb={2} color="text.secondary">{detailData.description}</Typography>
+              <Box display="flex" alignItems="center" mb={2}>
+                <Typography fontWeight={700} color="primary" fontSize={18} mr={1}>{detailData.price?.toLocaleString('vi-VN')} đ</Typography>
+              </Box>
+              {/* Hiển thị bảng chỉ số nếu có */}
+              {detailData && Array.isArray(detailData.components) && detailData.components.length > 0 && (
                 <>
                   <Typography variant="h5" fontWeight={700} color="#357ae8" mb={2} mt={3}>Giá trị tham chiếu</Typography>
                   <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 'none', background: '#f4f8fc' }}>
@@ -553,7 +1189,8 @@ export default function TestRegistrationPage() {
                     </Table>
                   </TableContainer>
                 </>
-              ) : detailData && Array.isArray(detailData.referenceRange) && detailData.referenceRange.length > 0 ? (
+              )}
+              {detailData && Array.isArray(detailData.referenceRange) && detailData.referenceRange.length > 0 && (
                 <>
                   <Typography variant="h5" fontWeight={700} color="#357ae8" mb={2} mt={3}>Giá trị tham chiếu</Typography>
                   <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 'none', background: '#f4f8fc' }}>
@@ -579,20 +1216,116 @@ export default function TestRegistrationPage() {
                     </Table>
                   </TableContainer>
                 </>
-              ) : detailData?.referenceRange ? (
+              )}
+              {detailData?.referenceRange && !Array.isArray(detailData.referenceRange) && (
                 <>
                   <Typography fontWeight={600} mb={1}>Giá trị tham chiếu:</Typography>
                   <Typography mb={2}>{detailData.referenceRange}</Typography>
                 </>
-              ) : null}
-              {/* Thêm các trường khác nếu cần */}
+              )}
+              {/* Hiển thị danh sách dịch vụ nếu là gói */}
+              {detailData.services && Array.isArray(detailData.services) && detailData.services.length > 0 && (
+                <>
+                  <Typography fontWeight={700} mt={2} mb={1} color={theme => theme.palette.primary.main}>Các dịch vụ trong gói</Typography>
+                  <List dense sx={{ pl: 1 }}>
+                    {detailData.services.map((svc, i) => (
+                      <ListItem key={svc.id || i} sx={{ py: 0.3 }}>
+                        <ListItemIcon sx={{ minWidth: 28 }}><CheckIcon color="success" fontSize="small" /></ListItemIcon>
+                        <ListItemText primary={<Typography fontSize={15} color="text.secondary">{svc.name}</Typography>} />
+                      </ListItem>
+                    ))}
+                  </List>
+                </>
+              )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+          <Button onClick={() => setDetailDialogOpen(false)} variant="outlined" sx={{ borderRadius: 8, fontWeight: 600, minWidth: 120 }}>Đóng</Button>
+        </DialogActions>
+      </GlassDialog>
+      {/* Dialog phụ xem chi tiết xét nghiệm lẻ: luôn hiển thị bảng chỉ số nếu có */}
+      <Dialog open={subDetailOpen} onClose={() => setSubDetailOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800, fontSize: 22, color: theme => theme.palette.primary.main, textAlign: 'center', letterSpacing: '-1px' }}>{subDetailData?.name || 'Chi tiết xét nghiệm'}</DialogTitle>
+        <DialogContent dividers sx={{ bgcolor: '#f7fafc', borderRadius: 3, p: 4 }}>
+          {subDetailLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight={120}><CircularProgress /></Box>
+          ) : subDetailData?.error ? (
+            <Typography color="error">{subDetailData.error}</Typography>
+          ) : subDetailData ? (
+            <>
+              <Typography mb={2} color="text.secondary" textAlign="center">{subDetailData.description}</Typography>
+              <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
+                <Typography fontWeight={700} color="primary" fontSize={20} mr={1}>{subDetailData.price?.toLocaleString('vi-VN')} đ</Typography>
+              </Box>
+              {/* Hiển thị bảng chỉ số nếu có */}
+              {Array.isArray(subDetailData.components) && subDetailData.components.length > 0 && (
+                <>
+                  <Typography variant="h5" fontWeight={700} color="#357ae8" mb={2} mt={3} textAlign="center">Giá trị tham chiếu</Typography>
+                  <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 'none', background: '#f4f8fc' }}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700, color: '#357ae8', fontSize: '1.1rem' }}>Thành phần</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: '#357ae8', fontSize: '1.1rem' }}>Giá trị bình thường</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: '#357ae8', fontSize: '1.1rem' }}>Đơn vị</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: '#357ae8', fontSize: '1.1rem' }}>Mô tả</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {subDetailData.components.map((row, idx) => (
+                          <TableRow key={idx} sx={{ background: idx % 2 === 0 ? '#f4f8fc' : '#fff' }}>
+                            <TableCell>{row.componentName}</TableCell>
+                            <TableCell>{row.normalRange}</TableCell>
+                            <TableCell>{row.unit}</TableCell>
+                            <TableCell>{row.description}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </>
+              )}
+              {Array.isArray(subDetailData.referenceRange) && subDetailData.referenceRange.length > 0 && (
+                <>
+                  <Typography variant="h5" fontWeight={700} color="#357ae8" mb={2} mt={3} textAlign="center">Giá trị tham chiếu</Typography>
+                  <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 'none', background: '#f4f8fc' }}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700, color: '#357ae8', fontSize: '1.1rem' }}>Thành phần</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: '#357ae8', fontSize: '1.1rem' }}>Giá trị bình thường</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: '#357ae8', fontSize: '1.1rem' }}>Đơn vị</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: '#357ae8', fontSize: '1.1rem' }}>Mô tả</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {subDetailData.referenceRange.map((row, idx) => (
+                          <TableRow key={idx} sx={{ background: idx % 2 === 0 ? '#f4f8fc' : '#fff' }}>
+                            <TableCell>{row.name}</TableCell>
+                            <TableCell>{row.normalRange}</TableCell>
+                            <TableCell>{row.unit}</TableCell>
+                            <TableCell>{row.description}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </>
+              )}
+              {subDetailData?.referenceRange && !Array.isArray(subDetailData.referenceRange) && (
+                <>
+                  <Typography fontWeight={600} mb={1}>Giá trị tham chiếu:</Typography>
+                  <Typography mb={2}>{subDetailData.referenceRange}</Typography>
+                </>
+              )}
             </>
           ) : (
             <Typography color="error">Không thể tải chi tiết xét nghiệm.</Typography>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDetailDialogOpen(false)} variant="outlined">Đóng</Button>
+          <Button onClick={() => setSubDetailOpen(false)} variant="outlined" sx={{ borderRadius: 8, fontWeight: 600 }}>Đóng</Button>
         </DialogActions>
       </Dialog>
     </Box>
