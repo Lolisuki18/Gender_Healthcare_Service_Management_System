@@ -75,7 +75,7 @@ const Footer = () => {
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
               {[
                 { href: "/", label: "Trang chủ" },
-                { href: "/sti-test", label: "Xét nghiệm STIs" },
+                { href: "/sti-services", label: "Xét nghiệm STIs" },
                 { href: "/blog", label: "Blogs" },
                 { href: "/about", label: "Giới thiệu" },
                 { href: "/ovulation", label: "Chu kì rụng trứng" },

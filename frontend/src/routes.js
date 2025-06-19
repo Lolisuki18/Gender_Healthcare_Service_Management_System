@@ -59,7 +59,7 @@ const AppRoutes = () => {
           }
         />
         <Route path="/appointment" element={<ConsultationPage />}></Route>
-        <Route path="/sti-test" element={<StiPage />} /> {/* Trang STI Test */}
+        <Route path="/sti-services" element={<StiPage />} /> {/* Trang STI Test (đổi endpoint) */}
         {/* Homepage cho các role đã đăng nhập (trừ admin) */}
         <Route path="home" element={<HomePage />} />{' '}
         {/* Profile Page chung - sẽ render component phù hợp với role */}

@@ -376,7 +376,7 @@ const Header = () => {
           >
             {[
               { to: "/", label: "Trang chủ" },
-              { to: "/sti-test", label: "Xét nghiệm STIs" },
+              { to: "/sti-services", label: "Xét nghiệm STIs" },
               { to: "/blog", label: "Blogs" },
               { to: "/about", label: "Giới thiệu" },
               { to: "/ovulation", label: "Chu kì rụng trứng" },
