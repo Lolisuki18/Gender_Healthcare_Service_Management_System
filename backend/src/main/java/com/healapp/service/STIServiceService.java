@@ -63,30 +63,37 @@ public class STIServiceService {
         }
     }
 
-    // Lấy thông tin tất cả dịch vụ STIAdd commentMore actions
-    public ApiResponse<List<STIServiceResponse>> getAllSTIServices(String role) {
+    // Lấy tông tin dịch vụ STI còn hoạt động
+    public ApiResponse<List<STIServiceResponse>> getActiveSTIServices() {
+        try {
+            List<STIService> services = stiServiceRepository.findAll();
+            if (services.isEmpty()) {
+                return ApiResponse.error("No active STI Services found");
+            }
+
+            List<STIServiceResponse> responses = services.stream()
+                .filter(STIService::getIsActive) // Chỉ lấy các dịch vụ đang hoạt động
+                .map(service -> convertToResponse(service, service.getTestComponents()))
+                .collect(Collectors.toList());
+
+            return ApiResponse.success("Active STI Services retrieved successfully", responses);
+        } catch (Exception e) {
+            return ApiResponse.error("Error retrieving active STI Services: " + e.getMessage());
+        }
+    }
+
+    // Lấy thông tin tất cả dịch vụ STI
+    public ApiResponse<List<STIServiceResponse>> getAllSTIServices() {
         try {
             List<STIService> services = stiServiceRepository.findAll();
             if (services.isEmpty()) {
                 return ApiResponse.error("No STI Services found");
             }
 
-            List<STIServiceResponse> responses;
+            List<STIServiceResponse> responses = services.stream()
+                .map(service -> convertToResponse(service, service.getTestComponents()))
+                .collect(Collectors.toList());
 
-            // Kiểm tra role người truy cập
-            // Nếu không phải STAFF, chỉ lấy các dịch vụ đang hoạt động
-            if(role == null || !role.equals("ROLE_STAFF")) {
-                responses = services.stream()
-                    .map(service -> convertToResponse(service, service.getTestComponents()))
-                    .filter(response -> response.isActive()) // Chỉ lấy các dịch vụ đang hoạt động
-                    .collect(Collectors.toList());
-
-            } else {
-                responses = services.stream()
-                    .map(service -> convertToResponse(service, service.getTestComponents()))
-                    .collect(Collectors.toList());
-            }
-            
             return ApiResponse.success("STI Services retrieved successfully", responses);
         } catch (Exception e) {
             return ApiResponse.error("Error retrieving STI Services: " + e.getMessage());
@@ -110,7 +117,7 @@ public class STIServiceService {
         }
     }
 
-    // Cập nhật thông tin dịch vụ STIAdd commentMore actions
+    // Cập nhật thông tin dịch vụ STI
     public ApiResponse<STIServiceResponse> updateSTIService(Long id, STIServiceRequest request) {
         try {
             STIService existingService = stiServiceRepository.findById(id).orElse(null);
@@ -126,7 +133,7 @@ public class STIServiceService {
 
             // Cập nhật các thành phần xét nghiệm liên quan đến dịch vụ
             List<ServiceTestComponent> oldComponents = existingService.getTestComponents();
-            
+
             // kiểm tra xem thành phần mới có cùng id với thành phần cũ không
             // nếu cùng thì cập nhật, nếu không thì thêm mới
             for (ServiceTestComponentRequest componentRequest : request.getComponents()) {

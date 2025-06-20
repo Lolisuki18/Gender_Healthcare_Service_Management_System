@@ -73,24 +73,24 @@ public class STIServiceController {
 
     /*
      * description: Lấy thông tin tất cả dịch vụ xét nghiệm STI
+     * path: /sti-services/staff
+     * method: GET
+     */
+    @GetMapping("/staff")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
+    public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getAllSTIServices() {
+        ApiResponse<List<STIServiceResponse>> response = stiServiceService.getAllSTIServices();
+        return ResponseEntity.ok(response);
+    }
+
+    /*
+     * description: Lấy thông tin dịch vụ STI còn hoạt động
      * path: /sti-services
      * method: GET
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getAllSTIServices() {
-        String role = null;
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // Kiểm tra xem có thông tin xác thực và principal có phải là UserDetails không
-        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            role = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .findFirst()
-                    .orElse(null); // Nếu có userDetails, lấy role; nếu không thì role là null
-        }
-        // Gọi service với role đã xác định (có thể là null nếu không đăng nhập)
-        ApiResponse<List<STIServiceResponse>> response = stiServiceService.getAllSTIServices(role);
+    public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getActiveSTIServices() {
+        ApiResponse<List<STIServiceResponse>> response = stiServiceService.getActiveSTIServices();
         return ResponseEntity.ok(response);
     }
 
