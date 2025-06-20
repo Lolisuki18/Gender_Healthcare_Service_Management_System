@@ -20,12 +20,62 @@ import {
   TableRow,
   IconButton,
   Tooltip,
+  Chip,
+  Grid,
+  Card,
+  CardContent,
+  useTheme,
+  TablePagination,
+  Badge,
 } from '@mui/material';
 import {
   getSTIServiceById,
   getTestResultsByTestId,
 } from '../../../services/stiService';
 import PreviewIcon from '@mui/icons-material/Preview';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import WarningIcon from '@mui/icons-material/Warning';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CheckIcon from '@mui/icons-material/Check';
+import ErrorIcon from '@mui/icons-material/Error';
+import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
+import PersonIcon from '@mui/icons-material/Person';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+
+// Helper function to check if a result is outside the normal range
+const isAbnormalResult = (resultValue, normalRange) => {
+  // Handle different normal range formats
+  if (!normalRange || !resultValue) return false;
+
+  // Convert result to number if possible
+  const numericResult = parseFloat(resultValue);
+  if (isNaN(numericResult)) {
+    // Handle non-numeric values like "Positive"/"Negative"
+    if (normalRange === 'Negative' && resultValue === 'Positive') {
+      return true;
+    }
+    return false;
+  }
+
+  // Handle ranges like "4.5-6.0"
+  if (normalRange.includes('-')) {
+    const [min, max] = normalRange.split('-').map((v) => parseFloat(v));
+    return numericResult < min || numericResult > max;
+  }
+
+  // Handle comparison operators like "<1:8" or ">10"
+  if (normalRange.includes('<')) {
+    const threshold = parseFloat(normalRange.replace('<', ''));
+    return numericResult >= threshold;
+  }
+
+  if (normalRange.includes('>')) {
+    const threshold = parseFloat(normalRange.replace('>', ''));
+    return numericResult <= threshold;
+  }
+
+  return false;
+};
 
 // Helper function to debug token status
 const checkTokenStatus = () => {
@@ -442,47 +492,22 @@ const SingleTestResultModal = ({
       try {
         console.log(`Saving results for test ID: ${testId}`);
         const response = await handleSaveResult(testId, requestData);
-        console.log('Save result response:', response);
-
-        // Successfully saved results
+        console.log('Save result response:', response); // Successfully saved results
         if (response && (response.status === 'SUCCESS' || response.success)) {
-          setSuccess('Test results saved successfully');
+          setSuccess('Test results saved successfully! 🎉');
 
           // Update test with the returned data
           if (onTestUpdated && response.data) {
             onTestUpdated(response.data);
           }
 
-          // Try to update status to COMPLETED if handler exists
-          if (handleCompleteTest) {
-            try {
-              console.log('Updating test status to COMPLETED');
-              const completeResponse = await handleCompleteTest(testId);
-              console.log('Complete test response:', completeResponse);
-
-              if (completeResponse && completeResponse.status === 'SUCCESS') {
-                setSuccess(
-                  'Test results saved and status updated to COMPLETED'
-                );
-                if (onTestUpdated && completeResponse.data) {
-                  onTestUpdated(completeResponse.data);
-                }
-              }
-            } catch (completeError) {
-              console.error(
-                'Error updating test status to COMPLETED:',
-                completeError
-              );
-              // Error updating status, but results were saved, so still successful
-            }
-          }
+          // Note: We no longer automatically complete the test
+          // Instead we'll show a "Complete" button when status is RESULTED
 
           // Close modal after showing success message
           setTimeout(() => onClose(), 1500);
           return;
-        }
-
-        // Handle case where response contains data despite error status
+        } // Handle case where response contains data despite error status
         else if (response && response.data) {
           console.log('Received data despite error status:', response);
           setSuccess('Test results saved successfully');
@@ -491,14 +516,7 @@ const SingleTestResultModal = ({
             onTestUpdated(response.data);
           }
 
-          // Try to update status to COMPLETED
-          if (handleCompleteTest) {
-            try {
-              await handleCompleteTest(testId);
-            } catch (completeError) {
-              console.error('Error updating status after save:', completeError);
-            }
-          }
+          // No longer automatically update to COMPLETED
 
           setTimeout(() => onClose(), 1500);
           return;
@@ -593,6 +611,44 @@ const SingleTestResultModal = ({
     }
   };
 
+  // Function to handle completing the test
+  const handleCompleteCurrentTest = async () => {
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      if (!handleCompleteTest) {
+        setError('Cannot complete test: No handler provided');
+        setSaving(false);
+        return;
+      }
+
+      console.log(`Completing test with ID: ${testId}`);
+      const response = await handleCompleteTest(testId);
+      console.log('Complete test response:', response);
+
+      if (response && (response.status === 'SUCCESS' || response.success)) {
+        setSuccess('Test status updated to COMPLETED successfully! 🎉');
+
+        // Update test with the returned data
+        if (onTestUpdated && response.data) {
+          onTestUpdated(response.data);
+        }
+
+        // Close modal after showing success message
+        setTimeout(() => onClose(), 1500);
+      } else {
+        throw new Error(response?.message || 'Unknown error completing test');
+      }
+    } catch (error) {
+      console.error('Error completing test:', error);
+      setError(`Error completing test: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -602,32 +658,155 @@ const SingleTestResultModal = ({
       maxWidth="md"
       fullWidth
       aria-labelledby="test-result-modal-title"
+      PaperProps={{
+        sx: {
+          borderRadius: '16px',
+          boxShadow: '0 12px 30px rgba(0, 0, 0, 0.16)',
+          overflow: 'hidden',
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
+        },
+      }}
     >
       {' '}
-      <DialogTitle id="test-result-modal-title">
-        {currentTest &&
-        (currentTest.status === 'RESULTED' ||
-          currentTest.status === 'COMPLETED')
-          ? 'View Test Results'
-          : currentTest && currentTest.status === 'SAMPLED'
-            ? 'Enter Test Results'
-            : currentTest
-              ? `Test Results - ${currentTest.status}`
-              : 'Test Results'}
-      </DialogTitle>{' '}
+      <DialogTitle
+        id="test-result-modal-title"
+        sx={{
+          background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          p: 2.5,
+          boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+        }}
+      >
+        <AssignmentIcon />
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{ fontWeight: 500, flexGrow: 1 }}
+        >
+          {currentTest &&
+          (currentTest.status === 'RESULTED' ||
+            currentTest.status === 'COMPLETED')
+            ? 'View Test Results'
+            : currentTest && currentTest.status === 'SAMPLED'
+              ? 'Enter Test Results'
+              : currentTest
+                ? `Test Results - ${currentTest.status}`
+                : 'Test Results'}
+        </Typography>
+        {currentTest && currentTest.status && (
+          <Chip
+            label={currentTest.status}
+            color={
+              currentTest.status === 'COMPLETED'
+                ? 'success'
+                : currentTest.status === 'RESULTED'
+                  ? 'info'
+                  : currentTest.status === 'SAMPLED'
+                    ? 'warning'
+                    : 'default'
+            }
+            size="small"
+            sx={{ fontWeight: 500 }}
+          />
+        )}
+      </DialogTitle>
       <DialogContent>
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-            <CircularProgress />
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              my: 5,
+              py: 3,
+            }}
+          >
+            <Box
+              sx={{
+                position: 'relative',
+                width: 60,
+                height: 60,
+                mb: 2,
+              }}
+            >
+              <CircularProgress
+                size={60}
+                sx={{
+                  color: '#4A90E2',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                }}
+              />
+              <CircularProgress
+                size={45}
+                sx={{
+                  color: '#1ABC9C',
+                  position: 'absolute',
+                  top: '7.5px',
+                  left: '7.5px',
+                }}
+              />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                background: 'linear-gradient(90deg, #4A90E2, #1ABC9C)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Loading test data...
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Please wait while we retrieve your test information
+            </Typography>
           </Box>
         ) : error ? (
-          <Alert severity="error" sx={{ my: 2 }} onClose={() => setError(null)}>
+          <Alert
+            severity="error"
+            sx={{
+              my: 2.5,
+              borderRadius: '12px',
+              '& .MuiAlert-icon': {
+                alignItems: 'center',
+              },
+              background: 'linear-gradient(45deg, #F44336, #E57373)',
+              boxShadow: '0 4px 15px rgba(244, 67, 54, 0.2)',
+              border: 'none',
+            }}
+            onClose={() => setError(null)}
+            variant="filled"
+          >
             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="body1" fontWeight="medium">
+              <Typography
+                variant="body1"
+                fontWeight="600"
+                sx={{ color: 'white' }}
+              >
                 {error}
               </Typography>
               {error.includes('Failed to save') && (
-                <Typography variant="caption" sx={{ mt: 1 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    fontWeight: 500,
+                    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                    borderRadius: '6px',
+                    px: 1.5,
+                    py: 0.75,
+                    display: 'inline-block',
+                    mt: 1.5,
+                  }}
+                >
                   This could be due to network issues or expired authentication.
                   Please try again or refresh the page.
                 </Typography>
@@ -640,49 +819,374 @@ const SingleTestResultModal = ({
           </Alert>
         ) : (
           <>
+            {' '}
             {success && (
-              <Alert severity="success" sx={{ my: 2 }}>
-                {success}
+              <Alert
+                severity="success"
+                sx={{
+                  my: 2.5,
+                  borderRadius: '12px',
+                  '& .MuiAlert-icon': {
+                    alignItems: 'center',
+                  },
+                  background: 'linear-gradient(45deg, #4CAF50, #66BB6A)',
+                  boxShadow: '0 4px 15px rgba(76, 175, 80, 0.2)',
+                  border: 'none',
+                }}
+                variant="filled"
+                onClose={() => setSuccess(null)}
+              >
+                <Typography
+                  variant="body1"
+                  fontWeight="600"
+                  sx={{
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  {success}
+                </Typography>
               </Alert>
             )}
             {serviceData && (
               <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  {serviceData.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  {serviceData.description}
-                </Typography>
-
-                {currentTest && (
-                  <Box sx={{ my: 1 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Test ID: {currentTest.testId}
-                    </Typography>
-                    <Typography variant="body2" gutterBottom>
-                      Customer: {currentTest.customerName}
-                    </Typography>
-                    <Typography variant="body2" gutterBottom>
-                      Status: {currentTest.status}
-                    </Typography>
+                {' '}
+                <Card
+                  elevation={2}
+                  sx={{
+                    mb: 3,
+                    background: 'linear-gradient(135deg, #ffffff, #f5f9ff)',
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    transition: 'all 0.3s ease',
+                    position: 'relative',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '6px',
+                      height: '100%',
+                      background:
+                        'linear-gradient(to bottom, #4A90E2, #1ABC9C)',
+                    },
+                  }}
+                >
+                  {' '}
+                  <CardContent sx={{ pl: 4 }}>
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={7}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            mb: 2,
+                            gap: 1.5,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              backgroundColor: 'rgba(74, 144, 226, 0.12)',
+                              p: 1,
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <MedicalServicesIcon sx={{ color: '#4A90E2' }} />
+                          </Box>
+                          <Typography
+                            variant="h6"
+                            component="div"
+                            sx={{
+                              fontWeight: 600,
+                              background:
+                                'linear-gradient(90deg, #4A90E2, #1ABC9C)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              letterSpacing: '0.5px',
+                            }}
+                          >
+                            {serviceData.name}
+                          </Typography>
+                        </Box>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          paragraph
+                          sx={{ ml: 5.5, lineHeight: 1.6 }}
+                        >
+                          {serviceData.description}
+                        </Typography>
+                      </Grid>
+                      {currentTest && (
+                        <Grid item xs={12} md={5}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              p: 2.5,
+                              bgcolor: 'rgba(255, 255, 255, 0.9)',
+                              borderRadius: 2,
+                              boxShadow: '0 4px 20px rgba(74, 144, 226, 0.08)',
+                              position: 'relative',
+                              overflow: 'hidden',
+                              '&::after': {
+                                content: '""',
+                                position: 'absolute',
+                                top: 0,
+                                right: 0,
+                                width: '40px',
+                                height: '40px',
+                                background:
+                                  'linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.08))',
+                                borderBottomLeftRadius: '100%',
+                              },
+                            }}
+                          >
+                            <Typography
+                              variant="subtitle2"
+                              sx={{
+                                mb: 2,
+                                color: '#4A90E2',
+                                fontWeight: 600,
+                                textTransform: 'uppercase',
+                                fontSize: '0.75rem',
+                                letterSpacing: '1px',
+                              }}
+                            >
+                              Test Information
+                            </Typography>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                mb: 2,
+                                pb: 1.5,
+                                borderBottom: '1px dashed rgba(0, 0, 0, 0.08)',
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  bgcolor: 'rgba(74, 144, 226, 0.1)',
+                                  p: 0.8,
+                                  borderRadius: 1,
+                                  display: 'flex',
+                                  mr: 1.5,
+                                }}
+                              >
+                                <EventNoteIcon
+                                  fontSize="small"
+                                  sx={{ color: '#4A90E2' }}
+                                />
+                              </Box>
+                              <Box>
+                                <Typography
+                                  variant="caption"
+                                  component="div"
+                                  sx={{
+                                    fontWeight: 600,
+                                    color: '#555',
+                                    mb: 0.2,
+                                  }}
+                                >
+                                  Test ID
+                                </Typography>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 500,
+                                    color: '#4A90E2',
+                                  }}
+                                >
+                                  #{currentTest.testId}
+                                </Typography>
+                              </Box>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  bgcolor: 'rgba(26, 188, 156, 0.1)',
+                                  p: 0.8,
+                                  borderRadius: 1,
+                                  display: 'flex',
+                                  mr: 1.5,
+                                }}
+                              >
+                                <PersonIcon
+                                  fontSize="small"
+                                  sx={{ color: '#1ABC9C' }}
+                                />
+                              </Box>
+                              <Box>
+                                <Typography
+                                  variant="caption"
+                                  component="div"
+                                  sx={{
+                                    fontWeight: 600,
+                                    color: '#555',
+                                    mb: 0.2,
+                                  }}
+                                >
+                                  Customer
+                                </Typography>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  {currentTest.customerName}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Box>
+                        </Grid>
+                      )}
+                    </Grid>
+                  </CardContent>
+                </Card>
+                <Divider sx={{ my: 2 }} />{' '}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    mb: 2.5,
+                    position: 'relative',
+                    pl: 4.5,
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      height: '24px',
+                      width: '4px',
+                      background:
+                        'linear-gradient(to bottom, #4A90E2, #1ABC9C)',
+                      borderRadius: '4px',
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      backgroundColor: 'rgba(74, 144, 226, 0.08)',
+                      p: 1,
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <AssignmentIcon
+                      sx={{ color: '#4A90E2' }}
+                      fontSize="small"
+                    />
                   </Box>
-                )}
-
-                <Divider sx={{ my: 2 }} />
-
-                <Typography variant="subtitle1" gutterBottom>
-                  Test Components
-                </Typography>
-
-                <TableContainer component={Paper} sx={{ mt: 2 }}>
+                  <Typography
+                    variant="subtitle1"
+                    component="h2"
+                    sx={{
+                      fontWeight: 600,
+                      background: 'linear-gradient(90deg, #4A90E2, #1ABC9C)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      letterSpacing: '0.3px',
+                    }}
+                  >
+                    Test Components
+                  </Typography>
+                  <Chip
+                    label={serviceData.components?.length || 0}
+                    size="small"
+                    sx={{
+                      fontWeight: 600,
+                      background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                      color: 'white',
+                      height: '22px',
+                      minWidth: '22px',
+                      ml: 1,
+                    }}
+                  />
+                </Box>
+                <TableContainer
+                  component={Paper}
+                  sx={{
+                    mt: 2,
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                    border: 'none',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {' '}
                   <Table>
                     <TableHead>
-                      <TableRow>
-                        <TableCell>Component</TableCell>
-                        <TableCell>Unit</TableCell>
-                        <TableCell>Normal Range</TableCell>
-                        <TableCell>Result Value</TableCell>
-                        <TableCell align="center">Actions</TableCell>
+                      <TableRow
+                        sx={{
+                          background:
+                            'linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.08))',
+                        }}
+                      >
+                        <TableCell
+                          sx={{
+                            fontWeight: 600,
+                            borderBottom: 'none',
+                            color: '#4A90E2',
+                            py: 1.5,
+                          }}
+                        >
+                          Component
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontWeight: 600,
+                            borderBottom: 'none',
+                            color: '#4A90E2',
+                            py: 1.5,
+                          }}
+                        >
+                          Unit
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontWeight: 600,
+                            borderBottom: 'none',
+                            color: '#4A90E2',
+                            py: 1.5,
+                          }}
+                        >
+                          Normal Range
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontWeight: 600,
+                            borderBottom: 'none',
+                            color: '#4A90E2',
+                            py: 1.5,
+                          }}
+                        >
+                          Result Value
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            fontWeight: 600,
+                            borderBottom: 'none',
+                            color: '#4A90E2',
+                            py: 1.5,
+                          }}
+                        >
+                          Actions
+                        </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -690,10 +1194,28 @@ const SingleTestResultModal = ({
                       {loading ? (
                         <TableRow>
                           <TableCell colSpan={5} align="center">
-                            <CircularProgress size={24} sx={{ my: 2 }} />
-                            <Typography variant="body2" sx={{ mt: 1 }}>
-                              Loading components...
-                            </Typography>
+                            <Box
+                              sx={{
+                                py: 3,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <CircularProgress
+                                size={40}
+                                sx={{
+                                  mb: 2,
+                                  color: (theme) => theme.palette.primary.main,
+                                }}
+                              />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Loading test components...
+                              </Typography>
+                            </Box>
                           </TableCell>
                         </TableRow>
                       ) : serviceData &&
@@ -706,12 +1228,21 @@ const SingleTestResultModal = ({
 
                           return (
                             <TableRow key={component.componentId}>
-                              <TableCell>{component.componentName}</TableCell>{' '}
+                              <TableCell>
+                                <Typography sx={{ fontWeight: 500 }}>
+                                  {component.componentName}
+                                </Typography>
+                              </TableCell>{' '}
                               <TableCell>
                                 {currentTest &&
                                 (currentTest.status === 'RESULTED' ||
                                   currentTest.status === 'COMPLETED') ? (
-                                  <Typography variant="body2">
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      fontFamily: "'Roboto Mono', monospace",
+                                    }}
+                                  >
                                     {result?.unit || '-'}
                                   </Typography>
                                 ) : (
@@ -727,6 +1258,9 @@ const SingleTestResultModal = ({
                                       )
                                     }
                                     placeholder="Unit"
+                                    InputProps={{
+                                      sx: { borderRadius: '8px' },
+                                    }}
                                   />
                                 )}
                               </TableCell>
@@ -734,9 +1268,30 @@ const SingleTestResultModal = ({
                                 {currentTest &&
                                 (currentTest.status === 'RESULTED' ||
                                   currentTest.status === 'COMPLETED') ? (
-                                  <Typography variant="body2">
-                                    {result?.normalRange || '-'}
-                                  </Typography>
+                                  <Box
+                                    sx={{
+                                      px: 1.5,
+                                      py: 0.5,
+                                      background:
+                                        'linear-gradient(to right, rgba(74, 144, 226, 0.06), rgba(26, 188, 156, 0.06))',
+                                      borderRadius: '20px',
+                                      display: 'inline-block',
+                                      border:
+                                        '1px solid rgba(74, 144, 226, 0.15)',
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        fontFamily: "'Roboto Mono', monospace",
+                                        fontWeight: 600,
+                                        color: '#4A90E2',
+                                        letterSpacing: '0.3px',
+                                      }}
+                                    >
+                                      {result?.normalRange || '-'}
+                                    </Typography>
+                                  </Box>
                                 ) : (
                                   <TextField
                                     size="small"
@@ -750,6 +1305,9 @@ const SingleTestResultModal = ({
                                       )
                                     }
                                     placeholder="Normal Range"
+                                    InputProps={{
+                                      sx: { borderRadius: '8px' },
+                                    }}
                                   />
                                 )}
                               </TableCell>
@@ -757,9 +1315,58 @@ const SingleTestResultModal = ({
                                 {currentTest &&
                                 (currentTest.status === 'RESULTED' ||
                                   currentTest.status === 'COMPLETED') ? (
-                                  <Typography variant="body2">
-                                    {result?.resultValue || '-'}
-                                  </Typography>
+                                  <Box
+                                    sx={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 1,
+                                    }}
+                                  >
+                                    {result?.resultValue &&
+                                    result?.normalRange &&
+                                    isAbnormalResult(
+                                      result.resultValue,
+                                      result.normalRange
+                                    ) ? (
+                                      <Chip
+                                        label={result?.resultValue || '-'}
+                                        size="small"
+                                        sx={{
+                                          fontWeight: 600,
+                                          color: 'white',
+                                          background:
+                                            'linear-gradient(45deg, #FF5252, #FF1744)',
+                                          boxShadow:
+                                            '0 2px 5px rgba(255, 23, 68, 0.3)',
+                                          px: 0.5,
+                                        }}
+                                        icon={
+                                          <WarningIcon
+                                            sx={{ color: 'white!important' }}
+                                          />
+                                        }
+                                      />
+                                    ) : (
+                                      <Chip
+                                        label={result?.resultValue || '-'}
+                                        size="small"
+                                        sx={{
+                                          fontWeight: 500,
+                                          color: 'white',
+                                          background:
+                                            'linear-gradient(45deg, #4CAF50, #2E7D32)',
+                                          boxShadow:
+                                            '0 2px 5px rgba(46, 125, 50, 0.2)',
+                                          px: 0.5,
+                                        }}
+                                        icon={
+                                          <CheckCircleIcon
+                                            sx={{ color: 'white!important' }}
+                                          />
+                                        }
+                                      />
+                                    )}
+                                  </Box>
                                 ) : (
                                   <TextField
                                     size="small"
@@ -780,6 +1387,9 @@ const SingleTestResultModal = ({
                                         ? 'Required'
                                         : ''
                                     }
+                                    InputProps={{
+                                      sx: { borderRadius: '8px' },
+                                    }}
                                   />
                                 )}
                               </TableCell>{' '}
@@ -808,6 +1418,12 @@ const SingleTestResultModal = ({
                                       size="small"
                                       color="primary"
                                       onClick={handleViewResults}
+                                      sx={{
+                                        bgcolor: 'rgba(25, 118, 210, 0.08)',
+                                        '&:hover': {
+                                          bgcolor: 'rgba(25, 118, 210, 0.15)',
+                                        },
+                                      }}
                                     >
                                       <PreviewIcon fontSize="small" />
                                     </IconButton>
@@ -820,19 +1436,100 @@ const SingleTestResultModal = ({
                       ) : (
                         <TableRow>
                           <TableCell colSpan={5}>
-                            <Typography align="center">
-                              No test components available
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              align="center"
-                              sx={{ display: 'block', mt: 1 }}
+                            {' '}
+                            <Box
+                              sx={{
+                                py: 4,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                background:
+                                  'linear-gradient(135deg, rgba(74, 144, 226, 0.03), rgba(26, 188, 156, 0.03))',
+                                borderRadius: '16px',
+                                my: 3,
+                                px: 3,
+                                border: '1px dashed rgba(74, 144, 226, 0.2)',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                '&::after': {
+                                  content: '""',
+                                  position: 'absolute',
+                                  width: '100px',
+                                  height: '100px',
+                                  borderRadius: '50%',
+                                  background:
+                                    'radial-gradient(circle, rgba(26, 188, 156, 0.05) 0%, rgba(74, 144, 226, 0.02) 70%)',
+                                  bottom: '-30px',
+                                  right: '-30px',
+                                },
+                                '&::before': {
+                                  content: '""',
+                                  position: 'absolute',
+                                  width: '80px',
+                                  height: '80px',
+                                  borderRadius: '50%',
+                                  background:
+                                    'radial-gradient(circle, rgba(74, 144, 226, 0.05) 0%, rgba(26, 188, 156, 0.02) 70%)',
+                                  top: '-20px',
+                                  left: '-20px',
+                                },
+                              }}
                             >
-                              {currentTest
-                                ? `Service ID: ${currentTest.serviceId || 'N/A'}, Test ID: ${currentTest.testId || 'N/A'}`
-                                : 'No test selected'}
-                            </Typography>
+                              <Box
+                                sx={{
+                                  width: 60,
+                                  height: 60,
+                                  borderRadius: '50%',
+                                  background:
+                                    'linear-gradient(135deg, rgba(74, 144, 226, 0.15), rgba(26, 188, 156, 0.1))',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  mb: 2,
+                                  boxShadow:
+                                    '0 4px 15px rgba(74, 144, 226, 0.1)',
+                                }}
+                              >
+                                <ErrorIcon
+                                  sx={{
+                                    fontSize: 30,
+                                    color: '#4A90E2',
+                                  }}
+                                />
+                              </Box>
+                              <Typography
+                                variant="subtitle1"
+                                align="center"
+                                gutterBottom
+                                sx={{
+                                  fontWeight: 600,
+                                  background:
+                                    'linear-gradient(90deg, #4A90E2, #1ABC9C)',
+                                  WebkitBackgroundClip: 'text',
+                                  WebkitTextFillColor: 'transparent',
+                                  mb: 1.5,
+                                }}
+                              >
+                                No test components available
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                align="center"
+                                sx={{
+                                  maxWidth: '80%',
+                                  padding: '10px 16px',
+                                  borderRadius: '20px',
+                                  background: 'rgba(255, 255, 255, 0.6)',
+                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {currentTest
+                                  ? `Service ID: ${currentTest.serviceId || 'N/A'}, Test ID: ${currentTest.testId || 'N/A'}`
+                                  : 'No test selected'}
+                              </Typography>
+                            </Box>
                           </TableCell>
                         </TableRow>
                       )}
@@ -844,19 +1541,38 @@ const SingleTestResultModal = ({
           </>
         )}
       </DialogContent>{' '}
-      <DialogActions>
-        <Button onClick={onClose} color="inherit" disabled={saving}>
+      <DialogActions
+        sx={{
+          px: 3,
+          py: 3,
+          background:
+            'linear-gradient(to right, rgba(74, 144, 226, 0.03), rgba(26, 188, 156, 0.03))',
+          borderTop: '1px solid rgba(0, 0, 0, 0.05)',
+        }}
+      >
+        <Button
+          onClick={onClose}
+          color="inherit"
+          disabled={saving}
+          variant="outlined"
+          sx={{
+            borderRadius: '50px',
+            minWidth: '120px',
+            textTransform: 'none',
+            px: 3,
+            borderColor: 'rgba(0, 0, 0, 0.15)',
+            '&:hover': {
+              borderColor: 'rgba(74, 144, 226, 0.5)',
+              backgroundColor: 'rgba(74, 144, 226, 0.04)',
+            },
+          }}
+        >
           Cancel
-        </Button>
-
-        {currentTest &&
-        (currentTest.status === 'RESULTED' ||
-          currentTest.status === 'COMPLETED') ? (
+        </Button>{' '}
+        {currentTest && currentTest.status === 'COMPLETED' ? (
           <>
-            {' '}
             <Button
               onClick={handleViewResults}
-              color="info"
               variant="contained"
               disabled={loading}
               startIcon={
@@ -866,17 +1582,99 @@ const SingleTestResultModal = ({
                   <PreviewIcon />
                 )
               }
+              sx={{
+                ml: 2,
+                borderRadius: '50px',
+                minWidth: '160px',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3,
+                py: 1,
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                boxShadow: '0 4px 10px rgba(74, 144, 226, 0.25)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #3A80D2, #0AAC8C)',
+                  boxShadow: '0 6px 15px rgba(74, 144, 226, 0.3)',
+                },
+              }}
             >
               {loading ? 'Loading...' : 'View Results'}
+            </Button>
+          </>
+        ) : currentTest && currentTest.status === 'RESULTED' ? (
+          <>
+            <Button
+              onClick={handleViewResults}
+              variant="outlined"
+              color="primary"
+              disabled={loading}
+              startIcon={<PreviewIcon />}
+              sx={{
+                ml: 2,
+                borderRadius: '50px',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3,
+              }}
+            >
+              View Results
+            </Button>
+
+            <Button
+              onClick={handleCompleteCurrentTest}
+              variant="contained"
+              disabled={loading || saving}
+              startIcon={
+                saving ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <CheckIcon />
+                )
+              }
+              color="success"
+              sx={{
+                ml: 2,
+                borderRadius: '50px',
+                minWidth: '160px',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3,
+                py: 1,
+                background: 'linear-gradient(45deg, #2E7D32, #00C853)',
+                boxShadow: '0 4px 10px rgba(46, 125, 50, 0.25)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #1B5E20, #00B84D)',
+                  boxShadow: '0 6px 15px rgba(46, 125, 50, 0.3)',
+                },
+              }}
+            >
+              {saving ? 'Processing...' : 'Complete Test'}
             </Button>
           </>
         ) : (
           <Button
             onClick={handleSaveResults}
-            color="primary"
             variant="contained"
             disabled={loading || saving || !serviceData}
             startIcon={saving && <CircularProgress size={20} color="inherit" />}
+            sx={{
+              ml: 2,
+              borderRadius: '50px',
+              minWidth: '160px',
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 3,
+              py: 1,
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+              boxShadow: '0 4px 10px rgba(74, 144, 226, 0.25)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #3A80D2, #0AAC8C)',
+                boxShadow: '0 6px 15px rgba(74, 144, 226, 0.3)',
+              },
+              '&.Mui-disabled': {
+                background: 'linear-gradient(45deg, #c5c5c5, #aaaaaa)',
+              },
+            }}
           >
             {saving ? 'Saving...' : 'Save Results'}
           </Button>

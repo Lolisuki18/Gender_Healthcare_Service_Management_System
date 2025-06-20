@@ -487,3 +487,162 @@ export const createSTIPackage = async (packageData) => {
     throw error.response?.data || error.message;
   }
 };
+
+// Get STI package by ID
+export const getSTIPackageById = async (packageId) => {
+  try {
+    const response = await apiClient.get(`/sti-packages/${packageId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// Get package test details with components
+export const getPackageTestDetails = async (packageId) => {
+  try {
+    console.log('Fetching package test details for ID:', packageId);
+
+    // First try to get detailed test information
+    const testResponse = await apiClient.get(`${API_URL}/tests/${packageId}`);
+    console.log('Package details response:', testResponse.data);
+
+    // Then get test results which should include component information
+    const resultsResponse = await apiClient.get(
+      `${API_URL}/tests/${packageId}/results`
+    );
+    console.log('Test results/components response:', resultsResponse.data);
+
+    // Combine the data
+    const packageData = testResponse.data?.data || testResponse.data || {};
+    const resultsData =
+      resultsResponse.data?.data || resultsResponse.data || [];
+
+    // Store the original results for reference
+    packageData.results = [...resultsData];
+
+    // Check if we already have components in the package data
+    let componentsData = [];
+
+    if (
+      packageData.testComponents &&
+      Array.isArray(packageData.testComponents) &&
+      packageData.testComponents.length > 0
+    ) {
+      console.log('Using existing test components from package data');
+      componentsData = packageData.testComponents;
+    }
+    // Otherwise transform the results into components
+    else if (resultsData.length > 0) {
+      console.log('Transforming results into components');
+      componentsData = resultsData.map((result, index) => ({
+        id:
+          result.componentId || result.testId || result.id || `result-${index}`,
+        componentId:
+          result.componentId || result.testId || result.id || `result-${index}`,
+        componentName:
+          result.componentName ||
+          result.testName ||
+          result.name ||
+          `Result ${index + 1}`,
+        status: result.status || packageData.status || 'RESULTED',
+        resultValue: result.resultValue || result.value || null,
+        unit: result.unit || null,
+        normalRange: result.normalRange || result.referenceRange || null,
+      }));
+    }
+    // Create dummy components if nothing was found
+    else {
+      console.log('Creating dummy components due to no results data');
+      // Create at least 2 mock components based on the package test
+      componentsData = [
+        {
+          id: `component-1-${packageId}`,
+          componentId: `component-1-${packageId}`,
+          componentName: `${packageData.serviceName || 'Test'} Component 1`,
+          status: packageData.status || 'PENDING',
+          resultValue: null,
+          unit: null,
+          normalRange: null,
+        },
+        {
+          id: `component-2-${packageId}`,
+          componentId: `component-2-${packageId}`,
+          componentName: `${packageData.serviceName || 'Test'} Component 2`,
+          status: packageData.status || 'PENDING',
+          resultValue: null,
+          unit: null,
+          normalRange: null,
+        },
+      ];
+    }
+
+    // Add components to the package data
+    packageData.testComponents = componentsData;
+
+    console.log('Final package data with components:', packageData);
+
+    return {
+      status: 'SUCCESS',
+      data: packageData,
+    };
+  } catch (error) {
+    console.error('Error fetching package details:', error);
+    throw error.response?.data || error.message;
+  }
+};
+
+// Export as a default object with all functions
+const stiService = {
+  createSTIService,
+  getAllSTIServices,
+  getSTIServiceById,
+  updateSTIService,
+  deleteSTIService,
+  bookSTITest,
+  getMySTITests,
+  getSTITestDetails,
+  cancelSTITest,
+  getPendingTests,
+  confirmTest,
+  getConfirmedTests,
+  sampleTest,
+  getStaffTests,
+  addTestResults,
+  completeTest,
+  getTestResults,
+  getTestPDF,
+  getTestResultsByTestId,
+  getAllSTIPackages,
+  createSTIPackage,
+  getSTIPackageById,
+  getPackageTestDetails,
+
+  // New function to get services within a package
+  getServicesInPackage: async (packageId) => {
+    try {
+      // First attempt to get full package details which should include services
+      const response = await apiClient.get(`/sti-packages/${packageId}`);
+      const packageData = response.data?.data || response.data;
+
+      if (!packageData) {
+        throw new Error('Package data not found');
+      }
+
+      // Extract just the services array
+      const services = packageData.services || [];
+
+      return {
+        status: 'SUCCESS',
+        data: services,
+        message: `Retrieved ${services.length} services for package #${packageId}`,
+      };
+    } catch (error) {
+      console.error('Error fetching package services:', error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Add any new functions here
+};
+
+export default stiService;
