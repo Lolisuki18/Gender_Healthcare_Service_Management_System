@@ -162,4 +162,30 @@ public class ConsultationController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    public ResponseEntity<ApiResponse<List<ConsultationResponse>>> getAllConsultations() {
+        ApiResponse<List<ConsultationResponse>> response = consultationService.getAllConsultations();
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @GetMapping("/{consultationId}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF') or @consultationService.isUserAuthorized(#consultationId, authentication.name)")
+    public ResponseEntity<ApiResponse<ConsultationResponse>> getConsultationById(
+            @PathVariable Long consultationId) {
+
+        ApiResponse<ConsultationResponse> response = consultationService.getConsultationById(consultationId);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 }
