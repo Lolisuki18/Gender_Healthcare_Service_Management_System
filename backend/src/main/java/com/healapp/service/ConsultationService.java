@@ -52,14 +52,13 @@ public class ConsultationService {
                 return ApiResponse.error("Consultant not found");
             }
             UserDtls user = userOpt.get();
-            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
             if (!"CONSULTANT".equals(user.getRoleName())) {
                 return ApiResponse.error("Selected user is not a consultant");
             }
 
             // Kiểm tra consultant có active không
-            if (!Boolean.TRUE.equals(user.getIsActive())) {
-                return ApiResponse.error("Consultant is not currently active");
+            if (!user.getIsActive()) {
+                return ApiResponse.error("This consultant is currently unavailable");
             }
 
             // Ngày bắt đầu và kết thúc tìm kiếm
@@ -115,14 +114,13 @@ public class ConsultationService {
             UserDtls customer = customerOpt.get();
             UserDtls consultant = consultantOpt.get();
 
-            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
             if (!"CONSULTANT".equals(consultant.getRoleName())) {
                 return ApiResponse.error("Selected user is not a consultant");
             }
 
             // Kiểm tra consultant có active không
-            if (!Boolean.TRUE.equals(consultant.getIsActive())) {
-                return ApiResponse.error("Consultant is not currently active");
+            if (!consultant.getIsActive()) {
+                return ApiResponse.error("This consultant is currently unavailable");
             }
 
             if (customer.getId().equals(consultant.getId())) {
@@ -282,6 +280,61 @@ public class ConsultationService {
         }
     }
 
+    public ApiResponse<List<ConsultationResponse>> getAllConsultations() {
+        try {
+            List<Consultation> consultations = consultationRepository.findAll();
+            List<ConsultationResponse> responses = consultations.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+
+            return ApiResponse.success("Consultations retrieved successfully", responses);
+        } catch (Exception e) {
+            log.error("Error retrieving all consultations: {}", e.getMessage());
+            return ApiResponse.error("Failed to retrieve consultations: " + e.getMessage());
+        }
+    }
+
+    // Get consultation by ID
+    public ApiResponse<ConsultationResponse> getConsultationById(Long consultationId) {
+        try {
+            Optional<Consultation> consultationOpt = consultationRepository.findById(consultationId);
+            if (consultationOpt.isEmpty()) {
+                return ApiResponse.error("Consultation not found");
+            }
+
+            ConsultationResponse response = convertToResponse(consultationOpt.get());
+            return ApiResponse.success("Consultation retrieved successfully", response);
+        } catch (Exception e) {
+            log.error("Error retrieving consultation by ID {}: {}", consultationId, e.getMessage());
+            return ApiResponse.error("Failed to retrieve consultation: " + e.getMessage());
+        }
+    }
+
+    // Check if user is authorized to access consultation
+    public boolean isUserAuthorized(Long consultationId, String username) {
+        try {
+            Optional<Consultation> consultationOpt = consultationRepository.findById(consultationId);
+            if (consultationOpt.isEmpty()) {
+                return false;
+            }
+
+            Consultation consultation = consultationOpt.get();
+            Optional<UserDtls> currentUserOpt = userRepository.findByEmail(username);
+
+            if (currentUserOpt.isEmpty()) {
+                return false;
+            }
+            UserDtls currentUser = currentUserOpt.get();
+
+            // User can access if they are the customer or the consultant
+            return consultation.getCustomer().getId().equals(currentUser.getId()) ||
+                    consultation.getConsultant().getId().equals(currentUser.getId());
+        } catch (Exception e) {
+            log.error("Error checking user authorization for consultation {}: {}", consultationId, e.getMessage());
+            return false;
+        }
+    }
+
     private String generateJitsiMeetUrl(Long consultationId) {
         // Tạo UUID để đảm bảo tính duy nhất và bảo mật
         String uniqueId = UUID.randomUUID().toString().substring(0, 8);
@@ -324,6 +377,8 @@ public class ConsultationService {
             return ApiResponse.error("Failed to retrieve consultations: " + e.getMessage());
         }
     }
+
+    
 
     private ConsultationResponse convertToResponse(Consultation consultation) {
         ConsultationResponse response = new ConsultationResponse();
