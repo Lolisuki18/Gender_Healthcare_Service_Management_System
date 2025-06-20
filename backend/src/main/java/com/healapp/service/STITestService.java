@@ -1,33 +1,5 @@
 package com.healapp.service;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.dto.STITestRequest;
-import com.healapp.dto.STITestResponse;
-import com.healapp.dto.STITestStatusUpdateRequest;
-import com.healapp.dto.TestResultRequest;
-import com.healapp.dto.TestResultResponse;
-import com.healapp.exception.PaymentException;
-import com.healapp.model.STIService;
-import com.healapp.model.STIPackage;
-import com.healapp.model.STITest;
-import com.healapp.model.ServiceTestComponent;
-import com.healapp.model.TestResult;
-import com.healapp.model.UserDtls;
-import com.healapp.model.Payment;
-import com.healapp.model.PaymentMethod;
-import com.healapp.model.PaymentStatus;
-import com.healapp.model.STITestStatus;
-import com.healapp.repository.STIServiceRepository;
-import com.healapp.repository.STIPackageRepository;
-import com.healapp.repository.STITestRepository;
-import com.healapp.repository.ServiceTestComponentRepository;
-import com.healapp.repository.TestResultRepository;
-import com.healapp.repository.UserRepository;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -35,6 +7,36 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.STITestRequest;
+import com.healapp.dto.STITestResponse;
+import com.healapp.dto.STITestStatusUpdateRequest;
+import com.healapp.dto.TestResultRequest;
+import com.healapp.dto.TestResultResponse;
+import com.healapp.exception.PaymentException;
+import com.healapp.model.Payment;
+import com.healapp.model.PaymentMethod;
+import com.healapp.model.PaymentStatus;
+import com.healapp.model.STIPackage;
+import com.healapp.model.STIService;
+import com.healapp.model.STITest;
+import com.healapp.model.STITestStatus;
+import com.healapp.model.ServiceTestComponent;
+import com.healapp.model.TestResult;
+import com.healapp.model.UserDtls;
+import com.healapp.repository.STIPackageRepository;
+import com.healapp.repository.STIServiceRepository;
+import com.healapp.repository.STITestRepository;
+import com.healapp.repository.ServiceTestComponentRepository;
+import com.healapp.repository.TestResultRepository;
+import com.healapp.repository.UserRepository;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -92,7 +94,6 @@ public class STITestService {
 
         STITest stiTest;
         BigDecimal totalPrice;
-
         if (request.isServiceBooking()) {
             // Service booking
             log.info("Booking service ID: {}", request.getServiceId());
@@ -104,6 +105,15 @@ public class STITestService {
 
             if (!stiService.getIsActive()) {
                 return ApiResponse.error("STI service is not available");
+            }
+
+            // Validate có ít nhất 1 active component
+            boolean hasActiveComponents = stiService.getTestComponents() != null
+                    && stiService.getTestComponents().stream()
+                            .anyMatch(component -> Boolean.TRUE.equals(component.getIsActive()));
+
+            if (!hasActiveComponents) {
+                return ApiResponse.error("STI service has no active test components available");
             }
 
             totalPrice = stiService.getPrice();
@@ -128,6 +138,17 @@ public class STITestService {
 
             if (!stiPackage.getIsActive()) {
                 return ApiResponse.error("STI package is not available");
+            }
+
+            // Validate có ít nhất 1 active component trong package
+            boolean hasActiveComponents = stiPackage.getServices() != null
+                    && stiPackage.getServices().stream()
+                            .anyMatch(service -> service.getTestComponents() != null
+                            && service.getTestComponents().stream()
+                                    .anyMatch(component -> Boolean.TRUE.equals(component.getIsActive())));
+
+            if (!hasActiveComponents) {
+                return ApiResponse.error("STI package has no active test components available");
             }
 
             totalPrice = stiPackage.getPackagePrice();
@@ -345,7 +366,6 @@ public class STITestService {
     }
 
     // ========== CONSULTANT METHODS ==========
-
     public ApiResponse<List<STITestResponse>> getTestsPendingConsultantNotes() {
         try {
             // Lấy các test có trạng thái SAMPLED, RESULTED, hoặc COMPLETED
@@ -405,8 +425,8 @@ public class STITestService {
             }
 
             // CONFIRMED status
-            if (request.getStatus() == STITestStatus.CONFIRMED &&
-                    ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
+            if (request.getStatus() == STITestStatus.CONFIRMED
+                    && ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
 
                 if (!validatePaymentForConfirmation(test)) {
                     return ApiResponse.error("Cannot confirm test - payment not completed or invalid");
@@ -414,20 +434,16 @@ public class STITestService {
 
                 test.setStatus(STITestStatus.CONFIRMED);
                 test.setStaff(user);
-            }
-
-            // SAMPLED status
-            else if (request.getStatus() == STITestStatus.SAMPLED &&
-                    ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
+            } // SAMPLED status
+            else if (request.getStatus() == STITestStatus.SAMPLED
+                    && ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
                 test.setStatus(STITestStatus.SAMPLED);
                 if (test.getConsultant() == null) {
                     test.setConsultant(user);
                 }
-            }
-
-            // RESULTED status
-            else if (request.getStatus() == STITestStatus.RESULTED &&
-                    ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
+            } // RESULTED status
+            else if (request.getStatus() == STITestStatus.RESULTED
+                    && ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
                 if (request.getResults() == null || request.getResults().isEmpty()) {
                     return ApiResponse.error("Test results are required for RESULTED status");
                 }
@@ -438,11 +454,9 @@ public class STITestService {
 
                 test.setStatus(STITestStatus.RESULTED);
                 test.setResultDate(LocalDateTime.now());
-            }
-
-            // COMPLETED status
-            else if (request.getStatus() == STITestStatus.COMPLETED &&
-                    ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
+            } // COMPLETED status
+            else if (request.getStatus() == STITestStatus.COMPLETED
+                    && ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
                 test.setStatus(STITestStatus.COMPLETED);
             }
 
@@ -585,19 +599,24 @@ public class STITestService {
         STITestStatus currentStatus = test.getStatus();
 
         if ("STAFF".equals(userRole)) {
-            if (currentStatus == STITestStatus.PENDING && newStatus == STITestStatus.CONFIRMED)
+            if (currentStatus == STITestStatus.PENDING && newStatus == STITestStatus.CONFIRMED) {
                 return true;
-            if (currentStatus == STITestStatus.CONFIRMED && newStatus == STITestStatus.SAMPLED)
+            }
+            if (currentStatus == STITestStatus.CONFIRMED && newStatus == STITestStatus.SAMPLED) {
                 return true;
-            if (currentStatus == STITestStatus.SAMPLED && newStatus == STITestStatus.RESULTED)
+            }
+            if (currentStatus == STITestStatus.SAMPLED && newStatus == STITestStatus.RESULTED) {
                 return true;
-            if (currentStatus == STITestStatus.RESULTED && newStatus == STITestStatus.COMPLETED)
+            }
+            if (currentStatus == STITestStatus.RESULTED && newStatus == STITestStatus.COMPLETED) {
                 return true;
+            }
         } else if ("ADMIN".equals(userRole)) {
             return true;
         } else if ("CUSTOMER".equals(userRole) || "CONSULTANT".equals(userRole)) {
-            if (currentStatus == STITestStatus.PENDING && newStatus == STITestStatus.CANCELED)
+            if (currentStatus == STITestStatus.PENDING && newStatus == STITestStatus.CANCELED) {
                 return true;
+            }
         }
 
         return false;
@@ -700,8 +719,8 @@ public class STITestService {
                 return ApiResponse.error("You can only cancel your own tests");
             }
 
-            if (!STITestStatus.PENDING.equals(stiTest.getStatus()) &&
-                    !STITestStatus.CONFIRMED.equals(stiTest.getStatus())) {
+            if (!STITestStatus.PENDING.equals(stiTest.getStatus())
+                    && !STITestStatus.CONFIRMED.equals(stiTest.getStatus())) {
                 return ApiResponse.error("Cannot cancel test in current status: " + stiTest.getStatus());
             }
 
@@ -716,9 +735,9 @@ public class STITestService {
                 Payment payment = paymentOpt.get();
 
                 // REFUND CHO CẢ VISA VÀ QR_CODE ĐÃ COMPLETED
-                if ((payment.getPaymentMethod() == PaymentMethod.VISA ||
-                        payment.getPaymentMethod() == PaymentMethod.QR_CODE) &&
-                        payment.getPaymentStatus() == PaymentStatus.COMPLETED) {
+                if ((payment.getPaymentMethod() == PaymentMethod.VISA
+                        || payment.getPaymentMethod() == PaymentMethod.QR_CODE)
+                        && payment.getPaymentStatus() == PaymentStatus.COMPLETED) {
 
                     ApiResponse<Payment> refundResult = paymentService.processRefund(
                             payment.getPaymentId(), "User cancellation");
@@ -737,12 +756,10 @@ public class STITestService {
                         log.info(" QR Code refund marked for cancelled test - Test ID: {}, Payment ID: {}, QR Ref: {}",
                                 testId, payment.getPaymentId(), payment.getQrPaymentReference());
                     }
-                }
-                // COD không cần refund - không có message
+                } // COD không cần refund - không có message
                 else if (payment.getPaymentMethod() == PaymentMethod.COD) {
                     log.info("📦 COD test cancelled - No refund needed - Test ID: {}", testId);
-                }
-                // Payment chưa completed - không refund
+                } // Payment chưa completed - không refund
                 else if (payment.getPaymentStatus() != PaymentStatus.COMPLETED) {
                     log.info("⏳ Payment not completed - No refund needed - Test ID: {}, Status: {}",
                             testId, payment.getPaymentStatus());
@@ -785,9 +802,9 @@ public class STITestService {
                 return ApiResponse.error("User is not a consultant");
             }
 
-            if (stiTest.getStatus() != STITestStatus.SAMPLED &&
-                    stiTest.getStatus() != STITestStatus.RESULTED &&
-                    stiTest.getStatus() != STITestStatus.COMPLETED) {
+            if (stiTest.getStatus() != STITestStatus.SAMPLED
+                    && stiTest.getStatus() != STITestStatus.RESULTED
+                    && stiTest.getStatus() != STITestStatus.COMPLETED) {
                 return ApiResponse.error(
                         "Consultant notes can only be updated for tests in SAMPLED, RESULTED, or COMPLETED status");
             }
@@ -946,15 +963,21 @@ public class STITestService {
             return;
         }
 
+        int activeComponentsCount = 0;
         for (ServiceTestComponent component : stiTest.getStiService().getTestComponents()) {
-            TestResult result = new TestResult();
-            result.setStiTest(stiTest);
-            result.setTestComponent(component);
-            result.setStiService(stiTest.getStiService()); // Same as parent service
-            testResultRepository.save(result);
+            // Chỉ tạo TestResult cho các component active
+            if (Boolean.TRUE.equals(component.getIsActive())) {
+                TestResult result = new TestResult();
+                result.setStiTest(stiTest);
+                result.setTestComponent(component);
+                result.setStiService(stiTest.getStiService()); // Same as parent service
+                testResultRepository.save(result);
+                activeComponentsCount++;
+            }
         }
-        log.info("Created {} test results for service booking: {}",
-                stiTest.getStiService().getTestComponents().size(), stiTest.getTestId());
+        log.info("Created {} test results for service booking: {} (from {} total components, {} active)",
+                activeComponentsCount, stiTest.getTestId(),
+                stiTest.getStiService().getTestComponents().size(), activeComponentsCount);
     }
 
     /**
@@ -966,19 +989,25 @@ public class STITestService {
         }
 
         int totalResults = 0;
+        int totalComponents = 0;
         for (STIService service : stiTest.getStiPackage().getServices()) {
             if (service.getTestComponents() != null) {
                 for (ServiceTestComponent component : service.getTestComponents()) {
-                    TestResult result = new TestResult();
-                    result.setStiTest(stiTest);
-                    result.setTestComponent(component);
-                    result.setStiService(service); // Track which service this component belongs to
-                    testResultRepository.save(result);
-                    totalResults++;
+                    totalComponents++;
+                    // Chỉ tạo TestResult cho các component active
+                    if (Boolean.TRUE.equals(component.getIsActive())) {
+                        TestResult result = new TestResult();
+                        result.setStiTest(stiTest);
+                        result.setTestComponent(component);
+                        result.setStiService(service); // Track which service this component belongs to
+                        testResultRepository.save(result);
+                        totalResults++;
+                    }
                 }
             }
         }
-        log.info("Created {} test results for package booking: {}", totalResults, stiTest.getTestId());
+        log.info("Created {} test results for package booking: {} (from {} total components, {} active)",
+                totalResults, stiTest.getTestId(), totalComponents, totalResults);
     }
 
     /**
@@ -1035,6 +1064,7 @@ public class STITestService {
      * DTO class for grouped service results
      */
     public static class ServiceTestGroup {
+
         private Long serviceId;
         private String serviceName;
         private String serviceDescription;
