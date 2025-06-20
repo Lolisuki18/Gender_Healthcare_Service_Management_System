@@ -120,6 +120,7 @@ public class STIServiceController {
      * String unit *
      * String referenceRange *
      * String interpretation *
+     * boolean isActive
      * }
      * }
      */

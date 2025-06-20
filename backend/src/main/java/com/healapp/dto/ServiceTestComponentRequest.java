@@ -25,4 +25,6 @@ public class ServiceTestComponentRequest {
 
     @Size(max = 200, message = "Interpretation must not exceed 200 characters")
     private String interpretation;
+
+    private Boolean isActive = true;
 }

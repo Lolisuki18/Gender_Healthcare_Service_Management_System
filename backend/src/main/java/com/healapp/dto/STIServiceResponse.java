@@ -36,5 +36,6 @@ public class STIServiceResponse {
         private String unit;
         private String normalRange;
         private String description;
+        private boolean isActive;
     }
 }

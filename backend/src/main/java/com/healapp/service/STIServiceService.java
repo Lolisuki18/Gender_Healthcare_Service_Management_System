@@ -41,7 +41,7 @@ public class STIServiceService {
             newService.setName(request.getName());
             newService.setDescription(request.getDescription());
             newService.setPrice(request.getPrice());
-            newService.setIsActive(true);
+            newService.setIsActive(true); // Mặc định là hoạt động
 
             List<ServiceTestComponent> components = request.getComponents().stream().map(c -> {
                 ServiceTestComponent component = new ServiceTestComponent();
@@ -49,6 +49,7 @@ public class STIServiceService {
                 component.setUnit(c.getUnit());
                 component.setReferenceRange(c.getReferenceRange());
                 component.setInterpretation(c.getReferenceRange());
+                component.setIsActive(true); // Mặc định là hoạt động
                 component.setStiService(newService);
                 return component;
             }).collect(Collectors.toList());
@@ -101,7 +102,6 @@ public class STIServiceService {
     }
 
 
-
     // Lấy thông tin dịch vụ STI theo ID
     public ApiResponse<STIServiceResponse> getSTIServiceById(Long id) {
         try {
@@ -134,31 +134,35 @@ public class STIServiceService {
             // Cập nhật các thành phần xét nghiệm liên quan đến dịch vụ
             List<ServiceTestComponent> oldComponents = existingService.getTestComponents();
 
-            // kiểm tra xem thành phần mới có cùng id với thành phần cũ không
-            // nếu cùng thì cập nhật, nếu không thì thêm mới
-            for (ServiceTestComponentRequest componentRequest : request.getComponents()) {
-                ServiceTestComponent existingComponent = oldComponents.stream()
-                        .filter(c -> c.getComponentId().equals(componentRequest.getComponentId()))
-                        .findFirst()
-                        .orElse(null);
-                
-                if (existingComponent != null) {
-                    // Cập nhật thông tin thành phần
-                    existingComponent.setTestName(componentRequest.getTestName());
-                    existingComponent.setUnit(componentRequest.getUnit());
-                    existingComponent.setReferenceRange(componentRequest.getReferenceRange());
-                    existingComponent.setInterpretation(componentRequest.getInterpretation());
-                } else {
-                    // Thêm mới thành phần nếu không tồn tại
+            // Lấy danh sách các thành phần mới từ request
+            for(ServiceTestComponentRequest componentRequest : request.getComponents()) {
+                // Nếu componentId là null, thì thêm mới thành phần
+                if (componentRequest.getComponentId() == null) {
                     ServiceTestComponent newComponent = new ServiceTestComponent();
                     newComponent.setTestName(componentRequest.getTestName());
                     newComponent.setUnit(componentRequest.getUnit());
                     newComponent.setReferenceRange(componentRequest.getReferenceRange());
                     newComponent.setInterpretation(componentRequest.getInterpretation());
+                    newComponent.setIsActive(componentRequest.getIsActive() == null ? true : componentRequest.getIsActive());
                     newComponent.setStiService(existingService);
                     oldComponents.add(newComponent);
+                } else {
+                    // Cập nhật thành phần đã tồn tại
+                    ServiceTestComponent existingComponent = oldComponents.stream()
+                            .filter(c -> c.getComponentId().equals(componentRequest.getComponentId()))
+                            .findFirst()
+                            .orElse(null);
+                    if (existingComponent != null) {
+                        existingComponent.setTestName(componentRequest.getTestName());
+                        existingComponent.setUnit(componentRequest.getUnit());
+                        existingComponent.setReferenceRange(componentRequest.getReferenceRange());
+                        existingComponent.setInterpretation(componentRequest.getInterpretation());
+                        // Nếu isActive không được cung cấp thì giữ nguyên giá trị cũ
+                        existingComponent.setIsActive(componentRequest.getIsActive() == null ? existingComponent.getIsActive() : componentRequest.getIsActive());
+                    }
                 }
             }
+            
             // Lưu lại các thành phần đã cập nhật
             existingService.setTestComponents(oldComponents);
 
@@ -221,6 +225,7 @@ public class STIServiceService {
             component.setUnit(c.getUnit());
             component.setNormalRange(c.getReferenceRange());
             component.setDescription(c.getInterpretation());
+            component.setActive(c.getIsActive());
             return component;
         }).collect(Collectors.toList());
 
