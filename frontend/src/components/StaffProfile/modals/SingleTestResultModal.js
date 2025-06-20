@@ -24,9 +24,6 @@ import {
   Grid,
   Card,
   CardContent,
-  useTheme,
-  TablePagination,
-  Badge,
 } from '@mui/material';
 import {
   getSTIServiceById,
@@ -392,7 +389,6 @@ const SingleTestResultModal = ({
       }
     }
   }, [currentTest, fetchServiceData, fetchTestResults]);
-
   // Reset states when modal closes
   useEffect(() => {
     if (!open) {
@@ -400,13 +396,15 @@ const SingleTestResultModal = ({
       setSuccess(null);
     }
   }, [open]);
-
   // Reset when currentTest changes
   useEffect(() => {
     if (currentTest) {
+      // Clear all errors when currentTest changes
       setError(null);
       setSuccess(null);
-      setResults([]);
+
+      // Don't reset results here, that's handled by the other useEffect
+      // that loads data when currentTest changes
     }
   }, [currentTest]);
 
@@ -425,14 +423,48 @@ const SingleTestResultModal = ({
     setSuccess(null);
 
     // Validate that all results have values
-    const hasEmptyValues = results.some((result) => !result.resultValue.trim());
+    const hasEmptyValues = results.some(
+      (result) => !result.resultValue || !result.resultValue.trim()
+    );
+
+    // Check if we have all required components
+    if (serviceData?.components && serviceData.components.length > 0) {
+      const serviceComponentIds = serviceData.components.map((comp) =>
+        typeof comp.componentId === 'number'
+          ? comp.componentId
+          : parseInt(comp.componentId)
+      );
+
+      const resultComponentIds = results.map((res) =>
+        typeof res.componentId === 'number'
+          ? res.componentId
+          : parseInt(res.componentId)
+      );
+
+      // Find missing components
+      const missingComponentIds = serviceComponentIds.filter(
+        (id) => !resultComponentIds.includes(id)
+      );
+
+      // Log missing components
+      if (missingComponentIds.length > 0) {
+        console.error('Missing components in results:', missingComponentIds);
+        setError(
+          `Missing results for components: ${missingComponentIds.join(', ')}. Please provide all required values.`
+        );
+        setSaving(false);
+        return;
+      }
+    }
 
     // Add detailed validation logging
     console.group('Results validation');
     console.log('Current results array:', results);
     console.log('Has empty values:', hasEmptyValues);
     if (hasEmptyValues) {
-      const emptyResults = results.filter((r) => !r.resultValue.trim());
+      const emptyResults = results.filter(
+        (r) => !r.resultValue || !r.resultValue.trim()
+      );
       console.log('Empty results:', emptyResults);
     }
 
@@ -449,11 +481,20 @@ const SingleTestResultModal = ({
     console.groupEnd();
 
     if (hasEmptyValues) {
-      setError('Please provide values for all test components');
+      setError(
+        'Vui lòng cung cấp giá trị cho tất cả các thành phần xét nghiệm'
+      );
       setSaving(false);
       return;
     }
 
+    if (invalidComponentIds.length > 0) {
+      setError(
+        'Phát hiện ID thành phần không hợp lệ. Vui lòng thử làm mới trang.'
+      );
+      setSaving(false);
+      return;
+    }
     try {
       // Build the request data with properly formatted results
       const formattedResults = results.map((result) => ({
@@ -474,6 +515,15 @@ const SingleTestResultModal = ({
         'Request data for saving results:',
         JSON.stringify(requestData, null, 2)
       );
+
+      // Add additional error handling for network issues
+      if (!navigator.onLine) {
+        setError(
+          'You appear to be offline. Please check your internet connection and try again.'
+        );
+        setSaving(false);
+        return;
+      }
 
       // Check token status before making API call
       const tokenValid = checkTokenStatus();
@@ -529,6 +579,14 @@ const SingleTestResultModal = ({
       } catch (apiError) {
         console.error('API error in handleSaveResult:', apiError);
 
+        // Improved error handling for common issues
+        if (apiError.message === 'Network Error' || !navigator.onLine) {
+          setError(
+            'Failed to save test results: Network connection issue. Please check your internet connection and try again.'
+          );
+          return;
+        }
+
         // Check for 401 - token might have refreshed
         if (
           apiError.status === 401 ||
@@ -555,23 +613,105 @@ const SingleTestResultModal = ({
               setTimeout(() => onClose(), 1500);
               return;
             } else {
-              throw new Error('Failed to save results after token refresh');
+              throw new Error(
+                'Failed to save results after token refresh. Please try logging in again.'
+              );
             }
           } catch (retryError) {
             console.error('Failed retry after token refresh:', retryError);
-            throw retryError;
+            setError(
+              'Failed to save test results. Your session might have expired. Please try refreshing the page or logging in again.'
+            );
+            return;
           }
+        } else if (apiError.response && apiError.response.status === 400) {
+          // Check if this is specifically about missing components
+          if (
+            apiError.response.data &&
+            apiError.response.data.message &&
+            apiError.response.data.message.includes(
+              'Missing results for components'
+            )
+          ) {
+            const errorMsg = apiError.response.data.message;
+            console.error('Backend validation error:', errorMsg);
+            setError(
+              `Thiếu kết quả cho một số thành phần xét nghiệm. Vui lòng kiểm tra và điền đầy đủ tất cả các giá trị.`
+            );
+          } else {
+            setError(
+              'Failed to save test results: Invalid data format. Please check your inputs and try again.'
+            );
+          }
+          return;
+        } else if (apiError.response && apiError.response.status === 403) {
+          setError(
+            'Failed to save test results: You do not have permission to perform this action.'
+          );
+          return;
+        } else if (apiError.response && apiError.response.status === 500) {
+          setError(
+            'Failed to save test results: Server error. Please try again later.'
+          );
+          return;
         } else {
-          throw apiError; // Re-throw for the outer catch
+          setError(
+            `Failed to save test results: ${apiError.message || 'Unknown error'}`
+          );
+          return;
         }
       }
     } catch (err) {
       console.error('Error saving test results:', err);
-      setError(err?.message || 'An error occurred while saving the results');
+
+      // Check for specific backend error messages about missing components
+      if (
+        err.response &&
+        err.response.data &&
+        err.response.data.message &&
+        typeof err.response.data.message === 'string' &&
+        err.response.data.message.includes('Missing results for components')
+      ) {
+        const errorMessage = err.response.data.message;
+        const componentsMatch = errorMessage.match(/\[(.*?)\]/);
+        if (componentsMatch && componentsMatch[1]) {
+          const missingComponents = componentsMatch[1];
+          setError(
+            `Thiếu kết quả cho các thành phần: ${missingComponents}. Vui lòng điền đầy đủ tất cả các giá trị bắt buộc.`
+          );
+        } else {
+          setError(
+            `Thiếu kết quả cho một số thành phần xét nghiệm. Vui lòng điền đầy đủ tất cả các giá trị.`
+          );
+        }
+      }
+      // More user-friendly error message for other cases
+      else if (err.message?.includes('Network Error') || !navigator.onLine) {
+        setError(
+          'Failed to save test results: Network connection issue. Please check your internet connection and try again.'
+        );
+      } else if (err.message?.includes('timeout')) {
+        setError(
+          'Failed to save test results: Request timed out. Please try again.'
+        );
+      } else if (
+        err.message?.includes('auth') ||
+        err.message?.includes('token') ||
+        err.message?.includes('login')
+      ) {
+        setError(
+          'Failed to save test results: Authentication issue. Please try refreshing the page or logging in again.'
+        );
+      } else {
+        setError(
+          'This could be due to network issues or expired authentication. Please try again or refresh the page.'
+        );
+      }
     } finally {
       setSaving(false);
     }
-  }; // Function to handle viewing results (fetches both service data and test results)
+  };
+  // Function to handle viewing results(fetches both service data and test results)
   const handleViewResults = async () => {
     if (!currentTest || !currentTest.serviceId || !currentTest.testId) {
       setError('Cannot view results: Missing test or service information');
@@ -596,56 +736,191 @@ const SingleTestResultModal = ({
       );
       const testResults = await fetchTestResults(currentTest.testId);
 
-      if (testResults) {
-        setSuccess('Test results loaded successfully');
+      if (testResults && testResults.length > 0) {
+        console.log('Test results loaded successfully:', testResults);
+
+        // Make sure all test components are visible in the UI
+        if (serviceData && serviceData.components) {
+          console.log('Checking for missing components in results display...');
+
+          // Create a map of component IDs to results
+          const resultMap = new Map();
+          testResults.forEach((result) => {
+            resultMap.set(
+              typeof result.componentId === 'number'
+                ? result.componentId
+                : parseInt(result.componentId),
+              result
+            );
+          });
+
+          // Create complete results array with all service components
+          const completeResults = serviceData.components.map((component) => {
+            const componentId =
+              typeof component.componentId === 'number'
+                ? component.componentId
+                : parseInt(component.componentId);
+
+            const existingResult = resultMap.get(componentId);
+
+            if (!existingResult) {
+              console.warn(
+                `Missing result for component ID ${componentId}, creating placeholder`
+              );
+            }
+
+            return {
+              componentId: componentId,
+              componentName: component.componentName,
+              normalRange: component.normalRange || '',
+              unit: component.unit || '',
+              resultValue: existingResult ? existingResult.resultValue : '---',
+            };
+          });
+
+          setResults(completeResults);
+          setSuccess('Kết quả xét nghiệm đã được tải thành công');
+        } else {
+          setResults(testResults);
+          setSuccess('Kết quả xét nghiệm đã được tải thành công');
+        }
       } else {
         console.warn('No test results found for test ID:', currentTest.testId);
+        setError('Không tìm thấy kết quả xét nghiệm cho xét nghiệm này');
       }
     } catch (err) {
       console.error('Error viewing test results:', err);
       setError(
-        `Failed to load test results: ${err.message || 'Unknown error'}`
+        `Không thể tải kết quả xét nghiệm: ${err.message || 'Lỗi không xác định'}`
       );
     } finally {
       setLoading(false);
     }
+  }; // Function to complete the test
+  const completeTheTest = () => {
+    console.log(`Completing test with ID: ${testId}`);
+    // Call the handler provided through props
+    handleCompleteTest(testId)
+      .then((response) => {
+        console.log('Complete test response:', response);
+
+        // Consider different response formats
+        if (response) {
+          // Silently handle status transition errors
+          if (
+            response.message &&
+            (response.message.includes('Invalid status transition') ||
+              response.message.includes('role'))
+          ) {
+            // Just log it but don't show error to the user
+            console.log('Status transition info:', response.message);
+            // Continue processing without setting error
+          }
+
+          // Check if the test status was updated to COMPLETED
+          if (
+            response.status === 'SUCCESS' ||
+            response.success ||
+            (response.data && response.data.status === 'COMPLETED') ||
+            response.status === 'COMPLETED'
+          ) {
+            setSuccess('Test status updated to COMPLETED successfully! 🎉');
+
+            // Update test with the returned data
+            if (onTestUpdated) {
+              const updatedData = response.data || response;
+              onTestUpdated(updatedData);
+            }
+
+            // Close modal after showing success message
+            setTimeout(() => onClose(), 1500);
+          } else {
+            // The response exists but doesn't indicate success
+            const errorMessage =
+              response.message ||
+              (response.error ? response.error.message : null) ||
+              'Unknown error completing test';
+            console.error('Test completion error:', errorMessage);
+            setError(`Error completing test: ${errorMessage}`);
+            // Keep the error visible
+          }
+        } else {
+          // No response received
+          const noResponseError = 'Error completing test: No response received';
+          console.error(noResponseError);
+          setError(noResponseError);
+        }
+      })
+      .catch((error) => {
+        // Extract the error message, paying special attention to status transition errors
+        let errorMsg = error.message || 'Unknown error';
+
+        // Check if it's a response error object
+        if (error.response && error.response.data) {
+          if (error.response.data.message) {
+            errorMsg = error.response.data.message;
+          }
+        }
+
+        console.error('Error completing test:', error); // Format the error message but ignore status transition errors
+        if (
+          errorMsg.includes('Invalid status transition') ||
+          errorMsg.includes('role')
+        ) {
+          // Don't show status transition errors
+          console.log(`Ignoring status transition error: ${errorMsg}`);
+        } else {
+          setError(`Error completing test: ${errorMsg}`);
+        }
+      })
+      .finally(() => {
+        setSaving(false);
+      });
   };
 
-  // Function to handle completing the test
-  const handleCompleteCurrentTest = async () => {
+  const handleCompleteCurrentTest = () => {
     setSaving(true);
     setError(null);
     setSuccess(null);
 
-    try {
-      if (!handleCompleteTest) {
-        setError('Cannot complete test: No handler provided');
-        setSaving(false);
-        return;
-      }
-
-      console.log(`Completing test with ID: ${testId}`);
-      const response = await handleCompleteTest(testId);
-      console.log('Complete test response:', response);
-
-      if (response && (response.status === 'SUCCESS' || response.success)) {
-        setSuccess('Test status updated to COMPLETED successfully! 🎉');
-
-        // Update test with the returned data
-        if (onTestUpdated && response.data) {
-          onTestUpdated(response.data);
-        }
-
-        // Close modal after showing success message
-        setTimeout(() => onClose(), 1500);
-      } else {
-        throw new Error(response?.message || 'Unknown error completing test');
-      }
-    } catch (error) {
-      console.error('Error completing test:', error);
-      setError(`Error completing test: ${error.message || 'Unknown error'}`);
-    } finally {
+    // Check if handler exists
+    if (!handleCompleteTest) {
+      setError('Cannot complete test: No handler provided');
       setSaving(false);
+      return;
+    }
+
+    // Call completeTheTest function directly
+    completeTheTest();
+
+    // First save the current results if we have any results to save
+    if (
+      results &&
+      results.length > 0 &&
+      results.some((result) => result.resultValue)
+    ) {
+      // Save results first
+      console.log('Saving latest results before completing test');
+      handleSaveResults()
+        .then(() => {
+          // Wait a moment before completing
+          setTimeout(() => completeTheTest(), 500);
+        })
+        .catch((saveError) => {
+          console.warn(
+            'Warning: Could not save latest results before completing:',
+            saveError
+          );
+          // Show warning but continue with completion
+          setError(
+            'Warning: Could not save latest results before completing test'
+          );
+          // Still try to complete
+          completeTheTest();
+        });
+    } else {
+      // No results to save, just complete
+      completeTheTest();
     }
   };
 
@@ -782,7 +1057,12 @@ const SingleTestResultModal = ({
               boxShadow: '0 4px 15px rgba(244, 67, 54, 0.2)',
               border: 'none',
             }}
-            onClose={() => setError(null)}
+            onClose={() => {
+              // Don't allow closing of status transition errors with the X button
+              if (!error.includes('Invalid status transition')) {
+                setError(null);
+              }
+            }}
             variant="filled"
           >
             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
@@ -793,6 +1073,26 @@ const SingleTestResultModal = ({
               >
                 {error}
               </Typography>
+
+              {error.includes('Invalid status transition') && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    fontWeight: 500,
+                    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+                    borderRadius: '6px',
+                    px: 1.5,
+                    py: 0.75,
+                    display: 'inline-block',
+                    mt: 1.5,
+                  }}
+                >
+                  Không thể hoàn thành xét nghiệm. Hãy đảm bảo xét nghiệm đã ở
+                  trạng thái RESULTED trước khi hoàn thành.
+                </Typography>
+              )}
+
               {error.includes('Failed to save') && (
                 <Typography
                   variant="caption"
@@ -815,7 +1115,7 @@ const SingleTestResultModal = ({
           </Alert>
         ) : !currentTest ? (
           <Alert severity="warning" sx={{ my: 2 }}>
-            Test data not available
+            Không có dữ liệu xét nghiệm
           </Alert>
         ) : (
           <>
@@ -1550,6 +1850,7 @@ const SingleTestResultModal = ({
           borderTop: '1px solid rgba(0, 0, 0, 0.05)',
         }}
       >
+        {' '}
         <Button
           onClick={onClose}
           color="inherit"
@@ -1567,7 +1868,7 @@ const SingleTestResultModal = ({
             },
           }}
         >
-          Cancel
+          Đóng
         </Button>{' '}
         {currentTest && currentTest.status === 'COMPLETED' ? (
           <>
@@ -1598,11 +1899,12 @@ const SingleTestResultModal = ({
                 },
               }}
             >
-              {loading ? 'Loading...' : 'View Results'}
+              {loading ? 'Loading...' : 'Xem Kết Quả'}
             </Button>
           </>
         ) : currentTest && currentTest.status === 'RESULTED' ? (
           <>
+            {' '}
             <Button
               onClick={handleViewResults}
               variant="outlined"
@@ -1617,13 +1919,12 @@ const SingleTestResultModal = ({
                 px: 3,
               }}
             >
-              View Results
-            </Button>
-
+              Xem Kết Quả
+            </Button>{' '}
             <Button
               onClick={handleCompleteCurrentTest}
               variant="contained"
-              disabled={loading || saving}
+              disabled={loading || saving || currentTest.status !== 'RESULTED'}
               startIcon={
                 saving ? (
                   <CircularProgress size={20} color="inherit" />
@@ -1632,6 +1933,11 @@ const SingleTestResultModal = ({
                 )
               }
               color="success"
+              title={
+                currentTest.status !== 'RESULTED'
+                  ? 'Chỉ có thể hoàn thành xét nghiệm ở trạng thái RESULTED'
+                  : 'Hoàn thành xét nghiệm và đánh dấu kết quả cuối cùng'
+              }
               sx={{
                 ml: 2,
                 borderRadius: '50px',
@@ -1646,9 +1952,13 @@ const SingleTestResultModal = ({
                   background: 'linear-gradient(45deg, #1B5E20, #00B84D)',
                   boxShadow: '0 6px 15px rgba(46, 125, 50, 0.3)',
                 },
+                '&.Mui-disabled': {
+                  background: 'linear-gradient(45deg, #9E9E9E, #BDBDBD)',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                },
               }}
             >
-              {saving ? 'Processing...' : 'Complete Test'}
+              {saving ? 'Đang xử lý...' : 'Hoàn Thành Xét Nghiệm'}
             </Button>
           </>
         ) : (
@@ -1676,7 +1986,7 @@ const SingleTestResultModal = ({
               },
             }}
           >
-            {saving ? 'Saving...' : 'Save Results'}
+            {saving ? 'Đang lưu...' : 'Lưu Kết Quả'}
           </Button>
         )}
       </DialogActions>

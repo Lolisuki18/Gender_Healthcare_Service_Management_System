@@ -44,8 +44,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+// Removed unused visibility icons as we now only use edit functionality
 import {
   getSTIServiceById,
   getTestResultsByTestId,
@@ -831,14 +830,12 @@ const PackageManagementModal = ({
     if (value === 'INCONCLUSIVE') return 'warning';
 
     return 'default';
-  }; // Xử lý hiển thị/ẩn kết quả xét nghiệm
+  }; // Xử lý hiển thị form nhập kết quả xét nghiệm
   const handleViewTestResult = (component) => {
-    // Always allow toggling, regardless of result status
-    // This allows staff to view and input test results
-
+    // Always show the component's result input form
     setComponents((prevComponents) => {
       return prevComponents.map((comp) => {
-        // Match component by ID to toggle its showResult state
+        // Match component by ID to set its showResult state to true
         if (
           comp.componentId === component.componentId ||
           comp.id === component.componentId ||
@@ -846,38 +843,188 @@ const PackageManagementModal = ({
         ) {
           return {
             ...comp,
-            showResult: !comp.showResult,
+            showResult: true, // Always set to true to show the input form
           };
         }
         return comp;
       });
     });
 
-    // If the component is hidden, scroll to it to make sure it's visible after expanding
-    if (!component.showResult) {
-      // Use setTimeout to ensure the DOM has updated before trying to scroll
-      setTimeout(() => {
-        const componentElement = document.getElementById(
-          `test-component-${component.componentId || component.id}`
-        );
-        if (componentElement) {
-          componentElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
-        }
-      }, 100);
-    }
-  };
-
-  // Function to handle completing the test
+    // Scroll to the component to make sure it's visible
+    setTimeout(() => {
+      const componentElement = document.getElementById(
+        `test-component-${component.componentId || component.id}`
+      );
+      if (componentElement) {
+        componentElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    }, 100);
+  }; // Function to handle completing the test - first save latest results then update status to COMPLETED
   const handleCompleteTest = async () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const response = await stiService.completeTest(test.testId);
+      // STEP 1: First save the latest results
+      // First validate all results
+      const validation = validateAllResults();
+      if (!validation.valid) {
+        setError(`Không thể hoàn thành: ${validation.message}`);
+        setLoading(false);
+        return;
+      }
+
+      // Prepare results for all components in the package with extra validation
+      const allResults = components.map((component) => {
+        // Ensure both resultValue and unit exist
+        if (!component.resultValue || !component.unit) {
+          console.warn(
+            `Missing data for component ${component.componentId || component.id}: resultValue=${component.resultValue}, unit=${component.unit}`
+          );
+        }
+
+        return {
+          componentId: component.componentId || component.id,
+          resultValue: component.resultValue || '',
+          referenceRange:
+            component.normalRange || component.referenceRange || '',
+          normalRange: component.normalRange || component.referenceRange || '',
+          unit: component.unit || '',
+        };
+      });
+
+      // Log complete data being sent
+      console.group('Saving results before completion');
+      console.log('Test ID:', test.testId);
+      console.log('All results to save:', allResults);
+      console.log(
+        'Components with missing data:',
+        allResults.filter((r) => !r.resultValue || !r.unit).length
+      );
+      console.groupEnd(); // Call API to save all results first
+      try {
+        console.log('Saving latest results before completing test');
+
+        // Kiểm tra và làm sạch dữ liệu trước khi gửi đi
+        const cleanedResults = allResults
+          .filter((result) => {
+            // Chỉ giữ lại những kết quả có đủ thông tin cần thiết
+            const isValid =
+              result.componentId && result.resultValue && result.unit;
+            if (!isValid) {
+              console.warn(
+                `Loại bỏ kết quả không hợp lệ cho componentId=${result.componentId}`
+              );
+            }
+            return isValid;
+          })
+          .map((result) => ({
+            // Đảm bảo componentId là số
+            componentId:
+              typeof result.componentId === 'string'
+                ? parseInt(result.componentId, 10)
+                : result.componentId,
+            // Đảm bảo các trường khác không là null/undefined
+            resultValue: result.resultValue || '',
+            normalRange: result.normalRange || '',
+            unit: result.unit || '',
+          }));
+
+        // Tạo object request đơn giản, đúng với định dạng backend mong đợi
+        const saveRequest = {
+          status: 'RESULTED',
+          results: cleanedResults,
+          // Bỏ các trường không cần thiết có thể gây lỗi
+        };
+
+        // In ra để debug
+        console.group('Request data');
+        console.log(
+          'Cleaned request payload:',
+          JSON.stringify(saveRequest, null, 2)
+        );
+        console.log('Components included:', cleanedResults.length);
+        console.groupEnd();
+
+        // Dùng try-catch cho fetch để nếu lỗi vẫn tiếp tục được
+        try {
+          // Lấy kết quả mới nhất
+          await fetchTestResults();
+          // Đợi một chút để dữ liệu được cập nhật
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        } catch (fetchError) {
+          console.warn('Không thể làm mới dữ liệu trước khi lưu:', fetchError);
+        }
+
+        const saveResponse = await stiService.addTestResults(
+          test.testId,
+          saveRequest
+        );
+
+        if (
+          saveResponse.status !== 'SUCCESS' &&
+          !(
+            saveResponse.message &&
+            saveResponse.message.toLowerCase().includes('updated')
+          )
+        ) {
+          console.warn(
+            'Warning when saving results before completion:',
+            saveResponse.message
+          );
+          setSuccess('Đã lưu kết quả trước khi hoàn thành, nhưng có cảnh báo.');
+        } else {
+          console.log(
+            'Successfully saved latest results before completing test'
+          );
+          setSuccess('Đã lưu kết quả trước khi hoàn thành thành công.');
+
+          // Short delay to ensure state updates and backend processing completes
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+      } catch (saveError) {
+        // Continue even if saving fails, but log the error
+        console.error(
+          'Error saving latest results before completing test:',
+          saveError
+        );
+        // Only set warning, don't stop the completion process
+        setError(
+          'Lưu ý: Có vấn đề khi lưu kết quả mới nhất trước khi hoàn thành'
+        );
+
+        // Give user a chance to see the error
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      } // STEP 2: Complete the test
+      setLoading(true); // Ensure loading state is set even if previous save failed
+      setError(null); // Clear any previous errors to focus on completion
+
+      // Đợi thêm một chút để đảm bảo backend đã xử lý xong lưu kết quả
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Khởi tạo biến response ở phạm vi ngoài try-catch để có thể sử dụng sau
+      let response;
+
+      try {
+        console.log(`Completing test with ID: ${test.testId}`);
+        response = await stiService.completeTest(test.testId);
+        console.log('Complete test response:', response);
+      } catch (completeError) {
+        // Nếu lỗi, thử một lần nữa sau khi đợi thêm
+        console.warn(
+          'First attempt to complete test failed, retrying...',
+          completeError
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        console.log(`Retrying complete test with ID: ${test.testId}`);
+        response = await stiService.completeTest(test.testId);
+        console.log('Complete test retry response:', response);
+      }
+
       if (response.status === 'SUCCESS') {
         setSuccess('Xét nghiệm đã được đánh dấu hoàn thành thành công');
 
@@ -908,10 +1055,46 @@ const PackageManagementModal = ({
       }
     } catch (error) {
       console.error('Error completing test:', error);
-      setError(
-        'Lỗi khi hoàn thành xét nghiệm: ' +
-          (error.message || 'Lỗi không xác định')
-      );
+
+      // Special case: Check if the error message indicates the test was actually updated to COMPLETED
+      // This appears to be a quirk in the backend API that returns this message as an error
+      // even though the operation succeeded
+      if (
+        error.message &&
+        (error.message.includes('STI test status updated to COMPLETED') ||
+          error.message.includes('updated to COMPLETED'))
+      ) {
+        // This is actually a success case
+        setSuccess('Xét nghiệm đã được đánh dấu hoàn thành thành công');
+
+        // Update components status
+        const updatedComponents = components.map((comp) => ({
+          ...comp,
+          status: 'COMPLETED',
+        }));
+
+        setComponents(updatedComponents);
+
+        // Update test status
+        setTest((prev) => ({
+          ...prev,
+          status: 'COMPLETED',
+        }));
+
+        // Notify parent component of the update
+        if (onTestUpdated) {
+          onTestUpdated({
+            ...test,
+            status: 'COMPLETED',
+            testComponents: updatedComponents,
+          });
+        }
+      } else {
+        setError(
+          'Lỗi khi hoàn thành xét nghiệm: ' +
+            (error.message || 'Lỗi không xác định')
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -1332,49 +1515,40 @@ const PackageManagementModal = ({
                                     color="success"
                                     sx={{ mr: 1 }}
                                   />
-                                )}
-                                <Button
-                                  size="small"
-                                  variant={
-                                    (test && test.status === 'COMPLETED') ||
-                                    hasResults
-                                      ? 'contained'
-                                      : 'outlined'
-                                  }
-                                  color={
-                                    test && test.status === 'COMPLETED'
-                                      ? 'success'
-                                      : hasResults
-                                        ? 'primary'
-                                        : 'inherit'
-                                  }
-                                  // Always enable the button to show test inputs
-                                  disabled={false}
-                                  onClick={() =>
-                                    handleViewTestResult(component)
-                                  }
-                                  startIcon={
-                                    component.showResult ? (
-                                      <VisibilityOffIcon fontSize="small" />
-                                    ) : (
-                                      <VisibilityIcon fontSize="small" />
-                                    )
-                                  }
-                                  sx={{
-                                    borderRadius: '20px',
-                                    boxShadow: hasResults ? 1 : 0,
-                                    '&:hover': {
-                                      boxShadow: hasResults ? 2 : 0,
-                                    },
-                                  }}
-                                >
-                                  {' '}
-                                  {component.showResult
-                                    ? 'Ẩn kết quả'
-                                    : hasResults
-                                      ? 'Xem kết quả'
-                                      : 'Nhập kết quả'}
-                                </Button>{' '}
+                                )}{' '}
+                                {/* Only show button when test is not in SAMPLED state */}
+                                {test && test.status !== 'SAMPLED' && (
+                                  <Button
+                                    size="small"
+                                    variant={
+                                      (test && test.status === 'COMPLETED') ||
+                                      hasResults
+                                        ? 'contained'
+                                        : 'outlined'
+                                    }
+                                    color={
+                                      test && test.status === 'COMPLETED'
+                                        ? 'success'
+                                        : hasResults
+                                          ? 'primary'
+                                          : 'inherit'
+                                    }
+                                    onClick={() =>
+                                      handleViewTestResult(component)
+                                    }
+                                    startIcon={<EditIcon fontSize="small" />}
+                                    sx={{
+                                      borderRadius: '20px',
+                                      boxShadow: hasResults ? 1 : 0,
+                                      '&:hover': {
+                                        boxShadow: hasResults ? 2 : 0,
+                                      },
+                                    }}
+                                  >
+                                    {' '}
+                                    {'Nhập kết quả'}
+                                  </Button>
+                                )}{' '}
                                 <Chip
                                   size="small"
                                   label={

@@ -712,25 +712,61 @@ const STITestManagementContent = () => {
       setLoading(false);
     }
   };
-
   const handleCompleteTestAction = async (testId) => {
     try {
       setLoading(true);
+      console.log('Calling completeTest API for test ID:', testId);
       const response = await completeTest(testId);
-      if (response.status === 'SUCCESS') {
-        updateTestInState(response.data);
-        return true;
+      console.log('Complete test API response:', response);
+
+      // Handle different response formats
+      if (response) {
+        if (response.status === 'SUCCESS' || response.success === true) {
+          // Get the updated test data from the response
+          const updatedTest = response.data || response;
+          console.log('Updated test data:', updatedTest);
+
+          // Update in state
+          updateTestInState(updatedTest);
+
+          // Show success message
+          setSuccess(
+            `Xét nghiệm #${testId} đã được chuyển trạng thái thành COMPLETED`
+          );
+
+          // Return true to indicate success
+          return { success: true, data: updatedTest };
+        } else if (
+          response.data &&
+          (response.data.status === 'COMPLETED' ||
+            response.data.status === 'SUCCESS')
+        ) {
+          // Alternative success case
+          updateTestInState(response.data);
+          setSuccess(
+            `Xét nghiệm #${testId} đã được chuyển trạng thái thành COMPLETED`
+          );
+          return { success: true, data: response.data };
+        } else {
+          // Response exists but doesn't indicate success
+          const errorMessage =
+            response.message || 'Không thể hoàn thành xét nghiệm';
+          setError(errorMessage);
+          console.error('API returned error:', errorMessage);
+          return { success: false, message: errorMessage };
+        }
       } else {
-        setError(response.message || 'Không thể hoàn thành xét nghiệm');
-        return false;
+        // No response
+        setError('Không nhận được phản hồi từ máy chủ');
+        return { success: false, message: 'No response from server' };
       }
     } catch (err) {
-      setError(
+      const errorMessage =
         'Lỗi khi hoàn thành xét nghiệm: ' +
-          (err.message || 'Lỗi không xác định')
-      );
+        (err.message || 'Lỗi không xác định');
+      setError(errorMessage);
       console.error('Error completing test:', err);
-      return false;
+      return { success: false, message: errorMessage };
     } finally {
       setLoading(false);
     }

@@ -7,7 +7,7 @@
  * - Quản lý thông tin chi tiết gói
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -35,221 +35,209 @@ import {
   Checkbox,
   Grid,
   Tooltip,
-} from "@mui/material";
+  CircularProgress,
+  Alert,
+} from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
   Visibility as VisibilityIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
+import {
+  getAllSTIPackages,
+  createSTIPackage,
+  updateSTIPackage,
+  deleteSTIPackage,
+  getAllSTIServices,
+} from '@/services/stiService';
 
 const STIPackageManagementContent = () => {
-  // Mock data - sẽ được thay thế bằng API calls
   const [packages, setPackages] = useState([
-    {
-      id: 1,
-      name: "Gói sàng lọc STI cơ bản",
-      description: "Bao gồm các xét nghiệm STI phổ biến",
-      price: 1500000,
-      recommended_for: "Người có nguy cơ thấp",
-      isActive: true,
-      createdAt: "2025-05-10T08:00:00",
-      updatedAt: "2025-06-01T14:30:00",
-      services: [
-        {
-          id: 1,
-          name: "Xét nghiệm HIV",
-          description: "Phát hiện kháng thể HIV trong máu",
-          price: 450000,
-          isActive: true,
-        },
-        {
-          id: 2,
-          name: "Xét nghiệm Giang mai",
-          description: "Kiểm tra vi khuẩn Treponema pallidum",
-          price: 350000,
-          isActive: true,
-        },
-        {
-          id: 3,
-          name: "Xét nghiệm Lậu",
-          description: "Xác định vi khuẩn lậu",
-          price: 450000,
-          isActive: true,
-        },
-      ],
-    },
-    {
-      id: 2,
-      name: "Gói sàng lọc STI toàn diện",
-      description: "Bao gồm tất cả các xét nghiệm STI",
-      price: 3200000,
-      recommended_for: "Người có nhiều bạn tình",
-      isActive: true,
-      createdAt: "2025-04-15T10:20:00",
-      updatedAt: "2025-05-20T16:45:00",
-      services: [
-        {
-          id: 1,
-          name: "Xét nghiệm HIV",
-          description: "Phát hiện kháng thể HIV trong máu",
-          price: 450000,
-          isActive: true,
-        },
-        {
-          id: 2,
-          name: "Xét nghiệm Giang mai",
-          description: "Kiểm tra vi khuẩn Treponema pallidum",
-          price: 350000,
-          isActive: true,
-        },
-        {
-          id: 3,
-          name: "Xét nghiệm Lậu",
-          description: "Xác định vi khuẩn lậu",
-          price: 450000,
-          isActive: true,
-        },
-        {
-          id: 4,
-          name: "Xét nghiệm Chlamydia",
-          description: "Phát hiện vi khuẩn Chlamydia trachomatis",
-          price: 550000,
-          isActive: true,
-        },
-        {
-          id: 5,
-          name: "Xét nghiệm HPV",
-          description: "Phát hiện virus Human papillomavirus",
-          price: 850000,
-          isActive: true,
-        },
-        {
-          id: 6,
-          name: "Xét nghiệm Herpes",
-          description: "Phát hiện virus Herpes simplex",
-          price: 650000,
-          isActive: true,
-        },
-      ],
-    },
-    {
-      id: 3,
-      name: "Gói STI theo giới tính",
-      description: "Các xét nghiệm STI phù hợp với từng giới tính",
-      price: 2000000,
-      recommended_for: "Phụ nữ trong độ tuổi sinh sản",
-      isActive: false,
-      createdAt: "2025-03-20T09:15:00",
-      updatedAt: "2025-06-05T11:10:00",
-      services: [
-        {
-          id: 1,
-          name: "Xét nghiệm HIV",
-          description: "Phát hiện kháng thể HIV trong máu",
-          price: 450000,
-          isActive: true,
-        },
-        {
-          id: 4,
-          name: "Xét nghiệm Chlamydia",
-          description: "Phát hiện vi khuẩn Chlamydia trachomatis",
-          price: 550000,
-          isActive: true,
-        },
-        {
-          id: 5,
-          name: "Xét nghiệm HPV",
-          description: "Phát hiện virus Human papillomavirus",
-          price: 850000,
-          isActive: true,
-        },
-      ],
-    },
-  ]);
+    //     {
+    //       id: 1,
+    //       name: 'Xét nghiệm HIV',
+    //       description: 'Phát hiện kháng thể HIV trong máu',
+    //       price: 450000,
+    //       isActive: true,
+    //     },
+    //     {
+    //       id: 2,
+    //       name: 'Xét nghiệm Giang mai',
+    //       description: 'Kiểm tra vi khuẩn Treponema pallidum',
+    //       price: 350000,
+    //       isActive: true,
+    //     },
+    //     {
+    //       id: 3,
+    //       name: 'Xét nghiệm Lậu',
+    //       description: 'Xác định vi khuẩn lậu',
+    //       price: 450000,
+    //       isActive: true,
+    //     },
+    //   ],
+    // },
+    // {
+    //   id: 2,
+    //   name: 'Gói sàng lọc STI toàn diện',
+    //   description: 'Bao gồm tất cả các xét nghiệm STI',
+    //   price: 3200000,
+    //   recommended_for: 'Người có nhiều bạn tình',
+    //   isActive: true,
+    //   createdAt: '2025-04-15T10:20:00',
+    //   updatedAt: '2025-05-20T16:45:00',
+    //   services: [
+    //     {
+    //       id: 1,
+    //       name: 'Xét nghiệm HIV',
+    //       description: 'Phát hiện kháng thể HIV trong máu',
+    //       price: 450000,
+    //       isActive: true,
+    //     },
+    //     {
+    //       id: 2,
+    //       name: 'Xét nghiệm Giang mai',
+    //       description: 'Kiểm tra vi khuẩn Treponema pallidum',
+    //       price: 350000,
+    //       isActive: true,
+    //     },
+    //     {
+    //       id: 3,
+    //       name: 'Xét nghiệm Lậu',
+    //       description: 'Xác định vi khuẩn lậu',
+    //       price: 450000,
+    //       isActive: true,
+    //     },
+    //     {
+    //       id: 4,
+    //       name: 'Xét nghiệm Chlamydia',
+    //       description: 'Phát hiện vi khuẩn Chlamydia trachomatis',
+    //       price: 550000,
+    //       isActive: true,
+    //     },
+    //     {
+    //       id: 5,
+    //       name: 'Xét nghiệm HPV',
+    //       description: 'Phát hiện virus Human papillomavirus',
+    //       price: 850000,
+    //       isActive: true,
+    //     },
+    //     {
+    //       id: 6,
+    //       name: 'Xét nghiệm Herpes',
+    //       description: 'Phát hiện virus Herpes simplex',
+    //       price: 650000,
+    //       isActive: true,
+    //     },
+    //   ],
+    // },
+    // {
+    //   id: 3,
+    //   name: 'Gói STI theo giới tính',
+    //   description: 'Các xét nghiệm STI phù hợp với từng giới tính',
+    //   price: 2000000,
+    //   recommended_for: 'Phụ nữ trong độ tuổi sinh sản',
+    //   isActive: false,
+    //   createdAt: '2025-03-20T09:15:00',
+    //   updatedAt: '2025-06-05T11:10:00',
+    //   services: [
+    //     {
+    //       id: 1,
+    //       name: 'Xét nghiệm HIV',
+    //       description: 'Phát hiện kháng thể HIV trong máu',
+    //       price: 450000,
+    //       isActive: true,
+    //     },
+    //     {
+    //       id: 4,
+    //       name: 'Xét nghiệm Chlamydia',
+    //       description: 'Phát hiện vi khuẩn Chlamydia trachomatis',
+    //       price: 550000,
+    //       isActive: true,
+    //     },
+    //     {
+    //       id: 5,
+    //       name: 'Xét nghiệm HPV',
+    //       description: 'Phát hiện virus Human papillomavirus',
+    //       price: 850000,
+    //       isActive: true,
+    //     },
+    //   ],
+    // },
+  ]); // State quản lý các dịch vụ có sẵn
 
-  // Mock data services
-  const availableServices = [
-    {
-      id: 1,
-      name: "Xét nghiệm HIV",
-      description: "Phát hiện kháng thể HIV trong máu",
-      price: 450000,
-      isActive: true,
-    },
-    {
-      id: 2,
-      name: "Xét nghiệm Giang mai",
-      description: "Kiểm tra vi khuẩn Treponema pallidum",
-      price: 350000,
-      isActive: true,
-    },
-    {
-      id: 3,
-      name: "Xét nghiệm Lậu",
-      description: "Xác định vi khuẩn lậu",
-      price: 450000,
-      isActive: true,
-    },
-    {
-      id: 4,
-      name: "Xét nghiệm Chlamydia",
-      description: "Phát hiện vi khuẩn Chlamydia trachomatis",
-      price: 550000,
-      isActive: true,
-    },
-    {
-      id: 5,
-      name: "Xét nghiệm HPV",
-      description: "Phát hiện virus Human papillomavirus",
-      price: 850000,
-      isActive: true,
-    },
-    {
-      id: 6,
-      name: "Xét nghiệm Herpes",
-      description: "Phát hiện virus Herpes simplex",
-      price: 650000,
-      isActive: true,
-    },
-    {
-      id: 7,
-      name: "Xét nghiệm Mycoplasma",
-      description: "Phát hiện vi khuẩn Mycoplasma genitalium",
-      price: 500000,
-      isActive: true,
-    },
-    {
-      id: 8,
-      name: "Xét nghiệm Trichomonas",
-      description: "Phát hiện ký sinh trùng Trichomonas vaginalis",
-      price: 450000,
-      isActive: true,
-    },
-  ]; // State management
+  // Fetch available services from backend
+  const [availableServices, setAvailableServices] = useState([]);
+
+  useEffect(() => {
+    const fetchAvailableServices = async () => {
+      try {
+        const response = await getAllSTIServices();
+        console.log('STI Services API response:', response);
+
+        // Log service field names for better understanding
+        if (response.data && response.data.length > 0) {
+          console.log(
+            'Service field names from API:',
+            Object.keys(response.data[0])
+          );
+        }
+
+        const servicesArray = response.data || [];
+
+        // Map backend fields to frontend expected structure
+        const mappedServices = Array.isArray(servicesArray)
+          ? servicesArray.map((service) => ({
+              id: service.id,
+              name: service.name,
+              description: service.description || '',
+              price: service.price || 0,
+              isActive:
+                service.isActive !== undefined ? service.isActive : true,
+            }))
+          : [];
+
+        setAvailableServices(mappedServices);
+      } catch (err) {
+        console.error('Error fetching available services:', err);
+        setError(
+          'Không thể tải dữ liệu dịch vụ: ' +
+            (err.message || 'Lỗi không xác định')
+        );
+        setTimeout(() => setError(null), 5000);
+      }
+    };
+
+    fetchAvailableServices();
+  }, []); // Chỉ chạy một lần khi component mount
+  // State management
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [currentPackage, setCurrentPackage] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
   // State cho dialog xem chi tiết dịch vụ
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
   const [packageDetails, setPackageDetails] = useState(null);
+  // Add loading state for better UX
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
+    name: '',
+    description: '',
     price: 0,
-    recommended_for: "", // Field này sẽ chỉ dùng cho frontend, không gửi lên backend
-    isActive: true, // Field này sẽ chỉ dùng cho frontend, không gửi lên backend
+    recommended_for: '', // Field này sẽ chỉ dùng cho frontend, không gửi lên backend
+    isActive: true, // Backend expects 'isActive', not 'active'
   });
   // State cho validation errors
   const [errors, setErrors] = useState({
-    name: "",
-    description: "",
-    price: "",
-    services: "",
+    name: '',
+    description: '',
+    price: '',
+    services: '',
   });
 
   // Handlers
@@ -270,18 +258,18 @@ const STIPackageManagementContent = () => {
     setCurrentPackage(null);
     setSelectedServices([]);
     setFormData({
-      name: "",
-      description: "",
+      name: '',
+      description: '',
       price: 0,
-      recommended_for: "",
+      recommended_for: '',
       isActive: true,
     });
     // Reset validation errors when opening dialog
     setErrors({
-      name: "",
-      description: "",
-      price: "",
-      services: "",
+      name: '',
+      description: '',
+      price: '',
+      services: '',
     });
     setOpenDialog(true);
   };
@@ -297,10 +285,10 @@ const STIPackageManagementContent = () => {
     });
     // Reset validation errors when opening dialog
     setErrors({
-      name: "",
-      description: "",
-      price: "",
-      services: "",
+      name: '',
+      description: '',
+      price: '',
+      services: '',
     });
     setOpenDialog(true);
   };
@@ -328,7 +316,7 @@ const STIPackageManagementContent = () => {
       if (newSelected.length > 0 && errors.services) {
         setErrors((prev) => ({
           ...prev,
-          services: "",
+          services: '',
         }));
       }
 
@@ -345,143 +333,445 @@ const STIPackageManagementContent = () => {
     if (errors[field]) {
       setErrors((prev) => ({
         ...prev,
-        [field]: "",
+        [field]: '',
       }));
     }
   };
   const validateForm = () => {
     const newErrors = {
-      name: "",
-      description: "",
-      price: "",
-      services: "",
+      name: '',
+      description: '',
+      price: '',
+      services: '',
     };
     let isValid = true;
 
     // Validate name (required, max length 200 per DTO)
     if (!formData.name.trim()) {
-      newErrors.name = "Package name is required";
+      newErrors.name = 'Package name is required';
       isValid = false;
     } else if (formData.name.length > 200) {
-      newErrors.name = "Package must not exceed 200 characters";
+      newErrors.name = 'Package must not exceed 200 characters';
       isValid = false;
     }
 
     // Validate price (required, must be a positive number)
     if (formData.price <= 0) {
-      newErrors.price = "Price is required and must be greater than 0";
+      newErrors.price = 'Price is required and must be greater than 0';
       isValid = false;
     }
 
     // Validate selected services (must select at least one)
     if (selectedServices.length === 0) {
-      newErrors.services = "At least one service must be selected";
+      newErrors.services = 'At least one service must be selected';
       isValid = false;
     }
 
     setErrors(newErrors);
     return isValid;
   };
-
-  const handleSavePackage = () => {
+  const handleSavePackage = async () => {
     // Validate form before saving
     if (!validateForm()) {
       return;
     }
 
-    // Get selected services data
-    const selectedServicesData = availableServices.filter((service) =>
-      selectedServices.includes(service.id)
-    );
+    try {
+      setLoading(true); // Get selected services data
+      const selectedServicesData = availableServices.filter((service) =>
+        selectedServices.includes(service.id)
+      ); // Prepare backend DTO data (STIPackageRequest)
+      // Based on STIPackageController.java: name, description, price, isActive, stiService (array of IDs)
+      // Chuẩn bị dữ liệu cho API request
+      const packageDTO = {
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        isActive: formData.isActive, // Backend expects 'isActive'
+        // Backend mong đợi mảng các ID đơn giản (Long), không phải object phức tạp
+        stiService: prepareServiceIdsForBackend(selectedServices),
+      };
+      try {
+        // Log the data we're sending to the API
+        console.log(
+          'Package data being sent:',
+          currentPackage ? 'UPDATE' : 'CREATE',
+          packageDTO
+        ); // Backend yêu cầu stiService là mảng các ID (Long), không phải object
+        // Sử dụng packageDTO trực tiếp vì chúng ta đã định nghĩa stiService là mảng ID
+        console.log('Using simple IDs for stiService:', packageDTO.stiService);
 
-    // Prepare frontend display data
-    const newPackage = {
-      id: currentPackage ? currentPackage.id : Date.now(), // Tạm thời dùng timestamp làm ID
-      ...formData,
-      services: selectedServicesData,
-      createdAt: currentPackage
-        ? currentPackage.createdAt
-        : new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }; // Prepare backend DTO data (STIPackageRequest)
-    const packageDTO = {
-      name: formData.name,
-      description: formData.description,
-      price: formData.price,
-      stiService: selectedServices, // Format for backend: array of IDs
-    };
+        let response;
+        if (currentPackage) {
+          // Remove the ID from packageDTO since it's in the URL
+          const { id, ...packageDataWithoutId } = packageDTO;
+          response = await updateSTIPackage(
+            currentPackage.id,
+            packageDataWithoutId
+          );
+        } else {
+          response = await createSTIPackage(packageDTO);
+        }
 
-    // Nếu đang edit một package đã có, thêm ID vào DTO
-    if (currentPackage) {
-      packageDTO.id = currentPackage.id;
-    }
+        // Log the raw response from the API
+        console.log('API Response:', response);
 
-    console.log("Package DTO to send to backend:", packageDTO);
+        // Check if the API call was successful
+        if (!response || !response.success) {
+          throw new Error(response?.message || 'API call was unsuccessful');
+        }
 
-    // In production, you would send packageDTO to the backend API here
-    // For now, we'll just update the UI with newPackage
+        // The actual package data will be in the data field
+        const updatedPackageData = response.data;
+        console.log('Updated Package Data from API:', updatedPackageData);
 
-    if (currentPackage) {
-      // Cập nhật package hiện có
-      setPackages(
-        packages.map((pkg) => (pkg.id === currentPackage.id ? newPackage : pkg))
+        if (!updatedPackageData) {
+          throw new Error('No package data returned from API');
+        }
+        // Map the API response to our frontend structure
+        // Log all the fields from the API response to understand field names
+        console.log(
+          'All fields from the API response:',
+          Object.keys(updatedPackageData)
+        );
+
+        const mappedPackage = {
+          id: updatedPackageData.id,
+          name: updatedPackageData.name,
+          description: updatedPackageData.description || '',
+          price: updatedPackageData.price || 0,
+          recommended_for: updatedPackageData.recommended_for || 'Tất cả',
+          // Handle the isActive/active inconsistency
+          isActive:
+            updatedPackageData.isActive !== undefined
+              ? updatedPackageData.isActive
+              : updatedPackageData.active !== undefined
+                ? updatedPackageData.active
+                : true,
+          services: updatedPackageData.services
+            ? updatedPackageData.services.map((service) => {
+                // Log service field names for debugging
+                if (service)
+                  console.log('Service fields:', Object.keys(service));
+
+                return {
+                  id: service.id,
+                  name: service.name,
+                  description: service.description || '',
+                  price: service.price || 0,
+                  // Handle the isActive/active inconsistency in services too
+                  isActive:
+                    service.isActive !== undefined
+                      ? service.isActive
+                      : service.active !== undefined
+                        ? service.active
+                        : true,
+                };
+              })
+            : selectedServicesData,
+          createdAt: updatedPackageData.createdAt,
+          updatedAt: updatedPackageData.updatedAt || new Date().toISOString(),
+        };
+
+        // Update UI with the mappedPackage
+        if (currentPackage) {
+          // For updates, update local state and refresh the packages list to ensure sync
+          try {
+            // Fetch all packages after updating to ensure fresh data
+            const refreshResult = await fetchAllPackages();
+            if (!refreshResult.success) {
+              // Fallback to optimistic update if refresh fails
+              setPackages(
+                packages.map((pkg) =>
+                  pkg.id === currentPackage.id ? mappedPackage : pkg
+                )
+              );
+            }
+            setSuccess(`Cập nhật gói STI ${mappedPackage.name} thành công`);
+          } catch (refreshError) {
+            console.error(
+              'Failed to refresh packages after update:',
+              refreshError
+            );
+            // Fallback to optimistic update
+            setPackages(
+              packages.map((pkg) =>
+                pkg.id === currentPackage.id ? mappedPackage : pkg
+              )
+            );
+            setSuccess(
+              `Cập nhật gói STI ${mappedPackage.name} thành công, nhưng danh sách chưa được làm mới hoàn toàn`
+            );
+          }
+        } else {
+          // For new packages, refresh the entire list to ensure we have all data correctly
+          try {
+            // Fetch all packages after creating a new one
+            const result = await fetchAllPackages();
+            if (!result.success) {
+              // Fallback if refresh fails
+              setPackages([...packages, mappedPackage]);
+            }
+            setSuccess(`Thêm gói STI ${mappedPackage.name} thành công`);
+          } catch (refreshError) {
+            console.error(
+              'Failed to refresh packages after create:',
+              refreshError
+            );
+            // Still add the package to UI even if refresh failed
+            setPackages([...packages, mappedPackage]);
+            setSuccess(
+              `Thêm gói STI ${mappedPackage.name} thành công, nhưng danh sách chưa được làm mới`
+            );
+          }
+        }
+      } catch (apiError) {
+        console.error('API Error:', apiError);
+        throw new Error(`API Error: ${apiError.message || 'Unknown error'}`);
+      }
+      setTimeout(() => setSuccess(null), 3000);
+      setOpenDialog(false);
+
+      // Luôn tải lại dữ liệu sau khi lưu thành công
+      await fetchAllPackages();
+    } catch (err) {
+      console.error('Error saving STI package:', err);
+      setError(
+        'Không thể lưu gói STI: ' + (err.message || 'Lỗi không xác định')
       );
-    } else {
-      // Thêm package mới
-      setPackages([...packages, newPackage]);
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setLoading(false);
     }
-
-    setOpenDialog(false);
   };
-  const handleDeletePackage = (id) => {
+  const handleDeletePackage = async (id) => {
     // Logic xóa gói
-    if (window.confirm("Bạn có chắc chắn muốn xóa gói này?")) {
-      setPackages(packages.filter((pkg) => pkg.id !== id));
+    if (window.confirm('Bạn có chắc chắn muốn xóa gói này?')) {
+      try {
+        setLoading(true);
+
+        // Call the API to delete the package
+        const response = await deleteSTIPackage(id);
+
+        // Check if the deletion was successful based on the ApiResponse structure
+        if (!response || !response.success) {
+          throw new Error(response?.message || 'Could not delete the package');
+        }
+
+        // Update state after successful deletion
+        // First update optimistically
+        setPackages(packages.filter((pkg) => pkg.id !== id));
+
+        // Then refresh the list to ensure synchronization with backend
+        try {
+          await fetchAllPackages();
+        } catch (refreshError) {
+          console.error(
+            'Failed to refresh packages after delete:',
+            refreshError
+          );
+          // We already updated optimistically, so no need to do anything else
+        }
+
+        setSuccess('Xóa gói STI thành công');
+        setTimeout(() => setSuccess(null), 3000);
+      } catch (err) {
+        console.error('Error deleting STI package:', err);
+        setError(
+          'Không thể xóa gói STI: ' + (err.message || 'Lỗi không xác định')
+        );
+        setTimeout(() => setError(null), 5000);
+      } finally {
+        setLoading(false);
+      }
     }
   };
-
   // Filter packages dựa trên searchTerm
-  const filteredPackages = packages.filter(
-    (pkg) =>
-      pkg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pkg.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pkg.recommended_for.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  const filteredPackages = Array.isArray(packages)
+    ? packages.filter(
+        (pkg) =>
+          (pkg.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (pkg.description || '')
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          (pkg.recommended_for || '')
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
+      )
+    : [];
   // Format price
   const formatPrice = (price) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
     }).format(price);
   };
+
+  // Helper function to calculate discount information
+  const calculateDiscount = (totalPrice, packagePrice) => {
+    if (!totalPrice || !packagePrice || totalPrice <= 0) {
+      return {
+        saving: 0,
+        discountPercent: 0,
+        formattedText: '0₫ (0%)',
+      };
+    }
+
+    const saving = totalPrice - packagePrice;
+    if (saving <= 0) {
+      return {
+        saving: 0,
+        discountPercent: 0,
+        formattedText: '0₫ (0%)',
+      };
+    }
+
+    const discountPercent = Math.round((saving / totalPrice) * 100);
+    return {
+      saving,
+      discountPercent,
+      formattedText: `${formatPrice(saving)} (${discountPercent}%)`,
+    };
+  };
+
+  // Helper function to ensure stiService is an array of simple IDs
+  const prepareServiceIdsForBackend = useCallback((services) => {
+    if (!services || !Array.isArray(services)) return [];
+
+    // Chỉ lấy ID từ mỗi dịch vụ
+    return services.map((service) => {
+      if (typeof service === 'number') return service;
+      if (typeof service === 'object' && service !== null)
+        return service.id || service.serviceId;
+      return service;
+    });
+  }, []);
+
+  // Helper function to map backend package data to frontend format
+  const mapBackendPackageToFrontend = useCallback((pkg) => {
+    return {
+      id: pkg.id,
+      name: pkg.name,
+      description: pkg.description || '',
+      recommended_for: pkg.recommended_for || 'Tất cả',
+      price: pkg.price || 0,
+      // Handle the isActive/active inconsistency
+      isActive:
+        pkg.isActive !== undefined
+          ? pkg.isActive
+          : pkg.active !== undefined
+            ? pkg.active
+            : true,
+      services: Array.isArray(pkg.services)
+        ? pkg.services.map((service) => ({
+            id: service.id,
+            name: service.name,
+            price: service.price || 0,
+            description: service.description || '',
+            // Handle the isActive/active inconsistency in services
+            isActive:
+              service.isActive !== undefined
+                ? service.isActive
+                : service.active !== undefined
+                  ? service.active
+                  : true,
+          }))
+        : [],
+      createdAt: pkg.createdAt,
+      updatedAt: pkg.updatedAt,
+    };
+  }, []);
+
+  // Helper function to fetch all packages from the API
+  const fetchAllPackages = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getAllSTIPackages();
+
+      // Extract the data array from the response
+      const packagesArray = response.data || [];
+
+      // Map backend fields to frontend expected structure
+      const mappedPackages = Array.isArray(packagesArray)
+        ? packagesArray.map(mapBackendPackageToFrontend)
+        : [];
+
+      setPackages(mappedPackages);
+      return { success: true, data: mappedPackages };
+    } catch (err) {
+      console.error('Error fetching STI packages:', err);
+      setError(
+        'Không thể tải dữ liệu gói STI: ' +
+          (err.message || 'Lỗi không xác định')
+      );
+      setTimeout(() => setError(null), 5000);
+      return { success: false, error: err };
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setPackages, setError, mapBackendPackageToFrontend]);
+  // Load packages when the component mounts
+  useEffect(() => {
+    const loadPackages = async () => {
+      console.log('Initial component load - fetching packages');
+      const result = await fetchAllPackages();
+      console.log('Initial load result:', result);
+      if (result.success) {
+        setSuccess('Đã tải dữ liệu gói STI thành công');
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    };
+
+    loadPackages();
+  }, [fetchAllPackages]);
+
   return (
     <Box sx={{ p: 3 }}>
+      {/* Loading and Alert Messages */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+          <CircularProgress color="primary" />
+        </Box>
+      )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert
+          severity="success"
+          sx={{ mb: 3 }}
+          onClose={() => setSuccess(null)}
+        >
+          {success}
+        </Alert>
+      )}
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
+          display: 'flex',
+          alignItems: 'center',
           mb: 4,
           pb: 2,
-          borderBottom: "1px solid #e0e0e0",
+          borderBottom: '1px solid #e0e0e0',
         }}
       >
         <Typography
           variant="h4"
           component="h1"
           sx={{
-            fontWeight: "bold",
-            color: "#1976d2",
-            position: "relative",
-            "&::after": {
+            fontWeight: 'bold',
+            color: '#1976d2',
+            position: 'relative',
+            '&::after': {
               content: '""',
-              position: "absolute",
+              position: 'absolute',
               bottom: -8,
               left: 0,
-              width: "80px",
-              height: "4px",
-              backgroundColor: "#1976d2",
-              borderRadius: "2px",
+              width: '80px',
+              height: '4px',
+              backgroundColor: '#1976d2',
+              borderRadius: '2px',
             },
           }}
         >
@@ -492,13 +782,13 @@ const STIPackageManagementContent = () => {
       <Paper
         elevation={0}
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
+          display: 'flex',
+          justifyContent: 'space-between',
           mb: 3,
           p: 2,
           borderRadius: 2,
-          backgroundColor: "#f8f9fa",
-          alignItems: "center",
+          backgroundColor: '#f8f9fa',
+          alignItems: 'center',
         }}
       >
         <TextField
@@ -507,16 +797,16 @@ const STIPackageManagementContent = () => {
           value={searchTerm}
           onChange={handleSearch}
           sx={{
-            width: "50%",
-            "& .MuiOutlinedInput-root": {
+            width: '50%',
+            '& .MuiOutlinedInput-root': {
               borderRadius: 2,
-              backgroundColor: "white",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              "& fieldset": {
-                borderColor: "rgba(0,0,0,0.12)",
+              backgroundColor: 'white',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              '& fieldset': {
+                borderColor: 'rgba(0,0,0,0.12)',
               },
-              "&:hover fieldset": {
-                borderColor: "rgba(0,0,0,0.24)",
+              '&:hover fieldset': {
+                borderColor: 'rgba(0,0,0,0.24)',
               },
             },
           }}
@@ -538,22 +828,22 @@ const STIPackageManagementContent = () => {
             boxShadow: 2,
             px: 3,
             py: 1,
-            fontWeight: "medium",
-            "&:hover": {
+            fontWeight: 'medium',
+            '&:hover': {
               boxShadow: 4,
             },
           }}
         >
           Thêm gói STI
         </Button>
-      </Paper>{" "}
+      </Paper>{' '}
       {/* Packages Table */}
       <TableContainer
         component={Paper}
         elevation={3}
         sx={{
           borderRadius: 2,
-          overflow: "hidden",
+          overflow: 'hidden',
           mb: 4,
         }}
       >
@@ -561,14 +851,14 @@ const STIPackageManagementContent = () => {
           <TableHead>
             <TableRow
               sx={{
-                backgroundColor: "#1976d2",
+                backgroundColor: '#1976d2',
               }}
             >
               <TableCell
                 sx={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "0.875rem",
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem',
                   py: 2,
                 }}
               >
@@ -576,42 +866,42 @@ const STIPackageManagementContent = () => {
               </TableCell>
               <TableCell
                 sx={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "0.875rem",
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem',
                   py: 2,
-                  width: "15%",
+                  width: '15%',
                 }}
               >
                 Tên gói
               </TableCell>
               <TableCell
                 sx={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "0.875rem",
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem',
                   py: 2,
-                  width: "20%",
+                  width: '20%',
                 }}
               >
                 Mô tả
               </TableCell>
               <TableCell
                 sx={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "0.875rem",
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem',
                   py: 2,
-                  width: "15%",
+                  width: '15%',
                 }}
               >
                 Đề xuất cho
               </TableCell>
               <TableCell
                 sx={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "0.875rem",
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem',
                   py: 2,
                 }}
               >
@@ -619,9 +909,9 @@ const STIPackageManagementContent = () => {
               </TableCell>
               <TableCell
                 sx={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "0.875rem",
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem',
                   py: 2,
                 }}
               >
@@ -629,9 +919,9 @@ const STIPackageManagementContent = () => {
               </TableCell>
               <TableCell
                 sx={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "0.875rem",
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem',
                   py: 2,
                 }}
               >
@@ -639,9 +929,9 @@ const STIPackageManagementContent = () => {
               </TableCell>
               <TableCell
                 sx={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "0.875rem",
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem',
                   py: 2,
                 }}
               >
@@ -650,169 +940,183 @@ const STIPackageManagementContent = () => {
               <TableCell
                 align="right"
                 sx={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "0.875rem",
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem',
                   py: 2,
                 }}
               >
                 Thao tác
               </TableCell>
             </TableRow>
-          </TableHead>
+          </TableHead>{' '}
           <TableBody>
-            {filteredPackages
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((pkg, index) => {
-                // Tính % giảm giá dựa trên giá gói và tổng giá dịch vụ
-                const servicesTotal = pkg.services.reduce(
-                  (sum, service) => sum + service.price,
-                  0
-                );
-                const discountPercent =
-                  servicesTotal > 0
-                    ? Math.round((1 - pkg.price / servicesTotal) * 100)
-                    : 0;
+            {' '}
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                  <CircularProgress size={40} />
+                  <Typography variant="body1" sx={{ mt: 2 }}>
+                    Đang tải dữ liệu...
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredPackages
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((pkg, index) => {
+                  // Tính % giảm giá dựa trên giá gói và tổng giá dịch vụ
+                  const discountInfo = calculateDiscount(
+                    pkg.services.reduce(
+                      (sum, service) => sum + service.price,
+                      0
+                    ),
+                    pkg.price
+                  );
 
-                return (
-                  <TableRow
-                    key={pkg.id}
-                    hover
-                    sx={{
-                      backgroundColor: index % 2 === 0 ? "#ffffff" : "#f5f5f5",
-                      "&:hover": {
-                        backgroundColor: "#e3f2fd",
-                      },
-                    }}
-                  >
-                    <TableCell sx={{ py: 1.5 }}>{pkg.id}</TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
-                      <Typography variant="body2" fontWeight="medium">
-                        {pkg.name}
-                      </Typography>
-                    </TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {pkg.description}
-                      </Typography>
-                    </TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
-                      {pkg.recommended_for}
-                    </TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
-                      <Typography
-                        variant="body2"
-                        fontWeight="medium"
-                        color="primary"
-                      >
-                        {formatPrice(pkg.price)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
-                      {discountPercent > 0 ? (
-                        <Chip
-                          label={`${discountPercent}%`}
-                          size="small"
-                          color="error"
-                          variant="outlined"
-                          sx={{ fontWeight: "bold" }}
-                        />
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          Không giảm giá
+                  return (
+                    <TableRow
+                      key={pkg.id}
+                      hover
+                      sx={{
+                        backgroundColor:
+                          index % 2 === 0 ? '#ffffff' : '#f5f5f5',
+                        '&:hover': {
+                          backgroundColor: '#e3f2fd',
+                        },
+                      }}
+                    >
+                      <TableCell sx={{ py: 1.5 }}>{pkg.id}</TableCell>
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Typography variant="body2" fontWeight="medium">
+                          {pkg.name}
                         </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1,
-                        }}
-                      >
-                        <Chip
-                          label={`${pkg.services.length} dịch vụ`}
-                          variant="outlined"
-                          size="small"
+                      </TableCell>
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {pkg.description}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ py: 1.5 }}>
+                        {pkg.recommended_for}
+                      </TableCell>
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Typography
+                          variant="body2"
+                          fontWeight="medium"
                           color="primary"
-                        />
-                        <Tooltip title="Xem chi tiết dịch vụ">
-                          <IconButton
-                            size="small"
-                            color="info"
-                            onClick={() => handleOpenDetailsDialog(pkg)}
-                            sx={{
-                              backgroundColor: "rgba(33, 150, 243, 0.08)",
-                              "&:hover": {
-                                backgroundColor: "rgba(33, 150, 243, 0.15)",
-                              },
-                            }}
-                          >
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
-                      <Chip
-                        label={
-                          pkg.isActive ? "Đang cung cấp" : "Ngừng cung cấp"
-                        }
-                        color={pkg.isActive ? "success" : "default"}
-                        size="small"
-                        sx={{
-                          fontWeight: pkg.isActive ? "medium" : "normal",
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell align="right" sx={{ py: 1.5 }}>
-                      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                        <Tooltip title="Chỉnh sửa">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => handleOpenEditDialog(pkg)}
-                            sx={{
-                              mr: 1,
-                              backgroundColor: "rgba(25, 118, 210, 0.08)",
-                              "&:hover": {
-                                backgroundColor: "rgba(25, 118, 210, 0.15)",
-                              },
-                            }}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Xóa">
-                          <IconButton
+                        >
+                          {formatPrice(pkg.price)}
+                        </Typography>
+                      </TableCell>{' '}
+                      <TableCell sx={{ py: 1.5 }}>
+                        {discountInfo.discountPercent > 0 ? (
+                          <Chip
+                            label={`${discountInfo.discountPercent}%`}
                             size="small"
                             color="error"
-                            onClick={() => handleDeletePackage(pkg.id)}
-                            sx={{
-                              backgroundColor: "rgba(211, 47, 47, 0.08)",
-                              "&:hover": {
-                                backgroundColor: "rgba(211, 47, 47, 0.15)",
-                              },
-                            }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                            variant="outlined"
+                            sx={{ fontWeight: 'bold' }}
+                          />
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            Không giảm giá
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Chip
+                            label={`${pkg.services.length} dịch vụ`}
+                            variant="outlined"
+                            size="small"
+                            color="primary"
+                          />
+                          <Tooltip title="Xem chi tiết dịch vụ">
+                            <IconButton
+                              size="small"
+                              color="info"
+                              onClick={() => handleOpenDetailsDialog(pkg)}
+                              sx={{
+                                backgroundColor: 'rgba(33, 150, 243, 0.08)',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(33, 150, 243, 0.15)',
+                                },
+                              }}
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Chip
+                          label={
+                            pkg.isActive ? 'Đang cung cấp' : 'Ngừng cung cấp'
+                          }
+                          color={pkg.isActive ? 'success' : 'default'}
+                          size="small"
+                          sx={{
+                            fontWeight: pkg.isActive ? 'medium' : 'normal',
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell align="right" sx={{ py: 1.5 }}>
+                        <Box
+                          sx={{ display: 'flex', justifyContent: 'flex-end' }}
+                        >
+                          <Tooltip title="Chỉnh sửa">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => handleOpenEditDialog(pkg)}
+                              sx={{
+                                mr: 1,
+                                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(25, 118, 210, 0.15)',
+                                },
+                              }}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Xóa">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDeletePackage(pkg.id)}
+                              sx={{
+                                backgroundColor: 'rgba(211, 47, 47, 0.08)',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(211, 47, 47, 0.15)',
+                                },
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+            )}
             {filteredPackages.length === 0 && (
               <TableRow>
                 <TableCell colSpan={9} align="center" sx={{ py: 3 }}>
@@ -837,7 +1141,7 @@ const STIPackageManagementContent = () => {
             `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
           }
         />
-      </TableContainer>{" "}
+      </TableContainer>{' '}
       {/* Add/Edit Package Dialog */}
       <Dialog
         open={openDialog}
@@ -848,20 +1152,20 @@ const STIPackageManagementContent = () => {
           elevation: 8,
           sx: {
             borderRadius: 2,
-            overflow: "hidden",
+            overflow: 'hidden',
           },
         }}
       >
         <DialogTitle
           sx={{
-            backgroundColor: "#1976d2",
-            color: "white",
+            backgroundColor: '#1976d2',
+            color: 'white',
             py: 2,
-            fontWeight: "bold",
-            fontSize: "1.2rem",
+            fontWeight: 'bold',
+            fontSize: '1.2rem',
           }}
         >
-          {currentPackage ? "Chỉnh sửa gói STI" : "Thêm gói STI mới"}
+          {currentPackage ? 'Chỉnh sửa gói STI' : 'Thêm gói STI mới'}
         </DialogTitle>
         <DialogContent dividers sx={{ px: 3, py: 3 }}>
           <Box component="form">
@@ -872,7 +1176,7 @@ const STIPackageManagementContent = () => {
                   label="Tên gói"
                   margin="normal"
                   value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
                   error={!!errors.name}
                   helperText={
                     errors.name
@@ -883,7 +1187,7 @@ const STIPackageManagementContent = () => {
                   required
                   variant="outlined"
                   sx={{
-                    "& .MuiOutlinedInput-root": {
+                    '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                     },
                   }}
@@ -899,7 +1203,7 @@ const STIPackageManagementContent = () => {
                   margin="normal"
                   value={formData.description}
                   onChange={(e) =>
-                    handleInputChange("description", e.target.value)
+                    handleInputChange('description', e.target.value)
                   }
                   error={!!errors.description}
                   helperText={
@@ -910,7 +1214,7 @@ const STIPackageManagementContent = () => {
                   inputProps={{ maxLength: 500 }}
                   variant="outlined"
                   sx={{
-                    "& .MuiOutlinedInput-root": {
+                    '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                     },
                   }}
@@ -925,11 +1229,11 @@ const STIPackageManagementContent = () => {
                   placeholder="VD: Người có nguy cơ cao, phụ nữ có thai..."
                   value={formData.recommended_for}
                   onChange={(e) =>
-                    handleInputChange("recommended_for", e.target.value)
+                    handleInputChange('recommended_for', e.target.value)
                   }
                   variant="outlined"
                   sx={{
-                    "& .MuiOutlinedInput-root": {
+                    '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                     },
                   }}
@@ -944,7 +1248,7 @@ const STIPackageManagementContent = () => {
                   type="number"
                   value={formData.price}
                   onChange={(e) =>
-                    handleInputChange("price", Number(e.target.value))
+                    handleInputChange('price', Number(e.target.value))
                   }
                   InputProps={{
                     inputProps: { min: 0 },
@@ -957,7 +1261,7 @@ const STIPackageManagementContent = () => {
                   required
                   variant="outlined"
                   sx={{
-                    "& .MuiOutlinedInput-root": {
+                    '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                     },
                   }}
@@ -968,7 +1272,7 @@ const STIPackageManagementContent = () => {
             <Box
               sx={{
                 mt: 4,
-                backgroundColor: "#f8f9fa",
+                backgroundColor: '#f8f9fa',
                 p: 2,
                 borderRadius: 2,
               }}
@@ -979,15 +1283,15 @@ const STIPackageManagementContent = () => {
                 color="primary"
                 sx={{ mb: 1 }}
               >
-                Các dịch vụ bao gồm trong gói{" "}
-                <span style={{ color: "red" }}>*</span>
+                Các dịch vụ bao gồm trong gói{' '}
+                <span style={{ color: 'red' }}>*</span>
               </Typography>
 
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                   mb: 2,
                 }}
               >
@@ -995,7 +1299,7 @@ const STIPackageManagementContent = () => {
                   <Typography
                     variant="caption"
                     color="error"
-                    sx={{ display: "block" }}
+                    sx={{ display: 'block' }}
                   >
                     {errors.services}
                   </Typography>
@@ -1019,13 +1323,13 @@ const STIPackageManagementContent = () => {
                 sx={{
                   mb: 2,
                   borderRadius: 2,
-                  overflow: "hidden",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                  overflow: 'hidden',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                 }}
               >
                 <Table size="small">
                   <TableHead>
-                    <TableRow sx={{ backgroundColor: "#e3f2fd" }}>
+                    <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
                       <TableCell padding="checkbox" sx={{ py: 1.5 }}>
                         <Checkbox
                           indeterminate={
@@ -1045,20 +1349,28 @@ const STIPackageManagementContent = () => {
                               setSelectedServices(
                                 availableServices.map((s) => s.id)
                               );
+
+                              // Clear services error when selecting all
+                              if (errors.services) {
+                                setErrors((prev) => ({
+                                  ...prev,
+                                  services: '',
+                                }));
+                              }
                             }
                           }}
                           color="primary"
                         />
                       </TableCell>
-                      <TableCell sx={{ py: 1.5, fontWeight: "bold" }}>
+                      <TableCell sx={{ py: 1.5, fontWeight: 'bold' }}>
                         Tên dịch vụ
                       </TableCell>
-                      <TableCell sx={{ py: 1.5, fontWeight: "bold" }}>
+                      <TableCell sx={{ py: 1.5, fontWeight: 'bold' }}>
                         Mô tả
                       </TableCell>
                       <TableCell
                         align="right"
-                        sx={{ py: 1.5, fontWeight: "bold" }}
+                        sx={{ py: 1.5, fontWeight: 'bold' }}
                       >
                         Giá
                       </TableCell>
@@ -1071,7 +1383,7 @@ const STIPackageManagementContent = () => {
                         hover
                         sx={{
                           backgroundColor:
-                            index % 2 === 0 ? "white" : "#fafafa",
+                            index % 2 === 0 ? 'white' : '#fafafa',
                         }}
                       >
                         <TableCell padding="checkbox" sx={{ py: 1 }}>
@@ -1090,11 +1402,11 @@ const STIPackageManagementContent = () => {
                           <Typography
                             variant="body2"
                             sx={{
-                              display: "-webkit-box",
+                              display: '-webkit-box',
                               WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
                             }}
                           >
                             {service.description}
@@ -1116,8 +1428,8 @@ const STIPackageManagementContent = () => {
                 sx={{
                   p: 2,
                   borderRadius: 2,
-                  backgroundColor: "#f0f7ff",
-                  border: "1px solid #bbdefb",
+                  backgroundColor: '#f0f7ff',
+                  border: '1px solid #bbdefb',
                 }}
               >
                 <Grid container spacing={2}>
@@ -1170,19 +1482,18 @@ const STIPackageManagementContent = () => {
                       color="error"
                       align="right"
                     >
+                      {' '}
                       {(() => {
                         const servicesTotal = availableServices
                           .filter((service) =>
                             selectedServices.includes(service.id)
                           )
                           .reduce((sum, service) => sum + service.price, 0);
-                        const saving = servicesTotal - formData.price;
-                        if (saving <= 0 || servicesTotal <= 0) return "0%";
-
-                        const discountPercent = Math.round(
-                          (saving / servicesTotal) * 100
+                        const discountInfo = calculateDiscount(
+                          servicesTotal,
+                          formData.price
                         );
-                        return `${formatPrice(saving)} (${discountPercent}%)`;
+                        return discountInfo.formattedText;
                       })()}
                     </Typography>
                   </Grid>
@@ -1196,7 +1507,7 @@ const STIPackageManagementContent = () => {
               variant="outlined"
               sx={{
                 mt: 3,
-                "& .MuiOutlinedInput-root": {
+                '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
                 },
               }}
@@ -1205,7 +1516,7 @@ const STIPackageManagementContent = () => {
               <Select
                 value={formData.isActive}
                 label="Trạng thái"
-                onChange={(e) => handleInputChange("isActive", e.target.value)}
+                onChange={(e) => handleInputChange('isActive', e.target.value)}
               >
                 <MenuItem value={true}>Đang cung cấp</MenuItem>
                 <MenuItem value={false}>Ngừng cung cấp</MenuItem>
@@ -1231,7 +1542,7 @@ const STIPackageManagementContent = () => {
               px: 3,
               borderRadius: 2,
               boxShadow: 2,
-              "&:hover": {
+              '&:hover': {
                 boxShadow: 4,
               },
             }}
@@ -1239,7 +1550,7 @@ const STIPackageManagementContent = () => {
             Lưu
           </Button>
         </DialogActions>
-      </Dialog>{" "}
+      </Dialog>{' '}
       {/* Dialog hiển thị chi tiết dịch vụ trong gói */}
       <Dialog
         open={openDetailsDialog}
@@ -1250,17 +1561,17 @@ const STIPackageManagementContent = () => {
           elevation: 8,
           sx: {
             borderRadius: 2,
-            overflow: "hidden",
+            overflow: 'hidden',
           },
         }}
       >
         <DialogTitle
           sx={{
-            backgroundColor: "#1976d2",
-            color: "white",
+            backgroundColor: '#1976d2',
+            color: 'white',
             py: 2,
-            fontWeight: "bold",
-            fontSize: "1.2rem",
+            fontWeight: 'bold',
+            fontSize: '1.2rem',
           }}
         >
           Chi tiết dịch vụ trong gói: {packageDetails?.name}
@@ -1272,9 +1583,9 @@ const STIPackageManagementContent = () => {
                 elevation={0}
                 sx={{
                   p: 2.5,
-                  backgroundColor: "#f8fcff",
+                  backgroundColor: '#f8fcff',
                   borderRadius: 2,
-                  border: "1px solid #e3f2fd",
+                  border: '1px solid #e3f2fd',
                   mb: 3,
                 }}
               >
@@ -1289,43 +1600,43 @@ const STIPackageManagementContent = () => {
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
                     <Typography variant="body1" sx={{ mb: 1.5 }}>
-                      <span style={{ color: "#666", marginRight: "8px" }}>
+                      <span style={{ color: '#666', marginRight: '8px' }}>
                         Tên gói:
                       </span>
-                      <span style={{ fontWeight: "500" }}>
+                      <span style={{ fontWeight: '500' }}>
                         {packageDetails.name}
                       </span>
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1.5 }}>
-                      <span style={{ color: "#666", marginRight: "8px" }}>
+                      <span style={{ color: '#666', marginRight: '8px' }}>
                         Giá gói:
                       </span>
-                      <span style={{ fontWeight: "600", color: "#1565c0" }}>
+                      <span style={{ fontWeight: '600', color: '#1565c0' }}>
                         {formatPrice(packageDetails.price)}
                       </span>
                     </Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <Typography variant="body1" sx={{ mb: 1.5 }}>
-                      <span style={{ color: "#666", marginRight: "8px" }}>
+                      <span style={{ color: '#666', marginRight: '8px' }}>
                         Đề xuất cho:
                       </span>
-                      <span style={{ fontWeight: "500" }}>
+                      <span style={{ fontWeight: '500' }}>
                         {packageDetails.recommended_for}
                       </span>
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1.5 }}>
-                      <span style={{ color: "#666", marginRight: "8px" }}>
+                      <span style={{ color: '#666', marginRight: '8px' }}>
                         Số dịch vụ:
                       </span>
-                      <span style={{ fontWeight: "500" }}>
+                      <span style={{ fontWeight: '500' }}>
                         {packageDetails.services.length} dịch vụ
                       </span>
                     </Typography>
                   </Grid>
                   <Grid item xs={12}>
                     <Typography variant="body1" sx={{ mb: 1 }}>
-                      <span style={{ color: "#666", marginRight: "8px" }}>
+                      <span style={{ color: '#666', marginRight: '8px' }}>
                         Mô tả:
                       </span>
                     </Typography>
@@ -1350,31 +1661,31 @@ const STIPackageManagementContent = () => {
                 elevation={2}
                 sx={{
                   borderRadius: 2,
-                  overflow: "hidden",
+                  overflow: 'hidden',
                   mb: 2,
                 }}
               >
                 <Table>
                   <TableHead>
-                    <TableRow sx={{ backgroundColor: "#e3f2fd" }}>
+                    <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
                       <TableCell
-                        sx={{ fontWeight: "bold", py: 1.5, width: "10%" }}
+                        sx={{ fontWeight: 'bold', py: 1.5, width: '10%' }}
                       >
                         STT
                       </TableCell>
                       <TableCell
-                        sx={{ fontWeight: "bold", py: 1.5, width: "25%" }}
+                        sx={{ fontWeight: 'bold', py: 1.5, width: '25%' }}
                       >
                         Tên dịch vụ
                       </TableCell>
                       <TableCell
-                        sx={{ fontWeight: "bold", py: 1.5, width: "45%" }}
+                        sx={{ fontWeight: 'bold', py: 1.5, width: '45%' }}
                       >
                         Mô tả
                       </TableCell>
                       <TableCell
                         align="right"
-                        sx={{ fontWeight: "bold", py: 1.5, width: "20%" }}
+                        sx={{ fontWeight: 'bold', py: 1.5, width: '20%' }}
                       >
                         Giá đơn lẻ
                       </TableCell>
@@ -1385,8 +1696,8 @@ const STIPackageManagementContent = () => {
                       <TableRow
                         key={service.id}
                         sx={{
-                          "&:nth-of-type(odd)": { backgroundColor: "#fafafa" },
-                          "&:hover": { backgroundColor: "#f5f5f5" },
+                          '&:nth-of-type(odd)': { backgroundColor: '#fafafa' },
+                          '&:hover': { backgroundColor: '#f5f5f5' },
                         }}
                       >
                         <TableCell sx={{ py: 1.5 }}>{index + 1}</TableCell>
@@ -1409,10 +1720,10 @@ const STIPackageManagementContent = () => {
 
               <Box
                 sx={{
-                  backgroundColor: "#f5f9ff",
+                  backgroundColor: '#f5f9ff',
                   borderRadius: 2,
                   p: 2,
-                  border: "1px solid #bbdefb",
+                  border: '1px solid #bbdefb',
                   mt: 3,
                 }}
               >
@@ -1473,18 +1784,17 @@ const STIPackageManagementContent = () => {
                       color="error"
                       align="right"
                     >
+                      {' '}
                       {(() => {
                         const servicesTotal = packageDetails.services.reduce(
                           (sum, service) => sum + service.price,
                           0
                         );
-                        const saving = servicesTotal - packageDetails.price;
-                        if (saving <= 0 || servicesTotal <= 0) return "0%";
-
-                        const discountPercent = Math.round(
-                          (saving / servicesTotal) * 100
+                        const discountInfo = calculateDiscount(
+                          servicesTotal,
+                          packageDetails.price
                         );
-                        return `${formatPrice(saving)} (${discountPercent}%)`;
+                        return discountInfo.formattedText;
                       })()}
                     </Typography>
                   </Grid>
@@ -1493,7 +1803,7 @@ const STIPackageManagementContent = () => {
             </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e0e0e0" }}>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid #e0e0e0' }}>
           <Button
             onClick={handleCloseDetailsDialog}
             variant="contained"
