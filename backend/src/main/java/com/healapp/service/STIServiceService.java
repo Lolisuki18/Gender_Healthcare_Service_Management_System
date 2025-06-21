@@ -74,7 +74,9 @@ public class STIServiceService {
 
             List<STIServiceResponse> responses = services.stream()
                 .filter(STIService::getIsActive) // Chỉ lấy các dịch vụ đang hoạt động
-                .map(service -> convertToResponse(service, service.getTestComponents()))
+                .map(service -> convertToResponse(service, service.getTestComponents().stream()
+                        .filter(ServiceTestComponent::getIsActive)// chỉ lấy các thành phần xét nghiệm còn hoạt động
+                        .collect(Collectors.toList())))
                 .collect(Collectors.toList());
 
             return ApiResponse.success("Active STI Services retrieved successfully", responses);
@@ -160,6 +162,14 @@ public class STIServiceService {
                         // Nếu isActive không được cung cấp thì giữ nguyên giá trị cũ
                         existingComponent.setIsActive(componentRequest.getIsActive() == null ? existingComponent.getIsActive() : componentRequest.getIsActive());
                     }
+                }
+            }
+
+            // Xóa các thành phần không còn trong request
+            for (ServiceTestComponent component : oldComponents) {
+                if (request.getComponents().stream().noneMatch(c -> c.getComponentId() != null && c.getComponentId().equals(component.getComponentId()))) {
+                    // Nếu không có trong request thì đánh dấu là không hoạt động
+                    component.setIsActive(false);
                 }
             }
             
