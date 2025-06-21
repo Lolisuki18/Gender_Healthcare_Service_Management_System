@@ -41,13 +41,15 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import CheckIcon from '@mui/icons-material/Check';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 // Import các hàm gọi API liên quan đến xét nghiệm từ service
-import { getAllSTIServices, getAllSTIPackages, getSTITestDetails, getSTIPackageById, getSTIServiceById, bookSTITest } from '@/services/stiService';
+import { getAllSTIServices, getAllSTIPackages, getSTITestDetails, getSTIPackageById, getSTIServiceById, bookSTITest, getActiveSTIServices } from '@/services/stiService';
 // Import các component hỗ trợ chọn ngày giờ
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import vi from 'date-fns/locale/vi';
+import { StaticDatePicker } from '@mui/x-date-pickers/StaticDatePicker';
 // React Router
 import { useLocation, useNavigate } from 'react-router-dom';
 // Styled-components của MUI
@@ -121,6 +123,7 @@ export default function TestRegistrationPage() {
   const [visaInfo, setVisaInfo] = useState({ cardNumber: '', cardName: '', expiry: '', cvv: '' }); // Thông tin thẻ visa
   const [visaErrors, setVisaErrors] = useState({});// Lỗi nhập thẻ visa
   const [bookingSuccess, setBookingSuccess] = useState(false);// Đặt lịch thành công
+  const [bookingMessage, setBookingMessage] = useState(''); // Message trả về từ backend khi đặt lịch thành công
   const location = useLocation(); // Lấy state truyền qua router
   const theme = useTheme();// Chủ đề MUI
   const navigate = useNavigate(); // Điều hướng
@@ -128,6 +131,9 @@ export default function TestRegistrationPage() {
   const [subDetailOpen, setSubDetailOpen] = useState(false);
   const [subDetailData, setSubDetailData] = useState(null);
   const [subDetailLoading, setSubDetailLoading] = useState(false);
+  const [openBankDialog, setOpenBankDialog] = useState(false); // Popup xác nhận chuyển khoản
+  const [pendingBankBooking, setPendingBankBooking] = useState(false); // Đang xử lý đặt lịch bank
+  const [openVisaDialog, setOpenVisaDialog] = useState(false); // Popup nhập thông tin Visa
   // Các khung giờ có sẵn
   const timeSlots = [
     '08:00', '09:00', '10:00', '11:00',
@@ -141,7 +147,7 @@ export default function TestRegistrationPage() {
       try {
         setLoading(true);
         const [servicesResponse, packagesResponse] = await Promise.all([
-          getAllSTIServices(),
+          getActiveSTIServices(),
           getAllSTIPackages()
         ]);
         if (servicesResponse.success) {
@@ -212,10 +218,22 @@ export default function TestRegistrationPage() {
   // --- Hàm đặt lịch xét nghiệm (gọi API bookSTITest) ---
   const handleBookTest = async () => {
     let serviceId = null, packageId = null;
-    if (selectedService?.type === 'single') {
-      serviceId = singleTests[selectedService.idx].id;
-    } else if (selectedService?.type === 'package') {
-      packageId = packages[selectedService.idx].id;
+    if (!selectedService || selectedService.idx == null) {
+      alert('Vui lòng chọn dịch vụ hoặc gói xét nghiệm!');
+      return;
+    }
+    if (selectedService.type === 'single') {
+      serviceId = singleTests[selectedService.idx]?.id;
+      if (!serviceId) {
+        alert('Không tìm thấy dịch vụ xét nghiệm đã chọn!');
+        return;
+      }
+    } else if (selectedService.type === 'package') {
+      packageId = packages[selectedService.idx]?.id;
+      if (!packageId) {
+        alert('Không tìm thấy gói xét nghiệm đã chọn!');
+        return;
+      }
     }
     const appointmentDate = selectedDate
       ? `${selectedDate.toISOString().split('T')[0]}T${selectedTime}:00`
@@ -223,10 +241,11 @@ export default function TestRegistrationPage() {
     let paymentMethodApi = 'COD';
     if (paymentMethod === 'bank') paymentMethodApi = 'BANK_TRANSFER';
     if (paymentMethod === 'visa') paymentMethodApi = 'VISA';
+    ///truyền về 
     const payload = {
       appointmentDate,
       paymentMethod: paymentMethodApi,
-      note,
+      customerNotes: note,
     };
     if (serviceId) payload.serviceId = serviceId;
     if (packageId) payload.packageId = packageId;
@@ -236,6 +255,7 @@ export default function TestRegistrationPage() {
       // Kiểm tra thành công nếu có success true hoặc có testId (hoặc data.testId)
       if (res.data.success === true || res.data.testId || (res.data.data && res.data.data.testId)) {
         setBookingSuccess(true);
+        setBookingMessage(res.data.message || 'Đặt lịch thành công!');
       } else {
         alert((res.data.message || 'Đăng ký thất bại') + '\n' + JSON.stringify(res.data));
       }
@@ -243,6 +263,13 @@ export default function TestRegistrationPage() {
       alert('Có lỗi xảy ra khi đăng ký: ' + (err?.response?.data?.message || err.message));
     }
   };
+
+  // Lấy giá dịch vụ/gói đã chọn (an toàn)
+  const selectedPrice = (selectedService && selectedService.idx != null)
+    ? (selectedService.type === 'single'
+        ? singleTests[selectedService.idx]?.price
+        : packages[selectedService.idx]?.price)
+    : 0;
 
   return (
     <Box sx={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F7FAFC 100%)', minHeight: '100vh', position: 'relative', overflow: 'hidden', fontFamily: 'Roboto, Helvetica, Arial, sans-serif' }}>
@@ -437,10 +464,32 @@ export default function TestRegistrationPage() {
                             border: '2px solid #1ABC9C',
                             background: 'linear-gradient(90deg, #f0f7ff 0%, #e8f4ff 100%)',
                             transform: 'translateY(-4px) scale(1.01)',
-                          }
+                          },
+                          position: 'relative',
                         }}
                         onClick={() => handleSelectService('single', (pageSingle - 1) * ITEMS_PER_PAGE + idx)}
                       >
+                        {/* Dấu tick khi được chọn */}
+                        {selectedService?.type === 'single' && selectedService?.idx === ((pageSingle - 1) * ITEMS_PER_PAGE + idx) && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 10,
+                              left: 10,
+                              bgcolor: 'transparent',
+                              border: '2px solid #43a047',
+                              borderRadius: '50%',
+                              width: 22,
+                              height: 22,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              zIndex: 2,
+                            }}
+                          >
+                            <CheckIcon sx={{ color: '#43a047', fontSize: 16 }} />
+                          </Box>
+                        )}
                         <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', p: 2 }}>
                           <Box>
                             <Typography fontWeight={700} fontSize={18}>{service.name}</Typography>
@@ -458,32 +507,27 @@ export default function TestRegistrationPage() {
                           <Box display="flex" alignItems="center" gap={2}>
                             <Typography fontWeight={700} fontSize={18} color="primary.main">{service.price ? service.price.toLocaleString('vi-VN') + ' đ' : ''}</Typography>
                             <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={e => { e.stopPropagation(); handleOpenDetail(service.id, 'single'); }}
+                              variant="contained"
                               sx={{
-                                ml: 2,
-                                textTransform: 'none',
                                 borderRadius: 50,
+                                px: 4,
+                                py: 1.5,
                                 fontWeight: 700,
-                                px: 2.5,
-                                py: 1,
-                                minWidth: 90,
-                                fontSize: '1rem',
-                                borderColor: theme => theme.palette.primary.main,
-                                color: theme => theme.palette.primary.main,
-                                background: '#fff',
-                                boxShadow: 'none',
+                                fontSize: '1.1rem',
+                                minWidth: 120,
+                                height: 48,
+                                background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+                                color: '#fff',
+                                textTransform: 'none',
+                                boxShadow: '0 2px 8px rgba(74,144,226,0.10)',
                                 transition: 'all 0.2s',
                                 '&:hover': {
-                                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-                                  color: '#fff',
-                                  borderColor: '#1ABC9C',
-                                  boxShadow: '0 4px 16px rgba(74,144,226,0.18)',
+                                  background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
                                 },
                               }}
+                              onClick={() => handleOpenDetail(service.id, 'single')}
                             >
-                              Xem chi tiết
+                              Chi tiết
                             </Button>
                           </Box>
                         </CardContent>
@@ -533,10 +577,32 @@ export default function TestRegistrationPage() {
                             border: '2px solid #1ABC9C',
                             background: 'linear-gradient(90deg, #f0f7ff 0%, #e8f4ff 100%)',
                             transform: 'translateY(-4px) scale(1.01)',
-                          }
+                          },
+                          position: 'relative',
                         }}
                         onClick={() => handleSelectService('package', (pagePackage - 1) * ITEMS_PER_PAGE + idx)}
                       >
+                        {/* Dấu tick khi được chọn */}
+                        {selectedService?.type === 'package' && selectedService?.idx === ((pagePackage - 1) * ITEMS_PER_PAGE + idx) && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 10,
+                              left: 10,
+                              bgcolor: 'transparent',
+                              border: '2px solid #43a047',
+                              borderRadius: '50%',
+                              width: 22,
+                              height: 22,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              zIndex: 2,
+                            }}
+                          >
+                            <CheckIcon sx={{ color: '#43a047', fontSize: 16 }} />
+                          </Box>
+                        )}
                         <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', p: 2 }}>
                           <Box>
                             <Typography fontWeight={700} fontSize={18}>{service.name}</Typography>
@@ -554,32 +620,27 @@ export default function TestRegistrationPage() {
                           <Box display="flex" alignItems="center" gap={2}>
                             <Typography fontWeight={700} fontSize={18} color="primary.main">{service.price ? service.price.toLocaleString('vi-VN') + ' đ' : ''}</Typography>
                             <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={e => { e.stopPropagation(); handleOpenPackageDetail(service.id); }}
+                              variant="contained"
                               sx={{
-                                ml: 2,
-                                textTransform: 'none',
                                 borderRadius: 50,
+                                px: 4,
+                                py: 1.5,
                                 fontWeight: 700,
-                                px: 2.5,
-                                py: 1,
-                                minWidth: 90,
-                                fontSize: '1rem',
-                                borderColor: theme => theme.palette.primary.main,
-                                color: theme => theme.palette.primary.main,
-                                background: '#fff',
-                                boxShadow: 'none',
+                                fontSize: '1.1rem',
+                                minWidth: 120,
+                                height: 48,
+                                background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+                                color: '#fff',
+                                textTransform: 'none',
+                                boxShadow: '0 2px 8px rgba(74,144,226,0.10)',
                                 transition: 'all 0.2s',
                                 '&:hover': {
-                                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-                                  color: '#fff',
-                                  borderColor: '#1ABC9C',
-                                  boxShadow: '0 4px 16px rgba(74,144,226,0.18)',
+                                  background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
                                 },
                               }}
+                              onClick={() => handleOpenPackageDetail(service.id)}
                             >
-                              Xem chi tiết
+                              Chi tiết
                             </Button>
                           </Box>
                         </CardContent>
@@ -610,7 +671,7 @@ export default function TestRegistrationPage() {
                 <Button
                   variant="contained"
                   color="primary"
-                  disabled={selectedService === null}
+                  disabled={!selectedService || selectedService.idx == null}
                   onClick={() => setActiveStep(1)}
                   sx={{
                     minWidth: 180,
@@ -648,67 +709,82 @@ export default function TestRegistrationPage() {
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'center', alignItems: { xs: 'stretch', md: 'flex-start' }, gap: 8, mt: 4, mb: 2 }}>
                 {/* Chọn ngày */}
                 <Box>
-                  <Typography fontWeight={700} mb={1} fontSize={20} textAlign="center">Chọn ngày</Typography>
+                  <Typography
+                    fontWeight={900}
+                    mb={1}
+                    fontSize={22}
+                    textAlign="center"
+                    sx={{
+                      background: 'linear-gradient(90deg, #357ae8 0%, #3ec6b7 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      letterSpacing: '-0.5px',
+                    }}
+                  >
+                    Chọn ngày
+                  </Typography>
                   <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
-                    <DatePicker
+                    <StaticDatePicker
+                      displayStaticWrapperAs="desktop"
                       value={selectedDate}
                       onChange={setSelectedDate}
                       disablePast
-                      renderInput={({ inputRef, inputProps, InputProps }) => (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                          <input
-                            ref={inputRef}
-                            {...inputProps}
-                            style={{
-                              padding: '16px 20px',
-                              borderRadius: 20,
-                              border: '2px solid #4A90E233',
-                              fontSize: 20,
-                              fontWeight: 600,
-                              background: '#fff',
-                              boxShadow: '0 2px 8px rgba(74,144,226,0.06)',
-                              outline: 'none',
-                              color: '#222',
-                              width: 220,
-                              marginRight: 12,
-                              transition: 'border 0.2s',
-                            }}
-                          />
-                          {InputProps?.endAdornment && (
-                            <Box sx={{ color: 'primary.main', fontSize: 28 }}>{InputProps.endAdornment}</Box>
-                          )}
-                        </Box>
-                      )}
+                      sx={{
+                        borderRadius: 4,
+                        boxShadow: '0 2px 8px rgba(74,144,226,0.07)',
+                        background: '#fff',
+                        p: 1,
+                        minWidth: 320,
+                      }}
+                      slotProps={{
+                        actionBar: { sx: { display: 'none' } },
+                      }}
                     />
                   </LocalizationProvider>
                 </Box>
                 {/* Chọn giờ */}
                 <Box>
-                  <Typography fontWeight={700} mb={1} fontSize={20} textAlign="center">Các khung giờ có sẵn</Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2, minWidth: 220, justifyContent: 'center' }}>
+                  <Typography
+                    fontWeight={900}
+                    mb={1}
+                    fontSize={22}
+                    textAlign="center"
+                    sx={{
+                      background: 'linear-gradient(90deg, #357ae8 0%, #3ec6b7 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      letterSpacing: '-0.5px',
+                    }}
+                  >
+                    Chọn khung giờ
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2.5, minWidth: 240, justifyContent: 'center' }}>
                     {timeSlots.map(slot => (
                       <Button
                         key={slot}
                         variant={selectedTime === slot ? 'contained' : 'outlined'}
                         onClick={() => setSelectedTime(slot)}
                         sx={{
-                          minWidth: 110,
+                          minWidth: 120,
                           height: 54,
                           borderRadius: 50,
-                          fontWeight: 600,
-                          fontSize: '1.1rem',
+                          fontWeight: 800,
+                          fontSize: '1.18rem',
                           px: 3,
                           py: 1.5,
-                          borderWidth: 2,
-                          borderColor: selectedTime === slot ? 'transparent' : '#4A90E233',
+                          borderWidth: 2.5,
+                          borderColor: selectedTime === slot ? 'transparent' : '#e3eafc',
                           bgcolor: selectedTime === slot ? 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)' : '#fff',
-                          color: selectedTime === slot ? '#fff' : 'primary.main',
-                          boxShadow: selectedTime === slot ? '0 2px 8px rgba(74,144,226,0.10)' : 'none',
+                          color: selectedTime === slot ? '#fff' : '#357ae8',
+                          boxShadow: selectedTime === slot ? '0 4px 16px rgba(74,144,226,0.13)' : 'none',
                           transition: 'all 0.2s',
                           '&:hover': {
-                            bgcolor: selectedTime === slot ? 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)' : '#E3F2FD',
-                            borderColor: '#4A90E2',
-                            transform: 'scale(1.04)',
+                            bgcolor: selectedTime === slot ? 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)' : '#e3f0ff',
+                            borderColor: '#357ae8',
+                            color: '#357ae8',
+                            transform: 'scale(1.05)',
                           },
                         }}
                       >
@@ -856,190 +932,20 @@ export default function TestRegistrationPage() {
                 <FormControlLabel value="bank" control={<Radio />} label="Chuyển khoản ngân hàng" />
                 <FormControlLabel value="visa" control={<Radio />} label="Thanh toán bằng thẻ Visa" />
               </RadioGroup>
-              {paymentMethod === 'bank' && (
-                <Box sx={{
-                  bgcolor: '#f4f8fc',
-                  border: '2px solid #4A90E233',
-                  borderRadius: 4,
-                  p: 3,
-                  mb: 3,
-                  color: '#1976D2',
-                  fontWeight: 500,
-                  maxWidth: 600,
-                  mx: 'auto',
-                  boxShadow: '0 2px 8px rgba(74,144,226,0.06)',
-                  mt: 4,
-                }}>
-                  <Typography fontWeight={700} color="#1976D2" mb={1} fontSize={18}>Thông tin chuyển khoản:</Typography>
-                  <Typography fontSize={16}>Số tài khoản: <b style={{ color: '#1976D2' }}>123456789</b></Typography>
-                  <Typography fontSize={16}>Ngân hàng: <b style={{ color: '#1976D2' }}>Vietcombank - CN Hà Nội</b></Typography>
-                  <Typography fontSize={16}>Chủ tài khoản: <b style={{ color: '#1976D2' }}>Nguyễn Văn A</b></Typography>
-                  <Typography fontSize={13} color="text.secondary" mt={1}>
-                    Vui lòng ghi rõ họ tên và số điện thoại khi chuyển khoản.
-                  </Typography>
-                </Box>
-              )}
-              {paymentMethod === 'visa' && (
-                <Box sx={{
-                  bgcolor: '#f4f8fc',
-                  border: '2px solid #4A90E233',
-                  borderRadius: 4,
-                  p: 3,
-                  mb: 3,
-                  color: '#1976D2',
-                  fontWeight: 500,
-                  maxWidth: 700,
-                  mx: 'auto',
-                  boxShadow: '0 2px 8px rgba(74,144,226,0.06)',
-                  mt: 4,
-                }}>
-                  <Typography fontWeight={700} color="#1976D2" mb={2} fontSize={20}>Nhập thông tin thẻ Visa</Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={4}>
-                      <TextField
-                        label="Số thẻ"
-                        fullWidth
-                        value={visaInfo.cardNumber}
-                        onChange={e => setVisaInfo({ ...visaInfo, cardNumber: e.target.value })}
-                        error={!!visaErrors.cardNumber}
-                        helperText={visaErrors.cardNumber}
-                        inputProps={{ maxLength: 19, inputMode: 'numeric', pattern: '[0-9 ]*' }}
-                        sx={{
-                          background: '#fff',
-                          borderRadius: 3,
-                          fontSize: 18,
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 3,
-                            fontSize: 18,
-                            fontWeight: 500,
-                            borderColor: '#4A90E233',
-                            '& fieldset': {
-                              borderColor: '#4A90E233',
-                            },
-                            '&:hover fieldset': {
-                              borderColor: 'primary.main',
-                            },
-                            '&.Mui-focused fieldset': {
-                              borderColor: 'primary.main',
-                              boxShadow: '0 0 0 2px #4A90E233',
-                            },
-                          },
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <TextField
-                        label="Tên chủ thẻ"
-                        fullWidth
-                        value={visaInfo.cardName}
-                        onChange={e => setVisaInfo({ ...visaInfo, cardName: e.target.value })}
-                        error={!!visaErrors.cardName}
-                        helperText={visaErrors.cardName}
-                        sx={{
-                          background: '#fff',
-                          borderRadius: 3,
-                          fontSize: 18,
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 3,
-                            fontSize: 18,
-                            fontWeight: 500,
-                            borderColor: '#4A90E233',
-                            '& fieldset': {
-                              borderColor: '#4A90E233',
-                            },
-                            '&:hover fieldset': {
-                              borderColor: 'primary.main',
-                            },
-                            '&.Mui-focused fieldset': {
-                              borderColor: 'primary.main',
-                              boxShadow: '0 0 0 2px #4A90E233',
-                            },
-                          },
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <TextField
-                        label="Ngày hết hạn (MM/YY)"
-                        fullWidth
-                        value={visaInfo.expiry}
-                        onChange={e => setVisaInfo({ ...visaInfo, expiry: e.target.value })}
-                        error={!!visaErrors.expiry}
-                        helperText={visaErrors.expiry}
-                        placeholder="MM/YY"
-                        sx={{
-                          background: '#fff',
-                          borderRadius: 3,
-                          fontSize: 18,
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 3,
-                            fontSize: 18,
-                            fontWeight: 500,
-                            borderColor: '#4A90E233',
-                            '& fieldset': {
-                              borderColor: '#4A90E233',
-                            },
-                            '&:hover fieldset': {
-                              borderColor: 'primary.main',
-                            },
-                            '&.Mui-focused fieldset': {
-                              borderColor: 'primary.main',
-                              boxShadow: '0 0 0 2px #4A90E233',
-                            },
-                          },
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <TextField
-                        label="CVV"
-                        fullWidth
-                        value={visaInfo.cvv}
-                        onChange={e => setVisaInfo({ ...visaInfo, cvv: e.target.value })}
-                        error={!!visaErrors.cvv}
-                        helperText={visaErrors.cvv}
-                        inputProps={{ maxLength: 4, inputMode: 'numeric', pattern: '[0-9]*' }}
-                        sx={{
-                          background: '#fff',
-                          borderRadius: 3,
-                          fontSize: 18,
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 3,
-                            fontSize: 18,
-                            fontWeight: 500,
-                            borderColor: '#4A90E233',
-                            '& fieldset': {
-                              borderColor: '#4A90E233',
-                            },
-                            '&:hover fieldset': {
-                              borderColor: 'primary.main',
-                            },
-                            '&.Mui-focused fieldset': {
-                              borderColor: 'primary.main',
-                              boxShadow: '0 0 0 2px #4A90E233',
-                            },
-                          },
-                        }}
-                      />
-                    </Grid>
-                  </Grid>
-                </Box>
-              )}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 6 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 6, gap: 2 }}>
                 <Button
                   variant="outlined"
-                  color="primary"
                   onClick={() => setActiveStep(2)}
                   sx={{
-                    minWidth: 160,
-                    fontWeight: 600,
                     borderRadius: 50,
-                    px: 3,
-                    py: 1.2,
+                    px: 4,
+                    py: 1.5,
+                    fontWeight: 700,
                     fontSize: '1.1rem',
-                    borderWidth: 2,
-                    borderColor: 'primary.main',
+                    minWidth: 120,
+                    height: 48,
                     color: 'primary.main',
+                    borderColor: 'primary.main',
                     textTransform: 'none',
                     transition: 'all 0.2s',
                     '&:hover': {
@@ -1053,24 +959,27 @@ export default function TestRegistrationPage() {
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={handleBookTest}
                   sx={{
-                    minWidth: 220,
-                    fontWeight: 600,
                     borderRadius: 50,
-                    px: 3,
-                    py: 1.2,
+                    px: 2,
+                    py: 1.5,
+                    fontWeight: 700,
                     fontSize: '1.1rem',
-                    background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                    minWidth: 160,
+                    height: 48,
+                    background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
                     color: '#fff',
-                    boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
                     textTransform: 'none',
-                    transition: 'all 0.3s ease',
+                    boxShadow: '0 2px 8px rgba(74,144,226,0.10)',
+                    transition: 'all 0.2s',
                     '&:hover': {
-                      background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
-                      transform: 'translateY(-3px)',
-                      boxShadow: '0 10px 25px rgba(74, 144, 226, 0.25)',
+                      background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
                     },
+                  }}
+                  onClick={() => {
+                    if (paymentMethod === 'bank') setOpenBankDialog(true);
+                    else if (paymentMethod === 'visa') setOpenVisaDialog(true);
+                    else handleBookTest();
                   }}
                 >
                   THANH TOÁN & HOÀN THÀNH ĐẶT LỊCH
@@ -1115,8 +1024,7 @@ export default function TestRegistrationPage() {
                   fontWeight: 500,
                 }}
               >
-                Cảm ơn bạn đã đăng ký xét nghiệm.<br />
-                Chúng tôi sẽ liên hệ xác nhận lịch hẹn sớm nhất.
+                {bookingMessage}
               </Typography>
               <Button
                 variant="contained"
@@ -1134,7 +1042,6 @@ export default function TestRegistrationPage() {
                   transition: 'all 0.2s',
                   '&:hover': {
                     background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
-                    boxShadow: '0 6px 18px rgba(74,144,226,0.18)',
                   },
                 }}
               >
@@ -1241,7 +1148,7 @@ export default function TestRegistrationPage() {
           )}
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
-          <Button onClick={() => setDetailDialogOpen(false)} variant="outlined" sx={{ borderRadius: 8, fontWeight: 600, minWidth: 120 }}>Đóng</Button>
+          <Button onClick={() => setDetailDialogOpen(false)} variant="outlined" sx={{ borderRadius: 8, fontWeight: 600 }}>Đóng</Button>
         </DialogActions>
       </GlassDialog>
       {/* Dialog phụ xem chi tiết xét nghiệm lẻ: luôn hiển thị bảng chỉ số nếu có */}
@@ -1326,6 +1233,179 @@ export default function TestRegistrationPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSubDetailOpen(false)} variant="outlined" sx={{ borderRadius: 8, fontWeight: 600 }}>Đóng</Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog xác nhận chuyển khoản ngân hàng */}
+      <Dialog
+        open={openBankDialog}
+        onClose={() => setOpenBankDialog(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 6,
+            p: 0,
+            boxShadow: '0 8px 32px rgba(74,144,226,0.18)',
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 900, fontSize: 24, color: '#1976D2', textAlign: 'center', pt: 4, pb: 2, letterSpacing: '-1px' }}>
+          Thông tin chuyển khoản
+        </DialogTitle>
+        <DialogContent sx={{ px: 4, pb: 2, pt: 0, textAlign: 'center' }}>
+          <Typography fontWeight={900} color="#E67E22" mb={2} fontSize={22}>
+            Số tiền cần chuyển: {selectedPrice?.toLocaleString()} VNĐ
+          </Typography>
+          <Typography fontSize={17} mb={1}>
+            Số tài khoản: <b style={{ color: '#1976D2' }}>123456789</b>
+          </Typography>
+          <Typography fontSize={17} mb={1}>
+            Ngân hàng: <b style={{ color: '#1976D2' }}>Vietcombank - CN Hà Nội</b>
+          </Typography>
+          <Typography fontSize={17} mb={2}>
+            Chủ tài khoản: <b style={{ color: '#1976D2' }}>Nguyễn Văn A</b>
+          </Typography>
+          <Typography fontSize={14} color="text.secondary" mb={2}>
+            Vui lòng ghi rõ họ tên và số điện thoại khi chuyển khoản.<br/>
+            Sau khi chuyển khoản, nhấn "Tôi đã thanh toán" để hoàn tất đặt lịch.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => {
+              setOpenBankDialog(false);
+              setBookingSuccess(false);
+              setBookingMessage('Đặt lịch thất bại hoặc bạn đã hủy thanh toán.');
+            }}
+            sx={{ minWidth: 120, fontWeight: 700, borderRadius: 50, height: 48, fontSize: 17 }}
+          >
+            Hủy
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            disabled={pendingBankBooking}
+            onClick={async () => {
+              setPendingBankBooking(true);
+              try {
+                await handleBookTest();
+                setOpenBankDialog(false);
+              } catch {
+                setBookingSuccess(false);
+                setBookingMessage('Đặt lịch thất bại. Vui lòng thử lại!');
+              } finally {
+                setPendingBankBooking(false);
+              }
+            }}
+            sx={{ minWidth: 180, fontWeight: 700, borderRadius: 50, height: 48, fontSize: 17 }}
+          >
+            Tôi đã thanh toán
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog nhập thông tin thẻ Visa */}
+      <Dialog
+        open={openVisaDialog}
+        onClose={() => setOpenVisaDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 6,
+            p: 0,
+            boxShadow: '0 8px 32px rgba(74,144,226,0.18)',
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 900, fontSize: 24, color: '#1976D2', textAlign: 'center', pt: 4, pb: 2, letterSpacing: '-1px' }}>
+          Nhập thông tin thẻ Visa
+        </DialogTitle>
+        <DialogContent sx={{ px: 4, pb: 2, pt: 0, textAlign: 'center' }}>
+          <Typography fontWeight={900} color="#E67E22" mb={2} fontSize={22}>
+            Số tiền cần thanh toán: {selectedPrice?.toLocaleString()} VNĐ
+          </Typography>
+          <Grid container spacing={2} sx={{ mt: 1, mb: 1 }}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                label="Số thẻ"
+                fullWidth
+                value={visaInfo.cardNumber}
+                onChange={e => setVisaInfo({ ...visaInfo, cardNumber: e.target.value })}
+                error={!!visaErrors.cardNumber}
+                helperText={visaErrors.cardNumber}
+                inputProps={{ maxLength: 19, inputMode: 'numeric', pattern: '[0-9 ]*' }}
+                sx={{ background: '#fff', borderRadius: 3, fontSize: 18 }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                label="Tên chủ thẻ"
+                fullWidth
+                value={visaInfo.cardName}
+                onChange={e => setVisaInfo({ ...visaInfo, cardName: e.target.value })}
+                error={!!visaErrors.cardName}
+                helperText={visaErrors.cardName}
+                sx={{ background: '#fff', borderRadius: 3, fontSize: 18 }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                label="Ngày hết hạn (MM/YY)"
+                fullWidth
+                value={visaInfo.expiry}
+                onChange={e => setVisaInfo({ ...visaInfo, expiry: e.target.value })}
+                error={!!visaErrors.expiry}
+                helperText={visaErrors.expiry}
+                placeholder="MM/YY"
+                sx={{ background: '#fff', borderRadius: 3, fontSize: 18 }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                label="CVV"
+                fullWidth
+                value={visaInfo.cvv}
+                onChange={e => setVisaInfo({ ...visaInfo, cvv: e.target.value })}
+                error={!!visaErrors.cvv}
+                helperText={visaErrors.cvv}
+                inputProps={{ maxLength: 4, inputMode: 'numeric', pattern: '[0-9]*' }}
+                sx={{ background: '#fff', borderRadius: 3, fontSize: 18 }}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => setOpenVisaDialog(false)}
+            sx={{ minWidth: 120, fontWeight: 700, borderRadius: 50, height: 48, fontSize: 17 }}
+          >
+            Hủy
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={async () => {
+              // Validate form
+              let errors = {};
+              if (!visaInfo.cardNumber || visaInfo.cardNumber.length < 12) errors.cardNumber = 'Số thẻ không hợp lệ';
+              if (!visaInfo.cardName) errors.cardName = 'Vui lòng nhập tên chủ thẻ';
+              if (!visaInfo.expiry || !/^\d{2}\/\d{2}$/.test(visaInfo.expiry)) errors.expiry = 'Định dạng MM/YY';
+              if (!visaInfo.cvv || visaInfo.cvv.length < 3) errors.cvv = 'CVV không hợp lệ';
+              setVisaErrors(errors);
+              if (Object.keys(errors).length > 0) return;
+              await handleBookTest();
+              setOpenVisaDialog(false);
+            }}
+            sx={{ minWidth: 180, fontWeight: 700, borderRadius: 50, height: 48, fontSize: 17 }}
+          >
+            Thanh toán
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

@@ -11,11 +11,19 @@ export const createSTIService = async (serviceData) => {
     throw error.response?.data || error.message;
   }
 };
-
-// Get all STI services
-export const getAllSTIServices = async () => {
+// Get all active STI services (dành cho user, chỉ trả về dịch vụ còn hoạt động)
+export const getActiveSTIServices = async () => {
   try {
     const response = await apiClient.get('/sti-services');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+// Get all STI services (dành cho staff, trả về tất cả dịch vụ)
+export const getAllSTIServices = async () => {
+  try {
+    const response = await apiClient.get('/sti-services/staff');
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -794,6 +802,8 @@ export const getPackageTestDetails = async (packageId) => {
   }
 };
 
+
+
 // Export as a default object with all functions
 const stiService = {
   createSTIService,
@@ -821,6 +831,7 @@ const stiService = {
   updateSTIPackage,
   deleteSTIPackage,
   getPackageTestDetails,
+  getActiveSTIServices,
 
   // New function to get services within a package
   getServicesInPackage: async (packageId) => {

@@ -218,52 +218,67 @@ export default function StiDetailPage() {
               <Zoom in={loaded} style={{ transitionDelay: `${idx * 100 + 200}ms` }}>
                 {/* --- Card gói xét nghiệm --- */}
                 <Card sx={{
-                  borderRadius: 4,
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.07)',
+                  borderRadius: 6,
+                  boxShadow: '0 8px 32px rgba(74,144,226,0.13)',
                   width: '100%',
                   maxWidth: 380,
                   minWidth: 280,
                   display: 'flex',
                   flexDirection: 'column',
-                  height: 340,
+                  height: 360,
                   transition: 'all 0.4s cubic-bezier(.4,0,.2,1)',
                   overflow: 'hidden',
                   position: 'relative',
-                  background: 'linear-gradient(180deg, #f8faff 0%, #f0f7ff 50%, #e8f4ff 100%)',
+                  background: 'linear-gradient(180deg, #f8faff 0%, #f0f7ff 60%, #e8f4ff 100%)',
                   '&:hover': {
                     transform: 'translateY(-10px) scale(1.03)',
-                    boxShadow: '0 20px 40px rgba(74, 144, 226, 0.18)',
-                    border: '1px solid rgba(74, 144, 226, 0.2)'
+                    boxShadow: '0 28px 56px 0 rgba(74,144,226,0.22)',
                   }
                 }}>
-                  <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 180 }}>
+                  <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 180, p: 3 }}>
                     <Box>
-                      <Typography fontWeight={700} mb={1} color={theme => theme.palette.text.primary} fontSize={18}>{pkg.name}</Typography>
-                      <Typography color="text.secondary" mb={2}>{pkg.description}</Typography>
+                      <Typography
+                        fontWeight={900}
+                        fontSize={22}
+                        sx={{
+                          background: 'linear-gradient(90deg, #357ae8 0%, #3ec6b7 100%)',
+                          backgroundClip: 'text',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          mb: 1,
+                          fontFamily: 'inherit',
+                          letterSpacing: '-0.5px',
+                        }}
+                      >
+                        {pkg.name}
+                      </Typography>
+                      <Typography color="text.secondary" mb={2} fontSize={15} sx={{ minHeight: 44, fontWeight: 400 }}>
+                        {pkg.description}
+                      </Typography>
                     </Box>
-                    <Typography fontWeight={700} color="primary" mb={2} fontSize={18}>
+                    <Typography fontWeight={800} color="primary" mb={2} fontSize={20}>
                       {pkg.price?.toLocaleString('vi-VN')} đ
                     </Typography>
                   </CardContent>
                   {/* --- Nút đăng ký và xem chi tiết --- */}
-                  <Box sx={{ p: 2, pt: 0, mt: 'auto', display: 'flex', gap: 1 }}>
+                  <Box sx={{ p: 2, pt: 0, mt: 'auto', display: 'flex', gap: 2.5, justifyContent: 'center', alignItems: 'center' }}>
                     <Button
                       variant="contained"
-                      fullWidth
                       sx={{
-                        background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                        background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
                         color: '#fff',
-                        fontWeight: 600,
-                        borderRadius: 16,
-                        px: 0.5,
-                        py: 0.2,
-                        minWidth: 60,
-                        fontSize: '0.85rem',
+                        fontWeight: 800,
+                        borderRadius: 50,
+                        px: 3,
+                        py: 1.3,
+                        minWidth: 110,
+                        height: 44,
+                        fontSize: '1.05rem',
                         boxShadow: '0 2px 8px rgba(74, 144, 226, 0.10)',
                         textTransform: 'none',
                         transition: 'all 0.3s ease',
                         '&:hover': {
-                          background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                          background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
                           transform: 'translateY(-2px)',
                           boxShadow: '0 6px 18px rgba(74, 144, 226, 0.18)',
                         },
@@ -275,13 +290,13 @@ export default function StiDetailPage() {
                     <Button
                       variant="outlined"
                       sx={{
-                        borderRadius: 16,
-                        fontWeight: 600,
-                        px: 0.5,
-                        py: 0.2,
-                        minWidth: 60,
-                        fontSize: '0.85rem',
-                        ml: 1,
+                        borderRadius: 50,
+                        fontWeight: 800,
+                        px: 3,
+                        py: 1.3,
+                        minWidth: 100,
+                        height: 44,
+                        fontSize: '1.05rem',
                         borderColor: theme => theme.palette.primary.main,
                         color: theme => theme.palette.primary.main,
                         textTransform: 'none',
@@ -293,7 +308,7 @@ export default function StiDetailPage() {
                       }}
                       onClick={() => handleOpenDetail(pkg)}
                     >
-                      Xem chi tiết
+                      Chi tiết
                     </Button>
                   </Box>
                 </Card>
@@ -315,20 +330,51 @@ export default function StiDetailPage() {
                 </Box>
                 {detailData.services && Array.isArray(detailData.services) && detailData.services.length > 0 && (
                   <>
-                    <Typography fontWeight={700} mt={2} mb={1.5} color={theme => theme.palette.primary.main} textAlign="center">Các dịch vụ trong gói</Typography>
-                    <List dense sx={{ pl: 1 }}>
+                    <Typography
+                      fontWeight={900}
+                      fontSize={22}
+                      sx={{
+                        background: 'linear-gradient(90deg, #357ae8 0%, #3ec6b7 100%)',
+                        backgroundClip: 'text',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        textAlign: 'center',
+                        mb: 2,
+                        mt: 3,
+                        letterSpacing: '-0.5px',
+                      }}
+                    >
+                      Các dịch vụ trong gói
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
                       {detailData.services.map((svc, i) => (
-                        <ListItem key={svc.id || i} sx={{ py: 0.5, borderRadius: 2, mb: 0.5, bgcolor: '#fff', boxShadow: '0 1px 4px rgba(74,144,226,0.04)' }}>
-                          <ListItemIcon sx={{ minWidth: 28 }}><CheckIcon color="success" fontSize="small" /></ListItemIcon>
-                          <ListItemText
-                            primary={<Box display="flex" alignItems="center" gap={1}>
-                              <Typography fontSize={15} color="text.primary" fontWeight={600}>{svc.name}</Typography>
-                              <Typography fontSize={14} color="primary" fontWeight={500} ml={1}>{svc.price ? svc.price.toLocaleString('vi-VN') + ' đ' : ''}</Typography>
-                            </Box>}
-                          />
-                        </ListItem>
+                        <Box
+                          key={svc.id || i}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            bgcolor: 'linear-gradient(90deg, #e3f0ff 0%, #e0f7fa 100%)',
+                            borderRadius: 4,
+                            boxShadow: '0 2px 8px rgba(74,144,226,0.07)',
+                            px: 2.5,
+                            py: 0.2,
+                            minHeight: 28,
+                            transition: 'box-shadow 0.2s',
+                          }}
+                        >
+                          <CheckIcon sx={{ color: '#43a047', fontSize: 28, mr: 1 }} />
+                          <Typography fontSize={16} color="text.primary" fontWeight={700} flex={1}>
+                            {svc.name}
+                          </Typography>
+                          {svc.price && (
+                            <Typography fontSize={15} color="primary" fontWeight={700} ml={2}>
+                              {svc.price.toLocaleString('vi-VN')} đ
+                            </Typography>
+                          )}
+                        </Box>
                       ))}
-                    </List>
+                    </Box>
                   </>
                 )}
               </>
