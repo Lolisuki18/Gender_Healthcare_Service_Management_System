@@ -802,8 +802,6 @@ export const getPackageTestDetails = async (packageId) => {
   }
 };
 
-
-
 // Export as a default object with all functions
 const stiService = {
   createSTIService,

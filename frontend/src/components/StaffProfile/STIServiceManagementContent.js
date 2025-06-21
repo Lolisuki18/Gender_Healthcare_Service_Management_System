@@ -23,6 +23,7 @@ import {
   IconButton,
   TextField,
   InputAdornment,
+  Switch,
   Chip,
   Dialog,
   DialogActions,
@@ -34,7 +35,6 @@ import {
   MenuItem,
   Divider,
   Grid,
-  Avatar,
   Tooltip,
   Stack,
   Alert,
@@ -56,6 +56,7 @@ import {
   deleteSTIService,
   getSTIServiceById,
 } from '../../services/stiService';
+import { id } from 'date-fns/locale';
 
 const STIServiceManagementContent = () => {
   // State management
@@ -198,13 +199,27 @@ const STIServiceManagementContent = () => {
       }));
     }
   };
-
   // Handle component input changes
   const handleComponentChange = (field, value) => {
     setNewComponent((prev) => ({
       ...prev,
       [field]: value,
     }));
+  };
+
+  // Handle component status change
+  const handleComponentStatusChange = (index, isActive) => {
+    setFormData((prev) => {
+      const updatedComponents = [...prev.components];
+      updatedComponents[index] = {
+        ...updatedComponents[index],
+        isActive: isActive,
+      };
+      return {
+        ...prev,
+        components: updatedComponents,
+      };
+    });
   };
 
   // Add component to the list
@@ -222,9 +237,9 @@ const STIServiceManagementContent = () => {
       });
       return;
     }
-
     const component = {
       ...newComponent,
+      isActive: true, // Default to active for new components
     };
 
     setFormData((prev) => ({
@@ -274,22 +289,31 @@ const STIServiceManagementContent = () => {
     });
     setOpenDialog(true);
   };
-
   const handleOpenEditDialog = (service) => {
     setCurrentService(service); // Map BE data structure to form data structure
     const components = service.components.map((comp) => ({
+      componentId: comp.componentId, // Store component ID for update
       testName: comp.componentName,
       unit: comp.unit,
       referenceRange: comp.normalRange,
       interpretation: comp.description,
-      isActive: comp.active, // Updated property name to match API response
+      // Use consistent helper approach for getting status
+      isActive:
+        comp.isActive !== undefined
+          ? comp.isActive
+          : comp.is_active !== undefined
+            ? comp.is_active
+            : comp.active !== undefined
+              ? comp.active
+              : true,
     }));
 
     setFormData({
       name: service.name,
       description: service.description || '',
       price: service.price,
-      isActive: service.active, // Updated property name to match API response
+      // Use our helper function for consistent status handling
+      isActive: getActiveStatus(service),
       components: components,
     });
 
@@ -368,33 +392,48 @@ const STIServiceManagementContent = () => {
       setLoading(false);
       handleCloseDeleteDialog();
     }
-  };
-
-  // Save service (create/update)
+  }; // Save service (create/update)
   const handleSaveService = async () => {
     // Validate form
     if (!validateForm()) {
       return;
     }
-
     try {
-      setLoading(true); // Prepare DTO data for backend
+      setLoading(true);
+      // Prepare DTO data for backend
       const serviceData = {
         name: formData.name,
         description: formData.description,
         price: formData.price,
-        active: formData.isActive, // Changed to match API's property name
+        // Use camelCase isActive to match Spring Boot DTO field name
+        isActive: formData.isActive === false ? false : true,
         components: formData.components.map((comp) => ({
+          component_id: comp.componentId || null, // Use componentId if exists for update, otherwise null for new component
+          componentId: comp.componentId || null, // Include both formats for compatibility
           testName: comp.testName,
           unit: comp.unit,
           referenceRange: comp.referenceRange,
           interpretation: comp.interpretation || '',
+          isActive: comp.isActive !== false ? true : false, // Pass individual component status
         })),
       };
 
       let response;
       if (currentService) {
         // Update existing service
+        console.log(
+          `Updating STI service with data: ${JSON.stringify(serviceData, null, 2)}`
+        );
+        console.log(
+          `Component data being sent: ${JSON.stringify(
+            serviceData.components.map((c) => ({
+              id: c.componentId,
+              testName: c.testName,
+            })),
+            null,
+            2
+          )}`
+        );
         response = await updateSTIService(currentService.id, serviceData);
         if (response.success) {
           setSnackbar({
@@ -459,6 +498,17 @@ const STIServiceManagementContent = () => {
       return new Date(dateArray).toLocaleString('vi-VN');
     }
     return 'N/A';
+  };
+  // Helper function to get active status - handles both is_active (snake_case) and isActive (camelCase)
+  const getActiveStatus = (service) => {
+    // Check all possible field names from API responses and provide a default
+    return service.isActive !== undefined
+      ? service.isActive
+      : service.is_active !== undefined
+        ? service.is_active
+        : service.active !== undefined
+          ? service.active
+          : true;
   };
 
   return (
@@ -642,18 +692,20 @@ const STIServiceManagementContent = () => {
                           fontSize: '0.75rem',
                         }}
                       />
-                    </TableCell>
+                    </TableCell>{' '}
                     <TableCell>
                       <Chip
-                        label={service.active ? 'Active' : 'Inactive'}
+                        label={getActiveStatus(service) ? 'Active' : 'Inactive'}
                         size="small"
                         sx={{
-                          backgroundColor: service.active
+                          backgroundColor: getActiveStatus(service)
                             ? '#E3FCF7'
                             : '#FEE2E2',
-                          color: service.active ? '#0F9B8E' : '#DC2626',
+                          color: getActiveStatus(service)
+                            ? '#0F9B8E'
+                            : '#DC2626',
                           fontWeight: 600,
-                          border: service.active
+                          border: getActiveStatus(service)
                             ? '1px solid #1ABC9C'
                             : '1px solid #DC2626',
                           fontSize: '0.75rem',
@@ -861,7 +913,7 @@ const STIServiceManagementContent = () => {
             {/* Components Section */}
             <Grid item xs={12}>
               {' '}
-              <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: 3 }} />{' '}
               <Typography
                 variant="subtitle1"
                 gutterBottom
@@ -881,22 +933,32 @@ const STIServiceManagementContent = () => {
                   {errors.components}
                 </Typography>
               )}
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mb: 1 }}
+              >
+                You can enable or disable individual components independently of
+                the overall service status.
+              </Typography>
             </Grid>
             {/* Component List */}
             {formData.components.length > 0 && (
               <Grid item xs={12}>
                 <TableContainer component={Paper} variant="outlined">
                   <Table size="small">
+                    {' '}
                     <TableHead>
                       <TableRow>
                         <TableCell>Test Name</TableCell>
                         <TableCell>Unit</TableCell>
                         <TableCell>Reference Range</TableCell>
                         <TableCell>Interpretation</TableCell>
-                        <TableCell align="center">Action</TableCell>
+                        <TableCell align="center">Status / Action</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
+                      {' '}
                       {formData.components.map((component, index) => (
                         <TableRow key={index}>
                           <TableCell>{component.testName}</TableCell>
@@ -906,13 +968,38 @@ const STIServiceManagementContent = () => {
                             {component.interpretation || 'N/A'}
                           </TableCell>
                           <TableCell align="center">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => handleRemoveComponent(index)}
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              justifyContent="center"
                             >
-                              <CloseIcon fontSize="small" />
-                            </IconButton>
+                              {' '}
+                              <Box display="flex" alignItems="center">
+                                <Typography variant="caption" sx={{ mr: 0.5 }}>
+                                  {component.isActive !== false
+                                    ? 'Active'
+                                    : 'Inactive'}
+                                </Typography>
+                                <Switch
+                                  checked={component.isActive !== false}
+                                  onChange={(e) =>
+                                    handleComponentStatusChange(
+                                      index,
+                                      e.target.checked
+                                    )
+                                  }
+                                  size="small"
+                                  color="success"
+                                />
+                              </Box>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleRemoveComponent(index)}
+                              >
+                                <CloseIcon fontSize="small" />
+                              </IconButton>
+                            </Stack>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1106,12 +1193,16 @@ const STIServiceManagementContent = () => {
                   <Typography variant="body1" gutterBottom>
                     {selectedService.description || 'No description provided'}
                   </Typography>
-                </Grid>
+                </Grid>{' '}
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2">Status</Typography>
                   <Chip
-                    label={selectedService.active ? 'Active' : 'Inactive'}
-                    color={selectedService.active ? 'success' : 'error'}
+                    label={
+                      getActiveStatus(selectedService) ? 'Active' : 'Inactive'
+                    }
+                    color={
+                      getActiveStatus(selectedService) ? 'success' : 'error'
+                    }
                     size="small"
                   />
                 </Grid>
@@ -1179,21 +1270,58 @@ const STIServiceManagementContent = () => {
                             <TableCell>{component.unit}</TableCell>
                             <TableCell>{component.normalRange}</TableCell>
                             <TableCell>
-                              {component.description || 'N/A'}
-                            </TableCell>{' '}
+                              {component.description || 'N/A'}{' '}
+                            </TableCell>
                             <TableCell>
                               <Chip
-                                label={component.active ? 'Active' : 'Inactive'}
+                                label={
+                                  // Use our helper approach for consistent status handling
+                                  (
+                                    component.isActive !== undefined
+                                      ? component.isActive
+                                      : component.is_active !== undefined
+                                        ? component.is_active
+                                        : component.active !== undefined
+                                          ? component.active
+                                          : true
+                                  )
+                                    ? 'Active'
+                                    : 'Inactive'
+                                }
                                 size="small"
                                 sx={{
-                                  backgroundColor: component.active
+                                  backgroundColor: (
+                                    component.isActive !== undefined
+                                      ? component.isActive
+                                      : component.is_active !== undefined
+                                        ? component.is_active
+                                        : component.active !== undefined
+                                          ? component.active
+                                          : true
+                                  )
                                     ? '#E3FCF7'
                                     : '#FEE2E2',
-                                  color: component.active
+                                  color: (
+                                    component.isActive !== undefined
+                                      ? component.isActive
+                                      : component.is_active !== undefined
+                                        ? component.is_active
+                                        : component.active !== undefined
+                                          ? component.active
+                                          : true
+                                  )
                                     ? '#0F9B8E'
                                     : '#DC2626',
                                   fontWeight: 600,
-                                  border: component.active
+                                  border: (
+                                    component.isActive !== undefined
+                                      ? component.isActive
+                                      : component.is_active !== undefined
+                                        ? component.is_active
+                                        : component.active !== undefined
+                                          ? component.active
+                                          : true
+                                  )
                                     ? '1px solid #1ABC9C'
                                     : '1px solid #DC2626',
                                   fontSize: '0.75rem',
