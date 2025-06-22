@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -11,7 +11,7 @@ import {
   Alert,
   Tooltip,
   Container,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Email as EmailIcon,
   Phone as PhoneIcon,
@@ -20,20 +20,20 @@ import {
   Info as InfoIcon,
   Security as SecurityIcon,
   VerifiedUser as VerifiedUserIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import {
   EmailChangeDialog,
   PasswordChangeDialog,
   PhoneChangeDialog,
-} from "./modals";
-import localStorageUtil from "@/utils/localStorage";
-import notify from "@/utils/notification";
-import { userService } from "@/services/userService";
+} from '../modals';
+import localStorageUtil from '@/utils/localStorage';
+import notify from '@/utils/notification';
+import { userService } from '@/services/userService';
 
 // Component quản lý bảo mật: email, sđt, mật khẩu
 const SecurityContent = () => {
   // Đảm bảo lấy thông tin người dùng với cấu trúc chuẩn {success, message, data}
-  const userProfileRaw = localStorageUtil.get("userProfile");
+  const userProfileRaw = localStorageUtil.get('userProfile');
   // Chuẩn hóa dữ liệu người dùng - đảm bảo đang làm việc với cấu trúc data
   const user = userProfileRaw?.data || userProfileRaw || {};
 
@@ -46,14 +46,14 @@ const SecurityContent = () => {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   // Log để debug cấu trúc dữ liệu
-  console.log("UserProfile structure:", userProfileRaw);
+  console.log('UserProfile structure:', userProfileRaw);
   const [formDataUpdate, setFormDataUpdate] = useState({
-    fullName: "",
-    phone: "",
-    birthDay: "",
-    email: "",
-    gender: "",
-    address: "",
+    fullName: '',
+    phone: '',
+    birthDay: '',
+    email: '',
+    gender: '',
+    address: '',
   });
 
   /**
@@ -63,7 +63,7 @@ const SecurityContent = () => {
     try {
       setIsSendingCode(true);
 
-      notify.info("Đang xử lý", "Đang gửi mã xác nhận đến email mới...", {
+      notify.info('Đang xử lý', 'Đang gửi mã xác nhận đến email mới...', {
         duration: 2000,
       });
 
@@ -73,10 +73,10 @@ const SecurityContent = () => {
       if (response.success) {
         return Promise.resolve();
       } else {
-        throw new Error(response.message || "Không thể gửi mã xác nhận");
+        throw new Error(response.message || 'Không thể gửi mã xác nhận');
       }
     } catch (error) {
-      console.error("❌ Error sending verification code:", error);
+      console.error('❌ Error sending verification code:', error);
       throw error;
     } finally {
       setIsSendingCode(false);
@@ -89,7 +89,7 @@ const SecurityContent = () => {
     try {
       setIsVerifying(true);
 
-      notify.info("Đang xác nhận", "Đang xác nhận mã và cập nhật email...", {
+      notify.info('Đang xác nhận', 'Đang xác nhận mã và cập nhật email...', {
         duration: 2000,
       });
 
@@ -107,7 +107,7 @@ const SecurityContent = () => {
         };
 
         setFormDataUpdate(updatedFormData); // Đảm bảo dữ liệu userProfile giữ đúng cấu trúc {success, message, data}
-        const currentProfile = localStorageUtil.get("userProfile") || {};
+        const currentProfile = localStorageUtil.get('userProfile') || {};
 
         // Nếu userProfile đã có cấu trúc data, cập nhật trong data
         if (currentProfile.data) {
@@ -118,38 +118,38 @@ const SecurityContent = () => {
               email: email,
             },
           };
-          localStorageUtil.set("userProfile", updatedProfile);
+          localStorageUtil.set('userProfile', updatedProfile);
           console.log(
-            "✅ Email updated successfully in data structure:",
+            '✅ Email updated successfully in data structure:',
             updatedProfile
           );
         } else {
           // Nếu userProfile là object trực tiếp, chuyển đổi sang cấu trúc chuẩn
           const updatedProfile = {
             success: true,
-            message: "User data updated",
+            message: 'User data updated',
             data: {
               ...currentProfile,
               email: email,
             },
           };
-          localStorageUtil.set("userProfile", updatedProfile);
+          localStorageUtil.set('userProfile', updatedProfile);
           console.log(
-            "✅ Email updated and structure normalized:",
+            '✅ Email updated and structure normalized:',
             updatedProfile
           );
         }
 
-        notify.success("Thành công!", "Email đã được cập nhật thành công!", {
+        notify.success('Thành công!', 'Email đã được cập nhật thành công!', {
           duration: 4000,
         });
 
         return Promise.resolve();
       } else {
-        throw new Error(response.message || "Mã xác nhận không đúng");
+        throw new Error(response.message || 'Mã xác nhận không đúng');
       }
     } catch (error) {
-      console.error("❌ Error verifying email:", error);
+      console.error('❌ Error verifying email:', error);
       throw error;
     } finally {
       setIsVerifying(false);
@@ -164,8 +164,8 @@ const SecurityContent = () => {
       setIsSendingCode(true);
 
       notify.info(
-        "Đang xử lý",
-        "Đang gửi mã xác nhận đến số điện thoại mới...",
+        'Đang xử lý',
+        'Đang gửi mã xác nhận đến số điện thoại mới...',
         {
           duration: 2000,
         }
@@ -177,10 +177,10 @@ const SecurityContent = () => {
       if (response.success) {
         return Promise.resolve();
       } else {
-        throw new Error(response.message || "Không thể gửi mã xác nhận");
+        throw new Error(response.message || 'Không thể gửi mã xác nhận');
       }
     } catch (error) {
-      console.error("❌ Error sending phone verification code:", error);
+      console.error('❌ Error sending phone verification code:', error);
       throw error;
     } finally {
       setIsSendingCode(false);
@@ -195,8 +195,8 @@ const SecurityContent = () => {
       setIsVerifying(true);
 
       notify.info(
-        "Đang xác nhận",
-        "Đang xác nhận mã và cập nhật số điện thoại...",
+        'Đang xác nhận',
+        'Đang xác nhận mã và cập nhật số điện thoại...',
         {
           duration: 2000,
         }
@@ -210,7 +210,7 @@ const SecurityContent = () => {
 
       if (response.success) {
         // Đảm bảo dữ liệu userProfile giữ đúng cấu trúc {success, message, data}
-        const currentProfile = localStorageUtil.get("userProfile") || {};
+        const currentProfile = localStorageUtil.get('userProfile') || {};
 
         // Nếu userProfile đã có cấu trúc data, cập nhật trong data
         if (currentProfile.data) {
@@ -221,31 +221,31 @@ const SecurityContent = () => {
               phone: phone,
             },
           };
-          localStorageUtil.set("userProfile", updatedProfile);
+          localStorageUtil.set('userProfile', updatedProfile);
           console.log(
-            "✅ Phone updated successfully in data structure:",
+            '✅ Phone updated successfully in data structure:',
             updatedProfile
           );
         } else {
           // Nếu userProfile là object trực tiếp, chuyển đổi sang cấu trúc chuẩn
           const updatedProfile = {
             success: true,
-            message: "User data updated",
+            message: 'User data updated',
             data: {
               ...currentProfile,
               phone: phone,
             },
           };
-          localStorageUtil.set("userProfile", updatedProfile);
+          localStorageUtil.set('userProfile', updatedProfile);
           console.log(
-            "✅ Phone updated and structure normalized:",
+            '✅ Phone updated and structure normalized:',
             updatedProfile
           );
         }
 
         notify.success(
-          "Thành công!",
-          "Số điện thoại đã được cập nhật thành công!",
+          'Thành công!',
+          'Số điện thoại đã được cập nhật thành công!',
           {
             duration: 4000,
           }
@@ -253,10 +253,10 @@ const SecurityContent = () => {
 
         return Promise.resolve();
       } else {
-        throw new Error(response.message || "Mã xác nhận không đúng");
+        throw new Error(response.message || 'Mã xác nhận không đúng');
       }
     } catch (error) {
-      console.error("❌ Error verifying phone:", error);
+      console.error('❌ Error verifying phone:', error);
       throw error;
     } finally {
       setIsVerifying(false);
@@ -270,7 +270,7 @@ const SecurityContent = () => {
     try {
       setIsChangingPassword(true);
 
-      notify.info("Đang xử lý", "Đang đổi mật khẩu...", { duration: 2000 });
+      notify.info('Đang xử lý', 'Đang đổi mật khẩu...', { duration: 2000 });
 
       const response = await userService.changePassword(passwordData);
 
@@ -280,10 +280,10 @@ const SecurityContent = () => {
         // Cập nhật token nếu API trả về
         if (response.data?.token) {
           // Lưu token mới vào localStorage
-          localStorageUtil.set("token", response.data.token);
+          localStorageUtil.set('token', response.data.token);
 
           // Đảm bảo dữ liệu userProfile giữ đúng cấu trúc {success, message, data}
-          const currentProfile = localStorageUtil.get("userProfile") || {};
+          const currentProfile = localStorageUtil.get('userProfile') || {};
 
           // Nếu userProfile đã có cấu trúc data, cập nhật token nếu cần
           if (currentProfile.data) {
@@ -293,39 +293,39 @@ const SecurityContent = () => {
                 ...currentProfile,
                 token: response.data.token,
               };
-              localStorageUtil.set("userProfile", updatedProfile);
+              localStorageUtil.set('userProfile', updatedProfile);
             }
           } else if (currentProfile.token) {
             // Nếu là object trực tiếp và có token, chuyển đổi sang cấu trúc chuẩn
             const updatedProfile = {
               success: true,
-              message: "User data updated",
+              message: 'User data updated',
               data: {
                 ...currentProfile,
               },
               token: response.data.token,
             };
-            localStorageUtil.set("userProfile", updatedProfile);
+            localStorageUtil.set('userProfile', updatedProfile);
           }
         }
 
         notify.success(
-          "Đổi mật khẩu thành công!",
-          "Mật khẩu của bạn đã được thay đổi thành công.",
+          'Đổi mật khẩu thành công!',
+          'Mật khẩu của bạn đã được thay đổi thành công.',
           { duration: 4000 }
         );
       } else {
-        throw new Error(response.message || "Không thể đổi mật khẩu");
+        throw new Error(response.message || 'Không thể đổi mật khẩu');
       }
     } catch (error) {
-      console.error("❌ Error changing password:", error);
+      console.error('❌ Error changing password:', error);
 
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
-        "Có lỗi xảy ra khi đổi mật khẩu!";
+        'Có lỗi xảy ra khi đổi mật khẩu!';
 
-      notify.error("Lỗi đổi mật khẩu", errorMessage, { duration: 5000 });
+      notify.error('Lỗi đổi mật khẩu', errorMessage, { duration: 5000 });
     } finally {
       setIsChangingPassword(false);
     }
@@ -338,8 +338,8 @@ const SecurityContent = () => {
     setIsEmailModalOpen(false);
 
     if (isSuccess) {
-      console.log("✅ Email updated successfully, modal closed");
-      notify.success("Hoàn tất", "Thông tin email đã được cập nhật!", {
+      console.log('✅ Email updated successfully, modal closed');
+      notify.success('Hoàn tất', 'Thông tin email đã được cập nhật!', {
         duration: 3000,
       });
     }
@@ -348,9 +348,9 @@ const SecurityContent = () => {
   return (
     <Box
       sx={{
-        background: "linear-gradient(135deg, #e3f2fd 0%, #f5f7fa 100%)",
-        minHeight: "calc(100vh - 80px)",
-        width: "100%",
+        background: 'linear-gradient(135deg, #e3f2fd 0%, #f5f7fa 100%)',
+        minHeight: 'calc(100vh - 80px)',
+        width: '100%',
         py: 3,
       }}
     >
@@ -360,17 +360,17 @@ const SecurityContent = () => {
             variant="h4"
             fontWeight={800}
             sx={{
-              background: "linear-gradient(90deg, #4A90E2, #1ABC9C)",
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              color: "transparent",
+              background: 'linear-gradient(90deg, #4A90E2, #1ABC9C)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent',
               letterSpacing: 0.5,
-              display: "flex",
-              alignItems: "center",
+              display: 'flex',
+              alignItems: 'center',
               gap: 1,
             }}
           >
-            <SecurityIcon fontSize="large" sx={{ color: "#4A90E2" }} />
+            <SecurityIcon fontSize="large" sx={{ color: '#4A90E2' }} />
             Bảo mật tài khoản
           </Typography>
 
@@ -378,8 +378,8 @@ const SecurityContent = () => {
             severity="info"
             sx={{
               mt: 2,
-              backgroundColor: "rgba(74, 144, 226, 0.08)",
-              border: "1px solid rgba(74, 144, 226, 0.2)",
+              backgroundColor: 'rgba(74, 144, 226, 0.08)',
+              border: '1px solid rgba(74, 144, 226, 0.2)',
               borderRadius: 2,
             }}
           >
@@ -394,9 +394,9 @@ const SecurityContent = () => {
               sx={{
                 borderRadius: 4,
                 p: { xs: 2, md: 4 },
-                background: "rgba(255,255,255,0.98)",
-                boxShadow: "0 8px 32px 0 rgba(74, 144, 226, 0.13)",
-                height: "100%",
+                background: 'rgba(255,255,255,0.98)',
+                boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.13)',
+                height: '100%',
               }}
             >
               <Typography
@@ -404,13 +404,13 @@ const SecurityContent = () => {
                 fontWeight={700}
                 sx={{
                   mb: 3,
-                  display: "flex",
-                  alignItems: "center",
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 1,
-                  color: "#2D3748",
+                  color: '#2D3748',
                 }}
               >
-                <ShieldIcon sx={{ color: "#4A90E2" }} />
+                <ShieldIcon sx={{ color: '#4A90E2' }} />
                 Thông tin bảo mật
               </Typography>
 
@@ -419,7 +419,7 @@ const SecurityContent = () => {
                 divider={
                   <Divider
                     flexItem
-                    sx={{ borderColor: "rgba(74,144,226,0.10)" }}
+                    sx={{ borderColor: 'rgba(74,144,226,0.10)' }}
                   />
                 }
               >
@@ -433,18 +433,18 @@ const SecurityContent = () => {
                   <Box
                     sx={{
                       background:
-                        "linear-gradient(135deg, #4A90E2 60%, #1ABC9C 100%)",
+                        'linear-gradient(135deg, #4A90E2 60%, #1ABC9C 100%)',
                       borderRadius: 2,
                       p: 1.2,
-                      display: "flex",
-                      alignItems: "center",
-                      boxShadow: "0 2px 8px rgba(74,144,226,0.10)",
+                      display: 'flex',
+                      alignItems: 'center',
+                      boxShadow: '0 2px 8px rgba(74,144,226,0.10)',
                       minWidth: 48,
                       minHeight: 48,
-                      justifyContent: "center",
+                      justifyContent: 'center',
                     }}
                   >
-                    <EmailIcon sx={{ color: "#fff", fontSize: 28 }} />
+                    <EmailIcon sx={{ color: '#fff', fontSize: 28 }} />
                   </Box>
                   <Box sx={{ flex: 1 }}>
                     <Typography fontWeight={700} fontSize={16} color="#2D3748">
@@ -455,7 +455,7 @@ const SecurityContent = () => {
                       color="text.secondary"
                       sx={{ mb: 0.5, fontSize: 15 }}
                     >
-                      {user.email || "Chưa cập nhật"}
+                      {user.email || 'Chưa cập nhật'}
                     </Typography>
                   </Box>
                   <Button
@@ -464,15 +464,15 @@ const SecurityContent = () => {
                     sx={{
                       borderRadius: 2,
                       fontWeight: 600,
-                      color: "#4A90E2",
-                      borderColor: "#4A90E2",
+                      color: '#4A90E2',
+                      borderColor: '#4A90E2',
                       px: 2.5,
-                      textTransform: "none",
+                      textTransform: 'none',
                       fontSize: 15,
-                      "&:hover": {
-                        background: "rgba(74,144,226,0.08)",
-                        borderColor: "#1ABC9C",
-                        color: "#1ABC9C",
+                      '&:hover': {
+                        background: 'rgba(74,144,226,0.08)',
+                        borderColor: '#1ABC9C',
+                        color: '#1ABC9C',
                       },
                     }}
                   >
@@ -490,18 +490,18 @@ const SecurityContent = () => {
                   <Box
                     sx={{
                       background:
-                        "linear-gradient(135deg, #1ABC9C 60%, #4A90E2 100%)",
+                        'linear-gradient(135deg, #1ABC9C 60%, #4A90E2 100%)',
                       borderRadius: 2,
                       p: 1.2,
-                      display: "flex",
-                      alignItems: "center",
-                      boxShadow: "0 2px 8px rgba(26,188,156,0.10)",
+                      display: 'flex',
+                      alignItems: 'center',
+                      boxShadow: '0 2px 8px rgba(26,188,156,0.10)',
                       minWidth: 48,
                       minHeight: 48,
-                      justifyContent: "center",
+                      justifyContent: 'center',
                     }}
                   >
-                    <PhoneIcon sx={{ color: "#fff", fontSize: 28 }} />
+                    <PhoneIcon sx={{ color: '#fff', fontSize: 28 }} />
                   </Box>
                   <Box sx={{ flex: 1 }}>
                     <Typography fontWeight={700} fontSize={16} color="#2D3748">
@@ -512,7 +512,7 @@ const SecurityContent = () => {
                       color="text.secondary"
                       sx={{ mb: 0.5, fontSize: 15 }}
                     >
-                      {user.phone || "Chưa cập nhật"}
+                      {user.phone || 'Chưa cập nhật'}
                     </Typography>
                   </Box>
                   <Button
@@ -521,15 +521,15 @@ const SecurityContent = () => {
                     sx={{
                       borderRadius: 2,
                       fontWeight: 600,
-                      color: "#1ABC9C",
-                      borderColor: "#1ABC9C",
+                      color: '#1ABC9C',
+                      borderColor: '#1ABC9C',
                       px: 2.5,
-                      textTransform: "none",
+                      textTransform: 'none',
                       fontSize: 15,
-                      "&:hover": {
-                        background: "rgba(26,188,156,0.08)",
-                        borderColor: "#4A90E2",
-                        color: "#4A90E2",
+                      '&:hover': {
+                        background: 'rgba(26,188,156,0.08)',
+                        borderColor: '#4A90E2',
+                        color: '#4A90E2',
                       },
                     }}
                   >
@@ -547,18 +547,18 @@ const SecurityContent = () => {
                   <Box
                     sx={{
                       background:
-                        "linear-gradient(135deg, #8E44AD 60%, #3498DB 100%)",
+                        'linear-gradient(135deg, #8E44AD 60%, #3498DB 100%)',
                       borderRadius: 2,
                       p: 1.2,
-                      display: "flex",
-                      alignItems: "center",
-                      boxShadow: "0 2px 8px rgba(142,68,173,0.10)",
+                      display: 'flex',
+                      alignItems: 'center',
+                      boxShadow: '0 2px 8px rgba(142,68,173,0.10)',
                       minWidth: 48,
                       minHeight: 48,
-                      justifyContent: "center",
+                      justifyContent: 'center',
                     }}
                   >
-                    <LockIcon sx={{ color: "#fff", fontSize: 28 }} />
+                    <LockIcon sx={{ color: '#fff', fontSize: 28 }} />
                   </Box>
                   <Box sx={{ flex: 1 }}>
                     <Typography fontWeight={700} fontSize={16} color="#2D3748">
@@ -578,15 +578,15 @@ const SecurityContent = () => {
                     sx={{
                       borderRadius: 2,
                       fontWeight: 600,
-                      color: "#8E44AD",
-                      borderColor: "#8E44AD",
+                      color: '#8E44AD',
+                      borderColor: '#8E44AD',
                       px: 2.5,
-                      textTransform: "none",
+                      textTransform: 'none',
                       fontSize: 15,
-                      "&:hover": {
-                        background: "rgba(142,68,173,0.08)",
-                        borderColor: "#3498DB",
-                        color: "#3498DB",
+                      '&:hover': {
+                        background: 'rgba(142,68,173,0.08)',
+                        borderColor: '#3498DB',
+                        color: '#3498DB',
                       },
                     }}
                   >
@@ -604,9 +604,9 @@ const SecurityContent = () => {
               sx={{
                 borderRadius: 4,
                 p: { xs: 2, md: 4 },
-                background: "rgba(255,255,255,0.98)",
-                boxShadow: "0 8px 32px 0 rgba(74, 144, 226, 0.13)",
-                height: "100%",
+                background: 'rgba(255,255,255,0.98)',
+                boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.13)',
+                height: '100%',
               }}
             >
               <Typography
@@ -614,13 +614,13 @@ const SecurityContent = () => {
                 fontWeight={700}
                 sx={{
                   mb: 3,
-                  display: "flex",
-                  alignItems: "center",
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 1,
-                  color: "#2D3748",
+                  color: '#2D3748',
                 }}
               >
-                <VerifiedUserIcon sx={{ color: "#1ABC9C" }} />
+                <VerifiedUserIcon sx={{ color: '#1ABC9C' }} />
                 Bảo mật tài khoản
               </Typography>
 
@@ -629,15 +629,15 @@ const SecurityContent = () => {
                   severity="success"
                   sx={{
                     borderRadius: 2,
-                    backgroundColor: "rgba(26,188,156,0.08)",
-                    borderColor: "rgba(26,188,156,0.2)",
+                    backgroundColor: 'rgba(26,188,156,0.08)',
+                    borderColor: 'rgba(26,188,156,0.2)',
                   }}
                 >
                   <Typography fontWeight={600}>Tình trạng xác thực</Typography>
                   <Box
                     sx={{
-                      display: "flex",
-                      alignItems: "center",
+                      display: 'flex',
+                      alignItems: 'center',
                       gap: 1,
                       mt: 1,
                     }}
@@ -653,9 +653,9 @@ const SecurityContent = () => {
                   elevation={0}
                   sx={{
                     p: 2,
-                    backgroundColor: "rgba(74,144,226,0.05)",
+                    backgroundColor: 'rgba(74,144,226,0.05)',
                     borderRadius: 2,
-                    border: "1px dashed rgba(74,144,226,0.3)",
+                    border: '1px dashed rgba(74,144,226,0.3)',
                   }}
                 >
                   <Typography
@@ -663,8 +663,8 @@ const SecurityContent = () => {
                     color="#4A90E2"
                     sx={{
                       mb: 1,
-                      display: "flex",
-                      alignItems: "center",
+                      display: 'flex',
+                      alignItems: 'center',
                       gap: 1,
                     }}
                   >
@@ -690,12 +690,12 @@ const SecurityContent = () => {
                       mt: 2,
                       py: 1.2,
                       borderRadius: 2,
-                      textTransform: "none",
+                      textTransform: 'none',
                       fontWeight: 600,
-                      background: "linear-gradient(90deg, #4A90E2, #1ABC9C)",
-                      boxShadow: "0 4px 10px rgba(74,144,226,0.25)",
-                      "&:hover": {
-                        boxShadow: "0 6px 15px rgba(74,144,226,0.35)",
+                      background: 'linear-gradient(90deg, #4A90E2, #1ABC9C)',
+                      boxShadow: '0 4px 10px rgba(74,144,226,0.25)',
+                      '&:hover': {
+                        boxShadow: '0 6px 15px rgba(74,144,226,0.35)',
                       },
                     }}
                   >
@@ -716,9 +716,9 @@ const SecurityContent = () => {
         isSubmitting={isSubmitting}
         isSendingCode={isSendingCode}
         isVerifying={isVerifying}
-        currentEmail={user?.email || ""}
+        currentEmail={user?.email || ''}
       />
-      {/* Modal đổi số điện thoại */}{" "}
+      {/* Modal đổi số điện thoại */}{' '}
       <PhoneChangeDialog
         open={isPhoneDialogOpen}
         onClose={() => setIsPhoneDialogOpen(false)}

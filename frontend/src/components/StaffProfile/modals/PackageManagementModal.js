@@ -44,7 +44,9 @@ import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-// Removed unused visibility icons as we now only use edit functionality
+import VisibilityIcon from '@mui/icons-material/Visibility'; // Add visibility icon for viewing results
+// Import TestResults component
+import TestResults from '../../modals/TestResults';
 import {
   getSTIServiceById,
   getTestResultsByTestId,
@@ -66,6 +68,8 @@ const PackageManagementModal = ({
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
+  // Add state for showing test results modal
+  const [showTestResults, setShowTestResults] = useState(false);
   // Add state for validation of all results
   const [validation, setValidation] = useState({
     valid: false,
@@ -563,10 +567,7 @@ const PackageManagementModal = ({
   // Function to validate if all components have results and are ready to be saved
   const validateAllResults = () => {
     if (!components || components.length === 0) {
-      return {
-        valid: false,
-        message: 'Không có thành phần xét nghiệm nào để lưu',
-      };
+      return { valid: false, message: 'Không có thành phần xét nghiệm nào' };
     }
 
     const missingResults = components.filter(
@@ -576,13 +577,25 @@ const PackageManagementModal = ({
     if (missingResults.length > 0) {
       return {
         valid: false,
-        message: `Còn ${missingResults.length} thành phần xét nghiệm chưa có kết quả hoặc đơn vị đo`,
-        missingComponents: missingResults,
+        message: `Cần nhập đầy đủ thông tin cho ${missingResults.length} thành phần còn thiếu`,
       };
     }
 
     return { valid: true };
   };
+
+  // Function to handle viewing test results
+  const handleViewTestResults = () => {
+    if (test && test.testId) {
+      setShowTestResults(true);
+    }
+  };
+
+  // Function to close test results modal
+  const handleCloseTestResults = () => {
+    setShowTestResults(false);
+  };
+
   // Function to save all test results for the entire package at once
   const handleSaveAllResults = async () => {
     // First validate all results
@@ -646,11 +659,18 @@ const PackageManagementModal = ({
               'Error fetching test results after save:',
               resultError
             );
-          }
-
-          // Update to RESULTED status only (not COMPLETED)
+          } // Update to RESULTED status only (not COMPLETED)
           setSuccess('Tất cả kết quả xét nghiệm đã được lưu thành công');
           await handleSuccessfulUpdate('RESULTED');
+
+          // Ask user if they want to complete the test now
+          if (
+            window.confirm(
+              'Bạn có muốn hoàn thành xét nghiệm ngay bây giờ không?'
+            )
+          ) {
+            await handleCompleteTest();
+          }
         } catch (error) {
           console.error('Error updating status after saving results:', error);
           setError('Có lỗi khi cập nhật trạng thái sau khi lưu kết quả');
@@ -1040,15 +1060,22 @@ const PackageManagementModal = ({
         setTest((prev) => ({
           ...prev,
           status: 'COMPLETED',
-        }));
-
-        // Notify parent component of the update
+        })); // Notify parent component of the update
         if (onTestUpdated) {
           onTestUpdated({
             ...test,
             status: 'COMPLETED',
             testComponents: updatedComponents,
           });
+        }
+
+        // Ask if user wants to view results now
+        if (
+          window.confirm(
+            'Xét nghiệm đã hoàn thành. Bạn có muốn xem kết quả chi tiết không?'
+          )
+        ) {
+          setShowTestResults(true);
         }
       } else {
         throw new Error(response.message || 'Không thể hoàn thành xét nghiệm');
@@ -1079,15 +1106,22 @@ const PackageManagementModal = ({
         setTest((prev) => ({
           ...prev,
           status: 'COMPLETED',
-        }));
-
-        // Notify parent component of the update
+        })); // Notify parent component of the update
         if (onTestUpdated) {
           onTestUpdated({
             ...test,
             status: 'COMPLETED',
             testComponents: updatedComponents,
           });
+        }
+
+        // Ask if user wants to view results now
+        if (
+          window.confirm(
+            'Xét nghiệm đã hoàn thành. Bạn có muốn xem kết quả chi tiết không?'
+          )
+        ) {
+          setShowTestResults(true);
         }
       } else {
         setError(
@@ -2144,13 +2178,23 @@ const PackageManagementModal = ({
             </Box>{' '}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               {test && test.status === 'COMPLETED' ? (
-                <Chip
-                  icon={<CheckIcon />}
-                  label="Xét nghiệm đã hoàn thành"
-                  color="success"
-                  variant="outlined"
-                  sx={{ fontWeight: 'medium' }}
-                />
+                <>
+                  <Chip
+                    icon={<CheckIcon />}
+                    label="Xét nghiệm đã hoàn thành"
+                    color="success"
+                    variant="outlined"
+                    sx={{ fontWeight: 'medium' }}
+                  />
+                  <Button
+                    onClick={handleViewTestResults}
+                    color="primary"
+                    variant="contained"
+                    startIcon={<VisibilityIcon />}
+                  >
+                    Xem chi tiết kết quả
+                  </Button>
+                </>
               ) : test && test.status === 'RESULTED' ? (
                 <>
                   <Chip
@@ -2193,7 +2237,10 @@ const PackageManagementModal = ({
         </DialogActions>
       </Dialog>{' '}
       {/* No longer need modals for individual component or service editing 
-          since we now have inline editing in the package management modal */}
+          since we now have inline editing in the package management modal */}{' '}
+      {showTestResults && test && (
+        <TestResults testId={test?.testId} onClose={handleCloseTestResults} />
+      )}
     </>
   );
 };

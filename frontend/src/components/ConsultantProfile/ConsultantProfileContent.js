@@ -2,13 +2,15 @@
  * ConsultantProfileContent.js - Component để hiển thị và quản lý hồ sơ chuyên gia
  *
  * Features:
- * - Hiển thị thông tin hồ sơ chuyên gia
- * - Cập nhật thông tin cá nhân
- * - Cập nhật thông tin chuyên môn
- * - Quản lý chứng chỉ và bằng cấp
+ * - Hiển thị thông tin hồ sơ chuyên gia với format đẹp giống CustomerProfile
+ * - Inline editing mode với disabled fields cho readonly data
+ * - Tích hợp thông tin cá nhân và chuyên môn trong một trang duy nhất
+ * - Modal riêng cho thay đổi email, password, avatar
+ * - Form validation và error handling
+ * - Responsive design với modern UI
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -18,1068 +20,1217 @@ import {
   Button,
   TextField,
   Divider,
-  Chip,
   FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  IconButton,
   CircularProgress,
   Alert,
-  Tabs,
-  Tab,
+  Stack,
+  Chip,
   Card,
-  CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Person as PersonIcon,
   Edit as EditIcon,
-  School as SchoolIcon,
   Work as WorkIcon,
   Save as SaveIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-} from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-import AvatarUpload from "../common/AvatarUpload";
+  Email as EmailIcon,
+  Phone as PhoneIcon,
+  Cake as CakeIcon,
+  Wc as GenderIcon,
+  Home as AddressIcon,
+  School as QualificationsIcon,
+  BusinessCenter as ExperienceIcon,
+  Info as BioIcon,
+  Verified as VerifiedIcon,
+  Cancel as CancelIcon,
+  Refresh as RefreshIcon,
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+import AvatarUpload from '../common/AvatarUpload';
+import apiClient from '../../services/api';
 
-// Styled components
+// Styled components - giống ProfileContent
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  borderRadius: "16px",
-  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-  background: "rgba(255, 255, 255, 0.95)",
-  backdropFilter: "blur(20px)",
+  background: 'rgba(255, 255, 255, 0.95)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  border: '1px solid rgba(74, 144, 226, 0.15)',
+  color: '#2D3748',
+  boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.1)',
 }));
 
-const ProfileSection = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(3),
+const ProfileCard = styled(Card)(({ theme }) => ({
+  background: 'linear-gradient(145deg, #FFFFFF, #F5F7FA)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '24px',
+  border: '1px solid rgba(74, 144, 226, 0.12)',
+  color: '#2D3748',
+  boxShadow: '0 4px 15px 0 rgba(0, 0, 0, 0.05)',
+  overflow: 'visible',
 }));
 
-// TabPanel component for tab content
-function TabPanel(props) {
-  const { children, value, index, ...other } = props;
+const IconWrapper = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '40px',
+  height: '40px',
+  borderRadius: '12px',
+  background:
+    'linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))',
+  marginRight: '16px',
+  flexShrink: 0,
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  '& .MuiInputLabel-root': {
+    color: '#4A5568',
+    fontSize: '14px',
+    fontWeight: 500,
+  },
+  '& .MuiOutlinedInput-root': {
+    color: '#2D3748',
+    borderRadius: '12px',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    '& fieldset': {
+      borderColor: 'rgba(74, 144, 226, 0.2)',
+      transition: 'all 0.3s ease',
+    },
+    '&:hover fieldset': {
+      borderColor: 'rgba(26, 188, 156, 0.4)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#1ABC9C',
+      borderWidth: 2,
+    },
+    '&.Mui-disabled': {
+      backgroundColor: 'rgba(240, 240, 240, 0.6)',
+      color: '#718096',
+      '& fieldset': {
+        borderColor: 'rgba(200, 200, 200, 0.3)',
+      },
+    },
+  },
+  '& .MuiInputBase-input': {
+    color: '#2D3748',
+    fontWeight: 600,
+    '&.Mui-disabled': {
+      color: '#718096',
+      WebkitTextFillColor: '#718096',
+    },
+  },
+}));
+
+// FieldInfoBox component - Support action button for special fields
+const FieldInfoBox = ({
+  icon,
+  label,
+  name,
+  value,
+  onChange,
+  isEditing,
+  disabled = false,
+  type = 'text',
+  multiline = false,
+  rows = 1,
+  options = null,
+  backgroundColor,
+  iconColor,
+  actionButton = null,
+}) => {
+  const isEmailField = type === 'email';
+
   return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`profile-tabpanel-${index}`}
-      aria-labelledby={`profile-tab-${index}`}
-      {...other}
+    <Paper
+      elevation={0}
+      sx={{
+        p: 3,
+        borderRadius: '16px',
+        background:
+          backgroundColor ||
+          'linear-gradient(45deg, rgba(74, 144, 226, 0.05), rgba(26, 188, 156, 0.05))',
+        border: `1px solid rgba(74, 144, 226, 0.1)`,
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          background:
+            'linear-gradient(45deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.08))',
+          transform: !isEditing ? 'translateY(-2px)' : 'none',
+          boxShadow: '0 8px 24px rgba(74, 144, 226, 0.08)',
+        },
+      }}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
+      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+        <IconWrapper
+          sx={{
+            background:
+              'linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))',
+          }}
+        >
+          {React.cloneElement(icon, {
+            sx: { color: iconColor || '#4A90E2', fontSize: 20 },
+          })}
+        </IconWrapper>
+        <Typography
+          variant="body2"
+          sx={{
+            color: '#4A5568',
+            fontWeight: 600,
+            flex: 1,
+          }}
+        >
+          {label}
+          {isEmailField && ' (Sử dụng nút riêng để thay đổi)'}
+        </Typography>
+      </Stack>
+
+      {isEditing && !isEmailField ? (
+        options ? (
+          <FormControl fullWidth disabled={disabled}>
+            <StyledTextField
+              select
+              name={name}
+              value={value || ''}
+              onChange={onChange}
+              disabled={disabled}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: disabled
+                    ? 'rgba(240, 240, 240, 0.6)'
+                    : 'transparent',
+                  '& fieldset': { border: 'none' },
+                },
+                '& .MuiInputBase-input': {
+                  padding: '12px 16px',
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  color: disabled ? '#718096' : '#2D3748',
+                },
+              }}
+              SelectProps={{
+                native: true,
+              }}
+            >
+              <option value="">Chọn {label.toLowerCase()}</option>
+              {options.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </StyledTextField>
+          </FormControl>
+        ) : (
+          <StyledTextField
+            fullWidth
+            name={name}
+            type={type}
+            value={value || ''}
+            onChange={onChange}
+            disabled={disabled}
+            multiline={multiline}
+            rows={rows}
+            variant="outlined"
+            placeholder={`Nhập ${label.toLowerCase()}`}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'transparent',
+                '& fieldset': { border: 'none' },
+              },
+              '& .MuiInputBase-input': {
+                padding: multiline ? '12px 16px' : '12px 16px',
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                color: '#2D3748',
+              },
+            }}
+          />
+        )
+      ) : (
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Typography
+            variant="h6"
+            sx={{
+              color: '#2D3748',
+              fontWeight: 700,
+              wordBreak: type === 'email' ? 'break-all' : 'break-word',
+              minHeight: '1.5rem',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(255, 255, 255, 0.5)',
+              flex: 1,
+            }}
+          >
+            {value || 'Chưa cập nhật'}
+          </Typography>
+
+          {isEmailField && value && (
+            <Chip
+              icon={<VerifiedIcon />}
+              label="Đã xác thực"
+              size="small"
+              sx={{
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                color: '#059669',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                '& .MuiChip-icon': {
+                  color: '#059669',
+                },
+              }}
+            />
+          )}
+
+          {actionButton}
+        </Stack>
+      )}
+    </Paper>
   );
-}
+};
+
+// TabPanel component for tab content - Không cần thiết nữa
+// function TabPanel(props) {
+//   const { children, value, index, ...other } = props;
+//   return (
+//     <div
+//       role="tabpanel"
+//       hidden={value !== index}
+//       id={`profile-tabpanel-${index}`}
+//       aria-labelledby={`profile-tab-${index}`}
+//       {...other}
+//     >
+//       {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+//     </div>
+//   );
+// }
 
 const ConsultantProfileContent = () => {
-  // State for tab management
-  const [tabValue, setTabValue] = useState(0);
+  // ====================================================================
+  // STATE MANAGEMENT
+  // ====================================================================
+  // Edit mode
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Messages
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState("");
-  const [educationDialogOpen, setEducationDialogOpen] = useState(false);
-  const [experienceDialogOpen, setExperienceDialogOpen] = useState(false);
-  const [certificationDialogOpen, setCertificationDialogOpen] = useState(false);
+  const [error, setError] = useState('');
+  // Modal states
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
 
-  // Mock data - sẽ được thay thế bằng API calls
-  const [profileData, setProfileData] = useState({
-    personalInfo: {
-      fullName: "Nguyễn Văn A",
-      email: "nguyenvana@example.com",
-      phone: "0987654321",
-      dob: "1985-06-15",
-      gender: "male",
-      address: "123 Đường Lê Lợi, Quận 1, TP.HCM",
-      avatar: "/images/avatars/doctor1.jpg",
-    },
-    professionalInfo: {
-      specialization: "Sức khỏe sinh sản",
-      yearsOfExperience: 8,
-      bio: "Chuyên gia trong lĩnh vực sức khỏe sinh sản với hơn 8 năm kinh nghiệm. Chuyên về tư vấn và điều trị các bệnh lây truyền qua đường tình dục (STI), sức khỏe sinh sản nam và nữ.",
-      consultationFee: 500000,
-      languages: ["Tiếng Việt", "Tiếng Anh"],
-    },
-    education: [
-      {
-        id: 1,
-        degree: "Tiến sĩ Y học",
-        institution: "Đại học Y Hà Nội",
-        year: "2015",
-        description: "Chuyên ngành Sức khỏe sinh sản",
-      },
-      {
-        id: 2,
-        degree: "Thạc sĩ Y học",
-        institution: "Đại học Y Dược TP.HCM",
-        year: "2010",
-        description: "Chuyên ngành Y học cộng đồng",
-      },
-    ],
-    experience: [
-      {
-        id: 1,
-        title: "Bác sĩ tư vấn",
-        organization: "Bệnh viện Đa khoa Quốc tế",
-        from: "2018",
-        to: "Hiện tại",
-        description:
-          "Tư vấn và điều trị các bệnh liên quan đến sức khỏe sinh sản",
-      },
-      {
-        id: 2,
-        title: "Bác sĩ chuyên khoa",
-        organization: "Trung tâm Y tế Phương Đông",
-        from: "2014",
-        to: "2018",
-        description: "Khám và điều trị các bệnh lây truyền qua đường tình dục",
-      },
-    ],
-    certifications: [
-      {
-        id: 1,
-        name: "Chứng chỉ Sức khỏe Sinh sản Quốc tế",
-        issuedBy: "Tổ chức Y tế Thế giới (WHO)",
-        year: "2016",
-      },
-      {
-        id: 2,
-        name: "Chứng nhận Tư vấn STI chuyên sâu",
-        issuedBy: "Hiệp hội Sức khỏe Sinh sản Châu Á",
-        year: "2017",
-      },
-    ],
+  // Data from API
+  const [userProfile, setUserProfile] = useState(null);
+
+  // Form data để edit - merged từ personal và professional info
+  const [formData, setFormData] = useState({
+    // Personal info
+    fullName: '',
+    email: '',
+    phone: '',
+    dob: '',
+    gender: '',
+    address: '',
+    avatar: '',
+    // Professional info
+    qualifications: '',
+    experience: '',
+    bio: '',
   });
+  // Original data để reset khi cancel
+  const [originalData, setOriginalData] = useState({});
+  // ====================================================================
+  // EFFECTS
+  // ====================================================================
 
-  // New education, experience, certification state
-  const [newEducation, setNewEducation] = useState({
-    degree: "",
-    institution: "",
-    year: "",
-    description: "",
-  });
+  /**
+   * Fetch user data từ API khi component mount
+   */
+  useEffect(() => {
+    loadProfileData();
+  }, []);
 
-  const [newExperience, setNewExperience] = useState({
-    title: "",
-    organization: "",
-    from: "",
-    to: "",
-    description: "",
-  });
+  // ====================================================================
+  // API FUNCTIONS
+  // ====================================================================
 
-  const [newCertification, setNewCertification] = useState({
-    name: "",
-    issuedBy: "",
-    year: "",
-  });
+  /**
+   * Function to load user profile and consultant profile
+   */
+  const loadProfileData = async () => {
+    setIsProfileLoading(true);
+    setError('');
 
-  // Handle tab change
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
+    try {
+      // Load user profile (personal info)
+      const userResponse = await apiClient.get('/users/profile');
+      if (userResponse.data.success) {
+        const userData = userResponse.data.data;
+        console.log('User data from API:', userData); // Debug log
+        setUserProfile(userData);
+
+        // Prepare form data with personal info
+        const personalInfo = {
+          fullName: userData.fullName || '',
+          email: userData.email || '',
+          phone: userData.phoneNumber || userData.phone || '', // Try both phoneNumber and phone
+          dob: userData.dob || '',
+          gender: userData.gender || '',
+          address: userData.address || '',
+          avatar: userData.avatar || '',
+        };
+
+        console.log('Personal info prepared:', personalInfo); // Debug log
+
+        // Load consultant profile (professional info) if user is consultant
+        let professionalInfo = {
+          qualifications: '',
+          experience: '',
+          bio: '',
+        };
+
+        if (userData.role === 'CONSULTANT') {
+          try {
+            const consultantResponse = await apiClient.get(
+              `/consultants/${userData.id}`
+            );
+            if (consultantResponse.data.success) {
+              professionalInfo = {
+                qualifications:
+                  consultantResponse.data.data.qualifications || '',
+                experience: consultantResponse.data.data.experience || '',
+                bio: consultantResponse.data.data.bio || '',
+              };
+            }
+          } catch (consultantError) {
+            console.warn('No consultant profile found, using default values');
+          }
+        } // Merge all data into formData
+        const mergedData = {
+          ...personalInfo,
+          ...professionalInfo,
+        };
+
+        console.log('Final merged data:', mergedData); // Debug log
+        setFormData(mergedData);
+        setOriginalData(mergedData);
+      }
+    } catch (error) {
+      console.error('Error loading profile data:', error);
+      setError('Không thể tải thông tin hồ sơ. Vui lòng thử lại sau.');
+    } finally {
+      setIsProfileLoading(false);
+    }
   };
 
-  // Toggle edit mode
+  /**
+   * Refresh data - reload từ API
+   */
+  const handleRefreshData = async () => {
+    setIsRefreshing(true);
+    await loadProfileData();
+    setIsRefreshing(false);
+  }; // ====================================================================
+  // UTILITY FUNCTIONS
+  // ====================================================================
+
+  /**
+   * Handle form input change
+   */
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  /**
+   * Handle toggle edit mode
+   */
   const handleToggleEdit = () => {
+    if (isEditing) {
+      // Cancel edit - reset to original data
+      setFormData(originalData);
+    }
     setIsEditing(!isEditing);
   };
 
-  // Handle save profile changes
+  /**
+   * Handle save profile changes
+   */
   const handleSaveProfile = async () => {
     setIsLoading(true);
-    setError("");
+    setError('');
 
     try {
-      // Mock API call - sẽ được thay thế bằng API thực
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Update personal info using UserController APIs
+      const personalInfoPayload = {
+        fullName: formData.fullName,
+        phone: formData.phone,
+        dob: formData.dob,
+        gender: formData.gender,
+        address: formData.address,
+      };
 
-      // Sau khi lưu thành công
-      setIsEditing(false);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      const personalResponse = await apiClient.put(
+        '/users/profile/basic',
+        personalInfoPayload
+      );
 
-      // API call sẽ được uncomment khi backend sẵn sàng
-      /*
-      await consultantService.updatePersonalInfo(profileData.id, profileData.personalInfo);
-      await consultantService.updateProfessionalInfo(profileData.id, profileData.professionalInfo);
-      */
+      if (personalResponse.data.success) {
+        // Update professional info using ConsultantController APIs
+        if (userProfile && userProfile.role === 'CONSULTANT') {
+          const professionalInfoPayload = {
+            qualifications: formData.qualifications,
+            experience: formData.experience,
+            bio: formData.bio,
+          };
+
+          await apiClient.put(
+            `/consultants/profile/${userProfile.id}`,
+            professionalInfoPayload
+          );
+        }
+
+        // Reload data to get updated info
+        await loadProfileData();
+
+        setIsEditing(false);
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      }
     } catch (err) {
-      console.error("Error saving profile:", err);
-      setError("Có lỗi xảy ra khi cập nhật hồ sơ. Vui lòng thử lại sau.");
+      console.error('Error saving profile:', err);
+      setError(
+        err.message || 'Có lỗi xảy ra khi cập nhật hồ sơ. Vui lòng thử lại sau.'
+      );
     } finally {
       setIsLoading(false);
     }
+  }; // ====================================================================
+  // AVATAR HANDLER FUNCTIONS
+  // ====================================================================
+
+  /**
+   * Handle avatar change click
+   */
+  const handleAvatarChangeClick = () => {
+    setIsAvatarModalOpen(true);
   };
 
-  // Handle update form fields
-  const handlePersonalInfoChange = (field, value) => {
-    setProfileData({
-      ...profileData,
-      personalInfo: {
-        ...profileData.personalInfo,
-        [field]: value,
-      },
-    });
+  /**
+   * Handle close avatar modal
+   */
+  const handleCloseAvatarModal = () => {
+    setIsAvatarModalOpen(false);
+    setAvatarError('');
   };
 
-  const handleProfessionalInfoChange = (field, value) => {
-    setProfileData({
-      ...profileData,
-      professionalInfo: {
-        ...profileData.professionalInfo,
-        [field]: value,
-      },
-    });
+  /**
+   * Handle avatar upload success
+   */
+  const handleAvatarUploadSuccess = (avatarPath) => {
+    setFormData((prev) => ({ ...prev, avatar: avatarPath }));
+    setIsAvatarModalOpen(false);
+    setAvatarError('');
+    // Reload data để sync với server
+    loadProfileData();
+    setSuccess(true);
+    setTimeout(() => setSuccess(false), 3000);
   };
 
-  // Education handlers
-  const handleOpenEducationDialog = () => {
-    setNewEducation({
-      degree: "",
-      institution: "",
-      year: "",
-      description: "",
-    });
-    setEducationDialogOpen(true);
+  /**
+   * Handle avatar upload error
+   */
+  const handleAvatarUploadError = (errorMessage) => {
+    setAvatarError(errorMessage);
   };
 
-  const handleCloseEducationDialog = () => {
-    setEducationDialogOpen(false);
-  };
-
-  const handleAddEducation = () => {
-    const newId =
-      Math.max(...profileData.education.map((item) => item.id), 0) + 1;
-    const updatedEducation = [
-      ...profileData.education,
-      { id: newId, ...newEducation },
-    ];
-
-    setProfileData({
-      ...profileData,
-      education: updatedEducation,
-    });
-
-    // Đóng dialog
-    handleCloseEducationDialog();
-
-    // API call sẽ được uncomment khi backend sẵn sàng
-    /*
-    try {
-      await consultantService.addEducation(profileData.id, newEducation);
-    } catch (err) {
-      console.error("Error adding education:", err);
-    }
-    */
-  };
-
-  const handleDeleteEducation = (id) => {
-    const updatedEducation = profileData.education.filter(
-      (item) => item.id !== id
+  // ====================================================================
+  // RENDER FUNCTIONS
+  // ====================================================================
+  // Show loading screen while fetching profile data
+  if (isProfileLoading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
+        <CircularProgress size={60} />
+        <Typography variant="h6" sx={{ ml: 2 }}>
+          Đang tải thông tin hồ sơ...
+        </Typography>
+      </Box>
     );
+  }
 
-    setProfileData({
-      ...profileData,
-      education: updatedEducation,
-    });
-
-    // API call sẽ được uncomment khi backend sẵn sàng
-    /*
-    try {
-      await consultantService.deleteEducation(profileData.id, id);
-    } catch (err) {
-      console.error("Error deleting education:", err);
-    }
-    */
-  };
-
-  // Experience handlers
-  const handleOpenExperienceDialog = () => {
-    setNewExperience({
-      title: "",
-      organization: "",
-      from: "",
-      to: "",
-      description: "",
-    });
-    setExperienceDialogOpen(true);
-  };
-
-  const handleCloseExperienceDialog = () => {
-    setExperienceDialogOpen(false);
-  };
-
-  const handleAddExperience = () => {
-    const newId =
-      Math.max(...profileData.experience.map((item) => item.id), 0) + 1;
-    const updatedExperience = [
-      ...profileData.experience,
-      { id: newId, ...newExperience },
-    ];
-
-    setProfileData({
-      ...profileData,
-      experience: updatedExperience,
-    });
-
-    // Đóng dialog
-    handleCloseExperienceDialog();
-
-    // API call sẽ được uncomment khi backend sẵn sàng
-    /*
-    try {
-      await consultantService.addExperience(profileData.id, newExperience);
-    } catch (err) {
-      console.error("Error adding experience:", err);
-    }
-    */
-  };
-
-  const handleDeleteExperience = (id) => {
-    const updatedExperience = profileData.experience.filter(
-      (item) => item.id !== id
-    );
-
-    setProfileData({
-      ...profileData,
-      experience: updatedExperience,
-    });
-
-    // API call sẽ được uncomment khi backend sẵn sàng
-    /*
-    try {
-      await consultantService.deleteExperience(profileData.id, id);
-    } catch (err) {
-      console.error("Error deleting experience:", err);
-    }
-    */
-  };
-
-  // Certification handlers
-  const handleOpenCertificationDialog = () => {
-    setNewCertification({
-      name: "",
-      issuedBy: "",
-      year: "",
-    });
-    setCertificationDialogOpen(true);
-  };
-
-  const handleCloseCertificationDialog = () => {
-    setCertificationDialogOpen(false);
-  };
-
-  const handleAddCertification = () => {
-    const newId =
-      Math.max(...profileData.certifications.map((item) => item.id), 0) + 1;
-    const updatedCertifications = [
-      ...profileData.certifications,
-      { id: newId, ...newCertification },
-    ];
-
-    setProfileData({
-      ...profileData,
-      certifications: updatedCertifications,
-    });
-
-    // Đóng dialog
-    handleCloseCertificationDialog();
-
-    // API call sẽ được uncomment khi backend sẵn sàng
-    /*
-    try {
-      await consultantService.addCertification(profileData.id, newCertification);
-    } catch (err) {
-      console.error("Error adding certification:", err);
-    }
-    */
-  };
-
-  const handleDeleteCertification = (id) => {
-    const updatedCertifications = profileData.certifications.filter(
-      (item) => item.id !== id
-    );
-
-    setProfileData({
-      ...profileData,
-      certifications: updatedCertifications,
-    });
-
-    // API call sẽ được uncomment khi backend sẵn sàng
-    /*
-    try {
-      await consultantService.deleteCertification(profileData.id, id);
-    } catch (err) {
-      console.error("Error deleting certification:", err);
-    }
-    */
-  };
-
+  // Gender options for select
+  const genderOptions = [
+    { value: 'male', label: 'Nam' },
+    { value: 'female', label: 'Nữ' },
+    { value: 'other', label: 'Khác' },
+  ];
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" fontWeight="bold" gutterBottom color="primary">
-        Hồ sơ chuyên gia
-      </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Quản lý thông tin cá nhân và chuyên môn của bạn
-      </Typography>
-
+    <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
+      {' '}
+      {/* Enhanced Header */}
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
+          mb: 4,
+          p: 3,
+          borderRadius: '20px',
+          background:
+            'linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(26, 188, 156, 0.1) 100%)',
+          border: '1px solid rgba(74, 144, 226, 0.15)',
+          backdropFilter: 'blur(10px)',
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background:
+              'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 50%, #4A90E2 100%)',
+            backgroundSize: '200% 100%',
+            animation: 'gradient 3s ease infinite',
+          },
+          '@keyframes gradient': {
+            '0%, 100%': {
+              backgroundPosition: '0% 50%',
+            },
+            '50%': {
+              backgroundPosition: '100% 50%',
+            },
+          },
         }}
       >
-        <Tabs
-          value={tabValue}
-          onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          aria-label="profile tabs"
+        <Box
           sx={{
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontWeight: "medium",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: { xs: 3, md: 0 },
+          }}
+        >
+          <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+            <Typography
+              variant="h3"
+              sx={{
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 800,
+                mb: 1,
+                fontSize: { xs: '2rem', md: '2.5rem' },
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Hồ sơ chuyên gia
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                color: '#4A5568',
+                fontWeight: 500,
+                opacity: 0.8,
+                fontSize: { xs: '1rem', md: '1.1rem' },
+              }}
+            >
+              Quản lý và cập nhật thông tin cá nhân của bạn
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Chip
+              icon={<WorkIcon />}
+              label="Đã xác thực"
+              sx={{
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                color: '#059669',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                fontWeight: 600,
+                '& .MuiChip-icon': {
+                  color: '#059669',
+                },
+              }}
+            />
+            <Button
+              variant="outlined"
+              startIcon={
+                isRefreshing ? <CircularProgress size={16} /> : <RefreshIcon />
+              }
+              onClick={handleRefreshData}
+              disabled={isRefreshing}
+              sx={{
+                borderRadius: '12px',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3,
+                py: 1,
+                borderColor: 'rgba(74, 144, 226, 0.3)',
+                color: '#4A90E2',
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                backdropFilter: 'blur(10px)',
+                '&:hover': {
+                  borderColor: '#1ABC9C',
+                  color: '#1ABC9C',
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 12px rgba(74, 144, 226, 0.2)',
+                },
+                transition: 'all 0.3s ease',
+              }}
+            >
+              {isRefreshing ? 'Đang tải...' : 'Làm mới'}{' '}
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+      {/* Success/Error Messages */}
+      {success && (
+        <Alert
+          severity="success"
+          sx={{
+            mb: 3,
+            borderRadius: '12px',
+            '& .MuiAlert-icon': {
+              color: '#059669',
             },
           }}
         >
-          <Tab
-            label="Thông tin cá nhân"
-            icon={<PersonIcon />}
-            iconPosition="start"
-          />
-          <Tab label="Chuyên môn" icon={<WorkIcon />} iconPosition="start" />
-          <Tab label="Học vấn" icon={<SchoolIcon />} iconPosition="start" />
-          <Tab label="Kinh nghiệm" icon={<WorkIcon />} iconPosition="start" />
-          <Tab label="Chứng chỉ" icon={<SchoolIcon />} iconPosition="start" />
-        </Tabs>
-
-        {tabValue === 0 || tabValue === 1 ? (
-          <Button
-            variant={isEditing ? "contained" : "outlined"}
-            color={isEditing ? "primary" : "secondary"}
-            startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
-            onClick={isEditing ? handleSaveProfile : handleToggleEdit}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <CircularProgress size={20} sx={{ mr: 1 }} />
-                Đang xử lý...
-              </>
-            ) : isEditing ? (
-              "Lưu thay đổi"
-            ) : (
-              "Chỉnh sửa"
-            )}
-          </Button>
-        ) : null}
-      </Box>
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
           Cập nhật hồ sơ thành công!
         </Alert>
       )}
-
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert
+          severity="error"
+          sx={{
+            mb: 3,
+            borderRadius: '12px',
+          }}
+        >
           {error}
         </Alert>
-      )}
+      )}{' '}
+      {/* Profile Header Card - Cải thiện layout */}
+      <ProfileCard sx={{ mb: 4, overflow: 'visible' }}>
+        <Box sx={{ p: 4 }}>
+          <Grid container spacing={4} alignItems="center">
+            {/* Avatar Section */}
+            <Grid item xs={12} md={4} lg={3}>
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                sx={{
+                  textAlign: 'center',
+                  position: 'relative',
+                }}
+              >
+                <Box
+                  sx={{
+                    position: 'relative',
+                    mb: 3,
+                  }}
+                >
+                  <Avatar
+                    src={formData.avatar}
+                    sx={{
+                      width: { xs: 100, md: 140 },
+                      height: { xs: 100, md: 140 },
+                      border: '4px solid rgba(74, 144, 226, 0.15)',
+                      boxShadow: '0 8px 24px rgba(74, 144, 226, 0.15)',
+                    }}
+                  />
+                  {/* Status indicator */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      bottom: 8,
+                      right: 8,
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      backgroundColor: '#10B981',
+                      border: '3px solid white',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    }}
+                  />
+                </Box>
 
-      {/* Tab thông tin cá nhân */}
-      <TabPanel value={tabValue} index={0}>
-        <StyledPaper elevation={3}>
-          <Grid container spacing={3}>
-            <Grid
-              item
-              xs={12}
-              md={4}
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <Box sx={{ position: "relative", mb: 2 }}>
-                <AvatarUpload
-                  currentAvatar={profileData.personalInfo.avatar || ""}
-                  size={180}
-                  disabled={!isEditing}
-                  onChange={(url) => handlePersonalInfoChange("avatar", url)}
-                />
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleAvatarChangeClick}
+                  sx={{
+                    borderRadius: '20px',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    borderColor: 'rgba(74, 144, 226, 0.3)',
+                    color: '#4A90E2',
+                    px: 3,
+                    '&:hover': {
+                      borderColor: '#1ABC9C',
+                      color: '#1ABC9C',
+                      backgroundColor: 'rgba(26, 188, 156, 0.05)',
+                    },
+                  }}
+                >
+                  Đổi ảnh đại diện
+                </Button>
               </Box>
-              <Typography variant="h6" fontWeight="medium">
-                {profileData.personalInfo.fullName}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {profileData.professionalInfo.specialization}
-              </Typography>
-              <Chip
-                label={`${profileData.professionalInfo.yearsOfExperience} năm kinh nghiệm`}
-                color="primary"
-                size="small"
-                sx={{ mt: 1 }}
-              />
             </Grid>
 
-            <Grid item xs={12} md={8}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Họ và tên"
-                    value={profileData.personalInfo.fullName}
-                    onChange={(e) =>
-                      handlePersonalInfoChange("fullName", e.target.value)
-                    }
-                    disabled={!isEditing}
-                    variant={isEditing ? "outlined" : "filled"}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    value={profileData.personalInfo.email}
-                    onChange={(e) =>
-                      handlePersonalInfoChange("email", e.target.value)
-                    }
-                    disabled={!isEditing}
-                    variant={isEditing ? "outlined" : "filled"}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Số điện thoại"
-                    value={profileData.personalInfo.phone}
-                    onChange={(e) =>
-                      handlePersonalInfoChange("phone", e.target.value)
-                    }
-                    disabled={!isEditing}
-                    variant={isEditing ? "outlined" : "filled"}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    type="date"
-                    label="Ngày sinh"
-                    value={profileData.personalInfo.dob}
-                    onChange={(e) =>
-                      handlePersonalInfoChange("dob", e.target.value)
-                    }
-                    disabled={!isEditing}
-                    variant={isEditing ? "outlined" : "filled"}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <FormControl
-                    fullWidth
-                    variant={isEditing ? "outlined" : "filled"}
-                    disabled={!isEditing}
+            {/* Basic Info Display - Expanded */}
+            <Grid item xs={12} md={8} lg={6}>
+              <Box sx={{ pl: { md: 2 } }}>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 700,
+                    color: '#2D3748',
+                    mb: 1,
+                    fontSize: { xs: '1.75rem', md: '2rem' },
+                  }}
+                >
+                  {formData.fullName || 'Chưa cập nhật'}
+                </Typography>
+
+                <Box
+                  sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      color: '#4A5568',
+                      fontWeight: 500,
+                      fontSize: '1.1rem',
+                    }}
                   >
-                    <InputLabel>Giới tính</InputLabel>
-                    <Select
-                      value={profileData.personalInfo.gender}
-                      onChange={(e) =>
-                        handlePersonalInfoChange("gender", e.target.value)
-                      }
-                      label="Giới tính"
-                    >
-                      <MenuItem value="male">Nam</MenuItem>
-                      <MenuItem value="female">Nữ</MenuItem>
-                      <MenuItem value="other">Khác</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Địa chỉ"
-                    value={profileData.personalInfo.address}
-                    onChange={(e) =>
-                      handlePersonalInfoChange("address", e.target.value)
-                    }
-                    disabled={!isEditing}
-                    variant={isEditing ? "outlined" : "filled"}
-                    multiline
-                    rows={2}
+                    Chuyên gia tư vấn
+                  </Typography>
+                  <Chip
+                    icon={<VerifiedIcon />}
+                    label="Đã xác thực"
+                    size="small"
+                    sx={{
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                      color: '#059669',
+                      border: '1px solid rgba(16, 185, 129, 0.2)',
+                      fontWeight: 600,
+                      '& .MuiChip-icon': {
+                        color: '#059669',
+                      },
+                    }}
                   />
+                </Box>
+
+                {/* Info Cards - Better layout */}
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid item xs={12} sm={6}>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        borderRadius: '12px',
+                        background: 'rgba(74, 144, 226, 0.08)',
+                        border: '1px solid rgba(74, 144, 226, 0.15)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          background: 'rgba(74, 144, 226, 0.12)',
+                          transform: 'translateY(-2px)',
+                        },
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={1}
+                        sx={{ mb: 1 }}
+                      >
+                        <CakeIcon sx={{ fontSize: 16, color: '#4A90E2' }} />
+                        <Typography
+                          variant="body2"
+                          sx={{ color: '#4A5568', fontWeight: 600 }}
+                        >
+                          Ngày sinh
+                        </Typography>
+                      </Stack>
+                      <Typography
+                        variant="body1"
+                        sx={{ fontWeight: 600, color: '#2D3748' }}
+                      >
+                        {formData.dob || 'Chưa cập nhật'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        borderRadius: '12px',
+                        background: 'rgba(159, 122, 234, 0.08)',
+                        border: '1px solid rgba(159, 122, 234, 0.15)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          background: 'rgba(159, 122, 234, 0.12)',
+                          transform: 'translateY(-2px)',
+                        },
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={1}
+                        sx={{ mb: 1 }}
+                      >
+                        <GenderIcon sx={{ fontSize: 16, color: '#9F7AEA' }} />
+                        <Typography
+                          variant="body2"
+                          sx={{ color: '#4A5568', fontWeight: 600 }}
+                        >
+                          Giới tính
+                        </Typography>
+                      </Stack>
+                      <Typography
+                        variant="body1"
+                        sx={{ fontWeight: 600, color: '#2D3748' }}
+                      >
+                        {formData.gender === 'male'
+                          ? 'Nam'
+                          : formData.gender === 'female'
+                            ? 'Nữ'
+                            : formData.gender || 'Chưa cập nhật'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        borderRadius: '12px',
+                        background: 'rgba(56, 161, 105, 0.08)',
+                        border: '1px solid rgba(56, 161, 105, 0.15)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          background: 'rgba(56, 161, 105, 0.12)',
+                          transform: 'translateY(-2px)',
+                        },
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={1}
+                        sx={{ mb: 1 }}
+                      >
+                        <EmailIcon sx={{ fontSize: 16, color: '#38A169' }} />
+                        <Typography
+                          variant="body2"
+                          sx={{ color: '#4A5568', fontWeight: 600 }}
+                        >
+                          Email liên hệ
+                        </Typography>
+                      </Stack>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: 600,
+                          color: '#2D3748',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {formData.email || 'Chưa cập nhật'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
                 </Grid>
-              </Grid>
+              </Box>
+            </Grid>
+
+            {/* Action Buttons - Better positioned */}
+            <Grid item xs={12} lg={3}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'row', lg: 'column' },
+                  gap: 2,
+                  justifyContent: { xs: 'center', lg: 'flex-start' },
+                  alignItems: { xs: 'center', lg: 'stretch' },
+                }}
+              >
+                {!isEditing ? (
+                  <Button
+                    variant="contained"
+                    startIcon={<EditIcon />}
+                    onClick={handleToggleEdit}
+                    fullWidth
+                    sx={{
+                      background:
+                        'linear-gradient(45deg, #4A90E2 30%, #1ABC9C 90%)',
+                      borderRadius: '12px',
+                      textTransform: 'none',
+                      fontWeight: '600',
+                      px: 3,
+                      py: 1.5,
+                      boxShadow: '0 4px 15px rgba(74, 144, 226, 0.3)',
+                      '&:hover': {
+                        background:
+                          'linear-gradient(45deg, #357ABD 30%, #16A085 90%)',
+                        boxShadow: '0 6px 20px rgba(74, 144, 226, 0.4)',
+                        transform: 'translateY(-2px)',
+                      },
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    Chỉnh sửa hồ sơ
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="contained"
+                      startIcon={<SaveIcon />}
+                      onClick={handleSaveProfile}
+                      disabled={isLoading}
+                      fullWidth
+                      sx={{
+                        background:
+                          'linear-gradient(45deg, #48BB78 30%, #38A169 90%)',
+                        borderRadius: '12px',
+                        textTransform: 'none',
+                        fontWeight: '600',
+                        px: 3,
+                        py: 1.5,
+                        boxShadow: '0 4px 15px rgba(72, 187, 120, 0.3)',
+                        '&:hover': {
+                          background:
+                            'linear-gradient(45deg, #38A169 30%, #2F855A 90%)',
+                          boxShadow: '0 6px 20px rgba(72, 187, 120, 0.4)',
+                          transform: 'translateY(-2px)',
+                        },
+                        '&:disabled': {
+                          background: 'rgba(160, 174, 192, 0.6)',
+                          boxShadow: 'none',
+                        },
+                        transition: 'all 0.3s ease',
+                      }}
+                    >
+                      {isLoading ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : (
+                        'Lưu thay đổi'
+                      )}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<CancelIcon />}
+                      onClick={handleToggleEdit}
+                      disabled={isLoading}
+                      fullWidth
+                      sx={{
+                        borderRadius: '12px',
+                        textTransform: 'none',
+                        fontWeight: '600',
+                        px: 3,
+                        py: 1.5,
+                        borderColor: 'rgba(160, 174, 192, 0.5)',
+                        color: '#4A5568',
+                        '&:hover': {
+                          borderColor: '#A0AEC0',
+                          backgroundColor: 'rgba(160, 174, 192, 0.05)',
+                          transform: 'translateY(-2px)',
+                        },
+                        transition: 'all 0.3s ease',
+                      }}
+                    >
+                      Hủy
+                    </Button>
+                  </>
+                )}
+              </Box>
             </Grid>
           </Grid>
-        </StyledPaper>
-      </TabPanel>
+        </Box>
+      </ProfileCard>
+      {/* Main Content - Thông tin chi tiết */}
+      <StyledPaper sx={{ p: 4 }}>
+        {/* Thông tin cá nhân Section */}
+        <Box sx={{ mb: 6 }}>
+          <Typography
+            variant="h5"
+            sx={{
+              mb: 3,
+              color: '#2D3748',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <IconWrapper sx={{ mr: 2 }}>
+              <PersonIcon sx={{ color: '#4A90E2', fontSize: 24 }} />
+            </IconWrapper>
+            Thông tin cá nhân
+          </Typography>
 
-      {/* Tab thông tin chuyên môn */}
-      <TabPanel value={tabValue} index={1}>
-        <StyledPaper elevation={3}>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Chuyên môn"
-                value={profileData.professionalInfo.specialization}
-                onChange={(e) =>
-                  handleProfessionalInfoChange("specialization", e.target.value)
-                }
-                disabled={!isEditing}
-                variant={isEditing ? "outlined" : "filled"}
-                margin="normal"
+            <Grid item xs={12}>
+              <FieldInfoBox
+                icon={<PersonIcon />}
+                label="Họ và tên"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleFormChange}
+                isEditing={isEditing}
+                iconColor="#4A90E2"
+              />
+            </Grid>{' '}
+            <Grid item xs={12}>
+              <FieldInfoBox
+                icon={<EmailIcon />}
+                label="Email"
+                name="email"
+                value={formData.email}
+                type="email"
+                isEditing={isEditing}
+                disabled={true}
+                iconColor="#E53E3E"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Kinh nghiệm (năm)"
-                type="number"
-                value={profileData.professionalInfo.yearsOfExperience}
-                onChange={(e) =>
-                  handleProfessionalInfoChange(
-                    "yearsOfExperience",
-                    e.target.value
-                  )
-                }
-                disabled={!isEditing}
-                variant={isEditing ? "outlined" : "filled"}
-                margin="normal"
+              <FieldInfoBox
+                icon={<PhoneIcon />}
+                label="Số điện thoại"
+                name="phone"
+                value={formData.phone}
+                onChange={handleFormChange}
+                isEditing={isEditing}
+                iconColor="#38A169"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Phí tư vấn (VNĐ)"
-                type="number"
-                value={profileData.professionalInfo.consultationFee}
-                onChange={(e) =>
-                  handleProfessionalInfoChange(
-                    "consultationFee",
-                    e.target.value
-                  )
-                }
-                disabled={!isEditing}
-                variant={isEditing ? "outlined" : "filled"}
-                margin="normal"
+              <FieldInfoBox
+                icon={<CakeIcon />}
+                label="Ngày sinh"
+                name="dob"
+                value={formData.dob}
+                onChange={handleFormChange}
+                isEditing={isEditing}
+                type="date"
+                iconColor="#D69E2E"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <FormControl
-                fullWidth
-                variant={isEditing ? "outlined" : "filled"}
-                disabled={!isEditing}
-                margin="normal"
-              >
-                <InputLabel>Ngôn ngữ</InputLabel>
-                <Select
-                  multiple
-                  value={profileData.professionalInfo.languages}
-                  onChange={(e) =>
-                    handleProfessionalInfoChange("languages", e.target.value)
-                  }
-                  label="Ngôn ngữ"
-                  renderValue={(selected) => (
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                      {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </Box>
-                  )}
-                >
-                  <MenuItem value="Tiếng Việt">Tiếng Việt</MenuItem>
-                  <MenuItem value="Tiếng Anh">Tiếng Anh</MenuItem>
-                  <MenuItem value="Tiếng Pháp">Tiếng Pháp</MenuItem>
-                  <MenuItem value="Tiếng Trung">Tiếng Trung</MenuItem>
-                  <MenuItem value="Tiếng Hàn">Tiếng Hàn</MenuItem>
-                  <MenuItem value="Tiếng Nhật">Tiếng Nhật</MenuItem>
-                </Select>
-              </FormControl>
+              <FieldInfoBox
+                icon={<GenderIcon />}
+                label="Giới tính"
+                name="gender"
+                value={formData.gender}
+                onChange={handleFormChange}
+                isEditing={isEditing}
+                options={genderOptions}
+                iconColor="#9F7AEA"
+              />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Giới thiệu chuyên môn"
-                value={profileData.professionalInfo.bio}
-                onChange={(e) =>
-                  handleProfessionalInfoChange("bio", e.target.value)
-                }
-                disabled={!isEditing}
-                variant={isEditing ? "outlined" : "filled"}
-                margin="normal"
-                multiline
-                rows={4}
+              <FieldInfoBox
+                icon={<AddressIcon />}
+                label="Địa chỉ hiện tại"
+                name="address"
+                value={formData.address}
+                onChange={handleFormChange}
+                isEditing={isEditing}
+                multiline={true}
+                rows={2}
+                iconColor="#F56565"
               />
             </Grid>
           </Grid>
-        </StyledPaper>
-      </TabPanel>
-
-      {/* Tab học vấn */}
-      <TabPanel value={tabValue} index={2}>
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenEducationDialog}
-          >
-            Thêm học vấn
-          </Button>
         </Box>
 
-        <Grid container spacing={3}>
-          {profileData.education.map((edu) => (
-            <Grid item xs={12} md={6} key={edu.id}>
-              <Card variant="outlined" sx={{ position: "relative" }}>
-                <IconButton
-                  size="small"
-                  sx={{ position: "absolute", top: 8, right: 8 }}
-                  onClick={() => handleDeleteEducation(edu.id)}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-                <CardContent>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <SchoolIcon color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">{edu.degree}</Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Trường/Viện:</strong> {edu.institution}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Năm tốt nghiệp:</strong> {edu.year}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 1 }}
-                  >
-                    <strong>Mô tả:</strong> {edu.description}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+        <Divider sx={{ my: 4 }} />
 
-        {/* Dialog thêm học vấn */}
-        <Dialog
-          open={educationDialogOpen}
-          onClose={handleCloseEducationDialog}
-          fullWidth
-          maxWidth="sm"
-        >
-          <DialogTitle>Thêm học vấn mới</DialogTitle>
-          <DialogContent>
-            <TextField
-              fullWidth
-              label="Bằng cấp/Học vị"
-              value={newEducation.degree}
-              onChange={(e) =>
-                setNewEducation({ ...newEducation, degree: e.target.value })
-              }
-              margin="normal"
-            />
-            <TextField
-              fullWidth
-              label="Trường/Viện"
-              value={newEducation.institution}
-              onChange={(e) =>
-                setNewEducation({
-                  ...newEducation,
-                  institution: e.target.value,
-                })
-              }
-              margin="normal"
-            />
-            <TextField
-              fullWidth
-              label="Năm tốt nghiệp"
-              value={newEducation.year}
-              onChange={(e) =>
-                setNewEducation({ ...newEducation, year: e.target.value })
-              }
-              margin="normal"
-            />
-            <TextField
-              fullWidth
-              label="Mô tả"
-              value={newEducation.description}
-              onChange={(e) =>
-                setNewEducation({
-                  ...newEducation,
-                  description: e.target.value,
-                })
-              }
-              margin="normal"
-              multiline
-              rows={2}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseEducationDialog}>Hủy</Button>
-            <Button
-              onClick={handleAddEducation}
-              color="primary"
-              variant="contained"
-              disabled={
-                !newEducation.degree ||
-                !newEducation.institution ||
-                !newEducation.year
-              }
-            >
-              Thêm
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </TabPanel>
-
-      {/* Tab kinh nghiệm */}
-      <TabPanel value={tabValue} index={3}>
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenExperienceDialog}
+        {/* Thông tin chuyên môn Section */}
+        <Box>
+          <Typography
+            variant="h5"
+            sx={{
+              mb: 3,
+              color: '#2D3748',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+            }}
           >
-            Thêm kinh nghiệm
-          </Button>
+            <IconWrapper sx={{ mr: 2 }}>
+              <WorkIcon sx={{ color: '#1ABC9C', fontSize: 24 }} />
+            </IconWrapper>
+            Thông tin chuyên môn
+          </Typography>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <FieldInfoBox
+                icon={<QualificationsIcon />}
+                label="Trình độ chuyên môn"
+                name="qualifications"
+                value={formData.qualifications}
+                onChange={handleFormChange}
+                isEditing={isEditing}
+                multiline={true}
+                rows={3}
+                iconColor="#805AD5"
+                backgroundColor="linear-gradient(45deg, rgba(128, 90, 213, 0.05), rgba(159, 122, 234, 0.05))"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FieldInfoBox
+                icon={<ExperienceIcon />}
+                label="Kinh nghiệm làm việc"
+                name="experience"
+                value={formData.experience}
+                onChange={handleFormChange}
+                isEditing={isEditing}
+                multiline={true}
+                rows={3}
+                iconColor="#3182CE"
+                backgroundColor="linear-gradient(45deg, rgba(49, 130, 206, 0.05), rgba(66, 153, 225, 0.05))"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FieldInfoBox
+                icon={<BioIcon />}
+                label="Giới thiệu bản thân"
+                name="bio"
+                value={formData.bio}
+                onChange={handleFormChange}
+                isEditing={isEditing}
+                multiline={true}
+                rows={4}
+                iconColor="#38A169"
+                backgroundColor="linear-gradient(45deg, rgba(56, 161, 105, 0.05), rgba(72, 187, 120, 0.05))"
+              />
+            </Grid>
+          </Grid>{' '}
         </Box>
-
-        <Grid container spacing={3}>
-          {profileData.experience.map((exp) => (
-            <Grid item xs={12} key={exp.id}>
-              <Card variant="outlined" sx={{ position: "relative" }}>
-                <IconButton
-                  size="small"
-                  sx={{ position: "absolute", top: 8, right: 8 }}
-                  onClick={() => handleDeleteExperience(exp.id)}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-                <CardContent>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <WorkIcon color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">{exp.title}</Typography>
-                  </Box>
-                  <Typography variant="body1">
-                    <strong>{exp.organization}</strong>
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Thời gian:</strong> {exp.from} - {exp.to}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 1 }}
-                  >
-                    <strong>Mô tả:</strong> {exp.description}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Dialog thêm kinh nghiệm */}
-        <Dialog
-          open={experienceDialogOpen}
-          onClose={handleCloseExperienceDialog}
-          fullWidth
-          maxWidth="sm"
-        >
-          <DialogTitle>Thêm kinh nghiệm mới</DialogTitle>
-          <DialogContent>
-            <TextField
-              fullWidth
-              label="Chức vụ"
-              value={newExperience.title}
-              onChange={(e) =>
-                setNewExperience({ ...newExperience, title: e.target.value })
-              }
-              margin="normal"
-            />
-            <TextField
-              fullWidth
-              label="Tổ chức"
-              value={newExperience.organization}
-              onChange={(e) =>
-                setNewExperience({
-                  ...newExperience,
-                  organization: e.target.value,
-                })
-              }
-              margin="normal"
-            />
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Từ năm"
-                  value={newExperience.from}
-                  onChange={(e) =>
-                    setNewExperience({ ...newExperience, from: e.target.value })
-                  }
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Đến năm"
-                  value={newExperience.to}
-                  onChange={(e) =>
-                    setNewExperience({ ...newExperience, to: e.target.value })
-                  }
-                  margin="normal"
-                />
-              </Grid>
-            </Grid>
-            <TextField
-              fullWidth
-              label="Mô tả công việc"
-              value={newExperience.description}
-              onChange={(e) =>
-                setNewExperience({
-                  ...newExperience,
-                  description: e.target.value,
-                })
-              }
-              margin="normal"
-              multiline
-              rows={3}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseExperienceDialog}>Hủy</Button>
-            <Button
-              onClick={handleAddExperience}
-              color="primary"
-              variant="contained"
-              disabled={
-                !newExperience.title ||
-                !newExperience.organization ||
-                !newExperience.from
-              }
-            >
-              Thêm
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </TabPanel>
-
-      {/* Tab chứng chỉ */}
-      <TabPanel value={tabValue} index={4}>
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenCertificationDialog}
-          >
-            Thêm chứng chỉ
-          </Button>
-        </Box>
-
-        <Grid container spacing={3}>
-          {profileData.certifications.map((cert) => (
-            <Grid item xs={12} md={6} key={cert.id}>
-              <Card variant="outlined" sx={{ position: "relative" }}>
-                <IconButton
-                  size="small"
-                  sx={{ position: "absolute", top: 8, right: 8 }}
-                  onClick={() => handleDeleteCertification(cert.id)}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-                <CardContent>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <SchoolIcon color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">{cert.name}</Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Đơn vị cấp:</strong> {cert.issuedBy}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Năm cấp:</strong> {cert.year}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Dialog thêm chứng chỉ */}
-        <Dialog
-          open={certificationDialogOpen}
-          onClose={handleCloseCertificationDialog}
-          fullWidth
-          maxWidth="sm"
-        >
-          <DialogTitle>Thêm chứng chỉ mới</DialogTitle>
-          <DialogContent>
-            <TextField
-              fullWidth
-              label="Tên chứng chỉ"
-              value={newCertification.name}
-              onChange={(e) =>
-                setNewCertification({
-                  ...newCertification,
-                  name: e.target.value,
-                })
-              }
-              margin="normal"
-            />
-            <TextField
-              fullWidth
-              label="Đơn vị cấp"
-              value={newCertification.issuedBy}
-              onChange={(e) =>
-                setNewCertification({
-                  ...newCertification,
-                  issuedBy: e.target.value,
-                })
-              }
-              margin="normal"
-            />
-            <TextField
-              fullWidth
-              label="Năm cấp"
-              value={newCertification.year}
-              onChange={(e) =>
-                setNewCertification({
-                  ...newCertification,
-                  year: e.target.value,
-                })
-              }
-              margin="normal"
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseCertificationDialog}>Hủy</Button>
-            <Button
-              onClick={handleAddCertification}
-              color="primary"
-              variant="contained"
-              disabled={
-                !newCertification.name ||
-                !newCertification.issuedBy ||
-                !newCertification.year
-              }
-            >
-              Thêm
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </TabPanel>
+      </StyledPaper>
+      {/* Avatar Upload Modal */}
+      {isAvatarModalOpen && (
+        <AvatarUpload
+          open={isAvatarModalOpen}
+          onClose={handleCloseAvatarModal}
+          onAvatarChange={handleAvatarUploadSuccess}
+          onError={handleAvatarUploadError}
+          currentAvatar={formData.avatar}
+          error={avatarError}
+        />
+      )}
     </Box>
   );
 };

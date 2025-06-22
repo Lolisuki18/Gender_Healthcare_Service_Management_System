@@ -30,6 +30,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   InputLabel,
   Select,
   MenuItem,
@@ -40,6 +41,7 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
+  FormHelperText,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
@@ -72,6 +74,18 @@ const STIServiceManagementContent = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [deleteConfirmDialog, setDeleteConfirmDialog] = useState(false);
   const [deleteServiceId, setDeleteServiceId] = useState(null);
+  // Component edit dialog state
+  const [editComponentDialog, setEditComponentDialog] = useState(false);
+  const [editingComponent, setEditingComponent] = useState({
+    testName: '',
+    unit: '',
+    referenceRange: '',
+    interpretation: '',
+    isActive: true,
+    componentId: null,
+  });
+  const [editingComponentIndex, setEditingComponentIndex] = useState(-1);
+
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -206,7 +220,6 @@ const STIServiceManagementContent = () => {
       [field]: value,
     }));
   };
-
   // Handle component status change
   const handleComponentStatusChange = (index, isActive) => {
     setFormData((prev) => {
@@ -220,6 +233,78 @@ const STIServiceManagementContent = () => {
         components: updatedComponents,
       };
     });
+  };
+  // Open edit component dialog
+  const handleOpenEditComponentDialog = (component, index) => {
+    setEditingComponent({
+      ...component,
+      componentId: component.componentId || null, // Ensure we maintain the componentId
+      component_id: component.component_id || component.componentId || null, // Ensure backward compatibility with both naming styles
+    });
+    setEditingComponentIndex(index);
+    setEditComponentDialog(true);
+  };
+  // Close edit component dialog
+  const handleCloseEditComponentDialog = () => {
+    setEditComponentDialog(false);
+    setEditingComponent({
+      testName: '',
+      unit: '',
+      referenceRange: '',
+      interpretation: '',
+      isActive: true,
+      componentId: null,
+    });
+    setEditingComponentIndex(-1);
+  };
+  // Save edited component
+  const handleSaveEditedComponent = () => {
+    if (
+      !editingComponent.testName ||
+      !editingComponent.unit ||
+      !editingComponent.referenceRange
+    ) {
+      setSnackbar({
+        open: true,
+        message: 'Please fill all required component fields',
+        severity: 'warning',
+      });
+      return;
+    }
+
+    setFormData((prev) => {
+      const updatedComponents = [...prev.components];
+      // Make sure we preserve both component_id and componentId for consistency
+      updatedComponents[editingComponentIndex] = {
+        ...editingComponent,
+        // Ensure both naming styles are preserved for consistent backend API calls
+        componentId:
+          editingComponent.componentId || editingComponent.component_id || null,
+        component_id:
+          editingComponent.component_id || editingComponent.componentId || null,
+      };
+      return {
+        ...prev,
+        components: updatedComponents,
+      };
+    });
+
+    // Show success message
+    setSnackbar({
+      open: true,
+      message: 'Component updated successfully',
+      severity: 'success',
+    });
+
+    handleCloseEditComponentDialog();
+  };
+
+  // Handle edit component input changes
+  const handleEditComponentChange = (field, value) => {
+    setEditingComponent((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
   // Add component to the list
@@ -966,14 +1051,13 @@ const STIServiceManagementContent = () => {
                           <TableCell>{component.referenceRange}</TableCell>
                           <TableCell>
                             {component.interpretation || 'N/A'}
-                          </TableCell>
+                          </TableCell>{' '}
                           <TableCell align="center">
                             <Stack
                               direction="row"
                               spacing={1}
                               justifyContent="center"
                             >
-                              {' '}
                               <Box display="flex" alignItems="center">
                                 <Typography variant="caption" sx={{ mr: 0.5 }}>
                                   {component.isActive !== false
@@ -992,6 +1076,19 @@ const STIServiceManagementContent = () => {
                                   color="success"
                                 />
                               </Box>
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() =>
+                                  handleOpenEditComponentDialog(
+                                    component,
+                                    index
+                                  )
+                                }
+                                sx={{ color: '#4A90E2' }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
                               <IconButton
                                 size="small"
                                 color="error"
@@ -1358,6 +1455,180 @@ const STIServiceManagementContent = () => {
             </DialogActions>
           </>
         )}
+      </Dialog>{' '}
+      {/* Edit Component Dialog */}
+      <Dialog
+        open={editComponentDialog}
+        onClose={handleCloseEditComponentDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+          },
+        }}
+      >
+        {' '}
+        <DialogTitle
+          sx={{
+            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+            color: 'white',
+            fontWeight: 600,
+            fontSize: '1.25rem',
+            px: 3,
+            py: 2,
+          }}
+        >
+          Edit Component: {editingComponent?.testName || 'Test Component'}
+        </DialogTitle>
+        <DialogContent dividers sx={{ px: 3, py: 3 }}>
+          {editingComponent && (
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 2 }}
+                >
+                  Edit the component details below. Fields marked with an
+                  asterisk (*) are required.
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                {' '}
+                <TextField
+                  fullWidth
+                  label="Test Name *"
+                  required
+                  value={editingComponent.testName}
+                  onChange={(e) =>
+                    handleEditComponentChange('testName', e.target.value)
+                  }
+                  error={!editingComponent.testName}
+                  helperText={
+                    !editingComponent.testName ? 'Test name is required' : ''
+                  }
+                  sx={{
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                {' '}
+                <TextField
+                  fullWidth
+                  label="Unit *"
+                  required
+                  value={editingComponent.unit}
+                  onChange={(e) =>
+                    handleEditComponentChange('unit', e.target.value)
+                  }
+                  error={!editingComponent.unit}
+                  helperText={!editingComponent.unit ? 'Unit is required' : ''}
+                  sx={{
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                {' '}
+                <TextField
+                  fullWidth
+                  label="Reference Range *"
+                  required
+                  value={editingComponent.referenceRange}
+                  onChange={(e) =>
+                    handleEditComponentChange('referenceRange', e.target.value)
+                  }
+                  error={!editingComponent.referenceRange}
+                  helperText={
+                    !editingComponent.referenceRange
+                      ? 'Reference range is required'
+                      : ''
+                  }
+                  sx={{
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Interpretation"
+                  multiline
+                  rows={3}
+                  value={editingComponent.interpretation || ''}
+                  onChange={(e) =>
+                    handleEditComponentChange('interpretation', e.target.value)
+                  }
+                  sx={{
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={editingComponent.isActive !== false}
+                      onChange={(e) =>
+                        handleEditComponentChange('isActive', e.target.checked)
+                      }
+                      color="success"
+                    />
+                  }
+                  label={`Status: ${editingComponent.isActive !== false ? 'Active' : 'Inactive'}`}
+                />
+              </Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button
+            onClick={handleCloseEditComponentDialog}
+            sx={{
+              color: '#4A90E2',
+              fontWeight: 600,
+              '&:hover': {
+                backgroundColor: 'rgba(74, 144, 226, 0.08)',
+              },
+            }}
+          >
+            Cancel
+          </Button>{' '}
+          <Button
+            variant="contained"
+            onClick={handleSaveEditedComponent}
+            sx={{
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+              color: '#fff',
+              fontWeight: 600,
+              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+              px: 3,
+              py: 1,
+              borderRadius: '8px',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #3A80D2, #0AAC8C)',
+                boxShadow: '0 4px 12px rgba(74, 144, 226, 0.4)',
+              },
+            }}
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
       </Dialog>
       {/* Delete Confirmation Dialog */}{' '}
       <Dialog

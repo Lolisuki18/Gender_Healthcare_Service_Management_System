@@ -1,7 +1,7 @@
 /**
  * ViewUserModal.js - Modal xem thông tin chi tiết người dùng
  */
-import React, { useEffect } from "react";
+import React, { useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -21,7 +21,7 @@ import {
   Divider,
   useTheme,
   alpha,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Close as CloseIcon,
   Email as EmailIcon,
@@ -36,51 +36,51 @@ import {
   Schedule as ScheduleIcon,
   Business as BusinessIcon,
   Description as DescriptionIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 // Import dateUtils for consistent date formatting
-import { formatDateDisplay } from "../../../utils/dateUtils.js";
+import { formatDateDisplay } from '../../utils/dateUtils.js';
 
 const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
   const theme = useTheme();
 
   // Medical theme colors
   const medicalColors = {
-    primary: "#4A90E2",
-    secondary: "#1ABC9C",
-    gradient: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+    primary: '#4A90E2',
+    secondary: '#1ABC9C',
+    gradient: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
     lightGradient:
-      "linear-gradient(135deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.08))",
+      'linear-gradient(135deg, rgba(74, 144, 226, 0.08), rgba(26, 188, 156, 0.08))',
     cardGradient:
-      "linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85))",
-    white: "#ffffff",
+      'linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85))',
+    white: '#ffffff',
     text: {
-      primary: "#1a202c",
-      secondary: "#4a5568",
-      muted: "#718096",
+      primary: '#1a202c',
+      secondary: '#4a5568',
+      muted: '#718096',
     },
   };
 
   useEffect(() => {
     if (user) {
-      console.log("📱 ViewUserModal received user:", user);
-      console.log("📅 Created Date:", user.createdDate);
-      console.log("📅 Updated At:", user.updatedAt);
-      console.log("👤 User role:", user.role);
+      console.log('📱 ViewUserModal received user:', user);
+      console.log('📅 Created Date:', user.createdDate);
+      console.log('📅 Updated At:', user.updatedAt);
+      console.log('👤 User role:', user.role);
 
       // Debug đặc biệt cho CONSULTANT
-      if (user.role === "CONSULTANT") {
-        console.log("🔍 CONSULTANT DEBUG:");
-        console.log("🔍 All keys:", Object.keys(user));
-        console.log("🔍 User object:", JSON.stringify(user, null, 2));
+      if (user.role === 'CONSULTANT') {
+        console.log('🔍 CONSULTANT DEBUG:');
+        console.log('🔍 All keys:', Object.keys(user));
+        console.log('🔍 User object:', JSON.stringify(user, null, 2));
 
         // Tìm tất cả field có chứa date
         const dateFields = Object.keys(user).filter(
           (key) =>
-            key.toLowerCase().includes("date") ||
-            key.toLowerCase().includes("created") ||
-            key.toLowerCase().includes("update")
+            key.toLowerCase().includes('date') ||
+            key.toLowerCase().includes('created') ||
+            key.toLowerCase().includes('update')
         );
-        console.log("🔍 Date fields found:", dateFields);
+        console.log('🔍 Date fields found:', dateFields);
         dateFields.forEach((field) => {
           console.log(`🔍 ${field}:`, user[field]);
         });
@@ -93,64 +93,64 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
   // Helper functions
   const getRoleDisplayName = (role) => {
     const roleMap = {
-      ADMIN: "Quản trị viên",
-      STAFF: "Nhân viên",
-      CUSTOMER: "Khách hàng",
-      CONSULTANT: "Tư vấn viên",
+      ADMIN: 'Quản trị viên',
+      STAFF: 'Nhân viên',
+      CUSTOMER: 'Khách hàng',
+      CONSULTANT: 'Tư vấn viên',
     };
     return roleMap[role] || role;
   };
 
   const getGenderDisplayName = (gender) => {
     const genderMap = {
-      MALE: "Nam",
-      FEMALE: "Nữ",
-      OTHER: "Khác",
+      MALE: 'Nam',
+      FEMALE: 'Nữ',
+      OTHER: 'Khác',
     };
-    return genderMap[gender] || "Chưa cập nhật";
+    return genderMap[gender] || 'Chưa cập nhật';
   };
 
   const getStatusDisplayName = (isActive) =>
-    isActive ? "Hoạt động" : "Tạm khóa";
+    isActive ? 'Hoạt động' : 'Tạm khóa';
 
   const getRoleColor = (role) => {
     const colorMap = {
-      ADMIN: "error",
-      CONSULTANT: "warning",
-      STAFF: "info",
-      CUSTOMER: "primary",
+      ADMIN: 'error',
+      CONSULTANT: 'warning',
+      STAFF: 'info',
+      CUSTOMER: 'primary',
     };
-    return colorMap[role] || "default";
+    return colorMap[role] || 'default';
   };
 
-  const getStatusColor = (isActive) => (isActive ? "success" : "error");
+  const getStatusColor = (isActive) => (isActive ? 'success' : 'error');
   // Helper functions for date formatting using dateUtils
   const formatDate = (dateInput) => {
-    if (!dateInput) return "Chưa cập nhật";
+    if (!dateInput) return 'Chưa cập nhật';
     try {
       let date;
       if (Array.isArray(dateInput)) {
         const [year, month, day, hour = 0, minute = 0] = dateInput;
         date = new Date(year, month - 1, day, hour, minute);
         // For array input with time, show time as well
-        return date.toLocaleDateString("vi-VN", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
+        return date.toLocaleDateString('vi-VN', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
         });
       } else {
         // Use dateUtils for consistent formatting
         return formatDateDisplay(dateInput);
       }
     } catch (error) {
-      return "Chưa cập nhật";
+      return 'Chưa cập nhật';
     }
   };
 
   const formatBirthDate = (birthDay) => {
-    if (!birthDay) return "Chưa cập nhật";
+    if (!birthDay) return 'Chưa cập nhật';
     // Use dateUtils for consistent formatting
     return formatDateDisplay(birthDay);
   };
@@ -159,37 +159,37 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
   const InfoItem = ({ icon, label, value, gradient = false }) => (
     <Box
       sx={{
-        display: "flex",
-        alignItems: "center",
+        display: 'flex',
+        alignItems: 'center',
         mb: 2.5,
         p: 2.5,
         borderRadius: 2,
-        background: gradient ? medicalColors.lightGradient : "transparent",
+        background: gradient ? medicalColors.lightGradient : 'transparent',
         border: gradient
           ? `1px solid ${alpha(medicalColors.primary, 0.1)}`
-          : "none",
-        transition: "all 0.2s ease",
-        "&:hover": gradient && {
+          : 'none',
+        transition: 'all 0.2s ease',
+        '&:hover': gradient && {
           background: `linear-gradient(135deg, ${alpha(
             medicalColors.primary,
             0.12
           )}, ${alpha(medicalColors.secondary, 0.12)})`,
-          transform: "translateY(-1px)",
+          transform: 'translateY(-1px)',
         },
       }}
     >
       <Box
         sx={{
           mr: 3,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           width: 48,
           height: 48,
           background: medicalColors.gradient,
-          borderRadius: "12px",
+          borderRadius: '12px',
           color: medicalColors.white,
-          boxShadow: "0 4px 12px rgba(74, 144, 226, 0.25)",
+          boxShadow: '0 4px 12px rgba(74, 144, 226, 0.25)',
         }}
       >
         {icon}
@@ -201,9 +201,9 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
             color: medicalColors.text.secondary,
             fontWeight: 600,
             mb: 0.5,
-            fontSize: "0.875rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
+            fontSize: '0.875rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
           }}
         >
           {label}
@@ -213,11 +213,11 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
           sx={{
             color: medicalColors.text.primary,
             fontWeight: 500,
-            fontSize: "1rem",
+            fontSize: '1rem',
             lineHeight: 1.5,
           }}
         >
-          {value || "Chưa cập nhật"}
+          {value || 'Chưa cập nhật'}
         </Typography>
       </Box>
     </Box>
@@ -225,12 +225,12 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
 
   // TODO: Thay đổi function này để sử dụng created_date khi backend cung cấp
   const getJoinDate = (user) => {
-    if (user.role === "CONSULTANT") {
-      console.log("🔍 getJoinDate for CONSULTANT:");
-      console.log("  createdDate:", user.createdDate);
-      console.log("  created_date:", user.created_date);
-      console.log("  updatedAt:", user.updatedAt);
-      console.log("  updated_at:", user.updated_at);
+    if (user.role === 'CONSULTANT') {
+      console.log('🔍 getJoinDate for CONSULTANT:');
+      console.log('  createdDate:', user.createdDate);
+      console.log('  created_date:', user.created_date);
+      console.log('  updatedAt:', user.updatedAt);
+      console.log('  updated_at:', user.updated_at);
     }
 
     // Ưu tiên createdDate, fallback về updatedAt nếu không có
@@ -242,8 +242,8 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
       user.createdAt ||
       user.dateCreated;
 
-    if (user.role === "CONSULTANT") {
-      console.log("🔍 getJoinDate result for CONSULTANT:", result);
+    if (user.role === 'CONSULTANT') {
+      console.log('🔍 getJoinDate result for CONSULTANT:', result);
     }
 
     return result;
@@ -259,11 +259,11 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
         sx: {
           borderRadius: 3,
           background: medicalColors.cardGradient,
-          backdropFilter: "blur(20px)",
+          backdropFilter: 'blur(20px)',
           border: `1px solid ${alpha(medicalColors.primary, 0.15)}`,
-          boxShadow: "0 25px 50px rgba(0, 0, 0, 0.15)",
-          maxHeight: "92vh",
-          overflow: "hidden",
+          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
+          maxHeight: '92vh',
+          overflow: 'hidden',
         },
       }}
     >
@@ -273,14 +273,14 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
           background: medicalColors.gradient,
           color: medicalColors.white,
           p: 0,
-          position: "relative",
-          overflow: "hidden",
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
         <Box
           sx={{
             p: 4,
-            position: "relative",
+            position: 'relative',
             zIndex: 2,
           }}
         >
@@ -302,11 +302,11 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
               sx={{
                 color: medicalColors.white,
                 background: alpha(medicalColors.white, 0.15),
-                "&:hover": {
+                '&:hover': {
                   background: alpha(medicalColors.white, 0.25),
-                  transform: "scale(1.1)",
+                  transform: 'scale(1.1)',
                 },
-                transition: "all 0.2s ease",
+                transition: 'all 0.2s ease',
               }}
             >
               <CloseIcon />
@@ -317,13 +317,13 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
         {/* Decorative overlay */}
         <Box
           sx={{
-            position: "absolute",
+            position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
             background:
-              "linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%)",
+              'linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%)',
             zIndex: 1,
           }}
         />
@@ -339,30 +339,30 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
           }}
         >
           <Stack direction="row" spacing={4} alignItems="center">
-            <Box sx={{ position: "relative" }}>
+            <Box sx={{ position: 'relative' }}>
               <Avatar
                 src={user.avatar}
                 sx={{
                   width: 120,
                   height: 120,
                   background: medicalColors.gradient,
-                  fontSize: "3rem",
+                  fontSize: '3rem',
                   fontWeight: 700,
-                  boxShadow: "0 8px 32px rgba(74, 144, 226, 0.3)",
+                  boxShadow: '0 8px 32px rgba(74, 144, 226, 0.3)',
                   border: `4px solid ${medicalColors.white}`,
                 }}
               >
-                {user.full_name?.charAt(0) || user.username?.charAt(0) || "?"}
+                {user.full_name?.charAt(0) || user.username?.charAt(0) || '?'}
               </Avatar>
               {user.is_active && (
                 <VerifiedIcon
                   sx={{
-                    position: "absolute",
+                    position: 'absolute',
                     bottom: 8,
                     right: 8,
                     color: medicalColors.secondary,
                     background: medicalColors.white,
-                    borderRadius: "50%",
+                    borderRadius: '50%',
                     fontSize: 28,
                     p: 0.5,
                   }}
@@ -378,12 +378,12 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                   color: medicalColors.text.primary,
                   mb: 2,
                   background: `linear-gradient(45deg, ${medicalColors.primary}, ${medicalColors.secondary})`,
-                  backgroundClip: "text",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
                 }}
               >
-                {user.full_name || user.username || "Không có tên"}
+                {user.full_name || user.username || 'Không có tên'}
               </Typography>
 
               <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
@@ -396,8 +396,8 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                     borderRadius: 3,
                     px: 2,
                     py: 1,
-                    fontSize: "0.9rem",
-                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+                    fontSize: '0.9rem',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                   }}
                 />
                 <Chip
@@ -409,7 +409,7 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                     borderRadius: 3,
                     px: 2,
                     py: 1,
-                    fontSize: "0.9rem",
+                    fontSize: '0.9rem',
                     borderWidth: 2,
                   }}
                 />
@@ -421,8 +421,8 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                   variant="body1"
                   sx={{
                     color: medicalColors.text.secondary,
-                    display: "flex",
-                    alignItems: "center",
+                    display: 'flex',
+                    alignItems: 'center',
                     fontWeight: 500,
                   }}
                 >
@@ -443,11 +443,11 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                 background: medicalColors.cardGradient,
                 borderRadius: 3,
                 border: `1px solid ${alpha(medicalColors.primary, 0.15)}`,
-                boxShadow: "0 8px 32px rgba(74, 144, 226, 0.12)",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  transform: "translateY(-4px)",
-                  boxShadow: "0 16px 48px rgba(74, 144, 226, 0.2)",
+                boxShadow: '0 8px 32px rgba(74, 144, 226, 0.12)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 16px 48px rgba(74, 144, 226, 0.2)',
                 },
               }}
             >
@@ -458,8 +458,8 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                     sx={{
                       color: medicalColors.text.primary,
                       fontWeight: 700,
-                      display: "flex",
-                      alignItems: "center",
+                      display: 'flex',
+                      alignItems: 'center',
                       mb: 1,
                     }}
                   >
@@ -520,11 +520,11 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                 background: medicalColors.cardGradient,
                 borderRadius: 3,
                 border: `1px solid ${alpha(medicalColors.primary, 0.15)}`,
-                boxShadow: "0 8px 32px rgba(74, 144, 226, 0.12)",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  transform: "translateY(-4px)",
-                  boxShadow: "0 16px 48px rgba(74, 144, 226, 0.2)",
+                boxShadow: '0 8px 32px rgba(74, 144, 226, 0.12)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 16px 48px rgba(74, 144, 226, 0.2)',
                 },
               }}
             >
@@ -535,8 +535,8 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                     sx={{
                       color: medicalColors.text.primary,
                       fontWeight: 700,
-                      display: "flex",
-                      alignItems: "center",
+                      display: 'flex',
+                      alignItems: 'center',
                       mb: 1,
                     }}
                   >
@@ -586,17 +586,17 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
             </Card>
 
             {/* Professional Information for Consultants */}
-            {user.role === "CONSULTANT" && (
+            {user.role === 'CONSULTANT' && (
               <Card
                 sx={{
                   background: medicalColors.cardGradient,
                   borderRadius: 3,
                   border: `1px solid ${alpha(medicalColors.primary, 0.15)}`,
-                  boxShadow: "0 8px 32px rgba(74, 144, 226, 0.12)",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    boxShadow: "0 16px 48px rgba(74, 144, 226, 0.2)",
+                  boxShadow: '0 8px 32px rgba(74, 144, 226, 0.12)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 16px 48px rgba(74, 144, 226, 0.2)',
                   },
                 }}
               >
@@ -607,8 +607,8 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                       sx={{
                         color: medicalColors.text.primary,
                         fontWeight: 700,
-                        display: "flex",
-                        alignItems: "center",
+                        display: 'flex',
+                        alignItems: 'center',
                         mb: 1,
                       }}
                     >
@@ -672,8 +672,8 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                             color: medicalColors.text.primary,
                             fontWeight: 700,
                             mb: 2,
-                            display: "flex",
-                            alignItems: "center",
+                            display: 'flex',
+                            alignItems: 'center',
                           }}
                         >
                           <SchoolIcon
@@ -705,7 +705,7 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                                   lineHeight: 1.8,
                                 }}
                               >
-                                {typeof user.qualifications === "string"
+                                {typeof user.qualifications === 'string'
                                   ? user.qualifications
                                   : JSON.stringify(user.qualifications)}
                               </Typography>
@@ -722,12 +722,12 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                               borderRadius: 3,
                             }}
                           >
-                            <CardContent sx={{ p: 3, textAlign: "center" }}>
+                            <CardContent sx={{ p: 3, textAlign: 'center' }}>
                               <Typography
                                 variant="body1"
                                 sx={{
                                   color: medicalColors.text.muted,
-                                  fontStyle: "italic",
+                                  fontStyle: 'italic',
                                 }}
                               >
                                 Chưa cập nhật thông tin bằng cấp
@@ -745,8 +745,8 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                             color: medicalColors.text.primary,
                             fontWeight: 700,
                             mb: 2,
-                            display: "flex",
-                            alignItems: "center",
+                            display: 'flex',
+                            alignItems: 'center',
                           }}
                         >
                           <BusinessIcon
@@ -774,18 +774,18 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                               sx={{
                                 color: medicalColors.text.primary,
                                 fontWeight: 600,
-                                display: "flex",
-                                alignItems: "center",
+                                display: 'flex',
+                                alignItems: 'center',
                               }}
                             >
                               <ScheduleIcon
                                 sx={{ mr: 1, color: medicalColors.secondary }}
                               />
                               {user.experience
-                                ? typeof user.experience === "number"
+                                ? typeof user.experience === 'number'
                                   ? `${user.experience} năm kinh nghiệm`
                                   : user.experience
-                                : "Chưa cập nhật thông tin kinh nghiệm"}
+                                : 'Chưa cập nhật thông tin kinh nghiệm'}
                             </Typography>
                           </CardContent>
                         </Card>
@@ -799,8 +799,8 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                             color: medicalColors.text.primary,
                             fontWeight: 700,
                             mb: 2,
-                            display: "flex",
-                            alignItems: "center",
+                            display: 'flex',
+                            alignItems: 'center',
                           }}
                         >
                           <DescriptionIcon
@@ -828,11 +828,11 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                               sx={{
                                 color: medicalColors.text.primary,
                                 lineHeight: 2,
-                                fontSize: "1.1rem",
-                                whiteSpace: "pre-wrap",
+                                fontSize: '1.1rem',
+                                whiteSpace: 'pre-wrap',
                               }}
                             >
-                              {user.bio || "Chưa cập nhật thông tin giới thiệu"}
+                              {user.bio || 'Chưa cập nhật thông tin giới thiệu'}
                             </Typography>
                           </CardContent>
                         </Card>
@@ -841,20 +841,20 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                   ) : user._detailsLoadFailed ? (
                     <Card
                       sx={{
-                        background: alpha("#dc2626", 0.05),
-                        border: `2px solid ${alpha("#dc2626", 0.2)}`,
+                        background: alpha('#dc2626', 0.05),
+                        border: `2px solid ${alpha('#dc2626', 0.2)}`,
                         borderRadius: 3,
                       }}
                     >
-                      <CardContent sx={{ p: 4, textAlign: "center" }}>
+                      <CardContent sx={{ p: 4, textAlign: 'center' }}>
                         <Typography
                           variant="h6"
                           sx={{
-                            color: "#dc2626",
+                            color: '#dc2626',
                             fontWeight: 600,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                           }}
                         >
                           <SchoolIcon sx={{ mr: 1, fontSize: 24 }} />
@@ -873,15 +873,15 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                         borderRadius: 3,
                       }}
                     >
-                      <CardContent sx={{ p: 4, textAlign: "center" }}>
+                      <CardContent sx={{ p: 4, textAlign: 'center' }}>
                         <Typography
                           variant="h6"
                           sx={{
                             color: medicalColors.primary,
                             fontWeight: 600,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                           }}
                         >
                           <CircularProgress size={24} sx={{ mr: 2 }} />
@@ -919,18 +919,18 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
             borderRadius: 3,
             px: 6,
             py: 2,
-            fontSize: "1.1rem",
-            textTransform: "none",
-            boxShadow: "0 8px 24px rgba(74, 144, 226, 0.4)",
-            "&:hover": {
+            fontSize: '1.1rem',
+            textTransform: 'none',
+            boxShadow: '0 8px 24px rgba(74, 144, 226, 0.4)',
+            '&:hover': {
               background: `linear-gradient(45deg, ${alpha(
                 medicalColors.primary,
                 0.9
               )}, ${alpha(medicalColors.secondary, 0.9)})`,
-              transform: "translateY(-2px)",
-              boxShadow: "0 12px 32px rgba(74, 144, 226, 0.5)",
+              transform: 'translateY(-2px)',
+              boxShadow: '0 12px 32px rgba(74, 144, 226, 0.5)',
             },
-            transition: "all 0.3s ease",
+            transition: 'all 0.3s ease',
           }}
         >
           Đóng

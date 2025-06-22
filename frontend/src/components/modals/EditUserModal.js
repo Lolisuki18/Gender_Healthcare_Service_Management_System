@@ -4,7 +4,7 @@
  * ==================================================================
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -27,18 +27,18 @@ import {
   ListItemText,
   Chip,
   Divider,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Close as CloseIcon,
   Person as PersonIcon,
   CompareArrows as CompareIcon,
   Check as CheckIcon,
   Warning as WarningIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 // Import dateUtils for consistent date formatting
-import { formatDateDisplay } from "../../../utils/dateUtils.js";
-import { confirmDialog } from "../../../utils/confirmDialog.js";
-import notify from "../../../utils/notification.js";
+import { formatDateDisplay } from '../../utils/dateUtils.js';
+import { confirmDialog } from '../../utils/confirmDialog.js';
+import notify from '../../utils/notification.js';
 
 const EditUserModal = ({ open, onClose, user, onSubmit }) => {
   // ====================================================================
@@ -49,15 +49,15 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
    * ✅ Updated form data với TẤT CẢ fields theo backend requirements
    */
   const [formData, setFormData] = useState({
-    fullName: "",
-    birthDay: "",
-    phone: "",
-    email: "",
-    password: "", // Để trống nếu không muốn đổi
-    address: "",
-    gender: "",
+    fullName: '',
+    birthDay: '',
+    phone: '',
+    email: '',
+    password: '', // Để trống nếu không muốn đổi
+    address: '',
+    gender: '',
     isActive: true,
-    role: "",
+    role: '',
   });
 
   /**
@@ -85,30 +85,30 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
   useEffect(() => {
     if (user && open) {
       // ✅ Xử lý role đặc biệt - đảm bảo lấy đúng giá trị role
-      const userRole = user.role || user.Role || "";
+      const userRole = user.role || user.Role || '';
 
-      console.log("🔍 User object received:", user);
-      console.log("🔍 Original role from user:", user.role);
-      console.log("🔍 Processed role:", userRole);
+      console.log('🔍 User object received:', user);
+      console.log('🔍 Original role from user:', user.role);
+      console.log('🔍 Processed role:', userRole);
 
       const userData = {
-        fullName: user.fullName || user.full_name || "",
-        birthDay: user.birthDay || user.birth_day || "",
-        phone: user.phone || "",
-        email: user.email || "",
-        password: "", // Luôn để trống để giữ password cũ
-        address: user.address || "",
-        gender: user.gender || "",
+        fullName: user.fullName || user.full_name || '',
+        birthDay: user.birthDay || user.birth_day || '',
+        phone: user.phone || '',
+        email: user.email || '',
+        password: '', // Luôn để trống để giữ password cũ
+        address: user.address || '',
+        gender: user.gender || '',
         isActive:
           user.isActive !== undefined
             ? user.isActive
             : user.is_active !== undefined
-            ? user.is_active
-            : true,
+              ? user.is_active
+              : true,
         role: userRole, // ✅ Sử dụng role đã được xử lý
       };
 
-      console.log("🔍 Form data initialized:", userData);
+      console.log('🔍 Form data initialized:', userData);
 
       setFormData(userData);
       setOriginalData(userData);
@@ -128,37 +128,37 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
 
     // ✅ Convert value to string trước khi validate để tránh lỗi trim
     const stringValue =
-      value !== null && value !== undefined ? String(value) : "";
+      value !== null && value !== undefined ? String(value) : '';
 
     switch (name) {
-      case "fullName":
-        if (!stringValue || stringValue.trim() === "") {
-          newErrors.fullName = "Full name is required";
+      case 'fullName':
+        if (!stringValue || stringValue.trim() === '') {
+          newErrors.fullName = 'Full name is required';
         } else if (stringValue.length > 100) {
-          newErrors.fullName = "Full name must not exceed 100 characters";
+          newErrors.fullName = 'Full name must not exceed 100 characters';
         } else {
           delete newErrors.fullName;
         }
         break;
 
-      case "email":
-        if (!stringValue || stringValue.trim() === "") {
-          newErrors.email = "Email is required";
+      case 'email':
+        if (!stringValue || stringValue.trim() === '') {
+          newErrors.email = 'Email is required';
         } else {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(stringValue)) {
-            newErrors.email = "Invalid email format";
+            newErrors.email = 'Invalid email format';
           } else {
             delete newErrors.email;
           }
         }
         break;
 
-      case "phone":
-        if (stringValue && stringValue.trim() !== "") {
+      case 'phone':
+        if (stringValue && stringValue.trim() !== '') {
           const phoneRegex = /^[0-9]{10,11}$/;
           if (!phoneRegex.test(stringValue)) {
-            newErrors.phone = "Phone number must be between 10 and 11 digits";
+            newErrors.phone = 'Phone number must be between 10 and 11 digits';
           } else {
             delete newErrors.phone;
           }
@@ -167,13 +167,13 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
         }
         break;
 
-      case "password":
-        if (stringValue && stringValue.trim() !== "") {
+      case 'password':
+        if (stringValue && stringValue.trim() !== '') {
           const passwordRegex =
             /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).{6,100}$/;
           if (!passwordRegex.test(stringValue)) {
             newErrors.password =
-              "Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, 1 special character and be 6-100 characters long";
+              'Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, 1 special character and be 6-100 characters long';
           } else {
             delete newErrors.password;
           }
@@ -182,28 +182,28 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
         }
         break;
 
-      case "address":
+      case 'address':
         if (stringValue && stringValue.length > 255) {
-          newErrors.address = "Address must not exceed 255 characters";
+          newErrors.address = 'Address must not exceed 255 characters';
         } else {
           delete newErrors.address;
         }
         break;
 
-      case "gender":
-        if (!stringValue || stringValue.trim() === "") {
-          newErrors.gender = "Gender is required";
+      case 'gender':
+        if (!stringValue || stringValue.trim() === '') {
+          newErrors.gender = 'Gender is required';
         } else {
           delete newErrors.gender;
         }
         break;
 
-      case "birthDay":
-        if (stringValue && stringValue.trim() !== "") {
+      case 'birthDay':
+        if (stringValue && stringValue.trim() !== '') {
           const birthDate = new Date(stringValue);
           const today = new Date();
           if (birthDate >= today) {
-            newErrors.birthDay = "Birth day must be in the past";
+            newErrors.birthDay = 'Birth day must be in the past';
           } else {
             delete newErrors.birthDay;
           }
@@ -212,18 +212,18 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
         }
         break;
 
-      case "role":
-        if (!stringValue || stringValue.trim() === "") {
-          newErrors.role = "Role is required";
+      case 'role':
+        if (!stringValue || stringValue.trim() === '') {
+          newErrors.role = 'Role is required';
         } else {
           delete newErrors.role;
         }
         break;
 
-      case "isActive":
+      case 'isActive':
         // ✅ Boolean field - không cần validate trim, chỉ validate type
         if (value !== true && value !== false) {
-          newErrors.isActive = "Active status is required";
+          newErrors.isActive = 'Active status is required';
         } else {
           delete newErrors.isActive;
         }
@@ -245,15 +245,15 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
 
     // ✅ Validate từng field một cách an toàn
     const fieldsToValidate = [
-      "fullName",
-      "email",
-      "phone",
-      "password",
-      "address",
-      "gender",
-      "birthDay",
-      "role",
-      "isActive",
+      'fullName',
+      'email',
+      'phone',
+      'password',
+      'address',
+      'gender',
+      'birthDay',
+      'role',
+      'isActive',
     ];
 
     fieldsToValidate.forEach((fieldName) => {
@@ -280,15 +280,15 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
     Object.keys(formData).forEach((key) => {
       if (formData[key] !== originalData[key]) {
         // Đặc biệt xử lý password - chỉ gửi khi có giá trị mới
-        if (key === "password") {
-          if (formData[key] && formData[key].trim() !== "") {
+        if (key === 'password') {
+          if (formData[key] && formData[key].trim() !== '') {
             changedFields[key] = formData[key];
             changes.push({
               field: key,
-              label: "Mật khẩu",
-              oldValue: "********",
-              newValue: "******** (mới)",
-              category: "security",
+              label: 'Mật khẩu',
+              oldValue: '********',
+              newValue: '******** (mới)',
+              category: 'security',
             });
           }
         } else {
@@ -312,15 +312,15 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
    */
   const getFieldLabel = (field) => {
     const labels = {
-      fullName: "Họ và tên",
-      birthDay: "Ngày sinh",
-      phone: "Số điện thoại",
-      email: "Email",
-      password: "Mật khẩu",
-      address: "Địa chỉ",
-      gender: "Giới tính",
-      isActive: "Trạng thái",
-      role: "Vai trò",
+      fullName: 'Họ và tên',
+      birthDay: 'Ngày sinh',
+      phone: 'Số điện thoại',
+      email: 'Email',
+      password: 'Mật khẩu',
+      address: 'Địa chỉ',
+      gender: 'Giới tính',
+      isActive: 'Trạng thái',
+      role: 'Vai trò',
     };
     return labels[field] || field;
   };
@@ -329,24 +329,24 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
    * Format value for display
    */
   const formatDisplayValue = (field, value) => {
-    if (field === "isActive") {
-      return value ? "Hoạt động" : "Tạm khóa";
+    if (field === 'isActive') {
+      return value ? 'Hoạt động' : 'Tạm khóa';
     }
-    if (field === "role") {
+    if (field === 'role') {
       return getRoleDisplayName(value);
     }
-    if (field === "gender") {
+    if (field === 'gender') {
       const genderLabels = {
-        MALE: "Nam",
-        FEMALE: "Nữ",
-        OTHER: "Khác",
+        MALE: 'Nam',
+        FEMALE: 'Nữ',
+        OTHER: 'Khác',
       };
       return genderLabels[value] || value;
     }
-    if (field === "birthDay" && value) {
+    if (field === 'birthDay' && value) {
       return formatDateDisplay(value);
     }
-    return value || "(Trống)";
+    return value || '(Trống)';
   };
 
   /**
@@ -354,19 +354,19 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
    */
   const getFieldCategory = (field) => {
     if (
-      ["fullName", "birthDay", "phone", "email", "address", "gender"].includes(
+      ['fullName', 'birthDay', 'phone', 'email', 'address', 'gender'].includes(
         field
       )
     ) {
-      return "basic";
+      return 'basic';
     }
-    if (["role", "isActive"].includes(field)) {
-      return "role";
+    if (['role', 'isActive'].includes(field)) {
+      return 'role';
     }
-    if (field === "password") {
-      return "security";
+    if (field === 'password') {
+      return 'security';
     }
-    return "other";
+    return 'other';
   };
 
   /**
@@ -374,10 +374,10 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
    */
   const getRoleDisplayName = (role) => {
     const roleNames = {
-      ADMIN: "Quản trị viên",
-      STAFF: "Nhân viên",
-      CUSTOMER: "Khách hàng",
-      CONSULTANT: "Tư vấn viên",
+      ADMIN: 'Quản trị viên',
+      STAFF: 'Nhân viên',
+      CUSTOMER: 'Khách hàng',
+      CONSULTANT: 'Tư vấn viên',
     };
     return roleNames[role] || role;
   };
@@ -393,8 +393,8 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
     const { name, value } = e.target;
     let processedValue = value;
 
-    if (name === "isActive") {
-      processedValue = value === "true";
+    if (name === 'isActive') {
+      processedValue = value === 'true';
     }
 
     setFormData((prev) => ({
@@ -411,18 +411,18 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
    */
   const handleSubmit = async () => {
     // ✅ Kiểm tra role required trước khi validate
-    if (!formData.role || formData.role.trim() === "") {
+    if (!formData.role || formData.role.trim() === '') {
       notify.warning(
-        "Thiếu thông tin bắt buộc",
-        "Vui lòng chọn vai trò cho người dùng!"
+        'Thiếu thông tin bắt buộc',
+        'Vui lòng chọn vai trò cho người dùng!'
       );
       return;
     }
 
     if (!validateForm()) {
       notify.error(
-        "Lỗi validation",
-        "Vui lòng kiểm tra lại các trường bị lỗi!"
+        'Lỗi validation',
+        'Vui lòng kiểm tra lại các trường bị lỗi!'
       );
       return;
     }
@@ -430,7 +430,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
     const { changedFields, changes } = getChangedFields();
 
     // ✅ Debug log để kiểm tra
-    console.log("🔍 Submit check:", {
+    console.log('🔍 Submit check:', {
       formData,
       originalData,
       changedFields,
@@ -462,52 +462,52 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
       };
 
       // ✅ XỬ LÝ PASSWORD CẨN THẬN VỚI TRIM VÀ LOG CHI TIẾT
-      const passwordValue = formData.password || "";
+      const passwordValue = formData.password || '';
       const trimmedPassword = passwordValue.trim();
 
-      console.log("🔍 PASSWORD DEBUG:");
-      console.log("  - Original password:", JSON.stringify(passwordValue));
-      console.log("  - Trimmed password:", JSON.stringify(trimmedPassword));
-      console.log("  - Password length:", trimmedPassword.length);
-      console.log("  - Has password:", trimmedPassword.length > 0);
+      console.log('🔍 PASSWORD DEBUG:');
+      console.log('  - Original password:', JSON.stringify(passwordValue));
+      console.log('  - Trimmed password:', JSON.stringify(trimmedPassword));
+      console.log('  - Password length:', trimmedPassword.length);
+      console.log('  - Has password:', trimmedPassword.length > 0);
 
       if (trimmedPassword.length > 0) {
         requestData.password = trimmedPassword;
-        console.log("✅ Password INCLUDED in request");
+        console.log('✅ Password INCLUDED in request');
       } else {
-        console.log("❌ Password EXCLUDED from request");
+        console.log('❌ Password EXCLUDED from request');
       }
 
       // ✅ THÊM DEBUG CHO BACKEND API FORMAT
-      console.log("🔍 BACKEND REQUEST FORMAT CHECK:");
-      console.log("  - Request data keys:", Object.keys(requestData));
-      console.log("  - Password field exists:", "password" in requestData);
-      console.log("  - Password value type:", typeof requestData.password);
+      console.log('🔍 BACKEND REQUEST FORMAT CHECK:');
+      console.log('  - Request data keys:', Object.keys(requestData));
+      console.log('  - Password field exists:', 'password' in requestData);
+      console.log('  - Password value type:', typeof requestData.password);
 
       // ✅ KIỂM TRA FIELD MAPPING BACKEND
-      console.log("🔍 FIELD MAPPING CHECK:");
-      console.log("  - fullName:", requestData.fullName);
-      console.log("  - email:", requestData.email);
+      console.log('🔍 FIELD MAPPING CHECK:');
+      console.log('  - fullName:', requestData.fullName);
+      console.log('  - email:', requestData.email);
       console.log(
-        "  - isActive:",
+        '  - isActive:',
         requestData.isActive,
         typeof requestData.isActive
       );
       if (requestData.password) {
         console.log(
-          "  - password:",
-          "[HIDDEN]",
-          "length:",
+          '  - password:',
+          '[HIDDEN]',
+          'length:',
           requestData.password.length
         );
       }
 
-      console.log("🚀 FINAL REQUEST DATA:");
+      console.log('🚀 FINAL REQUEST DATA:');
       console.log(JSON.stringify(requestData, null, 2));
-      console.log("🚀 Changed fields (for reference):", changedFields);
+      console.log('🚀 Changed fields (for reference):', changedFields);
 
       // ✅ INTERCEPT VÀ LOG API CALL
-      console.log("🌐 CALLING onSubmit with data...");
+      console.log('🌐 CALLING onSubmit with data...');
 
       onSubmit(requestData);
     }
@@ -523,11 +523,11 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
 
     if (changes.length > 0) {
       const confirmLeave = await confirmDialog.warning(
-        "Bạn có thay đổi chưa lưu. Nếu thoát bây giờ, tất cả thay đổi sẽ bị mất.",
+        'Bạn có thay đổi chưa lưu. Nếu thoát bây giờ, tất cả thay đổi sẽ bị mất.',
         {
-          title: "⚠️ Thay đổi chưa lưu",
-          confirmText: "Thoát không lưu",
-          cancelText: "Tiếp tục chỉnh sửa",
+          title: '⚠️ Thay đổi chưa lưu',
+          confirmText: 'Thoát không lưu',
+          cancelText: 'Tiếp tục chỉnh sửa',
         }
       );
       if (!confirmLeave) return;
@@ -563,36 +563,36 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
           sx: {
             borderRadius: 3,
             background:
-              "linear-gradient(180deg, #f8faff 0%, #f0f7ff 50%, #e8f4ff 100%)",
-            minHeight: "70vh",
-            maxHeight: "90vh",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+              'linear-gradient(180deg, #f8faff 0%, #f0f7ff 50%, #e8f4ff 100%)',
+            minHeight: '70vh',
+            maxHeight: '90vh',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
           },
         }}
       >
         {/* Dialog Header */}
         <DialogTitle
           sx={{
-            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-            color: "#fff",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+            color: '#fff',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             py: 2.5,
             fontWeight: 600,
-            boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+            boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box
               sx={{
                 width: 36,
                 height: 36,
                 borderRadius: 2,
-                background: "rgba(255, 255, 255, 0.2)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                background: 'rgba(255, 255, 255, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               <PersonIcon sx={{ fontSize: 20 }} />
@@ -605,12 +605,12 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
           <IconButton
             onClick={handleClose}
             sx={{
-              color: "white",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.2)",
-                transform: "scale(1.05)",
+              color: 'white',
+              '&:hover': {
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                transform: 'scale(1.05)',
               },
-              transition: "all 0.2s ease",
+              transition: 'all 0.2s ease',
             }}
           >
             <CloseIcon sx={{ fontSize: 24 }} />
@@ -623,19 +623,19 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
             px: 3,
             py: 2,
             background:
-              "linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))",
-            borderBottom: "1px solid rgba(74, 144, 226, 0.2)",
+              'linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))',
+            borderBottom: '1px solid rgba(74, 144, 226, 0.2)',
           }}
         >
-          <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
+          <Typography variant="h6" sx={{ color: '#2D3748', fontWeight: 600 }}>
             Đang chỉnh sửa: <strong>{user?.fullName || user?.username}</strong>
             <Chip
               label={getRoleDisplayName(user?.role)}
               size="small"
               sx={{
                 ml: 2,
-                backgroundColor: "rgba(74, 144, 226, 0.1)",
-                color: "#4A90E2",
+                backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                color: '#4A90E2',
                 fontWeight: 600,
               }}
             />
@@ -643,16 +643,16 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
         </Box>
 
         {/* Dialog Content */}
-        <DialogContent sx={{ p: 0, backgroundColor: "transparent" }}>
+        <DialogContent sx={{ p: 0, backgroundColor: 'transparent' }}>
           <Box sx={{ p: 3 }}>
             <Card
               sx={{
                 borderRadius: 4,
-                boxShadow: "0 8px 32px rgba(74, 144, 226, 0.08)",
-                border: "1px solid rgba(255,255,255,0.5)",
+                boxShadow: '0 8px 32px rgba(74, 144, 226, 0.08)',
+                border: '1px solid rgba(255,255,255,0.5)',
                 background:
-                  "linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,252,255,0.9))",
-                backdropFilter: "blur(10px)",
+                  'linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,252,255,0.9))',
+                backdropFilter: 'blur(10px)',
               }}
             >
               <CardContent sx={{ p: 4 }}>
@@ -662,11 +662,11 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                 <Typography
                   variant="h6"
                   sx={{
-                    color: "#2D3748",
+                    color: '#2D3748',
                     fontWeight: 600,
                     mb: 3,
-                    display: "flex",
-                    alignItems: "center",
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: 1,
                   }}
                 >
@@ -687,9 +687,9 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                       helperText={errors.fullName}
                       variant="outlined"
                       sx={{
-                        "& .MuiOutlinedInput-root": {
+                        '& .MuiOutlinedInput-root': {
                           borderRadius: 3,
-                          backgroundColor: "rgba(248,252,255,0.8)",
+                          backgroundColor: 'rgba(248,252,255,0.8)',
                         },
                       }}
                     />
@@ -709,9 +709,9 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                       helperText={errors.email}
                       variant="outlined"
                       sx={{
-                        "& .MuiOutlinedInput-root": {
+                        '& .MuiOutlinedInput-root': {
                           borderRadius: 3,
-                          backgroundColor: "rgba(248,252,255,0.8)",
+                          backgroundColor: 'rgba(248,252,255,0.8)',
                         },
                       }}
                     />
@@ -726,13 +726,13 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                       value={formData.phone}
                       onChange={handleInputChange}
                       error={!!errors.phone}
-                      helperText={errors.phone || "10-11 chữ số"}
+                      helperText={errors.phone || '10-11 chữ số'}
                       variant="outlined"
                       placeholder="VD: 0901234567"
                       sx={{
-                        "& .MuiOutlinedInput-root": {
+                        '& .MuiOutlinedInput-root': {
                           borderRadius: 3,
-                          backgroundColor: "rgba(248,252,255,0.8)",
+                          backgroundColor: 'rgba(248,252,255,0.8)',
                         },
                       }}
                     />
@@ -754,9 +754,9 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                         shrink: true,
                       }}
                       sx={{
-                        "& .MuiOutlinedInput-root": {
+                        '& .MuiOutlinedInput-root': {
                           borderRadius: 3,
-                          backgroundColor: "rgba(248,252,255,0.8)",
+                          backgroundColor: 'rgba(248,252,255,0.8)',
                         },
                       }}
                     />
@@ -776,9 +776,9 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                       multiline
                       rows={2}
                       sx={{
-                        "& .MuiOutlinedInput-root": {
+                        '& .MuiOutlinedInput-root': {
                           borderRadius: 3,
-                          backgroundColor: "rgba(248,252,255,0.8)",
+                          backgroundColor: 'rgba(248,252,255,0.8)',
                         },
                       }}
                     />
@@ -799,7 +799,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                         onChange={handleInputChange}
                         sx={{
                           borderRadius: 3,
-                          backgroundColor: "rgba(248,252,255,0.8)",
+                          backgroundColor: 'rgba(248,252,255,0.8)',
                         }}
                       >
                         <MenuItem value="Nam">👨 Nam</MenuItem>
@@ -809,7 +809,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                       {errors.gender && (
                         <Typography
                           variant="caption"
-                          sx={{ color: "error.main", mt: 0.5, ml: 2 }}
+                          sx={{ color: 'error.main', mt: 0.5, ml: 2 }}
                         >
                           {errors.gender}
                         </Typography>
@@ -819,7 +819,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                 </Grid>
 
                 <Divider
-                  sx={{ my: 4, borderColor: "rgba(74, 144, 226, 0.2)" }}
+                  sx={{ my: 4, borderColor: 'rgba(74, 144, 226, 0.2)' }}
                 />
 
                 {/* ====================================================== */}
@@ -828,11 +828,11 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                 <Typography
                   variant="h6"
                   sx={{
-                    color: "#2D3748",
+                    color: '#2D3748',
                     fontWeight: 600,
                     mb: 3,
-                    display: "flex",
-                    alignItems: "center",
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: 1,
                   }}
                 >
@@ -852,13 +852,13 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                       error={!!errors.password}
                       helperText={
                         errors.password ||
-                        "Ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
+                        'Ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt'
                       }
                       variant="outlined"
                       sx={{
-                        "& .MuiOutlinedInput-root": {
+                        '& .MuiOutlinedInput-root': {
                           borderRadius: 3,
-                          backgroundColor: "rgba(248,252,255,0.8)",
+                          backgroundColor: 'rgba(248,252,255,0.8)',
                         },
                       }}
                     />
@@ -866,7 +866,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                 </Grid>
 
                 <Divider
-                  sx={{ my: 4, borderColor: "rgba(74, 144, 226, 0.2)" }}
+                  sx={{ my: 4, borderColor: 'rgba(74, 144, 226, 0.2)' }}
                 />
 
                 {/* ====================================================== */}
@@ -875,11 +875,11 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                 <Typography
                   variant="h6"
                   sx={{
-                    color: "#2D3748",
+                    color: '#2D3748',
                     fontWeight: 600,
                     mb: 3,
-                    display: "flex",
-                    alignItems: "center",
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: 1,
                   }}
                 >
@@ -892,17 +892,17 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                     mb: 3,
                     p: 3,
                     borderRadius: 3,
-                    background: "linear-gradient(45deg, #FFF3CD, #FCF4A3)",
-                    border: "1px solid #F59E0B",
+                    background: 'linear-gradient(45deg, #FFF3CD, #FCF4A3)',
+                    border: '1px solid #F59E0B',
                   }}
                 >
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#92400E",
+                      color: '#92400E',
                       fontWeight: 500,
-                      display: "flex",
-                      alignItems: "center",
+                      display: 'flex',
+                      alignItems: 'center',
                       gap: 1,
                     }}
                   >
@@ -928,7 +928,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                         onChange={handleInputChange}
                         sx={{
                           borderRadius: 3,
-                          backgroundColor: "rgba(248,255,248,0.8)",
+                          backgroundColor: 'rgba(248,255,248,0.8)',
                         }}
                       >
                         <MenuItem value="ADMIN">🔐 Quản trị viên</MenuItem>
@@ -939,7 +939,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                       {errors.role && (
                         <Typography
                           variant="caption"
-                          sx={{ color: "error.main", mt: 0.5, ml: 2 }}
+                          sx={{ color: 'error.main', mt: 0.5, ml: 2 }}
                         >
                           {errors.role}
                         </Typography>
@@ -958,14 +958,14 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                         onChange={handleInputChange}
                         sx={{
                           borderRadius: 3,
-                          backgroundColor: "rgba(248,255,248,0.8)",
+                          backgroundColor: 'rgba(248,255,248,0.8)',
                         }}
                       >
                         <MenuItem value="true">
                           <Box
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
+                              display: 'flex',
+                              alignItems: 'center',
                               gap: 2,
                             }}
                           >
@@ -973,13 +973,13 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                               sx={{
                                 width: 12,
                                 height: 12,
-                                borderRadius: "50%",
-                                backgroundColor: "#4caf50",
-                                boxShadow: "0 0 12px rgba(76, 175, 80, 0.5)",
+                                borderRadius: '50%',
+                                backgroundColor: '#4caf50',
+                                boxShadow: '0 0 12px rgba(76, 175, 80, 0.5)',
                               }}
                             />
                             <Typography
-                              sx={{ color: "#2e7d32", fontWeight: 600 }}
+                              sx={{ color: '#2e7d32', fontWeight: 600 }}
                             >
                               Hoạt động
                             </Typography>
@@ -989,8 +989,8 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                         <MenuItem value="false">
                           <Box
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
+                              display: 'flex',
+                              alignItems: 'center',
                               gap: 2,
                             }}
                           >
@@ -998,13 +998,13 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                               sx={{
                                 width: 12,
                                 height: 12,
-                                borderRadius: "50%",
-                                backgroundColor: "#f44336",
-                                boxShadow: "0 0 12px rgba(244, 67, 54, 0.5)",
+                                borderRadius: '50%',
+                                backgroundColor: '#f44336',
+                                boxShadow: '0 0 12px rgba(244, 67, 54, 0.5)',
                               }}
                             />
                             <Typography
-                              sx={{ color: "#d32f2f", fontWeight: 600 }}
+                              sx={{ color: '#d32f2f', fontWeight: 600 }}
                             >
                               Tạm khóa
                             </Typography>
@@ -1024,9 +1024,9 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
           sx={{
             p: 4,
             background:
-              "linear-gradient(180deg, rgba(248,252,255,0.95), rgba(240,248,255,0.9))",
-            borderTop: "1px solid rgba(74, 144, 226, 0.1)",
-            boxShadow: "0 -4px 20px rgba(74, 144, 226, 0.05)",
+              'linear-gradient(180deg, rgba(248,252,255,0.95), rgba(240,248,255,0.9))',
+            borderTop: '1px solid rgba(74, 144, 226, 0.1)',
+            boxShadow: '0 -4px 20px rgba(74, 144, 226, 0.05)',
           }}
         >
           <Button
@@ -1034,20 +1034,20 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
             variant="outlined"
             size="large"
             sx={{
-              borderColor: "#90a4ae",
-              color: "#546e7a",
+              borderColor: '#90a4ae',
+              color: '#546e7a',
               minWidth: 140,
               height: 52,
               borderRadius: 3,
               px: 4,
               fontSize: 16,
               fontWeight: 600,
-              "&:hover": {
-                borderColor: "#4A90E2",
-                backgroundColor: "rgba(74, 144, 226, 0.05)",
-                color: "#4A90E2",
+              '&:hover': {
+                borderColor: '#4A90E2',
+                backgroundColor: 'rgba(74, 144, 226, 0.05)',
+                color: '#4A90E2',
               },
-              transition: "all 0.3s ease",
+              transition: 'all 0.3s ease',
             }}
           >
             Hủy bỏ
@@ -1059,26 +1059,26 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
             size="large"
             disabled={Object.keys(errors).length > 0}
             sx={{
-              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-              color: "#fff",
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+              color: '#fff',
               fontWeight: 600,
               minWidth: 220,
               height: 52,
               borderRadius: 3,
               px: 4,
               fontSize: 16,
-              boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-              "&:hover": {
-                background: "linear-gradient(45deg, #357ABD, #17A2B8)",
-                transform: "translateY(-2px)",
-                boxShadow: "0 15px 40px rgba(74, 144, 226, 0.4)",
+              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #357ABD, #17A2B8)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 15px 40px rgba(74, 144, 226, 0.4)',
               },
-              "&:disabled": {
-                background: "#ccc",
-                transform: "none",
-                boxShadow: "none",
+              '&:disabled': {
+                background: '#ccc',
+                transform: 'none',
+                boxShadow: 'none',
               },
-              transition: "all 0.3s ease",
+              transition: 'all 0.3s ease',
             }}
           >
             💾 Cập nhật thông tin
@@ -1097,18 +1097,18 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
         PaperProps={{
           sx: {
             borderRadius: 4,
-            background: "rgba(255, 255, 255, 0.98)",
-            backdropFilter: "blur(20px)",
-            boxShadow: "0 25px 50px rgba(0, 0, 0, 0.15)",
+            background: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(20px)',
+            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
           },
         }}
       >
         <DialogTitle
           sx={{
-            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-            color: "#fff",
-            display: "flex",
-            alignItems: "center",
+            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
             gap: 2,
             py: 3,
             fontWeight: 700,
@@ -1123,7 +1123,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
         <DialogContent sx={{ p: 4 }}>
           <Typography
             variant="h6"
-            sx={{ mb: 3, color: "#2D3748", fontWeight: 600 }}
+            sx={{ mb: 3, color: '#2D3748', fontWeight: 600 }}
           >
             Thông tin của: <strong>{user?.fullName || user?.username}</strong>
           </Typography>
@@ -1131,14 +1131,14 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
           {/* ✅ Hiển thị thông báo khác nhau tùy theo có thay đổi hay không */}
           {changes.length > 0 ? (
             <>
-              <Typography variant="body1" sx={{ mb: 3, color: "#4A5568" }}>
+              <Typography variant="body1" sx={{ mb: 3, color: '#4A5568' }}>
                 Những thay đổi sau sẽ được cập nhật:
               </Typography>
 
               <Card
                 sx={{
                   borderRadius: 3,
-                  border: "1px solid rgba(74, 144, 226, 0.15)",
+                  border: '1px solid rgba(74, 144, 226, 0.15)',
                 }}
               >
                 <CardContent sx={{ p: 0 }}>
@@ -1149,8 +1149,8 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                         sx={{
                           borderBottom:
                             index < changes.length - 1
-                              ? "1px solid rgba(74, 144, 226, 0.1)"
-                              : "none",
+                              ? '1px solid rgba(74, 144, 226, 0.1)'
+                              : 'none',
                           py: 2,
                         }}
                       >
@@ -1158,43 +1158,43 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                           primary={
                             <Typography
                               variant="subtitle1"
-                              sx={{ fontWeight: 600, color: "#2D3748", mb: 1 }}
+                              sx={{ fontWeight: 600, color: '#2D3748', mb: 1 }}
                             >
-                              {change.category === "basic"
-                                ? "📝"
-                                : change.category === "security"
-                                ? "🔒"
-                                : "🔐"}{" "}
+                              {change.category === 'basic'
+                                ? '📝'
+                                : change.category === 'security'
+                                  ? '🔒'
+                                  : '🔐'}{' '}
                               {change.label}
                             </Typography>
                           }
                           secondary={
                             <Box
                               sx={{
-                                display: "flex",
-                                alignItems: "center",
+                                display: 'flex',
+                                alignItems: 'center',
                                 gap: 2,
-                                flexWrap: "wrap",
+                                flexWrap: 'wrap',
                               }}
                             >
                               <Chip
                                 label={change.oldValue}
                                 size="small"
                                 sx={{
-                                  backgroundColor: "#FEF2F2",
-                                  color: "#DC2626",
+                                  backgroundColor: '#FEF2F2',
+                                  color: '#DC2626',
                                   fontWeight: 500,
                                 }}
                               />
                               <CompareIcon
-                                sx={{ color: "#4A90E2", fontSize: 20 }}
+                                sx={{ color: '#4A90E2', fontSize: 20 }}
                               />
                               <Chip
                                 label={change.newValue}
                                 size="small"
                                 sx={{
-                                  backgroundColor: "#ECFDF5",
-                                  color: "#059669",
+                                  backgroundColor: '#ECFDF5',
+                                  color: '#059669',
                                   fontWeight: 500,
                                 }}
                               />
@@ -1210,18 +1210,18 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
           ) : (
             <Box
               sx={{
-                textAlign: "center",
+                textAlign: 'center',
                 py: 3,
                 px: 2,
                 borderRadius: 3,
-                background: "rgba(74, 144, 226, 0.05)",
-                border: "1px solid rgba(74, 144, 226, 0.15)",
+                background: 'rgba(74, 144, 226, 0.05)',
+                border: '1px solid rgba(74, 144, 226, 0.15)',
               }}
             >
-              <Typography variant="body1" sx={{ color: "#4A5568", mb: 1 }}>
+              <Typography variant="body1" sx={{ color: '#4A5568', mb: 1 }}>
                 📋 Không có thay đổi nào được phát hiện
               </Typography>
-              <Typography variant="body2" sx={{ color: "#718096" }}>
+              <Typography variant="body2" sx={{ color: '#718096' }}>
                 Toàn bộ thông tin hiện tại sẽ được gửi lại để đồng bộ dữ liệu
               </Typography>
             </Box>
@@ -1242,14 +1242,14 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
             variant="contained"
             size="large"
             sx={{
-              background: "linear-gradient(45deg, #4CAF50, #45A049)",
+              background: 'linear-gradient(45deg, #4CAF50, #45A049)',
               minWidth: 200,
               height: 52,
               borderRadius: 3,
             }}
           >
             <CheckIcon sx={{ mr: 1 }} />
-            {changes.length > 0 ? "Xác nhận cập nhật" : "Gửi lại thông tin"}
+            {changes.length > 0 ? 'Xác nhận cập nhật' : 'Gửi lại thông tin'}
           </Button>
         </DialogActions>
       </Dialog>

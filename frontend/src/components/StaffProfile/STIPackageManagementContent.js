@@ -29,6 +29,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  FormHelperText,
   InputLabel,
   Select,
   MenuItem,
@@ -387,9 +388,9 @@ const STIPackageManagementContent = () => {
         name: formData.name,
         description: formData.description,
         price: formData.price,
-        isActive: formData.isActive, // Backend expects 'isActive'
+        isActive: formData.isActive, // Package status independent from service status
         // Backend mong đợi mảng các ID đơn giản (Long), không phải object phức tạp
-        stiService: prepareServiceIdsForBackend(selectedServices),
+        stiService: prepareServiceIdsForBackend(selectedServices), // Only IDs, doesn't change service status
       };
       try {
         // Log the data we're sending to the API
@@ -1720,7 +1721,7 @@ const STIPackageManagementContent = () => {
                   </Grid>
                 </Grid>
               </Paper>
-            </Box>
+            </Box>{' '}
             <FormControl
               fullWidth
               margin="normal"
@@ -1732,15 +1733,19 @@ const STIPackageManagementContent = () => {
                 },
               }}
             >
-              <InputLabel>Trạng thái</InputLabel>
+              <InputLabel>Trạng thái gói dịch vụ</InputLabel>
               <Select
                 value={formData.isActive}
-                label="Trạng thái"
+                label="Trạng thái gói dịch vụ"
                 onChange={(e) => handleInputChange('isActive', e.target.value)}
               >
                 <MenuItem value={true}>Đang cung cấp</MenuItem>
                 <MenuItem value={false}>Ngừng cung cấp</MenuItem>
               </Select>
+              <FormHelperText>
+                Trạng thái này chỉ áp dụng cho gói dịch vụ, không ảnh hưởng đến
+                trạng thái của các dịch vụ riêng lẻ.
+              </FormHelperText>
             </FormControl>
           </Box>
         </DialogContent>{' '}

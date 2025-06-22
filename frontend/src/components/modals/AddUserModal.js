@@ -4,8 +4,8 @@
  * Modal component để thêm mới các loại người dùng trong hệ thống
  */
 import React, { useState, useEffect } from 'react';
-import { adminService } from '../../../services/adminService';
-import notify from '../../../utils/notification';
+import { adminService } from '../../services/adminService';
+import notify from '../../utils/notification';
 import {
   Dialog,
   DialogTitle,
