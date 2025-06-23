@@ -27,11 +27,24 @@ public class STIPackageResponse {
       @Data
       @AllArgsConstructor
       @NoArgsConstructor
-      public class STIServiceResponse {
+      public static class STIServiceResponse {
           private Long id;
           private String name;
           private String description;
           private BigDecimal price;
+          private boolean isActive;
+          private List<ComponentResponse> components;
+      }
+
+      @Data
+      @AllArgsConstructor
+      @NoArgsConstructor
+      public static class ComponentResponse {
+          private Long id;
+          private String testName;
+          private String unit;
+          private String referenceRange;
+          private String interpretation;
           private boolean isActive;
       }
 

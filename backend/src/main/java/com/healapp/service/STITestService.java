@@ -1,17 +1,5 @@
 package com.healapp.service;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.STITestRequest;
 import com.healapp.dto.STITestResponse;
@@ -19,24 +7,37 @@ import com.healapp.dto.STITestStatusUpdateRequest;
 import com.healapp.dto.TestResultRequest;
 import com.healapp.dto.TestResultResponse;
 import com.healapp.exception.PaymentException;
-import com.healapp.model.Payment;
-import com.healapp.model.PaymentMethod;
-import com.healapp.model.PaymentStatus;
-import com.healapp.model.STIPackage;
 import com.healapp.model.STIService;
+import com.healapp.model.STIPackage;
 import com.healapp.model.STITest;
-import com.healapp.model.STITestStatus;
 import com.healapp.model.ServiceTestComponent;
 import com.healapp.model.TestResult;
 import com.healapp.model.UserDtls;
-import com.healapp.repository.STIPackageRepository;
+import com.healapp.model.Payment;
+import com.healapp.model.PaymentMethod;
+import com.healapp.model.PaymentStatus;
+import com.healapp.model.STITestStatus;
+import com.healapp.model.PackageService;
 import com.healapp.repository.STIServiceRepository;
+import com.healapp.repository.STIPackageRepository;
 import com.healapp.repository.STITestRepository;
 import com.healapp.repository.ServiceTestComponentRepository;
 import com.healapp.repository.TestResultRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.repository.PackageServiceRepository;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -65,6 +66,9 @@ public class STITestService {
 
     @Autowired
     private PaymentService paymentService;
+
+    @Autowired
+    private PackageServiceRepository packageServiceRepository;
 
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<STITestResponse> bookTest(STITestRequest request, Long customerId) {
@@ -141,11 +145,14 @@ public class STITestService {
             }
 
             // Validate có ít nhất 1 active component trong package
-            boolean hasActiveComponents = stiPackage.getServices() != null
-                    && stiPackage.getServices().stream()
-                            .anyMatch(service -> service.getTestComponents() != null
+            List<PackageService> packageServices = packageServiceRepository.findByStiPackage_PackageId(stiPackage.getPackageId());
+            boolean hasActiveComponents = packageServices != null
+                    && packageServices.stream()
+                    .map(PackageService::getStiService)
+                    .filter(service -> service != null && Boolean.TRUE.equals(service.getIsActive()))
+                    .anyMatch(service -> service.getTestComponents() != null
                             && service.getTestComponents().stream()
-                                    .anyMatch(component -> Boolean.TRUE.equals(component.getIsActive())));
+                            .anyMatch(component -> Boolean.TRUE.equals(component.getIsActive())));
 
             if (!hasActiveComponents) {
                 return ApiResponse.error("STI package has no active test components available");
@@ -510,8 +517,12 @@ public class STITestService {
         } else if (test.getStiPackage() != null) {
             // Package test - get all components from all services in the package
             serviceComponents = new ArrayList<>();
-            for (STIService service : test.getStiPackage().getServices()) {
-                serviceComponents.addAll(service.getTestComponents());
+            List<PackageService> packageServices = packageServiceRepository.findByStiPackage_PackageId(test.getStiPackage().getPackageId());
+            for (PackageService ps : packageServices) {
+                STIService service = ps.getStiService();
+                if (service.getTestComponents() != null) {
+                    serviceComponents.addAll(service.getTestComponents());
+                }
             }
         } else {
             log.error("Test {} has neither service nor package", test.getTestId());
@@ -984,17 +995,26 @@ public class STITestService {
      * Tạo TestResults cho Package booking
      */
     private void createTestResultsForPackage(STITest stiTest) {
-        if (stiTest.getStiPackage() == null || stiTest.getStiPackage().getServices() == null) {
+        if (stiTest.getStiPackage() == null) {
+            return;
+        }
+        // Lấy danh sách dịch vụ qua bảng trung gian
+        List<PackageService> packageServices = packageServiceRepository.findByStiPackage_PackageId(stiTest.getStiPackage().getPackageId());
+        if (packageServices == null || packageServices.isEmpty()) {
+            // Không có service nào trong gói này
             return;
         }
 
         int totalResults = 0;
-        int totalComponents = 0;
-        for (STIService service : stiTest.getStiPackage().getServices()) {
-            if (service.getTestComponents() != null) {
-                for (ServiceTestComponent component : service.getTestComponents()) {
-                    totalComponents++;
-                    // Chỉ tạo TestResult cho các component active
+        for (PackageService ps : packageServices) {
+            STIService service = ps.getStiService();
+            if (service == null || !Boolean.TRUE.equals(service.getIsActive())) {
+                continue;
+            }
+
+            List<ServiceTestComponent> components = service.getTestComponents();
+            if (components != null) {
+                for (ServiceTestComponent component : components) {
                     if (Boolean.TRUE.equals(component.getIsActive())) {
                         TestResult result = new TestResult();
                         result.setStiTest(stiTest);
@@ -1006,8 +1026,8 @@ public class STITestService {
                 }
             }
         }
-        log.info("Created {} test results for package booking: {} (from {} total components, {} active)",
-                totalResults, stiTest.getTestId(), totalComponents, totalResults);
+        
+        log.info("Created {} test results for package booking: {}", totalResults, stiTest.getTestId());
     }
 
     /**

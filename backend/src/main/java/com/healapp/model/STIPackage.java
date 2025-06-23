@@ -40,10 +40,12 @@ public class STIPackage {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // Quan hệ Many-to-Many với STIService
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "package_services", joinColumns = @JoinColumn(name = "package_id"), inverseJoinColumns = @JoinColumn(name = "service_id"))
-    private List<STIService> services = new ArrayList<>();
+    // // Quan hệ Many-to-Many với STIService
+    // @ManyToMany(fetch = FetchType.LAZY)
+    // @JoinTable(name = "package_services", joinColumns = @JoinColumn(name = "package_id"), inverseJoinColumns = @JoinColumn(name = "service_id"))
+    // private List<STIService> services = new ArrayList<>();
+    @OneToMany(mappedBy = "stiPackage", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PackageService> packageServices = new ArrayList<>();
 
     // Quan hệ One-to-Many với STITest
     @OneToMany(mappedBy = "stiPackage", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

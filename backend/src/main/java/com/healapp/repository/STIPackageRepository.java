@@ -31,17 +31,19 @@ public interface STIPackageRepository extends JpaRepository<STIPackage, Long> {
     boolean existsByPackageNameIgnoreCase(String packageName);
 
     // Tìm package với services (eager loading)
-    @Query("SELECT p FROM STIPackage p LEFT JOIN FETCH p.services WHERE p.packageId = :packageId")
+    @Query("SELECT p FROM STIPackage p LEFT JOIN FETCH p.packageServices ps LEFT JOIN FETCH ps.stiService WHERE p.packageId = :packageId")
     Optional<STIPackage> findByIdWithServices(@Param("packageId") Long packageId);
 
     @Query("SELECT DISTINCT p FROM STIPackage p " +
-            "LEFT JOIN FETCH p.services " +
+            "LEFT JOIN FETCH p.packageServices ps " +
+            "LEFT JOIN FETCH ps.stiService s " +
             "WHERE p.packageId = :packageId")
     Optional<STIPackage> findByIdWithServicesAndComponents(@Param("packageId") Long packageId);
 
     // Tìm package đang hoạt động với services
     @Query("SELECT DISTINCT p FROM STIPackage p " +
-            "LEFT JOIN FETCH p.services " +
+            "LEFT JOIN FETCH p.packageServices ps " +
+            "LEFT JOIN FETCH ps.stiService s " +
             "WHERE p.isActive = true " +
             "ORDER BY p.packageName")
     List<STIPackage> findActivePackagesWithServices();
@@ -49,10 +51,15 @@ public interface STIPackageRepository extends JpaRepository<STIPackage, Long> {
     // Tìm package theo khoảng giá
     @Query("SELECT p FROM STIPackage p WHERE p.isActive = true AND p.packagePrice BETWEEN :minPrice AND :maxPrice")
     List<STIPackage> findByPriceRange(@Param("minPrice") BigDecimal minPrice,
-            @Param("maxPrice") BigDecimal maxPrice);    // Tìm package chứa service cụ thể
-    @Query("SELECT DISTINCT p FROM STIPackage p JOIN p.services s WHERE s.id = :serviceId AND p.isActive = true")
-    List<STIPackage> findByServiceId(@Param("serviceId") Long serviceId);    @Query("SELECT DISTINCT p FROM STIPackage p " +
-            "JOIN p.services s " +
+            @Param("maxPrice") BigDecimal maxPrice);
+
+    // Tìm package chứa service cụ thể
+    @Query("SELECT DISTINCT p FROM STIPackage p JOIN p.packageServices ps JOIN ps.stiService s WHERE s.id = :serviceId AND p.isActive = true")
+    List<STIPackage> findByServiceId(@Param("serviceId") Long serviceId);
+
+    @Query("SELECT DISTINCT p FROM STIPackage p " +
+            "JOIN p.packageServices ps " +
+            "JOIN ps.stiService s " +
             "WHERE p.isActive = true AND s.id IN :serviceIds " +
             "GROUP BY p " +
             "HAVING COUNT(DISTINCT s.id) = :serviceCount")
@@ -61,7 +68,8 @@ public interface STIPackageRepository extends JpaRepository<STIPackage, Long> {
 
     // Tìm package theo từ khóa
     @Query("SELECT DISTINCT p FROM STIPackage p " +
-            "LEFT JOIN p.services s " +
+            "LEFT JOIN p.packageServices ps " +
+            "LEFT JOIN ps.stiService s " +
             "WHERE p.isActive = true AND " +
             "(LOWER(p.packageName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
@@ -70,7 +78,8 @@ public interface STIPackageRepository extends JpaRepository<STIPackage, Long> {
 
     // Tìm tất cả packages với services (cho admin/staff)
     @Query("SELECT DISTINCT p FROM STIPackage p " +
-            "LEFT JOIN FETCH p.services " +
+            "LEFT JOIN FETCH p.packageServices ps " +
+            "LEFT JOIN FETCH ps.stiService s " +
             "ORDER BY p.packageName")
     List<STIPackage> findAllWithServices();
 

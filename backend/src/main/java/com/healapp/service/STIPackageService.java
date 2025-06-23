@@ -17,6 +17,8 @@ import com.healapp.model.STIService;
 import com.healapp.repository.PackageServiceRepository;
 import com.healapp.repository.STIPackageRepository;
 import com.healapp.repository.STIServiceRepository;
+import com.healapp.repository.ServiceTestComponentRepository;
+import com.healapp.model.ServiceTestComponent;
 
 import jakarta.transaction.Transactional;
 
@@ -28,8 +30,10 @@ public class STIPackageService {
     private PackageServiceRepository packageServiceRepository;
     @Autowired
     private STIServiceRepository stiServiceRepository;
+    @Autowired
+    private ServiceTestComponentRepository serviceTestComponentRepository;
     
-    //Lấy tất cả các
+    //Lấy tất cả các gói(ẩn hiện theo chức vụ)
     public ApiResponse<List<STIPackageResponse>> getAllSTIPackage(String role) {
         try {
             List<STIPackage> packages = stiPackageRepository.findAll();
@@ -41,15 +45,7 @@ public class STIPackageService {
             if (!isStaff) {
                 responseList = packages.stream()
                         .filter(STIPackage::getIsActive) // Lọc gói đang active
-                        .map(pkg -> {
-                            // Lọc service chỉ lấy active
-                            pkg.setServices(
-                                pkg.getServices().stream()
-                                    .filter(STIService::getIsActive)
-                                    .collect(Collectors.toList())
-                            );
-                            return mapToResponse(pkg); // Không sửa mapToResponse
-                        })
+                        .map(this::mapToResponse)
                         .collect(Collectors.toList());
             } else {
                 // Staff thì thấy tất cả (không lọc)
@@ -86,7 +82,6 @@ public class STIPackageService {
             // Nếu có dịch vụ, thì tạo liên kết package_services
             if (resquest.getStiService() != null && !resquest.getStiService().isEmpty()) {
                 List<STIService> services = stiServiceRepository.findAllById(resquest.getStiService());
-                
                 //  Chỉ lấy các service có isActive = true
                 List<STIService> activeServices = services.stream()
                     .filter(STIService::getIsActive)
@@ -102,7 +97,6 @@ public class STIPackageService {
                     .collect(Collectors.toList());
 
                 packageServiceRepository.saveAll(packageServices);
-                savedPackage.setServices(activeServices); // Gán lại danh sách dịch vụ nếu cần dùng ở response
             }
 
             // Trả về kết quả
@@ -176,7 +170,6 @@ public class STIPackageService {
                 .collect(Collectors.toList());
 
             packageServiceRepository.saveAll(newLinks);
-            savedPackage.setServices(services);
         }
 
         // Trả kết quả
@@ -216,19 +209,39 @@ public class STIPackageService {
         response.setActive(pkg.getIsActive());
         response.setCreatedAt(pkg.getCreatedAt());
         response.setUpdatedAt(pkg.getUpdatedAt());
-
-        // Map các dịch vụ liên kết với gói
-        List<STIPackageResponse.STIServiceResponse> serviceResponses = pkg.getServices().stream()
+    
+        // Lấy dịch vụ từ bảng trung gian package_services
+        List<PackageService> packageServices = packageServiceRepository.findByStiPackage_PackageId(pkg.getPackageId());
+    
+        List<STIPackageResponse.STIServiceResponse> serviceResponses = packageServices.stream()
+            .map(PackageService::getStiService)
+            .filter(service -> Boolean.TRUE.equals(service.getIsActive()))
             .map(service -> {
-                STIPackageResponse.STIServiceResponse dto = response.new STIServiceResponse();
+                STIPackageResponse.STIServiceResponse dto = new STIPackageResponse.STIServiceResponse();
                 dto.setId(service.getId());
                 dto.setName(service.getName());
                 dto.setDescription(service.getDescription());
-                dto.setPrice(service.getPrice()); // nếu có
-                dto.setActive(service.getIsActive()); // thêm dòng này
+                dto.setPrice(service.getPrice());
+                dto.setActive(service.getIsActive());
+                // Lấy component cho service này, chỉ lấy component đang hoạt động
+                List<ServiceTestComponent> components = serviceTestComponentRepository.findByStiServiceId(service.getId());
+                List<STIPackageResponse.ComponentResponse> componentResponses = components.stream()
+                    .filter(c -> Boolean.TRUE.equals(c.getIsActive()))
+                    .map(c -> {
+                        STIPackageResponse.ComponentResponse cr = new STIPackageResponse.ComponentResponse();
+                        cr.setId(c.getComponentId());
+                        cr.setTestName(c.getTestName());
+                        cr.setUnit(c.getUnit());
+                        cr.setReferenceRange(c.getReferenceRange());
+                        cr.setInterpretation(c.getInterpretation());
+                        cr.setActive(Boolean.TRUE.equals(c.getIsActive()));
+                        return cr;
+                    }).collect(Collectors.toList());
+                dto.setComponents(componentResponses);
                 return dto;
-            }).collect(Collectors.toList());
-
+            })
+            .collect(Collectors.toList());
+    
         response.setServices(serviceResponses);
         return response;
     }

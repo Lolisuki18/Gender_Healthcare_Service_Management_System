@@ -47,6 +47,9 @@ public class STIService {
 
     @OneToMany(mappedBy = "stiService", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ServiceTestComponent> testComponents = new ArrayList<>();
+     
+    @OneToMany(mappedBy = "stiService", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PackageService> packageServices = new ArrayList<>();
 
     @OneToMany(mappedBy = "stiService", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<STITest> stiTests;

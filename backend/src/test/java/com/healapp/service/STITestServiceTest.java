@@ -55,6 +55,9 @@ class STITestServiceTest {
     @Mock
     private PaymentService paymentService;
 
+    @Mock
+    private PackageServiceRepository packageServiceRepository;
+
     @InjectMocks
     private STITestService stiTestService;
 
@@ -163,7 +166,6 @@ class STITestServiceTest {
         stiPackage.setDescription("Gói xét nghiệm toàn diện các bệnh STI");
         stiPackage.setPackagePrice(new BigDecimal("1200000"));
         stiPackage.setIsActive(true);
-        stiPackage.setServices(Arrays.asList(stiService));
 
         // Setup STITest
         stiTest = new STITest();
@@ -257,6 +259,12 @@ class STITestServiceTest {
         packageTest.setTotalPrice(new BigDecimal("1200000"));
         packageTest.setStatus(STITestStatus.PENDING);
 
+        // Mock packageServiceRepository để trả về danh sách dịch vụ cho package
+        PackageService packageService = new PackageService();
+        packageService.setId(1L);
+        packageService.setStiPackage(stiPackage);
+        packageService.setStiService(stiService);
+        packageService.setCreatedAt(LocalDateTime.now());
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(stiPackageRepository.findByIdWithServicesAndComponents(1L)).thenReturn(Optional.of(stiPackage));
         when(stiTestRepository.save(any(STITest.class))).thenReturn(packageTest);
@@ -264,6 +272,7 @@ class STITestServiceTest {
         when(paymentService.processCODPayment(anyLong(), anyString(), anyLong(), any(BigDecimal.class), anyString()))
                 .thenReturn(ApiResponse.success("Payment processed", payment));
         when(paymentService.getPaymentByService("STI", 2L)).thenReturn(Optional.of(payment));
+        when(packageServiceRepository.findByStiPackage_PackageId(1L)).thenReturn(Arrays.asList(packageService));
 
         ApiResponse<STITestResponse> response = stiTestService.bookTest(stiTestRequest, 1L);
 
@@ -272,6 +281,7 @@ class STITestServiceTest {
         assertNotNull(response.getData());
 
         verify(stiPackageRepository).findByIdWithServicesAndComponents(1L);
+        verify(packageServiceRepository).findByStiPackage_PackageId(1L);
     }
 
     @Test
