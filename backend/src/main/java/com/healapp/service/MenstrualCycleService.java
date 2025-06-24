@@ -323,7 +323,7 @@ public class MenstrualCycleService {
 
 
     // Gửi email nhắc nhở về tỉ lệ mang thai cao
-    // @Scheduled(cron = "0 0 7 * * ?")    // Mỗi ngày lúc 7 giờ sáng
+    @Scheduled(cron = "0 0 7 * * ?")    // Mỗi ngày lúc 7 giờ sáng
     public void sendReminderPregnancy() {
         LocalDate today = LocalDate.now();
         List<UserDtls> users = userRepository.findAll();
@@ -340,25 +340,25 @@ public class MenstrualCycleService {
                 }
                 LocalDate ovulationDate = cycle.getOvulationDate();
 
-                // List<PregnancyProbLog> logs = pregnancyProbLogRepository.findAllByMenstrualCycleId(cycle.getId()).orElse(List.of());
-                // if (logs.isEmpty()) continue;
+                List<PregnancyProbLog> logs = pregnancyProbLogRepository.findAllByMenstrualCycleId(cycle.getId()).orElse(List.of());
+                if (logs.isEmpty()) continue;
 
                 double probToday = 0.0;
-                // LocalDate start = today, end = today;
+                LocalDate start = today, end = today;
 
-                // for (PregnancyProbLog log : logs) {
-                //     if (log.getDate().isBefore(start)) start = log.getDate();
-                //     if (log.getDate().isAfter(end)) end = log.getDate();
-                //     if (log.getDate().isEqual(today)) probToday = log.getProbability().doubleValue();
-                // }
+                for (PregnancyProbLog log : logs) {
+                    if (log.getDate().isBefore(start)) start = log.getDate();
+                    if (log.getDate().isAfter(end)) end = log.getDate();
+                    if (log.getDate().isEqual(today)) probToday = log.getProbability().doubleValue();
+                }
 
-                // if (today.isAfter(start) && today.isBefore(end)) {
+                if (today.isAfter(start) && today.isBefore(end)) {
                     int daysBeforeOvulation = (int) ChronoUnit.DAYS.between(ovulationDate, today);
                     emailService.sendOvulationWithPregnancyProbReminderAsync(
                         user.getEmail(), user.getFullName(),
                         daysBeforeOvulation, probToday, ovulationDate
                     );
-                // }
+                }
 
             } catch (Exception e) {
                 // Chỉ log lỗi của user đó, không làm gián đoạn toàn bộ
