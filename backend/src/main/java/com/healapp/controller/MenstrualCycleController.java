@@ -123,10 +123,11 @@ public class MenstrualCycleController {
     @PostMapping("/reminder")
     @PreAuthorize("hasRole('ROLE_CUSTOMER')")
     public ResponseEntity<ApiResponse<String>> sendOvulationReminder() {
-        // ApiResponse<String> response = menstrualCycleService.sendOvulationReminderEmail();
-        menstrualCycleService.sendReminderPregnancy();
-        // return ResponseEntity.ok(response);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Gửi thông báo thành công"));
+        ApiResponse<String> response = menstrualCycleService.sendOvulationReminderEmail();        
+        return ResponseEntity.ok(response);
+
+        // menstrualCycleService.sendReminderPregnancy();
+        // return ResponseEntity.ok(new ApiResponse<>(true, "Gửi thông báo thành công"));
     }
 
 
