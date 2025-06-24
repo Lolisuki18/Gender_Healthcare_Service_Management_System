@@ -115,12 +115,20 @@ public class MenstrualCycleController {
     }
 
 
-    
+    /*
+     * description: thông báo ngày rụng trứng và tỉ lệ mang thai
+     * method: POST
+     * path: /menstrual-cycle/reminder
+     */
+    @PostMapping("/reminder")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    public ResponseEntity<ApiResponse<String>> sendOvulationReminder() {
+        // ApiResponse<String> response = menstrualCycleService.sendOvulationReminderEmail();
+        menstrualCycleService.sendReminderPregnancy();
+        // return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Gửi thông báo thành công"));
+    }
 
-
-
-
-    
 
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
