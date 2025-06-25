@@ -1,5 +1,18 @@
 package com.healapp.controller;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -9,30 +22,13 @@ import com.healapp.dto.STIServiceResponse;
 import com.healapp.dto.STITestRequest;
 import com.healapp.dto.STITestResponse;
 import com.healapp.dto.STITestStatusUpdateRequest;
+import com.healapp.dto.TestResultRequest;
 import com.healapp.dto.TestResultResponse;
-import com.healapp.model.STIService;
 import com.healapp.service.STIServiceService;
 import com.healapp.service.STITestService;
 import com.healapp.service.UserService;
 
 import jakarta.validation.Valid;
-
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/sti-services")
@@ -253,6 +249,29 @@ public class STIServiceController {
         request.setStatus(com.healapp.model.STITestStatus.COMPLETED);
 
         ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(testId, request, staffId);
+        return getResponseEntity(response);
+    }
+
+    /*
+     * description: Cập nhật kết quả xét nghiệm cho test đang ở trạng thái RESULTED
+     * path: /sti-services/staff/tests/{testId}/update-results
+     * method: PUT
+     * body: List<TestResultRequest>
+     * {
+     *   "componentId": 1,
+     *   "resultValue": "120",
+     *   "normalRange": "100-140",
+     *   "unit": "mg/dL"
+     * }
+     */
+    @PutMapping("/staff/tests/{testId}/update-results")
+    @PreAuthorize("hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<STITestResponse>> updateTestResults(
+            @PathVariable Long testId,
+            @Valid @RequestBody List<TestResultRequest> resultRequests) {
+
+        Long staffId = getCurrentUserId();
+        ApiResponse<STITestResponse> response = stiTestService.updateTestResults(testId, resultRequests, staffId);
         return getResponseEntity(response);
     }
 
