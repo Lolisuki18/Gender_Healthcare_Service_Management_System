@@ -1,5 +1,19 @@
 package com.healapp.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.STITestRequest;
 import com.healapp.dto.STITestResponse;
@@ -7,37 +21,26 @@ import com.healapp.dto.STITestStatusUpdateRequest;
 import com.healapp.dto.TestResultRequest;
 import com.healapp.dto.TestResultResponse;
 import com.healapp.exception.PaymentException;
-import com.healapp.model.STIService;
-import com.healapp.model.STIPackage;
-import com.healapp.model.STITest;
-import com.healapp.model.ServiceTestComponent;
-import com.healapp.model.TestResult;
-import com.healapp.model.UserDtls;
+import com.healapp.model.PackageService;
 import com.healapp.model.Payment;
 import com.healapp.model.PaymentMethod;
 import com.healapp.model.PaymentStatus;
+import com.healapp.model.STIPackage;
+import com.healapp.model.STIService;
+import com.healapp.model.STITest;
 import com.healapp.model.STITestStatus;
-import com.healapp.model.PackageService;
-import com.healapp.repository.STIServiceRepository;
+import com.healapp.model.ServiceTestComponent;
+import com.healapp.model.TestResult;
+import com.healapp.model.UserDtls;
+import com.healapp.repository.PackageServiceRepository;
 import com.healapp.repository.STIPackageRepository;
+import com.healapp.repository.STIServiceRepository;
 import com.healapp.repository.STITestRepository;
 import com.healapp.repository.ServiceTestComponentRepository;
 import com.healapp.repository.TestResultRepository;
 import com.healapp.repository.UserRepository;
-import com.healapp.repository.PackageServiceRepository;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -451,12 +454,11 @@ public class STITestService {
             } // RESULTED status
             else if (request.getStatus() == STITestStatus.RESULTED
                     && ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
-                if (request.getResults() == null || request.getResults().isEmpty()) {
-                    return ApiResponse.error("Test results are required for RESULTED status");
-                }
-
-                if (!validateAndSaveTestResults(test, request.getResults(), userId)) {
-                    return ApiResponse.error("Some test results could not be saved. Please check and try again.");
+                // Allow partial results when transitioning to RESULTED
+                if (request.getResults() != null && !request.getResults().isEmpty()) {
+                    if (!validateAndSaveTestResults(test, request.getResults(), userId, false)) {
+                        return ApiResponse.error("Some test results could not be saved. Please check and try again.");
+                    }
                 }
 
                 test.setStatus(STITestStatus.RESULTED);
@@ -464,6 +466,11 @@ public class STITestService {
             } // COMPLETED status
             else if (request.getStatus() == STITestStatus.COMPLETED
                     && ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
+                // Validate that all required test results are completed when transitioning to COMPLETED
+                if (!validateAllTestResultsCompleted(test)) {
+                    return ApiResponse.error("Cannot complete test - all test results must be filled before completion");
+                }
+                
                 test.setStatus(STITestStatus.COMPLETED);
             }
 
@@ -507,7 +514,7 @@ public class STITestService {
         }
     }
 
-    private boolean validateAndSaveTestResults(STITest test, List<TestResultRequest> resultRequests, Long userId) {
+    private boolean validateAndSaveTestResults(STITest test, List<TestResultRequest> resultRequests, Long userId, boolean requireAllResults) {
         List<ServiceTestComponent> serviceComponents;
 
         // Get components based on whether this is a service or package test
@@ -533,7 +540,8 @@ public class STITestService {
                 .map(ServiceTestComponent::getComponentId)
                 .collect(Collectors.toList());
 
-        if (resultRequests.size() < serviceComponentIds.size()) {
+        // Check if all required results are provided (only when requireAllResults is true)
+        if (requireAllResults && resultRequests.size() < serviceComponentIds.size()) {
             List<Long> missingComponentIds = new ArrayList<>(serviceComponentIds);
             missingComponentIds.removeAll(resultRequests.stream()
                     .map(TestResultRequest::getComponentId)
@@ -604,6 +612,69 @@ public class STITestService {
         }
 
         return allResultsSaved;
+    }
+
+    /**
+     * Validate that all required test results are completed for the test
+     */
+    private boolean validateAllTestResultsCompleted(STITest test) {
+        try {
+            List<ServiceTestComponent> requiredComponents = new ArrayList<>();
+
+            // Get all required components
+            if (test.getStiService() != null) {
+                // Individual service test
+                if (test.getStiService().getTestComponents() != null) {
+                    requiredComponents.addAll(test.getStiService().getTestComponents().stream()
+                            .filter(component -> Boolean.TRUE.equals(component.getIsActive()))
+                            .collect(Collectors.toList()));
+                }
+            } else if (test.getStiPackage() != null) {
+                // Package test - get all components from all services in the package
+                List<PackageService> packageServices = packageServiceRepository.findByStiPackage_PackageId(test.getStiPackage().getPackageId());
+                for (PackageService ps : packageServices) {
+                    STIService service = ps.getStiService();
+                    if (service != null && Boolean.TRUE.equals(service.getIsActive()) && service.getTestComponents() != null) {
+                        requiredComponents.addAll(service.getTestComponents().stream()
+                                .filter(component -> Boolean.TRUE.equals(component.getIsActive()))
+                                .collect(Collectors.toList()));
+                    }
+                }
+            }
+
+            if (requiredComponents.isEmpty()) {
+                log.warn("No required components found for test ID: {}", test.getTestId());
+                return true; // No components required, so it's considered complete
+            }
+
+            // Get existing test results
+            List<TestResult> existingResults = testResultRepository.findByStiTest_TestId(test.getTestId());
+            Set<Long> completedComponentIds = existingResults.stream()
+                    .filter(result -> result.getResultValue() != null && !result.getResultValue().trim().isEmpty())
+                    .map(result -> result.getTestComponent().getComponentId())
+                    .collect(Collectors.toSet());
+
+            // Check if all required components have results
+            Set<Long> requiredComponentIds = requiredComponents.stream()
+                    .map(ServiceTestComponent::getComponentId)
+                    .collect(Collectors.toSet());
+
+            Set<Long> missingComponentIds = new HashSet<>(requiredComponentIds);
+            missingComponentIds.removeAll(completedComponentIds);
+
+            if (!missingComponentIds.isEmpty()) {
+                log.warn("Test {} cannot be completed - missing results for components: {}", 
+                        test.getTestId(), missingComponentIds);
+                return false;
+            }
+
+            log.info("Test {} has all required results completed", test.getTestId());
+            return true;
+
+        } catch (Exception e) {
+            log.error("Error validating test results completion for test {}: {}", test.getTestId(), e.getMessage(), e);
+            return false;
+        }
     }
 
     private boolean validateStatusTransition(STITest test, STITestStatus newStatus, String userRole) {
