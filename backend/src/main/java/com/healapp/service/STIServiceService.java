@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.healapp.dto.ApiResponse;
-
 import com.healapp.dto.STIServiceRequest;
 import com.healapp.dto.STIServiceResponse;
 import com.healapp.dto.ServiceTestComponentRequest;
@@ -49,6 +48,7 @@ public class STIServiceService {
                 component.setUnit(c.getUnit());
                 component.setReferenceRange(c.getReferenceRange());
                 component.setInterpretation(c.getReferenceRange());
+                component.setSampleType(c.getSampleType());
                 component.setIsActive(true); // Mặc định là hoạt động
                 component.setStiService(newService);
                 return component;
@@ -145,6 +145,7 @@ public class STIServiceService {
                     newComponent.setUnit(componentRequest.getUnit());
                     newComponent.setReferenceRange(componentRequest.getReferenceRange());
                     newComponent.setInterpretation(componentRequest.getInterpretation());
+                    newComponent.setSampleType(componentRequest.getSampleType());
                     newComponent.setIsActive(componentRequest.getIsActive() == null ? true : componentRequest.getIsActive());
                     newComponent.setStiService(existingService);
                     oldComponents.add(newComponent);
@@ -159,6 +160,7 @@ public class STIServiceService {
                         existingComponent.setUnit(componentRequest.getUnit());
                         existingComponent.setReferenceRange(componentRequest.getReferenceRange());
                         existingComponent.setInterpretation(componentRequest.getInterpretation());
+                        existingComponent.setSampleType(componentRequest.getSampleType());
                         // Nếu isActive không được cung cấp thì giữ nguyên giá trị cũ
                         existingComponent.setIsActive(componentRequest.getIsActive() == null ? existingComponent.getIsActive() : componentRequest.getIsActive());
                     }
@@ -235,6 +237,7 @@ public class STIServiceService {
             component.setUnit(c.getUnit());
             component.setNormalRange(c.getReferenceRange());
             component.setDescription(c.getInterpretation());
+            component.setSampleType(c.getSampleType());
             component.setActive(c.getIsActive());
             return component;
         }).collect(Collectors.toList());

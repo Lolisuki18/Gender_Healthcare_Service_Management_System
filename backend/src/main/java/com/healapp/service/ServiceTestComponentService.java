@@ -23,6 +23,7 @@ public class ServiceTestComponentService {
                         request.getUnit(),
                         request.getReferenceRange(),
                         request.getInterpretation(),
+                        request.getSampleType(),
                         id);
             } else {
                 throw new RuntimeException("ServiceTestComponent with ID " + id + " does not exist.");

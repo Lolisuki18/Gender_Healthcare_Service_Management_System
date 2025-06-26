@@ -1,31 +1,55 @@
 package com.healapp.service;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.dto.STITestRequest;
-import com.healapp.dto.STITestResponse;
-import com.healapp.dto.STITestStatusUpdateRequest;
-import com.healapp.dto.TestResultRequest;
-import com.healapp.dto.TestResultResponse;
-import com.healapp.model.*;
-import com.healapp.repository.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.STITestRequest;
+import com.healapp.dto.STITestResponse;
+import com.healapp.dto.STITestStatusUpdateRequest;
+import com.healapp.dto.TestResultResponse;
+import com.healapp.model.PackageService;
+import com.healapp.model.Payment;
+import com.healapp.model.PaymentMethod;
+import com.healapp.model.PaymentStatus;
+import com.healapp.model.Role;
+import com.healapp.model.STIPackage;
+import com.healapp.model.STIService;
+import com.healapp.model.STITest;
+import com.healapp.model.STITestStatus;
+import com.healapp.model.ServiceTestComponent;
+import com.healapp.model.TestResult;
+import com.healapp.model.UserDtls;
+import com.healapp.repository.PackageServiceRepository;
+import com.healapp.repository.STIPackageRepository;
+import com.healapp.repository.STIServiceRepository;
+import com.healapp.repository.STITestRepository;
+import com.healapp.repository.ServiceTestComponentRepository;
+import com.healapp.repository.TestResultRepository;
+import com.healapp.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("STITestService Test")
@@ -139,6 +163,7 @@ class STITestServiceTest {
         testComponent1.setUnit("");
         testComponent1.setReferenceRange("Âm tính");
         testComponent1.setInterpretation("Dương tính: Có khả năng nhiễm HIV");
+        testComponent1.setSampleType("Máu");
 
         testComponent2 = new ServiceTestComponent();
         testComponent2.setComponentId(2L);
@@ -146,6 +171,7 @@ class STITestServiceTest {
         testComponent2.setUnit("");
         testComponent2.setReferenceRange("Âm tính");
         testComponent2.setInterpretation("Dương tính: Có khả năng nhiễm giang mai");
+        testComponent2.setSampleType("Máu");
 
         // Setup STIService
         stiService = new STIService();

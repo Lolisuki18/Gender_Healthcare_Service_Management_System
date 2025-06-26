@@ -39,7 +39,8 @@ public interface ServiceTestComponentRepository extends JpaRepository<ServiceTes
 
         // Cập nhật thông tin của ServiceTestComponent
         @Query("UPDATE ServiceTestComponent c SET c.testName = :testName, c.unit = :unit, " +
-                        "c.referenceRange = :referenceRange, c.interpretation = :interpretation " +
+                        "c.referenceRange = :referenceRange, c.interpretation = :interpretation, " +
+                        "c.sampleType = :sampleType " +
                         "WHERE c.componentId = :componentId")
         @Modifying
         @Transactional
@@ -48,5 +49,6 @@ public interface ServiceTestComponentRepository extends JpaRepository<ServiceTes
                         @Param("unit") String unit,
                         @Param("referenceRange") String referenceRange,
                         @Param("interpretation") String interpretation,
+                        @Param("sampleType") String sampleType,
                         @Param("componentId") Long componentId);
 }
