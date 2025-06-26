@@ -1,1600 +1,511 @@
-/**
- * OvulationPage.js - Trang quản lý chu kỳ kinh nguyệt và tính ovulation
- *
- * Trang này cho phép người dùng:
- * - Nhập thông tin chu kỳ kinh nguyệt mới
- * - Xem lịch sử các chu kỳ đã nhập
- * - Xem thông tin về ngày rụng trứng và xác suất mang thai
- * - Cập nhật hoặc xóa thông tin chu kỳ
- */
-
-import React, { useState, useEffect } from 'react';
-import {
-  Container,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Paper,
-  Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControlLabel,
-  Switch,
-  IconButton,
-  Tooltip,
-  Alert,
-  Card,
-  CardContent,
-  CircularProgress,
-  Divider,
-  Avatar,
-  Chip,
-  useTheme,
-  alpha,
-  Fade,
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { Container, Box, Typography, Card, CardContent, Grid, Avatar, Button, Link, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { vi } from 'date-fns/locale';
-import { format, parseISO, isValid, addDays, differenceInDays } from 'date-fns';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import InfoIcon from '@mui/icons-material/Info';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import WaterDropIcon from '@mui/icons-material/WaterDrop';
-import CycloneIcon from '@mui/icons-material/Cyclone';
-import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import apiClient from '../services/api';
+import ovulationAuthService from '../services/ovulationAuthService';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import React, { useState, useEffect } from 'react';
+import { CalendarToday, AccessTime, Timeline, CheckCircle, Add } from '@mui/icons-material';
+import { Line } from 'react-chartjs-2';
+import 'chart.js/auto';
+import { List, ListItem, ListItemText, Alert } from '@mui/material';
+import styles from '../styles/OvulationPage.module.css';
+import { 
+  Heart, 
+  Calendar, 
+  TrendingUp, 
+  Brain, 
+  Stethoscope, 
+  ChevronDown, 
+  ChevronUp,
+  Clock,
+  Shield,
+  AlertTriangle
+} from 'lucide-react';
 
 const OvulationPage = () => {
-  const theme = useTheme();
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [user, setUser] = React.useState(null);
 
-  // Custom styles
-  const styles = {
-    gradientButton: {
-      background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-      color: '#fff',
-      fontWeight: 600,
-      boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-      '&:hover': {
-        boxShadow: '0 4px 12px rgba(74, 144, 226, 0.35)',
-      },
-    },
-    pageHeader: {
-      backgroundImage: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-      borderRadius: '16px',
-      padding: '30px 20px',
-      marginBottom: '30px',
-      boxShadow: '0 4px 20px rgba(74, 144, 226, 0.15)',
-      position: 'relative',
-      overflow: 'hidden',
-    },
-    gradientText: {
-      background: '-webkit-linear-gradient(45deg, #4A90E2, #1ABC9C)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-    },
-    card: {
-      borderRadius: '12px',
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-      overflow: 'hidden',
-      border: '1px solid rgba(74, 144, 226, 0.1)',
-      height: '100%',
-      transition: 'all 0.3s ease',
-      '&:hover': {
-        boxShadow: '0 6px 25px rgba(74, 144, 226, 0.15)',
-        transform: 'translateY(-3px)',
-      },
-    },
-    detailsCard: {
-      borderRadius: '12px',
-      padding: '20px',
-      background: alpha(theme.palette.primary.light, 0.05),
-      marginTop: '16px',
-      marginBottom: '16px',
-    },
-    indicatorCircle: {
-      width: '10px',
-      height: '10px',
-      borderRadius: '50%',
-      display: 'inline-block',
-      marginRight: '8px',
-    },
-    fertileDays: {
-      backgroundColor: '#F06292',
-    },
-    safeDays: {
-      backgroundColor: '#4CAF50',
-    },
-    periodDays: {
-      backgroundColor: '#F44336',
-    },
-    iconWithText: {
-      display: 'flex',
-      alignItems: 'center',
-      marginBottom: '10px',
-      '& .MuiSvgIcon-root': {
-        marginRight: '8px',
-        color: theme.palette.primary.main,
-      },
-    },
-  };
-
-  // Import images
-  const bannerImage = require('../assets/images/ovulation_banner.svg').default;
-  const cycleIcon = require('../assets/images/cycle_icon.svg').default;
-  const cycleTracking = require('../assets/images/cycle_tracking.svg').default;
-
-  // State cho form nhập liệu
-  const [formData, setFormData] = useState({
-    startDate: null,
-    numberOfDays: '',
-    cycleLength: '',
-    reminderEnabled: false,
-  });
-
-  // State cho danh sách chu kỳ
-  const [menstrualCycles, setMenstrualCycles] = useState([]);
-  const [cyclesWithProb, setCyclesWithProb] = useState([]);
-
-  // State cho editing
-  const [editingCycle, setEditingCycle] = useState(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-
-  // State cho chi tiết
-  const [selectedCycle, setSelectedCycle] = useState(null);
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-
-  // State cho loading và error
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-
-  // Fetch dữ liệu khi component mount
-  useEffect(() => {
-    fetchMenstrualCycles();
-    fetchMenstrualCyclesWithProb();
+  React.useEffect(() => {
+    const checkLogin = async () => {
+      const userData = await ovulationAuthService.getCurrentUser();
+      if (userData) {
+        setIsLoggedIn(true);
+        setUser(userData);
+      } else {
+        setIsLoggedIn(false);
+        setUser(null);
+      }
+    };
+  
+    checkLogin();
+    window.addEventListener('storage', checkLogin);
+    return () => {
+      window.removeEventListener('storage', checkLogin);
+    };
   }, []);
 
-  // Function để lấy danh sách chu kỳ kinh nguyệt
-  const fetchMenstrualCycles = async () => {
-    setLoading(true);
-    try {
-      const response = await apiClient.get('/menstrual-cycle');
-      if (response.data.success) {
-        setMenstrualCycles(response.data.data);
-      } else {
-        setError(response.data.message);
+  const [menstrualCycles, setMenstrualCycles] = React.useState([]);
+
+  // Data cho biểu đồ
+  const chartData = {
+    labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5'],
+    datasets: [
+      {
+        label: 'Chu kỳ thực tế',
+        data: [28, 29, 28, 28, 28],
+        borderColor: '#E91E63',
+        backgroundColor: '#E91E63',
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: '#E91E63'
+      },
+      {
+        label: 'Trung bình',
+        data: [28, 28, 28, 28, 28],
+        borderColor: '#9C27B0',
+        backgroundColor: '#9C27B0',
+        borderDash: [5, 5],
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: '#9C27B0'
       }
-    } catch (error) {
-      setError('Có lỗi xảy ra khi lấy dữ liệu chu kỳ kinh nguyệt');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    ]
   };
 
-  // Function để lấy danh sách chu kỳ kinh nguyệt cùng tỉ lệ mang thai
-  const fetchMenstrualCyclesWithProb = async () => {
-    try {
-      const response = await apiClient.get('/menstrual-cycle/pregnancy-prob');
-      if (response.data.success) {
-        setCyclesWithProb(response.data.data);
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
       }
-    } catch (error) {
-      console.error('Error fetching pregnancy probability data:', error);
-    }
-  };
-
-  // Xử lý thay đổi input trong form
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-
-  // Xử lý thay đổi ngày
-  const handleDateChange = (date) => {
-    setFormData({
-      ...formData,
-      startDate: date,
-    });
-  };
-
-  // Xử lý thay đổi switch reminder
-  const handleReminderChange = (event) => {
-    setFormData({
-      ...formData,
-      reminderEnabled: event.target.checked,
-    });
-  };
-
-  // Submit form tạo mới
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (
-      !formData.startDate ||
-      !formData.numberOfDays ||
-      !formData.cycleLength
-    ) {
-      setError('Vui lòng điền đầy đủ thông tin');
-      return;
-    }
-
-    // Validate input
-    if (
-      parseInt(formData.numberOfDays) < 1 ||
-      parseInt(formData.numberOfDays) > 30
-    ) {
-      setError('Số ngày hành kinh phải từ 1-30 ngày');
-      return;
-    }
-
-    if (parseInt(formData.cycleLength) < 1) {
-      setError('Chu kỳ kinh nguyệt phải lớn hơn 0');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const dataToSubmit = {
-        startDate: formData.startDate.toISOString().split('T')[0], // Format YYYY-MM-DD
-        numberOfDays: parseInt(formData.numberOfDays),
-        cycleLength: parseInt(formData.cycleLength),
-        reminderEnabled: formData.reminderEnabled,
-      };
-
-      const response = await apiClient.post('/menstrual-cycle', dataToSubmit);
-
-      if (response.data.success) {
-        setSuccess('Đã thêm chu kỳ kinh nguyệt mới thành công!');
-        setFormData({
-          startDate: null,
-          numberOfDays: '',
-          cycleLength: '',
-          reminderEnabled: false,
-        });
-
-        // Refresh data
-        fetchMenstrualCycles();
-        fetchMenstrualCyclesWithProb();
-
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setError(response.data.message);
+    },
+    scales: {
+      y: {
+        beginAtZero: false,
+        min: 20,
+        max: 35,
+        ticks: {
+          stepSize: 2,
+          color: '#666',
+          font: {
+            size: 12
+          }
+        },
+        grid: {
+          color: 'rgba(0,0,0,0.05)',
+          drawBorder: false
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          color: '#666',
+          font: {
+            size: 12
+          }
+        }
       }
-    } catch (error) {
-      setError('Có lỗi xảy ra khi lưu dữ liệu. Vui lòng thử lại.');
-      console.error(error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Mở dialog chỉnh sửa
-  const handleEdit = (cycle) => {
-    const cycleData = {
-      id: cycle.id,
-      startDate: parseISO(cycle.startDate),
-      numberOfDays: cycle.numberOfDays.toString(),
-      cycleLength: cycle.cycleLength.toString(),
-      reminderEnabled: cycle.reminderEnabled,
-    };
-    setEditingCycle(cycleData);
-    setIsEditDialogOpen(true);
+  const [expandedSection, setExpandedSection] = useState(null);
+
+  const toggleSection = (section) => {
+    setExpandedSection(expandedSection === section ? null : section);
   };
 
-  // Xử lý thay đổi input trong dialog edit
-  const handleEditInputChange = (event) => {
-    const { name, value } = event.target;
-    setEditingCycle({
-      ...editingCycle,
-      [name]: value,
-    });
-  };
-
-  // Xử lý thay đổi ngày trong dialog edit
-  const handleEditDateChange = (date) => {
-    setEditingCycle({
-      ...editingCycle,
-      startDate: date,
-    });
-  };
-
-  // Xử lý thay đổi reminder trong dialog edit
-  const handleEditReminderChange = (event) => {
-    setEditingCycle({
-      ...editingCycle,
-      reminderEnabled: event.target.checked,
-    });
-  };
-
-  // Lưu chỉnh sửa
-  const handleSaveEdit = async () => {
-    if (
-      !editingCycle.startDate ||
-      !editingCycle.numberOfDays ||
-      !editingCycle.cycleLength
-    ) {
-      setError('Vui lòng điền đầy đủ thông tin');
-      return;
+  const benefits = [
+    {
+      icon: <Heart className="h-6 w-6 text-pink-600" />,
+      title: "Hiểu rõ cơ thể",
+      description: "Biết được chu kỳ kinh nguyệt có đều không",
+      details: ["Theo dõi triệu chứng như đau bụng, nổi mụn, mệt mỏi…"]
+    },
+    {
+      icon: <Calendar className="h-6 w-6 text-purple-600" />,
+      title: "Lập kế hoạch tốt hơn",
+      description: "Dễ dàng sắp xếp công việc, du lịch, vận động thể thao",
+      details: ["Tránh rơi vào tình huống bất ngờ do kinh đến đột ngột"]
+    },
+    {
+      icon: <TrendingUp className="h-6 w-6 text-indigo-600" />,
+      title: "Cải thiện sức khỏe sinh sản",
+      description: "Dự đoán thời điểm rụng trứng (hữu ích khi tránh thai hoặc mong muốn có con)",
+      details: ["Phát hiện sớm dấu hiệu rối loạn nội tiết"]
+    },
+    {
+      icon: <Brain className="h-6 w-6 text-green-600" />,
+      title: "Tăng cường sức khỏe tinh thần",
+      description: "Nhận biết mối liên hệ giữa tâm trạng và chu kỳ",
+      details: ["Chủ động chăm sóc bản thân đúng thời điểm (nghỉ ngơi, giảm stress)"]
+    },
+    {
+      icon: <Stethoscope className="h-6 w-6 text-blue-600" />,
+      title: "Hỗ trợ bác sĩ khi cần",
+      description: "Ghi chép đầy đủ giúp bác sĩ dễ chẩn đoán nếu có bất thường",
+      details: ["Tiết kiệm thời gian và điều trị hiệu quả hơn"]
     }
+  ];
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const dataToSubmit = {
-        startDate: editingCycle.startDate.toISOString().split('T')[0],
-        numberOfDays: parseInt(editingCycle.numberOfDays),
-        cycleLength: parseInt(editingCycle.cycleLength),
-        reminderEnabled: editingCycle.reminderEnabled,
-      };
-
-      const response = await apiClient.put(
-        `/menstrual-cycle/${editingCycle.id}`,
-        dataToSubmit
-      );
-
-      if (response.data.success) {
-        setSuccess('Cập nhật chu kỳ kinh nguyệt thành công!');
-        setIsEditDialogOpen(false);
-
-        // Refresh data
-        fetchMenstrualCycles();
-        fetchMenstrualCyclesWithProb();
-
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setError(response.data.message);
-      }
-    } catch (error) {
-      setError('Có lỗi xảy ra khi cập nhật dữ liệu. Vui lòng thử lại.');
-      console.error(error);
-    } finally {
-      setLoading(false);
+  const carePhases = [
+    {
+      phase: "Trước kỳ kinh",
+      icon: <Clock className="h-5 w-5 text-orange-600" />,
+      tips: [
+        "Ăn uống lành mạnh, tránh đường & caffeine",
+        "Vận động nhẹ nhàng, ngủ đủ giấc"
+      ],
+      color: "orange"
+    },
+    {
+      phase: "Trong kỳ kinh",
+      icon: <Shield className="h-5 w-5 text-red-600" />,
+      tips: [
+        "Thay băng vệ sinh 4–6 tiếng/lần",
+        "Ăn thực phẩm giàu sắt (rau xanh, thịt đỏ)",
+        "Dùng túi chườm ấm hoặc thuốc giảm đau nếu cần"
+      ],
+      color: "red"
+    },
+    {
+      phase: "Sau kỳ kinh",
+      icon: <CheckCircle className="h-5 w-5 text-green-600" />,
+      tips: [
+        "Tập thể dục nhẹ, bổ sung dinh dưỡng",
+        "Theo dõi và ghi nhận bất thường"
+      ],
+      color: "green"
     }
-  };
+  ];
 
-  // Xóa chu kỳ
-  const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc muốn xóa chu kỳ này không?')) {
-      return;
-    }
+  const warningSignals = [
+    "Kinh quá nhiều, kéo dài >7 ngày",
+    "Đau bụng dữ dội, trễ kinh thường xuyên",
+    "Khí hư có mùi lạ hoặc màu bất thường"
+  ];
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await apiClient.delete(`/menstrual-cycle/${id}`);
-
-      if (response.data.success) {
-        setSuccess('Đã xóa chu kỳ kinh nguyệt!');
-
-        // Refresh data
-        fetchMenstrualCycles();
-        fetchMenstrualCyclesWithProb();
-
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setError(response.data.message);
-      }
-    } catch (error) {
-      setError('Có lỗi xảy ra khi xóa dữ liệu. Vui lòng thử lại.');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  // Hiển thị chi tiết chu kỳ
-  const handleViewDetail = async (id) => {
-    try {
-      const response = await apiClient.get(`/menstrual-cycle/${id}`);
-      if (response.data.success) {
-        setSelectedCycle(response.data.data);
-        setIsDetailDialogOpen(true);
-      } else {
-        setError(response.data.message);
-      }
-    } catch (error) {
-      setError('Có lỗi xảy ra khi lấy chi tiết chu kỳ kinh nguyệt');
-      console.error(error);
-    }
-  };
-
-  // Format date để hiển thị
-  const formatDate = (dateInput) => {
-    if (!dateInput) return '';
-
-    // Nếu dateInput đã là một đối tượng Date hợp lệ, sử dụng nó trực tiếp
-    if (dateInput instanceof Date && !isNaN(dateInput)) {
-      return format(dateInput, 'dd/MM/yyyy');
-    }
-
-    try {
-      // Đảm bảo dateInput là chuỗi trước khi gọi parseISO
-      const dateString = dateInput.toString();
-      const date = parseISO(dateString);
-      return isValid(date) ? format(date, 'dd/MM/yyyy') : '';
-    } catch (error) {
-      console.error('Error formatting date:', error, dateInput);
-      return '';
-    }
-  };
-
-  // Tính toán ngày dự kiến có kinh tiếp theo
-  const calculateNextPeriod = (startDate, cycleLength) => {
-    if (!startDate || !cycleLength) return '';
-    const date = parseISO(startDate);
-    return isValid(date)
-      ? format(addDays(date, parseInt(cycleLength)), 'dd/MM/yyyy')
-      : '';
-  };
-
-  // Tính toán giai đoạn an toàn sau khi hành kinh
-  const calculateSafePeriodAfter = (startDate, numberOfDays) => {
-    if (!startDate || !numberOfDays) return '';
-    const date = parseISO(startDate);
-    return isValid(date)
-      ? format(addDays(date, parseInt(numberOfDays) + 1), 'dd/MM/yyyy')
-      : '';
-  };
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Box sx={styles.pageHeader}>
-          <img
-            src={bannerImage}
-            alt="Ovulation Tracker"
-            style={{
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              top: 0,
-              left: 0,
-              objectFit: 'cover',
-              opacity: 0.6,
-            }}
-          />
-          <Box sx={{ position: 'relative', zIndex: 2 }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={8}>
-                <Typography
-                  variant="h4"
-                  component="h1"
-                  sx={{ color: '#fff', fontWeight: 700, mb: 1 }}
-                >
-                  Theo dõi chu kỳ kinh nguyệt
-                </Typography>
-                <Typography
-                  variant="subtitle1"
-                  sx={{ color: '#fff', mb: 1, opacity: 0.85 }}
-                >
-                  Quản lý chu kỳ kinh nguyệt, dự đoán ngày rụng trứng và giai
-                  đoạn an toàn
-                </Typography>
+      <Container maxWidth="lg" className={styles.container}>
+        {isLoggedIn ? (
+          <>
+            {/* Stats Cards */}
+            <Grid container className={styles.statsGrid}>
+              {/* Card 1: Chu kỳ trung bình */}
+              <Grid item>
+                <Card className={styles.statCard}>
+                  <Box className={styles.statHeader}>
+                    <Box className={`${styles.iconWrapper} ${styles.iconPink}`}>
+                      <CalendarToday className={styles.icon} />
+                    </Box>
+                    <span className={styles.statTitle}>Chu kỳ trung bình</span>
+                  </Box>
+                  <div className={styles.statValue}>28 ngày</div>
+                  <div className={styles.statSubtext}>5 chu kỳ đã ghi nhận</div>
+                </Card>
               </Grid>
-              <Grid
-                item
-                xs={12}
-                md={4}
-                sx={{
-                  display: { xs: 'none', md: 'flex' },
-                  justifyContent: 'center',
-                }}
-              >
-                <img
-                  src={cycleTracking}
-                  alt="Cycle tracking"
-                  style={{ height: 120 }}
-                />
+
+              {/* Card 2: Kỳ kinh trung bình */}
+              <Grid item>
+                <Card className={styles.statCard}>
+                  <Box className={styles.statHeader}>
+                    <Box className={`${styles.iconWrapper} ${styles.iconPurple}`}>
+                      <AccessTime className={styles.icon} />
+                    </Box>
+                    <span className={styles.statTitle}>Kỳ kinh trung bình</span>
+                  </Box>
+                  <div className={styles.statValue}>5 ngày</div>
+                  <div className={styles.statSubtext}>Độ dài kỳ kinh</div>
+                </Card>
+              </Grid>
+
+              {/* Card 3: Dự đoán kỳ tới */}
+              <Grid item>
+                <Card className={styles.statCard}>
+                  <Box className={styles.statHeader}>
+                    <Box className={`${styles.iconWrapper} ${styles.iconBlue}`}>
+                      <Timeline className={styles.icon} />
+                    </Box>
+                    <span className={styles.statTitle}>Dự đoán kỳ tới</span>
+                  </Box>
+                  <div className={styles.statValue}>3/6/2024</div>
+                  <div className={styles.statSubtext}>Ngày dự kiến</div>
+                </Card>
+              </Grid>
+
+              {/* Card 4: Tính đều đặn */}
+              <Grid item>
+                <Card className={styles.statCard}>
+                  <Box className={styles.statHeader}>
+                    <Box className={`${styles.iconWrapper} ${styles.iconGreen}`}>
+                      <CheckCircle className={styles.icon} />
+                    </Box>
+                    <span className={styles.statTitle}>Tính đều đặn</span>
+                  </Box>
+                  <div className={styles.statValue}>Đều đặn</div>
+                  <div className={styles.statSubtext}>Đánh giá chu kỳ</div>
+                </Card>
               </Grid>
             </Grid>
-          </Box>
-        </Box>
-        {error && (
-          <Alert
-            severity="error"
-            sx={{
-              mb: 2,
-              borderRadius: '8px',
-              boxShadow: '0 2px 10px rgba(244, 67, 54, 0.1)',
-            }}
-            onClose={() => setError(null)}
-          >
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert
-            severity="success"
-            sx={{
-              mb: 2,
-              borderRadius: '8px',
-              boxShadow: '0 2px 10px rgba(76, 175, 80, 0.1)',
-            }}
-            onClose={() => setSuccess(null)}
-          >
-            {success}
-          </Alert>
-        )}{' '}
-        <Grid container spacing={3}>
-          {/* Form nhập liệu */}
-          <Grid item xs={12} md={5}>
-            <Paper sx={styles.card}>
-              <Box
-                sx={{
-                  p: 2,
-                  backgroundColor: alpha('#4A90E2', 0.05),
-                  borderBottom: '1px solid rgba(74, 144, 226, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                }}
-              >
-                <Avatar
-                  sx={{
-                    background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                    color: '#fff',
-                    boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-                  }}
-                >
-                  <CalendarTodayIcon />
-                </Avatar>
-                <Typography variant="h6" sx={styles.gradientText}>
-                  Thêm chu kỳ kinh nguyệt mới
-                </Typography>
-              </Box>
 
-              <Box
-                component="form"
-                onSubmit={handleSubmit}
-                noValidate
-                sx={{ p: 3, pt: 2 }}
-              >
-                <Box sx={styles.iconWithText}>
-                  <CalendarTodayIcon />
-                  <Typography variant="subtitle2">
-                    Ngày bắt đầu chu kỳ
+            {/* Chart Section */}
+            <Grid container spacing={3}>
+              <Card className={styles.chartCard}>
+                <Box className={styles.chartHeader}>
+                  <Typography variant="h6" className={styles.chartTitle}>
+                    Biểu đồ chu kỳ
+                  </Typography>
+                  <Typography className={styles.chartSubtitle}>
+                    Thống kê 5 chu kỳ gần nhất
                   </Typography>
                 </Box>
-                <DatePicker
-                  label="Chọn ngày bắt đầu chu kỳ"
-                  value={formData.startDate}
-                  onChange={handleDateChange}
-                  disableFuture
-                  sx={{ width: '100%', mb: 3 }}
-                  format="dd/MM/yyyy"
-                  slotProps={{
-                    textField: {
-                      required: true,
-                      sx: {
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '8px',
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: alpha('#4A90E2', 0.8),
-                          },
-                        },
-                      },
-                    },
-                  }}
-                />
 
-                <Box sx={styles.iconWithText}>
-                  <WaterDropIcon />
-                  <Typography variant="subtitle2">Số ngày hành kinh</Typography>
-                </Box>
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="numberOfDays"
-                  placeholder="Nhập số ngày"
-                  name="numberOfDays"
-                  type="number"
-                  value={formData.numberOfDays}
-                  onChange={handleInputChange}
-                  inputProps={{ min: 1, max: 30 }}
-                  sx={{
-                    mb: 3,
-                    mt: 0,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '8px',
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: alpha('#4A90E2', 0.8),
-                      },
-                    },
-                  }}
-                  helperText="Số ngày từ 1-30"
-                />
-
-                <Box sx={styles.iconWithText}>
-                  <CycloneIcon />
-                  <Typography variant="subtitle2">
-                    Độ dài chu kỳ (ngày)
-                  </Typography>
-                </Box>
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="cycleLength"
-                  placeholder="Nhập độ dài chu kỳ"
-                  name="cycleLength"
-                  type="number"
-                  value={formData.cycleLength}
-                  onChange={handleInputChange}
-                  inputProps={{ min: 1 }}
-                  sx={{
-                    mb: 3,
-                    mt: 0,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '8px',
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: alpha('#4A90E2', 0.8),
-                      },
-                    },
-                  }}
-                  helperText="Thông thường từ 21-35 ngày"
-                />
-
-                <Box sx={styles.iconWithText}>
-                  <NotificationsActiveIcon />
-                  <Typography variant="subtitle2">Cài đặt thông báo</Typography>
-                </Box>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.reminderEnabled}
-                      onChange={handleReminderChange}
-                      name="reminderEnabled"
-                      color="primary"
-                    />
-                  }
-                  label="Bật nhắc nhở"
-                  sx={{ mb: 3 }}
-                />
-
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  sx={styles.gradientButton}
-                  disabled={loading}
-                >
-                  {loading ? <CircularProgress size={24} /> : 'Lưu thông tin'}
-                </Button>
-
-                <Box
-                  sx={{
-                    mt: 3,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    opacity: 0.7,
-                  }}
-                >
-                  <img
-                    src={cycleIcon}
-                    alt="Cycle Icon"
-                    style={{ height: '60px' }}
-                  />
-                </Box>
-              </Box>
-            </Paper>
-          </Grid>{' '}
-          {/* Thông tin hiển thị */}
-          <Grid item xs={12} md={7}>
-            <Paper sx={styles.card}>
-              <Box
-                sx={{
-                  p: 2,
-                  backgroundColor: alpha('#4A90E2', 0.05),
-                  borderBottom: '1px solid rgba(74, 144, 226, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                }}
-              >
-                <Avatar
-                  sx={{
-                    background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                    color: '#fff',
-                    boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-                  }}
-                >
-                  <CycloneIcon />
-                </Avatar>
-                <Typography variant="h6" sx={styles.gradientText}>
-                  Thống kê chu kỳ kinh nguyệt
-                </Typography>
-              </Box>
-
-              <Box sx={{ p: 2 }}>
-                {loading ? (
-                  <Box
-                    display="flex"
-                    justifyContent="center"
-                    alignItems="center"
-                    sx={{ minHeight: '200px' }}
-                  >
-                    <CircularProgress sx={{ color: '#4A90E2' }} />
-                  </Box>
-                ) : menstrualCycles.length === 0 ? (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      minHeight: '200px',
-                      backgroundColor: alpha('#4A90E2', 0.02),
-                      borderRadius: '12px',
-                      p: 3,
-                      border: '1px dashed rgba(74, 144, 226, 0.3)',
-                    }}
-                  >
-                    <img
-                      src={cycleIcon}
-                      alt="Cycle Icon"
-                      style={{
-                        height: '80px',
-                        opacity: 0.5,
-                        marginBottom: '16px',
-                      }}
-                    />
-                    <Typography
-                      variant="body1"
-                      sx={{ color: alpha('#000', 0.6), textAlign: 'center' }}
-                    >
-                      Bạn chưa có dữ liệu chu kỳ kinh nguyệt nào.
-                      <br />
-                      <b>Hãy thêm một chu kỳ mới!</b>
+                <Box className={styles.legendContainer}>
+                  <Box className={styles.legendItem}>
+                    <Box className={styles.legendDot} style={{ backgroundColor: '#E91E63' }} />
+                    <Typography className={styles.legendText}>
+                      Chu kỳ thực tế
                     </Typography>
                   </Box>
-                ) : (
-                  <TableContainer
-                    sx={{
-                      borderRadius: '8px',
-                      boxShadow: 'none',
-                      border: '1px solid rgba(74, 144, 226, 0.12)',
-                    }}
-                  >
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow
-                          sx={{ backgroundColor: alpha('#4A90E2', 0.05) }}
-                        >
-                          <TableCell sx={{ fontWeight: 600, color: '#4A90E2' }}>
-                            Ngày bắt đầu
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{ fontWeight: 600, color: '#4A90E2' }}
-                          >
-                            Số ngày
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{ fontWeight: 600, color: '#4A90E2' }}
-                          >
-                            Chu kỳ
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{ fontWeight: 600, color: '#4A90E2' }}
-                          >
-                            Ngày rụng trứng
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            sx={{ fontWeight: 600, color: '#4A90E2' }}
-                          >
-                            Thao tác
-                          </TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {menstrualCycles.map((cycle) => (
-                          <TableRow
-                            key={cycle.id}
-                            sx={{
-                              '&:hover': {
-                                backgroundColor: alpha('#4A90E2', 0.03),
-                              },
-                              transition: 'background-color 0.2s',
-                            }}
-                          >
-                            <TableCell sx={{ fontWeight: 500 }}>
-                              {formatDate(cycle.startDate)}
-                            </TableCell>
-                            <TableCell align="center">
-                              <Chip
-                                label={cycle.numberOfDays}
-                                size="small"
-                                sx={{
-                                  backgroundColor: alpha('#F44336', 0.1),
-                                  color: '#F44336',
-                                  fontWeight: 500,
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell align="center">
-                              <Chip
-                                label={cycle.cycleLength + ' ngày'}
-                                size="small"
-                                sx={{
-                                  backgroundColor: alpha('#4A90E2', 0.1),
-                                  color: '#4A90E2',
-                                  fontWeight: 500,
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell align="center">
-                              <Chip
-                                label={formatDate(cycle.ovulationDate)}
-                                size="small"
-                                sx={{
-                                  backgroundColor: alpha('#F06292', 0.1),
-                                  color: '#F06292',
-                                  fontWeight: 500,
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell align="center">
-                              <Tooltip title="Chi tiết">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleViewDetail(cycle.id)}
-                                  sx={{
-                                    color: '#4A90E2',
-                                    '&:hover': {
-                                      backgroundColor: alpha('#4A90E2', 0.1),
-                                    },
-                                  }}
-                                >
-                                  <InfoIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Chỉnh sửa">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleEdit(cycle)}
-                                  sx={{
-                                    color: '#1ABC9C',
-                                    '&:hover': {
-                                      backgroundColor: alpha('#1ABC9C', 0.1),
-                                    },
-                                  }}
-                                >
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Xóa">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleDelete(cycle.id)}
-                                  sx={{
-                                    color: '#F44336',
-                                    '&:hover': {
-                                      backgroundColor: alpha('#F44336', 0.1),
-                                    },
-                                  }}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                )}
-              </Box>
-            </Paper>
-          </Grid>{' '}
-          {/* Thông tin tỉ lệ mang thai */}
-          {cyclesWithProb.length > 0 && (
-            <Grid item xs={12}>
-              <Card
-                sx={{
-                  ...styles.card,
-                  background:
-                    'linear-gradient(135deg, rgba(74, 144, 226, 0.02) 0%, rgba(26, 188, 156, 0.05) 100%)',
-                  p: 0,
-                }}
-              >
-                <Box
-                  sx={{
-                    p: 2,
-                    backgroundColor: alpha('#4A90E2', 0.05),
-                    borderBottom: '1px solid rgba(74, 144, 226, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 2,
-                  }}
-                >
-                  <Avatar
-                    sx={{
-                      background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                      color: '#fff',
-                      boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-                    }}
-                  >
-                    <FavoriteIcon />
-                  </Avatar>
-                  <Typography variant="h6" sx={styles.gradientText}>
-                    Dự đoán chu kỳ và tỉ lệ mang thai
-                  </Typography>
+                  <Box className={styles.legendItem}>
+                    <Box className={styles.legendDot} style={{ backgroundColor: '#9C27B0' }} />
+                    <Typography className={styles.legendText}>
+                      Trung bình
+                    </Typography>
+                  </Box>
                 </Box>
 
-                <CardContent>
-                  <Grid container spacing={3}>
-                    {cyclesWithProb.slice(0, 1).map((cycle) => (
-                      <React.Fragment key={cycle.id}>
-                        <Grid item xs={12} md={4}>
-                          <Box
-                            sx={{
-                              p: 2,
-                              borderRadius: '12px',
-                              backgroundColor: '#fff',
-                              boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-                              textAlign: 'center',
-                              height: '100%',
-                            }}
-                          >
-                            <img
-                              src={cycleIcon}
-                              alt="Cycle Icon"
-                              style={{ height: '60px', marginBottom: '8px' }}
-                            />
-                            <Typography
-                              variant="h6"
-                              sx={{ color: '#4A90E2', fontWeight: 600 }}
-                            >
-                              Chu kỳ gần nhất
-                            </Typography>
-                            <Typography
-                              variant="subtitle1"
-                              sx={{ fontSize: '1.1rem', fontWeight: 500 }}
-                            >
-                              {formatDate(cycle.startDate)}
-                            </Typography>
-                            <Divider sx={{ my: 1.5 }} />
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                mt: 1,
-                              }}
-                            >
-                              <Typography
-                                variant="body2"
-                                sx={{ color: alpha('#000', 0.7) }}
-                              >
-                                Chu kỳ tiếp theo:
-                              </Typography>
-                              <Chip
-                                label={calculateNextPeriod(
-                                  cycle.startDate,
-                                  cycle.cycleLength
-                                )}
-                                size="small"
-                                sx={{
-                                  backgroundColor: alpha('#4A90E2', 0.1),
-                                  color: '#4A90E2',
-                                  fontWeight: 500,
-                                }}
-                              />
-                            </Box>
-                          </Box>
-                        </Grid>
+                <Box className={styles.chartContainer}>
+                  <Line data={chartData} options={chartOptions} className={styles.chartCanvas} />
+                </Box>
 
-                        <Grid item xs={12} md={4}>
-                          <Box
-                            sx={{
-                              p: 2,
-                              borderRadius: '12px',
-                              backgroundColor: '#fff',
-                              boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-                              textAlign: 'center',
-                              height: '100%',
-                              display: 'flex',
-                              flexDirection: 'column',
-                            }}
-                          >
-                            <Typography
-                              variant="h6"
-                              sx={{ color: '#F06292', fontWeight: 600, mb: 1 }}
-                            >
-                              Ngày rụng trứng
-                            </Typography>
-                            <Box
-                              sx={{
-                                flex: 1,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                              }}
-                            >
-                              {' '}
-                              <Avatar
-                                sx={{
-                                  width: 80,
-                                  height: 80,
-                                  bgcolor: alpha('#F06292', 0.1),
-                                  color: '#F06292',
-                                  fontSize: '1rem',
-                                  fontWeight: 700,
-                                  mb: 2,
-                                }}
-                              >
-                                {(() => {
-                                  const formattedDate = formatDate(
-                                    cycle.ovulationDate
-                                  );
-                                  return formattedDate
-                                    ? formattedDate.split('/')[0]
-                                    : '';
-                                })()}
-                              </Avatar>
-                              <Typography sx={{ fontWeight: 500 }}>
-                                {formatDate(cycle.ovulationDate)}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                sx={{ color: alpha('#000', 0.5), mt: 0.5 }}
-                              >
-                                Khả năng mang thai cao nhất
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Grid>
-
-                        <Grid item xs={12} md={4}>
-                          <Box
-                            sx={{
-                              p: 2,
-                              borderRadius: '12px',
-                              backgroundColor: '#fff',
-                              boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-                              height: '100%',
-                            }}
-                          >
-                            <Typography
-                              variant="h6"
-                              sx={{
-                                color: '#1ABC9C',
-                                fontWeight: 600,
-                                mb: 1.5,
-                                textAlign: 'center',
-                              }}
-                            >
-                              Các giai đoạn
-                            </Typography>
-
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                mb: 1.5,
-                              }}
-                            >
-                              <Box
-                                sx={{
-                                  ...styles.indicatorCircle,
-                                  ...styles.safeDays,
-                                }}
-                              />
-                              <Typography
-                                variant="subtitle2"
-                                sx={{ fontWeight: 500 }}
-                              >
-                                Giai đoạn an toàn
-                              </Typography>
-                            </Box>
-                            <Typography
-                              variant="body2"
-                              sx={{ ml: 2.5, mb: 1.5 }}
-                            >
-                              Từ{' '}
-                              <Chip
-                                label={calculateSafePeriodAfter(
-                                  cycle.startDate,
-                                  cycle.numberOfDays
-                                )}
-                                size="small"
-                                sx={{ fontSize: '0.7rem', height: 20 }}
-                              />{' '}
-                              đến{' '}
-                              <Chip
-                                label={formatDate(
-                                  addDays(parseISO(cycle.ovulationDate), -5)
-                                )}
-                                size="small"
-                                sx={{ fontSize: '0.7rem', height: 20 }}
-                              />
-                            </Typography>
-
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                mb: 1.5,
-                              }}
-                            >
-                              <Box
-                                sx={{
-                                  ...styles.indicatorCircle,
-                                  ...styles.fertileDays,
-                                }}
-                              />
-                              <Typography
-                                variant="subtitle2"
-                                sx={{ fontWeight: 500 }}
-                              >
-                                Giai đoạn dễ mang thai
-                              </Typography>
-                            </Box>
-                            <Typography variant="body2" sx={{ ml: 2.5 }}>
-                              Từ{' '}
-                              <Chip
-                                label={formatDate(
-                                  addDays(parseISO(cycle.ovulationDate), -5)
-                                )}
-                                size="small"
-                                color="error"
-                                variant="outlined"
-                                sx={{ fontSize: '0.7rem', height: 20 }}
-                              />{' '}
-                              đến{' '}
-                              <Chip
-                                label={formatDate(
-                                  addDays(parseISO(cycle.ovulationDate), 1)
-                                )}
-                                size="small"
-                                color="error"
-                                variant="outlined"
-                                sx={{ fontSize: '0.7rem', height: 20 }}
-                              />
-                            </Typography>
-                          </Box>
-                        </Grid>
-                      </React.Fragment>
-                    ))}
-                  </Grid>
-                </CardContent>
+                <Box className={styles.statsFooterWrapper}>
+                  <Box className={styles.statsFooter}>
+                    <Box className={styles.statsFooterCard}>
+                      <Typography className={styles.statSubtext}>
+                        Chu kỳ ngắn nhất
+                      </Typography>
+                      <Typography variant="h6" className={styles.statValue}>
+                        28 ngày
+                      </Typography>
+                    </Box>
+                    <Box className={styles.statsFooterCard}>
+                      <Typography className={styles.statSubtext}>
+                        Chu kỳ dài nhất
+                      </Typography>
+                      <Typography variant="h6" className={styles.statValue}>
+                        28 ngày
+                      </Typography>
+                    </Box>
+                    <Box className={styles.statsFooterCard}>
+                      <Typography className={styles.statSubtext}>
+                        Chênh lệch
+                      </Typography>
+                      <Typography variant="h6" className={styles.statValue}>
+                        0 ngày
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
               </Card>
             </Grid>
-          )}
-        </Grid>{' '}
-        {/* Dialog chỉnh sửa */}
-        <Dialog
-          open={isEditDialogOpen}
-          onClose={() => setIsEditDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-          PaperProps={{
-            elevation: 2,
-            sx: {
-              borderRadius: '12px',
-              overflow: 'hidden',
-            },
-          }}
-        >
-          <DialogTitle
-            sx={{
-              background:
-                'linear-gradient(45deg, rgba(74, 144, 226, 0.05) 0%, rgba(26, 188, 156, 0.05) 100%)',
-              borderBottom: '1px solid rgba(74, 144, 226, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-            }}
-          >
-            <EditIcon sx={{ color: '#4A90E2' }} />
-            <Typography sx={styles.gradientText}>
-              Chỉnh sửa chu kỳ kinh nguyệt
-            </Typography>
-          </DialogTitle>
-          <DialogContent>
-            <Box sx={{ mt: 2 }}>
-              <Box sx={styles.iconWithText}>
-                <CalendarTodayIcon />
-                <Typography variant="subtitle2">Ngày bắt đầu chu kỳ</Typography>
-              </Box>
-              <DatePicker
-                label="Chọn ngày bắt đầu"
-                value={editingCycle ? editingCycle.startDate : null}
-                onChange={handleEditDateChange}
-                disableFuture
-                sx={{ width: '100%', mb: 2 }}
-                format="dd/MM/yyyy"
-                slotProps={{
-                  textField: {
-                    required: true,
-                    sx: {
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '8px',
-                      },
-                    },
-                  },
-                }}
-              />
 
-              <Box sx={styles.iconWithText}>
-                <WaterDropIcon />
-                <Typography variant="subtitle2">Số ngày hành kinh</Typography>
-              </Box>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="editNumberOfDays"
-                label="Số ngày hành kinh"
-                name="numberOfDays"
-                type="number"
-                value={editingCycle ? editingCycle.numberOfDays : ''}
-                onChange={handleEditInputChange}
-                inputProps={{ min: 1, max: 30 }}
-                sx={{
-                  mb: 2,
-                  mt: 0,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '8px',
-                  },
-                }}
-                helperText="Số ngày từ 1-30"
-              />
+            {/* Health Advice Section */}
+            <Box className={styles.healthAdviceSection}>
+              <Card className={styles.healthAdviceCard}>
+                <Box className={styles.healthAdviceHeader}>
+                  <Box className={styles.healthAdviceIconWrapper}>
+                    <FavoriteBorderIcon className={styles.healthAdviceIcon} />
+                  </Box>
+                  <Box>
+                    <Typography variant="h6" className={styles.healthAdviceTitle}>Lời khuyên sức khỏe</Typography>
+                    <Typography className={styles.healthAdviceSubtitle}>Dựa trên dữ liệu chu kỳ của bạn</Typography>
+                  </Box>
+                </Box>
 
-              <Box sx={styles.iconWithText}>
-                <CycloneIcon />
-                <Typography variant="subtitle2">
-                  Độ dài chu kỳ (ngày)
-                </Typography>
-              </Box>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="editCycleLength"
-                label="Độ dài chu kỳ"
-                name="cycleLength"
-                type="number"
-                value={editingCycle ? editingCycle.cycleLength : ''}
-                onChange={handleEditInputChange}
-                inputProps={{ min: 1 }}
-                sx={{
-                  mb: 2,
-                  mt: 0,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '8px',
-                  },
-                }}
-                helperText="Thông thường từ 21-35 ngày"
-              />
+                {/* Card: Chu kỳ đều đặn */}
+                <Card className={styles.adviceCardRegular}>
+                  <Box className={styles.adviceCardHeader}>
+                    <Box className={styles.adviceCardIconRegular}>
+                      <FavoriteBorderIcon className={styles.adviceCardIconRegularIcon} />
+                    </Box>
+                    <Typography variant="subtitle1" className={styles.adviceCardTitleRegular}>Chu kỳ đều đặn</Typography>
+                  </Box>
+                  <Typography className={styles.adviceCardTextRegular}>Chu kỳ của bạn rất đều đặn! Hãy duy trì lối sống lành mạnh hiện tại.</Typography>
+                  <List className={styles.adviceCardList}>
+                    <ListItem className={styles.adviceCardListItem}>Tiếp tục duy trì chế độ ăn uống cân bằng</ListItem>
+                    <ListItem className={styles.adviceCardListItem}>Tập thể dục đều đặn</ListItem>
+                    <ListItem className={styles.adviceCardListItem}>Ngủ đủ 7-8 tiếng mỗi ngày</ListItem>
+                  </List>
+                </Card>
 
-              <Box sx={styles.iconWithText}>
-                <NotificationsActiveIcon />
-                <Typography variant="subtitle2">Cài đặt thông báo</Typography>
-              </Box>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={
-                      editingCycle ? editingCycle.reminderEnabled : false
-                    }
-                    onChange={handleEditReminderChange}
-                    name="reminderEnabled"
-                    color="primary"
-                  />
-                }
-                label="Bật nhắc nhở"
-              />
+                {/* Card: Lời khuyên chung */}
+                <Card className={styles.adviceCardGeneral}>
+                  <Box className={styles.adviceCardHeader}>
+                    <Box className={styles.adviceCardIconGeneral}>
+                      <FavoriteBorderIcon className={styles.adviceCardIconGeneralIcon} />
+                    </Box>
+                    <Typography variant="subtitle1" className={styles.adviceCardTitleGeneral}>Lời khuyên chung</Typography>
+                  </Box>
+                  <Typography className={styles.adviceCardTextGeneral}>Những thói quen tốt để duy trì sức khỏe sinh sản.</Typography>
+                  <List className={styles.adviceCardList}>
+                    <ListItem className={styles.adviceCardListItem}>Uống đủ 2-3 lít nước mỗi ngày</ListItem>
+                    <ListItem className={styles.adviceCardListItem}>Ăn nhiều rau xanh và trái cây</ListItem>
+                    <ListItem className={styles.adviceCardListItem}>Tập thể dục nhẹ nhàng trong kỳ kinh</ListItem>
+                    <ListItem className={styles.adviceCardListItem}>Theo dõi và ghi chép đều đặn</ListItem>
+                  </List>
+                </Card>
+
+                {/* Lưu ý */}
+                <Box className={styles.healthAdviceNote}>
+                  <b>Lưu ý:</b> Những lời khuyên này chỉ mang tính chất tham khảo. Nếu có bất thường hoặc lo lắng, hãy tham khảo ý kiến bác sĩ chuyên khoa.
+                </Box>
+              </Card>
             </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 2, pt: 0 }}>
-            <Button
-              onClick={() => setIsEditDialogOpen(false)}
-              variant="outlined"
-              sx={{
-                borderRadius: '8px',
-                borderColor: alpha('#4A90E2', 0.5),
-                color: '#4A90E2',
-                '&:hover': { borderColor: '#4A90E2' },
-              }}
-            >
-              Hủy
-            </Button>
-            <Button
-              onClick={handleSaveEdit}
-              disabled={loading}
-              variant="contained"
-              sx={styles.gradientButton}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Lưu thay đổi'}
-            </Button>
-          </DialogActions>
-        </Dialog>
-        {/* Dialog chi tiết */}
-        <Dialog
-          open={isDetailDialogOpen}
-          onClose={() => setIsDetailDialogOpen(false)}
-          maxWidth="md"
-          fullWidth
-          PaperProps={{
-            elevation: 2,
-            sx: {
-              borderRadius: '12px',
-              overflow: 'hidden',
-            },
-          }}
-        >
-          <DialogTitle
-            sx={{
-              background:
-                'linear-gradient(45deg, rgba(74, 144, 226, 0.05) 0%, rgba(26, 188, 156, 0.05) 100%)',
-              borderBottom: '1px solid rgba(74, 144, 226, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-            }}
-          >
-            <InfoIcon sx={{ color: '#4A90E2' }} />
-            <Typography sx={styles.gradientText}>
-              Chi tiết chu kỳ kinh nguyệt
-            </Typography>
-          </DialogTitle>
-          <DialogContent sx={{ p: 3 }}>
-            {selectedCycle && (
-              <Box>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
-                    <Card
-                      sx={{
-                        borderRadius: '12px',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-                        height: '100%',
-                      }}
-                    >
-                      <CardContent>
-                        <Box sx={{ textAlign: 'center', mb: 2 }}>
-                          <img
-                            src={cycleIcon}
-                            alt="Cycle Icon"
-                            style={{ height: '60px' }}
-                          />
-                          <Typography variant="h6" sx={styles.gradientText}>
-                            Thông tin chu kỳ
-                          </Typography>
-                        </Box>
-                        <Divider sx={{ mb: 2 }} />
 
-                        <Grid container spacing={2}>
-                          <Grid item xs={6}>
-                            <Typography
-                              variant="subtitle2"
-                              color="textSecondary"
-                            >
-                              Ngày bắt đầu:
-                            </Typography>
-                            <Typography
-                              variant="body1"
-                              sx={{ fontWeight: 500 }}
-                            >
-                              {formatDate(selectedCycle.startDate)}
-                            </Typography>
-                          </Grid>
+            {/* Add New Cycle Button */}
+            <Box className={styles.addButtonCard}>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                className={styles.addButton}
+              >
+                Ghi nhận chu kỳ mới
+              </Button>
+            </Box>
+          </>
+        ) : (
+          <div className={styles.introduction}>
+            {/* Header */}
+            <div className={styles.header}>
+              <div className="text-center">
+                <h2 className={styles.headerTitle}>
+                  Lợi Ích Của Việc Theo Dõi Chu Kỳ & Chăm Sóc Bản Thân
+                </h2>
+                <p className={styles.headerSubtitle}>
+                  Hiểu rõ cơ thể để chăm sóc bản thân tốt hơn
+                </p>
+              </div>
+            </div>
 
-                          <Grid item xs={6}>
-                            <Typography
-                              variant="subtitle2"
-                              color="textSecondary"
-                            >
-                              Số ngày hành kinh:
-                            </Typography>
-                            <Typography
-                              variant="body1"
-                              sx={{ fontWeight: 500 }}
-                            >
-                              {selectedCycle.numberOfDays} ngày
-                            </Typography>
-                          </Grid>
+            <div className={styles.content}>
+              {/* Benefits Grid */}
+              <div className={styles.benefitsGrid}>
+                {benefits.map((benefit, index) => (
+                  <div key={index} className={styles.benefitCard}>
+                    <div className="flex items-start space-x-3">
+                      <div className={styles.benefitIconWrapper}>
+                        {benefit.icon}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className={styles.benefitTitle}>{benefit.title}</h4>
+                        <p className={styles.benefitDescription}>{benefit.description}</p>
+                        {benefit.details.map((detail, detailIndex) => (
+                          <div key={detailIndex} className={styles.benefitDetail}>
+                            <div className={styles.benefitBullet}></div>
+                            <span>{detail}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-                          <Grid item xs={6}>
-                            <Typography
-                              variant="subtitle2"
-                              color="textSecondary"
-                            >
-                              Độ dài chu kỳ:
-                            </Typography>
-                            <Typography
-                              variant="body1"
-                              sx={{ fontWeight: 500 }}
-                            >
-                              {selectedCycle.cycleLength} ngày
-                            </Typography>
-                          </Grid>
-
-                          <Grid item xs={6}>
-                            <Typography
-                              variant="subtitle2"
-                              color="textSecondary"
-                            >
-                              Ngày rụng trứng:
-                            </Typography>
-                            <Typography
-                              variant="body1"
-                              sx={{ fontWeight: 500 }}
-                            >
-                              {formatDate(selectedCycle.ovulationDate)}
-                            </Typography>
-                          </Grid>
-
-                          <Grid item xs={12}>
-                            <Typography
-                              variant="subtitle2"
-                              color="textSecondary"
-                            >
-                              Chu kỳ tiếp theo dự kiến:
-                            </Typography>
-                            <Chip
-                              label={calculateNextPeriod(
-                                selectedCycle.startDate,
-                                selectedCycle.cycleLength
-                              )}
-                              sx={{
-                                backgroundColor: alpha('#4A90E2', 0.1),
-                                color: '#4A90E2',
-                                fontWeight: 500,
-                                mt: 0.5,
-                              }}
-                            />
-                          </Grid>
-                        </Grid>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-
-                  {selectedCycle.pregnancyProbLogs &&
-                    selectedCycle.pregnancyProbLogs.length > 0 && (
-                      <Grid item xs={12} md={6}>
-                        <Card
-                          sx={{
-                            borderRadius: '12px',
-                            boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-                            height: '100%',
-                          }}
-                        >
-                          <CardContent>
-                            <Typography
-                              variant="h6"
-                              sx={{
-                                ...styles.gradientText,
-                                mb: 2,
-                                textAlign: 'center',
-                              }}
-                            >
-                              Tỉ lệ mang thai theo ngày
-                            </Typography>
-                            <Divider sx={{ mb: 2 }} />
-
-                            <TableContainer
-                              sx={{
-                                borderRadius: '8px',
-                                border: '1px solid rgba(74, 144, 226, 0.12)',
-                              }}
-                            >
-                              <Table size="small">
-                                <TableHead>
-                                  <TableRow
-                                    sx={{
-                                      backgroundColor: alpha('#4A90E2', 0.05),
-                                    }}
-                                  >
-                                    <TableCell
-                                      sx={{ fontWeight: 600, color: '#4A90E2' }}
-                                    >
-                                      Ngày
-                                    </TableCell>
-                                    <TableCell
-                                      align="right"
-                                      sx={{ fontWeight: 600, color: '#4A90E2' }}
-                                    >
-                                      Tỉ lệ mang thai
-                                    </TableCell>
-                                    <TableCell
-                                      sx={{ fontWeight: 600, color: '#4A90E2' }}
-                                    >
-                                      Ghi chú
-                                    </TableCell>
-                                  </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                  {selectedCycle.pregnancyProbLogs.map(
-                                    (log) => (
-                                      <TableRow
-                                        key={log.id}
-                                        sx={{
-                                          '&:hover': {
-                                            backgroundColor: alpha(
-                                              '#4A90E2',
-                                              0.03
-                                            ),
-                                          },
-                                          transition: 'background-color 0.2s',
-                                        }}
-                                      >
-                                        <TableCell>
-                                          {formatDate(log.date)}
-                                        </TableCell>
-                                        <TableCell align="right">
-                                          <Chip
-                                            label={`${log.probability}%`}
-                                            size="small"
-                                            sx={{
-                                              backgroundColor:
-                                                log.probability > 50
-                                                  ? alpha('#F06292', 0.1)
-                                                  : log.probability > 20
-                                                    ? alpha('#FFA726', 0.1)
-                                                    : alpha('#4CAF50', 0.1),
-                                              color:
-                                                log.probability > 50
-                                                  ? '#F06292'
-                                                  : log.probability > 20
-                                                    ? '#FFA726'
-                                                    : '#4CAF50',
-                                              fontWeight: 500,
-                                            }}
-                                          />
-                                        </TableCell>
-                                        <TableCell>{log.description}</TableCell>
-                                      </TableRow>
-                                    )
-                                  )}
-                                </TableBody>
-                              </Table>
-                            </TableContainer>
-                          </CardContent>
-                        </Card>
-                      </Grid>
+              {/* Care Phases Section */}
+              <div>
+                <button
+                  onClick={() => toggleSection('care')}
+                  className={`${styles.sectionButton} ${styles.careButton}`}
+                >
+                  <h3 className={styles.sectionTitle}>Chăm Sóc Bản Thân Theo Từng Giai Đoạn</h3>
+                  <div className={`${styles.chevronIcon} ${expandedSection === 'care' ? styles.expanded : ''}`}>
+                    {expandedSection === 'care' ? (
+                      <ChevronUp className="h-5 w-5" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5" />
                     )}
-                </Grid>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Button
-              onClick={() => setIsDetailDialogOpen(false)}
-              variant="contained"
-              sx={styles.gradientButton}
-            >
-              Đóng
-            </Button>
-          </DialogActions>
-        </Dialog>
+                  </div>
+                </button>
+
+                {expandedSection === 'care' && (
+                  <div className={styles.careGrid}>
+                    {carePhases.map((phase, index) => (
+                      <div key={index} className={`${styles.carePhaseCard} ${styles[phase.color]}`}>
+                        <div className={styles.carePhaseHeader}>
+                          <div className={styles.carePhaseIcon}>
+                            {phase.icon}
+                          </div>
+                          <h4 className={styles.carePhaseTitle}>{phase.phase}</h4>
+                        </div>
+                        <ul className={styles.careTipsList}>
+                          {phase.tips.map((tip, tipIndex) => (
+                            <li key={tipIndex} className={styles.careTip}>
+                              <div className={styles.tipBullet}></div>
+                              <span>{tip}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Warning Signs Section */}
+              <div>
+                <button
+                  onClick={() => toggleSection('warning')}
+                  className={`${styles.sectionButton} ${styles.warningButton}`}
+                >
+                  <h3 className={`${styles.sectionTitle} flex items-center space-x-2`}>
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                    <span>Khi Nào Nên Đi Khám?</span>
+                  </h3>
+                  <div className={`${styles.chevronIcon} ${expandedSection === 'warning' ? styles.expanded : ''}`}>
+                    {expandedSection === 'warning' ? (
+                      <ChevronUp className="h-5 w-5" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5" />
+                    )}
+                  </div>
+                </button>
+
+                {expandedSection === 'warning' && (
+                  <div className={styles.warningContent}>
+                    <ul className={styles.warningList}>
+                      {warningSignals.map((signal, index) => (
+                        <li key={index} className={styles.warningItem}>
+                          <AlertTriangle className={styles.warningIcon} />
+                          <span>{signal}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className={styles.warningNote}>
+                      <p className={styles.warningNoteText}>
+                        <strong className={styles.warningNoteHighlight}>Lưu ý:</strong> Nếu gặp bất kỳ triệu chứng nào ở trên, 
+                        hãy tham khảo ý kiến bác sĩ chuyên khoa để được tư vấn và điều trị kịp thời.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Button chuyển đến trang đăng nhập */}
+              <button
+                className={styles.loginButton}
+                onClick={() => window.location.href = '/login'}
+              >
+                Đăng nhập để sử dụng đầy đủ tính năng
+              </button>
+            </div>
+          </div>
+        )}
       </Container>
     </LocalizationProvider>
   );

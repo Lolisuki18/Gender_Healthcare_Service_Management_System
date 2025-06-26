@@ -131,6 +131,20 @@ public class MenstrualCycleController {
     }
 
 
+    /*
+     * description: lấy chu kỳ trung bình của người dùng
+     * method: GET
+     * path: /menstrual-cycle/average
+     */
+    @GetMapping("/average")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    public ResponseEntity<ApiResponse<Double>> getAverageMenstrualCycle() {
+        Long userId = getCurrentUserId();
+        ApiResponse<Double> response = menstrualCycleService.calculateAverageCycleLength(userId);
+        return ResponseEntity.ok(response);
+    }
+
+
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();

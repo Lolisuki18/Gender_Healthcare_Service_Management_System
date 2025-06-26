@@ -368,6 +368,27 @@ public class MenstrualCycleService {
     }
 
 
+    // Tính chu kỳ trung bình
+    public ApiResponse<Double> calculateAverageCycleLength(Long userId) {
+        try {
+            List<MenstrualCycle> cycles = menstrualCycleRepository.findAllByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy chu kỳ kinh nguyệt cho người dùng"));
+
+            if (cycles.isEmpty()) {
+                return ApiResponse.error("Không có chu kỳ kinh nguyệt nào để tính toán");
+            }
+
+            double totalCycleLength = cycles.stream()
+                .mapToDouble(MenstrualCycle::getCycleLength)
+                .sum();
+
+            double averageCycleLength = totalCycleLength / cycles.size();
+            return ApiResponse.success("Tính chu kỳ trung bình thành công", averageCycleLength);
+        } catch (Exception e) {
+            return ApiResponse.error("Lỗi khi tính chu kỳ trung bình: " + e.getMessage());
+        }
+    }
+
     
     /*
      * Chuyển đổi MenstrualCycle thành MenstrualCycleResponse không có tỉ lệ mang thai
