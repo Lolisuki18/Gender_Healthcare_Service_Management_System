@@ -4,11 +4,11 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { vi } from 'date-fns/locale';
 import ovulationAuthService from '../services/ovulationAuthService';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import React, { useState, useEffect } from 'react';
-import { CalendarToday, AccessTime, Timeline, CheckCircle, Add } from '@mui/icons-material';
+import React, { useState } from 'react';
+import { CheckCircle, Add } from '@mui/icons-material';
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { List, ListItem, ListItemText, Alert } from '@mui/material';
+import { List, ListItem } from '@mui/material';
 import styles from '../styles/OvulationPage.module.css';
 import { 
   Heart, 
@@ -21,7 +21,10 @@ import {
   Clock,
   Shield,
   AlertTriangle,
-  AlertCircle
+  AlertCircle,
+  Activity,
+  Zap,
+  Lightbulb
 } from 'lucide-react';
 
 const defaultStats = {
@@ -34,17 +37,14 @@ const defaultStats = {
 
 const OvulationPage = ({ stats = defaultStats }) => {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  const [user, setUser] = React.useState(null);
 
   React.useEffect(() => {
     const checkLogin = async () => {
       const userData = await ovulationAuthService.getCurrentUser();
       if (userData) {
         setIsLoggedIn(true);
-        setUser(userData);
       } else {
         setIsLoggedIn(false);
-        setUser(null);
       }
     };
   
@@ -54,8 +54,6 @@ const OvulationPage = ({ stats = defaultStats }) => {
       window.removeEventListener('storage', checkLogin);
     };
   }, []);
-
-  const [menstrualCycles, setMenstrualCycles] = React.useState([]);
 
   // Data cho biểu đồ
   const chartData = {
@@ -271,7 +269,10 @@ const OvulationPage = ({ stats = defaultStats }) => {
     }
   ];
 
-  if (stats.consistency === 'regular') {
+  const getAdvice = () => {
+    const advice = [];
+
+    if (stats.consistency === 'regular') {
       advice.push({
         icon: <Heart className="h-6 w-6 text-green-600" />,
         title: 'Chu kỳ đều đặn',
@@ -307,76 +308,24 @@ const OvulationPage = ({ stats = defaultStats }) => {
       });
     }
 
-    const getAdvice = () => {
-      const advice = [];
-  
-      if (stats.consistency === 'regular') {
-        advice.push({
-          icon: <Heart className="h-6 w-6 text-green-600" />,
-          title: 'Chu kỳ đều đặn',
-          description: 'Chu kỳ của bạn rất đều đặn! Hãy duy trì lối sống lành mạnh hiện tại.',
-          tips: ['Tiếp tục duy trì chế độ ăn uống cân bằng', 'Tập thể dục đều đặn', 'Ngủ đủ 7-8 tiếng mỗi ngày'],
-          color: 'green'
-        });
-      } else if (stats.consistency === 'irregular') {
-        advice.push({
-          icon: <Activity className="h-6 w-6 text-yellow-600" />,
-          title: 'Chu kỳ không đều',
-          description: 'Chu kỳ có thể bị ảnh hưởng bởi stress, thay đổi cân nặng hoặc lối sống.',
-          tips: ['Giảm stress thông qua yoga hoặc thiền', 'Duy trì cân nặng ổn định', 'Tham khảo ý kiến bác sĩ nếu cần'],
-          color: 'yellow'
-        });
-      }
-  
-      if (stats.averageCycleLength < 21) {
-        advice.push({
-          icon: <Zap className="h-6 w-6 text-red-600" />,
-          title: 'Chu kỳ ngắn',
-          description: 'Chu kỳ ngắn hơn 21 ngày có thể cần được kiểm tra y tế.',
-          tips: ['Theo dõi kỹ hơn các triệu chứng', 'Ghi chú về stress và thay đổi lối sống', 'Nên thăm khám bác sĩ'],
-          color: 'red'
-        });
-      } else if (stats.averageCycleLength > 35) {
-        advice.push({
-          icon: <Lightbulb className="h-6 w-6 text-blue-600" />,
-          title: 'Chu kỳ dài',
-          description: 'Chu kỳ dài hơn 35 ngày có thể do nhiều nguyên nhân khác nhau.',
-          tips: ['Kiểm tra hormone nếu có thể', 'Duy trì chế độ ăn giàu dinh dưỡng', 'Tham khảo chuyên gia sức khỏe'],
-          color: 'blue'
-        });
-      }
-  
-      // General advice
-      advice.push({
-        icon: <Heart className="h-6 w-6 text-pink-600" />,
-        title: 'Lời khuyên chung',
-        description: 'Những thói quen tốt để duy trì sức khỏe sinh sản.',
-        tips: [
-          'Uống đủ 2-3 lít nước mỗi ngày',
-          'Ăn nhiều rau xanh và trái cây',
-          'Tập thể dục nhẹ nhàng trong kỳ kinh',
-          'Theo dõi và ghi chép đều đặn'
-        ],
-        color: 'pink'
-      });
-  
-      return advice;
-    };
-  
-    const advice = getAdvice();
-  
-    const getColorClasses = (color) => {
-      const colors = {
-        green: 'bg-green-50 border-green-200',
-        yellow: 'bg-yellow-50 border-yellow-200',
-        red: 'bg-red-50 border-red-200',
-        blue: 'bg-blue-50 border-blue-200',
-        pink: 'bg-pink-50 border-pink-200'
-      };
-      return colors[color] || 'bg-gray-50 border-gray-200';
-    };
-  
-  
+    // General advice
+    advice.push({
+      icon: <Heart className="h-6 w-6 text-pink-600" />,
+      title: 'Lời khuyên chung',
+      description: 'Những thói quen tốt để duy trì sức khỏe sinh sản.',
+      tips: [
+        'Uống đủ 2-3 lít nước mỗi ngày',
+        'Ăn nhiều rau xanh và trái cây',
+        'Tập thể dục nhẹ nhàng trong kỳ kinh',
+        'Theo dõi và ghi chép đều đặn'
+      ],
+      color: 'pink'
+    });
+
+    return advice;
+  };
+
+  const advice = getAdvice();
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
