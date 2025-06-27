@@ -1,3 +1,4 @@
+// ===== IMPORT CÁC THỨ VIỆN VÀ COMPONENT CẦN THIẾT =====
 // Thư viện React và các hook cơ bản
 import React, { useEffect, useState } from 'react';
 // Import các component UI từ Material-UI (MUI)
@@ -13,57 +14,155 @@ import {
   Button,
   Grid,
   Chip,
-  useTheme,
   Container,
   Zoom,
-  Dialog,
-  DialogActions,
+  Fade,
+  Paper,
+  Avatar,
+  Stack,
 } from '@mui/material';
 // Icon từ MUI
 import CheckIcon from '@mui/icons-material/Check';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 // React Router
 import { useNavigate } from 'react-router-dom';
+// API và utilities
+import apiClient from '@/services/api';
+import localStorageUtil from '@/utils/localStorage';
 // Hàm gọi API lấy danh sách gói xét nghiệm
 import { getAllSTIPackages } from '@/services/stiService';
+// Import component dialog chi tiết dịch vụ
+import ServiceDetailDialog from '@/components/TestRegistration/ServiceDetailDialog';
 
+// ===== COMPONENT TRANG CHI TIẾT XÉT NGHIỆM STI =====
+// Trang này hiển thị thông tin chi tiết về dịch vụ xét nghiệm STI và danh sách các gói xét nghiệm
 export default function StiDetailPage() {
-  const navigate = useNavigate(); // Hook điều hướng
-  const [packages, setPackages] = useState([]); // Danh sách gói xét nghiệm
-  const theme = useTheme(); // Hook lấy theme MUI
-  const [loaded, setLoaded] = React.useState(false); // State hiệu ứng xuất hiện
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false); // Dialog chi tiết gói
-  const [detailData, setDetailData] = useState(null); // Dữ liệu chi tiết gói
-  // Thêm state mới cho dialog chi tiết xét nghiệm
-  const [serviceDetailOpen, setServiceDetailOpen] = useState(false);
-  const [currentServiceDetail, setCurrentServiceDetail] = useState(null);
+  const navigate = useNavigate(); // Hook điều hướng để chuyển trang
+  
+  // ===== CÁC STATE QUẢN LÝ DỮ LIỆU VÀ TRẠNG THÁI =====
+  const [packages, setPackages] = useState([]); // Danh sách gói xét nghiệm STI
+  const [loaded, setLoaded] = React.useState(false); // State hiệu ứng xuất hiện mượt mà
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false); // Điều khiển dialog chi tiết gói
+  const [detailData, setDetailData] = useState(null); // Dữ liệu chi tiết gói đang xem
+  const [loadingDetail, setLoadingDetail] = useState(false); // Trạng thái loading khi tải chi tiết
+  
+  // State cho dialog chi tiết xét nghiệm đơn lẻ
+  const [serviceDetailOpen, setServiceDetailOpen] = useState(false); // Điều khiển dialog chi tiết xét nghiệm
+  const [currentServiceDetail, setCurrentServiceDetail] = useState(null); // Dữ liệu xét nghiệm đang xem chi tiết
 
+  // ===== EFFECT CHẠY KHI COMPONENT ĐƯỢC MOUNT =====
   useEffect(() => {
-    // Lấy danh sách gói xét nghiệm khi load trang
+    // ===== HÀM LẤY DANH SÁCH GÓI XÉT NGHIỆM TỪ API =====
     const fetchPackages = async () => {
       try {
+        // Gọi API lấy tất cả gói xét nghiệm STI
         const res = await getAllSTIPackages();
+        // Nếu API trả về thành công, cập nhật state packages
         if (res.success) setPackages(res.data);
       } catch {
+        // Nếu có lỗi, đặt packages thành mảng rỗng để tránh crash
         setPackages([]);
       }
     };
+    
+    // Gọi hàm fetch data
     fetchPackages();
-    // Hiệu ứng xuất hiện mượt mà
+    
+    // ===== THIẾT LẬP HIỆU ỨNG XUẤT HIỆN MƯỢT MÀ =====
+    // Sau 100ms mới cho phép các animation fade/zoom chạy
     const timer = setTimeout(() => setLoaded(true), 100);
+    
+    // Cleanup function: xóa timer khi component unmount để tránh memory leak
     return () => clearTimeout(timer);
-  }, []);
+  }, []); // Dependencies rỗng => chỉ chạy 1 lần khi mount
 
-  // Hàm mở dialog chi tiết gói
+  // ===== HÀM MỞ DIALOG CHI TIẾT GÓI XÉT NGHIỆM =====
+  // Hàm này được gọi khi người dùng click nút "Chi tiết" trên card gói xét nghiệm
   const handleOpenDetail = (pkg) => {
+    // Đặt dữ liệu gói đã chọn vào state để hiển thị trong dialog
     setDetailData(pkg);
+    // Mở dialog chi tiết gói
     setDetailDialogOpen(true);
+    // Không cần loading vì dữ liệu đã có sẵn từ API call ban đầu
+    setLoadingDetail(false);
   };
 
-  // Hàm mở dialog chi tiết xét nghiệm
-  const handleOpenServiceDetail = (service) => {
-    setCurrentServiceDetail(service);
-    setServiceDetailOpen(true);
+  // ===== HÀM MỞ DIALOG CHI TIẾT XÉT NGHIỆM ĐƠN LẺ =====
+  // Hàm này có thể được gọi theo 2 cách:
+  // 1. Từ ServiceDetailDialog với serviceId (string/number) và type
+  // 2. Trực tiếp với service object từ component khác
+  const handleOpenServiceDetail = (serviceOrId, type = 'single') => {
+    // ===== TRƯỜNG HỢP 1: ĐƯỢC GỌI VỚI SERVICE ID =====
+    if (typeof serviceOrId === 'string' || typeof serviceOrId === 'number') {
+      // Tìm kiếm service trong danh sách packages đã load
+      let foundService = null;
+      
+      // Duyệt qua tất cả packages để tìm service có ID khớp
+      for (const pkg of packages) {
+        // Kiểm tra nếu package có danh sách services
+        if (pkg.services && Array.isArray(pkg.services)) {
+          // Tìm service có ID khớp trong package này
+          foundService = pkg.services.find(service => service.id === serviceOrId);
+          if (foundService) break; // Thoát loop khi tìm thấy
+        }
+      }
+      
+      // Nếu tìm thấy service, hiển thị dialog
+      if (foundService) {
+        setCurrentServiceDetail(foundService);
+        setServiceDetailOpen(true);
+        setLoadingDetail(false); // Không cần loading vì data đã có
+      } else {
+        // Log lỗi nếu không tìm thấy service
+        console.error('Service not found with ID:', serviceOrId);
+      }
+    } else {
+      // ===== TRƯỜNG HỢP 2: ĐƯỢC GỌI VỚI SERVICE OBJECT =====
+      // Đặt trực tiếp service object vào state
+      setCurrentServiceDetail(serviceOrId);
+      setServiceDetailOpen(true);
+      setLoadingDetail(false);
+    }
+  };
+
+  // ===== HÀM XỬ LÝ ĐĂNG KÝ XÉT NGHIỆM VỚI KIỂM TRA ĐĂNG NHẬP =====
+  // Hàm này kiểm tra trạng thái đăng nhập trước khi chuyển đến trang đăng ký
+  const handleTestRegistration = async (selectedPackage = null) => {
+    try {
+      // ===== KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP =====
+      // Gọi API để check authentication status - sử dụng endpoint có sẵn
+      const response = await apiClient.get('/users/profile', { 
+        skipAutoRedirect: true // Không tự động redirect khi lỗi
+      });
+      
+      // ===== NẾU ĐÃ ĐĂNG NHẬP - CHUYỂN ĐẾN TRANG ĐĂNG KÝ =====
+      if (response.status === 200) {
+        if (selectedPackage) {
+          // Chuyển với dữ liệu gói đã chọn
+          navigate('/test-registration', { state: { selectedPackage } });
+        } else {
+          // Chuyển không có gói nào được chọn trước
+          navigate('/test-registration');
+        }
+      }
+    } catch (error) {
+      // Nếu lỗi 401/403 => chưa đăng nhập
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        const redirectData = { path: "/test-registration" };
+        if (selectedPackage) {
+          redirectData.state = { selectedPackage };
+        }
+        localStorageUtil.set("redirectAfterLogin", redirectData);
+        navigate("/login");
+      } else {
+        // Lỗi khác => vẫn cho phép truy cập
+        if (selectedPackage) {
+          navigate('/test-registration', { state: { selectedPackage } });
+        } else {
+          navigate('/test-registration');
+        }
+      }
+    }
   };
 
   return (
@@ -93,396 +192,522 @@ export default function StiDetailPage() {
           zIndex: 0,
         }}
       />
-      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1, py: { xs: 6, md: 8 } }}>
+      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1, py: { xs: 6, md: 10 } }}>
         {/* --- Nút quay lại --- */}
-        <Button
-          startIcon={<ArrowBackIcon />}
-          sx={{ mb: 3, fontWeight: 600, color: theme => theme.palette.primary.main, background: 'rgba(74,144,226,0.07)', borderRadius: 50, px: 3, py: 1, textTransform: 'none', '&:hover': { background: 'rgba(74,144,226,0.15)' } }}
-          onClick={() => navigate(-1)}
-        >
-          Quay lại Dịch vụ
-        </Button>
-        {/* --- Header: Tiêu đề, mô tả, underline --- */}
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-              mb: 2,
-              gap: 2,
+        <Fade in={loaded} timeout={600}>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            sx={{ 
+              mb: 4, 
+              fontWeight: 700, 
+              color: '#fff',
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)', 
+              borderRadius: 50, 
+              px: 4, 
+              py: 1.5, 
+              textTransform: 'none',
+              boxShadow: '0 4px 16px rgba(74, 144, 226, 0.3)',
+              transition: 'all 0.3s ease',
+              '&:hover': { 
+                background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 24px rgba(74, 144, 226, 0.4)'
+              } 
             }}
+            onClick={() => navigate(-1)}
           >
-            {/* <Chip
-              label="DỊCH VỤ SỨC KHỎE GIỚI TÍNH"
+            Quay lại Dịch vụ
+          </Button>
+        </Fade>
+
+        {/* --- Header: Tiêu đề, mô tả, underline --- */}
+        <Fade in={loaded} timeout={800}>
+          <Box sx={{ textAlign: 'center', mb: 8 }}>
+            <Chip
+              label="✨ Xét nghiệm STI chuyên nghiệp"
               sx={{
-                bgcolor: theme => theme.palette.primary.light + '30',
-                color: theme => theme.palette.primary.main,
+                mb: 3,
+                px: 3,
+                py: 1,
+                fontSize: '0.9rem',
                 fontWeight: 600,
-                fontSize: '1rem',
-                borderRadius: '24px',
-                px: 2.5,
-                py: 1.2,
-                height: 'auto',
-                letterSpacing: 0.5,
-                mr: { xs: 0, sm: 2 },
+                background: 'linear-gradient(45deg, rgba(255,107,107,0.1), rgba(74,144,226,0.1))',
+                color: '#FF6B6B',
+                border: '1px solid rgba(255,107,107,0.2)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, rgba(255,107,107,0.15), rgba(74,144,226,0.15))',
+                },
               }}
-            /> */}
+            />
+            
             <Typography
               variant="h2"
               component="h1"
               sx={{
-                fontWeight: 800,
-                fontSize: { xs: '2.5rem', sm: '3rem', md: '3.5rem' },
+                fontWeight: 900,
+                fontSize: { xs: '2.2rem', sm: '3rem', md: '3.8rem' },
                 color: 'transparent',
-                background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+                background: 'linear-gradient(135deg, #FF6B6B 0%, #4A90E2 50%, #1ABC9C 100%)',
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 textAlign: 'center',
                 lineHeight: 1.1,
-                letterSpacing: '-1px',
-                mb: 2,
+                letterSpacing: '-2px',
+                mb: 3,
+                textShadow: '0 4px 8px rgba(255, 107, 107, 0.1)',
               }}
             >
-              Dịch vụ xét nghiệm các bệnh lây truyền qua đường tình dục (STI)
+              Xét nghiệm STI
             </Typography>
+
+            {/* Gạch chân gradient dưới tiêu đề */}
+            <Box
+              sx={{
+                width: 180,
+                height: 8,
+                mx: 'auto',
+                mb: 4,
+                borderRadius: 4,
+                background: 'linear-gradient(90deg, #FF6B6B 0%, #4A90E2 50%, #1ABC9C 100%)',
+                boxShadow: '0 4px 12px rgba(255, 107, 107, 0.3)',
+              }}
+            />
+            
+            <Typography
+              sx={{
+                color: (theme) => theme.palette.text.secondary,
+                maxWidth: '900px',
+                mx: 'auto',
+                fontSize: { xs: '1.15rem', md: '1.3rem' },
+                lineHeight: 1.8,
+                fontWeight: 400,
+                textAlign: 'center',
+                mb: 4,
+              }}
+            >
+              Dịch vụ xét nghiệm toàn diện và bảo mật các bệnh lây truyền qua đường tình dục 
+              với kết quả nhanh chóng, chính xác và hỗ trợ chuyên nghiệp từ đội ngũ y bác sĩ giàu kinh nghiệm.
+            </Typography>
+
+            {/* Statistics Cards */}
+            <Stack 
+              direction={{ xs: 'column', sm: 'row' }} 
+              spacing={3} 
+              justifyContent="center"
+              alignItems="center"
+              sx={{ mt: 4 }}
+            >
+              {[
+                { number: '15+', label: 'Loại xét nghiệm', color: '#FF6B6B' },
+                { number: '98%', label: 'Độ chính xác', color: '#4A90E2' },
+                { number: '2-5 ngày', label: 'Có kết quả', color: '#1ABC9C' },
+              ].map((stat, index) => (
+                <Paper
+                  key={index}
+                  elevation={0}
+                  sx={{
+                    p: 3,
+                    textAlign: 'center',
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248,250,255,0.9))',
+                    border: `1px solid ${stat.color}20`,
+                    borderRadius: 3,
+                    backdropFilter: 'blur(10px)',
+                    minWidth: 160,
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateY(-5px)',
+                      boxShadow: `0 10px 30px ${stat.color}25`,
+                      border: `1px solid ${stat.color}40`,
+                    }
+                  }}
+                >
+                  <Typography 
+                    variant="h4" 
+                    sx={{ 
+                      fontWeight: 900, 
+                      color: stat.color,
+                      mb: 1,
+                      fontSize: '2rem'
+                    }}
+                  >
+                    {stat.number}
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: 'text.secondary',
+                      fontWeight: 500,
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    {stat.label}
+                  </Typography>
+                </Paper>
+              ))}
+            </Stack>
           </Box>
-           {/* Gạch chân gradient dưới tiêu đề */}
-          <Box
-            sx={{
-              width: 120,
-              height: 6,
-              mx: 'auto',
-              mt: 2,
-              mb: 2,
-              borderRadius: 3,
-              background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-            }}
-          />
-          <Typography
-            sx={{
-              color: theme => theme.palette.text.secondary,
-              maxWidth: '700px',
-              mx: 'auto',
-              mt: 2,
-              fontSize: { xs: '1.1rem', md: '1.2rem' },
-              lineHeight: 1.7,
-              fontWeight: 400,
-              textAlign: 'center',
+        </Fade>
+        {/* --- Phần mô tả dịch vụ --- */}
+        <Fade in={loaded} timeout={1000}>
+          <Paper 
+            elevation={0}
+            sx={{ 
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,255,0.95) 100%)',
+              borderRadius: 5, 
+              boxShadow: '0 20px 60px rgba(255,107,107,0.08)', 
+              p: { xs: 4, md: 6 }, 
+              mb: 8,
+              border: '1px solid rgba(255,107,107,0.1)',
+              position: 'relative',
+              overflow: 'hidden',
+              backdropFilter: 'blur(20px)',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                width: 400,
+                height: 400,
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(255,107,107,0.05) 0%, rgba(255,255,255,0) 70%)',
+                top: -200,
+                right: -200,
+                zIndex: 0,
+              },
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                width: 300,
+                height: 300,
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(74,144,226,0.05) 0%, rgba(255,255,255,0) 70%)',
+                bottom: -150,
+                left: -150,
+                zIndex: 0,
+              }
             }}
           >
-            Dịch vụ xét nghiệm toàn diện và bảo mật các bệnh lây truyền qua đường tình dục với kết quả nhanh chóng và hỗ trợ chuyên nghiệp.
-          </Typography>
-        </Box>
-                <Box sx={{ 
-  bgcolor: '#fff', 
-  borderRadius: 4, 
-  boxShadow: '0 10px 40px rgba(74,144,226,0.08)', 
-  p: { xs: 3, md: 5 }, 
-  mb: 6,
-  border: '1px solid rgba(74,144,226,0.05)',
-  position: 'relative',
-  overflow: 'hidden',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(74,144,226,0.03) 0%, rgba(255,255,255,0) 70%)',
-    top: -150,
-    right: -150,
-    zIndex: 0,
-  },
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(26,188,156,0.03) 0%, rgba(255,255,255,0) 70%)',
-    bottom: -150,
-    left: -150,
-    zIndex: 0,
-  }
-}}>
-  <Box sx={{ position: 'relative', zIndex: 1 }}>
-    <Typography 
-      variant="h6" 
-      fontWeight={800} 
-      mt={2} 
-      mb={2} 
-      color={theme => theme.palette.primary.main}
-      sx={{
-        display: 'inline-block',
-        position: 'relative',
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          width: '40%',
-          height: 3,
-          borderRadius: 2,
-          background: 'linear-gradient(90deg, #4A90E2, rgba(74,144,226,0))',
-          bottom: -8,
-          left: 0
-        }
-      }}
-    >
-      Mô tả dịch vụ
-    </Typography>
-    <Typography mb={3} color="text.secondary" sx={{ lineHeight: 1.8, fontSize: '1.05rem' }}>
-      Dịch vụ xét nghiệm STI cung cấp các gói xét nghiệm tổng quát và xét nghiệm lẻ cho các bệnh như HIV, chlamydia, lậu, giang mai, herpes, viêm gan B, viêm gan C... Kết quả bảo mật, tư vấn chuyên sâu và hỗ trợ điều trị nếu cần thiết.
-    </Typography>
-    
-    <Typography 
-      variant="h6" 
-      fontWeight={800} 
-      mt={4} 
-      mb={2} 
-      color={theme => theme.palette.primary.main}
-      sx={{
-        display: 'inline-block',
-        position: 'relative',
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          width: '40%',
-          height: 3,
-          borderRadius: 2,
-          background: 'linear-gradient(90deg, #4A90E2, rgba(74,144,226,0))',
-          bottom: -8,
-          left: 0
-        }
-      }}
-    >
-      Quy trình xét nghiệm
-    </Typography>
-    <List sx={{
-      '& .MuiListItem-root': { py: 1 },
-      '& .MuiListItemText-primary': { lineHeight: 1.6, fontSize: '1.05rem' },
-      pl: 1,
-      mb: 2
-    }}>
-      <ListItem>
-        <ListItemIcon sx={{ minWidth: 36 }}>
-          <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-        </ListItemIcon>
-        <ListItemText primary="Tư vấn ban đầu với chuyên gia y tế về lịch sử sức khỏe và triệu chứng." />
-      </ListItem>
-      <ListItem>
-        <ListItemIcon sx={{ minWidth: 36 }}>
-          <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-        </ListItemIcon>
-        <ListItemText primary="Lấy mẫu: tuỳ loại xét nghiệm có thể lấy máu, nước tiểu hoặc dịch." />
-      </ListItem>
-      <ListItem>
-        <ListItemIcon sx={{ minWidth: 36 }}>
-          <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-        </ListItemIcon>
-        <ListItemText primary="Mẫu được gửi đến phòng xét nghiệm đạt chuẩn để phân tích." />
-      </ListItem>
-      <ListItem>
-        <ListItemIcon sx={{ minWidth: 36 }}>
-          <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-        </ListItemIcon>
-        <ListItemText primary="Trả kết quả nhanh chóng (2-5 ngày làm việc)." />
-      </ListItem>
-      <ListItem>
-        <ListItemIcon sx={{ minWidth: 36 }}>
-          <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-        </ListItemIcon>
-        <ListItemText primary="Tư vấn kết quả và hỗ trợ điều trị nếu cần thiết." />
-      </ListItem>
-    </List>
-    
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 6, mt: 5 }}>
-      <Box sx={{ flex: '1 1 300px' }}>
-        <Typography 
-          variant="h6" 
-          fontWeight={800} 
-          mb={2} 
-          color={theme => theme.palette.primary.main}
-          sx={{
-            display: 'inline-block',
-            position: 'relative',
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              width: '40%',
-              height: 3,
-              borderRadius: 2,
-              background: 'linear-gradient(90deg, #4A90E2, rgba(74,144,226,0))',
-              bottom: -8,
-              left: 0
-            }
-          }}
-        >
-          Lý do chọn dịch vụ của chúng tôi
-        </Typography>
-        <List sx={{
-          '& .MuiListItem-root': { py: 0.75 },
-          '& .MuiListItemText-primary': { lineHeight: 1.6, fontSize: '1.05rem' },
-          pl: 1
-        }}>
-          <ListItem>
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-            </ListItemIcon>
-            <ListItemText primary="Bảo mật tuyệt đối thông tin khách hàng." />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-            </ListItemIcon>
-            <ListItemText primary="Trang thiết bị hiện đại, kết quả chính xác." />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-            </ListItemIcon>
-            <ListItemText primary="Đội ngũ chuyên gia tận tâm, tư vấn chuyên sâu." />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-            </ListItemIcon>
-            <ListItemText primary="Đặt lịch linh hoạt, dễ dàng." />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-            </ListItemIcon>
-            <ListItemText primary="Hỗ trợ điều trị và kê đơn nếu cần thiết." />
-          </ListItem>
-        </List>
-      </Box>
-      
-      <Box sx={{ flex: '1 1 300px' }}>
-        <Typography 
-          variant="h6" 
-          fontWeight={800} 
-          mb={2} 
-          color={theme => theme.palette.primary.main}
-          sx={{
-            display: 'inline-block',
-            position: 'relative',
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              width: '40%',
-              height: 3,
-              borderRadius: 2,
-              background: 'linear-gradient(90deg, #4A90E2, rgba(74,144,226,0))',
-              bottom: -8,
-              left: 0
-            }
-          }}
-        >
-          Khi nào nên xét nghiệm?
-        </Typography>
-        <List sx={{
-          '& .MuiListItem-root': { py: 0.75 },
-          '& .MuiListItemText-primary': { lineHeight: 1.6, fontSize: '1.05rem' },
-          pl: 1
-        }}>
-          <ListItem>
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-            </ListItemIcon>
-            <ListItemText primary="Khi có bạn tình mới hoặc nhiều bạn tình." />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-            </ListItemIcon>
-            <ListItemText primary="Khi có triệu chứng nghi ngờ mắc bệnh lây truyền qua đường tình dục." />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-            </ListItemIcon>
-            <ListItemText primary="Sau khi quan hệ không an toàn." />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <CheckIcon sx={{ color: '#43a047', fontSize: 22 }} />
-            </ListItemIcon>
-            <ListItemText primary="Định kỳ kiểm tra sức khỏe tình dục." />
-          </ListItem>
-        </List>
-      </Box>
-    </Box>
-  </Box>
-</Box>
+            <Box sx={{ position: 'relative', zIndex: 1 }}>
+              {/* Icon và tiêu đề chính */}
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+                <Avatar
+                  sx={{
+                    width: 64,
+                    height: 64,
+                    background: 'linear-gradient(45deg, #FF6B6B, #4A90E2)',
+                    mr: 3,
+                    boxShadow: '0 8px 24px rgba(255,107,107,0.3)',
+                  }}
+                >
+                  <CheckIcon sx={{ fontSize: '2rem', color: 'white' }} />
+                </Avatar>
+                <Box>
+                  <Typography 
+                    variant="h4" 
+                    fontWeight={900} 
+                    sx={{
+                      color: 'transparent',
+                      background: 'linear-gradient(45deg, #FF6B6B, #4A90E2)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      mb: 1
+                    }}
+                  >
+                    Về dịch vụ của chúng tôi
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem' }}>
+                    Chuyên nghiệp • Bảo mật • Chính xác
+                  </Typography>
+                </Box>
+              </Box>
 
-{/* Bảng giá dịch vụ */}
-<Box sx={{ mb: 6, textAlign: 'center', position: 'relative' }}>
-  <Typography 
-    variant="h4" 
-    fontWeight={800} 
-    mb={5} 
-    sx={{
-      color: theme => theme.palette.text.primary,
-      display: 'inline-block',
-      position: 'relative',
-      '&::after': {
-        content: '""',
-        position: 'absolute',
-        width: '60px',
-        height: '5px',
-        borderRadius: 3,
-        background: 'linear-gradient(90deg, #4A90E2, #1ABC9C)',
-        bottom: '-15px',
-        left: '50%',
-        transform: 'translateX(-50%)'
-      }
-    }}
-  >
-    Bảng giá dịch vụ
-  </Typography>
-</Box>
+              <Typography mb={4} color="text.secondary" sx={{ lineHeight: 1.8, fontSize: '1.1rem' }}>
+                Dịch vụ xét nghiệm STI cung cấp các gói xét nghiệm tổng quát và xét nghiệm lẻ cho các bệnh như 
+                <strong> HIV, chlamydia, lậu, giang mai, herpes, viêm gan B, viêm gan C</strong>... 
+                Kết quả hoàn toàn bảo mật, tư vấn chuyên sâu và hỗ trợ điều trị nếu cần thiết.
+              </Typography>
+              
+              <Grid container spacing={4}>
+                {/* Quy trình xét nghiệm */}
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ 
+                    p: 4,
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,107,107,0.05) 100%)',
+                    borderRadius: 4,
+                    border: '1px solid rgba(255,107,107,0.15)',
+                    height: '100%'
+                  }}>
+                    <Typography 
+                      variant="h6" 
+                      fontWeight={800} 
+                      mb={3} 
+                      sx={{
+                        color: '#FF6B6B',
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontSize: '1.3rem'
+                      }}
+                    >
+                      🔬 Quy trình xét nghiệm
+                    </Typography>
+                    <List sx={{
+                      '& .MuiListItem-root': { py: 1, px: 0 },
+                      '& .MuiListItemText-primary': { lineHeight: 1.6, fontSize: '1rem' },
+                    }}>
+                      {[
+                        'Tư vấn ban đầu với chuyên gia y tế',
+                        'Lấy mẫu: máu, nước tiểu hoặc dịch',
+                        'Phân tích tại phòng lab đạt chuẩn',
+                        'Trả kết quả nhanh (2-5 ngày)',
+                        'Tư vấn kết quả và hỗ trợ điều trị'
+                      ].map((step, index) => (
+                        <ListItem key={index}>
+                          <ListItemIcon sx={{ minWidth: 36 }}>
+                            <Box sx={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: '50%',
+                              background: 'linear-gradient(45deg, #FF6B6B, #FF8E8E)',
+                              color: 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.8rem',
+                              fontWeight: 'bold'
+                            }}>
+                              {index + 1}
+                            </Box>
+                          </ListItemIcon>
+                          <ListItemText primary={step} />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Box>
+                </Grid>
+
+                {/* Lý do chọn chúng tôi */}
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ 
+                    p: 4,
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(74,144,226,0.05) 100%)',
+                    borderRadius: 4,
+                    border: '1px solid rgba(74,144,226,0.15)',
+                    height: '100%'
+                  }}>
+                    <Typography 
+                      variant="h6" 
+                      fontWeight={800} 
+                      mb={3} 
+                      sx={{
+                        color: '#4A90E2',
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontSize: '1.3rem'
+                      }}
+                    >
+                      ⭐ Tại sao chọn chúng tôi?
+                    </Typography>
+                    <List sx={{
+                      '& .MuiListItem-root': { py: 1, px: 0 },
+                      '& .MuiListItemText-primary': { lineHeight: 1.6, fontSize: '1rem' },
+                    }}>
+                      {[
+                        'Bảo mật tuyệt đối thông tin khách hàng',
+                        'Trang thiết bị hiện đại, kết quả chính xác',
+                        'Đội ngũ chuyên gia tận tâm, giàu kinh nghiệm',
+                        'Đặt lịch linh hoạt, hỗ trợ 24/7',
+                        'Hỗ trợ điều trị và kê đơn nếu cần'
+                      ].map((reason, index) => (
+                        <ListItem key={index}>
+                          <ListItemIcon sx={{ minWidth: 36 }}>
+                            <CheckIcon sx={{ color: '#4A90E2', fontSize: 24, fontWeight: 'bold' }} />
+                          </ListItemIcon>
+                          <ListItemText primary={reason} />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Box>
+                </Grid>
+
+                {/* Khi nào nên xét nghiệm */}
+                <Grid item xs={12}>
+                  <Box sx={{ 
+                    p: 4,
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(26,188,156,0.05) 100%)',
+                    borderRadius: 4,
+                    border: '1px solid rgba(26,188,156,0.15)',
+                    mt: 2
+                  }}>
+                    <Typography 
+                      variant="h6" 
+                      fontWeight={800} 
+                      mb={3} 
+                      sx={{
+                        color: '#1ABC9C',
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontSize: '1.3rem'
+                      }}
+                    >
+                      🩺 Khi nào nên xét nghiệm STI?
+                    </Typography>
+                    <Grid container spacing={3}>
+                      {[
+                        { icon: '👥', text: 'Khi có bạn tình mới hoặc nhiều bạn tình' },
+                        { icon: '⚠️', text: 'Khi có triệu chứng nghi ngờ mắc bệnh STI' },
+                        { icon: '🔒', text: 'Sau khi quan hệ không an toàn' },
+                        { icon: '📅', text: 'Định kỳ kiểm tra sức khỏe tình dục' }
+                      ].map((item, index) => (
+                        <Grid item xs={12} sm={6} key={index}>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center',
+                            p: 2,
+                            borderRadius: 3,
+                            background: 'rgba(255,255,255,0.7)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              transform: 'translateX(10px)',
+                              boxShadow: '0 4px 16px rgba(26,188,156,0.15)'
+                            }
+                          }}>
+                            <Typography sx={{ fontSize: '1.5rem', mr: 2 }}>{item.icon}</Typography>
+                            <Typography sx={{ fontSize: '1rem', fontWeight: 500 }}>{item.text}</Typography>
+                          </Box>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          </Paper>
+        </Fade>
+
+        {/* --- Bảng giá dịch vụ --- */}
+        <Fade in={loaded} timeout={1200}>
+          <Box sx={{ mb: 8, textAlign: 'center', position: 'relative' }}>
+            <Chip
+              label="💰 Bảng giá"
+              sx={{
+                mb: 3,
+                px: 3,
+                py: 1,
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                background: 'linear-gradient(45deg, rgba(26,188,156,0.1), rgba(74,144,226,0.1))',
+                color: '#1ABC9C',
+                border: '1px solid rgba(26,188,156,0.2)',
+              }}
+            />
+            
+            <Typography 
+              variant="h4" 
+              fontWeight={900} 
+              mb={2}
+              sx={{
+                color: 'transparent',
+                background: 'linear-gradient(135deg, #1ABC9C 0%, #4A90E2 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontSize: { xs: '2.2rem', md: '2.8rem' }
+              }}
+            >
+              Gói xét nghiệm STI
+            </Typography>
+            
+            <Box
+              sx={{
+                width: 120,
+                height: 6,
+                mx: 'auto',
+                mb: 4,
+                borderRadius: 3,
+                background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
+                boxShadow: '0 4px 12px rgba(26, 188, 156, 0.3)',
+              }}
+            />
+            
+            <Typography 
+              sx={{
+                color: 'text.secondary',
+                maxWidth: '600px',
+                mx: 'auto',
+                fontSize: '1.1rem',
+                lineHeight: 1.6,
+                mb: 6
+              }}
+            >
+              Chọn gói xét nghiệm phù hợp với nhu cầu của bạn. Tất cả các gói đều bao gồm tư vấn miễn phí.
+            </Typography>
+          </Box>
+        </Fade>
+
         {/* --- Grid danh sách gói xét nghiệm --- */}
-        <Grid container spacing={5} sx={{ width: '100%', mb: 8 }} justifyContent="center">
+        <Grid container spacing={4} sx={{ width: '100%', mb: 8 }} justifyContent="center">
           {packages.map((pkg, idx) => (
-            <Grid item xs={12} sm={6} md={6} key={pkg.id} display="flex" justifyContent="center">
-              <Zoom in={loaded} style={{ transitionDelay: `${idx * 100 + 200}ms` }}>
+            <Grid item xs={12} sm={6} lg={4} key={pkg.id} display="flex" justifyContent="center">
+              <Zoom in={loaded} style={{ transitionDelay: `${idx * 150 + 600}ms` }}>
                 {/* --- Card gói xét nghiệm --- */}
                 <Card sx={{
-                  borderRadius: 4,
-                  boxShadow: '0 10px 30px rgba(74,144,226,0.1)',
+                  borderRadius: 5,
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
                   width: '100%',
-                  maxWidth: 380,
-                  minWidth: 280,
+                  maxWidth: 360,
                   display: 'flex',
                   flexDirection: 'column',
-                  height: 'auto',
+                  height: '100%',
                   transition: 'all 0.4s cubic-bezier(.4,0,.2,1)',
                   overflow: 'hidden',
                   position: 'relative',
-                  background: 'linear-gradient(180deg, #f8faff 0%, #f4f9ff 100%)',
-                  border: '1px solid rgba(74,144,226,0.05)',
+                  background: 'linear-gradient(180deg, #ffffff 0%, #f8faff 100%)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(20px)',
                   '&:hover': {
-                    transform: 'translateY(-10px)',
-                    boxShadow: '0 20px 40px rgba(74,144,226,0.15)',
+                    transform: 'translateY(-15px) scale(1.02)',
+                    boxShadow: '0 25px 60px rgba(74,144,226,0.2)',
+                    '& .package-header': {
+                      background: 'linear-gradient(135deg, #1ABC9C, #4A90E2)',
+                    },
+                    '& .package-button': {
+                      background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                      transform: 'translateY(-2px)',
+                    }
                   }
                 }}>
-                  {/* Title bar with gradient */}
-                  <Box sx={{
-                    background: 'linear-gradient(90deg, #4A90E2, #1ABC9C)',
-                    color: 'white',
-                    py: 2,
-                    px: 3,
-                    borderTopLeftRadius: 4,
-                    borderTopRightRadius: 4,
-                  }}>
+                  {/* Header với gradient */}
+                  <Box 
+                    className="package-header"
+                    sx={{
+                      background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
+                      color: 'white',
+                      py: 3,
+                      px: 3,
+                      position: 'relative',
+                      overflow: 'hidden',
+                      transition: 'all 0.3s ease',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        width: 100,
+                        height: 100,
+                        background: 'radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%)',
+                        borderRadius: '50%',
+                        transform: 'translate(30px, -30px)',
+                      }
+                    }}
+                  >
                     <Typography
                       fontWeight={800}
-                      fontSize={20}
+                      fontSize={22}
                       sx={{
-                        textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                        textAlign: 'center'
+                        textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        textAlign: 'center',
+                        position: 'relative',
+                        zIndex: 1
                       }}
                     >
                       {pkg.name}
@@ -494,12 +719,12 @@ export default function StiDetailPage() {
                     display: 'flex', 
                     flexDirection: 'column', 
                     justifyContent: 'space-between', 
-                    p: 3 
+                    p: 4 
                   }}>
                     <Typography 
                       color="text.secondary" 
                       mb={3} 
-                      fontSize={15} 
+                      fontSize={16} 
                       sx={{ 
                         fontWeight: 400, 
                         lineHeight: 1.6,
@@ -510,21 +735,32 @@ export default function StiDetailPage() {
                       {pkg.description}
                     </Typography>
                     
-                    <Typography 
-                      fontWeight={800} 
-                      color="primary" 
-                      mb={3}
-                      fontSize={24}
-                      sx={{
-                        textAlign: 'center',
-                        display: 'block',
-                        p: 1.5,
-                        borderTop: '1px dashed rgba(74,144,226,0.15)',
-                        borderBottom: '1px dashed rgba(74,144,226,0.15)',
-                      }}
-                    >
-                      {pkg.price?.toLocaleString('vi-VN')} đ
-                    </Typography>
+                    {/* Price Display */}
+                    <Box sx={{ 
+                      textAlign: 'center',
+                      p: 2,
+                      mb: 3,
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, rgba(74,144,226,0.08), rgba(26,188,156,0.08))',
+                      border: '1px solid rgba(74,144,226,0.15)'
+                    }}>
+                      <Typography 
+                        variant="h4"
+                        fontWeight={900} 
+                        sx={{
+                          color: 'transparent',
+                          background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                          backgroundClip: 'text',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                        }}
+                      >
+                        {pkg.price?.toLocaleString('vi-VN')} đ
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                        Bao gồm tư vấn miễn phí
+                      </Typography>
+                    </Box>
                     
                     {/* --- Nút đăng ký và xem chi tiết --- */}
                     <Box sx={{ 
@@ -535,27 +771,28 @@ export default function StiDetailPage() {
                       mt: 2
                     }}>
                       <Button
+                        className="package-button"
                         variant="contained"
                         sx={{
-                          background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+                          background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
                           color: '#fff',
                           fontWeight: 700,
                           borderRadius: 50,
-                          px: 3,
-                          py: 1.2,
-                          minWidth: 110,
+                          px: 4,
+                          py: 1.5,
+                          minWidth: 120,
                           fontSize: '1rem',
-                          boxShadow: '0 4px 12px rgba(74, 144, 226, 0.15)',
+                          boxShadow: '0 4px 16px rgba(74, 144, 226, 0.25)',
                           textTransform: 'none',
+                          transition: 'all 0.3s ease',
                           '&:hover': {
-                            background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 6px 18px rgba(74, 144, 226, 0.18)',
+                            background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                            boxShadow: '0 8px 24px rgba(74, 144, 226, 0.35)',
                           },
                         }}
-                        onClick={() => navigate('/test-registration', { state: { selectedPackage: pkg } })}
+                        onClick={() => handleTestRegistration(pkg)}
                       >
-                        Đăng ký
+                        Đăng ký ngay
                       </Button>
                       <Button
                         variant="outlined"
@@ -563,17 +800,19 @@ export default function StiDetailPage() {
                           borderRadius: 50,
                           fontWeight: 700,
                           px: 3,
-                          py: 1.2,
+                          py: 1.5,
                           minWidth: 100,
                           fontSize: '1rem',
-                          borderColor: theme => theme.palette.primary.main,
+                          borderColor: '#4A90E2',
                           borderWidth: 2,
-                          color: theme => theme.palette.primary.main,
+                          color: '#4A90E2',
                           textTransform: 'none',
+                          transition: 'all 0.3s ease',
                           '&:hover': {
-                            borderColor: theme => theme.palette.primary.dark,
-                            background: 'rgba(74,144,226,0.07)',
-                            transform: 'translateY(-2px)',
+                            borderColor: '#1ABC9C',
+                            color: '#1ABC9C',
+                            background: 'rgba(26,188,156,0.08)',
+                            borderWidth: 2,
                           },
                         }}
                         onClick={() => handleOpenDetail(pkg)}
@@ -587,705 +826,35 @@ export default function StiDetailPage() {
             </Grid>
           ))}
         </Grid>
-
-        {/* Dialog chi tiết gói */}
-        <Dialog 
-          open={detailDialogOpen} 
-          onClose={() => setDetailDialogOpen(false)} 
-          maxWidth="md" 
-          fullWidth
-          PaperProps={{
-            style: {
-              borderRadius: 24,
-              overflow: 'hidden',
-              boxShadow: "0 25px 80px rgba(0, 0, 0, 0.20)"
-            }
+        {/* Dialog chi tiết gói - sử dụng ServiceDetailDialog component */}
+        <ServiceDetailDialog
+          open={detailDialogOpen}
+          onClose={() => {
+            setDetailDialogOpen(false);
+            setDetailData(null);
+            setLoadingDetail(false);
           }}
-        >
-          <Box sx={{ 
-            position: 'relative', 
-            p: 0, 
-            background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f4ff 100%)',
-            display: 'flex',
-            flexDirection: 'column',
-            height: 'auto', // Changed from maxHeight to fixed height
-            maxHeight: '90vh' // Keep this to ensure it doesn't exceed screen height
-          }}>
-            {/* Background decoration */}
-            <Box
-              sx={{
-                position: 'absolute',
-                width: { xs: 200, md: 300 },
-                height: { xs: 200, md: 300 },
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(74,144,226,0.08) 0%, rgba(255,255,255,0) 70%)',
-                top: -100,
-                right: -100,
-                zIndex: 0,
-                pointerEvents: 'none', // Ensure decorations don't interfere with content
-              }}
-            />
-            <Box
-              sx={{
-                position: 'absolute',
-                width: { xs: 200, md: 300 },
-                height: { xs: 200, md: 300 },
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(26,188,156,0.08) 0%, rgba(255,255,255,0) 70%)',
-                bottom: -100,
-                left: -100,
-                zIndex: 0,
-                pointerEvents: 'none', // Ensure decorations don't interfere with content
-              }}
-            />
-            
-            {/* Header with gradient - remains fixed */}
-            <Box sx={{ 
-              py: 4, 
-              px: 4,
-              background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-              color: 'white',
-              position: 'relative',
-              zIndex: 1,
-              textAlign: 'center',
-              flexShrink: 0 // Prevent header from shrinking
-            }}>
-              <Typography 
-                sx={{ 
-                  fontWeight: 800, 
-                  fontSize: 28, 
-                  textAlign: 'center', 
-                  textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  mb: 1.5,
-                  letterSpacing: '-0.5px'
-                }}
-              >
-                {detailData?.name || 'Chi tiết gói xét nghiệm'}
-              </Typography>
-              <Typography 
-                variant="body1" 
-                sx={{ 
-                  textAlign: 'center', 
-                  opacity: 0.95, 
-                  maxWidth: '85%', 
-                  mx: 'auto',
-                  fontWeight: 400,
-                  lineHeight: 1.7,
-                  fontSize: '1.1rem'
-                }}
-              >
-                {detailData?.description}
-              </Typography>
-            </Box>
-            
-            {/* Price badge */}
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                position: 'relative',
-                zIndex: 5,
-                mt: 3,
-                mb: 3
-              }}
-            >
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  bgcolor: 'white', 
-                  py: 2, 
-                  px: 5, 
-                  borderRadius: 50,
-                  boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
-                  border: '1px solid rgba(74,144,226,0.15)'
-                }}
-              >
-                <Typography 
-                  fontWeight={800} 
-                  fontSize={28} 
-                  sx={{ 
-                    background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                  }}
-                >
-                  {detailData?.price?.toLocaleString('vi-VN')} đ
-                </Typography>
-              </Box>
-            </Box>
-            
-            {/* Scrollable content area */}
-            <Box 
-              sx={{ 
-                p: 0, 
-                position: 'relative', 
-                zIndex: 1,
-                overflowY: 'auto', // Enable vertical scrolling
-                flexGrow: 1, // Allow content to grow and take available space
-                px: 4,
-                pb: 4
-              }}
-            >
-              {detailData ? (
-                <Box>
-                  {/* Services list */}
-                  <Box sx={{ mb: 3 }}>
-                    {detailData.services && Array.isArray(detailData.services) && detailData.services.length > 0 && (
-                      <>
-                        <Typography
-                          variant="h6"
-                          fontWeight={800}
-                          sx={{
-                            color: '#2d3748',
-                            mb: 3,
-                            display: 'flex',
-                            alignItems: 'center'
-                          }}
-                        >
-                          <Box 
-                            component="span" 
-                            sx={{ 
-                              width: 32, 
-                              height: 32, 
-                              borderRadius: '50%', 
-                              background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
-                              color: 'white', 
-                              display: 'inline-flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'center',
-                              fontSize: '0.9rem',
-                              fontWeight: 700,
-                              mr: 1.5,
-                              boxShadow: '0 3px 10px rgba(74,144,226,0.25)'
-                            }}
-                          >
-                            {detailData.services.length}
-                          </Box>
-                          Dịch vụ trong gói xét nghiệm
-                        </Typography>
-                        <Box 
-                          sx={{ 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            gap: 2.5,
-                            p: 3,
-                            borderRadius: 4,
-                            background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(247,250,252,0.95) 100%)',
-                            border: '1px solid rgba(0,0,0,0.05)',
-                            boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
-                          }}
-                        >
-                          {detailData.services.map((svc, i) => (
-                            <Box
-                              key={svc.id || i}
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 2,
-                                bgcolor: 'white',
-                                borderRadius: 3,
-                                boxShadow: '0 5px 15px rgba(74,144,226,0.08)',
-                                overflow: 'hidden',
-                                p: 2,
-                                transition: 'all 0.3s',
-                                border: '1px solid rgba(0,0,0,0.02)',
-                                '&:hover': {
-                                  boxShadow: '0 10px 25px rgba(74,144,226,0.12)',
-                                  transform: 'translateY(-3px)',
-                                  borderColor: 'rgba(74,144,226,0.08)'
-                                }
-                              }}
-                            >
-                              <Box 
-                                sx={{ 
-                                  width: 50,
-                                  height: 50,
-                                  borderRadius: '50%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  background: 'linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(74, 144, 226, 0.15) 100%)',
-                                  color: '#4A90E2',
-                                  flexShrink: 0,
-                                  border: '1px solid rgba(74,144,226,0.1)'
-                                }}
-                              >
-                                <CheckIcon sx={{ color: '#43a047', fontSize: 28 }} />
-                              </Box>
-                              <Box sx={{ flex: 1 }}>
-                                <Typography fontSize={16} color="text.primary" fontWeight={700}>
-                                  {svc.name}
-                                </Typography>
-                                {svc.components && (
-                                  <Typography variant="body2" color="text.secondary">
-                                    {svc.components.length} chỉ số xét nghiệm • {svc.resultTime || "2-3 ngày có kết quả"}
-                                  </Typography>
-                                )}
-                              </Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-                                {svc.price && (
-                                  <Typography fontSize={16} color="primary" fontWeight={700} sx={{ minWidth: 100, textAlign: 'right' }}>
-                                    {svc.price.toLocaleString('vi-VN')} đ
-                                  </Typography>
-                                )}
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenServiceDetail(svc);
-                                  }}
-                                  sx={{
-                                    borderRadius: 6,
-                                    minWidth: 'auto',
-                                    fontSize: '0.85rem',
-                                    py: 0.6,
-                                    px: 1.5,
-                                    borderWidth: 2,
-                                    borderColor: theme.palette.primary.main,
-                                    color: theme.palette.primary.main,
-                                    '&:hover': {
-                                      bgcolor: 'rgba(74,144,226,0.08)',
-                                      borderWidth: 2,
-                                    }
-                                  }}
-                                >
-                                  Chi tiết
-                                </Button>
-                              </Box>
-                            </Box>
-                          ))}
-                        </Box>
-                      </>
-                    )}
-                  </Box>
-                </Box>
-              ) : (
-                <Box sx={{ p: 4, textAlign: 'center' }}>
-                  <Typography color="error">Không thể tải chi tiết gói.</Typography>
-                </Box>
-              )}
-            </Box>
-            
-            {/* Footer - remains fixed */}
-            <DialogActions 
-              sx={{ 
-                justifyContent: 'space-between', 
-                p: 3, 
-                bgcolor: 'rgba(255,255,255,0.8)',
-                flexShrink: 0, // Prevent footer from shrinking
-                borderTop: '1px solid rgba(0,0,0,0.05)', // Add border for visual separation
-                backdropFilter: 'blur(10px)'
-              }}
-            >
-              <Button 
-                onClick={() => setDetailDialogOpen(false)} 
-                variant="outlined" 
-                sx={{ 
-                  borderRadius: 8, 
-                  fontWeight: 600, 
-                  minWidth: 120,
-                  py: 1.2,
-                  borderColor: 'rgba(0,0,0,0.2)',
-                  color: 'text.secondary',
-                  '&:hover': {
-                    borderColor: 'primary.main',
-                    bgcolor: 'rgba(74,144,226,0.08)'
-                  }
-                }}
-              >
-                Đóng
-              </Button>
-              <Button
-                variant="contained"
-                sx={{
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  minWidth: 150,
-                  py: 1.2,
-                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
-                    transform: 'translateY(-3px)',
-                    boxShadow: '0 8px 20px rgba(74, 144, 226, 0.3)',
-                  },
-                  transition: 'all 0.3s ease',
-                }}
-                onClick={() => navigate('/test-registration', { state: { selectedPackage: detailData } })}
-              >
-                Đăng ký ngay
-              </Button>
-            </DialogActions>
-          </Box>
-        </Dialog>
+          detailData={detailData}
+          detailType="package"
+          loadingDetail={loadingDetail}
+          onOpenDetail={handleOpenServiceDetail}
+          onSelectService={null}
+        />
 
-        {/* Dialog chi tiết xét nghiệm */}
-        <Dialog 
-          open={serviceDetailOpen} 
-          onClose={() => setServiceDetailOpen(false)} 
-          maxWidth="md" 
-          fullWidth
-          PaperProps={{
-            style: {
-              borderRadius: 24,
-              overflow: 'hidden',
-              boxShadow: "0 25px 80px rgba(0, 0, 0, 0.20)"
-            }
+        {/* Dialog chi tiết xét nghiệm - sử dụng ServiceDetailDialog component */}
+        <ServiceDetailDialog
+          open={serviceDetailOpen}
+          onClose={() => {
+            setServiceDetailOpen(false);
+            setCurrentServiceDetail(null);
+            setLoadingDetail(false);
           }}
-        >
-          <Box sx={{ 
-            position: 'relative', 
-            p: 0, 
-            display: 'flex',
-            flexDirection: 'column',
-            height: 'auto',
-            maxHeight: '90vh',
-            background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f4ff 100%)'
-          }}>
-            {/* Header with gradient */}
-            <Box sx={{ 
-              position: 'relative',
-              py: 3, 
-              px: 4,
-              background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-              color: 'white',
-              zIndex: 1,
-              textAlign: 'center',
-              flexShrink: 0
-            }}>
-              <Box sx={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, bgcolor: 'rgba(0,0,0,0.1)' }} />
-              <Typography 
-                sx={{ 
-                  fontWeight: 800, 
-                  fontSize: 26, 
-                  textAlign: 'center',
-                  textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  mb: 1,
-                  letterSpacing: '-0.5px'
-                }}
-              >
-                {currentServiceDetail?.name || 'Chi tiết xét nghiệm'}
-              </Typography>
-              {currentServiceDetail?.price && (
-                <Typography 
-                  sx={{ 
-                    textAlign: 'center', 
-                    fontWeight: 700,
-                    fontSize: '1.3rem',
-                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  {currentServiceDetail.price.toLocaleString('vi-VN')} đ
-                </Typography>
-              )}
-            </Box>
-            
-            {/* Scrollable content area */}  
-            <Box 
-              sx={{ 
-                position: 'relative',
-                overflowY: 'auto',
-                flexGrow: 1,
-                zIndex: 1,
-                px: 4,
-                py: 4
-              }}
-            >
-              {/* Background decoration */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  width: { xs: 200, md: 350 },
-                  height: { xs: 200, md: 350 },
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(74,144,226,0.05) 0%, rgba(255,255,255,0) 70%)',
-                  top: '50%',
-                  right: -100,
-                  transform: 'translateY(-50%)',
-                  zIndex: 0,
-                  pointerEvents: 'none', // Ensure decorations don't interfere with scrolling
-                }}
-              />
-              <Box
-                sx={{
-                  position: 'absolute',
-                  width: { xs: 200, md: 350 },
-                  height: { xs: 200, md: 350 },
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(26,188,156,0.05) 0%, rgba(255,255,255,0) 70%)',
-                  bottom: -150,
-                  left: -100,
-                  zIndex: 0,
-                  pointerEvents: 'none', // Ensure decorations don't interfere with scrolling
-                }}
-              />
-              
-              {currentServiceDetail ? (
-                <Box sx={{ position: 'relative', zIndex: 1 }}>
-                  {/* Description section */}
-                  <Box 
-                    sx={{ 
-                      p: 4, 
-                      bgcolor: 'rgba(255,255,255,0.8)', 
-                      borderRadius: 4,
-                      boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
-                      border: '1px solid rgba(0,0,0,0.05)',
-                      backdropFilter: 'blur(10px)',
-                      mb: 4
-                    }}
-                  >
-                    <Typography 
-                      variant="h6" 
-                      fontWeight={800} 
-                      sx={{ 
-                        mb: 3, 
-                        color: '#2d3748',
-                        display: 'inline-block',
-                        position: 'relative',
-                        '&::after': {
-                          content: '""',
-                          position: 'absolute',
-                          width: '40%',
-                          height: 3,
-                          borderRadius: 2,
-                          background: 'linear-gradient(90deg, #4A90E2, rgba(74,144,226,0))',
-                          bottom: -8,
-                          left: 0
-                        }
-                      }}
-                    >
-                      Mô tả dịch vụ
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, fontSize: '1.05rem' }}>
-                      {currentServiceDetail.description || 'Xét nghiệm giúp phát hiện sớm các bệnh lây truyền qua đường tình dục.'}
-                    </Typography>
-                    
-                    {currentServiceDetail.components && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', mt: 3 }}>
-                        <Chip 
-                          label={`${currentServiceDetail.components.length} chỉ số xét nghiệm`}
-                          color="primary"
-                          size="medium"
-                          sx={{ 
-                            borderRadius: 6,
-                            bgcolor: 'rgba(74, 144, 226, 0.1)', 
-                            color: 'primary.main',
-                            fontWeight: 600,
-                            fontSize: '0.9rem',
-                            height: 32,
-                            px: 1
-                          }}
-                        />
-                        <Typography variant="body2" color="text.secondary" sx={{ ml: 2, fontWeight: 500 }}>
-                          • {currentServiceDetail.resultTime || '2-3 ngày có kết quả'}
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
-                        
-                  {/* Test components section */}
-                  {currentServiceDetail.components && currentServiceDetail.components.length > 0 && (
-                    <>
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          px: 0, 
-                          mb: 3,
-                          fontWeight: 800, 
-                          color: '#2d3748',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <Box 
-                          component="span" 
-                          sx={{ 
-                            width: 32, 
-                            height: 32, 
-                            borderRadius: '50%', 
-                            background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
-                            color: 'white', 
-                            display: 'inline-flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            fontSize: '0.9rem',
-                            fontWeight: 700,
-                            mr: 1.5,
-                            boxShadow: '0 3px 10px rgba(74,144,226,0.25)'
-                          }}
-                        >
-                          {currentServiceDetail.components?.length || 0}
-                        </Box>
-                        Chỉ số xét nghiệm chi tiết
-                      </Typography>
-                          
-                      <Box 
-                        sx={{ 
-                          p: 4,
-                          borderRadius: 4,
-                          background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(247,250,252,0.95) 100%)',
-                          border: '1px solid rgba(0,0,0,0.05)',
-                          boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
-                        }}
-                      >
-                        {currentServiceDetail.components.map((component, idx) => (
-                          <Box
-                            key={component.id || idx}
-                            sx={{
-                              p: 3,
-                              mb: idx === currentServiceDetail.components.length - 1 ? 0 : 3,
-                              borderRadius: 3,
-                              bgcolor: 'white',
-                              boxShadow: '0 5px 20px rgba(0,0,0,0.05)',
-                              border: '1px solid rgba(0,0,0,0.02)',
-                              transition: 'all 0.3s ease',
-                              '&:hover': {
-                                boxShadow: '0 8px 25px rgba(74,144,226,0.1)',
-                                transform: 'translateY(-3px)',
-                                borderColor: 'rgba(74,144,226,0.08)'
-                              }
-                            }}
-                          >
-                            <Grid container spacing={3}>
-                              <Grid item xs={12} sm={4}>
-                                <Typography 
-                                  fontWeight={700} 
-                                  color="primary.dark"
-                                  fontSize="1.1rem"
-                                  sx={{ 
-                                    pb: 1,
-                                    borderBottom: '2px solid',
-                                    borderColor: 'rgba(74,144,226,0.2)',
-                                    display: 'inline-block'
-                                  }}
-                                >
-                                  {component.testName}
-                                </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1.5 }}>
-                                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                    Đơn vị:
-                                  </Typography>
-                                  <Chip 
-                                    size="small" 
-                                    label={component.unit} 
-                                    sx={{ 
-                                      ml: 1,
-                                      height: 22, 
-                                      fontSize: '0.75rem', 
-                                      bgcolor: 'rgba(0,0,0,0.04)', 
-                                      fontWeight: 600 
-                                    }} 
-                                  />
-                                </Box>
-                              </Grid>
-                              <Grid item xs={12} sm={8}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                                    Chỉ số bình thường:
-                                  </Typography>
-                                  <Chip 
-                                    size="small" 
-                                    label={component.referenceRange} 
-                                    color="success"
-                                    sx={{ 
-                                      ml: 1.5,
-                                      fontSize: '0.75rem', 
-                                      height: 24,
-                                      bgcolor: 'rgba(56, 161, 105, 0.1)',
-                                      color: 'success.dark',
-                                      fontWeight: 600
-                                    }} 
-                                  />
-                                </Box>
-                                <Typography 
-                                  variant="body2" 
-                                  color="text.secondary" 
-                                  sx={{ 
-                                    fontSize: '0.95rem',
-                                    fontStyle: 'italic',
-                                    px: 2,
-                                    py: 1.5,
-                                    borderLeft: '3px solid',
-                                    borderColor: 'rgba(74,144,226,0.2)',
-                                    bgcolor: 'rgba(74,144,226,0.03)',
-                                    borderRadius: '0 6px 6px 0',
-                                    lineHeight: 1.6
-                                  }}
-                                >
-                                  {component.interpretation}
-                                </Typography>
-                              </Grid>
-                            </Grid>
-                          </Box>
-                        ))}
-                      </Box>
-                    </>
-                  )}
-                </Box>
-              ) : (
-                <Box sx={{ p: 4, textAlign: 'center' }}>
-                  <Typography color="error">Không thể tải thông tin chi tiết.</Typography>
-                </Box>
-              )}
-            </Box>
-            <DialogActions 
-              sx={{ 
-                justifyContent: 'space-between', 
-                p: 3, 
-                bgcolor: 'rgba(255,255,255,0.8)',
-                flexShrink: 0,
-                borderTop: '1px solid rgba(0,0,0,0.05)',
-                backdropFilter: 'blur(10px)'
-              }}
-            >
-              <Button 
-                onClick={() => setServiceDetailOpen(false)} 
-                variant="outlined" 
-                sx={{ 
-                  borderRadius: 8, 
-                  fontWeight: 600,
-                  minWidth: 120,
-                  py: 1.2,
-                  borderColor: 'rgba(0,0,0,0.2)',
-                  color: 'text.secondary',
-                  '&:hover': {
-                    borderColor: 'primary.main',
-                    bgcolor: 'rgba(74,144,226,0.08)'
-                  }
-                }}
-              >
-                Đóng
-              </Button>
-              <Button 
-                variant="contained" 
-                sx={{
-                  borderRadius: 8, 
-                  fontWeight: 600,
-                  minWidth: 150,
-                  py: 1.2,
-                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
-                    transform: 'translateY(-3px)',
-                    boxShadow: '0 8px 20px rgba(74, 144, 226, 0.3)',
-                  },
-                  transition: 'all 0.3s ease',
-                }}
-                onClick={() => navigate('/test-registration', { 
-                  state: { 
-                    selectedService: currentServiceDetail,
-                    fromPackage: detailData?.name 
-                  } 
-                })}
-              >
-                Đăng ký xét nghiệm
-              </Button>
-            </DialogActions>
-          </Box>
-        </Dialog>
+          detailData={currentServiceDetail}
+          detailType="single"
+          loadingDetail={loadingDetail}
+          onOpenDetail={handleOpenServiceDetail}
+          onSelectService={null}
+        />
       </Container>
     </Box>
   );

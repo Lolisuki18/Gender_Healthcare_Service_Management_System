@@ -151,15 +151,30 @@ const LoginPage = () => {
                 navigate("/admin/profile");
                 return;
               } else {
-                // Nếu không phải admin, chuyển về trang chủ
+                // Nếu không phải admin, kiểm tra redirect sau đăng nhập
+                const redirectInfo = localStorageUtil.get("redirectAfterLogin");
+                
                 // Lưu thông báo đăng nhập thành công vào localStorage để hiển thị ở homepage
                 localStorageUtil.set("loginSuccessMessage", {
                   title: "Đăng nhập thành công",
                   message: `Chào mừng ${profileData.data.username} trở lại!`,
                   timestamp: Date.now(),
                 });
-                // Chuyển hướng về trang chủ
-                window.location.href = "/";
+                
+                if (redirectInfo) {
+                  // Xóa thông tin redirect sau khi sử dụng
+                  localStorageUtil.remove("redirectAfterLogin");
+                  
+                  // Chuyển hướng đến trang được yêu cầu trước đó
+                  if (redirectInfo.state) {
+                    navigate(redirectInfo.path, { state: redirectInfo.state });
+                  } else {
+                    navigate(redirectInfo.path);
+                  }
+                } else {
+                  // Chuyển hướng về trang chủ
+                  window.location.href = "/";
+                }
               }
             })
             .catch((error) => {
@@ -177,13 +192,28 @@ const LoginPage = () => {
                 navigate("/admin/profile");
                 return;
               } else {
+                const redirectInfo = localStorageUtil.get("redirectAfterLogin");
+                
                 localStorageUtil.set("loginSuccessMessage", {
                   title: "Đăng nhập thành công",
                   message: `Chào mừng ${token.username} trở lại!`,
                   timestamp: Date.now(),
                 });
-                // Chuyển hướng về trang chủ
-                window.location.href = "/";
+                
+                if (redirectInfo) {
+                  // Xóa thông tin redirect sau khi sử dụng
+                  localStorageUtil.remove("redirectAfterLogin");
+                  
+                  // Chuyển hướng đến trang được yêu cầu trước đó
+                  if (redirectInfo.state) {
+                    navigate(redirectInfo.path, { state: redirectInfo.state });
+                  } else {
+                    navigate(redirectInfo.path);
+                  }
+                } else {
+                  // Chuyển hướng về trang chủ
+                  window.location.href = "/";
+                }
               }
             });
         } else {
