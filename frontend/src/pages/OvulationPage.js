@@ -1,4 +1,4 @@
-import { Container, Box, Typography, Card, CardContent, Grid, Avatar, Button, Link, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { Container, Box, Typography, Card, Grid, Button } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { vi } from 'date-fns/locale';
@@ -20,10 +20,19 @@ import {
   ChevronUp,
   Clock,
   Shield,
-  AlertTriangle
+  AlertTriangle,
+  AlertCircle
 } from 'lucide-react';
 
-const OvulationPage = () => {
+const defaultStats = {
+  averageCycleLength: 28,
+  totalCycles: 10,
+  averagePeriodLength: 5,
+  nextPredictedPeriod: '2025-07-01',
+  consistency: 'irregular'
+};
+
+const OvulationPage = ({ stats = defaultStats }) => {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [user, setUser] = React.useState(null);
 
@@ -189,69 +198,227 @@ const OvulationPage = () => {
     "Khí hư có mùi lạ hoặc màu bất thường"
   ];
 
+  const getConsistencyClass = (consistency) => {
+    switch (consistency) {
+      case 'regular':
+        return styles.regular;
+      case 'irregular':
+        return styles.irregular;
+      default:
+        return styles.unknown;
+    }
+  };
+
+  const getConsistencyText = (consistency) => {
+    switch (consistency) {
+      case 'regular':
+        return 'Đều đặn';
+      case 'irregular':
+        return 'Không đều';
+      default:
+        return 'Chưa đủ dữ liệu';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const dashboardCards = [
+    {
+      icon: <Calendar className={`${styles.icon} ${styles.pink}`} />,
+      iconWrapper: `${styles.iconWrapper} ${styles.pink}`,
+      label: 'Chu kỳ trung bình',
+      mainValue: `${stats.averageCycleLength} ngày`,
+      subValue: `${stats.totalCycles} chu kỳ đã ghi nhận`,
+      id: 'average-cycle'
+    },
+    {
+      icon: <Clock className={`${styles.icon} ${styles.purple}`} />,
+      iconWrapper: `${styles.iconWrapper} ${styles.purple}`,
+      label: 'Kỳ kinh trung bình',
+      mainValue: `${stats.averagePeriodLength} ngày`,
+      subValue: 'Độ dài kỳ kinh',
+      id: 'average-period'
+    },
+    {
+      icon: <TrendingUp className={`${styles.icon} ${styles.indigo}`} />,
+      iconWrapper: `${styles.iconWrapper} ${styles.indigo}`,
+      label: 'Dự đoán kỳ tới',
+      mainValue: formatDate(stats.nextPredictedPeriod),
+      subValue: 'Ngày dự kiến',
+      id: 'next-prediction',
+      isSpecial: true
+    },
+    {
+      icon: <AlertCircle className={`${styles.icon} ${styles.green}`} />,
+      iconWrapper: `${styles.iconWrapper} ${styles.green}`,
+      label: 'Tính đều đặn',
+      mainValue: null,
+      subValue: 'Đánh giá chu kỳ',
+      id: 'consistency',
+      customContent: (
+        <div className="mb-2">
+          <span className={`${styles.consistencyBadge} ${getConsistencyClass(stats.consistency)}`}>
+            {getConsistencyText(stats.consistency)}
+          </span>
+        </div>
+      )
+    }
+  ];
+
+  if (stats.consistency === 'regular') {
+      advice.push({
+        icon: <Heart className="h-6 w-6 text-green-600" />,
+        title: 'Chu kỳ đều đặn',
+        description: 'Chu kỳ của bạn rất đều đặn! Hãy duy trì lối sống lành mạnh hiện tại.',
+        tips: ['Tiếp tục duy trì chế độ ăn uống cân bằng', 'Tập thể dục đều đặn', 'Ngủ đủ 7-8 tiếng mỗi ngày'],
+        color: 'green'
+      });
+    } else if (stats.consistency === 'irregular') {
+      advice.push({
+        icon: <Activity className="h-6 w-6 text-yellow-600" />,
+        title: 'Chu kỳ không đều',
+        description: 'Chu kỳ có thể bị ảnh hưởng bởi stress, thay đổi cân nặng hoặc lối sống.',
+        tips: ['Giảm stress thông qua yoga hoặc thiền', 'Duy trì cân nặng ổn định', 'Tham khảo ý kiến bác sĩ nếu cần'],
+        color: 'yellow'
+      });
+    }
+
+    if (stats.averageCycleLength < 21) {
+      advice.push({
+        icon: <Zap className="h-6 w-6 text-red-600" />,
+        title: 'Chu kỳ ngắn',
+        description: 'Chu kỳ ngắn hơn 21 ngày có thể cần được kiểm tra y tế.',
+        tips: ['Theo dõi kỹ hơn các triệu chứng', 'Ghi chú về stress và thay đổi lối sống', 'Nên thăm khám bác sĩ'],
+        color: 'red'
+      });
+    } else if (stats.averageCycleLength > 35) {
+      advice.push({
+        icon: <Lightbulb className="h-6 w-6 text-blue-600" />,
+        title: 'Chu kỳ dài',
+        description: 'Chu kỳ dài hơn 35 ngày có thể do nhiều nguyên nhân khác nhau.',
+        tips: ['Kiểm tra hormone nếu có thể', 'Duy trì chế độ ăn giàu dinh dưỡng', 'Tham khảo chuyên gia sức khỏe'],
+        color: 'blue'
+      });
+    }
+
+    const getAdvice = () => {
+      const advice = [];
+  
+      if (stats.consistency === 'regular') {
+        advice.push({
+          icon: <Heart className="h-6 w-6 text-green-600" />,
+          title: 'Chu kỳ đều đặn',
+          description: 'Chu kỳ của bạn rất đều đặn! Hãy duy trì lối sống lành mạnh hiện tại.',
+          tips: ['Tiếp tục duy trì chế độ ăn uống cân bằng', 'Tập thể dục đều đặn', 'Ngủ đủ 7-8 tiếng mỗi ngày'],
+          color: 'green'
+        });
+      } else if (stats.consistency === 'irregular') {
+        advice.push({
+          icon: <Activity className="h-6 w-6 text-yellow-600" />,
+          title: 'Chu kỳ không đều',
+          description: 'Chu kỳ có thể bị ảnh hưởng bởi stress, thay đổi cân nặng hoặc lối sống.',
+          tips: ['Giảm stress thông qua yoga hoặc thiền', 'Duy trì cân nặng ổn định', 'Tham khảo ý kiến bác sĩ nếu cần'],
+          color: 'yellow'
+        });
+      }
+  
+      if (stats.averageCycleLength < 21) {
+        advice.push({
+          icon: <Zap className="h-6 w-6 text-red-600" />,
+          title: 'Chu kỳ ngắn',
+          description: 'Chu kỳ ngắn hơn 21 ngày có thể cần được kiểm tra y tế.',
+          tips: ['Theo dõi kỹ hơn các triệu chứng', 'Ghi chú về stress và thay đổi lối sống', 'Nên thăm khám bác sĩ'],
+          color: 'red'
+        });
+      } else if (stats.averageCycleLength > 35) {
+        advice.push({
+          icon: <Lightbulb className="h-6 w-6 text-blue-600" />,
+          title: 'Chu kỳ dài',
+          description: 'Chu kỳ dài hơn 35 ngày có thể do nhiều nguyên nhân khác nhau.',
+          tips: ['Kiểm tra hormone nếu có thể', 'Duy trì chế độ ăn giàu dinh dưỡng', 'Tham khảo chuyên gia sức khỏe'],
+          color: 'blue'
+        });
+      }
+  
+      // General advice
+      advice.push({
+        icon: <Heart className="h-6 w-6 text-pink-600" />,
+        title: 'Lời khuyên chung',
+        description: 'Những thói quen tốt để duy trì sức khỏe sinh sản.',
+        tips: [
+          'Uống đủ 2-3 lít nước mỗi ngày',
+          'Ăn nhiều rau xanh và trái cây',
+          'Tập thể dục nhẹ nhàng trong kỳ kinh',
+          'Theo dõi và ghi chép đều đặn'
+        ],
+        color: 'pink'
+      });
+  
+      return advice;
+    };
+  
+    const advice = getAdvice();
+  
+    const getColorClasses = (color) => {
+      const colors = {
+        green: 'bg-green-50 border-green-200',
+        yellow: 'bg-yellow-50 border-yellow-200',
+        red: 'bg-red-50 border-red-200',
+        blue: 'bg-blue-50 border-blue-200',
+        pink: 'bg-pink-50 border-pink-200'
+      };
+      return colors[color] || 'bg-gray-50 border-gray-200';
+    };
+  
+  
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
       <Container maxWidth="lg" className={styles.container}>
         {isLoggedIn ? (
           <>
             {/* Stats Cards */}
-            <Grid container className={styles.statsGrid}>
-              {/* Card 1: Chu kỳ trung bình */}
-              <Grid item>
-                <Card className={styles.statCard}>
-                  <Box className={styles.statHeader}>
-                    <Box className={`${styles.iconWrapper} ${styles.iconPink}`}>
-                      <CalendarToday className={styles.icon} />
-                    </Box>
-                    <span className={styles.statTitle}>Chu kỳ trung bình</span>
-                  </Box>
-                  <div className={styles.statValue}>28 ngày</div>
-                  <div className={styles.statSubtext}>5 chu kỳ đã ghi nhận</div>
-                </Card>
-              </Grid>
-
-              {/* Card 2: Kỳ kinh trung bình */}
-              <Grid item>
-                <Card className={styles.statCard}>
-                  <Box className={styles.statHeader}>
-                    <Box className={`${styles.iconWrapper} ${styles.iconPurple}`}>
-                      <AccessTime className={styles.icon} />
-                    </Box>
-                    <span className={styles.statTitle}>Kỳ kinh trung bình</span>
-                  </Box>
-                  <div className={styles.statValue}>5 ngày</div>
-                  <div className={styles.statSubtext}>Độ dài kỳ kinh</div>
-                </Card>
-              </Grid>
-
-              {/* Card 3: Dự đoán kỳ tới */}
-              <Grid item>
-                <Card className={styles.statCard}>
-                  <Box className={styles.statHeader}>
-                    <Box className={`${styles.iconWrapper} ${styles.iconBlue}`}>
-                      <Timeline className={styles.icon} />
-                    </Box>
-                    <span className={styles.statTitle}>Dự đoán kỳ tới</span>
-                  </Box>
-                  <div className={styles.statValue}>3/6/2024</div>
-                  <div className={styles.statSubtext}>Ngày dự kiến</div>
-                </Card>
-              </Grid>
-
-              {/* Card 4: Tính đều đặn */}
-              <Grid item>
-                <Card className={styles.statCard}>
-                  <Box className={styles.statHeader}>
-                    <Box className={`${styles.iconWrapper} ${styles.iconGreen}`}>
-                      <CheckCircle className={styles.icon} />
-                    </Box>
-                    <span className={styles.statTitle}>Tính đều đặn</span>
-                  </Box>
-                  <div className={styles.statValue}>Đều đặn</div>
-                  <div className={styles.statSubtext}>Đánh giá chu kỳ</div>
-                </Card>
-              </Grid>
-            </Grid>
+            <div className={styles.dashboard}>
+              {dashboardCards.map((card, index) => (
+                <div 
+                  key={card.id} 
+                  className={styles.card}
+                  role="article"
+                  aria-labelledby={`card-${card.id}-title`}
+                  tabIndex={0}
+                >
+                  <div className={styles.cardHeader}>
+                    <div className={card.iconWrapper}>
+                      {card.icon}
+                    </div>
+                    <span 
+                      className={styles.cardLabel}
+                      id={`card-${card.id}-title`}
+                    >
+                      {card.label}
+                    </span>
+                  </div>
+                  
+                  {card.customContent ? (
+                    card.customContent
+                  ) : (
+                    <div className={styles.mainValue}>
+                      {card.mainValue}
+                    </div>
+                  )}
+                  
+                  <div className={styles.subValue}>
+                    {card.subValue}
+                  </div>
+                </div>
+              ))}
+            </div>
 
             {/* Chart Section */}
             <Grid container spacing={3}>
@@ -510,5 +677,4 @@ const OvulationPage = () => {
     </LocalizationProvider>
   );
 };
-
 export default OvulationPage;
