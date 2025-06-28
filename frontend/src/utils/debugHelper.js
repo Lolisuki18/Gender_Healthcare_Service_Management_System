@@ -124,8 +124,10 @@ export const logStorageState = () => {
   }
 };
 
-export default {
+const debugHelper = {
   debugLog,
   extractAvatarFromResponse,
   logStorageState,
 };
+
+export default debugHelper;

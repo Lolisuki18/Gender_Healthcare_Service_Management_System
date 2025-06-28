@@ -21,8 +21,6 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material';
-import localStorageUtil from '@/utils/localStorage';
-import notification from '@/utils/notification';
 import { keyframes } from '@mui/system';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -38,6 +36,9 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import CountUp from 'react-countup';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '@/services/api';
+import localStorageUtil from '@/utils/localStorage';
+import notification from '@/utils/notification';
 
 // Define animations
 const float = keyframes`
@@ -77,6 +78,35 @@ export const HomePage = () => {
 
     return () => clearTimeout(timer);
   }, []); // Chỉ chạy 1 lần khi component mount
+
+  // Function xử lý đăng ký xét nghiệm với check đăng nhập
+  const handleTestRegistration = async () => {
+    try {
+      // Gọi API để check authentication status - sử dụng endpoint có sẵn
+      const response = await apiClient.get('/users/profile', {
+        skipAutoRedirect: true, // Tránh auto redirect trong interceptor
+      });
+
+      // Nếu API thành công (200) => đã đăng nhập
+      if (response.status === 200) {
+        navigate('/test-registration');
+      }
+    } catch (error) {
+      // Nếu lỗi 401 hoặc 403 => chưa đăng nhập
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        // Lưu đường dẫn để redirect sau khi đăng nhập
+        localStorageUtil.set('redirectAfterLogin', {
+          path: '/test-registration',
+        });
+        navigate('/login');
+      } else {
+        // Lỗi khác (network, server) => vẫn cho phép truy cập
+        console.error('Error checking auth:', error);
+        navigate('/test-registration');
+      }
+    }
+  };
+
   return (
     <Box sx={{ overflow: 'hidden' }}>
       {/* Hero Section */}{' '}
@@ -200,7 +230,7 @@ export const HomePage = () => {
                   variant="outlined"
                   size="large"
                   startIcon={<MedicalServicesIcon />}
-                  onClick={() => navigate('/test-registration')}
+                  onClick={handleTestRegistration}
                   sx={{
                     borderColor: '#1ABC9C',
                     color: '#fff',

@@ -1233,4 +1233,61 @@ public class STITestService {
 
         return false;
     }
+
+    /**
+     * Update test results for tests in RESULTED status
+     * Allows staff to modify existing results before completing the test
+     */
+    @Transactional
+    public ApiResponse<STITestResponse> updateTestResults(Long testId, List<TestResultRequest> resultRequests, Long userId) {
+        try {
+            log.info("Updating test results for test {} by user {}", testId, userId);
+
+            Optional<STITest> testOpt = stiTestRepository.findById(testId);
+            if (testOpt.isEmpty()) {
+                return ApiResponse.error("STI test not found");
+            }
+
+            STITest test = testOpt.get();
+
+            // Check if test is in RESULTED status
+            if (test.getStatus() != STITestStatus.RESULTED) {
+                return ApiResponse.error("Test results can only be updated when test is in RESULTED status");
+            }
+
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+            String userRole = user.getRole() != null ? user.getRole().getRoleName() : null;
+            
+            // Only STAFF and ADMIN can update test results
+            if (!"STAFF".equals(userRole) && !"ADMIN".equals(userRole)) {
+                return ApiResponse.error("Only staff and admin can update test results");
+            }
+
+            if (resultRequests == null || resultRequests.isEmpty()) {
+                return ApiResponse.error("Test results are required");
+            }
+
+            // Validate and save the updated results
+            if (!validateAndSaveTestResults(test, resultRequests, userId, false)) {
+                return ApiResponse.error("Some test results could not be updated. Please check and try again.");
+            }
+
+            // Update the result date
+            test.setResultDate(LocalDateTime.now());
+            test.setUpdatedAt(LocalDateTime.now());
+            
+            STITest updatedTest = stiTestRepository.save(test);
+            STITestResponse response = convertToResponse(updatedTest);
+
+            return ApiResponse.success("Test results updated successfully", response);
+        } catch (Exception e) {
+            log.error("Error updating test results for test {}: {}", testId, e.getMessage(), e);
+            return ApiResponse.error("Error updating test results: " + e.getMessage());
+        }
+    }
 }

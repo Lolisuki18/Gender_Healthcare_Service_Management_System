@@ -14,13 +14,21 @@ import {
   ListItemText,
   Chip,
   Container,
-  useTheme,
   Fade,
   Zoom,
+  Avatar,
+  Paper,
+  Stack,
 } from '@mui/material';
 // Icon từ MUI
 import CheckIcon from '@mui/icons-material/Check';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import VideoCallIcon from '@mui/icons-material/VideoCall';
+import SchoolIcon from '@mui/icons-material/School';
+import SupportIcon from '@mui/icons-material/Support';
+import PsychologyIcon from '@mui/icons-material/Psychology';
 // React Router
 import { useNavigate } from 'react-router-dom';
 
@@ -39,6 +47,10 @@ const services = [
       'Tư vấn chuyên sâu',
     ],
     detailRoute: '/services/sti-testing',
+    icon: MedicalServicesIcon,
+    color: '#FF6B6B',
+    gradientFrom: '#FF6B6B',
+    gradientTo: '#FF8E8E',
   },
   {
     id: 2,
@@ -53,6 +65,10 @@ const services = [
       'Ghi chú triệu chứng',
     ],
     detailRoute: '/services/cycle-tracking',
+    icon: FavoriteIcon,
+    color: '#FF69B4',
+    gradientFrom: '#FF69B4',
+    gradientTo: '#FF8FA3',
   },
   {
     id: 3,
@@ -67,6 +83,10 @@ const services = [
       'Giới thiệu chuyên khoa',
     ],
     detailRoute: '/services/online-consultation',
+    icon: VideoCallIcon,
+    color: '#4A90E2',
+    gradientFrom: '#4A90E2',
+    gradientTo: '#6BA3E7',
   },
   {
     id: 4,
@@ -80,6 +100,10 @@ const services = [
       'Thông tin dựa trên bằng chứng',
     ],
     detailRoute: '/services/sexual-health-education',
+    icon: SchoolIcon,
+    color: '#9C27B0',
+    gradientFrom: '#9C27B0',
+    gradientTo: '#B55BC5',
   },
   {
     id: 5,
@@ -93,6 +117,10 @@ const services = [
       'Chăm sóc toàn diện',
     ],
     detailRoute: '/services/gender-affirming-care',
+    icon: SupportIcon,
+    color: '#00BCD4',
+    gradientFrom: '#00BCD4',
+    gradientTo: '#26C6DA',
   },
   {
     id: 6,
@@ -107,12 +135,15 @@ const services = [
       'Giáo dục sức khỏe sinh sản',
     ],
     detailRoute: '/services/reproductive-health-counseling',
+    icon: PsychologyIcon,
+    color: '#1ABC9C',
+    gradientFrom: '#1ABC9C',
+    gradientTo: '#48C9B0',
   },
 ];
 
 export default function StiPage() {
   const navigate = useNavigate(); // Hook điều hướng
-  const theme = useTheme(); // Hook lấy theme MUI
   const [loaded, setLoaded] = React.useState(false); // State để tạo hiệu ứng xuất hiện
   React.useEffect(() => {
     // Hiệu ứng xuất hiện mượt mà khi load trang
@@ -162,215 +193,365 @@ export default function StiPage() {
         sx={{ position: 'relative', zIndex: 1, py: { xs: 6, md: 10 } }}
       >
         {/* --- Header: Tiêu đề, mô tả, underline --- */}
-        <Box sx={{ textAlign: 'center', mb: 7 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-              mb: 2,
-              gap: 2,
-            }}
-          >
-            {/* Có thể thêm Chip ở đây nếu muốn */}
+        <Fade in={loaded} timeout={800}>
+          <Box sx={{ textAlign: 'center', mb: 8 }}>
+            <Chip
+              label="✨ Dịch vụ chăm sóc sức khỏe"
+              sx={{
+                mb: 3,
+                px: 3,
+                py: 1,
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                background: 'linear-gradient(45deg, rgba(74,144,226,0.1), rgba(26,188,156,0.1))',
+                color: '#4A90E2',
+                border: '1px solid rgba(74,144,226,0.2)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, rgba(74,144,226,0.15), rgba(26,188,156,0.15))',
+                },
+              }}
+            />
+            
             <Typography
               variant="h2"
               component="h1"
               sx={{
-                fontWeight: 800,
-                fontSize: { xs: '2.5rem', sm: '3rem', md: '3.5rem' },
+                fontWeight: 900,
+                fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' },
                 color: 'transparent',
-                background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+                background: 'linear-gradient(135deg, #4A90E2 0%, #1ABC9C 50%, #667eea 100%)',
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 textAlign: 'center',
                 lineHeight: 1.1,
-                letterSpacing: '-1px',
-                mb: 2,
+                letterSpacing: '-2px',
+                mb: 3,
+                textShadow: '0 4px 8px rgba(74, 144, 226, 0.1)',
               }}
             >
               Dịch vụ của chúng tôi
             </Typography>
-          </Box>
-          {/* Gạch chân gradient dưới tiêu đề */}
-          <Box
-            sx={{
-              width: 120,
-              height: 6,
-              mx: 'auto',
-              mt: 2,
-              mb: 2,
-              borderRadius: 3,
-              background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-            }}
-          />
-          <Typography
-            sx={{
-              color: (theme) => theme.palette.text.secondary,
-              maxWidth: '800px',
-              mx: 'auto',
-              mt: 2,
-              fontSize: { xs: '1.1rem', md: '1.25rem' },
-              lineHeight: 1.7,
-              fontWeight: 400,
-              textAlign: 'center',
-            }}
-          >
-            Các dịch vụ chăm sóc sức khỏe giới tính toàn diện, bảo mật và chuyên
-            nghiệp.
-          </Typography>
-        </Box>
-        {/* --- Grid danh sách dịch vụ --- */}
-        <Grid container spacing={4} justifyContent="center">
-          {services.map((service, idx) => (
-            <Grid
-              item
-              xs={12}
-              sm={6}
-              md={4}
-              key={service.id}
-              display="flex"
-              justifyContent="center"
+
+            {/* Gạch chân gradient dưới tiêu đề */}
+            <Box
+              sx={{
+                width: 150,
+                height: 8,
+                mx: 'auto',
+                mb: 4,
+                borderRadius: 4,
+                background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 50%, #667eea 100%)',
+                boxShadow: '0 4px 12px rgba(74, 144, 226, 0.3)',
+              }}
+            />
+            
+            <Typography
+              sx={{
+                color: (theme) => theme.palette.text.secondary,
+                maxWidth: '900px',
+                mx: 'auto',
+                fontSize: { xs: '1.15rem', md: '1.3rem' },
+                lineHeight: 1.8,
+                fontWeight: 400,
+                textAlign: 'center',
+                mb: 4,
+              }}
             >
-              <Zoom
-                in={loaded}
-                style={{ transitionDelay: `${idx * 100 + 200}ms` }}
-              >
-                {/* --- Card dịch vụ --- */}
-                <Card
+              Khám phá các dịch vụ chăm sóc sức khỏe giới tính toàn diện, bảo mật và chuyên nghiệp. 
+              Chúng tôi cam kết mang đến trải nghiệm tốt nhất cho bạn.
+            </Typography>
+
+            {/* Statistics Cards */}
+            <Stack 
+              direction={{ xs: 'column', sm: 'row' }} 
+              spacing={3} 
+              justifyContent="center"
+              alignItems="center"
+              sx={{ mt: 4 }}
+            >
+              {[
+                { number: '10,000+', label: 'Khách hàng tin tưởng' },
+                { number: '99%', label: 'Độ hài lòng' },
+                { number: '24/7', label: 'Hỗ trợ khách hàng' },
+              ].map((stat, index) => (
+                <Paper
+                  key={index}
+                  elevation={0}
                   sx={{
-                    borderRadius: 4,
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.07)',
-                    width: '100%',
-                    maxWidth: 340,
-                    mx: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%',
-                    transition: 'all 0.4s cubic-bezier(.4,0,.2,1)',
-                    overflow: 'hidden',
-                    position: 'relative',
-                    background:
-                      'linear-gradient(180deg, #f8faff 0%, #f0f7ff 50%, #e8f4ff 100%)',
+                    p: 3,
+                    textAlign: 'center',
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248,250,255,0.9))',
+                    border: '1px solid rgba(74,144,226,0.1)',
+                    borderRadius: 3,
+                    backdropFilter: 'blur(10px)',
+                    minWidth: 160,
+                    transition: 'all 0.3s ease',
                     '&:hover': {
-                      transform: 'translateY(-10px) scale(1.03)',
-                      boxShadow: '0 20px 40px rgba(74, 144, 226, 0.18)',
-                      border: '1px solid rgba(74, 144, 226, 0.2)',
-                    },
+                      transform: 'translateY(-5px)',
+                      boxShadow: '0 10px 30px rgba(74, 144, 226, 0.15)',
+                      border: '1px solid rgba(74,144,226,0.2)',
+                    }
                   }}
                 >
-                  {/* --- Ảnh dịch vụ và Chip số thứ tự --- */}
-                  <Box
-                    sx={{
-                      height: 120,
-                      bgcolor: '#e3f2fd',
-                      borderRadius: 2,
-                      mb: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      position: 'relative',
+                  <Typography 
+                    variant="h4" 
+                    sx={{ 
+                      fontWeight: 900, 
+                      color: '#4A90E2',
+                      mb: 1,
+                      fontSize: '2rem'
                     }}
                   >
-                    <Chip
-                      label={`Dịch vụ #${service.id}`}
-                      sx={{
-                        position: 'absolute',
-                        top: 16,
-                        right: 16,
-                        backgroundColor: 'rgba(74,144,226,0.1)',
-                        fontWeight: 600,
-                        fontSize: '0.8rem',
-                        color: theme.palette.primary.main,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                      }}
-                    />
-                    <Typography color="#bdbdbd" fontWeight={600} fontSize={18}>
-                      Ảnh dịch vụ
-                    </Typography>
-                  </Box>
-                  {/* --- Nội dung card: tiêu đề, mô tả, bullet --- */}
-                  <CardContent
+                    {stat.number}
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: 'text.secondary',
+                      fontWeight: 500,
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    {stat.label}
+                  </Typography>
+                </Paper>
+              ))}
+            </Stack>
+          </Box>
+        </Fade>
+        {/* --- Grid danh sách dịch vụ --- */}
+        <Grid container spacing={3} justifyContent="center">
+          {services.map((service, idx) => {
+            const IconComponent = service.icon;
+            return (
+              <Grid
+                item
+                xs={12}
+                sm={4}
+                lg={4}
+                key={service.id}
+                display="flex"
+                justifyContent="center"
+              >
+                <Zoom
+                  in={loaded}
+                  style={{ transitionDelay: `${idx * 150 + 400}ms` }}
+                >
+                  {/* --- Card dịch vụ --- */}
+                  <Card
                     sx={{
-                      flexGrow: 1,
+                      borderRadius: 5,
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                      width: '100%',
+                      maxWidth: 350,
+                      mx: 'auto',
                       display: 'flex',
                       flexDirection: 'column',
-                      p: 3,
+                      height: '100%',
+                      transition: 'all 0.4s cubic-bezier(.4,0,.2,1)',
+                      overflow: 'hidden',
+                      position: 'relative',
+                      background: 'linear-gradient(180deg, #ffffff 0%, #f8faff 100%)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      backdropFilter: 'blur(20px)',
+                      '&:hover': {
+                        transform: 'translateY(-12px) scale(1.02)',
+                        boxShadow: `0 25px 50px rgba(${service.color.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(',')}, 0.25)`,
+                        border: `1px solid ${service.color}40`,
+                        '& .service-icon': {
+                          transform: 'scale(1.2) rotate(5deg)',
+                          background: `linear-gradient(45deg, ${service.gradientFrom}, ${service.gradientTo})`,
+                        },
+                        '& .service-button': {
+                          background: `linear-gradient(45deg, ${service.gradientFrom}, ${service.gradientTo})`,
+                          transform: 'translateY(-2px)',
+                        }
+                      },
                     }}
                   >
-                    <Typography
-                      gutterBottom
-                      variant="h6"
-                      component="h3"
+                    {/* --- Header với Icon và Chip --- */}
+                    <Box
                       sx={{
-                        color: (theme) => theme.palette.text.primary,
-                        fontWeight: 700,
-                        mb: 1,
-                        fontSize: '1.15rem',
-                        minHeight: 56,
+                        p: 3,
+                        pb: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        background: `linear-gradient(135deg, ${service.color}08, ${service.color}15)`,
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          width: 100,
+                          height: 100,
+                          background: `radial-gradient(circle, ${service.color}15, transparent 70%)`,
+                          borderRadius: '50%',
+                          transform: 'translate(30px, -30px)',
+                        }
                       }}
                     >
-                      {service.title}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        color: (theme) => theme.palette.text.secondary,
-                        mb: 2,
-                        fontSize: '1rem',
-                        minHeight: 48,
-                      }}
-                    >
-                      {service.shortDesc}
-                    </Typography>
-                    <List dense disablePadding sx={{ flexGrow: 1 }}>
-                      {service.bullets.map((b, i) => (
-                        <ListItem key={i} sx={{ py: 0 }}>
-                          <ListItemIcon sx={{ minWidth: 28 }}>
-                            <CheckIcon color="success" fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={b}
-                            primaryTypographyProps={{ fontSize: 15 }}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, zIndex: 1 }}>
+                        <Avatar
+                          className="service-icon"
+                          sx={{
+                            width: 56,
+                            height: 56,
+                            background: `linear-gradient(45deg, ${service.color}20, ${service.color}40)`,
+                            color: service.color,
+                            transition: 'all 0.3s ease',
+                            boxShadow: `0 4px 16px ${service.color}30`,
+                          }}
+                        >
+                          <IconComponent sx={{ fontSize: '1.8rem' }} />
+                        </Avatar>
+                        <Box>
+                          <Chip
+                            label={`#${service.id}`}
+                            size="small"
+                            sx={{
+                              backgroundColor: `${service.color}15`,
+                              color: service.color,
+                              fontWeight: 700,
+                              fontSize: '0.75rem',
+                              height: 24,
+                              '& .MuiChip-label': { px: 1.5 }
+                            }}
                           />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </CardContent>
-                  {/* --- Nút xem chi tiết --- */}
-                  <Box sx={{ p: 2, pt: 0, textAlign: 'center' }}>
-                    <Button
-                      variant="contained"
-                      endIcon={<ArrowForwardIcon />}
-                      fullWidth
-                      onClick={() => navigate(service.detailRoute)}
+                        </Box>
+                      </Box>
+                    </Box>
+
+                    {/* --- Nội dung card: tiêu đề, mô tả, bullet --- */}
+                    <CardContent
                       sx={{
-                        background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                        color: '#fff',
-                        fontWeight: 600,
-                        borderRadius: 50,
-                        px: 4,
-                        py: 1.5,
-                        height: 48,
-                        fontSize: '1.1rem',
-                        boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
-                        textTransform: 'none',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
-                          transform: 'translateY(-3px)',
-                          boxShadow: '0 10px 25px rgba(74, 144, 226, 0.25)',
-                        },
+                        flexGrow: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        p: 3,
+                        pt: 1,
                       }}
                     >
-                      Xem chi tiết
-                    </Button>
-                  </Box>
-                </Card>
-              </Zoom>
-            </Grid>
-          ))}
+                      <Typography
+                        gutterBottom
+                        variant="h6"
+                        component="h3"
+                        sx={{
+                          color: '#1a1a1a',
+                          fontWeight: 700,
+                          mb: 2,
+                          fontSize: '1.2rem',
+                          lineHeight: 1.3,
+                          minHeight: 62,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {service.title}
+                      </Typography>
+                      
+                      <Typography
+                        sx={{
+                          color: 'text.secondary',
+                          mb: 3,
+                          fontSize: '1rem',
+                          lineHeight: 1.6,
+                          minHeight: 48,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {service.shortDesc}
+                      </Typography>
+                      
+                      <List dense disablePadding sx={{ flexGrow: 1, mb: 2 }}>
+                        {service.bullets.slice(0, 4).map((bullet, i) => (
+                          <ListItem key={i} sx={{ py: 0.5, px: 0 }}>
+                            <ListItemIcon sx={{ minWidth: 32 }}>
+                              <CheckIcon 
+                                sx={{ 
+                                  color: service.color, 
+                                  fontSize: '1.2rem',
+                                  fontWeight: 'bold'
+                                }} 
+                              />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={bullet}
+                              primaryTypographyProps={{ 
+                                fontSize: '0.95rem',
+                                fontWeight: 500,
+                                color: '#2a2a2a'
+                              }}
+                            />
+                          </ListItem>
+                        ))}
+                        {service.bullets.length > 4 && (
+                          <ListItem sx={{ py: 0.5, px: 0 }}>
+                            <ListItemIcon sx={{ minWidth: 32 }}>
+                              <Typography 
+                                sx={{ 
+                                  color: service.color, 
+                                  fontSize: '0.85rem',
+                                  fontWeight: 'bold'
+                                }}
+                              >
+                                +{service.bullets.length - 4}
+                              </Typography>
+                            </ListItemIcon>
+                            <ListItemText
+                              primary="Và nhiều tính năng khác..."
+                              primaryTypographyProps={{ 
+                                fontSize: '0.9rem',
+                                fontStyle: 'italic',
+                                color: 'text.secondary'
+                              }}
+                            />
+                          </ListItem>
+                        )}
+                      </List>
+                    </CardContent>
+
+                    {/* --- Nút xem chi tiết --- */}
+                    <Box sx={{ p: 3, pt: 0 }}>
+                      <Button
+                        className="service-button"
+                        variant="contained"
+                        endIcon={<ArrowForwardIcon />}
+                        fullWidth
+                        onClick={() => navigate(service.detailRoute)}
+                        sx={{
+                          background: `linear-gradient(45deg, ${service.color}90, ${service.color})`,
+                          color: '#fff',
+                          fontWeight: 700,
+                          borderRadius: 3,
+                          px: 4,
+                          py: 1.8,
+                          fontSize: '1rem',
+                          textTransform: 'none',
+                          boxShadow: `0 4px 16px ${service.color}40`,
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            background: `linear-gradient(45deg, ${service.gradientTo}, ${service.gradientFrom})`,
+                            boxShadow: `0 8px 24px ${service.color}50`,
+                          },
+                        }}
+                      >
+                        Khám phá ngay
+                      </Button>
+                    </Box>
+                  </Card>
+                </Zoom>
+              </Grid>
+            );
+          })}
         </Grid>
       </Container>
     </Box>
