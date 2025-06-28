@@ -58,7 +58,7 @@ import {
   deleteSTIService,
   getSTIServiceById,
 } from '../../services/stiService';
-import { id } from 'date-fns/locale';
+import notify from '../../utils/notification';
 
 const STIServiceManagementContent = () => {
   // State management
@@ -85,12 +85,6 @@ const STIServiceManagementContent = () => {
     componentId: null,
   });
   const [editingComponentIndex, setEditingComponentIndex] = useState(-1);
-
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -130,11 +124,7 @@ const STIServiceManagementContent = () => {
     } catch (err) {
       console.error('Error fetching services:', err);
       setError(err.message || 'Failed to fetch services');
-      setSnackbar({
-        open: true,
-        message: 'Failed to load STI services',
-        severity: 'error',
-      });
+      notify.error('Error', 'Failed to load STI services');
     } finally {
       setLoading(false);
     }
@@ -264,11 +254,10 @@ const STIServiceManagementContent = () => {
       !editingComponent.unit ||
       !editingComponent.referenceRange
     ) {
-      setSnackbar({
-        open: true,
-        message: 'Please fill all required component fields',
-        severity: 'warning',
-      });
+      notify.warning(
+        'Validation Error',
+        'Please fill all required component fields'
+      );
       return;
     }
 
@@ -290,11 +279,7 @@ const STIServiceManagementContent = () => {
     });
 
     // Show success message
-    setSnackbar({
-      open: true,
-      message: 'Component updated successfully',
-      severity: 'success',
-    });
+    notify.success('Success', 'Component updated successfully');
 
     handleCloseEditComponentDialog();
   };
@@ -315,11 +300,10 @@ const STIServiceManagementContent = () => {
       !newComponent.unit ||
       !newComponent.referenceRange
     ) {
-      setSnackbar({
-        open: true,
-        message: 'Please fill all required component fields',
-        severity: 'warning',
-      });
+      notify.warning(
+        'Validation Error',
+        'Please fill all required component fields'
+      );
       return;
     }
     const component = {
@@ -425,11 +409,7 @@ const STIServiceManagementContent = () => {
       }
     } catch (err) {
       console.error('Error fetching service details:', err);
-      setSnackbar({
-        open: true,
-        message: 'Failed to load service details',
-        severity: 'error',
-      });
+      notify.error('Error', 'Failed to load service details');
     } finally {
       setLoading(false);
     }
@@ -458,21 +438,13 @@ const STIServiceManagementContent = () => {
       setLoading(true);
       const response = await deleteSTIService(deleteServiceId);
       if (response.success) {
-        setSnackbar({
-          open: true,
-          message: 'Service deleted successfully',
-          severity: 'success',
-        });
+        notify.success('Success', 'Service deleted successfully');
         // Refresh services
         fetchSTIServices();
       }
     } catch (err) {
       console.error('Error deleting service:', err);
-      setSnackbar({
-        open: true,
-        message: err.message || 'Failed to delete service',
-        severity: 'error',
-      });
+      notify.error('Error', err.message || 'Failed to delete service');
     } finally {
       setLoading(false);
       handleCloseDeleteDialog();
@@ -521,21 +493,16 @@ const STIServiceManagementContent = () => {
         );
         response = await updateSTIService(currentService.id, serviceData);
         if (response.success) {
-          setSnackbar({
-            open: true,
-            message: 'Service updated successfully',
-            severity: 'success',
-          });
+          notify.success('Success', 'Service updated successfully');
         }
       } else {
+        console.log('Service data begin sent for creation: ', serviceData);
         // Create new service
         response = await createSTIService(serviceData);
         if (response.success) {
-          setSnackbar({
-            open: true,
-            message: 'Service created successfully',
-            severity: 'success',
-          });
+          notify.success('Success', 'Service created successfully');
+        } else {
+          notify.error('Error', 'Service creation failed: ' + response.message);
         }
       }
 
@@ -544,22 +511,10 @@ const STIServiceManagementContent = () => {
       handleCloseDialog();
     } catch (err) {
       console.error('Error saving service:', err);
-      setSnackbar({
-        open: true,
-        message: err.message || 'Failed to save service',
-        severity: 'error',
-      });
+      notify.error('Error', err.message || 'Failed to save service');
     } finally {
       setLoading(false);
     }
-  };
-
-  // Close snackbar
-  const handleCloseSnackbar = () => {
-    setSnackbar((prev) => ({
-      ...prev,
-      open: false,
-    }));
   };
 
   // Format price to VND
@@ -1700,21 +1655,6 @@ const STIServiceManagementContent = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

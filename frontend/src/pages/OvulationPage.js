@@ -444,20 +444,44 @@ const OvulationPage = () => {
   // Tính toán ngày dự kiến có kinh tiếp theo
   const calculateNextPeriod = (startDate, cycleLength) => {
     if (!startDate || !cycleLength) return '';
-    const date = parseISO(startDate);
-    return isValid(date)
-      ? format(addDays(date, parseInt(cycleLength)), 'dd/MM/yyyy')
-      : '';
+
+    try {
+      // Ensure startDate is a string before passing to parseISO
+      const dateString =
+        typeof startDate === 'string' ? startDate : String(startDate);
+      const date = parseISO(dateString);
+      return isValid(date)
+        ? format(addDays(date, parseInt(cycleLength)), 'dd/MM/yyyy')
+        : '';
+    } catch (error) {
+      console.error('Error calculating next period:', error, startDate);
+      return '';
+    }
   };
 
-  // Tính toán giai đoạn an toàn sau khi hành kinh
   const calculateSafePeriodAfter = (startDate, numberOfDays) => {
     if (!startDate || !numberOfDays) return '';
-    const date = parseISO(startDate);
-    return isValid(date)
-      ? format(addDays(date, parseInt(numberOfDays) + 1), 'dd/MM/yyyy')
-      : '';
+
+    try {
+      // Ensure startDate is a non-empty string
+      const dateString = String(startDate).trim();
+      if (!dateString) return '';
+
+      const date = parseISO(dateString);
+
+      // Check if date is valid
+      if (!isValid(date)) {
+        console.error('Invalid date parsed:', startDate);
+        return '';
+      }
+
+      return format(addDays(date, parseInt(numberOfDays) + 1), 'dd/MM/yyyy');
+    } catch (error) {
+      console.error('Error calculating safe period:', error, startDate);
+      return '';
+    }
   };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -1120,18 +1144,28 @@ const OvulationPage = () => {
                             >
                               Từ{' '}
                               <Chip
-                                label={calculateSafePeriodAfter(
-                                  cycle.startDate,
-                                  cycle.numberOfDays
-                                )}
+                                label={
+                                  calculateSafePeriodAfter(
+                                    cycle.startDate,
+                                    cycle.numberOfDays
+                                  ) || 'Không xác định'
+                                }
                                 size="small"
                                 sx={{ fontSize: '0.7rem', height: 20 }}
                               />{' '}
                               đến{' '}
                               <Chip
-                                label={formatDate(
-                                  addDays(parseISO(cycle.ovulationDate), -5)
-                                )}
+                                label={
+                                  cycle.ovulationDate &&
+                                  isValid(parseISO(cycle.ovulationDate))
+                                    ? formatDate(
+                                        addDays(
+                                          parseISO(cycle.ovulationDate),
+                                          -5
+                                        )
+                                      )
+                                    : 'Không xác định'
+                                }
                                 size="small"
                                 sx={{ fontSize: '0.7rem', height: 20 }}
                               />
@@ -1160,9 +1194,17 @@ const OvulationPage = () => {
                             <Typography variant="body2" sx={{ ml: 2.5 }}>
                               Từ{' '}
                               <Chip
-                                label={formatDate(
-                                  addDays(parseISO(cycle.ovulationDate), -5)
-                                )}
+                                label={
+                                  cycle.ovulationDate &&
+                                  isValid(parseISO(cycle.ovulationDate))
+                                    ? formatDate(
+                                        addDays(
+                                          parseISO(cycle.ovulationDate),
+                                          -5
+                                        )
+                                      )
+                                    : 'Không xác định'
+                                }
                                 size="small"
                                 color="error"
                                 variant="outlined"
@@ -1170,9 +1212,17 @@ const OvulationPage = () => {
                               />{' '}
                               đến{' '}
                               <Chip
-                                label={formatDate(
-                                  addDays(parseISO(cycle.ovulationDate), 1)
-                                )}
+                                label={
+                                  cycle.ovulationDate &&
+                                  isValid(parseISO(cycle.ovulationDate))
+                                    ? formatDate(
+                                        addDays(
+                                          parseISO(cycle.ovulationDate),
+                                          1
+                                        )
+                                      )
+                                    : 'Không xác định'
+                                }
                                 size="small"
                                 color="error"
                                 variant="outlined"

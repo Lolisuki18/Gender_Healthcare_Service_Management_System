@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -20,24 +20,24 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-} from "@mui/material";
-import localStorageUtil from "@/utils/localStorage";
-import notification from "@/utils/notification";
-import { keyframes } from "@mui/system";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import MaleIcon from "@mui/icons-material/Male";
-import FemaleIcon from "@mui/icons-material/Female";
-import TransgenderIcon from "@mui/icons-material/Transgender";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import FormatQuoteIcon from "@mui/icons-material/FormatQuote";
-import NewspaperIcon from "@mui/icons-material/Newspaper";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import CountUp from "react-countup";
-import { useNavigate } from "react-router-dom";
+} from '@mui/material';
+import localStorageUtil from '@/utils/localStorage';
+import notification from '@/utils/notification';
+import { keyframes } from '@mui/system';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import MaleIcon from '@mui/icons-material/Male';
+import FemaleIcon from '@mui/icons-material/Female';
+import TransgenderIcon from '@mui/icons-material/Transgender';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
+import NewspaperIcon from '@mui/icons-material/Newspaper';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import CountUp from 'react-countup';
+import { useNavigate } from 'react-router-dom';
 
 // Define animations
 const float = keyframes`
@@ -57,91 +57,91 @@ export const HomePage = () => {
     }, 100);
 
     // Kiểm tra và hiển thị thông báo đăng nhập thành công
-    const loginMessage = localStorageUtil.get("loginSuccessMessage");
+    const loginMessage = localStorageUtil.get('loginSuccessMessage');
 
     if (loginMessage) {
       // Hiển thị thông báo
       notification.success(
-        loginMessage.title || "Đăng nhập thành công!",
-        loginMessage.message || "Chào mừng bạn trở lại!",
+        loginMessage.title || 'Đăng nhập thành công!',
+        loginMessage.message || 'Chào mừng bạn trở lại!',
         {
           duration: 3000,
         }
       );
 
       // xoá ngay lập tức để tránh hiện thị lại
-      localStorageUtil.remove("loginSuccessMessage");
+      localStorageUtil.remove('loginSuccessMessage');
     }
 
-    console.log("HomePage component mounted");
+    console.log('HomePage component mounted');
 
     return () => clearTimeout(timer);
   }, []); // Chỉ chạy 1 lần khi component mount
   return (
-    <Box sx={{ overflow: "hidden" }}>
-      {/* Hero Section */}{" "}
+    <Box sx={{ overflow: 'hidden' }}>
+      {/* Hero Section */}{' '}
       <Box
         sx={{
-          background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-          color: "#fff",
+          background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+          color: '#fff',
           py: { xs: 10, md: 16 },
-          textAlign: "center",
-          position: "relative",
-          overflow: "hidden",
-          "&::before": {
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
             content: '""',
-            position: "absolute",
+            position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
             backgroundImage:
               "url('https://images.unsplash.com/photo-1586773860418-d37222d8fce3?q=80&w=2073')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
             opacity: 0.15,
             zIndex: 0,
           },
-          "&::after": {
+          '&::after': {
             content: '""',
-            position: "absolute",
+            position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
             background:
-              "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.2) 100%)",
-            backdropFilter: "blur(3px)",
+              'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.2) 100%)',
+            backdropFilter: 'blur(3px)',
             zIndex: 1,
           },
         }}
       >
-        <Container maxWidth="lg" sx={{ position: "relative", zIndex: 2 }}>
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
           <Fade in={loaded} timeout={1000}>
             <Box>
               <Typography
                 variant="overline"
                 sx={{
-                  fontSize: "1.1rem",
-                  letterSpacing: "0.15em",
+                  fontSize: '1.1rem',
+                  letterSpacing: '0.15em',
                   opacity: 0.9,
-                  textTransform: "uppercase",
+                  textTransform: 'uppercase',
                   mb: 2,
-                  display: "block",
+                  display: 'block',
                 }}
               >
                 Chào mừng đến với hệ thống chăm sóc sức khỏe
-              </Typography>{" "}
+              </Typography>{' '}
               <Typography
                 variant="h1"
                 component="h1"
                 gutterBottom
                 sx={{
                   fontWeight: 800,
-                  fontSize: { xs: "2.5rem", sm: "3.5rem", md: "4.5rem" },
+                  fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' },
                   mb: 3,
-                  textShadow: "0px 2px 4px rgba(0,0,0,0.2)",
-                  color: "#FFFFFF", // Changed to white color
+                  textShadow: '0px 2px 4px rgba(0,0,0,0.2)',
+                  color: '#FFFFFF', // Changed to white color
                   animation: `${float} 6s ease-in-out infinite`,
                   lineHeight: 1.2,
                 }}
@@ -153,11 +153,11 @@ export const HomePage = () => {
                 paragraph
                 sx={{
                   opacity: 0.9,
-                  maxWidth: "800px",
-                  mx: "auto",
+                  maxWidth: '800px',
+                  mx: 'auto',
                   mb: 5,
                   fontWeight: 400,
-                  fontSize: { xs: "1.1rem", md: "1.35rem" },
+                  fontSize: { xs: '1.1rem', md: '1.35rem' },
                   lineHeight: 1.6,
                 }}
               >
@@ -165,60 +165,60 @@ export const HomePage = () => {
                 vụ toàn diện, tôn trọng và thấu hiểu nhu cầu của bạn
               </Typography>
               <Stack
-                direction={{ xs: "column", sm: "row" }}
+                direction={{ xs: 'column', sm: 'row' }}
                 spacing={{ xs: 2, sm: 3 }}
                 justifyContent="center"
                 sx={{ mt: 5 }}
               >
-                {" "}
+                {' '}
                 <Button
                   variant="contained"
                   size="large"
                   startIcon={<CalendarMonthIcon />}
-                  onClick={() => navigate("/appointment")}
+                  onClick={() => navigate('/consultation')}
                   sx={{
-                    background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                    color: "#fff",
+                    background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                    color: '#fff',
                     fontWeight: 600,
                     px: 4,
                     py: 1.8,
                     borderRadius: 50,
-                    boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-                    "&:hover": {
-                      background: "linear-gradient(45deg, #1ABC9C, #4A90E2)",
-                      transform: "translateY(-3px)",
-                      boxShadow: "0 10px 25px rgba(74, 144, 226, 0.4)",
+                    boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 10px 25px rgba(74, 144, 226, 0.4)',
                     },
-                    transition: "all 0.3s ease",
-                    fontSize: { xs: "0.95rem", sm: "1.1rem" },
-                    textTransform: "none",
+                    transition: 'all 0.3s ease',
+                    fontSize: { xs: '0.95rem', sm: '1.1rem' },
+                    textTransform: 'none',
                   }}
                 >
                   Đặt lịch tư vấn
-                </Button>{" "}
+                </Button>{' '}
                 <Button
                   variant="outlined"
                   size="large"
                   startIcon={<MedicalServicesIcon />}
-                  onClick={() => navigate("/test-registration")}
+                  onClick={() => navigate('/test-registration')}
                   sx={{
-                    borderColor: "#1ABC9C",
-                    color: "#fff",
+                    borderColor: '#1ABC9C',
+                    color: '#fff',
                     fontWeight: 600,
                     px: 4,
                     py: 1.8,
                     borderRadius: 50,
-                    borderWidth: "2px",
-                    background: "rgba(26, 188, 156, 0.15)",
-                    "&:hover": {
-                      background: "rgba(26, 188, 156, 0.25)",
-                      borderColor: "#1ABC9C",
-                      transform: "translateY(-3px)",
-                      boxShadow: "0 10px 25px rgba(74, 144, 226, 0.15)",
+                    borderWidth: '2px',
+                    background: 'rgba(26, 188, 156, 0.15)',
+                    '&:hover': {
+                      background: 'rgba(26, 188, 156, 0.25)',
+                      borderColor: '#1ABC9C',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 10px 25px rgba(74, 144, 226, 0.15)',
                     },
-                    transition: "all 0.3s ease",
-                    fontSize: { xs: "0.95rem", sm: "1.1rem" },
-                    textTransform: "none",
+                    transition: 'all 0.3s ease',
+                    fontSize: { xs: '0.95rem', sm: '1.1rem' },
+                    textTransform: 'none',
                   }}
                 >
                   Đặt lịch dịch vụ
@@ -227,8 +227,8 @@ export const HomePage = () => {
               <Box
                 sx={{
                   mt: 8,
-                  display: "flex",
-                  justifyContent: "center",
+                  display: 'flex',
+                  justifyContent: 'center',
                   gap: 3,
                 }}
               >
@@ -236,58 +236,58 @@ export const HomePage = () => {
                   icon={<MaleIcon />}
                   label="Nam"
                   sx={{
-                    bgcolor: "rgba(255, 255, 255, 0.15)",
-                    color: "#fff",
-                    borderRadius: "16px",
+                    bgcolor: 'rgba(255, 255, 255, 0.15)',
+                    color: '#fff',
+                    borderRadius: '16px',
                     px: 1,
-                    "& .MuiChip-icon": { color: "#fff" },
+                    '& .MuiChip-icon': { color: '#fff' },
                   }}
                 />
                 <Chip
                   icon={<FemaleIcon />}
                   label="Nữ"
                   sx={{
-                    bgcolor: "rgba(255, 255, 255, 0.15)",
-                    color: "#fff",
-                    borderRadius: "16px",
+                    bgcolor: 'rgba(255, 255, 255, 0.15)',
+                    color: '#fff',
+                    borderRadius: '16px',
                     px: 1,
-                    "& .MuiChip-icon": { color: "#fff" },
+                    '& .MuiChip-icon': { color: '#fff' },
                   }}
                 />
                 <Chip
                   icon={<TransgenderIcon />}
                   label="LGBTQ+"
                   sx={{
-                    bgcolor: "rgba(255, 255, 255, 0.15)",
-                    color: "#fff",
-                    borderRadius: "16px",
+                    bgcolor: 'rgba(255, 255, 255, 0.15)',
+                    color: '#fff',
+                    borderRadius: '16px',
                     px: 1,
-                    "& .MuiChip-icon": { color: "#fff" },
+                    '& .MuiChip-icon': { color: '#fff' },
                   }}
                 />
               </Box>
             </Box>
           </Fade>
         </Container>
-      </Box>{" "}
+      </Box>{' '}
       {/* Featured Services */}
       <Box
         sx={{
           py: { xs: 8, md: 12 },
-          background: "linear-gradient(180deg, #FFFFFF 0%, #F7FAFC 100%)",
+          background: 'linear-gradient(180deg, #FFFFFF 0%, #F7FAFC 100%)',
         }}
       >
         <Container maxWidth="lg">
-          <Box sx={{ mb: 7, textAlign: "center" }}>
+          <Box sx={{ mb: 7, textAlign: 'center' }}>
             <Chip
               label="DỊCH VỤ NỔI BẬT"
               sx={{
                 mb: 2,
-                bgcolor: (theme) => theme.palette.primary.light + "30",
+                bgcolor: (theme) => theme.palette.primary.light + '30',
                 color: (theme) => theme.palette.primary.main,
                 fontWeight: 600,
-                fontSize: "0.75rem",
-                borderRadius: "16px",
+                fontSize: '0.75rem',
+                borderRadius: '16px',
                 px: 1.5,
               }}
             />
@@ -300,19 +300,19 @@ export const HomePage = () => {
                 mb: 3,
                 color: (theme) => theme.palette.text.primary,
                 fontWeight: 800,
-                fontSize: { xs: "1.8rem", sm: "2.25rem", md: "2.75rem" },
-                position: "relative",
-                display: "inline-block",
-                "&::after": {
+                fontSize: { xs: '1.8rem', sm: '2.25rem', md: '2.75rem' },
+                position: 'relative',
+                display: 'inline-block',
+                '&::after': {
                   content: '""',
-                  position: "absolute",
-                  width: "80px",
-                  height: "5px",
-                  bottom: "-15px",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  background: "linear-gradient(to right, #4A90E2, #1ABC9C)",
-                  borderRadius: "10px",
+                  position: 'absolute',
+                  width: '80px',
+                  height: '5px',
+                  bottom: '-15px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'linear-gradient(to right, #4A90E2, #1ABC9C)',
+                  borderRadius: '10px',
                 },
               }}
             >
@@ -322,10 +322,10 @@ export const HomePage = () => {
             <Typography
               sx={{
                 color: (theme) => theme.palette.text.secondary,
-                maxWidth: "800px",
-                mx: "auto",
+                maxWidth: '800px',
+                mx: 'auto',
                 mt: 5,
-                fontSize: { xs: "1rem", md: "1.1rem" },
+                fontSize: { xs: '1rem', md: '1.1rem' },
                 lineHeight: 1.7,
               }}
             >
@@ -338,30 +338,30 @@ export const HomePage = () => {
             {[
               {
                 id: 1,
-                title: "Tư vấn sức khỏe",
+                title: 'Tư vấn sức khỏe',
                 description:
-                  "Dịch vụ tư vấn sức khỏe cá nhân với đội ngũ chuyên gia y tế hàng đầu, giải đáp mọi thắc mắc và đưa ra lời khuyên phù hợp.",
+                  'Dịch vụ tư vấn sức khỏe cá nhân với đội ngũ chuyên gia y tế hàng đầu, giải đáp mọi thắc mắc và đưa ra lời khuyên phù hợp.',
                 image:
-                  "https://images.unsplash.com/photo-1666214280557-f1b5022eb634?q=80&w=2070",
-                color: "#2C5282",
+                  'https://images.unsplash.com/photo-1666214280557-f1b5022eb634?q=80&w=2070',
+                color: '#2C5282',
               },
               {
                 id: 2,
-                title: "Khám và điều trị",
+                title: 'Khám và điều trị',
                 description:
-                  "Dịch vụ khám và điều trị toàn diện với trang thiết bị hiện đại, phác đồ cá nhân hóa theo nhu cầu sức khỏe cụ thể.",
+                  'Dịch vụ khám và điều trị toàn diện với trang thiết bị hiện đại, phác đồ cá nhân hóa theo nhu cầu sức khỏe cụ thể.',
                 image:
-                  "https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=1880",
-                color: "#38A169",
+                  'https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=1880',
+                color: '#38A169',
               },
               {
                 id: 3,
-                title: "Sức khỏe giới tính",
+                title: 'Sức khỏe giới tính',
                 description:
-                  "Dịch vụ chăm sóc sức khỏe giới tính chuyên biệt, đảm bảo quyền riêng tư và tôn trọng cho mọi bản dạng giới.",
+                  'Dịch vụ chăm sóc sức khỏe giới tính chuyên biệt, đảm bảo quyền riêng tư và tôn trọng cho mọi bản dạng giới.',
                 image:
-                  "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?q=80&w=1941",
-                color: "#E53E3E",
+                  'https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?q=80&w=1941',
+                color: '#E53E3E',
               },
             ].map((service) => (
               <Grid item key={service.id} xs={12} sm={6} md={4}>
@@ -370,33 +370,33 @@ export const HomePage = () => {
                   style={{
                     transitionDelay: service.id
                       ? `${service.id * 100}ms`
-                      : "0ms",
+                      : '0ms',
                   }}
                 >
                   <Card
                     sx={{
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      transition: "all 0.4s ease",
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'all 0.4s ease',
                       borderRadius: 4,
-                      overflow: "hidden",
-                      boxShadow: "0 10px 30px rgba(0, 0, 0, 0.07)",
-                      "&:hover": {
-                        transform: "translateY(-10px)",
-                        boxShadow: "0 20px 40px rgba(74, 144, 226, 0.25)",
-                        "& .MuiCardMedia-root": {
-                          transform: "scale(1.1)",
+                      overflow: 'hidden',
+                      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.07)',
+                      '&:hover': {
+                        transform: 'translateY(-10px)',
+                        boxShadow: '0 20px 40px rgba(74, 144, 226, 0.25)',
+                        '& .MuiCardMedia-root': {
+                          transform: 'scale(1.1)',
                         },
-                        border: "1px solid rgba(74, 144, 226, 0.2)",
+                        border: '1px solid rgba(74, 144, 226, 0.2)',
                       },
                     }}
                   >
                     <Box
                       sx={{
-                        position: "relative",
-                        overflow: "hidden",
-                        height: "200px",
+                        position: 'relative',
+                        overflow: 'hidden',
+                        height: '200px',
                       }}
                     >
                       <CardMedia
@@ -405,12 +405,12 @@ export const HomePage = () => {
                         image={service.image}
                         alt={service.title}
                         sx={{
-                          transition: "transform 1s ease",
+                          transition: 'transform 1s ease',
                         }}
                       />
                       <Box
                         sx={{
-                          position: "absolute",
+                          position: 'absolute',
                           top: 0,
                           left: 0,
                           right: 0,
@@ -421,12 +421,12 @@ export const HomePage = () => {
                       <Chip
                         label={`Dịch vụ #${service.id}`}
                         sx={{
-                          position: "absolute",
+                          position: 'absolute',
                           top: 16,
                           right: 16,
-                          backgroundColor: "rgba(255,255,255,0.9)",
+                          backgroundColor: 'rgba(255,255,255,0.9)',
                           fontWeight: 600,
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                         }}
                       />
                     </Box>
@@ -439,7 +439,7 @@ export const HomePage = () => {
                           color: (theme) => theme.palette.text.primary,
                           fontWeight: 700,
                           mb: 2,
-                          fontSize: "1.5rem",
+                          fontSize: '1.5rem',
                         }}
                       >
                         {service.title}
@@ -451,20 +451,20 @@ export const HomePage = () => {
                         }}
                       >
                         {service.description}
-                      </Typography>{" "}
+                      </Typography>{' '}
                       <Button
                         variant="text"
                         endIcon={<ArrowForwardIcon />}
                         sx={{
                           mt: 3,
-                          color: "#4A90E2",
+                          color: '#4A90E2',
                           fontWeight: 600,
-                          "&:hover": {
-                            backgroundColor: "rgba(74, 144, 226, 0.1)",
-                            transform: "translateX(5px)",
+                          '&:hover': {
+                            backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                            transform: 'translateX(5px)',
                           },
-                          transition: "all 0.3s ease",
-                          justifyContent: "flex-start",
+                          transition: 'all 0.3s ease',
+                          justifyContent: 'flex-start',
                           pl: 0,
                         }}
                       >
@@ -477,38 +477,38 @@ export const HomePage = () => {
             ))}
           </Grid>
 
-          <Box sx={{ textAlign: "center", mt: 6 }}>
-            {" "}
+          <Box sx={{ textAlign: 'center', mt: 6 }}>
+            {' '}
             <Button
               variant="contained"
               size="large"
               endIcon={<ArrowForwardIcon />}
-              onClick={() => navigate("/services")}
+              onClick={() => navigate('/services')}
               sx={{
-                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                color: "#fff",
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                color: '#fff',
                 fontWeight: 600,
                 px: 4,
                 py: 1.5,
                 borderRadius: 50,
-                boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-                textTransform: "none",
-                fontSize: "1.1rem",
-                "&:hover": {
-                  background: "linear-gradient(45deg, #1ABC9C, #4A90E2)",
-                  transform: "translateY(-3px)",
-                  boxShadow: "0 10px 25px rgba(74, 144, 226, 0.4)",
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                textTransform: 'none',
+                fontSize: '1.1rem',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                  transform: 'translateY(-3px)',
+                  boxShadow: '0 10px 25px rgba(74, 144, 226, 0.4)',
                 },
-                transition: "all 0.3s ease",
+                transition: 'all 0.3s ease',
               }}
             >
               Xem tất cả dịch vụ
             </Button>
           </Box>
         </Container>
-      </Box>{" "}
+      </Box>{' '}
       {/* Why Choose Us Section */}
-      <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: "#FFFFFF" }}>
+      <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#FFFFFF' }}>
         <Container maxWidth="lg">
           <Grid container spacing={8} alignItems="center">
             <Grid item xs={12} md={6}>
@@ -518,11 +518,11 @@ export const HomePage = () => {
                     label="TẠI SAO CHỌN CHÚNG TÔI"
                     sx={{
                       mb: 2,
-                      bgcolor: (theme) => theme.palette.secondary.light + "30",
+                      bgcolor: (theme) => theme.palette.secondary.light + '30',
                       color: (theme) => theme.palette.secondary.main,
                       fontWeight: 600,
-                      fontSize: "0.75rem",
-                      borderRadius: "16px",
+                      fontSize: '0.75rem',
+                      borderRadius: '16px',
                       px: 1.5,
                     }}
                   />
@@ -534,18 +534,18 @@ export const HomePage = () => {
                       mb: 4,
                       color: (theme) => theme.palette.text.primary,
                       fontWeight: 800,
-                      fontSize: { xs: "1.8rem", sm: "2.25rem", md: "2.5rem" },
-                      position: "relative",
-                      "&::after": {
+                      fontSize: { xs: '1.8rem', sm: '2.25rem', md: '2.5rem' },
+                      position: 'relative',
+                      '&::after': {
                         content: '""',
-                        position: "absolute",
-                        width: "80px",
-                        height: "5px",
-                        bottom: "-15px",
+                        position: 'absolute',
+                        width: '80px',
+                        height: '5px',
+                        bottom: '-15px',
                         left: 0,
                         background:
-                          "linear-gradient(to right, #1ABC9C, #4A90E2)",
-                        borderRadius: "10px",
+                          'linear-gradient(to right, #1ABC9C, #4A90E2)',
+                        borderRadius: '10px',
                       },
                     }}
                   >
@@ -557,7 +557,7 @@ export const HomePage = () => {
                       color: (theme) => theme.palette.text.secondary,
                       mt: 5,
                       mb: 4,
-                      fontSize: "1.1rem",
+                      fontSize: '1.1rem',
                       lineHeight: 1.8,
                     }}
                   >
@@ -569,19 +569,19 @@ export const HomePage = () => {
                   <Stack spacing={3}>
                     {[
                       {
-                        title: "Chuyên môn cao",
+                        title: 'Chuyên môn cao',
                         description:
-                          "Đội ngũ y bác sĩ được đào tạo chuyên sâu về sức khỏe giới tính",
+                          'Đội ngũ y bác sĩ được đào tạo chuyên sâu về sức khỏe giới tính',
                       },
                       {
-                        title: "Bảo mật thông tin",
+                        title: 'Bảo mật thông tin',
                         description:
-                          "Đảm bảo tuyệt đối về bảo mật thông tin cá nhân của khách hàng",
+                          'Đảm bảo tuyệt đối về bảo mật thông tin cá nhân của khách hàng',
                       },
                       {
-                        title: "Thiết bị hiện đại",
+                        title: 'Thiết bị hiện đại',
                         description:
-                          "Trang thiết bị và công nghệ y tế tiên tiến nhất hiện nay",
+                          'Trang thiết bị và công nghệ y tế tiên tiến nhất hiện nay',
                       },
                     ].map((item, index) => (
                       <Paper
@@ -591,13 +591,13 @@ export const HomePage = () => {
                           p: 2.5,
                           borderRadius: 3,
                           bgcolor: (theme) => theme.palette.background.paper,
-                          border: "1px solid rgba(0,0,0,0.05)",
-                          boxShadow: "0 5px 20px rgba(0,0,0,0.05)",
-                          transition: "all 0.3s ease",
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 10px 30px rgba(74, 144, 226, 0.15)",
-                            borderColor: "#4A90E2",
+                          border: '1px solid rgba(0,0,0,0.05)',
+                          boxShadow: '0 5px 20px rgba(0,0,0,0.05)',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            transform: 'translateY(-5px)',
+                            boxShadow: '0 10px 30px rgba(74, 144, 226, 0.15)',
+                            borderColor: '#4A90E2',
                           },
                         }}
                       >
@@ -606,12 +606,12 @@ export const HomePage = () => {
                             sx={{
                               width: 50,
                               height: 50,
-                              borderRadius: "50%",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              bgcolor: "rgba(74, 144, 226, 0.15)",
-                              color: "#4A90E2",
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              bgcolor: 'rgba(74, 144, 226, 0.15)',
+                              color: '#4A90E2',
                             }}
                           >
                             <FavoriteIcon />
@@ -635,20 +635,20 @@ export const HomePage = () => {
             <Grid item xs={12} md={6}>
               <Box
                 sx={{
-                  position: "relative",
+                  position: 'relative',
                   height: { xs: 300, md: 500 },
                   borderRadius: 4,
-                  overflow: "hidden",
-                  boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
-                  "&::after": {
+                  overflow: 'hidden',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+                  '&::after': {
                     content: '""',
-                    position: "absolute",
+                    position: 'absolute',
                     top: 0,
                     left: 0,
                     right: 0,
                     bottom: 0,
                     background:
-                      "linear-gradient(to bottom, transparent 70%, rgba(0,0,0,0.7))",
+                      'linear-gradient(to bottom, transparent 70%, rgba(0,0,0,0.7))',
                   },
                 }}
               >
@@ -656,43 +656,43 @@ export const HomePage = () => {
                   src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070"
                   alt="Healthcare professionals"
                   style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
                   }}
                 />
               </Box>
             </Grid>
           </Grid>
         </Container>
-      </Box>{" "}
+      </Box>{' '}
       {/* Stats Section */}
       <Box
         sx={{
           py: { xs: 6, md: 10 },
-          background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-          color: "#fff",
-          position: "relative",
-          overflow: "hidden",
-          "&::before": {
+          background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+          color: '#fff',
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
             content: '""',
-            position: "absolute",
-            width: "100%",
-            height: "100%",
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
             background:
               'url(\'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Cpath fill="%23ffffff" fill-opacity="0.05" d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z"%3E%3C/path%3E%3C/svg%3E\')',
             opacity: 0.15,
             zIndex: 0,
           },
-          "&::after": {
+          '&::after': {
             content: '""',
-            position: "absolute",
+            position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
             background:
-              "radial-gradient(circle at center, transparent 50%, rgba(0,0,0,0.15) 100%)",
+              'radial-gradient(circle at center, transparent 50%, rgba(0,0,0,0.15) 100%)',
             zIndex: 0,
           },
         }}
@@ -700,12 +700,12 @@ export const HomePage = () => {
         {/* Decorative elements */}
         <Box
           sx={{
-            position: "absolute",
+            position: 'absolute',
             width: { xs: 150, md: 300 },
             height: { xs: 150, md: 300 },
-            borderRadius: "50%",
+            borderRadius: '50%',
             background:
-              "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
+              'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
             top: { xs: -50, md: -100 },
             left: { xs: -50, md: -100 },
             zIndex: 0,
@@ -713,12 +713,12 @@ export const HomePage = () => {
         />
         <Box
           sx={{
-            position: "absolute",
+            position: 'absolute',
             width: { xs: 200, md: 400 },
             height: { xs: 200, md: 400 },
-            borderRadius: "50%",
+            borderRadius: '50%',
             background:
-              "radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 70%)",
+              'radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 70%)',
             bottom: { xs: -100, md: -200 },
             right: { xs: -100, md: -200 },
             zIndex: 0,
@@ -730,16 +730,16 @@ export const HomePage = () => {
               <Zoom in={loaded} timeout={1000}>
                 <Box
                   sx={{
-                    textAlign: "center",
+                    textAlign: 'center',
                     p: 3,
                     borderRadius: 4,
-                    bgcolor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    transition: "all 0.3s ease",
-                    height: "100%",
-                    "&:hover": {
-                      transform: "translateY(-5px)",
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    backdropFilter: 'blur(10px)',
+                    transition: 'all 0.3s ease',
+                    height: '100%',
+                    '&:hover': {
+                      transform: 'translateY(-5px)',
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
                     },
                   }}
                 >
@@ -747,7 +747,7 @@ export const HomePage = () => {
                     variant="h3"
                     fontWeight={800}
                     gutterBottom
-                    sx={{ height: "3rem" }}
+                    sx={{ height: '3rem' }}
                   >
                     {loaded && (
                       <CountUp
@@ -770,16 +770,16 @@ export const HomePage = () => {
               <Zoom in={loaded} timeout={1100}>
                 <Box
                   sx={{
-                    textAlign: "center",
+                    textAlign: 'center',
                     p: 3,
                     borderRadius: 4,
-                    bgcolor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    transition: "all 0.3s ease",
-                    height: "100%",
-                    "&:hover": {
-                      transform: "translateY(-5px)",
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    backdropFilter: 'blur(10px)',
+                    transition: 'all 0.3s ease',
+                    height: '100%',
+                    '&:hover': {
+                      transform: 'translateY(-5px)',
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
                     },
                   }}
                 >
@@ -787,7 +787,7 @@ export const HomePage = () => {
                     variant="h3"
                     fontWeight={800}
                     gutterBottom
-                    sx={{ height: "3rem" }}
+                    sx={{ height: '3rem' }}
                   >
                     {loaded && (
                       <CountUp start={0} end={25} duration={2.5} suffix="+" />
@@ -804,16 +804,16 @@ export const HomePage = () => {
               <Zoom in={loaded} timeout={1200}>
                 <Box
                   sx={{
-                    textAlign: "center",
+                    textAlign: 'center',
                     p: 3,
                     borderRadius: 4,
-                    bgcolor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    transition: "all 0.3s ease",
-                    height: "100%",
-                    "&:hover": {
-                      transform: "translateY(-5px)",
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    backdropFilter: 'blur(10px)',
+                    transition: 'all 0.3s ease',
+                    height: '100%',
+                    '&:hover': {
+                      transform: 'translateY(-5px)',
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
                     },
                   }}
                 >
@@ -821,7 +821,7 @@ export const HomePage = () => {
                     variant="h3"
                     fontWeight={800}
                     gutterBottom
-                    sx={{ height: "3rem" }}
+                    sx={{ height: '3rem' }}
                   >
                     {loaded && (
                       <CountUp start={0} end={98} duration={2.5} suffix="%" />
@@ -838,16 +838,16 @@ export const HomePage = () => {
               <Zoom in={loaded} timeout={1300}>
                 <Box
                   sx={{
-                    textAlign: "center",
+                    textAlign: 'center',
                     p: 3,
                     borderRadius: 4,
-                    bgcolor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    transition: "all 0.3s ease",
-                    height: "100%",
-                    "&:hover": {
-                      transform: "translateY(-5px)",
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    backdropFilter: 'blur(10px)',
+                    transition: 'all 0.3s ease',
+                    height: '100%',
+                    '&:hover': {
+                      transform: 'translateY(-5px)',
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
                     },
                   }}
                 >
@@ -855,7 +855,7 @@ export const HomePage = () => {
                     variant="h3"
                     fontWeight={800}
                     gutterBottom
-                    sx={{ height: "3rem" }}
+                    sx={{ height: '3rem' }}
                   >
                     {loaded && (
                       <CountUp start={0} end={15} duration={2.5} suffix="+" />
@@ -874,26 +874,26 @@ export const HomePage = () => {
       <Box
         sx={{
           py: { xs: 8, md: 12 },
-          bgcolor: "#F7FAFC",
-          position: "relative",
-          overflow: "hidden",
-          "&::before": {
+          bgcolor: '#F7FAFC',
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
             content: '""',
-            position: "absolute",
+            position: 'absolute',
             width: 300,
             height: 300,
-            borderRadius: "50%",
+            borderRadius: '50%',
             background: (theme) => `${theme.palette.primary.light}15`,
             top: -150,
             left: -150,
             zIndex: 0,
           },
-          "&::after": {
+          '&::after': {
             content: '""',
-            position: "absolute",
+            position: 'absolute',
             width: 300,
             height: 300,
-            borderRadius: "50%",
+            borderRadius: '50%',
             background: (theme) => `${theme.palette.secondary.light}15`,
             bottom: -150,
             right: -150,
@@ -901,17 +901,17 @@ export const HomePage = () => {
           },
         }}
       >
-        <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
-          <Box sx={{ textAlign: "center", mb: 8 }}>
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+          <Box sx={{ textAlign: 'center', mb: 8 }}>
             <Chip
               label="ĐÁNH GIÁ TỪ KHÁCH HÀNG"
               sx={{
                 mb: 2,
-                bgcolor: (theme) => theme.palette.secondary.light + "30",
+                bgcolor: (theme) => theme.palette.secondary.light + '30',
                 color: (theme) => theme.palette.secondary.main,
                 fontWeight: 600,
-                fontSize: "0.75rem",
-                borderRadius: "16px",
+                fontSize: '0.75rem',
+                borderRadius: '16px',
                 px: 1.5,
               }}
             />
@@ -923,82 +923,82 @@ export const HomePage = () => {
                 mb: 3,
                 color: (theme) => theme.palette.text.primary,
                 fontWeight: 800,
-                fontSize: { xs: "1.8rem", sm: "2.25rem", md: "2.75rem" },
-                position: "relative",
-                display: "inline-block",
-                "&::after": {
+                fontSize: { xs: '1.8rem', sm: '2.25rem', md: '2.75rem' },
+                position: 'relative',
+                display: 'inline-block',
+                '&::after': {
                   content: '""',
-                  position: "absolute",
-                  width: "80px",
-                  height: "5px",
-                  bottom: "-15px",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  background: "linear-gradient(to right, #1ABC9C, #4A90E2)",
-                  borderRadius: "10px",
+                  position: 'absolute',
+                  width: '80px',
+                  height: '5px',
+                  bottom: '-15px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'linear-gradient(to right, #1ABC9C, #4A90E2)',
+                  borderRadius: '10px',
                 },
               }}
             >
               Khách hàng nói gì về chúng tôi
             </Typography>
-          </Box>{" "}
+          </Box>{' '}
           <Grid container spacing={4}>
             {[
               {
-                name: "Nguyễn Minh Anh",
-                role: "Khách hàng thường xuyên",
-                avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+                name: 'Nguyễn Minh Anh',
+                role: 'Khách hàng thường xuyên',
+                avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
                 comment:
-                  "Tôi vô cùng hài lòng với dịch vụ tại đây. Các bác sĩ không chỉ chuyên nghiệp mà còn rất thấu hiểu và tôn trọng nhu cầu cá nhân của tôi.",
+                  'Tôi vô cùng hài lòng với dịch vụ tại đây. Các bác sĩ không chỉ chuyên nghiệp mà còn rất thấu hiểu và tôn trọng nhu cầu cá nhân của tôi.',
                 rating: 5,
               },
               {
-                name: "Trần Văn Khoa",
-                role: "Khách hàng mới",
-                avatar: "https://randomuser.me/api/portraits/men/32.jpg",
+                name: 'Trần Văn Khoa',
+                role: 'Khách hàng mới',
+                avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
                 comment:
-                  "Lần đầu tiên đến đây tôi đã cảm thấy thoải mái với cách tiếp đón chuyên nghiệp. Các tư vấn viên giải đáp mọi thắc mắc một cách chi tiết.",
+                  'Lần đầu tiên đến đây tôi đã cảm thấy thoải mái với cách tiếp đón chuyên nghiệp. Các tư vấn viên giải đáp mọi thắc mắc một cách chi tiết.',
                 rating: 5,
               },
               {
-                name: "Lê Thị Phương",
-                role: "Khách hàng thân thiết",
-                avatar: "https://randomuser.me/api/portraits/women/68.jpg",
+                name: 'Lê Thị Phương',
+                role: 'Khách hàng thân thiết',
+                avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
                 comment:
-                  "Đã sử dụng dịch vụ tư vấn sức khỏe định kỳ trong 2 năm qua và luôn hài lòng. Đội ngũ y tế rất tận tâm.",
+                  'Đã sử dụng dịch vụ tư vấn sức khỏe định kỳ trong 2 năm qua và luôn hài lòng. Đội ngũ y tế rất tận tâm.',
                 rating: 4,
               },
             ].map((testimonial, index) => (
               <Grid item xs={12} md={4} key={index}>
-                {" "}
+                {' '}
                 <Fade
                   in={loaded}
                   style={{
                     transitionDelay:
-                      index !== undefined ? `${300 + index * 150}ms` : "0ms",
+                      index !== undefined ? `${300 + index * 150}ms` : '0ms',
                   }}
                 >
                   <Paper
                     elevation={0}
                     sx={{
                       p: 4,
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
                       borderRadius: 4,
-                      bgcolor: "#fff",
-                      position: "relative",
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.07)",
-                      transition: "all 0.3s ease",
-                      "&:hover": {
-                        boxShadow: "0 15px 35px rgba(0,0,0,0.12)",
-                        transform: "translateY(-5px)",
+                      bgcolor: '#fff',
+                      position: 'relative',
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.07)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: '0 15px 35px rgba(0,0,0,0.12)',
+                        transform: 'translateY(-5px)',
                       },
                     }}
                   >
                     <Box
                       sx={{
-                        position: "absolute",
+                        position: 'absolute',
                         top: 20,
                         right: 20,
                         color: (theme) => theme.palette.secondary.light,
@@ -1027,7 +1027,7 @@ export const HomePage = () => {
                         sx={{
                           width: 56,
                           height: 56,
-                          border: "2px solid",
+                          border: '2px solid',
                           borderColor: (theme) => theme.palette.primary.light,
                         }}
                       />
@@ -1051,32 +1051,32 @@ export const HomePage = () => {
               </Grid>
             ))}
           </Grid>
-        </Container>{" "}
-      </Box>{" "}
+        </Container>{' '}
+      </Box>{' '}
       {/* Blog/News Section */}
       <Box
         sx={{
           py: { xs: 8, md: 12 },
-          bgcolor: "#FFFFFF",
-          position: "relative",
-          overflow: "hidden",
-          "&::before": {
+          bgcolor: '#FFFFFF',
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
             content: '""',
-            position: "absolute",
+            position: 'absolute',
             width: 400,
             height: 400,
-            borderRadius: "50%",
+            borderRadius: '50%',
             background: (theme) => `${theme.palette.primary.light}10`,
             top: -200,
             right: -200,
             zIndex: 0,
           },
-          "&::after": {
+          '&::after': {
             content: '""',
-            position: "absolute",
+            position: 'absolute',
             width: 300,
             height: 300,
-            borderRadius: "50%",
+            borderRadius: '50%',
             background: (theme) => `${theme.palette.secondary.light}10`,
             bottom: -100,
             left: -100,
@@ -1084,17 +1084,17 @@ export const HomePage = () => {
           },
         }}
       >
-        <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
-          <Box sx={{ textAlign: "center", mb: 7 }}>
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+          <Box sx={{ textAlign: 'center', mb: 7 }}>
             <Chip
               label="TIN TỨC MỚI NHẤT"
               sx={{
                 mb: 2,
-                bgcolor: (theme) => theme.palette.primary.light + "30",
+                bgcolor: (theme) => theme.palette.primary.light + '30',
                 color: (theme) => theme.palette.primary.main,
                 fontWeight: 600,
-                fontSize: "0.75rem",
-                borderRadius: "16px",
+                fontSize: '0.75rem',
+                borderRadius: '16px',
                 px: 1.5,
               }}
             />
@@ -1106,19 +1106,19 @@ export const HomePage = () => {
                 mb: 3,
                 color: (theme) => theme.palette.text.primary,
                 fontWeight: 800,
-                fontSize: { xs: "1.8rem", sm: "2.25rem", md: "2.75rem" },
-                position: "relative",
-                display: "inline-block",
-                "&::after": {
+                fontSize: { xs: '1.8rem', sm: '2.25rem', md: '2.75rem' },
+                position: 'relative',
+                display: 'inline-block',
+                '&::after': {
                   content: '""',
-                  position: "absolute",
-                  width: "80px",
-                  height: "5px",
-                  bottom: "-15px",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  background: "linear-gradient(to right, #4A90E2, #1ABC9C)",
-                  borderRadius: "10px",
+                  position: 'absolute',
+                  width: '80px',
+                  height: '5px',
+                  bottom: '-15px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'linear-gradient(to right, #4A90E2, #1ABC9C)',
+                  borderRadius: '10px',
                 },
               }}
             >
@@ -1129,98 +1129,98 @@ export const HomePage = () => {
             {[
               {
                 id: 1,
-                title: "Bảo vệ sức khỏe giới tính an toàn và hiệu quả",
+                title: 'Bảo vệ sức khỏe giới tính an toàn và hiệu quả',
                 summary:
-                  "Tìm hiểu về các biện pháp bảo vệ sức khỏe giới tính an toàn và hiệu quả nhất hiện nay.",
+                  'Tìm hiểu về các biện pháp bảo vệ sức khỏe giới tính an toàn và hiệu quả nhất hiện nay.',
                 image:
-                  "https://images.unsplash.com/photo-1579684453607-4f6ed3affcb9?q=80&w=2091",
-                date: "12/05/2025",
+                  'https://images.unsplash.com/photo-1579684453607-4f6ed3affcb9?q=80&w=2091',
+                date: '12/05/2025',
               },
               {
                 id: 2,
-                title: "Những dấu hiệu cảnh báo không nên bỏ qua",
+                title: 'Những dấu hiệu cảnh báo không nên bỏ qua',
                 summary:
-                  "Những dấu hiệu sức khỏe quan trọng mà mọi người nên chú ý và tìm kiếm tư vấn y tế kịp thời.",
+                  'Những dấu hiệu sức khỏe quan trọng mà mọi người nên chú ý và tìm kiếm tư vấn y tế kịp thời.',
                 image:
-                  "https://images.unsplash.com/photo-1624727828489-a1e03b79bba8?q=80&w=2071",
-                date: "05/05/2025",
+                  'https://images.unsplash.com/photo-1624727828489-a1e03b79bba8?q=80&w=2071',
+                date: '05/05/2025',
               },
               {
                 id: 3,
-                title: "Tầm quan trọng của việc khám sức khỏe định kỳ",
+                title: 'Tầm quan trọng của việc khám sức khỏe định kỳ',
                 summary:
-                  "Tại sao việc kiểm tra sức khỏe định kỳ lại quan trọng và nên thực hiện với tần suất như thế nào?",
+                  'Tại sao việc kiểm tra sức khỏe định kỳ lại quan trọng và nên thực hiện với tần suất như thế nào?',
                 image:
-                  "https://images.unsplash.com/photo-1579165466741-7f35e4755186?q=80&w=2070",
-                date: "28/04/2025",
+                  'https://images.unsplash.com/photo-1579165466741-7f35e4755186?q=80&w=2070',
+                date: '28/04/2025',
               },
             ].map((blog, index) => (
               <Grid item xs={12} md={4} key={index}>
-                {" "}
+                {' '}
                 <Card
                   sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    transition: "all 0.4s ease",
-                    borderRadius: "20px",
-                    overflow: "hidden",
-                    boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
-                    border: "1px solid rgba(0,0,0,0.03)",
-                    backgroundColor: "rgba(255,255,255,0.95)",
-                    backdropFilter: "blur(10px)",
-                    "&:hover": {
-                      transform: "translateY(-10px)",
-                      boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
-                      "& .MuiCardMedia-root": {
-                        transform: "scale(1.08)",
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'all 0.4s ease',
+                    borderRadius: '20px',
+                    overflow: 'hidden',
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
+                    border: '1px solid rgba(0,0,0,0.03)',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    backdropFilter: 'blur(10px)',
+                    '&:hover': {
+                      transform: 'translateY(-10px)',
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                      '& .MuiCardMedia-root': {
+                        transform: 'scale(1.08)',
                       },
-                      "& .card-overlay": {
+                      '& .card-overlay': {
                         opacity: 0.3,
                       },
                     },
                   }}
                 >
-                  {" "}
-                  <Box sx={{ position: "relative", overflow: "hidden" }}>
+                  {' '}
+                  <Box sx={{ position: 'relative', overflow: 'hidden' }}>
                     <CardMedia
                       component="img"
                       height="200"
                       image={blog.image}
                       alt={blog.title}
                       sx={{
-                        transition: "transform 0.8s ease",
-                        filter: "brightness(0.95)",
+                        transition: 'transform 0.8s ease',
+                        filter: 'brightness(0.95)',
                       }}
                     />
                     <Box
                       className="card-overlay"
                       sx={{
-                        position: "absolute",
+                        position: 'absolute',
                         left: 0,
                         top: 0,
-                        width: "100%",
-                        height: "100%",
+                        width: '100%',
+                        height: '100%',
                         background: (theme) =>
                           `linear-gradient(180deg, transparent 50%, ${theme.palette.primary.main}40 100%)`,
                         opacity: 0.2,
-                        transition: "opacity 0.4s ease",
+                        transition: 'opacity 0.4s ease',
                       }}
                     />
                   </Box>
                   <CardContent sx={{ p: 3, flexGrow: 1 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <NewspaperIcon
                         sx={{
                           color: (theme) => theme.palette.text.secondary,
-                          fontSize: "0.9rem",
+                          fontSize: '0.9rem',
                           mr: 1,
                         }}
                       />
                       <Typography
                         variant="caption"
                         color="text.secondary"
-                        sx={{ display: "flex", alignItems: "center" }}
+                        sx={{ display: 'flex', alignItems: 'center' }}
                       >
                         Tin tức
                       </Typography>
@@ -1229,14 +1229,14 @@ export const HomePage = () => {
                           mx: 1,
                           width: 4,
                           height: 4,
-                          borderRadius: "50%",
-                          bgcolor: "text.disabled",
+                          borderRadius: '50%',
+                          bgcolor: 'text.disabled',
                         }}
                       />
                       <AccessTimeIcon
                         sx={{
                           color: (theme) => theme.palette.text.secondary,
-                          fontSize: "0.9rem",
+                          fontSize: '0.9rem',
                           mr: 1,
                         }}
                       />
@@ -1258,20 +1258,20 @@ export const HomePage = () => {
                       paragraph
                     >
                       {blog.summary}
-                    </Typography>{" "}
+                    </Typography>{' '}
                     <Button
                       size="small"
                       endIcon={<ArrowForwardIcon />}
                       sx={{
                         mt: 1,
                         fontWeight: 600,
-                        color: "#4A90E2",
-                        "&:hover": {
-                          background: "rgba(74, 144, 226, 0.1)",
-                          transform: "translateX(3px)",
+                        color: '#4A90E2',
+                        '&:hover': {
+                          background: 'rgba(74, 144, 226, 0.1)',
+                          transform: 'translateX(3px)',
                         },
-                        transition: "all 0.3s ease",
-                        textTransform: "none",
+                        transition: 'all 0.3s ease',
+                        textTransform: 'none',
                       }}
                     >
                       Đọc thêm
@@ -1281,29 +1281,29 @@ export const HomePage = () => {
               </Grid>
             ))}
           </Grid>
-          <Box sx={{ textAlign: "center", mt: 6 }}>
-            {" "}
+          <Box sx={{ textAlign: 'center', mt: 6 }}>
+            {' '}
             <Button
               variant="contained"
               size="large"
               endIcon={<ArrowForwardIcon />}
-              onClick={() => navigate("/blog")}
+              onClick={() => navigate('/blog')}
               sx={{
-                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                color: "#fff",
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                color: '#fff',
                 fontWeight: 600,
                 px: 4,
                 py: 1.5,
                 borderRadius: 50,
-                boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-                textTransform: "none",
-                fontSize: "1.1rem",
-                "&:hover": {
-                  background: "linear-gradient(45deg, #1ABC9C, #4A90E2)",
-                  transform: "translateY(-3px)",
-                  boxShadow: "0 10px 25px rgba(74, 144, 226, 0.4)",
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                textTransform: 'none',
+                fontSize: '1.1rem',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                  transform: 'translateY(-3px)',
+                  boxShadow: '0 10px 25px rgba(74, 144, 226, 0.4)',
                 },
-                transition: "all 0.3s ease",
+                transition: 'all 0.3s ease',
               }}
             >
               Xem tất cả bài viết
@@ -1312,21 +1312,21 @@ export const HomePage = () => {
         </Container>
       </Box>
       {/* FAQ Section */}
-      <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: "#F7FAFC" }}>
+      <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F7FAFC' }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: "center", mb: 7 }}>
+          <Box sx={{ textAlign: 'center', mb: 7 }}>
             <Chip
               label="CÂU HỎI THƯỜNG GẶP"
               icon={<HelpOutlineIcon />}
               sx={{
                 mb: 2,
-                bgcolor: (theme) => theme.palette.secondary.light + "30",
+                bgcolor: (theme) => theme.palette.secondary.light + '30',
                 color: (theme) => theme.palette.secondary.main,
                 fontWeight: 600,
-                fontSize: "0.75rem",
-                borderRadius: "16px",
+                fontSize: '0.75rem',
+                borderRadius: '16px',
                 px: 1.5,
-                "& .MuiChip-icon": {
+                '& .MuiChip-icon': {
                   color: (theme) => theme.palette.secondary.main,
                 },
               }}
@@ -1339,77 +1339,77 @@ export const HomePage = () => {
                 mb: 3,
                 color: (theme) => theme.palette.text.primary,
                 fontWeight: 800,
-                fontSize: { xs: "1.8rem", sm: "2.25rem", md: "2.75rem" },
-                position: "relative",
-                display: "inline-block",
-                "&::after": {
+                fontSize: { xs: '1.8rem', sm: '2.25rem', md: '2.75rem' },
+                position: 'relative',
+                display: 'inline-block',
+                '&::after': {
                   content: '""',
-                  position: "absolute",
-                  width: "80px",
-                  height: "5px",
-                  bottom: "-15px",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  background: "linear-gradient(to right, #1ABC9C, #4A90E2)",
-                  borderRadius: "10px",
+                  position: 'absolute',
+                  width: '80px',
+                  height: '5px',
+                  bottom: '-15px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'linear-gradient(to right, #1ABC9C, #4A90E2)',
+                  borderRadius: '10px',
                 },
               }}
             >
               Giải đáp thắc mắc
             </Typography>
-          </Box>{" "}
-          <Box sx={{ maxWidth: "800px", mx: "auto" }}>
+          </Box>{' '}
+          <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
             {[
               {
                 question:
-                  "Dịch vụ tư vấn sức khỏe giới tính có đảm bảo tính riêng tư không?",
+                  'Dịch vụ tư vấn sức khỏe giới tính có đảm bảo tính riêng tư không?',
                 answer:
-                  "Chúng tôi cam kết đảm bảo tính riêng tư tuyệt đối cho mọi khách hàng. Thông tin cá nhân và nội dung tư vấn được bảo mật nghiêm ngặt theo quy định của pháp luật và đạo đức nghề nghiệp y khoa.",
+                  'Chúng tôi cam kết đảm bảo tính riêng tư tuyệt đối cho mọi khách hàng. Thông tin cá nhân và nội dung tư vấn được bảo mật nghiêm ngặt theo quy định của pháp luật và đạo đức nghề nghiệp y khoa.',
               },
               {
-                question: "Tôi có thể đặt lịch tư vấn trực tuyến không?",
+                question: 'Tôi có thể đặt lịch tư vấn trực tuyến không?',
                 answer:
-                  "Có, bạn có thể đặt lịch tư vấn trực tuyến thông qua trang web của chúng tôi hoặc ứng dụng di động. Hệ thống sẽ cho phép bạn chọn thời gian phù hợp và bác sĩ tư vấn theo nhu cầu của bạn.",
-              },
-              {
-                question:
-                  "Các gói dịch vụ có được bảo hiểm y tế chi trả không?",
-                answer:
-                  "Một số dịch vụ của chúng tôi được bảo hiểm y tế chi trả, tùy thuộc vào loại bảo hiểm bạn đang sử dụng. Vui lòng liên hệ với nhân viên tư vấn để biết thêm chi tiết về trường hợp cụ thể của bạn.",
-              },
-              {
-                question: "Tôi cần chuẩn bị gì khi đến khám lần đầu?",
-                answer:
-                  "Khi đến khám lần đầu, bạn nên mang theo giấy tờ tùy thân, hồ sơ y tế (nếu có), kết quả xét nghiệm hoặc chẩn đoán trước đây (nếu có) và danh sách các loại thuốc đang sử dụng. Bạn cũng nên chuẩn bị sẵn các câu hỏi hoặc vấn đề sức khỏe mà bạn muốn được tư vấn.",
+                  'Có, bạn có thể đặt lịch tư vấn trực tuyến thông qua trang web của chúng tôi hoặc ứng dụng di động. Hệ thống sẽ cho phép bạn chọn thời gian phù hợp và bác sĩ tư vấn theo nhu cầu của bạn.',
               },
               {
                 question:
-                  "Trung tâm có cung cấp dịch vụ khám cho cộng đồng LGBTQ+?",
+                  'Các gói dịch vụ có được bảo hiểm y tế chi trả không?',
                 answer:
-                  "Có, chúng tôi cung cấp dịch vụ chăm sóc sức khỏe toàn diện và thân thiện cho tất cả mọi người, bao gồm cả cộng đồng LGBTQ+. Đội ngũ nhân viên của chúng tôi được đào tạo để hiểu và tôn trọng nhu cầu đa dạng về sức khỏe giới tính.",
+                  'Một số dịch vụ của chúng tôi được bảo hiểm y tế chi trả, tùy thuộc vào loại bảo hiểm bạn đang sử dụng. Vui lòng liên hệ với nhân viên tư vấn để biết thêm chi tiết về trường hợp cụ thể của bạn.',
+              },
+              {
+                question: 'Tôi cần chuẩn bị gì khi đến khám lần đầu?',
+                answer:
+                  'Khi đến khám lần đầu, bạn nên mang theo giấy tờ tùy thân, hồ sơ y tế (nếu có), kết quả xét nghiệm hoặc chẩn đoán trước đây (nếu có) và danh sách các loại thuốc đang sử dụng. Bạn cũng nên chuẩn bị sẵn các câu hỏi hoặc vấn đề sức khỏe mà bạn muốn được tư vấn.',
+              },
+              {
+                question:
+                  'Trung tâm có cung cấp dịch vụ khám cho cộng đồng LGBTQ+?',
+                answer:
+                  'Có, chúng tôi cung cấp dịch vụ chăm sóc sức khỏe toàn diện và thân thiện cho tất cả mọi người, bao gồm cả cộng đồng LGBTQ+. Đội ngũ nhân viên của chúng tôi được đào tạo để hiểu và tôn trọng nhu cầu đa dạng về sức khỏe giới tính.',
               },
             ].map((faq, index) => (
               <Accordion
                 key={index}
                 sx={{
                   mb: 2,
-                  boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
-                  borderRadius: "10px !important",
-                  overflow: "hidden",
-                  "&:before": { display: "none" },
-                  "&.Mui-expanded": {
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                  borderRadius: '10px !important',
+                  overflow: 'hidden',
+                  '&:before': { display: 'none' },
+                  '&.Mui-expanded': {
                     mt: 0,
-                    borderRadius: "10px !important",
+                    borderRadius: '10px !important',
                   },
                 }}
               >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   sx={{
-                    borderRadius: "10px",
-                    "&.Mui-expanded": {
-                      borderBottom: "1px solid",
-                      borderColor: "rgba(0,0,0,0.08)",
+                    borderRadius: '10px',
+                    '&.Mui-expanded': {
+                      borderBottom: '1px solid',
+                      borderColor: 'rgba(0,0,0,0.08)',
                     },
                   }}
                 >
@@ -1424,37 +1424,37 @@ export const HomePage = () => {
             ))}
           </Box>
         </Container>
-      </Box>{" "}
+      </Box>{' '}
       {/* Call to Action */}
       <Box
         sx={{
           py: { xs: 10, md: 14 },
           background:
-            "linear-gradient(135deg, #F5F8FD, rgba(74, 144, 226, 0.1))",
-          position: "relative",
-          overflow: "hidden",
-          "&::before": {
+            'linear-gradient(135deg, #F5F8FD, rgba(74, 144, 226, 0.1))',
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
             content: '""',
-            position: "absolute",
+            position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
-            height: "100%",
+            height: '100%',
             backgroundImage:
               "url('https://images.unsplash.com/photo-1587621144431-845c71d54650?q=80&w=1887')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
             opacity: 0.05,
             zIndex: 0,
           },
-          "&::after": {
+          '&::after': {
             content: '""',
-            position: "absolute",
+            position: 'absolute',
             bottom: -100,
             right: -100,
             width: 300,
             height: 300,
-            borderRadius: "50%",
+            borderRadius: '50%',
             background: (theme) =>
               `linear-gradient(45deg, ${theme.palette.primary.light}30, ${theme.palette.secondary.light}20)`,
             zIndex: 0,
@@ -1464,55 +1464,55 @@ export const HomePage = () => {
         {/* Additional decorative elements */}
         <Box
           sx={{
-            position: "absolute",
+            position: 'absolute',
             width: 200,
             height: 200,
-            borderRadius: "50%",
+            borderRadius: '50%',
             background: (theme) =>
               `radial-gradient(circle, ${theme.palette.secondary.light}20, transparent 70%)`,
-            top: "20%",
-            left: "5%",
+            top: '20%',
+            left: '5%',
             zIndex: 0,
           }}
         />
         <Box
           sx={{
-            position: "absolute",
+            position: 'absolute',
             width: 150,
             height: 150,
-            borderRadius: "50%",
+            borderRadius: '50%',
             background: (theme) =>
               `radial-gradient(circle, ${theme.palette.primary.light}25, transparent 70%)`,
-            top: "60%",
-            right: "10%",
+            top: '60%',
+            right: '10%',
             zIndex: 0,
           }}
         />
         <Container maxWidth="md">
-          {" "}
+          {' '}
           <Paper
             elevation={0}
             sx={{
               p: { xs: 4, md: 6 },
               borderRadius: 6,
-              textAlign: "center",
+              textAlign: 'center',
               background:
-                "linear-gradient(135deg, rgba(74, 144, 226, 0.05) 0%, rgba(26, 188, 156, 0.05) 100%)",
-              boxShadow: "0 20px 50px rgba(0,0,0,0.08)",
-              border: "1px solid rgba(0,0,0,0.05)",
-              position: "relative",
-              overflow: "hidden",
-              backdropFilter: "blur(10px)",
-              transition: "transform 0.3s ease, box-shadow 0.3s ease",
-              "&:hover": {
-                transform: "translateY(-5px)",
-                boxShadow: "0 25px 60px rgba(0,0,0,0.12)",
+                'linear-gradient(135deg, rgba(74, 144, 226, 0.05) 0%, rgba(26, 188, 156, 0.05) 100%)',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.08)',
+              border: '1px solid rgba(0,0,0,0.05)',
+              position: 'relative',
+              overflow: 'hidden',
+              backdropFilter: 'blur(10px)',
+              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-5px)',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.12)',
               },
             }}
           >
             <Box
               sx={{
-                position: "relative",
+                position: 'relative',
                 zIndex: 1,
               }}
             >
@@ -1524,11 +1524,11 @@ export const HomePage = () => {
                   color: (theme) => theme.palette.text.primary,
                   fontWeight: 800,
                   mb: 3,
-                  fontSize: { xs: "1.8rem", sm: "2.25rem", md: "2.75rem" },
-                  background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                  backgroundClip: "text",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
+                  fontSize: { xs: '1.8rem', sm: '2.25rem', md: '2.75rem' },
+                  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
                 }}
               >
                 Tham gia cộng đồng của chúng tôi
@@ -1540,10 +1540,10 @@ export const HomePage = () => {
                 paragraph
                 sx={{
                   color: (theme) => theme.palette.text.secondary,
-                  fontSize: { xs: "1rem", md: "1.2rem" },
+                  fontSize: { xs: '1rem', md: '1.2rem' },
                   fontWeight: 400,
-                  maxWidth: "800px",
-                  mx: "auto",
+                  maxWidth: '800px',
+                  mx: 'auto',
                   mb: 5,
                   lineHeight: 1.8,
                 }}
@@ -1553,68 +1553,68 @@ export const HomePage = () => {
               </Typography>
 
               <Stack
-                direction={{ xs: "column", sm: "row" }}
+                direction={{ xs: 'column', sm: 'row' }}
                 spacing={2}
                 justifyContent="center"
                 alignItems="center"
-                sx={{ maxWidth: 600, mx: "auto" }}
+                sx={{ maxWidth: 600, mx: 'auto' }}
               >
                 <TextField
                   placeholder="Nhập email của bạn"
                   fullWidth
                   sx={{
-                    "& .MuiOutlinedInput-root": {
+                    '& .MuiOutlinedInput-root': {
                       borderRadius: 50,
-                      bgcolor: "#fff",
-                      boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-                      "& fieldset": {
-                        borderColor: "rgba(0,0,0,0.1)",
+                      bgcolor: '#fff',
+                      boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                      '& fieldset': {
+                        borderColor: 'rgba(0,0,0,0.1)',
                       },
-                      "&:hover fieldset": {
+                      '&:hover fieldset': {
                         borderColor: (theme) => theme.palette.primary.main,
                       },
                     },
                   }}
-                />{" "}
+                />{' '}
                 <Button
                   variant="contained"
                   size="large"
                   sx={{
-                    background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                    color: "#fff",
+                    background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                    color: '#fff',
                     fontWeight: 600,
                     px: { xs: 3, sm: 5 },
                     py: 1.8,
                     borderRadius: 50,
-                    boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-                    textTransform: "none",
-                    fontSize: { xs: "1rem", sm: "1.1rem" },
+                    boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                    textTransform: 'none',
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
                     minWidth: { sm: 160 },
-                    position: "relative",
-                    overflow: "hidden",
-                    "&::before": {
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&::before': {
                       content: '""',
-                      position: "absolute",
+                      position: 'absolute',
                       top: 0,
                       left: 0,
-                      width: "100%",
-                      height: "100%",
-                      background: "rgba(255,255,255,0.15)",
-                      clipPath: "polygon(0 0, 0% 0, 0% 100%, 0% 100%)",
-                      transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+                      width: '100%',
+                      height: '100%',
+                      background: 'rgba(255,255,255,0.15)',
+                      clipPath: 'polygon(0 0, 0% 0, 0% 100%, 0% 100%)',
+                      transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                     },
-                    "&:hover": {
-                      transform: "translateY(-3px)",
-                      boxShadow: "0 12px 30px rgba(0,0,0,0.2)",
-                      "&::before": {
-                        clipPath: "polygon(0 0, 100% 0, 100% 100%, 0% 100%)",
+                    '&:hover': {
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 12px 30px rgba(0,0,0,0.2)',
+                      '&::before': {
+                        clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0% 100%)',
                       },
                     },
-                    "&:active": {
-                      transform: "translateY(0)",
-                      boxShadow: "0 5px 15px rgba(0,0,0,0.2)",
+                    '&:active': {
+                      transform: 'translateY(0)',
+                      boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
                     },
-                    transition: "all 0.3s ease",
+                    transition: 'all 0.3s ease',
                   }}
                 >
                   Đăng ký ngay
@@ -1625,10 +1625,10 @@ export const HomePage = () => {
             {/* Decorative circles */}
             <Box
               sx={{
-                position: "absolute",
+                position: 'absolute',
                 width: 200,
                 height: 200,
-                borderRadius: "50%",
+                borderRadius: '50%',
                 background: (theme) =>
                   `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.primary.main}10)`,
                 top: -100,
@@ -1638,10 +1638,10 @@ export const HomePage = () => {
             />
             <Box
               sx={{
-                position: "absolute",
+                position: 'absolute',
                 width: 300,
                 height: 300,
-                borderRadius: "50%",
+                borderRadius: '50%',
                 background: (theme) =>
                   `linear-gradient(135deg, ${theme.palette.secondary.light}15, ${theme.palette.secondary.main}05)`,
                 bottom: -150,

@@ -586,44 +586,44 @@ export const createSTIPackage = async (packageData) => {
   try {
     console.log('Creating new STI package with data:', packageData);
 
-    // Ensure we have the correct field names as expected by the backend
-    const validatedData = {
-      ...packageData,
-      // Make sure we're using isActive, not active
-      isActive:
-        packageData.isActive !== undefined
-          ? packageData.isActive
-          : packageData.active !== undefined
-            ? packageData.active
-            : true,
-    }; // Ensure stiService is always an array with proper format
-    if (!validatedData.stiService) {
-      validatedData.stiService = [];
-    } else if (Array.isArray(validatedData.stiService)) {
-      // Kiểm tra xem mỗi phần tử có phải là object với serviceId không
-      validatedData.stiService = validatedData.stiService.map((item) => {
-        // Nếu là số nguyên (id) thì chuyển thành object
-        if (typeof item === 'number') {
-          return {
-            serviceId: item,
-            created_at: new Date().toISOString(),
-          };
-        }
-        // Nếu đã là object nhưng không có created_at, thêm vào
-        if (typeof item === 'object' && !item.created_at) {
-          return {
-            ...item,
-            created_at: new Date().toISOString(),
-          };
-        }
-        // Đã đúng format
-        return item;
-      });
-    }
+    // // Ensure we have the correct field names as expected by the backend
+    // const validatedData = {
+    //   ...packageData,
+    //   // Make sure we're using isActive, not active
+    //   isActive:
+    //     packageData.isActive !== undefined
+    //       ? packageData.isActive
+    //       : packageData.active !== undefined
+    //         ? packageData.active
+    //         : true,
+    // }; // Ensure stiService is always an array with proper format
+    // if (!validatedData.stiService) {
+    //   validatedData.stiService = [];
+    // } else if (Array.isArray(validatedData.stiService)) {
+    //   // Kiểm tra xem mỗi phần tử có phải là object với serviceId không
+    //   validatedData.stiService = validatedData.stiService.map((item) => {
+    //     // Nếu là số nguyên (id) thì chuyển thành object
+    //     // if (typeof item === 'number') {
+    //     //   return {
+    //     //     serviceId: item,
+    //     //     created_at: new Date().toISOString(),
+    //     //   };
+    //     // }
+    //     // Nếu đã là object nhưng không có created_at, thêm vào
+    //     if (typeof item === 'object' && !item.created_at) {
+    //       return {
+    //         ...item,
+    //         created_at: new Date().toISOString(),
+    //       };
+    //     }
+    //     // Đã đúng format
+    //     return item;
+    //   });
+    // }
 
-    console.log('Sending validated data to backend:', validatedData);
+    console.log('Sending validated data to backend:', packageData);
 
-    const response = await apiClient.post('/sti-packages', validatedData);
+    const response = await apiClient.post('/sti-packages', packageData);
 
     console.log('Create response:', response.data);
     return response.data;

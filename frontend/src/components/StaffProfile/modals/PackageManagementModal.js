@@ -1201,11 +1201,11 @@ const PackageManagementModal = ({
         </DialogTitle>
         <DialogContent>
           {loading && <LinearProgress />}
-          {error && (
+          {/* {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
-          )}
+          )} */}
           {success && (
             <Alert severity="success" sx={{ mb: 2 }}>
               {success}

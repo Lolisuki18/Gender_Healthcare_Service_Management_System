@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Typography,
@@ -25,29 +25,29 @@ import {
   CircularProgress,
   Divider,
   Stack,
-} from "@mui/material";
-import { styled } from "@mui/material/styles";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { format } from "date-fns";
-import vi from "date-fns/locale/vi";
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { format } from 'date-fns';
+import vi from 'date-fns/locale/vi';
 
 // Icons
-import SchoolIcon from "@mui/icons-material/School";
-import WorkHistoryIcon from "@mui/icons-material/WorkHistory";
-import PersonIcon from "@mui/icons-material/Person";
-import StarIcon from "@mui/icons-material/Star";
-import VerifiedIcon from "@mui/icons-material/Verified";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import ScheduleIcon from "@mui/icons-material/Schedule";
+import SchoolIcon from '@mui/icons-material/School';
+import WorkHistoryIcon from '@mui/icons-material/WorkHistory';
+import PersonIcon from '@mui/icons-material/Person';
+import StarIcon from '@mui/icons-material/Star';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import ScheduleIcon from '@mui/icons-material/Schedule';
 
 // Services and Utils
-import consultantService from "@/services/consultantService";
-import imageUrl from "@/utils/imageUrl";
-import notify from "@/utils/notification";
-import confirmDialog from "@/utils/confirmDialog";
-import localStorageUtil from "@/utils/localStorage";
+import consultantService from '@/services/consultantService';
+import imageUrl from '@/utils/imageUrl';
+import notify from '@/utils/notification';
+import confirmDialog from '@/utils/confirmDialog';
+import localStorageUtil from '@/utils/localStorage';
 
 // Custom styled components
 // Styled Components
@@ -58,15 +58,15 @@ const StyledContainer = styled(Container)(({ theme }) => ({
 
 const PageHeader = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),
-  textAlign: "center",
+  textAlign: 'center',
 }));
 
 const GradientTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 700,
-  backgroundImage: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-  backgroundClip: "text",
-  WebkitBackgroundClip: "text",
-  WebkitTextFillColor: "transparent",
+  backgroundImage: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
   marginBottom: theme.spacing(1),
 }));
 
@@ -74,38 +74,38 @@ const HeaderSubtitle = styled(Typography)(({ theme }) => ({
   marginBottom: theme.spacing(2),
   color: theme.palette.text.secondary,
   maxWidth: 800,
-  marginLeft: "auto",
-  marginRight: "auto",
+  marginLeft: 'auto',
+  marginRight: 'auto',
 }));
 
 const ConsultantCard = styled(Card)(({ theme }) => ({
-  height: "100%",
-  transition: "all 0.3s ease",
+  height: '100%',
+  transition: 'all 0.3s ease',
   borderRadius: theme.spacing(2),
-  overflow: "visible",
-  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-  position: "relative",
-  border: "1px solid rgba(226, 232, 240, 0.8)",
-  "&:hover": {
-    transform: "translateY(-5px)",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+  overflow: 'visible',
+  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+  position: 'relative',
+  border: '1px solid rgba(226, 232, 240, 0.8)',
+  '&:hover': {
+    transform: 'translateY(-5px)',
+    boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
   },
 }));
 
 const CardMediaWrapper = styled(CardMedia)(({ theme }) => ({
   height: 200,
-  position: "relative",
+  position: 'relative',
 }));
 
 const ConsultantAvatar = styled(Avatar)(({ theme }) => ({
   width: 100,
   height: 100,
-  position: "absolute",
+  position: 'absolute',
   bottom: -40,
-  left: "50%",
-  transform: "translateX(-50%)",
-  border: "4px solid white",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+  left: '50%',
+  transform: 'translateX(-50%)',
+  border: '4px solid white',
+  boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
 }));
 
 const CardContentWrapper = styled(CardContent)(({ theme }) => ({
@@ -114,24 +114,24 @@ const CardContentWrapper = styled(CardContent)(({ theme }) => ({
 }));
 
 const ConsultantName = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
   marginBottom: theme.spacing(1),
 }));
 
 const RatingWrapper = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   marginBottom: theme.spacing(2),
 }));
 
 const DetailItem = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
+  display: 'flex',
+  alignItems: 'center',
   marginBottom: theme.spacing(1),
-  "& .MuiSvgIcon-root": {
+  '& .MuiSvgIcon-root': {
     marginRight: theme.spacing(1),
     color: theme.palette.primary.main,
   },
@@ -140,38 +140,38 @@ const DetailItem = styled(Box)(({ theme }) => ({
 const BioText = styled(Typography)(({ theme }) => ({
   marginTop: theme.spacing(2),
   color: theme.palette.text.secondary,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  display: "-webkit-box",
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  display: '-webkit-box',
   WebkitLineClamp: 2,
   lineClamp: 2, // For standard compatibility
-  WebkitBoxOrient: "vertical",
+  WebkitBoxOrient: 'vertical',
 }));
 
 const CardActionsWrapper = styled(CardActions)(({ theme }) => ({
   padding: theme.spacing(2),
   paddingTop: 0,
-  display: "flex",
-  justifyContent: "space-between",
+  display: 'flex',
+  justifyContent: 'space-between',
 }));
 
 const LoadingContainer = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  height: "50vh",
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  height: '50vh',
 }));
 
 // Profile Detail Dialog Styles
 const AvatarSection = styled(Box)(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  [theme.breakpoints.down("md")]: {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  [theme.breakpoints.down('md')]: {
     marginBottom: theme.spacing(3),
-    width: "100%",
+    width: '100%',
   },
-  [theme.breakpoints.up("md")]: {
+  [theme.breakpoints.up('md')]: {
     marginRight: theme.spacing(4),
     minWidth: 200,
   },
@@ -181,7 +181,7 @@ const DetailAvatar = styled(Avatar)(({ theme }) => ({
   width: 150,
   height: 150,
   marginBottom: theme.spacing(2),
-  boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+  boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
 }));
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
@@ -190,14 +190,14 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
 }));
 
 const timeSlots = [
-  "08:00-09:00",
-  "09:00-10:00",
-  "10:00-11:00",
-  "11:00-12:00",
-  "13:00-14:00",
-  "14:00-15:00",
-  "15:00-16:00",
-  "16:00-17:00",
+  '08:00-09:00',
+  '09:00-10:00',
+  '10:00-11:00',
+  '11:00-12:00',
+  '13:00-14:00',
+  '14:00-15:00',
+  '15:00-16:00',
+  '16:00-17:00',
 ];
 
 const ConsultationPage = () => {
@@ -205,6 +205,7 @@ const ConsultationPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [profileConsultants, setProfileConsultants] = useState([]);
 
   // Dialog states
   const [detailDialog, setDetailDialog] = useState({
@@ -219,7 +220,7 @@ const ConsultationPage = () => {
   // Appointment form
   const [appointmentForm, setAppointmentForm] = useState({
     date: null,
-    timeSlot: "",
+    timeSlot: '',
     consultantId: null,
   });
 
@@ -234,15 +235,19 @@ const ConsultationPage = () => {
   const fetchConsultants = async () => {
     setLoading(true);
     try {
-      const response = await consultantService.getAllConsultants();
-      if (response.success) {
-        setConsultants(response.data);
+      //Get consultants
+      const consultants = await consultantService.getAllConsultants();
+      console.log('Consultants response:', consultants);
+      //Get profile of consultants
+      const profileConsultant = await consultantService.getProfileConsultants();
+      if (consultants.success) {
+        setConsultants(consultants.data);
       } else {
-        setError(response.message || "Không thể tải danh sách tư vấn viên");
+        setError(consultants.message || 'Không thể tải danh sách tư vấn viên');
       }
     } catch (err) {
-      setError("Có lỗi xảy ra khi kết nối đến máy chủ");
-      console.error("Error fetching consultants:", err);
+      setError('Có lỗi xảy ra khi kết nối đến máy chủ');
+      console.error('Error fetching consultants:', err);
     } finally {
       setLoading(false);
     }
@@ -256,30 +261,30 @@ const ConsultationPage = () => {
   };
   const handleOpenAppointment = async (consultant) => {
     // Check if user is authenticated with both userProfile and token
-    const userProfile = localStorageUtil.get("userProfile");
-    const token = localStorageUtil.get("token");
+    const userProfile = localStorageUtil.get('userProfile');
+    const token = localStorageUtil.get('token');
 
     if (!userProfile || !token) {
       // Show confirmation dialog with more information
       const result = await confirmDialog.info(
-        "Bạn cần đăng nhập để đặt lịch hẹn với tư vấn viên. Bạn có muốn đăng nhập ngay không?",
+        'Bạn cần đăng nhập để đặt lịch hẹn với tư vấn viên. Bạn có muốn đăng nhập ngay không?',
         {
-          title: "Yêu cầu đăng nhập",
-          confirmText: "Đăng nhập",
-          cancelText: "Hủy",
+          title: 'Yêu cầu đăng nhập',
+          confirmText: 'Đăng nhập',
+          cancelText: 'Hủy',
         }
       );
 
       if (result) {
         // Redirect to login page if user confirms
-        navigate("/login");
+        navigate('/login');
       }
       return;
     } // User is properly authenticated, proceed with appointment
     setAppointmentDialog({ open: true, consultant });
     setAppointmentForm({
       date: null,
-      timeSlot: "",
+      timeSlot: '',
       consultantId: consultant.userId,
     });
   };
@@ -299,12 +304,12 @@ const ConsultationPage = () => {
   const handleSubmit = async () => {
     // Validate form
     if (!appointmentForm.date) {
-      setFormError("Vui lòng chọn ngày hẹn");
+      setFormError('Vui lòng chọn ngày hẹn');
       return;
     }
 
     if (!appointmentForm.timeSlot) {
-      setFormError("Vui lòng chọn khung giờ");
+      setFormError('Vui lòng chọn khung giờ');
       return;
     }
 
@@ -313,7 +318,7 @@ const ConsultationPage = () => {
 
     try {
       // Format date to LocalDate (yyyy-MM-dd)
-      const formattedDate = format(appointmentForm.date, "yyyy-MM-dd");
+      const formattedDate = format(appointmentForm.date, 'yyyy-MM-dd');
 
       const appointmentData = {
         consultantId: appointmentForm.consultantId,
@@ -321,19 +326,18 @@ const ConsultationPage = () => {
         timeSlot: appointmentForm.timeSlot,
       };
 
-      const response = await consultantService.scheduleAppointment(
-        appointmentData
-      );
+      const response =
+        await consultantService.scheduleAppointment(appointmentData);
 
       if (response.success) {
-        notify.success("Đặt lịch hẹn thành công!");
+        notify.success('Đặt lịch hẹn thành công!');
         handleCloseAppointment();
       } else {
-        setFormError(response.message || "Không thể đặt lịch hẹn");
+        setFormError(response.message || 'Không thể đặt lịch hẹn');
       }
     } catch (err) {
-      setFormError("Có lỗi xảy ra khi kết nối đến máy chủ");
-      console.error("Error scheduling appointment:", err);
+      setFormError('Có lỗi xảy ra khi kết nối đến máy chủ');
+      console.error('Error scheduling appointment:', err);
     } finally {
       setSubmitting(false);
     }
@@ -344,43 +348,43 @@ const ConsultationPage = () => {
     {
       profileId: 1,
       userId: 101,
-      fullName: "Nguyễn Thị An",
-      email: "nta@example.com",
-      phone: "0901234567",
+      fullName: 'Nguyễn Thị An',
+      email: 'nta@example.com',
+      phone: '0901234567',
       avatar: null,
-      qualifications: "Tiến sĩ Y khoa, Chuyên khoa Sức khỏe giới tính",
-      experience: "10 năm kinh nghiệm tư vấn sức khỏe giới tính",
-      bio: "Chuyên gia hàng đầu về tư vấn sức khỏe giới tính với nhiều năm kinh nghiệm làm việc tại các bệnh viện lớn.",
-      gender: "FEMALE",
+      qualifications: 'Tiến sĩ Y khoa, Chuyên khoa Sức khỏe giới tính',
+      experience: '10 năm kinh nghiệm tư vấn sức khỏe giới tính',
+      bio: 'Chuyên gia hàng đầu về tư vấn sức khỏe giới tính với nhiều năm kinh nghiệm làm việc tại các bệnh viện lớn.',
+      gender: 'FEMALE',
       isActive: true,
       rating: 4.8,
     },
     {
       profileId: 2,
       userId: 102,
-      fullName: "Trần Văn Bình",
-      email: "tvb@example.com",
-      phone: "0912345678",
+      fullName: 'Trần Văn Bình',
+      email: 'tvb@example.com',
+      phone: '0912345678',
       avatar: null,
-      qualifications: "Thạc sĩ Tâm lý học lâm sàng",
-      experience: "8 năm kinh nghiệm tư vấn tâm lý giới tính",
-      bio: "Chuyên gia tâm lý với kinh nghiệm chuyên sâu về các vấn đề tâm lý liên quan đến giới tính và xu hướng tính dục.",
-      gender: "MALE",
+      qualifications: 'Thạc sĩ Tâm lý học lâm sàng',
+      experience: '8 năm kinh nghiệm tư vấn tâm lý giới tính',
+      bio: 'Chuyên gia tâm lý với kinh nghiệm chuyên sâu về các vấn đề tâm lý liên quan đến giới tính và xu hướng tính dục.',
+      gender: 'MALE',
       isActive: true,
       rating: 4.5,
     },
     {
       profileId: 3,
       userId: 103,
-      fullName: "Lê Thị Cúc",
-      email: "ltc@example.com",
-      phone: "0923456789",
+      fullName: 'Lê Thị Cúc',
+      email: 'ltc@example.com',
+      phone: '0923456789',
       avatar: null,
-      qualifications: "Bác sĩ Chuyên khoa II Sản phụ khoa",
+      qualifications: 'Bác sĩ Chuyên khoa II Sản phụ khoa',
       experience:
-        "15 năm kinh nghiệm trong lĩnh vực sản phụ khoa và sức khỏe sinh sản",
-      bio: "Bác sĩ với nhiều năm kinh nghiệm trong lĩnh vực sức khỏe sinh sản nữ giới và các vấn đề liên quan.",
-      gender: "FEMALE",
+        '15 năm kinh nghiệm trong lĩnh vực sản phụ khoa và sức khỏe sinh sản',
+      bio: 'Bác sĩ với nhiều năm kinh nghiệm trong lĩnh vực sức khỏe sinh sản nữ giới và các vấn đề liên quan.',
+      gender: 'FEMALE',
       isActive: true,
       rating: 4.9,
     },
@@ -394,7 +398,7 @@ const ConsultationPage = () => {
           với các vấn đề sức khỏe giới tính
         </HeaderSubtitle>
         <Divider sx={{ mb: 4 }} />
-      </PageHeader>{" "}
+      </PageHeader>{' '}
       {loading ? (
         <LoadingContainer>
           <CircularProgress />
@@ -477,8 +481,8 @@ const ConsultationPage = () => {
                       <WorkHistoryIcon fontSize="small" />
                       <Typography variant="body2" noWrap>
                         {consultant.experience
-                          ? consultant.experience.split(" ")[0]
-                          : "10"}{" "}
+                          ? consultant.experience.split(' ')[0]
+                          : '10'}{' '}
                         năm kinh nghiệm
                       </Typography>
                     </DetailItem>
@@ -513,7 +517,7 @@ const ConsultationPage = () => {
             )
           )}
         </Grid>
-      )}{" "}
+      )}{' '}
       {/* Consultant Detail Dialog */}
       <Dialog
         open={detailDialog.open}
@@ -531,8 +535,8 @@ const ConsultationPage = () => {
             <DialogContent>
               <Box
                 sx={{
-                  display: "flex",
-                  flexDirection: { xs: "column", md: "row" },
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
                   mb: 3,
                 }}
               >
@@ -571,7 +575,7 @@ const ConsultationPage = () => {
 
                   <Chip
                     label={`Giới tính: ${
-                      detailDialog.consultant.gender === "MALE" ? "Nam" : "Nữ"
+                      detailDialog.consultant.gender === 'MALE' ? 'Nam' : 'Nữ'
                     }`}
                     color="primary"
                     variant="outlined"
@@ -636,7 +640,7 @@ const ConsultationPage = () => {
             </DialogActions>
           </>
         )}
-      </Dialog>{" "}
+      </Dialog>{' '}
       {/* Appointment Dialog */}
       <Dialog
         open={appointmentDialog.open}
@@ -671,8 +675,8 @@ const ConsultationPage = () => {
                   <DatePicker
                     label="Chọn ngày hẹn"
                     value={appointmentForm.date}
-                    onChange={(date) => handleFormChange("date", date)}
-                    sx={{ mb: 2, width: "100%" }}
+                    onChange={(date) => handleFormChange('date', date)}
+                    sx={{ mb: 2, width: '100%' }}
                     minDate={new Date()} // Không cho phép chọn ngày trong quá khứ
                   />
                 </LocalizationProvider>
@@ -682,11 +686,11 @@ const ConsultationPage = () => {
                   <Select
                     value={appointmentForm.timeSlot}
                     onChange={(e) =>
-                      handleFormChange("timeSlot", e.target.value)
+                      handleFormChange('timeSlot', e.target.value)
                     }
                     label="Chọn khung giờ"
                     startAdornment={
-                      <ScheduleIcon sx={{ mr: 1, color: "primary.main" }} />
+                      <ScheduleIcon sx={{ mr: 1, color: 'primary.main' }} />
                     }
                   >
                     {timeSlots.map((slot) => (
@@ -699,7 +703,7 @@ const ConsultationPage = () => {
               </Box>
             </DialogContent>
             <DialogActions
-              sx={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}
+              sx={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}
             >
               <Button onClick={handleCloseAppointment} disabled={submitting}>
                 Hủy
@@ -712,7 +716,7 @@ const ConsultationPage = () => {
                   submitting ? <CircularProgress size={20} /> : undefined
                 }
               >
-                {submitting ? "Đang xử lý..." : "Đặt lịch"}
+                {submitting ? 'Đang xử lý...' : 'Đặt lịch'}
               </Button>
             </DialogActions>
           </>

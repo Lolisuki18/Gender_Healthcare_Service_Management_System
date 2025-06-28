@@ -1,4 +1,4 @@
-import apiClient from "./api";
+import apiClient from './api';
 
 const consultantService = {
   //===================================== Xem thông tin =====================================
@@ -6,6 +6,26 @@ const consultantService = {
   getConsultantDetails: async (consultantId) => {
     try {
       const response = await apiClient.get(`/consultants/${consultantId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+  //Lấy toàn bộ consultant
+  getAllConsultants: async () => {
+    try {
+      const reponse = await apiClient.get(`/consultations/consultants`);
+      return reponse.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+  //Lấy profile của consultant
+  getProfileConsultants: async (consultantId) => {
+    try {
+      const response = await apiClient.get(
+        `/consultations/consultant/${consultantId}/profile`
+      );
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -143,7 +163,7 @@ const consultantService = {
   //===================================== Quản lý câu hỏi =====================================
   getMyQuestions: async () => {
     try {
-      const response = await apiClient.get("/consultants/my-questions");
+      const response = await apiClient.get('/consultants/my-questions');
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -163,7 +183,7 @@ const consultantService = {
 
   askQuestion: async (data) => {
     try {
-      const response = await apiClient.post("/consultants/questions", data);
+      const response = await apiClient.post('/consultants/questions', data);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -172,7 +192,7 @@ const consultantService = {
 
   getQuestionsForConsultant: async (params = {}) => {
     try {
-      const response = await apiClient.get("/consultants/answer-questions", {
+      const response = await apiClient.get('/consultants/answer-questions', {
         params,
       });
       return response.data;
@@ -196,7 +216,7 @@ const consultantService = {
   //===================================== Quản lý lịch tư vấn =====================================
   getConsultations: async (params = {}) => {
     try {
-      const response = await apiClient.get("/consultants/consultations", {
+      const response = await apiClient.get('/consultants/consultations', {
         params,
       });
       return response.data;
@@ -243,7 +263,7 @@ const consultantService = {
   //===================================== Quản lý STI Tests =====================================
   getSTITests: async (params = {}) => {
     try {
-      const response = await apiClient.get("/consultants/sti-tests", {
+      const response = await apiClient.get('/consultants/sti-tests', {
         params,
       });
       return response.data;
@@ -278,7 +298,7 @@ const consultantService = {
       const response = await apiClient.get(
         `/consultants/sti-tests/${testId}/report`,
         {
-          responseType: "blob",
+          responseType: 'blob',
         }
       );
       return response.data;
@@ -290,7 +310,7 @@ const consultantService = {
   //===================================== Quản lý đánh giá =====================================
   getMyReviews: async (params = {}) => {
     try {
-      const response = await apiClient.get("/consultants/reviews", { params });
+      const response = await apiClient.get('/consultants/reviews', { params });
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -320,7 +340,7 @@ const consultantService = {
 
   getReviewsStatistics: async () => {
     try {
-      const response = await apiClient.get("/consultants/reviews/statistics");
+      const response = await apiClient.get('/consultants/reviews/statistics');
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -328,31 +348,31 @@ const consultantService = {
   },
 
   //===================================== Trang ConsultationPage =====================================
-  // Lấy danh sách tư vấn viên
-  getAllConsultants: async () => {
-    try {
-      const response = await apiClient.get("/consultants");
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error) {
-      console.error("Error fetching consultants:", error);
-      return {
-        success: false,
-        message:
-          error.response?.data?.message ||
-          "Không thể lấy danh sách tư vấn viên",
-        error,
-      };
-    }
-  },
+  // // Lấy danh sách tư vấn viên
+  // getAllConsultants: async () => {
+  //   try {
+  //     const response = await apiClient.get('/consultants');
+  //     return {
+  //       success: true,
+  //       data: response.data,
+  //     };
+  //   } catch (error) {
+  //     console.error('Error fetching consultants:', error);
+  //     return {
+  //       success: false,
+  //       message:
+  //         error.response?.data?.message ||
+  //         'Không thể lấy danh sách tư vấn viên',
+  //       error,
+  //     };
+  //   }
+  // },
 
   // Đặt lịch hẹn với tư vấn viên
   scheduleAppointment: async (appointmentData) => {
     try {
       const response = await apiClient.post(
-        "/consultations/schedule",
+        '/consultations/schedule',
         appointmentData
       );
       return {
@@ -360,10 +380,10 @@ const consultantService = {
         data: response.data,
       };
     } catch (error) {
-      console.error("Error scheduling appointment:", error);
+      console.error('Error scheduling appointment:', error);
       return {
         success: false,
-        message: error.response?.data?.message || "Không thể đặt lịch hẹn",
+        message: error.response?.data?.message || 'Không thể đặt lịch hẹn',
         error,
       };
     }
@@ -380,12 +400,12 @@ const consultantService = {
         data: response.data,
       };
     } catch (error) {
-      console.error("Error fetching available time slots:", error);
+      console.error('Error fetching available time slots:', error);
       return {
         success: false,
         message:
           error.response?.data?.message ||
-          "Không thể lấy thông tin khung giờ trống",
+          'Không thể lấy thông tin khung giờ trống',
         error,
       };
     }
@@ -394,17 +414,17 @@ const consultantService = {
   // Lấy các lịch hẹn đã đặt của người dùng
   getUserAppointments: async () => {
     try {
-      const response = await apiClient.get("/consultations/user");
+      const response = await apiClient.get('/consultations/user');
       return {
         success: true,
         data: response.data,
       };
     } catch (error) {
-      console.error("Error fetching user appointments:", error);
+      console.error('Error fetching user appointments:', error);
       return {
         success: false,
         message:
-          error.response?.data?.message || "Không thể lấy thông tin lịch hẹn",
+          error.response?.data?.message || 'Không thể lấy thông tin lịch hẹn',
         error,
       };
     }

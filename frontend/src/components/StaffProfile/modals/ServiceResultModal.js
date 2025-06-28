@@ -523,11 +523,11 @@ const ServiceResultModal = ({
             <Typography variant="body2">{error}</Typography>
           </Alert>
         )}
-        {error && !success && (
+        {/* {error && !success && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
             {error}
           </Alert>
-        )}
+        )} */}
         {success && !error && (
           <Alert severity="success" sx={{ mb: 2 }}>
             {success}

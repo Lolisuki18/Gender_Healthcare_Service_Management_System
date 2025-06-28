@@ -158,6 +158,9 @@ const STITestManagementContent = () => {
         case 5: // Completed tests
           // Lấy tất cả các xét nghiệm của staff, sau đó lọc theo trạng thái
           response = await getStaffTests();
+          console.log(
+            `Lấy tất cả xét nghiệm, sau đó lọc theo trạng thái cho tab ${response}`
+          );
           break;
         default:
           response = await getStaffTests();
@@ -751,7 +754,7 @@ const STITestManagementContent = () => {
           // Response exists but doesn't indicate success
           const errorMessage =
             response.message || 'Không thể hoàn thành xét nghiệm';
-          setError(errorMessage);
+          // setError(errorMessage);
           console.error('API returned error:', errorMessage);
           return { success: false, message: errorMessage };
         }
@@ -1169,11 +1172,11 @@ const STITestManagementContent = () => {
         >
           Quản lý xét nghiệm STI
         </Typography>{' '}
-        {error && (
+        {/* {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
           </Alert>
-        )}
+        )} */}
         {success && (
           <Alert severity="success" sx={{ mb: 3 }}>
             {success}

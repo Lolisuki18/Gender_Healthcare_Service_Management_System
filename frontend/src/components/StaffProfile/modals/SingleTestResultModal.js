@@ -664,49 +664,49 @@ const SingleTestResultModal = ({
     } catch (err) {
       console.error('Error saving test results:', err);
 
-      // Check for specific backend error messages about missing components
-      if (
-        err.response &&
-        err.response.data &&
-        err.response.data.message &&
-        typeof err.response.data.message === 'string' &&
-        err.response.data.message.includes('Missing results for components')
-      ) {
-        const errorMessage = err.response.data.message;
-        const componentsMatch = errorMessage.match(/\[(.*?)\]/);
-        if (componentsMatch && componentsMatch[1]) {
-          const missingComponents = componentsMatch[1];
-          setError(
-            `Thiếu kết quả cho các thành phần: ${missingComponents}. Vui lòng điền đầy đủ tất cả các giá trị bắt buộc.`
-          );
-        } else {
-          setError(
-            `Thiếu kết quả cho một số thành phần xét nghiệm. Vui lòng điền đầy đủ tất cả các giá trị.`
-          );
-        }
-      }
-      // More user-friendly error message for other cases
-      else if (err.message?.includes('Network Error') || !navigator.onLine) {
-        setError(
-          'Failed to save test results: Network connection issue. Please check your internet connection and try again.'
-        );
-      } else if (err.message?.includes('timeout')) {
-        setError(
-          'Failed to save test results: Request timed out. Please try again.'
-        );
-      } else if (
-        err.message?.includes('auth') ||
-        err.message?.includes('token') ||
-        err.message?.includes('login')
-      ) {
-        setError(
-          'Failed to save test results: Authentication issue. Please try refreshing the page or logging in again.'
-        );
-      } else {
-        setError(
-          'This could be due to network issues or expired authentication. Please try again or refresh the page.'
-        );
-      }
+      // // Check for specific backend error messages about missing components
+      // if (
+      //   err.response &&
+      //   err.response.data &&
+      //   err.response.data.message &&
+      //   typeof err.response.data.message === 'string' &&
+      //   err.response.data.message.includes('Missing results for components')
+      // ) {
+      //   const errorMessage = err.response.data.message;
+      //   const componentsMatch = errorMessage.match(/\[(.*?)\]/);
+      //   if (componentsMatch && componentsMatch[1]) {
+      //     const missingComponents = componentsMatch[1];
+      //     setError(
+      //       `Thiếu kết quả cho các thành phần: ${missingComponents}. Vui lòng điền đầy đủ tất cả các giá trị bắt buộc.`
+      //     );
+      //   } else {
+      //     setError(
+      //       `Thiếu kết quả cho một số thành phần xét nghiệm. Vui lòng điền đầy đủ tất cả các giá trị.`
+      //     );
+      //   }
+      // }
+      // // More user-friendly error message for other cases
+      // else if (err.message?.includes('Network Error') || !navigator.onLine) {
+      //   setError(
+      //     'Failed to save test results: Network connection issue. Please check your internet connection and try again.'
+      //   );
+      // } else if (err.message?.includes('timeout')) {
+      //   setError(
+      //     'Failed to save test results: Request timed out. Please try again.'
+      //   );
+      // } else if (
+      //   err.message?.includes('auth') ||
+      //   err.message?.includes('token') ||
+      //   err.message?.includes('login')
+      // ) {
+      //   setError(
+      //     'Failed to save test results: Authentication issue. Please try refreshing the page or logging in again.'
+      //   );
+      // } else {
+      //   setError(
+      //     'This could be due to network issues or expired authentication. Please try again or refresh the page.'
+      //   );
+      // }
     } finally {
       setSaving(false);
     }
@@ -1671,7 +1671,6 @@ const SingleTestResultModal = ({
                                   <TextField
                                     size="small"
                                     fullWidth
-                                    required
                                     value={result?.resultValue || ''}
                                     onChange={(e) =>
                                       handleResultChange(

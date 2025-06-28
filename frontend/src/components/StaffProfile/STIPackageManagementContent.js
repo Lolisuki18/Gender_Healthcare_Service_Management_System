@@ -232,6 +232,7 @@ const STIPackageManagementContent = () => {
     price: 0,
     recommended_for: '', // Field này sẽ chỉ dùng cho frontend, không gửi lên backend
     isActive: true, // Backend expects 'isActive', not 'active'
+    stiService: [], // This will be set based on selectedServices
   });
   // State cho validation errors
   const [errors, setErrors] = useState({
@@ -264,6 +265,7 @@ const STIPackageManagementContent = () => {
       price: 0,
       recommended_for: '',
       isActive: true,
+      stiService: [],
     });
     // Reset validation errors when opening dialog
     setErrors({
@@ -371,6 +373,7 @@ const STIPackageManagementContent = () => {
     setErrors(newErrors);
     return isValid;
   };
+  //để lưu package mới hoặc cập nhật package hiện tại
   const handleSavePackage = async () => {
     // Validate form before saving
     if (!validateForm()) {
@@ -411,6 +414,7 @@ const STIPackageManagementContent = () => {
             packageDataWithoutId
           );
         } else {
+          console.log('Creating new package with data:', packageDTO);
           response = await createSTIPackage(packageDTO);
         }
 
@@ -636,16 +640,29 @@ const STIPackageManagementContent = () => {
   };
 
   // Helper function to ensure stiService is an array of simple IDs
-  const prepareServiceIdsForBackend = useCallback((services) => {
-    if (!services || !Array.isArray(services)) return [];
+  // const prepareServiceIdsForBackend = useCallback((services) => {
+  //   if (!services || !Array.isArray(services)) return [];
 
-    // Chỉ lấy ID từ mỗi dịch vụ
-    return services.map((service) => {
-      if (typeof service === 'number') return service;
-      if (typeof service === 'object' && service !== null)
-        return service.id || service.serviceId;
-      return service;
-    });
+  //   // Chỉ lấy ID từ mỗi dịch vụ
+  //   return services.map((service) => {
+  //     if (typeof service === 'number') return service;
+  //     if (typeof service === 'object' && service !== null)
+  //       return service.id || service.serviceId;
+  //     return service;
+  //   });
+  // }, []);
+  const prepareServiceIdsForBackend = useCallback((services) => {
+    if (!Array.isArray(services)) return [];
+
+    return services
+      .map((service) => {
+        if (typeof service === 'number') return service;
+        if (typeof service === 'object' && service !== null) {
+          return service.id ?? service.serviceId;
+        }
+        return null;
+      })
+      .filter((id) => typeof id === 'number');
   }, []);
 
   // Helper function to map backend package data to frontend format

@@ -174,31 +174,32 @@ export const formatDateDisplay = (dateString) => {
           year = dateString[0];
           month = dateString[1]; // Tháng trong mảng thường là 0-11
           day = dateString[2];
+          date = new Date(year, month - 1, day);
+          console.log('📅 Created date from array:', date);
+          // // Một số trường hợp mảng [2025, 6, 19] thì month đã đúng với thực tế (1-12)
+          // // Một số trường hợp mảng [2025, 5, 19] thì month là zero-based (0-11)
+          // // Kiểm tra nếu month > 12, giả sử đã có sự hiệu chỉnh
+          // if (month >= 12) {
+          //   date = new Date(year, month - 1, day);
+          // } else {
+          //   // Thử cả hai trường hợp
+          //   const date1 = new Date(year, month, day); // month là zero-based (0-11)
+          //   const date2 = new Date(year, month - 1, day); // month là 1-12
 
-          // Một số trường hợp mảng [2025, 6, 19] thì month đã đúng với thực tế (1-12)
-          // Một số trường hợp mảng [2025, 5, 19] thì month là zero-based (0-11)
-          // Kiểm tra nếu month > 12, giả sử đã có sự hiệu chỉnh
-          if (month >= 12) {
-            date = new Date(year, month - 1, day);
-          } else {
-            // Thử cả hai trường hợp
-            const date1 = new Date(year, month, day); // month là zero-based (0-11)
-            const date2 = new Date(year, month - 1, day); // month là 1-12
-
-            // Dùng date nào hợp lệ
-            if (!isNaN(date1.getTime())) {
-              date = date1;
-              console.log('📅 Using zero-based month format');
-            } else if (!isNaN(date2.getTime())) {
-              date = date2;
-              console.log('📅 Using one-based month format');
-            } else {
-              console.warn(
-                '⚠️ Cannot create valid date from array:',
-                dateString
-              );
-            }
-          }
+          //   // Dùng date nào hợp lệ
+          //   if (!isNaN(date1.getTime())) {
+          //     date = date1;
+          //     console.log('📅 Using zero-based month format');
+          //   } else if (!isNaN(date2.getTime())) {
+          //     date = date2;
+          //     console.log('📅 Using one-based month format');
+          //   } else {
+          //     console.warn(
+          //       '⚠️ Cannot create valid date from array:',
+          //       dateString
+          //     );
+          //   }
+          // }
         }
       }
       // Trường hợp là chuỗi ISO hoặc SQL DateTime
