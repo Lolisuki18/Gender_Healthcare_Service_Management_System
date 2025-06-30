@@ -42,12 +42,14 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  CircularProgress,
 } from '@mui/material';
 import AvatarUpload from '../common/AvatarUpload'; // Import AvatarUpload component
 import EditIcon from '@mui/icons-material/Edit'; // For edit button
 import { useDispatch, useSelector } from 'react-redux'; // Import Redux hooks
 import { selectAvatar, selectUser } from '@/redux/slices/authSlice'; // Import selectors
 import { fetchCurrentUser } from '@/redux/thunks/userThunks'; // Import user thunk
+import { toast } from 'react-toastify';
 
 import VerifiedIcon from '@mui/icons-material/Verified';
 import PersonIcon from '@mui/icons-material/Person';
@@ -64,7 +66,6 @@ import SaveIcon from '@mui/icons-material/Save'; // Save icon
 import { styled } from '@mui/material/styles';
 import { userService } from '@/services/userService';
 import localStorageUtil from '@/utils/localStorage';
-import { notify } from '@/utils/notification';
 import { formatDateForInput, formatDateDisplay } from '@/utils/dateUtils'; // Import date formatting utils
 
 import { PasswordChangeDialog, EmailChangeDialog } from '../modals'; // Reuse modals from CustomerProfile
@@ -557,7 +558,7 @@ const ProfileContent = (props) => {
 
         setFormDataUpdate(formData);
         setOriginalData(formData);
-        notify.success('Thành công', 'Đã tải thông tin nhân viên từ Redux!');
+        toast.success('Thành công', 'Đã tải thông tin nhân viên từ Redux!');
 
         // Vẫn gọi API để đồng bộ dữ liệu mới nhất
         dispatch(fetchCurrentUser());
@@ -591,7 +592,7 @@ const ProfileContent = (props) => {
 
         setFormDataUpdate(formData);
         setOriginalData(formData);
-        notify.success('Thành công', 'Đã tải thông tin nhân viên thành công!');
+        toast.success('Thành công', 'Đã tải thông tin nhân viên thành công!');
         return;
       }
 
@@ -624,7 +625,7 @@ const ProfileContent = (props) => {
           data: user.data || user,
         };
         localStorageUtil.set('userProfile', userProfileData);
-        notify.success('Thành công', 'Đã tải thông tin nhân viên thành công!');
+        toast.success('Thành công', 'Đã tải thông tin nhân viên thành công!');
       } else {
         throw new Error(
           response?.message || 'Không thể tải thông tin nhân viên'
@@ -634,7 +635,7 @@ const ProfileContent = (props) => {
       console.error('❌ Lỗi khi tải thông tin nhân viên:', error);
 
       if (error.response?.status === 401) {
-        notify.error('Phiên đăng nhập hết hạn', 'Vui lòng đăng nhập lại!');
+        toast.error('Phiên đăng nhập hết hạn', 'Vui lòng đăng nhập lại!');
       } else {
         // Fallback to localStorage nếu API fail
         const localUser =
@@ -653,12 +654,12 @@ const ProfileContent = (props) => {
           };
           setFormDataUpdate(formData);
           setOriginalData(formData);
-          notify.warning(
+          toast.warning(
             'Dữ liệu offline',
             'Sử dụng dữ liệu đã lưu. Vui lòng kiểm tra kết nối mạng.'
           );
         } else {
-          notify.error('Lỗi', 'Không thể tải thông tin nhân viên!');
+          toast.error('Lỗi', 'Không thể tải thông tin nhân viên!');
         }
       }
     } finally {
@@ -670,7 +671,7 @@ const ProfileContent = (props) => {
    */
   const handleRefreshData = async () => {
     setIsRefreshing(true);
-    notify.info('Đang làm mới', 'Đang tải thông tin từ máy chủ...', {
+    toast.info('Đang làm mới', 'Đang tải thông tin từ máy chủ...', {
       duration: 2000,
     });
     await dispatch(fetchCurrentUser());
@@ -704,14 +705,14 @@ const ProfileContent = (props) => {
 
       // ✅ Validate required fields
       if (!formDataUpdate.fullName.trim()) {
-        notify.warning('Thiếu thông tin', 'Vui lòng nhập họ tên!', {
+        toast.warning('Thiếu thông tin', 'Vui lòng nhập họ tên!', {
           duration: 3000,
         });
         return;
       }
 
       console.log('🔄 Đang lưu thông tin nhân viên:', formDataUpdate);
-      notify.info('Đang xử lý', 'Đang lưu thông tin nhân viên...', {
+      toast.info('Đang xử lý', 'Đang lưu thông tin nhân viên...', {
         duration: 2000,
       });
       const updateData = {
@@ -746,7 +747,7 @@ const ProfileContent = (props) => {
         localStorageUtil.set('user', updatedUser); // Cập nhật cả user chính
 
         setIsEditing(false);
-        notify.success(
+        toast.success(
           'Thành công',
           'Thông tin nhân viên đã được lưu thành công.',
           { duration: 4000 }
@@ -758,7 +759,7 @@ const ProfileContent = (props) => {
       }
     } catch (error) {
       console.error('❌ Lỗi khi cập nhật thông tin:', error);
-      notify.error(
+      toast.error(
         'Lỗi cập nhật',
         error.message || 'Có lỗi xảy ra khi cập nhật thông tin',
         { duration: 5000 }
@@ -774,7 +775,7 @@ const ProfileContent = (props) => {
   const handleCancel = () => {
     setFormDataUpdate({ ...originalData });
     setIsEditing(false);
-    notify.info('Đã hủy', 'Các thay đổi đã được hủy bỏ.', { duration: 2000 });
+    toast.info('Đã hủy', 'Các thay đổi đã được hủy bỏ.', { duration: 2000 });
   };
 
   /**
@@ -812,7 +813,7 @@ const ProfileContent = (props) => {
     try {
       setIsSendingCode(true);
 
-      notify.info('Đang xử lý', 'Đang gửi mã xác nhận đến email mới...', {
+      toast.info('Đang xử lý', 'Đang gửi mã xác nhận đến email mới...', {
         duration: 2000,
       });
 
@@ -839,7 +840,7 @@ const ProfileContent = (props) => {
     try {
       setIsVerifying(true);
 
-      notify.info('Đang xác nhận', 'Đang xác nhận mã và cập nhật email...', {
+      toast.info('Đang xác nhận', 'Đang xác nhận mã và cập nhật email...', {
         duration: 2000,
       });
 
@@ -879,7 +880,7 @@ const ProfileContent = (props) => {
 
         console.log('✅ Email updated successfully:', updatedUser);
 
-        notify.success('Thành công!', 'Email đã được cập nhật thành công!', {
+        toast.success('Thành công!', 'Email đã được cập nhật thành công!', {
           duration: 4000,
         });
 
@@ -906,12 +907,12 @@ const ProfileContent = (props) => {
       const response = await userService.changePassword(passwordData);
 
       if (response && response.success) {
-        notify.success('Thành công', 'Mật khẩu đã được thay đổi thành công.', {
+        toast.success('Thành công', 'Mật khẩu đã được thay đổi thành công.', {
           duration: 3000,
         });
         handleClosePasswordDialog();
       } else {
-        notify.error(
+        toast.error(
           'Lỗi',
           response?.message || 'Không thể thay đổi mật khẩu. Vui lòng thử lại.'
         );
@@ -926,7 +927,7 @@ const ProfileContent = (props) => {
         errorMessage = error.response.data.message;
       }
 
-      notify.error('Lỗi', errorMessage);
+      toast.error('Lỗi', errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -1006,14 +1007,11 @@ const ProfileContent = (props) => {
                   console.error('❌ Không thể cập nhật Redux state:', err);
                 });
 
-              notify.success(
-                'Thành công',
-                'Avatar đã được cập nhật thành công'
-              );
+              toast.success('Thành công', 'Avatar đã được cập nhật thành công');
             }}
             onError={(error) => {
               setAvatarError(error);
-              notify.error('Lỗi', error || 'Không thể cập nhật avatar');
+              toast.error('Lỗi', error || 'Không thể cập nhật avatar');
             }}
             onClose={() => setIsAvatarModalOpen(false)}
           />

@@ -38,6 +38,7 @@ import {
   ListItemIcon,
   ListItemText,
   CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -51,13 +52,13 @@ import {
   Visibility as VisibilityIcon,
   Add as AddIcon,
 } from '@mui/icons-material';
+import { toast } from 'react-toastify';
 import AddUserModal from '../modals/AddUserModal';
 import ViewUserModal from '../modals/ViewUserModal';
 import EditUserModal from '../modals/EditUserModal';
 import { confirmDialog } from '@/utils/confirmDialog';
 import { userService } from '@/services/userService';
 import { adminService } from '@/services/adminService';
-import notify from '@/utils/notification';
 
 const UserManagementContent = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,14 +76,12 @@ const UserManagementContent = () => {
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
-  const [newUserId, setNewUserId] = useState(null); // Add this new state
+  const [newUserId, setNewUserId] = useState(null);
 
-  // ✅ Fetch users từ API khi component mount
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  // ✅ Function để fetch users từ API
   const fetchUsers = async (newUserId = null) => {
     try {
       setLoading(true);
@@ -95,14 +94,10 @@ const UserManagementContent = () => {
       if (response && response.data) {
         let userData = response.data;
 
-        // Nếu có newUserId, sắp xếp lại để người dùng mới lên đầu tiên
         if (newUserId) {
-          // Tìm người dùng mới trong danh sách
           const newUser = userData.find((user) => user.id === newUserId);
           if (newUser) {
-            // Xóa người dùng mới khỏi danh sách
             userData = userData.filter((user) => user.id !== newUserId);
-            // Thêm người dùng mới vào đầu danh sách
             userData = [newUser, ...userData];
           }
         }
@@ -112,14 +107,10 @@ const UserManagementContent = () => {
       } else if (Array.isArray(response)) {
         let userData = response;
 
-        // Nếu có newUserId, sắp xếp lại để người dùng mới lên đầu tiên
         if (newUserId) {
-          // Tìm người dùng mới trong danh sách
           const newUser = userData.find((user) => user.id === newUserId);
           if (newUser) {
-            // Xóa người dùng mới khỏi danh sách
             userData = userData.filter((user) => user.id !== newUserId);
-            // Thêm người dùng mới vào đầu danh sách
             userData = [newUser, ...userData];
           }
         }
@@ -137,7 +128,7 @@ const UserManagementContent = () => {
       setLoading(false);
     }
   };
-  // ✅ Cập nhật userCategories để sử dụng role từ API - đã loại bỏ ADMIN vì chỉ có 1 tài khoản ADMIN duy nhất
+
   const userCategories = [
     {
       label: 'Tất cả',
@@ -165,7 +156,6 @@ const UserManagementContent = () => {
     },
   ];
 
-  // ✅ Cập nhật handleEdit
   const handleEdit = async (userId) => {
     const user = users.find((u) => u.id === userId);
     console.log('🔍 User found for edit:', user);
@@ -188,10 +178,9 @@ const UserManagementContent = () => {
       if (!isConfirmed) return;
     }
 
-    // ✅ Đảm bảo user object có đầy đủ thông tin role
     const userToEdit = {
       ...user,
-      role: user.role || user.Role || '', // Đảm bảo role luôn có giá trị
+      role: user.role || user.Role || '',
     };
 
     console.log('🔍 User to edit prepared:', userToEdit);
@@ -199,13 +188,11 @@ const UserManagementContent = () => {
     setEditingUser(userToEdit);
     setOpenEditModal(true);
   };
-  // * ✅ Thêm handler riêng cho cập nhật thông tin cơ bản
-  //Hàm này chưa gắn API
+
   const handleUpdateBasicInfo = async (formData) => {
     try {
       console.log('🔄 Đang cập nhật thông tin cơ bản:', formData);
 
-      // Gọi API riêng cho thông tin cơ bản
       const response = await userService.updateBasicInfo(formData.id, {
         fullName: formData.fullName,
         username: formData.username,
@@ -213,21 +200,16 @@ const UserManagementContent = () => {
         phone: formData.phone,
       });
 
-      // Cập nhật state local
       setUsers((prevUsers) =>
         prevUsers.map((u) => (u.id === formData.id ? { ...u, ...formData } : u))
       );
 
-      notify.success(
-        'Cập nhật thành công!',
+      toast.success(
         `Đã cập nhật thông tin cơ bản của ${
           formData.fullName || formData.username
         }`
       );
 
-      // Refresh data từ server
-
-      console.log('✅ Cập nhật thông tin cơ bản thành công');
       await fetchUsers();
     } catch (error) {
       console.error('❌ Lỗi khi cập nhật thông tin cơ bản:', error);
@@ -236,17 +218,13 @@ const UserManagementContent = () => {
         error.message ||
         'Có lỗi xảy ra khi cập nhật thông tin cơ bản';
 
-      notify.error('Lỗi cập nhật', errorMessage);
+      toast.error('Lỗi cập nhật', errorMessage);
     }
   };
 
-  /**
-   * ✅ Thêm handler riêng cho cập nhật vai trò & trạng thái
-   */
   const handleUpdateRole = async (formData) => {
     const user = editingUser;
 
-    // Xác nhận thay đổi vai trò
     if (formData.role !== user.role) {
       const isConfirmed = await confirmDialog.warning(
         `Bạn đang thay đổi vai trò từ "${getRoleDisplayName(
@@ -267,13 +245,11 @@ const UserManagementContent = () => {
     try {
       console.log('🔐 Đang cập nhật vai trò & trạng thái:', formData);
 
-      // Gọi API riêng cho vai trò & trạng thái
       const response = await adminService.updateUserStatus(formData.id, {
         role: formData.role,
         isActive: formData.isActive,
       });
 
-      // Cập nhật state local
       setUsers((prevUsers) =>
         prevUsers.map((u) =>
           u.id === formData.id
@@ -282,12 +258,10 @@ const UserManagementContent = () => {
         )
       );
 
-      notify.success(
-        'Cập nhật thành công!',
+      toast.success(
         `Đã cập nhật vai trò & trạng thái của ${user.fullName || user.username}`
       );
 
-      // Refresh data từ server
       await fetchUsers();
 
       console.log('✅ Cập nhật vai trò & trạng thái thành công');
@@ -298,11 +272,10 @@ const UserManagementContent = () => {
         error.message ||
         'Có lỗi xảy ra khi cập nhật vai trò & trạng thái';
 
-      notify.error('Lỗi cập nhật', errorMessage);
+      toast.error('Lỗi cập nhật', errorMessage);
     }
   };
 
-  // ✅ Cập nhật handleDelete
   const handleDelete = async (userId) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return;
@@ -326,7 +299,7 @@ const UserManagementContent = () => {
         }
         if (user.role === 'STAFF') {
           console.log('Đang xóa nhân viên ID:', userId);
-          await adminService.deleteStaff(userId); // ✅ Sửa từ deleteUser thành deleteStaff
+          await adminService.deleteStaff(userId);
         }
         if (user.role === 'CUSTOMER') {
           console.log('Đang xóa khách hàng ID:', userId);
@@ -337,11 +310,9 @@ const UserManagementContent = () => {
           await adminService.deleteAdmin(userId);
         }
 
-        // ✅ Refresh lại danh sách người dùng sau khi xóa thành công
         await fetchUsers();
 
-        notify.success(
-          'Xóa người dùng thành công',
+        toast.success(
           `Đã xóa người dùng "${user.fullName || user.username}" thành công!`
         );
         console.log('Xóa người dùng thành công');
@@ -352,53 +323,43 @@ const UserManagementContent = () => {
           error.message ||
           'Có lỗi xảy ra khi xóa người dùng';
 
-        notify.error('Lỗi xóa người dùng', errorMessage);
+        toast.error('Lỗi xóa người dùng', errorMessage);
       }
     }
   };
 
-  // ✅ Thêm state để quản lý loading consultant details
   const [loadingConsultantDetails, setLoadingConsultantDetails] =
     useState(false);
 
-  // ✅ Cập nhật Function xử lý xem thông tin chi tiết với API call
   const handleViewUser = async (userId) => {
     try {
       setLoadingUserDetails(true);
 
-      // Tìm user trong state để lấy thông tin cơ bản
       const user = users.find((u) => u.id === userId);
       if (!user) {
-        notify.error('Lỗi', 'Không tìm thấy thông tin người dùng');
+        toast.error('Lỗi', 'Không tìm thấy thông tin người dùng');
         return;
       }
 
       console.log('🔍 User từ state:', user);
 
-      // ✅ Hiển thị modal ngay với thông tin cơ bản
       setSelectedUser(user);
       setOpenViewModal(true);
 
-      // ✅ Nếu là Consultant, gọi API để lấy thêm thông tin
       if (user.role === 'CONSULTANT') {
         console.log('📞 Đang gọi API getConsultantDetails cho userId:', userId);
 
-        // Gọi API để lấy consultant profile
         const response = await adminService.getConsultantDetails(userId);
 
         console.log('📋 Raw response từ API:', response);
 
-        // ✅ Extract data từ response structure
         const consultantDetails = response.data || response;
         console.log('📋 Consultant details:', consultantDetails);
 
-        // ✅ Map response từ ConsultantProfileResponse
         const mappedUser = {
-          // Thông tin cơ bản từ user hiện tại
           id: user.id,
           role: user.role,
 
-          // Thông tin chi tiết từ API response
           profileId: consultantDetails.profileId,
           full_name:
             consultantDetails.fullName || user.fullName || user.full_name,
@@ -415,24 +376,19 @@ const UserManagementContent = () => {
                 : user.is_active,
           avatar: consultantDetails.avatar || user.avatar,
 
-          // Thông tin từ state (có thể API không trả về)
           birth_day: user.birth_day,
           created_date: user.created_date,
 
-          // Thông tin chuyên môn từ API
           qualifications: consultantDetails.qualifications,
           experience: consultantDetails.experience,
           bio: consultantDetails.bio,
           updated_at: consultantDetails.updatedAt,
 
-          // Flag để biết đã load thông tin chi tiết
           _hasDetailedInfo: true,
         };
 
         console.log('🔄 Mapped user data:', mappedUser);
         setSelectedUser(mappedUser);
-
-        // notify.success("Thành công", "Đã tải thông tin chi tiết tư vấn viên");
       } else {
         console.log('ℹ️ Không phải consultant, chỉ hiển thị thông tin cơ bản');
       }
@@ -445,9 +401,8 @@ const UserManagementContent = () => {
         error.message ||
         'Có lỗi xảy ra khi tải thông tin người dùng';
 
-      notify.error('Lỗi tải thông tin', errorMessage);
+      toast.error('Lỗi tải thông tin', errorMessage);
 
-      // Fallback: giữ thông tin cơ bản và đánh dấu load failed
       const user = users.find((u) => u.id === userId);
       if (user) {
         setSelectedUser({
@@ -459,7 +414,7 @@ const UserManagementContent = () => {
       setLoadingUserDetails(false);
     }
   };
-  // ✅ Cập nhật handleEditSubmit
+
   const handleEditSubmit = async (formData) => {
     const user = editingUser;
 
@@ -471,7 +426,6 @@ const UserManagementContent = () => {
       isRoleChanged: formData?.role !== user?.role,
     });
 
-    // ✅ Xác nhận thay đổi vai trò nếu có - KIỂM TRA AN TOÀN
     if (formData.role && user.role && formData.role !== user.role) {
       const isConfirmed = await confirmDialog.warning(
         `Bạn đang thay đổi vai trò từ "${getRoleDisplayName(
@@ -492,7 +446,6 @@ const UserManagementContent = () => {
     try {
       console.log('🔄 Đang cập nhật thông tin người dùng:', formData);
 
-      // ✅ Gọi API thống nhất
       const response = await adminService.updateUser(formData.id, user.role, {
         fullName: formData.fullName,
         username: formData.username,
@@ -506,17 +459,14 @@ const UserManagementContent = () => {
         isActive: formData.isActive,
       });
 
-      // Cập nhật state local
       setUsers((prevUsers) =>
         prevUsers.map((u) => (u.id === formData.id ? { ...u, ...formData } : u))
       );
 
-      notify.success(
-        'Cập nhật thành công!',
+      toast.success(
         `Đã cập nhật thông tin của ${formData.fullName || formData.username}`
       );
 
-      // Refresh data từ server
       await fetchUsers();
 
       setOpenEditModal(false);
@@ -530,14 +480,12 @@ const UserManagementContent = () => {
         error.message ||
         'Có lỗi xảy ra khi cập nhật thông tin người dùng';
 
-      notify.error('Lỗi cập nhật', errorMessage);
+      toast.error('Lỗi cập nhật', errorMessage);
     }
   };
 
-  // ✅ Thêm state mới cho loading create user
   const [isCreatingUser, setIsCreatingUser] = useState(false);
 
-  // ✅ Cập nhật handleModalSubmit
   const handleModalSubmit = async (formData, userType) => {
     setIsCreatingUser(true);
 
@@ -548,26 +496,18 @@ const UserManagementContent = () => {
       const result = await adminService.addNewUserAccount(formData);
 
       if (result && result.success) {
-        // Lấy ID của người dùng mới tạo
         const newId = result.data?.id || result.id;
 
-        // Lưu ID người dùng mới để highlight
         setNewUserId(newId);
 
-        // Tự động xóa highlight sau 5 giây
         setTimeout(() => {
           setNewUserId(null);
         }, 5000);
 
-        notify.success(
-          'Tạo thành công!',
-          `Tạo ${getRoleDisplayName(userType)} thành công!`
-        );
+        toast.success(`Tạo ${getRoleDisplayName(userType)} thành công!`);
 
-        // ✅ Refresh data với ID của người dùng mới để đưa lên đầu danh sách
         await fetchUsers(newId);
 
-        // Đóng modal
         setOpenModal(false);
         setModalType('');
 
@@ -580,13 +520,12 @@ const UserManagementContent = () => {
         error.message ||
         'Có lỗi xảy ra khi tạo người dùng';
 
-      notify.error('Lỗi tạo người dùng', errorMessage);
+      toast.error('Lỗi tạo người dùng', errorMessage);
     } finally {
       setIsCreatingUser(false);
     }
   };
 
-  // ✅ Cập nhật getModalTitle
   const getModalTitle = (userType) => {
     switch (userType) {
       case 'ADMIN':
@@ -602,7 +541,6 @@ const UserManagementContent = () => {
     }
   };
 
-  // ✅ Cập nhật getRoleDisplayName
   const getRoleDisplayName = (role) => {
     switch (role) {
       case 'ADMIN':
@@ -623,18 +561,10 @@ const UserManagementContent = () => {
   };
 
   const handleAddNew = () => {
-    // ✅ Bỏ setOpenRoleSelection, mở trực tiếp AddUserModal
-    setModalType('all'); // Set "all" để hiển thị dropdown role
+    setModalType('all');
     setOpenModal(true);
   };
 
-  // ✅ Bỏ handleRoleSelect function vì không cần nữa
-  // const handleRoleSelect = (userType) => {
-  //   setOpenRoleSelection(false);
-  //   setModalType(userType);
-  //   setOpenModal(true);
-  // };
-  // ✅ Cập nhật roleOptions - đã loại bỏ ADMIN
   const roleOptions = [
     {
       value: 'STAFF',
@@ -658,7 +588,7 @@ const UserManagementContent = () => {
       color: '#4A90E2',
     },
   ];
-  // ✅ Cập nhật getFilteredUsers - đã loại bỏ ADMIN
+
   const getFilteredUsers = () => {
     console.log('=== FILTERING USERS ===');
     console.log('Original users count:', users.length);
@@ -667,23 +597,19 @@ const UserManagementContent = () => {
     console.log('Role filter:', roleFilter);
     console.log('Status filter:', statusFilter);
 
-    // Loại bỏ người dùng ADMIN khỏi danh sách hiển thị
     let filtered = users.filter((user) => user.role !== 'ADMIN');
 
-    // Lọc theo tab
     const currentTab = userCategories[selectedTab]?.value;
     if (currentTab && currentTab !== 'all') {
       filtered = filtered.filter((u) => u.role === currentTab);
       console.log('After tab filter:', filtered.length);
     }
 
-    // Lọc theo role filter (chỉ khi ở tab "Tất cả")
     if (currentTab === 'all' && roleFilter !== 'all') {
       filtered = filtered.filter((u) => u.role === roleFilter);
       console.log('After role filter:', filtered.length);
     }
 
-    // Lọc theo status filter
     if (statusFilter !== 'all') {
       if (statusFilter === 'Hoạt động') {
         filtered = filtered.filter((u) => u.isActive === true);
@@ -693,7 +619,6 @@ const UserManagementContent = () => {
       console.log('After status filter:', filtered.length);
     }
 
-    // Lọc theo search term
     if (searchTerm && searchTerm.trim() !== '') {
       const searchLower = searchTerm.toLowerCase().trim();
       filtered = filtered.filter((u) => {
@@ -733,7 +658,6 @@ const UserManagementContent = () => {
     }
   };
 
-  // ✅ Cập nhật getRoleColor
   const getRoleColor = (role) => {
     switch (role) {
       case 'ADMIN':
@@ -751,7 +675,6 @@ const UserManagementContent = () => {
 
   const filteredUsers = getFilteredUsers();
 
-  // ✅ Hiển thị loading khi đang tải
   if (loading) {
     return (
       <Box
@@ -770,7 +693,6 @@ const UserManagementContent = () => {
     );
   }
 
-  // ✅ Hiển thị error khi có lỗi
   if (error) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -795,7 +717,6 @@ const UserManagementContent = () => {
 
   return (
     <Box>
-      {/* Header */}
       <Typography
         variant="h4"
         sx={{
@@ -821,7 +742,6 @@ const UserManagementContent = () => {
         Quản lý tài khoản và phân quyền người dùng trong hệ thống
       </Typography>
 
-      {/* User Category Tabs */}
       <Card
         sx={{
           background: 'rgba(255, 255, 255, 0.95)',
@@ -891,7 +811,6 @@ const UserManagementContent = () => {
           </Typography>
         </Box>
 
-        {/* Search and Filters */}
         <CardContent sx={{ pt: 0, p: 3 }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={6}>
@@ -933,7 +852,6 @@ const UserManagementContent = () => {
               )}
             </Grid>
 
-            {/* Role Filter */}
             {userCategories[selectedTab]?.value === 'all' && (
               <Grid item xs={12} md={3}>
                 <FormControl size="small" fullWidth>
@@ -973,7 +891,7 @@ const UserManagementContent = () => {
           </Grid>
         </CardContent>
       </Card>
-      {/* Results Summary */}
+
       <Box sx={{ mb: 2 }}>
         <Typography variant="body2" sx={{ color: '#4A5568' }}>
           {' '}
@@ -984,7 +902,7 @@ const UserManagementContent = () => {
           {searchTerm && ` (tìm kiếm: "${searchTerm}")`}
         </Typography>
       </Box>
-      {/* Users Table */}
+
       <Card
         sx={{
           background: 'rgba(255, 255, 255, 0.95)',
@@ -1166,7 +1084,6 @@ const UserManagementContent = () => {
                         >
                           <EditIcon sx={{ fontSize: 16 }} />
                         </IconButton>
-                        {/* Delete button removed */}
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -1180,12 +1097,11 @@ const UserManagementContent = () => {
                   </TableCell>
                 </TableRow>
               )}
-            </TableBody>{' '}
+            </TableBody>
           </Table>
         </TableContainer>
       </Card>
 
-      {/* Add User Button */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
         <Button
           variant="contained"
@@ -1211,7 +1127,6 @@ const UserManagementContent = () => {
         </Button>
       </Box>
 
-      {/* Modals */}
       <AddUserModal
         open={openModal}
         onClose={() => setOpenModal(false)}
@@ -1233,7 +1148,7 @@ const UserManagementContent = () => {
           setEditingUser(null);
         }}
         user={editingUser}
-        onSubmit={handleEditSubmit} // ✅ Chỉ còn 1 callback
+        onSubmit={handleEditSubmit}
       />
     </Box>
   );

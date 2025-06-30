@@ -25,7 +25,7 @@
  * - Mỗi appointment có: id, date, time, doctor, status, location
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -45,7 +45,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-} from "@mui/material";
+} from '@mui/material';
 import {
   CalendarToday as CalendarIcon,
   AccessTime as TimeIcon,
@@ -53,32 +53,35 @@ import {
   Cancel as CancelIcon,
   MoreVert as MoreVertIcon,
   Visibility as VisibilityIcon,
-} from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-import { formatDateDisplay } from "../../utils/dateUtils.js";
-import { mockGetMySTITests, mockCancelSTITest } from "../../dataDemo/mockStiData.js";
-import notify from "../../utils/notification";
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+import { formatDateDisplay } from '../../utils/dateUtils.js';
+import {
+  mockGetMySTITests,
+  mockCancelSTITest,
+} from '../../dataDemo/mockStiData.js';
+import { toast } from 'react-toastify';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.95)",
-  backdropFilter: "blur(20px)",
-  borderRadius: "20px",
-  border: "1px solid rgba(74, 144, 226, 0.15)",
-  color: "#2D3748",
-  boxShadow: "0 8px 32px 0 rgba(74, 144, 226, 0.1)",
+  background: 'rgba(255, 255, 255, 0.95)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  border: '1px solid rgba(74, 144, 226, 0.15)',
+  color: '#2D3748',
+  boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.1)',
 }));
 
 const AppointmentCard = styled(Card)(({ theme }) => ({
-  background: "linear-gradient(145deg, #FFFFFF, #F5F7FA)",
-  backdropFilter: "blur(20px)",
-  borderRadius: "16px",
-  border: "1px solid rgba(74, 144, 226, 0.12)",
-  color: "#2D3748",
-  boxShadow: "0 4px 15px 0 rgba(0, 0, 0, 0.05)",
-  transition: "all 0.3s ease",
-  "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: "0 8px 25px 0 rgba(74, 144, 226, 0.2)",
+  background: 'linear-gradient(145deg, #FFFFFF, #F5F7FA)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '16px',
+  border: '1px solid rgba(74, 144, 226, 0.12)',
+  color: '#2D3748',
+  boxShadow: '0 4px 15px 0 rgba(0, 0, 0, 0.05)',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 8px 25px 0 rgba(74, 144, 226, 0.2)',
   },
 }));
 
@@ -99,7 +102,7 @@ const AppointmentsContent = () => {
         setAppointments(response.data);
       }
     } catch (error) {
-      notify.error("Không thể tải danh sách lịch hẹn");
+      toast.error('Không thể tải danh sách lịch hẹn');
     } finally {
       setLoading(false);
     }
@@ -115,12 +118,12 @@ const AppointmentsContent = () => {
     try {
       const response = await mockCancelSTITest(selectedAppointment.testId);
       if (response && response.data) {
-        notify.success("Hủy lịch hẹn thành công");
+        toast.success('Hủy lịch hẹn thành công');
         setOpenCancelDialog(false);
         fetchAppointments();
       }
     } catch (error) {
-      notify.error(error.message || "Không thể hủy lịch hẹn");
+      toast.error(error.message || 'Không thể hủy lịch hẹn');
     }
     handleMenuClose();
   };
@@ -148,36 +151,36 @@ const AppointmentsContent = () => {
 
   const getStatusColor = (status) => {
     switch (status?.toUpperCase()) {
-      case "CONFIRMED":
-        return "linear-gradient(45deg, #4CAF50, #2ECC71)";
-      case "PENDING":
-        return "linear-gradient(45deg, #F39C12, #E67E22)";
-      case "COMPLETED":
-        return "linear-gradient(45deg, #4A90E2, #1ABC9C)";
-      case "CANCELLED":
-        return "linear-gradient(45deg, #E74C3C, #C0392B)";
+      case 'CONFIRMED':
+        return 'linear-gradient(45deg, #4CAF50, #2ECC71)';
+      case 'PENDING':
+        return 'linear-gradient(45deg, #F39C12, #E67E22)';
+      case 'COMPLETED':
+        return 'linear-gradient(45deg, #4A90E2, #1ABC9C)';
+      case 'CANCELLED':
+        return 'linear-gradient(45deg, #E74C3C, #C0392B)';
       default:
-        return "linear-gradient(45deg, #607D8B, #455A64)";
+        return 'linear-gradient(45deg, #607D8B, #455A64)';
     }
   };
 
   const getStatusText = (status) => {
     switch (status?.toUpperCase()) {
-      case "CONFIRMED":
-        return "Đã xác nhận";
-      case "PENDING":
-        return "Chờ xác nhận";
-      case "COMPLETED":
-        return "Đã hoàn thành";
-      case "CANCELLED":
-        return "Đã hủy";
+      case 'CONFIRMED':
+        return 'Đã xác nhận';
+      case 'PENDING':
+        return 'Chờ xác nhận';
+      case 'COMPLETED':
+        return 'Đã hoàn thành';
+      case 'CANCELLED':
+        return 'Đã hủy';
       default:
-        return "Không xác định";
+        return 'Không xác định';
     }
   };
 
   return (
-    <Box sx={{ maxWidth: "1200px", mx: "auto" }}>
+    <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
       {/* Header */}
       <StyledPaper sx={{ p: 4, mb: 4 }}>
         <Typography
@@ -185,21 +188,21 @@ const AppointmentsContent = () => {
           sx={{
             mb: 2,
             fontWeight: 700,
-            color: "#2D3748", // Dark text for readability
-            display: "flex",
-            alignItems: "center",
-            fontSize: { xs: "1.5rem", md: "2rem" },
+            color: '#2D3748', // Dark text for readability
+            display: 'flex',
+            alignItems: 'center',
+            fontSize: { xs: '1.5rem', md: '2rem' },
           }}
         >
-          <CalendarIcon sx={{ mr: 2, color: "#4A90E2", fontSize: 32 }} />{" "}
+          <CalendarIcon sx={{ mr: 2, color: '#4A90E2', fontSize: 32 }} />{' '}
           {/* Medical blue */}
           Lịch hẹn của tôi
         </Typography>
         <Typography
           variant="body1"
           sx={{
-            color: "#4A5568", // Dark blue-gray for text
-            fontSize: "16px",
+            color: '#4A5568', // Dark blue-gray for text
+            fontSize: '16px',
           }}
         >
           Quản lý và theo dõi các cuộc hẹn xét nghiệm của bạn
@@ -222,9 +225,9 @@ const AppointmentsContent = () => {
                 {/* Status Badge */}
                 <Box
                   sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
                     mb: 2,
                   }}
                 >
@@ -232,32 +235,36 @@ const AppointmentsContent = () => {
                     variant="h6"
                     sx={{
                       fontWeight: 600,
-                      color: "#2D3748",
-                      fontSize: "18px",
+                      color: '#2D3748',
+                      fontSize: '18px',
                     }}
                   >
                     {appointment.serviceName}
                   </Typography>
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Chip
                       label={getStatusText(appointment.status)}
                       size="small"
                       sx={{
                         background: getStatusColor(appointment.status),
-                        color: "#fff",
+                        color: '#fff',
                         fontWeight: 500,
-                        fontSize: "11px",
+                        fontSize: '11px',
                         mr: 1,
                       }}
                     />
                     <IconButton
                       aria-label="more"
-                      aria-controls={openMenuId === appointment.testId ? `long-menu-${appointment.testId}` : undefined}
+                      aria-controls={
+                        openMenuId === appointment.testId
+                          ? `long-menu-${appointment.testId}`
+                          : undefined
+                      }
                       aria-haspopup="true"
                       onClick={(event) => handleMenuClick(event, appointment)}
                       size="small"
                       sx={{
-                        color: "#718096",
+                        color: '#718096',
                         p: 0.5,
                       }}
                     >
@@ -280,23 +287,23 @@ const AppointmentsContent = () => {
                         },
                       }}
                     >
-                      <MenuItem
-                        onClick={handleOpenDetailDialog}
-                      >
+                      <MenuItem onClick={handleOpenDetailDialog}>
                         <ListItemIcon>
                           <VisibilityIcon fontSize="small" />
                         </ListItemIcon>
                         <ListItemText>Xem chi tiết</ListItemText>
                       </MenuItem>
 
-                      {appointment.status === "PENDING" && (
+                      {appointment.status === 'PENDING' && (
                         <MenuItem
                           onClick={() => {
                             setOpenCancelDialog(true);
                           }}
-                          sx={{ color: theme => theme.palette.error.main }}
+                          sx={{ color: (theme) => theme.palette.error.main }}
                         >
-                          <ListItemIcon sx={{ color: theme => theme.palette.error.main }}>
+                          <ListItemIcon
+                            sx={{ color: (theme) => theme.palette.error.main }}
+                          >
                             <CancelIcon fontSize="small" />
                           </ListItemIcon>
                           <ListItemText>Hủy lịch hẹn</ListItemText>
@@ -307,13 +314,13 @@ const AppointmentsContent = () => {
                 </Box>
 
                 {/* Doctor Info */}
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <DoctorIcon sx={{ color: "#4A90E2", fontSize: 18, mr: 1 }} />{" "}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <DoctorIcon sx={{ color: '#4A90E2', fontSize: 18, mr: 1 }} />{' '}
                   {/* Medical green */}
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#4A5568", // Dark blue-gray for text
+                      color: '#4A5568', // Dark blue-gray for text
                       fontWeight: 500,
                     }}
                   >
@@ -322,14 +329,14 @@ const AppointmentsContent = () => {
                 </Box>
 
                 {/* Date & Time */}
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <CalendarIcon
-                    sx={{ color: "#4CAF50", fontSize: 18, mr: 1 }}
+                    sx={{ color: '#4CAF50', fontSize: 18, mr: 1 }}
                   />
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#4A5568", // Dark blue-gray for text
+                      color: '#4A5568', // Dark blue-gray for text
                       fontWeight: 500,
                     }}
                   >
@@ -337,13 +344,13 @@ const AppointmentsContent = () => {
                   </Typography>
                 </Box>
 
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <TimeIcon sx={{ color: "#F39C12", fontSize: 18, mr: 1 }} />{" "}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <TimeIcon sx={{ color: '#F39C12', fontSize: 18, mr: 1 }} />{' '}
                   {/* Medical orange */}
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#4A5568", // Dark blue-gray for text
+                      color: '#4A5568', // Dark blue-gray for text
                       fontWeight: 500,
                     }}
                   >
@@ -352,11 +359,11 @@ const AppointmentsContent = () => {
                 </Box>
 
                 {/* Price */}
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#4A5568",
+                      color: '#4A5568',
                       fontWeight: 500,
                     }}
                   >
@@ -365,11 +372,11 @@ const AppointmentsContent = () => {
                 </Box>
 
                 {/* Payment Method */}
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#4A5568",
+                      color: '#4A5568',
                       fontWeight: 500,
                     }}
                   >
@@ -379,12 +386,14 @@ const AppointmentsContent = () => {
 
                 {/* Notes */}
                 {appointment.notes && (
-                  <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}
+                  >
                     <Typography
                       variant="body2"
                       sx={{
-                        color: "#4A5568",
-                        fontStyle: "italic",
+                        color: '#4A5568',
+                        fontStyle: 'italic',
                       }}
                     >
                       Ghi chú: {appointment.notes}
@@ -399,14 +408,14 @@ const AppointmentsContent = () => {
 
       {/* Empty State */}
       {!loading && appointments.length === 0 && (
-        <StyledPaper sx={{ p: 6, textAlign: "center" }}>
+        <StyledPaper sx={{ p: 6, textAlign: 'center' }}>
           <CalendarIcon
-            sx={{ fontSize: 64, color: "rgba(74, 144, 226, 0.3)", mb: 2 }} // Light medical blue
+            sx={{ fontSize: 64, color: 'rgba(74, 144, 226, 0.3)', mb: 2 }} // Light medical blue
           />
           <Typography
             variant="h5"
             sx={{
-              color: "#2D3748", // Dark text for readability
+              color: '#2D3748', // Dark text for readability
               fontWeight: 600,
               mb: 1,
             }}
@@ -416,7 +425,7 @@ const AppointmentsContent = () => {
           <Typography
             variant="body1"
             sx={{
-              color: "#4A5568", // Dark blue-gray for text
+              color: '#4A5568', // Dark blue-gray for text
             }}
           >
             Hãy đặt lịch hẹn đầu tiên của bạn
@@ -434,7 +443,8 @@ const AppointmentsContent = () => {
         <DialogTitle>Xác nhận hủy lịch hẹn</DialogTitle>
         <DialogContent>
           <Typography>
-            Bạn có chắc chắn muốn hủy lịch hẹn này không? Hành động này không thể hoàn tác.
+            Bạn có chắc chắn muốn hủy lịch hẹn này không? Hành động này không
+            thể hoàn tác.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -470,25 +480,35 @@ const AppointmentsContent = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  <CalendarIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  <CalendarIcon
+                    fontSize="small"
+                    sx={{ verticalAlign: 'middle', mr: 1 }}
+                  />
                   Ngày: {formatDateDisplay(selectedAppointment.appointmentDate)}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  <TimeIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  <TimeIcon
+                    fontSize="small"
+                    sx={{ verticalAlign: 'middle', mr: 1 }}
+                  />
                   Giờ: {selectedAppointment.appointmentTime}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  <DoctorIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
-                  Bác sĩ: {selectedAppointment.doctorName || "Chưa chỉ định"}
+                  <DoctorIcon
+                    fontSize="small"
+                    sx={{ verticalAlign: 'middle', mr: 1 }}
+                  />
+                  Bác sĩ: {selectedAppointment.doctorName || 'Chưa chỉ định'}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  Giá: {(selectedAppointment.price || 0).toLocaleString('vi-VN')} đ
+                  Giá:{' '}
+                  {(selectedAppointment.price || 0).toLocaleString('vi-VN')} đ
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -498,13 +518,15 @@ const AppointmentsContent = () => {
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  Ghi chú của khách hàng: {selectedAppointment.notes || "Không có"}
+                  Ghi chú của khách hàng:{' '}
+                  {selectedAppointment.notes || 'Không có'}
                 </Typography>
               </Grid>
               {selectedAppointment.consultantNotes && (
                 <Grid item xs={12}>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    Ghi chú của tư vấn viên: {selectedAppointment.consultantNotes}
+                    Ghi chú của tư vấn viên:{' '}
+                    {selectedAppointment.consultantNotes}
                   </Typography>
                 </Grid>
               )}

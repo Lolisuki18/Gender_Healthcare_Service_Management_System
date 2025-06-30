@@ -11,7 +11,6 @@ import { styled } from "@mui/material/styles";
 import { useDispatch, useSelector } from "react-redux";
 import { uploadUserAvatar } from "@/redux/thunks/userThunks";
 import { selectAvatar } from "@/redux/slices/authSlice";
-import { notify } from "@/utils/notification";
 import localStorageUtil from "@/utils/localStorage";
 import imageUrl from "@/utils/imageUrl";
 

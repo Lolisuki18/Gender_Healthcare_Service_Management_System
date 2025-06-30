@@ -21,7 +21,6 @@ import {
   InputLabel,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import notify from "@/utils/notification";
 import { Link } from "react-router-dom";
 
 // --- ICONS ---

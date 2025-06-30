@@ -15,7 +15,6 @@ import {
   updateUserAvatar,
   updateUserProfile,
 } from "@/redux/slices/authSlice";
-import { notify } from "@/utils/notification";
 import localStorageUtil from "@/utils/localStorage";
 import {
   extractAvatarFromResponse,

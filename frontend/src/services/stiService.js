@@ -425,109 +425,52 @@ export const addTestResults = async (testId, resultsData) => {
 };
 
 // Complete a test (Staff only)
-export const completeTest = async (testId) => {
+export const completeTest = async (testId, resultsData) => {
   try {
-    console.group('Complete test API call');
-    console.log('Completing test ID:', testId);
+    console.group('Complete Test Process');
+    console.log(`Starting completion process for test ID: ${testId}`);
 
-    // Handle case where testId might not be a number
-    if (typeof testId === 'string') {
-      testId = parseInt(testId, 10);
-      console.log('Converted testId to number:', testId);
-    }
-
-    // Check token status before making request
-    const tokenStr = localStorage.getItem('token');
-    if (!tokenStr) {
-      console.warn('No token found in localStorage');
-    }
-
-    try {
-      // First try with standard endpoint
-      const response = await apiClient.put(
-        `${API_URL}/staff/tests/${testId}/complete`
+    // Step 1: If result data is provided, save it first.
+    // This ensures the test status is 'RESULTED', which is required to move to 'COMPLETED'.
+    if (resultsData && resultsData.results && resultsData.results.length > 0) {
+      console.log('New result data found. Saving results before completing...');
+      try {
+        await addTestResults(testId, {
+          status: 'RESULTED', // This status is for the save operation
+          results: resultsData.results,
+          serviceId: resultsData.serviceId, // Pass serviceId for package tests
+        });
+        console.log(`Results for test ID ${testId} saved successfully.`);
+      } catch (saveError) {
+        console.error('Failed to save results before completing:', saveError);
+        console.groupEnd();
+        // If saving fails, we must stop the process.
+        throw saveError;
+      }
+    } else {
+      console.log(
+        'No new result data provided. Proceeding directly to completion check.'
       );
-      console.log('Complete test success response:', response.data);
-      console.groupEnd();
-
-      // Process API response
-      if (response && response.data) {
-        // If the API returned data with a status field, and it's not SUCCESS,
-        // consider it an error to handle properly in the UI
-        if (response.data.status && response.data.status !== 'SUCCESS') {
-          const errorMessage =
-            response.data.message || 'Failed to complete test';
-          console.error('API returned an error status:', errorMessage);
-          throw new Error(errorMessage);
-        }
-
-        // Otherwise return the data for processing
-        return response.data;
-      } else {
-        console.warn('API returned empty response');
-        return { success: true, data: { testId, status: 'COMPLETED' } };
-      }
-    } catch (apiError) {
-      // Log detailed error info for debugging
-      console.error('API error when completing test:', apiError);
-      if (apiError.response) {
-        console.error('Error status:', apiError.response.status);
-        console.error('Error data:', apiError.response.data);
-
-        // If we got a successful response but with an error status inside the data
-        if (apiError.response.status === 200 && apiError.response.data) {
-          return apiError.response.data; // Let the UI handle this
-        }
-
-        // If it's a 400 Bad Request, try an alternative approach
-        if (apiError.response.status === 400) {
-          console.log('Trying alternative approach to complete test...');
-          // Try updating status directly as alternative
-          try {
-            const altResponse = await apiClient.put(
-              `${API_URL}/staff/tests/${testId}/result`,
-              { status: 'COMPLETED' }
-            );
-            console.log(
-              'Alternative complete method succeeded:',
-              altResponse.data
-            );
-            console.groupEnd();
-            return altResponse.data;
-          } catch (altError) {
-            console.error('Alternative approach also failed:', altError);
-
-            // If we at least get a 200 OK response, use that
-            if (altError.response && altError.response.status === 200) {
-              return altError.response.data;
-            }
-
-            throw altError.response?.data || altError;
-          }
-        }
-      }
-
-      // If the error has a data property with testId and status, it might be
-      // that the API worked but returned data in an unexpected format
-      if (
-        apiError.response &&
-        apiError.response.data &&
-        apiError.response.data.testId &&
-        apiError.response.data.status === 'COMPLETED'
-      ) {
-        console.log(
-          'API returned data in error response, using it anyway:',
-          apiError.response.data
-        );
-        return { success: true, data: apiError.response.data };
-      }
-
-      throw apiError.response?.data || apiError;
     }
-  } catch (error) {
-    console.error('Error in completeTest function:', error);
+
+    // Step 2: Call the dedicated endpoint to mark the test as 'COMPLETED'.
+    // This endpoint will transition the status from 'RESULTED' to 'COMPLETED'.
+    console.log(`Sending request to mark test ID ${testId} as COMPLETED.`);
+    const response = await apiClient.put(
+      `${API_URL}/staff/tests/${testId}/complete`
+    );
+
+    console.log('Test completed successfully. API Response:', response.data);
     console.groupEnd();
-    throw error;
+    return response.data;
+  } catch (error) {
+    console.error(`Error during completeTest for test ID ${testId}:`, error);
+    if (error.response) {
+      console.error('API Error Status:', error.response.status);
+      console.error('API Error Data:', error.response.data);
+    }
+    console.groupEnd();
+    throw error.response?.data || error;
   }
 };
 
@@ -565,6 +508,11 @@ export const getTestPDF = async (testId) => {
 export const getTestResultsByTestId = async (testId) => {
   try {
     const response = await apiClient.get(`${API_URL}/tests/${testId}/results`);
+    // API now returns a wrapper object, so we extract the data array
+    if (response.data && response.data.success) {
+      return response.data.data;
+    }
+    // Fallback for old format or if 'success' is not true
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -802,6 +750,43 @@ export const getPackageTestDetails = async (packageId) => {
   }
 };
 
+// Save partial test results (Staff only) - không đổi trạng thái test
+export const savePartialTestResults = async (testId, resultData) => {
+  try {
+    console.log(
+      'Saving partial results for test ID:',
+      testId,
+      'Data:',
+      resultData
+    );
+    // The endpoint should not contain the status, as we are not changing it
+    const response = await apiClient.put(
+      `${API_URL}/staff/tests/${testId}/save-partial-results`,
+      resultData.results // Send only the array of results
+    );
+    console.log('Partial results save response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error saving partial results:', error);
+    throw error.response?.data || error.message;
+  }
+};
+
+// Hàm mới để cập nhật kết quả cho một xét nghiệm đã có kết quả (RESULTED)
+export const updateTestResults = async (testId, resultsData) => {
+  try {
+    // API này chỉ nhận một mảng các kết quả, không phải object bao ngoài
+    const response = await apiClient.put(
+      `${API_URL}/staff/tests/${testId}/update-results`,
+      resultsData.results // Chỉ gửi mảng results
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error updating test results:', error);
+    throw error.response?.data || error.message;
+  }
+};
+
 // Export as a default object with all functions
 const stiService = {
   createSTIService,
@@ -830,6 +815,8 @@ const stiService = {
   deleteSTIPackage,
   getPackageTestDetails,
   getActiveSTIServices,
+  savePartialTestResults,
+  updateTestResults,
 
   // New function to get services within a package
   getServicesInPackage: async (packageId) => {

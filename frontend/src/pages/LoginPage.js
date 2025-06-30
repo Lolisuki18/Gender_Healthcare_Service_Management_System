@@ -25,7 +25,6 @@ import LoginIcon from "@mui/icons-material/Login";
 import { userService } from "@/services/userService";
 import localStorageUtil from "@/utils/localStorage";
 import { Link, useNavigate } from "react-router-dom";
-import notify from "@/utils/notification";
 
 import LoggedInView from "@/components/common/LoggedInView";
 import { logout } from "@/redux/slices/authSlice";

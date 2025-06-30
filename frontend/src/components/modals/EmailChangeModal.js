@@ -40,7 +40,6 @@ import {
   Timer as TimerIcon,
   Save as SaveIcon,
 } from "@mui/icons-material";
-import { notify } from "@/utils/notification";
 
 // ✅ Email Change Dialog Component with Steps
 export const EmailChangeDialog = ({

@@ -58,7 +58,7 @@ import { formatDateDisplay } from '../../utils/dateUtils.js';
 // Import stiService for API calls
 import stiService from '../../services/stiService.js';
 // Import notification system
-import notify from '../../utils/notification.js';
+import { toast } from 'react-toastify';
 
 // Styled Paper Component với hiệu ứng glass morphism hiện đại
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -159,7 +159,7 @@ const MedicalHistoryContent = () => {
       .catch((err) => {
         console.error('Error fetching STI tests:', err);
         setError('Không thể tải dữ liệu xét nghiệm STI. Vui lòng thử lại sau.');
-        notify.error('Lỗi', 'Không thể tải dữ liệu xét nghiệm STI.');
+        toast.error('Lỗi', 'Không thể tải dữ liệu xét nghiệm STI.');
         setStiTests([]);
       })
       .finally(() => {
@@ -250,7 +250,7 @@ const MedicalHistoryContent = () => {
   const handleViewTestResults = (testId) => {
     if (!testId) {
       console.warn('Attempted to view test results with null testId');
-      notify.warning(
+      toast.warning(
         'Không thể xem kết quả',
         'Không tìm thấy mã xét nghiệm hợp lệ.'
       );
@@ -260,7 +260,7 @@ const MedicalHistoryContent = () => {
     console.log(`Viewing test results for testId: ${testId}`);
 
     setSelectedTestId(testId);
-    notify.info('Đang tải kết quả', 'Đang tải dữ liệu kết quả xét nghiệm...', {
+    toast.info('Đang tải kết quả', 'Đang tải dữ liệu kết quả xét nghiệm...', {
       duration: 3000,
     });
   };
@@ -960,7 +960,7 @@ const MedicalHistoryContent = () => {
                     if (medicalRecords[0]?.hasTestResults) {
                       handleViewTestResults(medicalRecords[0].testId);
                     } else {
-                      notify.warning(
+                      toast.warning(
                         'Chưa có kết quả',
                         'Xét nghiệm gần nhất chưa có kết quả'
                       );

@@ -27,7 +27,7 @@ import {
   PhoneChangeDialog,
 } from '../modals';
 import localStorageUtil from '@/utils/localStorage';
-import notify from '@/utils/notification';
+import { toast } from 'react-toastify';
 import { userService } from '@/services/userService';
 
 // Component quản lý bảo mật: email, sđt, mật khẩu
@@ -63,7 +63,7 @@ const SecurityContent = () => {
     try {
       setIsSendingCode(true);
 
-      notify.info('Đang xử lý', 'Đang gửi mã xác nhận đến email mới...', {
+      toast.info('Đang xử lý', 'Đang gửi mã xác nhận đến email mới...', {
         duration: 2000,
       });
 
@@ -89,7 +89,7 @@ const SecurityContent = () => {
     try {
       setIsVerifying(true);
 
-      notify.info('Đang xác nhận', 'Đang xác nhận mã và cập nhật email...', {
+      toast.info('Đang xác nhận', 'Đang xác nhận mã và cập nhật email...', {
         duration: 2000,
       });
 
@@ -140,7 +140,7 @@ const SecurityContent = () => {
           );
         }
 
-        notify.success('Thành công!', 'Email đã được cập nhật thành công!', {
+        toast.success('Thành công!', 'Email đã được cập nhật thành công!', {
           duration: 4000,
         });
 
@@ -163,7 +163,7 @@ const SecurityContent = () => {
     try {
       setIsSendingCode(true);
 
-      notify.info(
+      toast.info(
         'Đang xử lý',
         'Đang gửi mã xác nhận đến số điện thoại mới...',
         {
@@ -194,7 +194,7 @@ const SecurityContent = () => {
     try {
       setIsVerifying(true);
 
-      notify.info(
+      toast.info(
         'Đang xác nhận',
         'Đang xác nhận mã và cập nhật số điện thoại...',
         {
@@ -243,7 +243,7 @@ const SecurityContent = () => {
           );
         }
 
-        notify.success(
+        toast.success(
           'Thành công!',
           'Số điện thoại đã được cập nhật thành công!',
           {
@@ -270,7 +270,7 @@ const SecurityContent = () => {
     try {
       setIsChangingPassword(true);
 
-      notify.info('Đang xử lý', 'Đang đổi mật khẩu...', { duration: 2000 });
+      toast.info('Đang xử lý', 'Đang đổi mật khẩu...', { duration: 2000 });
 
       const response = await userService.changePassword(passwordData);
 
@@ -309,7 +309,7 @@ const SecurityContent = () => {
           }
         }
 
-        notify.success(
+        toast.success(
           'Đổi mật khẩu thành công!',
           'Mật khẩu của bạn đã được thay đổi thành công.',
           { duration: 4000 }
@@ -325,7 +325,7 @@ const SecurityContent = () => {
         error.message ||
         'Có lỗi xảy ra khi đổi mật khẩu!';
 
-      notify.error('Lỗi đổi mật khẩu', errorMessage, { duration: 5000 });
+      toast.error('Lỗi đổi mật khẩu', errorMessage, { duration: 5000 });
     } finally {
       setIsChangingPassword(false);
     }
@@ -339,7 +339,7 @@ const SecurityContent = () => {
 
     if (isSuccess) {
       console.log('✅ Email updated successfully, modal closed');
-      notify.success('Hoàn tất', 'Thông tin email đã được cập nhật!', {
+      toast.success('Hoàn tất', 'Thông tin email đã được cập nhật!', {
         duration: 3000,
       });
     }

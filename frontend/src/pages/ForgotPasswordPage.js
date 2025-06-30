@@ -1,5 +1,4 @@
 import { userService } from "@/services/userService";
-import notify from "@/utils/notification";
 import React, { useState } from "react";
 import useAuthCheck from "@/hooks/useAuthCheck";
 import LoggedInView from "@/components/common/LoggedInView";

@@ -40,6 +40,7 @@ import {
   getStaffTests,
   confirmTest,
   addTestResults,
+  updateTestResults,
   sampleTest,
   completeTest,
   getPendingTests,
@@ -47,6 +48,9 @@ import {
   getPackageTestDetails,
   cancelSTITest,
   getTestResultsByTestId,
+  getSTIServiceById,
+  getSTIPackageById,
+  savePartialTestResults,
 } from '../../services/stiService';
 import { formatDateDisplay } from '../../utils/dateUtils';
 
@@ -61,10 +65,10 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import CancelIcon from '@mui/icons-material/Cancel';
 // PDF icon removed
 
-// Import the modal components
-import SingleTestResultModal from './modals/SingleTestResultModal';
-import PackageManagementModal from './modals/PackageManagementModal';
-import TestInPackageModal from './modals/TestInPackageModal';
+// Import Modals
+import SampleCollectionModal from './modals/SampleCollectionModal';
+import TestResultInputModal from './modals/TestResultInputModal';
+import FinalTestResultModal from './modals/FinalTestResultModal';
 
 // TabPanel component for tab content
 function TabPanel(props) {
@@ -137,7 +141,35 @@ const STITestManagementContent = () => {
   const [openSingleModal, setOpenSingleModal] = useState(false);
   const [openPackageModal, setOpenPackageModal] = useState(false);
   const [openTestInPackageModal, setOpenTestInPackageModal] = useState(false);
-  const [selectedTestComponent, setSelectedTestComponent] = useState(null); // Fetch tests based on the active tab
+  const [openSampleModal, setOpenSampleModal] = useState(false);
+  const [openComponentModal, setOpenComponentModal] = useState(false);
+  const [serviceComponents, setServiceComponents] = useState([]);
+  const [serviceInfo, setServiceInfo] = useState(null);
+  const [selectedTestComponent, setSelectedTestComponent] = useState(null);
+  const [isPackageModal, setIsPackageModal] = useState(false);
+  const [packageServices, setPackageServices] = useState([]); // List of services in package
+  const [selectedService, setSelectedService] = useState(null);
+  const [loadingService, setLoadingService] = useState(false); // Fetch tests based on the active tab
+  const [allServiceComponents, setAllServiceComponents] = useState({});
+
+  // State cho modal nhập kết quả
+  const [openResultModal, setOpenResultModal] = useState(false);
+  const [resultModalComponents, setResultModalComponents] = useState([]);
+  const [resultModalTest, setResultModalTest] = useState(null);
+  const [resultModalLoading, setResultModalLoading] = useState(false);
+  const [resultModalError, setResultModalError] = useState(null);
+  const [resultModalSuccess, setResultModalSuccess] = useState(null);
+  const [resultModalIsPackage, setResultModalIsPackage] = useState(false);
+  const [resultModalPackageServices, setResultModalPackageServices] = useState(
+    []
+  );
+  const [resultModalSelectedService, setResultModalSelectedService] =
+    useState(null);
+  const [resultModalAllServiceComponents, setResultModalAllServiceComponents] =
+    useState({});
+
+  const [openFinalResultModal, setOpenFinalResultModal] = useState(false);
+
   const fetchTests = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -434,6 +466,101 @@ const STITestManagementContent = () => {
     setSelectedTest(packageTest);
     setSelectedTestComponent(testComponent);
     setOpenTestInPackageModal(true);
+  };
+
+  // Handler mở modal lấy mẫu
+  const handleOpenSampleModal = async (test) => {
+    setSelectedTest(test);
+    setAllServiceComponents({});
+    // Nếu là package
+    if (test.packageId) {
+      setLoadingService(true);
+      try {
+        const res = await getSTIPackageById(test.packageId);
+        if (res && res.data && Array.isArray(res.data.services)) {
+          setIsPackageModal(true);
+          setPackageServices(res.data.services);
+          // Tải trước toàn bộ components cho các service trong package
+          const serviceList = res.data.services;
+          const promises = serviceList.map((svc) => getSTIServiceById(svc.id));
+          const results = await Promise.all(promises);
+          const componentsMap = {};
+          results.forEach((result, idx) => {
+            const svcId = serviceList[idx].id;
+            if (
+              result &&
+              result.data &&
+              Array.isArray(result.data.components)
+            ) {
+              componentsMap[svcId] = result.data.components;
+            } else if (result && Array.isArray(result.components)) {
+              componentsMap[svcId] = result.components;
+            } else {
+              componentsMap[svcId] = [];
+            }
+          });
+          setAllServiceComponents(componentsMap);
+          setOpenComponentModal(true);
+          setSelectedService(null);
+        }
+      } catch (err) {
+        setError(
+          'Không thể lấy thông tin gói dịch vụ: ' +
+            (err.message || 'Lỗi không xác định')
+        );
+        setTimeout(() => setError(null), 3000);
+      } finally {
+        setLoadingService(false);
+      }
+    } else if (!test.packageId && test.serviceId) {
+      // Nếu là service đơn lẻ
+      try {
+        setLoadingService(true);
+        const res = await getSTIServiceById(test.serviceId);
+        if (res && res.data && Array.isArray(res.data.components)) {
+          setServiceComponents(res.data.components);
+          setServiceInfo(res.data);
+          setIsPackageModal(false);
+          setOpenComponentModal(true);
+        }
+      } catch (err) {
+        setError(
+          'Không thể lấy thông tin service: ' +
+            (err.message || 'Lỗi không xác định')
+        );
+        setTimeout(() => setError(null), 3000);
+      } finally {
+        setLoadingService(false);
+      }
+    } else {
+      setOpenSampleModal(true);
+    }
+  };
+
+  // Khi chọn 1 service trong package, load component của service đó bằng API
+  const handleSelectServiceInPackage = (svc) => {
+    setSelectedService(svc);
+    if (svc && svc.id && allServiceComponents[svc.id]) {
+      setServiceComponents(allServiceComponents[svc.id]);
+    } else {
+      setServiceComponents([]);
+    }
+    // Không cần loadingService nữa khi chuyển service trong package
+  };
+
+  // Callback khi xác nhận lấy mẫu xong
+  const handleSampleCollected = async (testId) => {
+    // Gọi API chuyển trạng thái sang SAMPLED
+    const result = await handleSampleTestAction(testId);
+    if (result) {
+      setOpenSampleModal(false);
+      setSuccess('Đã cập nhật trạng thái lấy mẫu thành công!');
+      fetchTests();
+      return { success: true };
+    } else {
+      setError('Không thể cập nhật trạng thái lấy mẫu');
+      return { success: false };
+    }
   };
 
   // Test status update handlers
@@ -996,77 +1123,22 @@ const STITestManagementContent = () => {
         );
       case 'CONFIRMED':
         return (
-          <>
-            <Tooltip title="Lấy mẫu">
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<BiotechIcon />}
-                onClick={async () => {
-                  // Lưu ID để cập nhật UI ngay lập tức
-                  const testIdToUpdate = test.testId;
-
-                  // Cập nhật UI ngay lập tức (optimistic update)
-                  const optimisticUpdatedTests = tests.map((t) =>
-                    t.testId === testIdToUpdate
-                      ? { ...t, status: 'SAMPLED' }
-                      : t
-                  );
-                  setTests(optimisticUpdatedTests);
-
-                  // Cập nhật filteredTests dựa theo tab hiện tại
-                  if (tabValue === 2) {
-                    // Nếu đang ở tab "Đã xác nhận"
-                    const newFilteredTests = filteredTests.filter(
-                      (t) => t.testId !== testIdToUpdate
-                    );
-                    setFilteredTests(newFilteredTests);
-                  }
-
-                  // Hiển thị thông báo thành công
-                  setSuccess(
-                    `Đang cập nhật trạng thái lấy mẫu cho xét nghiệm #${testIdToUpdate}...`
-                  );
-
-                  // Gọi API để cập nhật trên server
-                  const success = await handleSampleTestAction(testIdToUpdate);
-
-                  // Nếu thành công, cập nhật lại dữ liệu từ server
-                  if (success) {
-                    setTimeout(() => fetchTests(), 500);
-                  } else {
-                    // Nếu thất bại, hoàn tác UI về trạng thái cũ
-                    const revertedTests = tests.map((t) =>
-                      t.testId === testIdToUpdate
-                        ? { ...t, status: 'CONFIRMED' }
-                        : t
-                    );
-                    setTests(revertedTests);
-                    fetchTests();
-                  }
-                }}
-                sx={{
-                  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                  color: '#fff',
-                  fontWeight: 600,
-                  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-                }}
-              >
-                Lấy mẫu
-              </Button>
-            </Tooltip>
-            <Tooltip title="Hủy xét nghiệm">
-              <Button
-                variant="outlined"
-                size="small"
-                color="error"
-                startIcon={<CancelIcon />}
-                onClick={() => handleCancelTestAction(test.testId)}
-              >
-                Hủy
-              </Button>
-            </Tooltip>
-          </>
+          <Tooltip title="Lấy mẫu">
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<BiotechIcon />}
+              onClick={() => handleOpenSampleModal(test)}
+              sx={{
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                color: '#fff',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+              }}
+            >
+              Lấy mẫu
+            </Button>
+          </Tooltip>
         );
       case 'SAMPLED':
         return (
@@ -1075,21 +1147,7 @@ const STITestManagementContent = () => {
               variant="contained"
               size="small"
               startIcon={<ScienceIcon />}
-              onClick={() => {
-                // Lưu ID để cập nhật UI ngay lập tức
-                const testIdToUpdate = test.testId;
-
-                // Trước khi mở modal, hiển thị thông báo đang xử lý
-                setSuccess(
-                  `Đang mở form nhập kết quả cho xét nghiệm #${testIdToUpdate}...`
-                );
-
-                // Mở modal nhập kết quả
-                handleOpenTestModal(test);
-
-                // Không cần optimistic update ở đây vì việc nhập kết quả
-                // sẽ được xử lý trong modal, và cập nhật UI sau khi đóng modal
-              }}
+              onClick={() => handleOpenResultModal(test)}
               sx={{
                 background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
                 color: '#fff',
@@ -1108,7 +1166,7 @@ const STITestManagementContent = () => {
               variant="contained"
               size="small"
               startIcon={<ScienceIcon />}
-              onClick={() => handleOpenTestModal(test)}
+              onClick={() => handleOpenResultModal(test)}
               sx={{
                 background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
                 color: '#fff',
@@ -1121,6 +1179,25 @@ const STITestManagementContent = () => {
           </Tooltip>
         );
       case 'COMPLETED':
+        return (
+          <Tooltip title="Xem kết quả cuối cùng">
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<ScienceIcon />}
+              onClick={() => handleOpenFinalResult(test)}
+              sx={{
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                color: '#fff',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+              }}
+            >
+              Xem kết quả
+            </Button>
+          </Tooltip>
+        );
+      default:
         return (
           <Tooltip title="Xem chi tiết">
             <Button
@@ -1136,23 +1213,202 @@ const STITestManagementContent = () => {
             </Button>
           </Tooltip>
         );
-      default:
-        return (
-          <Tooltip title="Xem chi tiết">
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => handleOpenTestModal(test)}
-              sx={{
-                borderColor: STATUS_COLORS[test.status] || '#757575',
-                color: STATUS_COLORS[test.status] || '#757575',
-              }}
-            >
-              Xem chi tiết
-            </Button>
-          </Tooltip>
-        );
     }
+  };
+
+  // Hàm mở modal nhập kết quả
+  const handleOpenResultModal = async (test) => {
+    setResultModalTest(test);
+    setResultModalError(null);
+    setResultModalSuccess(null);
+    setResultModalLoading(true);
+
+    // Tải kết quả xét nghiệm đã có nếu trạng thái là RESULTED hoặc COMPLETED
+    if (test.status === 'RESULTED' || test.status === 'COMPLETED') {
+      try {
+        const results = await getTestResultsByTestId(test.testId);
+        if (results && results.data) {
+          // Gắn kết quả vào đối tượng test để modal có thể sử dụng
+          test.testResults = results.data;
+        }
+      } catch (err) {
+        console.error('Không thể tải kết quả xét nghiệm đã có:', err);
+        // Có thể set lỗi ở đây nếu cần
+      }
+    }
+
+    setResultModalIsPackage(!!test.packageId);
+    if (test.packageId) {
+      // Nếu là package, lấy danh sách service và components từng service
+      try {
+        let services = [];
+        let allComponents = {};
+        // Ưu tiên lấy từ allServiceComponents nếu đã có
+        if (
+          allServiceComponents &&
+          Object.keys(allServiceComponents).length > 0 &&
+          packageServices &&
+          packageServices.length > 0
+        ) {
+          services = packageServices;
+          allComponents = allServiceComponents;
+        } else {
+          // Lấy lại từ API
+          const res = await getSTIPackageById(test.packageId);
+          if (res && res.data && Array.isArray(res.data.services)) {
+            services = res.data.services;
+            const promises = services.map((svc) => getSTIServiceById(svc.id));
+            const results = await Promise.all(promises);
+            results.forEach((result, idx) => {
+              const svcId = services[idx].id;
+              if (
+                result &&
+                result.data &&
+                Array.isArray(result.data.components)
+              ) {
+                allComponents[svcId] = result.data.components;
+              } else if (result && Array.isArray(result.components)) {
+                allComponents[svcId] = result.components;
+              } else {
+                allComponents[svcId] = [];
+              }
+            });
+          }
+        }
+        setResultModalPackageServices(services);
+        setResultModalAllServiceComponents(allComponents);
+        // Mặc định chọn service đầu tiên
+        const firstService = services[0];
+        setResultModalSelectedService(firstService);
+        setResultModalComponents(allComponents[firstService.id] || []);
+      } catch (err) {
+        setResultModalError('Không thể tải thông tin gói dịch vụ');
+        setResultModalPackageServices([]);
+        setResultModalAllServiceComponents({});
+        setResultModalSelectedService(null);
+        setResultModalComponents([]);
+      } finally {
+        setResultModalLoading(false);
+        setOpenResultModal(true);
+      }
+    } else {
+      // Nếu là service đơn lẻ
+      try {
+        if (test.testComponents) {
+          setResultModalComponents(test.testComponents);
+        } else if (test.serviceId) {
+          const res = await getSTIServiceById(test.serviceId);
+          if (res && res.data && Array.isArray(res.data.components)) {
+            setResultModalComponents(res.data.components);
+          } else {
+            setResultModalComponents([]);
+          }
+        } else {
+          setResultModalComponents([]);
+        }
+      } catch (err) {
+        setResultModalError('Không thể tải thành phần xét nghiệm');
+        setResultModalComponents([]);
+      } finally {
+        setResultModalLoading(false);
+        setOpenResultModal(true);
+      }
+    }
+  };
+
+  // Khi chọn service trong package
+  const handleSelectServiceInResultModal = (svc) => {
+    setResultModalSelectedService(svc);
+    if (svc && svc.id && resultModalAllServiceComponents[svc.id]) {
+      setResultModalComponents(resultModalAllServiceComponents[svc.id]);
+    } else {
+      setResultModalComponents([]);
+    }
+  };
+
+  // Hàm lưu tạm thời (cho từng service trong package hoặc service đơn)
+  const handleSavePartialResult = async (data) => {
+    setResultModalLoading(true);
+    setResultModalError(null);
+    setResultModalSuccess(null);
+    try {
+      await savePartialTestResults(resultModalTest.testId, data);
+      setResultModalSuccess('Đã lưu tạm kết quả!');
+    } catch (err) {
+      setResultModalError('Lưu tạm thất bại!');
+    } finally {
+      setResultModalLoading(false);
+    }
+  };
+
+  // Hàm lưu tất cả (cho từng service trong package hoặc service đơn)
+  const handleSaveAllResult = async (data) => {
+    setResultModalLoading(true);
+    setResultModalError(null);
+    setResultModalSuccess(null);
+    try {
+      // Nếu test đã có kết quả thì dùng API cập nhật, ngược lại thì dùng API thêm mới
+      if (resultModalTest.status === 'RESULTED') {
+        await updateTestResults(resultModalTest.testId, data);
+      } else {
+        await addTestResults(resultModalTest.testId, data);
+      }
+
+      setTimeout(() => {
+        setOpenResultModal(false);
+        fetchTests();
+      }, 1000);
+    } catch (err) {
+      setResultModalError('Lưu kết quả thất bại!');
+    } finally {
+      setResultModalLoading(false);
+    }
+  };
+
+  // Hàm mới để xử lý việc hoàn tất xét nghiệm
+  const handleCompleteResult = async (data) => {
+    setResultModalLoading(true);
+    setResultModalError(null);
+    setResultModalSuccess(null);
+
+    try {
+      // 1. Luôn cập nhật kết quả mới nhất trước khi hoàn tất
+      // Tương tự như handleSaveAllResult, dùng API phù hợp với trạng thái
+      if (resultModalTest.status === 'RESULTED') {
+        await updateTestResults(resultModalTest.testId, data);
+      } else {
+        await addTestResults(resultModalTest.testId, data);
+      }
+
+      setResultModalSuccess('Cập nhật kết quả thành công, đang hoàn tất...');
+
+      // 2. Chuyển trạng thái sang COMPLETED
+      const completeResponse = await completeTest(resultModalTest.testId);
+      if (
+        !completeResponse ||
+        (completeResponse.status !== 'SUCCESS' && !completeResponse.success)
+      ) {
+        throw new Error(
+          completeResponse.message || 'Hoàn tất xét nghiệm thất bại'
+        );
+      }
+
+      setResultModalSuccess('Đã hoàn tất xét nghiệm thành công!');
+      setTimeout(() => {
+        setOpenResultModal(false);
+        fetchTests(); // Tải lại danh sách để cập nhật UI
+      }, 1500);
+    } catch (err) {
+      setResultModalError(err.message || 'Lỗi khi hoàn tất xét nghiệm!');
+    } finally {
+      setResultModalLoading(false);
+    }
+  };
+
+  // Hàm xử lý mở modal kết quả cuối cùng
+  const handleOpenFinalResult = async (test) => {
+    setSelectedTest(test);
+    setOpenFinalResultModal(true);
   };
 
   return (
@@ -1330,70 +1586,49 @@ const STITestManagementContent = () => {
         <TabPanel value={tabValue} index={5}>
           {renderTestTable()}
         </TabPanel>
-        {/* Modals */}{' '}
-        <SingleTestResultModal
-          open={openSingleModal}
-          onClose={() => setOpenSingleModal(false)}
-          currentTest={selectedTest}
-          handleSaveResult={handleAddResultsAction}
-          handleConfirmTest={handleConfirmTestAction}
-          handleSampleTest={handleSampleTestAction}
-          handleCompleteTest={handleCompleteTestAction}
-          handleCancelTest={handleCancelTestAction}
-          onTestUpdated={(updatedTest) => {
-            // Update test in state and close modal with optimistic UI update
-            console.log(
-              'Test updated through modal, applying to UI',
-              updatedTest
-            );
-            updateTestInState(updatedTest);
-            setOpenSingleModal(false);
-
-            // Show success message
-            setSuccess(
-              `Đã cập nhật thành công xét nghiệm #${updatedTest.testId}`
-            );
-            setTimeout(() => setSuccess(null), 3000);
-
-            // Refresh data after a short delay to ensure backend has processed the change
-            setTimeout(() => {
-              console.log('Refreshing data after single test update');
-              fetchTests();
-            }, 500);
+        {/* Modals */} {/* Modal lấy mẫu */}
+        <SampleCollectionModal
+          open={openComponentModal}
+          onClose={() => setOpenComponentModal(false)}
+          test={selectedTest}
+          isPackage={isPackageModal}
+          packageServices={packageServices}
+          selectedService={selectedService}
+          onSelectService={handleSelectServiceInPackage}
+          serviceComponents={serviceComponents}
+          loadingService={loadingService && !isPackageModal}
+          onConfirmSample={async () => {
+            if (!selectedTest) return;
+            setLoadingService(true);
+            await handleSampleCollected(selectedTest.testId);
+            setLoadingService(false);
+            setOpenComponentModal(false);
           }}
+          confirming={loadingService}
+          formatDateDisplay={formatDateDisplay}
+          allServiceComponents={allServiceComponents}
         />
-        <PackageManagementModal
-          open={openPackageModal}
-          onClose={() => setOpenPackageModal(false)}
-          packageTest={selectedTest}
-          onTestSelect={handleOpenTestInPackageModal}
-          onTestUpdated={(updatedTest) => {
-            // Update test in state and close modal
-            updateTestInState(updatedTest);
-            setOpenPackageModal(false);
-
-            // Refresh data after a short delay
-            setTimeout(() => {
-              console.log('Refreshing data after package test update');
-              fetchTests();
-            }, 500);
-          }}
+        <TestResultInputModal
+          open={openResultModal}
+          onClose={() => setOpenResultModal(false)}
+          test={resultModalTest}
+          isPackage={resultModalIsPackage}
+          packageServices={resultModalPackageServices}
+          selectedService={resultModalSelectedService}
+          onSelectService={handleSelectServiceInResultModal}
+          components={resultModalComponents}
+          onSavePartial={handleSavePartialResult}
+          onSaveAll={handleSaveAllResult}
+          onComplete={handleCompleteResult}
+          loading={resultModalLoading}
+          error={resultModalError}
+          success={resultModalSuccess}
         />
-        <TestInPackageModal
-          open={openTestInPackageModal}
-          onClose={() => setOpenTestInPackageModal(false)}
-          packageTest={selectedTest}
-          testComponent={selectedTestComponent}
-          onTestUpdated={(updatedTest) => {
-            // Update test in state and close modal
-            updateTestInState(updatedTest);
-            setOpenTestInPackageModal(false);
-            // Refresh data after a short delay
-            setTimeout(() => {
-              console.log('Refreshing data after component test update');
-              fetchTests();
-            }, 500);
-          }}
+        <FinalTestResultModal
+          open={openFinalResultModal}
+          onClose={() => setOpenFinalResultModal(false)}
+          test={selectedTest}
+          formatDateDisplay={formatDateDisplay}
         />
       </Paper>
     </Container>

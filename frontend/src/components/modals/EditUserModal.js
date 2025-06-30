@@ -38,7 +38,7 @@ import {
 // Import dateUtils for consistent date formatting
 import { formatDateDisplay } from '../../utils/dateUtils.js';
 import { confirmDialog } from '../../utils/confirmDialog.js';
-import notify from '../../utils/notification.js';
+import { toast } from 'react-toastify';
 
 const EditUserModal = ({ open, onClose, user, onSubmit }) => {
   // ====================================================================
@@ -412,7 +412,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
   const handleSubmit = async () => {
     // ✅ Kiểm tra role required trước khi validate
     if (!formData.role || formData.role.trim() === '') {
-      notify.warning(
+      toast.warning(
         'Thiếu thông tin bắt buộc',
         'Vui lòng chọn vai trò cho người dùng!'
       );
@@ -420,10 +420,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
     }
 
     if (!validateForm()) {
-      notify.error(
-        'Lỗi validation',
-        'Vui lòng kiểm tra lại các trường bị lỗi!'
-      );
+      toast.error('Lỗi validation', 'Vui lòng kiểm tra lại các trường bị lỗi!');
       return;
     }
 

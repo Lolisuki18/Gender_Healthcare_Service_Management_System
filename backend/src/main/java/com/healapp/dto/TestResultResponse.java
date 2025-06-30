@@ -24,4 +24,6 @@ public class TestResultResponse {
     private LocalDateTime reviewedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long serviceId;
+    private Long packageId;
 }

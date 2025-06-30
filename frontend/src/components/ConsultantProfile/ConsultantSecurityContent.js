@@ -37,6 +37,7 @@ import {
   Shield as ShieldIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { toast } from 'react-toastify';
 
 // Import modals từ thư mục chung
 import { PasswordChangeDialog } from '../modals/PasswordChangeModal';
@@ -45,7 +46,6 @@ import { PhoneChangeDialog } from '../modals/PhoneChangeModal';
 
 import localStorageUtil from '@/utils/localStorage';
 import apiClient from '../../services/api';
-import notify from '../../utils/notification';
 
 // Styled components
 const HeaderSection = styled(Box)(({ theme }) => ({
@@ -164,7 +164,7 @@ const ConsultantSecurityContent = () => {
       );
 
       if (response.data.success) {
-        notify.success('Thành công!', 'Đổi mật khẩu thành công!', {
+        toast.success('Thành công!', 'Đổi mật khẩu thành công!', {
           duration: 4000,
         });
         handleCloseModal('password');
@@ -225,7 +225,7 @@ const ConsultantSecurityContent = () => {
       });
 
       if (response.data.success) {
-        notify.success('Thành công!', 'Email đã được cập nhật thành công!', {
+        toast.success('Thành công!', 'Email đã được cập nhật thành công!', {
           duration: 4000,
         });
         handleCloseModal('email');
@@ -292,7 +292,7 @@ const ConsultantSecurityContent = () => {
       });
 
       if (response.data.success) {
-        notify.success(
+        toast.success(
           'Thành công!',
           'Số điện thoại đã được cập nhật thành công!',
           { duration: 4000 }

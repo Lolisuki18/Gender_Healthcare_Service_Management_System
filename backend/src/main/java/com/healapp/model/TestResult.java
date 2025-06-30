@@ -35,7 +35,7 @@ public class TestResult {
     @Column(name = "result_value", columnDefinition = "NVARCHAR(200)")
     private String resultValue;
 
-    @Column(name = "unit", columnDefinition = "NVARCHAR(20)")
+    @Column(name = "unit", columnDefinition = "NVARCHAR(100)")
     private String unit;
 
     @Column(name = "normal_range", columnDefinition = "NVARCHAR(100)")

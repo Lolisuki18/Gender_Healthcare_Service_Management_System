@@ -12,7 +12,6 @@ import {
   useTheme,
 } from "@mui/material";
 import HomeIcon from "@mui/icons-material/Home";
-import notify from "@/utils/notification";
 import localStorageUtil from "@/utils/localStorage";
 import imageUrl from "@/utils/imageUrl";
 import { listenToAvatarUpdates } from "@/utils/storageEvent";

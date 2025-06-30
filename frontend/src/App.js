@@ -17,16 +17,19 @@
  * - BrowserRouter: Cấu hình điều hướng không cần tải lại trang
  */
 
-import React from "react";
-import { BrowserRouter } from "react-router-dom";
-import { Provider } from "react-redux";
-import { PersistGate } from "redux-persist/integration/react";
-import { CssBaseline } from "@mui/material";
-import { store, persistor } from "@redux/store";
-import AppRoutes from "@/routes";
-import { CustomThemeProvider } from "@context/ThemeContext";
-import { UserProvider } from "@context/UserContext";
-import "./App.css";
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { CssBaseline } from '@mui/material';
+import { store, persistor } from '@redux/store';
+import AppRoutes from '@/routes';
+import { CustomThemeProvider } from '@context/ThemeContext';
+import { UserProvider } from '@context/UserContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import './App.css';
+import MainLayout from './components/layouts/MainLayout';
 
 function App() {
   return (
@@ -37,6 +40,18 @@ function App() {
             <CssBaseline />
             <BrowserRouter>
               <AppRoutes />
+              <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="colored"
+              />
             </BrowserRouter>
           </UserProvider>
         </CustomThemeProvider>

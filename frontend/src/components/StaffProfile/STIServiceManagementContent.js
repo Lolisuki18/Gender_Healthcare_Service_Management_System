@@ -50,6 +50,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import { toast } from 'react-toastify';
 
 import {
   getAllSTIServices,
@@ -58,7 +59,6 @@ import {
   deleteSTIService,
   getSTIServiceById,
 } from '../../services/stiService';
-import notify from '../../utils/notification';
 
 const STIServiceManagementContent = () => {
   // State management
@@ -81,6 +81,7 @@ const STIServiceManagementContent = () => {
     unit: '',
     referenceRange: '',
     interpretation: '',
+    testType: 'QUANTITATIVE', // Default value
     isActive: true,
     componentId: null,
   });
@@ -107,6 +108,7 @@ const STIServiceManagementContent = () => {
     unit: '',
     referenceRange: '',
     interpretation: '',
+    testType: 'QUANTITATIVE', // Default value
   });
 
   // Fetch services on component mount
@@ -124,7 +126,7 @@ const STIServiceManagementContent = () => {
     } catch (err) {
       console.error('Error fetching services:', err);
       setError(err.message || 'Failed to fetch services');
-      notify.error('Error', 'Failed to load STI services');
+      toast.error('Error', 'Failed to load STI services');
     } finally {
       setLoading(false);
     }
@@ -228,8 +230,9 @@ const STIServiceManagementContent = () => {
   const handleOpenEditComponentDialog = (component, index) => {
     setEditingComponent({
       ...component,
-      componentId: component.componentId || null, // Ensure we maintain the componentId
-      component_id: component.component_id || component.componentId || null, // Ensure backward compatibility with both naming styles
+      testType: component.testType || 'QUANTITATIVE', // Ensure fallback
+      componentId: component.componentId || null,
+      component_id: component.component_id || component.componentId || null,
     });
     setEditingComponentIndex(index);
     setEditComponentDialog(true);
@@ -242,6 +245,7 @@ const STIServiceManagementContent = () => {
       unit: '',
       referenceRange: '',
       interpretation: '',
+      testType: 'QUANTITATIVE', // Default value
       isActive: true,
       componentId: null,
     });
@@ -254,7 +258,7 @@ const STIServiceManagementContent = () => {
       !editingComponent.unit ||
       !editingComponent.referenceRange
     ) {
-      notify.warning(
+      toast.warning(
         'Validation Error',
         'Please fill all required component fields'
       );
@@ -279,7 +283,7 @@ const STIServiceManagementContent = () => {
     });
 
     // Show success message
-    notify.success('Success', 'Component updated successfully');
+    toast.success('Success', 'Component updated successfully');
 
     handleCloseEditComponentDialog();
   };
@@ -300,7 +304,7 @@ const STIServiceManagementContent = () => {
       !newComponent.unit ||
       !newComponent.referenceRange
     ) {
-      notify.warning(
+      toast.warning(
         'Validation Error',
         'Please fill all required component fields'
       );
@@ -322,6 +326,7 @@ const STIServiceManagementContent = () => {
       unit: '',
       referenceRange: '',
       interpretation: '',
+      testType: 'QUANTITATIVE', // Default value
     });
 
     // Clear component error if exists
@@ -366,6 +371,7 @@ const STIServiceManagementContent = () => {
       unit: comp.unit,
       referenceRange: comp.normalRange,
       interpretation: comp.description,
+      testType: comp.testType || 'QUANTITATIVE', // Ensure fallback
       // Use consistent helper approach for getting status
       isActive:
         comp.isActive !== undefined
@@ -409,7 +415,7 @@ const STIServiceManagementContent = () => {
       }
     } catch (err) {
       console.error('Error fetching service details:', err);
-      notify.error('Error', 'Failed to load service details');
+      toast.error('Error', 'Failed to load service details');
     } finally {
       setLoading(false);
     }
@@ -438,13 +444,13 @@ const STIServiceManagementContent = () => {
       setLoading(true);
       const response = await deleteSTIService(deleteServiceId);
       if (response.success) {
-        notify.success('Success', 'Service deleted successfully');
+        toast.success('Success', 'Service deleted successfully');
         // Refresh services
         fetchSTIServices();
       }
     } catch (err) {
       console.error('Error deleting service:', err);
-      notify.error('Error', err.message || 'Failed to delete service');
+      toast.error('Error', err.message || 'Failed to delete service');
     } finally {
       setLoading(false);
       handleCloseDeleteDialog();
@@ -471,6 +477,7 @@ const STIServiceManagementContent = () => {
           unit: comp.unit,
           referenceRange: comp.referenceRange,
           interpretation: comp.interpretation || '',
+          testType: comp.testType || 'QUANTITATIVE', // Ensure fallback
           isActive: comp.isActive !== false ? true : false, // Pass individual component status
         })),
       };
@@ -493,16 +500,16 @@ const STIServiceManagementContent = () => {
         );
         response = await updateSTIService(currentService.id, serviceData);
         if (response.success) {
-          notify.success('Success', 'Service updated successfully');
+          toast.success('Success', 'Service updated successfully');
         }
       } else {
         console.log('Service data begin sent for creation: ', serviceData);
         // Create new service
         response = await createSTIService(serviceData);
         if (response.success) {
-          notify.success('Success', 'Service created successfully');
+          toast.success('Success', 'Service created successfully');
         } else {
-          notify.error('Error', 'Service creation failed: ' + response.message);
+          toast.error('Error', 'Service creation failed: ' + response.message);
         }
       }
 
@@ -511,7 +518,7 @@ const STIServiceManagementContent = () => {
       handleCloseDialog();
     } catch (err) {
       console.error('Error saving service:', err);
-      notify.error('Error', err.message || 'Failed to save service');
+      toast.error('Error', err.message || 'Failed to save service');
     } finally {
       setLoading(false);
     }
@@ -1085,74 +1092,64 @@ const STIServiceManagementContent = () => {
                   Add New Component
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={4} md={3}>
                     <TextField
-                      fullWidth
-                      label="Test Name"
-                      required
-                      size="small"
+                      label="Component Name"
                       value={newComponent.testName}
                       onChange={(e) =>
                         handleComponentChange('testName', e.target.value)
                       }
+                      fullWidth
+                      size="small"
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={4} md={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Test Type</InputLabel>
+                      <Select
+                        value={newComponent.testType}
+                        label="Test Type"
+                        onChange={(e) =>
+                          handleComponentChange('testType', e.target.value)
+                        }
+                      >
+                        <MenuItem value="QUANTITATIVE">
+                          Định lượng (Số)
+                        </MenuItem>
+                        <MenuItem value="BINARY">Định tính (Âm/Dương)</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={4} md={2}>
                     <TextField
-                      fullWidth
                       label="Unit"
-                      required
-                      size="small"
                       value={newComponent.unit}
                       onChange={(e) =>
                         handleComponentChange('unit', e.target.value)
                       }
+                      fullWidth
+                      size="small"
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <TextField
-                      fullWidth
                       label="Reference Range"
-                      required
-                      size="small"
                       value={newComponent.referenceRange}
                       onChange={(e) =>
                         handleComponentChange('referenceRange', e.target.value)
                       }
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
                       fullWidth
-                      label="Interpretation"
                       size="small"
-                      value={newComponent.interpretation}
-                      onChange={(e) =>
-                        handleComponentChange('interpretation', e.target.value)
-                      }
                     />
                   </Grid>
-                  <Grid item xs={12}>
-                    {' '}
+                  <Grid item xs={12} sm={6} md={1}>
                     <Button
+                      onClick={handleAddComponent}
                       variant="contained"
                       startIcon={<AddCircleIcon />}
-                      onClick={handleAddComponent}
-                      size="small"
-                      sx={{
-                        background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                        color: '#fff',
-                        fontWeight: 600,
-                        boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-                        borderRadius: '6px',
-                        '&:hover': {
-                          background:
-                            'linear-gradient(45deg, #3A80D2, #0AAC8C)',
-                          boxShadow: '0 4px 12px rgba(74, 144, 226, 0.4)',
-                        },
-                      }}
+                      sx={{ height: '100%' }}
                     >
-                      Add Component
+                      Add
                     </Button>
                   </Grid>
                 </Grid>

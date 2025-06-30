@@ -64,7 +64,7 @@ import SaveIcon from '@mui/icons-material/Save'; // Save icon
 import { styled } from '@mui/material/styles';
 import { userService } from '@/services/userService';
 import localStorageUtil from '@/utils/localStorage';
-import { notify } from '@/utils/notification';
+import { toast } from 'react-toastify';
 import { formatDateForInput, formatDateDisplay } from '@/utils/dateUtils';
 import { EmailChangeDialog, PasswordChangeDialog } from '../modals';
 import imageUrl from '../../utils/imageUrl'; // Import với đường dẫn tương đối
@@ -427,7 +427,7 @@ const ProfileContent = () => {
         localStorageUtil.set('userProfile', userProfileData);
 
         // ✅ Use custom notification
-        notify.success('Thành công', 'Đã tải thông tin người dùng!', {
+        toast.success('Đã tải thông tin người dùng!', {
           duration: 3000,
         });
       } else {
@@ -440,7 +440,7 @@ const ProfileContent = () => {
 
       if (error.response?.status === 401) {
         // ✅ Use custom notification for error
-        notify.error(
+        toast.error(
           'Lỗi xác thực',
           'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!',
           { duration: 6000 }
@@ -463,14 +463,14 @@ const ProfileContent = () => {
           setOriginalData(formData);
 
           // ✅ Use custom notification for warning
-          notify.warning(
+          toast.warning(
             'Chế độ offline',
             'Sử dụng dữ liệu đã lưu. Vui lòng kiểm tra kết nối mạng.',
             { duration: 5000 }
           );
         } else {
           // ✅ Use custom notification for error
-          notify.error(
+          toast.error(
             'Lỗi tải dữ liệu',
             'Không thể tải thông tin người dùng!',
             { duration: 4000 }
@@ -489,7 +489,7 @@ const ProfileContent = () => {
     setIsRefreshing(true);
 
     // ✅ Show loading notification
-    notify.info('Đang tải', 'Đang làm mới dữ liệu...', { duration: 2000 });
+    toast.info('Đang tải', 'Đang làm mới dữ liệu...', { duration: 2000 });
 
     await fetchUserData();
     setIsRefreshing(false);
@@ -531,7 +531,7 @@ const ProfileContent = () => {
 
       // ✅ Validate required fields
       if (!formDataUpdate.fullName.trim()) {
-        notify.warning('Thiếu thông tin', 'Vui lòng nhập họ tên!', {
+        toast.warning('Thiếu thông tin', 'Vui lòng nhập họ tên!', {
           duration: 4000,
         });
         return;
@@ -539,7 +539,7 @@ const ProfileContent = () => {
 
       console.log('🔄 Đang lưu thông tin cá nhân:', formDataUpdate);
 
-      notify.info('Đang xử lý', 'Đang lưu thông tin cá nhân...', {
+      toast.info('Đang xử lý', 'Đang lưu thông tin cá nhân...', {
         duration: 2000,
       });
 
@@ -578,7 +578,7 @@ const ProfileContent = () => {
         // ✅ Exit edit mode
         setIsEditing(false);
 
-        notify.success(
+        toast.success(
           'Cập nhật thành công!',
           'Thông tin cá nhân đã được lưu thành công.',
           { duration: 4000 }
@@ -592,7 +592,7 @@ const ProfileContent = () => {
       console.error('❌ Lỗi khi cập nhật thông tin:', error);
 
       if (error.response?.status === 401) {
-        notify.error(
+        toast.error(
           'Lỗi xác thực',
           'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!',
           { duration: 6000 }
@@ -609,7 +609,7 @@ const ProfileContent = () => {
           error.message ||
           'Có lỗi xảy ra khi cập nhật thông tin!';
 
-        notify.error('Lỗi cập nhật', errorMessage, { duration: 5000 });
+        toast.error('Lỗi cập nhật', errorMessage, { duration: 5000 });
       }
     } finally {
       setIsSaving(false);
@@ -635,7 +635,7 @@ const ProfileContent = () => {
     setFormDataUpdate({ ...originalData });
     setIsEditing(false);
 
-    notify.info('Đã hủy', 'Các thay đổi đã được hủy bỏ.', { duration: 2000 });
+    toast.info('Đã hủy', 'Các thay đổi đã được hủy bỏ.', { duration: 2000 });
   };
 
   // ====================================================================
@@ -659,7 +659,7 @@ const ProfileContent = () => {
     if (isSuccess) {
       console.log('✅ Email updated successfully, modal closed');
       // Chỉ hiển thị thông báo, không refresh
-      notify.success('Hoàn tất', 'Thông tin email đã được cập nhật!', {
+      toast.success('Hoàn tất', 'Thông tin email đã được cập nhật!', {
         duration: 3000,
       });
     }
@@ -672,7 +672,7 @@ const ProfileContent = () => {
     try {
       setIsSendingCode(true); // ✅ Set loading state
 
-      notify.info('Đang xử lý', 'Đang gửi mã xác nhận đến email mới...', {
+      toast.info('Đang xử lý', 'Đang gửi mã xác nhận đến email mới...', {
         duration: 2000,
       });
 
@@ -699,7 +699,7 @@ const ProfileContent = () => {
     try {
       setIsVerifying(true); // ✅ Set loading state
 
-      notify.info('Đang xác nhận', 'Đang xác nhận mã và cập nhật email...', {
+      toast.info('Đang xác nhận', 'Đang xác nhận mã và cập nhật email...', {
         duration: 2000,
       });
 
@@ -737,7 +737,7 @@ const ProfileContent = () => {
 
         console.log('✅ Email updated successfully:', updatedUser);
 
-        notify.success('Thành công!', 'Email đã được cập nhật thành công!', {
+        toast.success('Thành công!', 'Email đã được cập nhật thành công!', {
           duration: 4000,
         });
 
@@ -798,14 +798,14 @@ const ProfileContent = () => {
     try {
       setIsChangingPassword(true);
 
-      notify.info('Đang xử lý', 'Đang đổi mật khẩu...', { duration: 2000 });
+      toast.info('Đang xử lý', 'Đang đổi mật khẩu...', { duration: 2000 });
 
       const response = await userService.changePassword(passwordData);
 
       if (response.success) {
         setPasswordChangeDialog({ open: false });
 
-        notify.success(
+        toast.success(
           'Đổi mật khẩu thành công!',
           'Mật khẩu của bạn đã được thay đổi thành công.',
           { duration: 4000 }
@@ -821,7 +821,7 @@ const ProfileContent = () => {
         error.message ||
         'Có lỗi xảy ra khi đổi mật khẩu!';
 
-      notify.error('Lỗi đổi mật khẩu', errorMessage, { duration: 5000 });
+      toast.error('Lỗi đổi mật khẩu', errorMessage, { duration: 5000 });
     } finally {
       setIsChangingPassword(false);
     }

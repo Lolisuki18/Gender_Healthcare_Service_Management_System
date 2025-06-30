@@ -28,14 +28,16 @@ import {
   MenuItem,
   Avatar,
   Container,
+  Badge,
 } from '@mui/material';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { userService } from '@/services/userService';
 import localStorageUtil from '@/utils/localStorage';
-import { notify } from '@/utils/notification';
+import { toast } from 'react-toastify';
 import imageUrl from '@/utils/imageUrl';
 import { listenToAvatarUpdates } from '@/utils/storageEvent';
 import '@styles/Header.css';
+import { Notifications as NotificationsIcon } from '@mui/icons-material';
 
 const Header = () => {
   // Avatar state
@@ -132,7 +134,7 @@ const Header = () => {
 
     try {
       await userService.logout();
-      notify.success('Đăng xuất thành công', 'Bạn đã đăng xuất khỏi hệ thống');
+      toast.success('Bạn đã đăng xuất thành công!');
 
       // Thêm small delay để đảm bảo mọi thứ được xóa hoàn toàn trước khi chuyển hướng
       setTimeout(() => {
@@ -140,7 +142,7 @@ const Header = () => {
       }, 100);
     } catch (error) {
       console.error('Error during logout:', error);
-      notify.error(
+      toast.error(
         'Đăng xuất thất bại',
         'Có lỗi xảy ra trong quá trình đăng xuất'
       );

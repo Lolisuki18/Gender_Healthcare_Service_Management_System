@@ -38,7 +38,9 @@ import CountUp from 'react-countup';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '@/services/api';
 import localStorageUtil from '@/utils/localStorage';
-import notification from '@/utils/notification';
+import { toast } from 'react-toastify';
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '@/redux/slices/authSlice';
 
 // Define animations
 const float = keyframes`
@@ -48,7 +50,10 @@ const float = keyframes`
 
 export const HomePage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [loaded, setLoaded] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
 
   // --- LIFECYCLE HOOKS ---
   useEffect(() => {
@@ -62,11 +67,11 @@ export const HomePage = () => {
 
     if (loginMessage) {
       // Hiển thị thông báo
-      notification.success(
+      toast.success(
         loginMessage.title || 'Đăng nhập thành công!',
         loginMessage.message || 'Chào mừng bạn trở lại!',
         {
-          duration: 3000,
+          autoClose: 3000,
         }
       );
 
@@ -104,6 +109,20 @@ export const HomePage = () => {
         console.error('Error checking auth:', error);
         navigate('/test-registration');
       }
+    }
+  };
+
+  const handleLogin = (action) => {
+    if (action.type === loginSuccess.type) {
+      localStorage.setItem('user', JSON.stringify(action.payload.user));
+      localStorage.setItem('token', action.payload.token);
+      localStorage.setItem('isLoggedIn', 'true');
+      navigate('/');
+      window.location.reload();
+    } else {
+      toast.error(
+        'Login failed: ' + (action.payload?.message || 'Unknown error')
+      );
     }
   };
 

@@ -25,6 +25,7 @@ import {
   CircularProgress,
   Divider,
   Stack,
+  Pagination,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -32,6 +33,9 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { format } from 'date-fns';
 import vi from 'date-fns/locale/vi';
+import { toast } from 'react-toastify';
+import Header from '@components/common/Header';
+import Footer from '@components/common/Footer';
 
 // Icons
 import SchoolIcon from '@mui/icons-material/School';
@@ -45,7 +49,6 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 // Services and Utils
 import consultantService from '@/services/consultantService';
 import imageUrl from '@/utils/imageUrl';
-import notify from '@/utils/notification';
 import confirmDialog from '@/utils/confirmDialog';
 import localStorageUtil from '@/utils/localStorage';
 
@@ -76,20 +79,6 @@ const HeaderSubtitle = styled(Typography)(({ theme }) => ({
   maxWidth: 800,
   marginLeft: 'auto',
   marginRight: 'auto',
-}));
-
-const ConsultantCard = styled(Card)(({ theme }) => ({
-  height: '100%',
-  transition: 'all 0.3s ease',
-  borderRadius: theme.spacing(2),
-  overflow: 'visible',
-  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-  position: 'relative',
-  border: '1px solid rgba(226, 232, 240, 0.8)',
-  '&:hover': {
-    transform: 'translateY(-5px)',
-    boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-  },
 }));
 
 const CardMediaWrapper = styled(CardMedia)(({ theme }) => ({
@@ -200,6 +189,20 @@ const timeSlots = [
   '16:00-17:00',
 ];
 
+const ConsultantCard = styled(Card)(({ theme }) => ({
+  height: '100%',
+  transition: 'all 0.3s ease',
+  borderRadius: theme.spacing(2),
+  overflow: 'visible',
+  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+  position: 'relative',
+  border: '1px solid rgba(226, 232, 240, 0.8)',
+  '&:hover': {
+    transform: 'translateY(-5px)',
+    boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+  },
+}));
+
 const ConsultationPage = () => {
   const [consultants, setConsultants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -246,10 +249,12 @@ const ConsultationPage = () => {
         setError(consultants.message || 'Không thể tải danh sách tư vấn viên');
       }
     } catch (err) {
-      setError('Có lỗi xảy ra khi kết nối đến máy chủ');
-      console.error('Error fetching consultants:', err);
-    } finally {
       setLoading(false);
+      setError('Không thể tải danh sách chuyên gia. Vui lòng thử lại sau.');
+      toast.error(
+        'Lỗi',
+        'Không thể tải danh sách chuyên gia. Vui lòng thử lại sau.'
+      );
     }
   };
   const handleOpenDetails = (consultant) => {
@@ -330,13 +335,14 @@ const ConsultationPage = () => {
         await consultantService.scheduleAppointment(appointmentData);
 
       if (response.success) {
-        notify.success('Đặt lịch hẹn thành công!');
+        toast.success('Đặt lịch hẹn thành công!');
         handleCloseAppointment();
       } else {
         setFormError(response.message || 'Không thể đặt lịch hẹn');
       }
     } catch (err) {
       setFormError('Có lỗi xảy ra khi kết nối đến máy chủ');
+      toast.error('Có lỗi xảy ra khi kết nối đến máy chủ');
       console.error('Error scheduling appointment:', err);
     } finally {
       setSubmitting(false);

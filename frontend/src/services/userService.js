@@ -1,28 +1,28 @@
-import apiClient from "@services/api";
-import axios from "axios";
-import localStorageUtil from "@utils/localStorage";
+import apiClient from '@services/api';
+import axios from 'axios';
+import localStorageUtil from '@utils/localStorage';
 
 // Service cho các API liên quan đến người dùng
 export const userService = {
   //đăng xuất
   logout: async () => {
     try {
-      const response = await apiClient.post("/auth/logout");
+      const response = await apiClient.post('/auth/logout');
 
-      localStorageUtil.remove("user");
+      localStorageUtil.remove('user');
 
       return response.data;
     } catch (error) {
-      localStorageUtil.remove("user");
+      localStorageUtil.remove('user');
 
       throw error.response?.data || error;
     }
   }, // Đăng nhập
   login: async (credentials) => {
     try {
-      const response = await apiClient.post("/auth/login", credentials);
-      console.log("Raw API response:", response); // Debug log
-      console.log("Response data:", response.data); // Debug log
+      const response = await apiClient.post('/auth/login', credentials);
+      console.log('Raw API response:', response); // Debug log
+      console.log('Response data:', response.data); // Debug log
       return response.data; // JwtResponse từ backend
     } catch (error) {
       throw error.response?.data || error;
@@ -32,13 +32,13 @@ export const userService = {
   // Đăng ký
   register: async (userData) => {
     try {
-      console.log("Sending registration data:", userData); // ✅ Debug log
+      console.log('Sending registration data:', userData); // ✅ Debug log
 
-      const response = await apiClient.post("/users/register", userData);
+      const response = await apiClient.post('/users/register', userData);
       return response.data;
     } catch (error) {
-      console.error("Register error:", error);
-      console.error("Error response:", error.response?.data); // ✅ Debug log
+      console.error('Register error:', error);
+      console.error('Error response:', error.response?.data); // ✅ Debug log
       throw error;
     }
   },
@@ -46,7 +46,7 @@ export const userService = {
   // Lấy thông tin người dùng hiện tại
   getCurrentUser: async () => {
     try {
-      const response = await apiClient.get("/users/profile");
+      const response = await apiClient.get('/users/profile');
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -55,33 +55,16 @@ export const userService = {
   // Cập nhật thông tin người dùng
   updateProfile: async (userData) => {
     try {
-      const response = await apiClient.put("/users/profile/basic", userData);
+      const response = await apiClient.put('/users/profile/basic', userData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
     }
   },
 
-  // Cập nhật thông tin người dùng không cần token (cho staff profile)
-  updateProfileNoAuth: async (userData) => {
-    try {
-      // Tạo một instance axios riêng không có interceptor
-      const noAuthClient = axios.create({
-        baseURL: process.env.REACT_APP_API_URL || "http://localhost:8080/",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const response = await noAuthClient.put("/users/profile/basic", userData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
   sendCode: async (email) => {
     try {
-      const response = await apiClient.post("/users/send-verification", {
+      const response = await apiClient.post('/users/send-verification', {
         email,
       });
       return response.data;
@@ -91,7 +74,7 @@ export const userService = {
   },
   sendCodeForgotPassword: async (email) => {
     try {
-      const response = await apiClient.post("/users/forgot-password", {
+      const response = await apiClient.post('/users/forgot-password', {
         email,
       });
       return response.data;
@@ -101,7 +84,7 @@ export const userService = {
   },
   resetPassword: async (email, code, newPassword) => {
     try {
-      const response = await apiClient.post("/users/reset-password", {
+      const response = await apiClient.post('/users/reset-password', {
         email,
         code,
         newPassword,
@@ -120,23 +103,23 @@ export const userService = {
   sendEmailVerificationCode: async (newEmail) => {
     try {
       const response = await apiClient.post(
-        "/users/profile/email/send-verification",
+        '/users/profile/email/send-verification',
         {
           email: newEmail,
         }
       );
-      console.log("Email verification code sent:", response.data);
+      console.log('Email verification code sent:', response.data);
       // Trả về kết quả thành công
       return {
         success: true,
         data: response.data,
-        message: "Đã gửi mã xác nhận thành công",
+        message: 'Đã gửi mã xác nhận thành công',
       };
     } catch (error) {
-      console.error("❌ Error sending email verification code:", error);
+      console.error('❌ Error sending email verification code:', error);
       return {
         success: false,
-        message: error.response?.data?.message || "Không thể gửi mã xác nhận",
+        message: error.response?.data?.message || 'Không thể gửi mã xác nhận',
         error: error,
       };
     }
@@ -150,33 +133,33 @@ export const userService = {
    * @returns {Promise<Object>} API response
    */ verifyEmailChange: async (data) => {
     try {
-      console.log("🔄 Verifying email change:", {
+      console.log('🔄 Verifying email change:', {
         newEmail: data.newEmail,
         hasVerificationCode: !!data.verificationCode,
         codeLength: data.verificationCode?.length,
       });
 
-      const response = await apiClient.put("/users/profile/email", {
+      const response = await apiClient.put('/users/profile/email', {
         newEmail: data.newEmail,
         verificationCode: data.verificationCode,
       });
       // Lưu lại token mới nếu server cung cấp
       if (response.data.token) {
-        localStorageUtil.set("token", response.data.token);
+        localStorageUtil.set('token', response.data.token);
       }
-      console.log("✅ Email change response:", response);
+      console.log('✅ Email change response:', response);
 
       return {
         success: true,
         data: response.data,
-        message: "Email đã được thay đổi thành công",
+        message: 'Email đã được thay đổi thành công',
       };
     } catch (error) {
-      console.error("❌ Error verifying email change:", {
+      console.error('❌ Error verifying email change:', {
         status: error.response?.status,
         statusText: error.response?.statusText,
         errorData: error.response?.data,
-        endpoint: "/users/profile/email",
+        endpoint: '/users/profile/email',
         requestData: {
           newEmail: data.newEmail,
           hasVerificationCode: !!data.verificationCode,
@@ -184,14 +167,14 @@ export const userService = {
       });
 
       // Xử lý các loại lỗi khác nhau
-      let errorMessage = "Mã xác nhận không đúng";
+      let errorMessage = 'Mã xác nhận không đúng';
 
       if (error.response?.status === 401) {
-        errorMessage = "Phiên đăng nhập hết hạn, vui lòng đăng nhập lại";
+        errorMessage = 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại';
       } else if (error.response?.status === 400) {
-        errorMessage = error.response?.data?.message || "Dữ liệu không hợp lệ";
+        errorMessage = error.response?.data?.message || 'Dữ liệu không hợp lệ';
       } else if (error.response?.status === 404) {
-        errorMessage = "Không tìm thấy người dùng";
+        errorMessage = 'Không tìm thấy người dùng';
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
@@ -214,7 +197,7 @@ export const userService = {
    */
   changePassword: async (passwordData) => {
     try {
-      const response = await apiClient.put("/users/profile/password", {
+      const response = await apiClient.put('/users/profile/password', {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
         confirmPassword: passwordData.confirmPassword,
@@ -223,28 +206,28 @@ export const userService = {
       return {
         success: true,
         data: response.data.data,
-        message: response.data.message || "Đổi mật khẩu thành công",
+        message: response.data.message || 'Đổi mật khẩu thành công',
       };
     } catch (error) {
-      console.error("❌ Error changing password:", error);
+      console.error('❌ Error changing password:', error);
       return {
         success: false,
         message:
-          error.response?.data?.message || "Có lỗi xảy ra khi đổi mật khẩu",
+          error.response?.data?.message || 'Có lỗi xảy ra khi đổi mật khẩu',
       };
     }
   },
   // Refresh token
   refreshToken: async (refreshTokenValue) => {
     try {
-      console.log("Attempting to refresh token...");
+      console.log('Attempting to refresh token...');
 
       // Sử dụng apiClient chính thay vì tạo instance mới
-      const response = await apiClient.post("/auth/refresh-token", {
+      const response = await apiClient.post('/auth/refresh-token', {
         refreshToken: refreshTokenValue,
       });
 
-      console.log("Token refresh successful:", response.data);
+      console.log('Token refresh successful:', response.data);
 
       if (response.data && response.data.accessToken) {
         const tokenData = response.data;
@@ -256,37 +239,37 @@ export const userService = {
         };
 
         // Lưu token mới vào localStorage
-        localStorageUtil.set("token", newToken);
-        console.log("✅ Token updated in localStorage", newToken);
+        localStorageUtil.set('token', newToken);
+        console.log('✅ Token updated in localStorage', newToken);
 
         // Cập nhật cả trong user data nếu có
-        const userData = localStorageUtil.get("user");
+        const userData = localStorageUtil.get('user');
         if (userData) {
           userData.accessToken = tokenData.accessToken;
           if (tokenData.refreshToken) {
             userData.refreshToken = tokenData.refreshToken;
           }
-          localStorageUtil.set("user", userData);
+          localStorageUtil.set('user', userData);
         }
 
         return tokenData;
       }
 
-      throw new Error("Invalid refresh token response");
+      throw new Error('Invalid refresh token response');
     } catch (error) {
-      console.error("Token refresh failed:", error);
-      
+      console.error('Token refresh failed:', error);
+
       // Xử lý lỗi authentication
       if (error.response?.status === 401) {
-        localStorageUtil.remove("token");
-        localStorageUtil.remove("user");
-        
+        localStorageUtil.remove('token');
+        localStorageUtil.remove('user');
+
         // Chỉ redirect nếu không phải đang ở trang login
-        if (!window.location.pathname.includes("/login")) {
-          window.location.href = "/login";
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
         }
       }
-      
+
       throw error.response?.data || error;
     }
   },
@@ -303,54 +286,54 @@ export const userService = {
         return {
           success: false,
           message:
-            "Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.",
+            'Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.',
         };
       }
 
       // Lấy token mới nhất từ localStorage
-      const tokenData = localStorageUtil.get("token");
+      const tokenData = localStorageUtil.get('token');
       if (!tokenData || !tokenData.accessToken) {
         return {
           success: false,
-          message: "Không tìm thấy token xác thực. Vui lòng đăng nhập lại.",
+          message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập lại.',
         };
       } // Create form data object for file upload
       const formData = new FormData();
-      formData.append("file", file); // Sử dụng key "file" theo yêu cầu của backend
+      formData.append('file', file); // Sử dụng key "file" theo yêu cầu của backend
 
-      console.log("Sending avatar upload request with form data...", {
+      console.log('Sending avatar upload request with form data...', {
         fileSize: file.size,
         fileType: file.type,
         fileName: file.name,
         hasToken: !!tokenData.accessToken,
-        tokenFirstChars: tokenData.accessToken.substring(0, 15) + "...", // Hiện token một phần để debug
+        tokenFirstChars: tokenData.accessToken.substring(0, 15) + '...', // Hiện token một phần để debug
       });
-      console.log("Sending avatar upload request to:", "/users/profile/avatar");
+      console.log('Sending avatar upload request to:', '/users/profile/avatar');
 
-      const response = await apiClient.post("/users/profile/avatar", formData, {
+      const response = await apiClient.post('/users/profile/avatar', formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${tokenData.accessToken}`, // Đảm bảo token được gửi đi
         },
         timeout: 30000, // Tăng timeout lên 30 giây cho upload file lớn
       });
 
-      console.log("Avatar upload API response:", response);
-      console.log("Avatar upload response data:", response.data);
-      console.log("Avatar upload response status:", response.status);
+      console.log('Avatar upload API response:', response);
+      console.log('Avatar upload response data:', response.data);
+      console.log('Avatar upload response status:', response.status);
 
       // Kiểm tra cấu trúc response từ API
       if (!response.data) {
-        console.error("Không nhận được dữ liệu từ API response");
+        console.error('Không nhận được dữ liệu từ API response');
         return {
           success: false,
-          message: "Không nhận được dữ liệu từ API",
+          message: 'Không nhận được dữ liệu từ API',
         };
       } // Xử lý nhiều định dạng response khác nhau
       let responseData = response.data;
       let avatarData = responseData;
 
-      console.log("Phân tích cấu trúc responseData:", responseData);
+      console.log('Phân tích cấu trúc responseData:', responseData);
 
       // Nếu response là { success, data, message } format
       if (
@@ -359,57 +342,57 @@ export const userService = {
         responseData.data
       ) {
         avatarData = responseData.data;
-        console.log("Trích xuất data từ format chuẩn:", avatarData);
+        console.log('Trích xuất data từ format chuẩn:', avatarData);
       }
 
       // Kiểm tra nếu avatar nằm trực tiếp trong data và là string
       if (
-        typeof responseData === "string" &&
-        (responseData.includes("/img/") ||
-          responseData.includes("/avatar/") ||
-          responseData.includes("/images/"))
+        typeof responseData === 'string' &&
+        (responseData.includes('/img/') ||
+          responseData.includes('/avatar/') ||
+          responseData.includes('/images/'))
       ) {
         avatarData = responseData;
-        console.log("Avatar là đường dẫn trực tiếp:", avatarData);
+        console.log('Avatar là đường dẫn trực tiếp:', avatarData);
       }
 
       // Trường hợp data.avatar hoặc data là object có chứa avatar
-      if (typeof avatarData === "object") {
+      if (typeof avatarData === 'object') {
         if (avatarData.avatar) {
-          console.log("Tìm thấy avatar trong data.avatar", avatarData.avatar);
+          console.log('Tìm thấy avatar trong data.avatar', avatarData.avatar);
           avatarData = { avatar: avatarData.avatar };
         } else if (responseData.avatar) {
           console.log(
-            "Tìm thấy avatar trong responseData.avatar",
+            'Tìm thấy avatar trong responseData.avatar',
             responseData.avatar
           );
           avatarData = { avatar: responseData.avatar };
         }
       }
 
-      console.log("Dữ liệu avatar cuối cùng trước khi trả về:", avatarData);
+      console.log('Dữ liệu avatar cuối cùng trước khi trả về:', avatarData);
 
       return {
         success: true,
         data: avatarData,
-        message: "Cập nhật avatar thành công",
+        message: 'Cập nhật avatar thành công',
       };
     } catch (error) {
-      console.error("❌ Error uploading avatar:", error);
+      console.error('❌ Error uploading avatar:', error);
 
       // Kiểm tra lỗi token hết hạn
       if (error.response?.status === 401) {
-        console.log("Token hết hạn, thử refresh token...");
+        console.log('Token hết hạn, thử refresh token...');
         try {
           // Thử làm mới token và gửi lại yêu cầu
-          const tokenData = localStorageUtil.get("token");
+          const tokenData = localStorageUtil.get('token');
           if (tokenData?.refreshToken) {
             const refreshResponse = await userService.refreshToken(
               tokenData.refreshToken
             );
             if (refreshResponse.accessToken) {
               // Update token và thử lại
-              localStorageUtil.set("token", {
+              localStorageUtil.set('token', {
                 ...tokenData,
                 accessToken: refreshResponse.accessToken,
                 refreshToken:
@@ -421,10 +404,10 @@ export const userService = {
             }
           }
         } catch (refreshError) {
-          console.error("Không thể làm mới token:", refreshError);
+          console.error('Không thể làm mới token:', refreshError);
           return {
             success: false,
-            message: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+            message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
             error: refreshError,
           };
         }
@@ -432,7 +415,7 @@ export const userService = {
 
       return {
         success: false,
-        message: error.response?.data?.message || "Không thể cập nhật avatar",
+        message: error.response?.data?.message || 'Không thể cập nhật avatar',
         error: error,
       };
     }
@@ -443,16 +426,16 @@ export const userService = {
    */
   ensureValidToken: async () => {
     try {
-      const tokenData = localStorageUtil.get("token");
+      const tokenData = localStorageUtil.get('token');
       if (!tokenData || !tokenData.accessToken) {
-        console.error("Không tìm thấy token xác thực");
+        console.error('Không tìm thấy token xác thực');
         return false;
       }
 
       // Phân tích JWT token để kiểm tra hết hạn
-      const tokenParts = tokenData.accessToken.split(".");
+      const tokenParts = tokenData.accessToken.split('.');
       if (tokenParts.length !== 3) {
-        console.error("Token không hợp lệ");
+        console.error('Token không hợp lệ');
         return false;
       }
 
@@ -464,7 +447,7 @@ export const userService = {
 
         // Kiểm tra nếu token sắp hết hạn (còn dưới 5 phút)
         if (expiryTime - currentTime < 5 * 60 * 1000) {
-          console.log("Token sắp hết hạn, tiến hành làm mới..."); // Gọi hàm refreshToken
+          console.log('Token sắp hết hạn, tiến hành làm mới...'); // Gọi hàm refreshToken
           const refreshResult = await userService.refreshToken(
             tokenData.refreshToken
           );
@@ -480,11 +463,11 @@ export const userService = {
         // Token vẫn còn hiệu lực
         return true;
       } catch (error) {
-        console.error("Lỗi khi phân tích token:", error);
+        console.error('Lỗi khi phân tích token:', error);
         return false;
       }
     } catch (error) {
-      console.error("Lỗi khi kiểm tra token:", error);
+      console.error('Lỗi khi kiểm tra token:', error);
       return false;
     }
   },
@@ -493,10 +476,10 @@ export const consultantService = {
   // Lấy danh sách bác sĩ
   getConsultants: async () => {
     try {
-      const response = await apiClient.get("/consultants");
+      const response = await apiClient.get('/consultants');
       return response.data;
     } catch (error) {
-      console.error("Error fetching consultants:", error);
+      console.error('Error fetching consultants:', error);
       throw error.response?.data || error;
     }
   },
@@ -504,12 +487,12 @@ export const consultantService = {
   updateProfile: async (consultantDate) => {
     try {
       const response = await apiClient.put(
-        "/consultants/profile",
+        '/consultants/profile',
         consultantDate
       );
       return response.data;
     } catch (error) {
-      console.error("Error updating consultant profile:", error);
+      console.error('Error updating consultant profile:', error);
       throw error.response?.data || error;
     }
   },
@@ -519,7 +502,7 @@ export const consultantService = {
       const response = await apiClient.get(`/consultants/${consultantId}`);
       return response.data;
     } catch (error) {
-      console.error("Error fetching consultant profile:", error);
+      console.error('Error fetching consultant profile:', error);
       throw error.response?.data || error;
     }
   },

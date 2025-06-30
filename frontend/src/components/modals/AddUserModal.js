@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
-import notify from '../../utils/notification';
+import { toast } from 'react-toastify';
 import {
   Dialog,
   DialogTitle,
@@ -87,7 +87,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
   const handleTogglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
-  // Validate password strength
+  // Validate password
   const validatePassword = (password) => {
     // Validation based on backend requirements:
     // @Size(min = 6, max = 100)
@@ -160,7 +160,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
     );
 
     if (missingFields.length > 0) {
-      notify.warning(
+      toast.warning(
         'Thông tin thiếu',
         `Vui lòng điền đầy đủ các trường bắt buộc: ${missingFields
           .map((field) => {
@@ -183,7 +183,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      notify.error(
+      toast.error(
         'Email không hợp lệ',
         'Vui lòng nhập địa chỉ email đúng định dạng!'
       );
@@ -193,7 +193,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
     // Gender validation
     const genderRegex = /^(Nam|Nữ|Khác|MALE|FEMALE|OTHER)$/;
     if (!genderRegex.test(formData.gender)) {
-      notify.error(
+      toast.error(
         'Giới tính không hợp lệ',
         'Giới tính phải là: Nam, Nữ, Khác, MALE, FEMALE, hoặc OTHER'
       );
@@ -204,7 +204,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
       formData.username.trim() !== '' &&
       (formData.username.length < 4 || formData.username.length > 50)
     ) {
-      notify.error('Username không hợp lệ', 'Username phải có từ 4-50 ký tự!');
+      toast.error('Username không hợp lệ', 'Username phải có từ 4-50 ký tự!');
       return;
     } // Password validation (optional but must meet requirements if provided)
     if (formData.password && formData.password.trim() !== '') {
@@ -221,7 +221,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
         if (!passwordValidation.hasSpecialChar)
           errorMessage += '- Ít nhất 1 ký tự đặc biệt (@#$%^&+=)';
 
-        notify.error('Mật khẩu không hợp lệ', errorMessage);
+        toast.error('Mật khẩu không hợp lệ', errorMessage);
         return;
       }
     } // Phone validation (optional but must be valid if provided)
@@ -231,7 +231,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
       formData.phone.trim() !== '' &&
       !phoneRegex.test(formData.phone)
     ) {
-      notify.error(
+      toast.error(
         'Số điện thoại không hợp lệ',
         'Số điện thoại phải có 10-11 chữ số!'
       );

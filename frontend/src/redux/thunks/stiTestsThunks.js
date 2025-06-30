@@ -27,7 +27,6 @@ import {
   updateTest,
 } from "@/redux/slices/stiTestsSlice";
 
-import { notify } from "@/utils/notification";
 
 /**
  * Fetch STI tests based on status

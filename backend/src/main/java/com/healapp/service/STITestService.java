@@ -148,14 +148,15 @@ public class STITestService {
             }
 
             // Validate có ít nhất 1 active component trong package
-            List<PackageService> packageServices = packageServiceRepository.findByStiPackage_PackageId(stiPackage.getPackageId());
+            List<PackageService> packageServices = packageServiceRepository
+                    .findByStiPackage_PackageId(stiPackage.getPackageId());
             boolean hasActiveComponents = packageServices != null
                     && packageServices.stream()
-                    .map(PackageService::getStiService)
-                    .filter(service -> service != null && Boolean.TRUE.equals(service.getIsActive()))
-                    .anyMatch(service -> service.getTestComponents() != null
-                            && service.getTestComponents().stream()
-                            .anyMatch(component -> Boolean.TRUE.equals(component.getIsActive())));
+                            .map(PackageService::getStiService)
+                            .filter(service -> service != null && Boolean.TRUE.equals(service.getIsActive()))
+                            .anyMatch(service -> service.getTestComponents() != null
+                                    && service.getTestComponents().stream()
+                                            .anyMatch(component -> Boolean.TRUE.equals(component.getIsActive())));
 
             if (!hasActiveComponents) {
                 return ApiResponse.error("STI package has no active test components available");
@@ -466,11 +467,13 @@ public class STITestService {
             } // COMPLETED status
             else if (request.getStatus() == STITestStatus.COMPLETED
                     && ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
-                // Validate that all required test results are completed when transitioning to COMPLETED
+                // Validate that all required test results are completed when transitioning to
+                // COMPLETED
                 if (!validateAllTestResultsCompleted(test)) {
-                    return ApiResponse.error("Cannot complete test - all test results must be filled before completion");
+                    return ApiResponse
+                            .error("Cannot complete test - all test results must be filled before completion");
                 }
-                
+
                 test.setStatus(STITestStatus.COMPLETED);
             }
 
@@ -514,7 +517,8 @@ public class STITestService {
         }
     }
 
-    private boolean validateAndSaveTestResults(STITest test, List<TestResultRequest> resultRequests, Long userId, boolean requireAllResults) {
+    private boolean validateAndSaveTestResults(STITest test, List<TestResultRequest> resultRequests, Long userId,
+            boolean requireAllResults) {
         List<ServiceTestComponent> serviceComponents;
 
         // Get components based on whether this is a service or package test
@@ -524,7 +528,8 @@ public class STITestService {
         } else if (test.getStiPackage() != null) {
             // Package test - get all components from all services in the package
             serviceComponents = new ArrayList<>();
-            List<PackageService> packageServices = packageServiceRepository.findByStiPackage_PackageId(test.getStiPackage().getPackageId());
+            List<PackageService> packageServices = packageServiceRepository
+                    .findByStiPackage_PackageId(test.getStiPackage().getPackageId());
             for (PackageService ps : packageServices) {
                 STIService service = ps.getStiService();
                 if (service.getTestComponents() != null) {
@@ -540,7 +545,8 @@ public class STITestService {
                 .map(ServiceTestComponent::getComponentId)
                 .collect(Collectors.toList());
 
-        // Check if all required results are provided (only when requireAllResults is true)
+        // Check if all required results are provided (only when requireAllResults is
+        // true)
         if (requireAllResults && resultRequests.size() < serviceComponentIds.size()) {
             List<Long> missingComponentIds = new ArrayList<>(serviceComponentIds);
             missingComponentIds.removeAll(resultRequests.stream()
@@ -631,10 +637,12 @@ public class STITestService {
                 }
             } else if (test.getStiPackage() != null) {
                 // Package test - get all components from all services in the package
-                List<PackageService> packageServices = packageServiceRepository.findByStiPackage_PackageId(test.getStiPackage().getPackageId());
+                List<PackageService> packageServices = packageServiceRepository
+                        .findByStiPackage_PackageId(test.getStiPackage().getPackageId());
                 for (PackageService ps : packageServices) {
                     STIService service = ps.getStiService();
-                    if (service != null && Boolean.TRUE.equals(service.getIsActive()) && service.getTestComponents() != null) {
+                    if (service != null && Boolean.TRUE.equals(service.getIsActive())
+                            && service.getTestComponents() != null) {
                         requiredComponents.addAll(service.getTestComponents().stream()
                                 .filter(component -> Boolean.TRUE.equals(component.getIsActive()))
                                 .collect(Collectors.toList()));
@@ -663,7 +671,7 @@ public class STITestService {
             missingComponentIds.removeAll(completedComponentIds);
 
             if (!missingComponentIds.isEmpty()) {
-                log.warn("Test {} cannot be completed - missing results for components: {}", 
+                log.warn("Test {} cannot be completed - missing results for components: {}",
                         test.getTestId(), missingComponentIds);
                 return false;
             }
@@ -1033,7 +1041,15 @@ public class STITestService {
             userRepository.findById(result.getReviewedBy())
                     .ifPresent(user -> response.setReviewerName(user.getFullName()));
         }
-
+        // Sửa logic lấy serviceId và packageId
+        if (result.getStiService() != null) {
+            response.setServiceId(result.getStiService().getId());
+        } else if (result.getStiTest() != null && result.getStiTest().getStiService() != null) {
+            response.setServiceId(result.getStiTest().getStiService().getId());
+        }
+        if (result.getStiTest() != null && result.getStiTest().getStiPackage() != null) {
+            response.setPackageId(result.getStiTest().getStiPackage().getPackageId());
+        }
         return response;
     }
 
@@ -1070,7 +1086,8 @@ public class STITestService {
             return;
         }
         // Lấy danh sách dịch vụ qua bảng trung gian
-        List<PackageService> packageServices = packageServiceRepository.findByStiPackage_PackageId(stiTest.getStiPackage().getPackageId());
+        List<PackageService> packageServices = packageServiceRepository
+                .findByStiPackage_PackageId(stiTest.getStiPackage().getPackageId());
         if (packageServices == null || packageServices.isEmpty()) {
             // Không có service nào trong gói này
             return;
@@ -1097,7 +1114,7 @@ public class STITestService {
                 }
             }
         }
-        
+
         log.info("Created {} test results for package booking: {}", totalResults, stiTest.getTestId());
     }
 
@@ -1239,7 +1256,8 @@ public class STITestService {
      * Allows staff to modify existing results before completing the test
      */
     @Transactional
-    public ApiResponse<STITestResponse> updateTestResults(Long testId, List<TestResultRequest> resultRequests, Long userId) {
+    public ApiResponse<STITestResponse> updateTestResults(Long testId, List<TestResultRequest> resultRequests,
+            Long userId) {
         try {
             log.info("Updating test results for test {} by user {}", testId, userId);
 
@@ -1262,7 +1280,7 @@ public class STITestService {
 
             UserDtls user = userOpt.get();
             String userRole = user.getRole() != null ? user.getRole().getRoleName() : null;
-            
+
             // Only STAFF and ADMIN can update test results
             if (!"STAFF".equals(userRole) && !"ADMIN".equals(userRole)) {
                 return ApiResponse.error("Only staff and admin can update test results");
@@ -1280,7 +1298,7 @@ public class STITestService {
             // Update the result date
             test.setResultDate(LocalDateTime.now());
             test.setUpdatedAt(LocalDateTime.now());
-            
+
             STITest updatedTest = stiTestRepository.save(test);
             STITestResponse response = convertToResponse(updatedTest);
 
