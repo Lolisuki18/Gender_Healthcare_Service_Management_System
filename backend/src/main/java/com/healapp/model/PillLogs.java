@@ -28,10 +28,10 @@ public class PillLogs {
     private Long logId;
 
     @ManyToOne
-    @JoinColumn(name ="pills_id", nullable = false)
-    private ControlPills pillsId;
+    @JoinColumn(name = "control_pills_id")
+    private ControlPills controlPills;
 
-    @Column(name = "check_in")
+    @Column(name = "check_in", nullable = false)
     private LocalDateTime checkIn;
 
     @Column(name ="created_at")
