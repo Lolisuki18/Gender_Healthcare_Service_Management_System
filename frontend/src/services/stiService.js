@@ -775,29 +775,29 @@ const stiService = {
   updateTestResults,
 
   // New function to get services within a package
-  getServicesInPackage: async (packageId) => {
-    try {
-      // First attempt to get full package details which should include services
-      const response = await apiClient.get(`/sti-packages/${packageId}`);
-      const packageData = response.data?.data || response.data;
-
-      if (!packageData) {
-        throw new Error('Package data not found');
-      }
-
-      // Extract just the services array
-      const services = packageData.services || [];
-
-      return {
-        status: 'SUCCESS',
-        data: services,
-        message: `Retrieved ${services.length} services for package #${packageId}`,
-      };
-    } catch (error) {
-      console.error('Error fetching package services:', error);
-      throw error.response?.data || error.message;
-    }
-  },
+  // getServicesInPackage: async (packageId) => {
+  //   try {
+  //     // First attempt to get full package details which should include services
+  //     const response = await apiClient.get(`/sti-packages/${packageId}`);
+  //     const packageData = response.data?.data || response.data;
+  //
+  //     if (!packageData) {
+  //       throw new Error('Package data not found');
+  //     }
+  //
+  //     // Extract just the services array
+  //     const services = packageData.services || [];
+  //
+  //     return {
+  //       status: 'SUCCESS',
+  //       data: services,
+  //       message: `Retrieved ${services.length} services for package #${packageId}`,
+  //     };
+  //   } catch (error) {
+  //     console.error('Error fetching package services:', error);
+  //     throw error.response?.data || error.message;
+  //   }
+  // },
   // Add any new functions here
 };
 

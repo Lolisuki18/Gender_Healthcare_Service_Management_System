@@ -465,55 +465,33 @@ export const formatDateTime = (dateTimeString) => {
 };
 
 /**
- * ✅ Hàm trợ giúp xử lý mảng ngày tháng từ API
- *
- * @param {Array} dateArray - Mảng [năm, tháng, ngày] hoặc [năm, tháng, ngày, giờ, phút]
- * @returns {Date} Đối tượng Date nếu hợp lệ, null nếu không
- *
- * @example
- * arrayToDate([2025, 6, 19]) // Date object representing 2025-06-19
- * arrayToDate([2025, 5, 19, 14, 30]) // Date object representing 2025-06-19 14:30
+ * Format array [year, month, day, hour, minute] hoặc [year, month, day] thành DD/MM/YYYY HH:MM hoặc DD/MM/YYYY
+ * @param {Array} arr
+ * @returns {string}
  */
-export const arrayToDate = (dateArray) => {
-  if (!dateArray || !Array.isArray(dateArray) || dateArray.length < 3) {
-    console.warn('⚠️ Invalid date array:', dateArray);
-    return null;
-  }
-
+export const formatDateTimeFromArray = (arr) => {
+  if (!Array.isArray(arr)) return 'Chưa cập nhật';
   try {
-    const year = dateArray[0];
-    const month = dateArray[1]; // Có thể là 0-11 hoặc 1-12
-    const day = dateArray[2];
-    let hours = 0;
-    let minutes = 0;
-
-    // Nếu có thêm thông tin giờ, phút
-    if (dateArray.length >= 5) {
-      hours = dateArray[3] || 0;
-      minutes = dateArray[4] || 0;
+    let date;
+    if (arr.length >= 5) {
+      date = new Date(arr[0], arr[1] - 1, arr[2], arr[3], arr[4]);
+    } else if (arr.length >= 3) {
+      date = new Date(arr[0], arr[1] - 1, arr[2]);
+    } else {
+      return 'Chưa cập nhật';
     }
-
-    // Thử với giả định month là 1-12
-    let date1 = new Date(year, month - 1, day, hours, minutes);
-
-    // Thử với giả định month là 0-11
-    let date2 = new Date(year, month, day, hours, minutes);
-
-    // Kiểm tra xem date nào hợp lệ
-    if (!isNaN(date1.getTime())) {
-      console.log('✅ Valid date from array (month 1-12):', date1);
-      return date1;
+    if (isNaN(date.getTime())) return 'Thời gian không hợp lệ';
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    if (arr.length >= 5) {
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } else {
+      return `${day}/${month}/${year}`;
     }
-
-    if (!isNaN(date2.getTime())) {
-      console.log('✅ Valid date from array (month 0-11):', date2);
-      return date2;
-    }
-
-    console.warn('⚠️ Could not create valid date from array:', dateArray);
-    return null;
-  } catch (error) {
-    console.error('❌ Error converting array to date:', error);
-    return null;
+  } catch (e) {
+    return 'Lỗi định dạng thời gian';
   }
 };

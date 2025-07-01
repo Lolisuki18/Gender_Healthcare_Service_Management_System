@@ -8,7 +8,7 @@
  * - Thay đổi trạng thái lịch tư vấn
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -47,11 +47,33 @@ import {
   EventAvailable as EventAvailableIcon,
   PendingActions as PendingActionsIcon,
   Update as UpdateIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import viLocale from 'date-fns/locale/vi';
+import consultantService from '@/services/consultantService';
+import {
+  formatDateDisplay,
+  formatDateTime,
+  formatDateTimeFromArray,
+} from '@/utils/dateUtils';
+import { toast } from 'react-toastify';
+import { userService } from '@/services/userService';
+import EmailIcon from '@mui/icons-material/Email';
+import PhoneIcon from '@mui/icons-material/Phone';
+import WcIcon from '@mui/icons-material/Wc';
+import CakeIcon from '@mui/icons-material/Cake';
+import HomeIcon from '@mui/icons-material/Home';
+
+// Thêm mapping ENUM -> text tiếng Việt ở đầu file (sau import)
+const STATUS_TEXT = {
+  PENDING: 'Chờ xác nhận',
+  CONFIRMED: 'Đã xác nhận',
+  CANCELED: 'Đã hủy',
+  COMPLETED: 'Đã hoàn thành',
+};
 
 // Styled components
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -193,7 +215,12 @@ const MedicalTabs = styled(Tabs)(({ theme }) => ({
 }));
 
 // Component để hiển thị slot thời gian
-const TimeSlot = ({ slot, onViewDetails, onUpdateStatus }) => {
+const TimeSlot = ({
+  slot,
+  onViewDetails,
+  onUpdateConsultationStatus,
+  updateStatus,
+}) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
@@ -210,9 +237,26 @@ const TimeSlot = ({ slot, onViewDetails, onUpdateStatus }) => {
     onViewDetails(slot);
   };
 
-  const handleUpdateStatus = (status) => {
+  const consultationId = slot.consultationId || slot.id;
+
+  const handleUpdateStatusClick = (status) => {
     handleClose();
-    onUpdateStatus(slot.id, status);
+    if (typeof onUpdateConsultationStatus !== 'function') {
+      console.warn(
+        'onUpdateConsultationStatus prop is not a function!',
+        onUpdateConsultationStatus
+      );
+      return;
+    }
+    if (typeof consultationId !== 'number' || typeof status !== 'string') {
+      console.warn(
+        'handleUpdateStatusClick: consultationId or status is invalid',
+        consultationId,
+        status
+      );
+      return;
+    }
+    onUpdateConsultationStatus(consultationId, status);
   };
 
   // Hàm lấy icon theo phương thức tư vấn
@@ -230,40 +274,40 @@ const TimeSlot = ({ slot, onViewDetails, onUpdateStatus }) => {
   // Hàm lấy chip status
   const getStatusChip = (status) => {
     switch (status) {
-      case 'scheduled':
+      case 'PENDING':
         return (
           <StatusChip
-            label="Đã đặt lịch"
+            label={STATUS_TEXT[status]}
+            size="small"
+            status={status}
+            icon={<PendingActionsIcon fontSize="small" />}
+          />
+        );
+      case 'CONFIRMED':
+        return (
+          <StatusChip
+            label={STATUS_TEXT[status]}
             size="small"
             status={status}
             icon={<EventAvailableIcon fontSize="small" />}
           />
         );
-      case 'completed':
+      case 'CANCELED':
         return (
           <StatusChip
-            label="Đã hoàn thành"
-            size="small"
-            status={status}
-            icon={<CheckIcon fontSize="small" />}
-          />
-        );
-      case 'canceled':
-        return (
-          <StatusChip
-            label="Đã hủy"
+            label={STATUS_TEXT[status]}
             size="small"
             status={status}
             icon={<CloseIcon fontSize="small" />}
           />
         );
-      case 'pending':
+      case 'COMPLETED':
         return (
           <StatusChip
-            label="Chờ xác nhận"
+            label={STATUS_TEXT[status]}
             size="small"
             status={status}
-            icon={<PendingActionsIcon fontSize="small" />}
+            icon={<CheckIcon fontSize="small" />}
           />
         );
       default:
@@ -346,15 +390,13 @@ const TimeSlot = ({ slot, onViewDetails, onUpdateStatus }) => {
                     mb: 0.5,
                   }}
                 >
-                  {new Date(slot.startTime).toLocaleTimeString('vi-VN', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}{' '}
+                  {Array.isArray(slot.startTime)
+                    ? formatDateTimeFromArray(slot.startTime)
+                    : formatDateTime(slot.startTime)}{' '}
                   -{' '}
-                  {new Date(slot.endTime).toLocaleTimeString('vi-VN', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  {Array.isArray(slot.endTime)
+                    ? formatDateTimeFromArray(slot.endTime)
+                    : formatDateTime(slot.endTime)}
                 </Typography>
                 <Typography
                   variant="body2"
@@ -363,11 +405,9 @@ const TimeSlot = ({ slot, onViewDetails, onUpdateStatus }) => {
                     fontSize: '0.875rem',
                   }}
                 >
-                  {new Date(slot.date).toLocaleDateString('vi-VN', {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short',
-                  })}
+                  {Array.isArray(slot.date)
+                    ? formatDateTimeFromArray(slot.date)
+                    : formatDateDisplay(slot.date)}
                 </Typography>
               </Box>
             </Box>
@@ -451,7 +491,9 @@ const TimeSlot = ({ slot, onViewDetails, onUpdateStatus }) => {
                   }}
                 >
                   Thời gian tạo:{' '}
-                  {new Date(slot.createdAt).toLocaleDateString('vi-VN')}
+                  {Array.isArray(slot.createdAt)
+                    ? formatDateTimeFromArray(slot.createdAt)
+                    : formatDateDisplay(slot.createdAt)}
                 </Typography>
                 {slot.customerPhone && (
                   <Typography
@@ -497,6 +539,73 @@ const TimeSlot = ({ slot, onViewDetails, onUpdateStatus }) => {
                   justifyContent: { xs: 'flex-start', md: 'flex-end' },
                 }}
               >
+                {slot.status === 'PENDING' && (
+                  <>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      onClick={() => handleUpdateStatusClick('CONFIRMED')}
+                      disabled={updateStatus.loading}
+                      sx={{ borderRadius: 2, fontWeight: 600 }}
+                    >
+                      {updateStatus.loading ? 'Đang xác nhận...' : 'Xác nhận'}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => handleUpdateStatusClick('CANCELED')}
+                      disabled={updateStatus.loading}
+                      sx={{ borderRadius: 2, fontWeight: 600 }}
+                    >
+                      {updateStatus.loading ? 'Đang xử lý...' : 'Huỷ'}
+                    </Button>
+                  </>
+                )}
+                {slot.status === 'CONFIRMED' && (
+                  <>
+                    {(slot.meetUrl || slot.meetLink) && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        href={slot.meetUrl || slot.meetLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          fontSize: '0.75rem',
+                          padding: '6px 12px',
+                          minWidth: 'auto',
+                          background:
+                            'linear-gradient(45deg, #1ABC9C, #16A085)',
+                          color: '#fff',
+                          borderRadius: '6px',
+                          '&:hover': {
+                            background:
+                              'linear-gradient(45deg, #16A085, #148F77)',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 12px rgba(26, 188, 156, 0.3)',
+                          },
+                        }}
+                        startIcon={<VideocamIcon fontSize="small" />}
+                      >
+                        Join Meet
+                      </Button>
+                    )}
+                    <Button
+                      variant="contained"
+                      color="success"
+                      size="small"
+                      onClick={() => handleUpdateStatusClick('COMPLETED')}
+                      disabled={updateStatus.loading}
+                      sx={{ borderRadius: 2, fontWeight: 600 }}
+                    >
+                      {updateStatus.loading
+                        ? 'Đang hoàn thành...'
+                        : 'Hoàn thành'}
+                    </Button>
+                  </>
+                )}
                 <Button
                   variant="outlined"
                   size="medium"
@@ -538,53 +647,8 @@ const TimeSlot = ({ slot, onViewDetails, onUpdateStatus }) => {
                 </IconButton>
               </Box>
 
-              {/* Google Meet link cho video consultation */}
-              {slot.type === 'video' && slot.meetLink && (
-                <Box
-                  sx={{
-                    textAlign: { xs: 'left', md: 'right' },
-                    width: '100%',
-                  }}
-                >
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'text.secondary',
-                      fontSize: '0.75rem',
-                      display: 'block',
-                      mb: 0.5,
-                    }}
-                  >
-                    Link tư vấn:
-                  </Typography>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    href={slot.meetLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      fontSize: '0.75rem',
-                      padding: '6px 12px',
-                      minWidth: 'auto',
-                      background: 'linear-gradient(45deg, #1ABC9C, #16A085)',
-                      color: '#fff',
-                      borderRadius: '6px',
-                      '&:hover': {
-                        background: 'linear-gradient(45deg, #16A085, #148F77)',
-                        transform: 'translateY(-1px)',
-                        boxShadow: '0 4px 12px rgba(26, 188, 156, 0.3)',
-                      },
-                    }}
-                    startIcon={<VideocamIcon fontSize="small" />}
-                  >
-                    Join Meet
-                  </Button>
-                </Box>
-              )}
-
               {/* Hiển thị feedback cho completed consultations */}
-              {slot.status === 'completed' && slot.rating && (
+              {slot.status === 'COMPLETED' && slot.rating && (
                 <Box
                   sx={{
                     textAlign: { xs: 'left', md: 'right' },
@@ -649,9 +713,9 @@ const TimeSlot = ({ slot, onViewDetails, onUpdateStatus }) => {
           Xem chi tiết
         </MenuItem>
         <Divider sx={{ my: 0.5 }} />
-        {slot.status === 'pending' && (
+        {slot.status === 'PENDING' && (
           <MenuItem
-            onClick={() => handleUpdateStatus('scheduled')}
+            onClick={() => handleUpdateStatusClick('CONFIRMED')}
             sx={{
               py: 1.5,
               fontSize: '0.9rem',
@@ -666,9 +730,9 @@ const TimeSlot = ({ slot, onViewDetails, onUpdateStatus }) => {
             Xác nhận lịch tư vấn
           </MenuItem>
         )}
-        {slot.status === 'scheduled' && (
+        {slot.status === 'CONFIRMED' && (
           <MenuItem
-            onClick={() => handleUpdateStatus('completed')}
+            onClick={() => handleUpdateStatusClick('COMPLETED')}
             sx={{
               py: 1.5,
               fontSize: '0.9rem',
@@ -683,9 +747,9 @@ const TimeSlot = ({ slot, onViewDetails, onUpdateStatus }) => {
             Đánh dấu đã hoàn thành
           </MenuItem>
         )}
-        {(slot.status === 'scheduled' || slot.status === 'pending') && (
+        {(slot.status === 'PENDING' || slot.status === 'CONFIRMED') && (
           <MenuItem
-            onClick={() => handleUpdateStatus('canceled')}
+            onClick={() => handleUpdateStatusClick('CANCELED')}
             sx={{
               py: 1.5,
               fontSize: '0.9rem',
@@ -724,362 +788,49 @@ const MyConsultationsContent = () => {
 
   // Pagination states
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10); // Mock data - replace with API call
-  const [consultations, setConsultations] = useState([
-    {
-      id: 1,
-      customerName: 'Nguyễn Thị Hoa',
-      customerEmail: 'nguyenthihoa@example.com',
-      customerPhone: '0934567890',
-      customerAvatar: '/images/avatars/avatar1.jpg',
-      date: '2025-06-22T00:00:00',
-      startTime: '2025-06-22T09:00:00',
-      endTime: '2025-06-22T10:00:00',
-      type: 'video',
-      status: 'scheduled',
-      notes:
-        'Khách hàng muốn tư vấn về cách phòng tránh STI và các biện pháp an toàn tình dục.',
-      reason: 'Tư vấn phòng tránh STI',
-      meetLink: 'https://meet.google.com/abc-defg-hij',
-      createdAt: '2025-06-20T14:30:00',
-    },
-    {
-      id: 2,
-      customerName: 'Trần Văn Minh',
-      customerEmail: 'tranvanminh@example.com',
-      customerPhone: '0912345678',
-      customerAvatar: '/images/avatars/avatar2.jpg',
-      date: '2025-06-22T00:00:00',
-      startTime: '2025-06-22T13:30:00',
-      endTime: '2025-06-22T14:30:00',
-      type: 'chat',
-      status: 'pending',
-      notes:
-        'Khách hàng cần tư vấn về các biện pháp xét nghiệm STI và kết quả xét nghiệm gần đây.',
-      reason: 'Tư vấn xét nghiệm STI',
-      createdAt: '2025-06-21T10:15:00',
-    },
-    {
-      id: 3,
-      customerName: 'Lê Thị Mai',
-      customerEmail: 'lethimai@example.com',
-      customerPhone: '0978123456',
-      customerAvatar: '/images/avatars/avatar3.jpg',
-      date: '2025-06-23T00:00:00',
-      startTime: '2025-06-23T10:00:00',
-      endTime: '2025-06-23T11:00:00',
-      type: 'video',
-      status: 'scheduled',
-      notes:
-        'Khách hàng cần tư vấn về kết quả xét nghiệm và hướng dẫn điều trị.',
-      reason: 'Tư vấn kết quả xét nghiệm STI',
-      meetLink: 'https://meet.google.com/xyz-mnop-qrs',
-      createdAt: '2025-06-20T09:45:00',
-    },
-    {
-      id: 4,
-      customerName: 'Phạm Văn Hoàng',
-      customerEmail: 'phamvanhoang@example.com',
-      customerPhone: '0936789012',
-      customerAvatar: '/images/avatars/avatar4.jpg',
-      date: '2025-06-21T00:00:00',
-      startTime: '2025-06-21T15:00:00',
-      endTime: '2025-06-21T16:00:00',
-      type: 'chat',
-      status: 'completed',
-      notes:
-        'Đã tư vấn về các biện pháp phòng ngừa và điều trị STI, hướng dẫn sử dụng thuốc.',
-      reason: 'Tư vấn phòng ngừa và điều trị STI',
-      feedback:
-        'Rất hài lòng với buổi tư vấn, chuyên gia giải thích rất rõ ràng và chi tiết. Cảm ơn bác sĩ đã tận tình tư vấn.',
-      rating: 5,
-      createdAt: '2025-06-19T08:30:00',
-    },
-    {
-      id: 5,
-      customerName: 'Vũ Thị Hương',
-      customerEmail: 'vuthihuong@example.com',
-      customerPhone: '0945678901',
-      customerAvatar: '/images/avatars/avatar5.jpg',
-      date: '2025-06-21T00:00:00',
-      startTime: '2025-06-21T11:30:00',
-      endTime: '2025-06-21T12:30:00',
-      type: 'video',
-      status: 'canceled',
-      notes: 'Khách hàng hủy do lịch trình cá nhân thay đổi.',
-      reason: 'Tư vấn về các biểu hiện của STI',
-      meetLink: 'https://meet.google.com/tuv-wxyz-abc',
-      cancelReason: 'Có việc đột xuất, sẽ đặt lại sau',
-      createdAt: '2025-06-19T14:20:00',
-    },
-    {
-      id: 6,
-      customerName: 'Đặng Thanh Tùng',
-      customerEmail: 'dangthanhtung@example.com',
-      customerPhone: '0967890123',
-      customerAvatar: '/images/avatars/avatar6.jpg',
-      date: '2025-06-24T00:00:00',
-      startTime: '2025-06-24T14:00:00',
-      endTime: '2025-06-24T15:00:00',
-      type: 'video',
-      status: 'scheduled',
-      notes: 'Tư vấn về các phương pháp kiểm tra sức khỏe sinh sản định kỳ.',
-      reason: 'Tư vấn sức khỏe sinh sản',
-      meetLink: 'https://meet.google.com/def-ghij-klm',
-      createdAt: '2025-06-22T11:00:00',
-    },
-    {
-      id: 7,
-      customerName: 'Ngô Thị Lan',
-      customerEmail: 'ngothilan@example.com',
-      customerPhone: '0956781234',
-      customerAvatar: '/images/avatars/avatar7.jpg',
-      date: '2025-06-25T00:00:00',
-      startTime: '2025-06-25T08:30:00',
-      endTime: '2025-06-25T09:30:00',
-      type: 'chat',
-      status: 'pending',
-      notes: 'Cần tư vấn về các vấn đề sức khỏe tình dục và hướng dẫn an toàn.',
-      reason: 'Tư vấn sức khỏe tình dục',
-      createdAt: '2025-06-22T16:45:00',
-    },
-    {
-      id: 8,
-      customerName: 'Hoàng Văn Đức',
-      customerEmail: 'hoangvanduc@example.com',
-      customerPhone: '0943218765',
-      customerAvatar: '/images/avatars/avatar8.jpg',
-      date: '2025-06-20T00:00:00',
-      startTime: '2025-06-20T16:00:00',
-      endTime: '2025-06-20T17:00:00',
-      type: 'video',
-      status: 'completed',
-      notes: 'Đã tư vấn về kết quả xét nghiệm và hướng dẫn điều trị phù hợp.',
-      reason: 'Tư vấn kết quả xét nghiệm HIV',
-      meetLink: 'https://meet.google.com/nop-qrst-uvw',
-      feedback:
-        'Bác sĩ rất chuyên nghiệp và chu đáo. Tôi cảm thấy an tâm hơn sau buổi tư vấn.',
-      rating: 5,
-      createdAt: '2025-06-18T13:20:00',
-    },
-    {
-      id: 9,
-      customerName: 'Bùi Thị Thu',
-      customerEmail: 'buithithu@example.com',
-      customerPhone: '0932165487',
-      customerAvatar: '/images/avatars/avatar9.jpg',
-      date: '2025-06-26T00:00:00',
-      startTime: '2025-06-26T15:30:00',
-      endTime: '2025-06-26T16:30:00',
-      type: 'chat',
-      status: 'scheduled',
-      notes:
-        'Tư vấn về các biện pháp kiểm soát sinh sản và lựa chọn phương pháp phù hợp.',
-      reason: 'Tư vấn kiểm soát sinh sản',
-      createdAt: '2025-06-21T14:10:00',
-    },
-    {
-      id: 10,
-      customerName: 'Võ Minh Quân',
-      customerEmail: 'vominhquan@example.com',
-      customerPhone: '0918472635',
-      customerAvatar: '/images/avatars/avatar10.jpg',
-      date: '2025-06-19T00:00:00',
-      startTime: '2025-06-19T10:30:00',
-      endTime: '2025-06-19T11:30:00',
-      type: 'video',
-      status: 'completed',
-      notes:
-        'Đã tư vấn về các yếu tố nguy cơ và cách phòng tránh lây nhiễm STI.',
-      reason: 'Tư vấn phòng tránh lây nhiễm STI',
-      meetLink: 'https://meet.google.com/xyz-abcd-efg',
-      feedback:
-        'Buổi tư vấn rất bổ ích, tôi đã hiểu rõ hơn về cách bảo vệ bản thân.',
-      rating: 4,
-      createdAt: '2025-06-17T09:15:00',
-    },
-    {
-      id: 11,
-      customerName: 'Trương Thị Oanh',
-      customerEmail: 'truongthioanh@example.com',
-      customerPhone: '0912876543',
-      customerAvatar: '/images/avatars/avatar11.jpg',
-      date: '2025-06-27T00:00:00',
-      startTime: '2025-06-27T09:30:00',
-      endTime: '2025-06-27T10:30:00',
-      type: 'video',
-      status: 'scheduled',
-      notes: 'Tư vấn về các biện pháp phòng tránh HIV và an toàn tình dục.',
-      reason: 'Tư vấn phòng tránh HIV',
-      meetLink: 'https://meet.google.com/hij-klmn-opq',
-      createdAt: '2025-06-23T10:20:00',
-    },
-    {
-      id: 12,
-      customerName: 'Đinh Hoàng Nam',
-      customerEmail: 'dinhhoangnam@example.com',
-      customerPhone: '0923456789',
-      customerAvatar: '/images/avatars/avatar12.jpg',
-      date: '2025-06-28T00:00:00',
-      startTime: '2025-06-28T14:30:00',
-      endTime: '2025-06-28T15:30:00',
-      type: 'chat',
-      status: 'pending',
-      notes:
-        'Khách hàng cần tư vấn về vấn đề rối loạn hormone và ảnh hưởng đến sức khỏe sinh sản.',
-      reason: 'Tư vấn rối loạn hormone',
-      createdAt: '2025-06-24T08:45:00',
-    },
-    {
-      id: 13,
-      customerName: 'Phan Thị Ngọc',
-      customerEmail: 'phanthingoc@example.com',
-      customerPhone: '0934567890',
-      customerAvatar: '/images/avatars/avatar13.jpg',
-      date: '2025-06-29T00:00:00',
-      startTime: '2025-06-29T11:00:00',
-      endTime: '2025-06-29T12:00:00',
-      type: 'video',
-      status: 'scheduled',
-      notes:
-        'Tư vấn về vấn đề kinh nguyệt không đều và các triệu chứng liên quan.',
-      reason: 'Tư vấn rối loạn kinh nguyệt',
-      meetLink: 'https://meet.google.com/rst-uvwx-yzab',
-      createdAt: '2025-06-24T15:30:00',
-    },
-    {
-      id: 14,
-      customerName: 'Lý Văn Thắng',
-      customerEmail: 'lyvanghang@example.com',
-      customerPhone: '0945678901',
-      customerAvatar: '/images/avatars/avatar14.jpg',
-      date: '2025-06-18T00:00:00',
-      startTime: '2025-06-18T13:00:00',
-      endTime: '2025-06-18T14:00:00',
-      type: 'video',
-      status: 'completed',
-      notes:
-        'Đã tư vấn về kết quả xét nghiệm và hướng dẫn điều trị bệnh lây qua đường tình dục.',
-      reason: 'Tư vấn điều trị STD',
-      meetLink: 'https://meet.google.com/cde-fghi-jklm',
-      feedback:
-        'Tôi rất hài lòng với chất lượng tư vấn. Bác sĩ giải thích rất chi tiết và dễ hiểu.',
-      rating: 5,
-      createdAt: '2025-06-16T11:40:00',
-    },
-    {
-      id: 15,
-      customerName: 'Nguyễn Thu Hà',
-      customerEmail: 'nguyenthuha@example.com',
-      customerPhone: '0956789012',
-      customerAvatar: '/images/avatars/avatar15.jpg',
-      date: '2025-06-30T00:00:00',
-      startTime: '2025-06-30T16:00:00',
-      endTime: '2025-06-30T17:00:00',
-      type: 'chat',
-      status: 'scheduled',
-      notes: 'Tư vấn về các phương pháp tránh thai an toàn và hiệu quả.',
-      reason: 'Tư vấn phương pháp tránh thai',
-      createdAt: '2025-06-25T09:15:00',
-    },
-    {
-      id: 11,
-      customerName: 'Trần Thị Nga',
-      customerEmail: 'tranthinga@example.com',
-      customerPhone: '0925374681',
-      customerAvatar: '/images/avatars/avatar11.jpg',
-      date: '2025-06-27T00:00:00',
-      startTime: '2025-06-27T09:15:00',
-      endTime: '2025-06-27T10:15:00',
-      type: 'video',
-      status: 'pending',
-      notes:
-        'Khách hàng cần tư vấn về các triệu chứng bất thường và cần kiểm tra.',
-      reason: 'Tư vấn triệu chứng sức khỏe sinh sản',
-      createdAt: '2025-06-22T10:30:00',
-    },
-    {
-      id: 12,
-      customerName: 'Lý Văn Hải',
-      customerEmail: 'lyvanhai@example.com',
-      customerPhone: '0914736258',
-      customerAvatar: '/images/avatars/avatar12.jpg',
-      date: '2025-06-28T00:00:00',
-      startTime: '2025-06-28T13:00:00',
-      endTime: '2025-06-28T14:00:00',
-      type: 'chat',
-      status: 'scheduled',
-      notes:
-        'Tư vấn về các biện pháp điều trị và theo dõi sau khi phát hiện nhiễm STI.',
-      reason: 'Tư vấn điều trị và theo dõi STI',
-      createdAt: '2025-06-21T15:45:00',
-    },
-  ]);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [consultations, setConsultations] = useState([]);
 
-  // Fetch consultations on component mount - will be replaced with API call
-  // React.useEffect(() => {
-  //   const fetchConsultations = async () => {
-  //     try {
-  //       const data = await consultantService.getConsultations();
-  //       setConsultations(data);
-  //     } catch (error) {
-  //       console.error("Error fetching consultations:", error);
-  //     }
-  //   };
-  //   fetchConsultations();
-  // }, []);
+  // Thông tin chi tiết customer
+  const [customerDetail, setCustomerDetail] = useState(null);
+  const [customerLoading, setCustomerLoading] = useState(false);
+  const [customerError, setCustomerError] = useState('');
+
+  // New state for editing notes
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState('');
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+
+  // Fetch all assigned consultations on mount
+  useEffect(() => {
+    const fetchAssignedConsultations = async () => {
+      try {
+        const res = await consultantService.getAssignedConsultations();
+        if (res.success) {
+          setConsultations(res.data);
+          console.log('Consultations from API:', res.data); // Debug
+        }
+      } catch (err) {
+        // handle error if needed
+      }
+    };
+    fetchAssignedConsultations();
+  }, []);
 
   // Filter consultations based on selected date and view type
   const getFilteredConsultations = () => {
-    // Filter by tab/status
-    let statusFiltered;
-    if (tabValue === 0) {
-      // Tất cả
-      statusFiltered = consultations;
-    } else if (tabValue === 1) {
-      // Chờ xác nhận
-      statusFiltered = consultations.filter((c) => c.status === 'pending');
-    } else if (tabValue === 2) {
-      // Đã đặt lịch
-      statusFiltered = consultations.filter((c) => c.status === 'scheduled');
-    } else if (tabValue === 3) {
-      // Đã hoàn thành
-      statusFiltered = consultations.filter((c) => c.status === 'completed');
-    } else {
-      // Đã hủy
-      statusFiltered = consultations.filter((c) => c.status === 'canceled');
+    switch (tabValue) {
+      case 1:
+        return consultations.filter((c) => c.status === 'PENDING');
+      case 2:
+        return consultations.filter((c) => c.status === 'CONFIRMED');
+      case 3:
+        return consultations.filter((c) => c.status === 'COMPLETED');
+      case 4:
+        return consultations.filter((c) => c.status === 'CANCELED');
+      default:
+        return consultations;
     }
-
-    // Filter by date
-    const filteredByDate = statusFiltered.filter((consultation) => {
-      const consultDate = new Date(consultation.date);
-
-      if (viewType === 'day') {
-        // Same day
-        return (
-          consultDate.getFullYear() === selectedDate.getFullYear() &&
-          consultDate.getMonth() === selectedDate.getMonth() &&
-          consultDate.getDate() === selectedDate.getDate()
-        );
-      } else if (viewType === 'week') {
-        // Same week
-        const startOfWeek = new Date(selectedDate);
-        startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
-
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-
-        return consultDate >= startOfWeek && consultDate <= endOfWeek;
-      } else {
-        // Same month
-        return (
-          consultDate.getFullYear() === selectedDate.getFullYear() &&
-          consultDate.getMonth() === selectedDate.getMonth()
-        );
-      }
-    });
-
-    return filteredByDate;
   };
 
   // Handle view type change
@@ -1098,9 +849,26 @@ const MyConsultationsContent = () => {
   };
 
   // Handle open details dialog
-  const handleOpenDetailsDialog = (consultation) => {
+  const handleOpenDetailsDialog = async (consultation) => {
     setSelectedConsultation(consultation);
     setDetailsDialogOpen(true);
+    setCustomerDetail(null);
+    setCustomerError('');
+    if (consultation.customerId) {
+      setCustomerLoading(true);
+      try {
+        const res = await userService.getUserById(consultation.customerId);
+        if (res.success && res.data) {
+          setCustomerDetail(res.data);
+        } else {
+          setCustomerError(res.message || 'Không thể lấy thông tin khách hàng');
+        }
+      } catch (err) {
+        setCustomerError(err.message || 'Không thể lấy thông tin khách hàng');
+      } finally {
+        setCustomerLoading(false);
+      }
+    }
   };
 
   // Handle close details dialog
@@ -1109,60 +877,67 @@ const MyConsultationsContent = () => {
   };
 
   // Handle update consultation status
+  const VALID_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELED', 'COMPLETED'];
   const handleUpdateStatus = async (consultationId, newStatus) => {
-    setUpdateStatus({
-      loading: true,
-      success: false,
-      error: '',
-    });
-
-    try {
-      // Mock API call - replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Update status in local state
-      setConsultations((prevConsultations) =>
-        prevConsultations.map((c) =>
-          c.id === consultationId ? { ...c, status: newStatus } : c
-        )
+    const statusEnum =
+      typeof newStatus === 'string' ? newStatus.toUpperCase() : '';
+    if (!VALID_STATUSES.includes(statusEnum)) {
+      toast.error(
+        `Trạng thái gửi lên không hợp lệ! (Chỉ chấp nhận: ${VALID_STATUSES.join(', ')})`
       );
-
-      // Update selected consultation if dialog is open
-      if (selectedConsultation && selectedConsultation.id === consultationId) {
-        setSelectedConsultation({
-          ...selectedConsultation,
-          status: newStatus,
-        });
+      setUpdateStatus({ loading: false, success: false, error: '' });
+      return;
+    }
+    setUpdateStatus({ loading: true, success: false, error: '' });
+    try {
+      const res = await consultantService.updateConsultationStatus(
+        consultationId,
+        { status: statusEnum }
+      );
+      console.log('API response:', res); // Debug log
+      if (res.success) {
+        setConsultations((prev) =>
+          prev.map((c) =>
+            c.consultationId === consultationId || c.id === consultationId
+              ? {
+                  ...c,
+                  status: statusEnum,
+                  meetUrl: res.data?.meetUrl || c.meetUrl,
+                }
+              : c
+          )
+        );
+        toast.success('Cập nhật trạng thái thành công!');
+        setUpdateStatus({ loading: false, success: true, error: '' });
+        setTimeout(
+          () => setUpdateStatus((prev) => ({ ...prev, success: false })),
+          2000
+        );
+      } else {
+        // Dịch lỗi phổ biến sang tiếng Việt
+        let errorMsg = res.message || 'Có lỗi xảy ra';
+        if (
+          errorMsg ===
+          'Consultation cannot be marked as completed before its end time'
+        ) {
+          errorMsg =
+            'Không thể đánh dấu hoàn thành trước khi kết thúc buổi tư vấn';
+        }
+        toast.error(errorMsg);
+        setUpdateStatus({ loading: false, success: false, error: '' });
       }
-
-      // Show success message
-      setUpdateStatus({
-        loading: false,
-        success: true,
-        error: '',
-      });
-
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setUpdateStatus((prev) => ({
-          ...prev,
-          success: false,
-        }));
-      }, 3000);
-
-      // API call would be uncommented when back-end is ready
-      /*
-      await consultantService.updateConsultationStatus(consultationId, {
-        status: newStatus
-      });
-      */
-    } catch (error) {
-      console.error('Error updating consultation status:', error);
-      setUpdateStatus({
-        loading: false,
-        success: false,
-        error: 'Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại sau.',
-      });
+    } catch (err) {
+      console.log('API error:', err); // Debug log
+      let errorMsg = 'Có lỗi xảy ra khi cập nhật trạng thái';
+      if (
+        err?.response?.data?.message ===
+        'Consultation cannot be marked as completed before its end time'
+      ) {
+        errorMsg =
+          'Không thể đánh dấu hoàn thành trước khi kết thúc buổi tư vấn';
+      }
+      toast.error(errorMsg);
+      setUpdateStatus({ loading: false, success: false, error: '' });
     }
   };
 
@@ -1246,30 +1021,6 @@ const MyConsultationsContent = () => {
             tận tâm
           </Typography>
         </Box>{' '}
-        {updateStatus.success && (
-          <Alert
-            severity="success"
-            sx={{
-              mb: 3,
-              borderRadius: '12px',
-              boxShadow: '0 4px 12px rgba(26, 188, 156, 0.15)',
-            }}
-          >
-            Cập nhật trạng thái thành công!
-          </Alert>
-        )}
-        {updateStatus.error && (
-          <Alert
-            severity="error"
-            sx={{
-              mb: 3,
-              borderRadius: '12px',
-              boxShadow: '0 4px 12px rgba(231, 76, 60, 0.15)',
-            }}
-          >
-            {updateStatus.error}
-          </Alert>
-        )}
         <StyledPaper elevation={0} sx={{ p: 3, mb: 4 }}>
           <Box
             sx={{
@@ -1347,28 +1098,28 @@ const MyConsultationsContent = () => {
             />
             <Tab
               label={`Chờ xác nhận (${
-                consultations.filter((c) => c.status === 'pending').length
+                consultations.filter((c) => c.status === 'PENDING').length
               })`}
               icon={<PendingActionsIcon />}
               iconPosition="start"
             />
             <Tab
               label={`Đã đặt lịch (${
-                consultations.filter((c) => c.status === 'scheduled').length
+                consultations.filter((c) => c.status === 'CONFIRMED').length
               })`}
               icon={<EventAvailableIcon />}
               iconPosition="start"
             />
             <Tab
               label={`Đã hoàn thành (${
-                consultations.filter((c) => c.status === 'completed').length
+                consultations.filter((c) => c.status === 'COMPLETED').length
               })`}
               icon={<CheckIcon />}
               iconPosition="start"
             />{' '}
             <Tab
               label={`Đã hủy (${
-                consultations.filter((c) => c.status === 'canceled').length
+                consultations.filter((c) => c.status === 'CANCELED').length
               })`}
               icon={<CloseIcon />}
               iconPosition="start"
@@ -1402,7 +1153,8 @@ const MyConsultationsContent = () => {
                   key={consultation.id}
                   slot={consultation}
                   onViewDetails={handleOpenDetailsDialog}
-                  onUpdateStatus={handleUpdateStatus}
+                  onUpdateConsultationStatus={handleUpdateStatus}
+                  updateStatus={updateStatus}
                 />
               ))}{' '}
               <TablePagination
@@ -1518,208 +1270,454 @@ const MyConsultationsContent = () => {
           <DialogContent dividers sx={{ p: 4, background: '#fafbfc' }}>
             {selectedConsultation && (
               <Grid container spacing={4}>
-                <Grid item xs={12} md={6}>
-                  <MedicalCard variant="outlined">
-                    <CardContent sx={{ p: 3 }}>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontWeight: 600,
-                          color: '#2c3e50',
-                          mb: 3,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                        }}
-                      >
-                        <Avatar
+                <Grid
+                  container
+                  spacing={3}
+                  sx={{
+                    mb: 3,
+                    justifyContent: 'center',
+                    alignItems: 'stretch',
+                  }}
+                >
+                  <Grid
+                    item
+                    xs={12}
+                    md={6}
+                    sx={{ display: 'flex', justifyContent: 'center' }}
+                  >
+                    <MedicalCard
+                      variant="outlined"
+                      sx={{
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRadius: 3,
+                        boxShadow: '0 2px 12px 0 rgba(32,40,45,0.07)',
+                        minHeight: 220,
+                        px: 4,
+                        py: 3,
+                        bgcolor: '#fff',
+                        maxWidth: 420,
+                        width: '100%',
+                      }}
+                    >
+                      <CardContent sx={{ p: 0, width: '100%' }}>
+                        <Typography
+                          variant="h6"
                           sx={{
-                            background:
-                              'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                            width: 24,
-                            height: 24,
-                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: '#2c3e50',
+                            mb: 3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
                           }}
                         >
-                          👤
-                        </Avatar>
-                        Thông tin bệnh nhân
-                      </Typography>
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', mb: 2 }}
-                      >
-                        <Avatar
-                          src={selectedConsultation.customerAvatar}
-                          alt={selectedConsultation.customerName}
-                          sx={{ width: 64, height: 64, mr: 2 }}
-                        />
-                        <Box>
-                          <Typography variant="h6">
-                            {selectedConsultation.customerName}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Email: {selectedConsultation.customerEmail}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Điện thoại: {selectedConsultation.customerPhone}
-                          </Typography>{' '}
-                        </Box>
-                      </Box>
-                    </CardContent>
-                  </MedicalCard>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <MedicalCard variant="outlined">
-                    <CardContent sx={{ p: 3 }}>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontWeight: 600,
-                          color: '#2c3e50',
-                          mb: 3,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                        }}
-                      >
-                        <Avatar
-                          sx={{
-                            background:
-                              'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                            width: 24,
-                            height: 24,
-                            fontSize: '0.75rem',
-                          }}
-                        >
-                          📅
-                        </Avatar>
-                        Thông tin buổi tư vấn
-                      </Typography>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 1,
-                        }}
-                      >
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <CalendarMonthIcon fontSize="small" color="action" />
-                          <Typography variant="body2">
-                            <strong>Ngày:</strong>{' '}
-                            {formatDate(selectedConsultation.date)}
-                          </Typography>
-                        </Box>
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <TodayIcon fontSize="small" color="action" />
-                          <Typography variant="body2">
-                            <strong>Thời gian:</strong>{' '}
-                            {new Date(
-                              selectedConsultation.startTime
-                            ).toLocaleTimeString('vi-VN', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}{' '}
-                            -{' '}
-                            {new Date(
-                              selectedConsultation.endTime
-                            ).toLocaleTimeString('vi-VN', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </Typography>
-                        </Box>
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <EventIcon fontSize="small" color="action" />
-                          <Typography variant="body2">
-                            <strong>Phương thức:</strong>{' '}
-                            {selectedConsultation.type === 'video'
-                              ? 'Tư vấn qua video'
-                              : selectedConsultation.type === 'chat'
-                                ? 'Tư vấn qua chat'
-                                : 'Tư vấn trực tiếp'}
-                          </Typography>
-                        </Box>{' '}
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <UpdateIcon fontSize="small" color="action" />
-                          <Typography variant="body2">
-                            <strong>Trạng thái:</strong>{' '}
-                            {selectedConsultation.status === 'scheduled'
-                              ? 'Đã đặt lịch'
-                              : selectedConsultation.status === 'completed'
-                                ? 'Đã hoàn thành'
-                                : selectedConsultation.status === 'canceled'
-                                  ? 'Đã hủy'
-                                  : 'Đang chờ xác nhận'}
-                          </Typography>
-                        </Box>
-                        {/* Hiển thị Google Meet link cho tư vấn video */}
-                        {selectedConsultation.type === 'video' &&
-                          selectedConsultation.meetLink && (
-                            <Box
+                          <Avatar
+                            sx={{
+                              background:
+                                'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                              width: 24,
+                              height: 24,
+                              fontSize: '0.75rem',
+                            }}
+                          >
+                            👤
+                          </Avatar>
+                          Thông tin bệnh nhân
+                        </Typography>
+                        {customerLoading ? (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              minHeight: 120,
+                            }}
+                          >
+                            <CircularProgress />
+                          </Box>
+                        ) : customerError ? (
+                          <Alert severity="error" sx={{ mb: 2 }}>
+                            {customerError}
+                          </Alert>
+                        ) : customerDetail ? (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              mb: 2,
+                            }}
+                          >
+                            <Avatar
+                              src={
+                                customerDetail.avatar ||
+                                selectedConsultation.customerAvatar
+                              }
+                              alt={
+                                customerDetail.fullName ||
+                                selectedConsultation.customerName
+                              }
                               sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1,
-                                mt: 2,
-                                p: 2,
-                                bgcolor: 'rgba(26, 188, 156, 0.1)',
-                                borderRadius: '8px',
-                                border: '1px solid rgba(26, 188, 156, 0.2)',
+                                width: 72,
+                                height: 72,
+                                mr: 2,
+                                border: '2px solid #4A90E2',
                               }}
-                            >
-                              <VideocamIcon
-                                fontSize="small"
-                                sx={{ color: '#1ABC9C' }}
-                              />
-                              <Box sx={{ flexGrow: 1 }}>
+                            />
+                            <Box>
+                              <Typography
+                                variant="h5"
+                                sx={{
+                                  fontWeight: 700,
+                                  color: '#1976D2',
+                                  mb: 0.5,
+                                }}
+                              >
+                                {customerDetail.fullName ||
+                                  selectedConsultation.customerName}
+                              </Typography>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  mb: 0.5,
+                                }}
+                              >
+                                <EmailIcon
+                                  fontSize="small"
+                                  sx={{ color: '#4A90E2' }}
+                                />
                                 <Typography
                                   variant="body2"
+                                  color="text.secondary"
+                                >
+                                  {customerDetail.email ||
+                                    selectedConsultation.customerEmail}
+                                </Typography>
+                              </Box>
+                              {customerDetail.phone && (
+                                <Box
                                   sx={{
-                                    fontWeight: 600,
-                                    color: '#1ABC9C',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
                                     mb: 0.5,
                                   }}
                                 >
-                                  Link tham gia video call:
-                                </Typography>
-                                <MedicalButton
-                                  variant="contained"
-                                  size="small"
-                                  href={selectedConsultation.meetLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                  <PhoneIcon
+                                    fontSize="small"
+                                    sx={{ color: '#4A90E2' }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    {customerDetail.phone}
+                                  </Typography>
+                                </Box>
+                              )}
+                              {customerDetail.gender && (
+                                <Box
                                   sx={{
-                                    background:
-                                      'linear-gradient(45deg, #1ABC9C, #16A085)',
-                                    fontSize: '0.8rem',
-                                    padding: '6px 16px',
-                                    '&:hover': {
-                                      background:
-                                        'linear-gradient(45deg, #16A085, #148F77)',
-                                    },
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    mb: 0.5,
                                   }}
-                                  startIcon={<VideocamIcon fontSize="small" />}
                                 >
-                                  Tham gia Google Meet
-                                </MedicalButton>
-                              </Box>
+                                  <WcIcon
+                                    fontSize="small"
+                                    sx={{ color: '#4A90E2' }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    {customerDetail.gender || 'Không xác định'}
+                                  </Typography>
+                                </Box>
+                              )}
+                              {customerDetail.dateOfBirth && (
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    mb: 0.5,
+                                  }}
+                                >
+                                  <CakeIcon
+                                    fontSize="small"
+                                    sx={{ color: '#4A90E2' }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    {new Date(
+                                      customerDetail.dateOfBirth
+                                    ).toLocaleDateString('vi-VN')}
+                                  </Typography>
+                                </Box>
+                              )}
+                              {customerDetail.address && (
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                  }}
+                                >
+                                  <HomeIcon
+                                    fontSize="small"
+                                    sx={{ color: '#4A90E2' }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    {customerDetail.address}
+                                  </Typography>
+                                </Box>
+                              )}
                             </Box>
-                          )}{' '}
-                      </Box>
-                    </CardContent>
-                  </MedicalCard>
+                          </Box>
+                        ) : (
+                          // Fallback nếu không có thông tin chi tiết
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              mb: 2,
+                            }}
+                          >
+                            <Avatar
+                              src={selectedConsultation.customerAvatar}
+                              alt={selectedConsultation.customerName}
+                              sx={{ width: 64, height: 64, mr: 2 }}
+                            />
+                            <Box>
+                              <Typography variant="h6">
+                                {selectedConsultation.customerName}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Email: {selectedConsultation.customerEmail}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Điện thoại: {selectedConsultation.customerPhone}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        )}
+                      </CardContent>
+                    </MedicalCard>
+                  </Grid>
+                  <Grid
+                    item
+                    xs={12}
+                    md={6}
+                    sx={{ display: 'flex', justifyContent: 'center' }}
+                  >
+                    <MedicalCard
+                      variant="outlined"
+                      sx={{
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRadius: 3,
+                        boxShadow: '0 2px 12px 0 rgba(32,40,45,0.07)',
+                        minHeight: 220,
+                        px: 4,
+                        py: 3,
+                        bgcolor: '#fff',
+                        maxWidth: 420,
+                        width: '100%',
+                      }}
+                    >
+                      <CardContent sx={{ p: 0, width: '100%' }}>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontWeight: 600,
+                            color: '#2c3e50',
+                            mb: 3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Avatar
+                            sx={{
+                              background:
+                                'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                              width: 24,
+                              height: 24,
+                              fontSize: '0.75rem',
+                            }}
+                          >
+                            📅
+                          </Avatar>
+                          Thông tin buổi tư vấn
+                        </Typography>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 1,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <CalendarMonthIcon
+                              fontSize="small"
+                              color="action"
+                            />
+                            <Typography variant="body2">
+                              <strong>Ngày:</strong>{' '}
+                              {Array.isArray(selectedConsultation.date)
+                                ? formatDateTimeFromArray(
+                                    selectedConsultation.date
+                                  )
+                                : formatDateDisplay(selectedConsultation.date)}
+                            </Typography>
+                          </Box>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <TodayIcon fontSize="small" color="action" />
+                            <Typography variant="body2">
+                              <strong>Thời gian:</strong>{' '}
+                              {Array.isArray(selectedConsultation.startTime)
+                                ? formatDateTimeFromArray(
+                                    selectedConsultation.startTime
+                                  )
+                                : formatDateTime(
+                                    selectedConsultation.startTime
+                                  )}
+                            </Typography>
+                          </Box>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <EventIcon fontSize="small" color="action" />
+                            <Typography variant="body2">
+                              <strong>Phương thức:</strong>{' '}
+                              {selectedConsultation.type === 'video'
+                                ? 'Tư vấn qua video'
+                                : selectedConsultation.type === 'chat'
+                                  ? 'Tư vấn qua chat'
+                                  : 'Tư vấn trực tiếp'}
+                            </Typography>
+                          </Box>{' '}
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <UpdateIcon fontSize="small" color="action" />
+                            <Typography variant="body2">
+                              <strong>Trạng thái:</strong>{' '}
+                              {selectedConsultation.status === 'CONFIRMED'
+                                ? 'Đã đặt lịch'
+                                : selectedConsultation.status === 'COMPLETED'
+                                  ? 'Đã hoàn thành'
+                                  : selectedConsultation.status === 'CANCELED'
+                                    ? 'Đã hủy'
+                                    : 'Đang chờ xác nhận'}
+                            </Typography>
+                          </Box>
+                          {/* Hiển thị Google Meet link cho tư vấn video */}
+                          {selectedConsultation.type === 'video' &&
+                            (selectedConsultation.meetUrl ||
+                              selectedConsultation.meetLink) && (
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  mt: 2,
+                                  p: 2,
+                                  bgcolor: 'rgba(26, 188, 156, 0.1)',
+                                  borderRadius: '8px',
+                                  border: '1px solid rgba(26, 188, 156, 0.2)',
+                                }}
+                              >
+                                <VideocamIcon
+                                  fontSize="small"
+                                  sx={{ color: '#1ABC9C' }}
+                                />
+                                <Box sx={{ flexGrow: 1 }}>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: '#1ABC9C',
+                                      mb: 0.5,
+                                    }}
+                                  >
+                                    Link tham gia video call:
+                                  </Typography>
+                                  <MedicalButton
+                                    variant="contained"
+                                    size="small"
+                                    href={
+                                      selectedConsultation.meetUrl ||
+                                      selectedConsultation.meetLink
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    sx={{
+                                      background:
+                                        'linear-gradient(45deg, #1ABC9C, #16A085)',
+                                      fontSize: '0.8rem',
+                                      padding: '6px 16px',
+                                      '&:hover': {
+                                        background:
+                                          'linear-gradient(45deg, #16A085, #148F77)',
+                                      },
+                                    }}
+                                    startIcon={
+                                      <VideocamIcon fontSize="small" />
+                                    }
+                                  >
+                                    Tham gia Google Meet
+                                  </MedicalButton>
+                                </Box>
+                              </Box>
+                            )}
+                        </Box>
+                      </CardContent>
+                    </MedicalCard>
+                  </Grid>
                 </Grid>
-
-                <Grid item xs={12}>
+                <Grid item size={12} xs={12} md={12}>
                   <MedicalCard variant="outlined">
                     <CardContent sx={{ p: 3 }}>
                       <Typography
@@ -1746,64 +1744,170 @@ const MyConsultationsContent = () => {
                         </Avatar>
                         Nội dung buổi tư vấn
                       </Typography>
-                      <Typography variant="body2" paragraph>
-                        <strong>Lý do tư vấn:</strong>{' '}
-                        {selectedConsultation.reason}
-                      </Typography>
-                      <Typography variant="body2" paragraph>
-                        <strong>Ghi chú:</strong>{' '}
-                        {selectedConsultation.notes || 'Không có ghi chú'}
-                      </Typography>
-
-                      {selectedConsultation.status === 'canceled' &&
-                        selectedConsultation.cancelReason && (
-                          <Alert severity="warning" sx={{ mt: 2 }}>
-                            <Typography variant="body2">
-                              <strong>Lý do hủy:</strong>{' '}
-                              {selectedConsultation.cancelReason}
-                            </Typography>
-                          </Alert>
-                        )}
-
-                      {selectedConsultation.status === 'completed' && (
-                        <>
-                          {selectedConsultation.feedback && (
-                            <Box
-                              sx={{
-                                mt: 2,
-                                p: 2,
-                                bgcolor: 'background.default',
-                                borderRadius: 1,
-                              }}
-                            >
-                              <Typography variant="subtitle2" gutterBottom>
-                                Phản hồi từ khách hàng:
+                      {/* Lý do tư vấn */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 1.5,
+                          mb: 2,
+                          p: 2,
+                          bgcolor: '#f8fafb',
+                          borderRadius: 2,
+                          border: '1px solid #e3eaf5',
+                        }}
+                      >
+                        <EventIcon sx={{ color: '#4A90E2', mt: 0.5 }} />
+                        <Box>
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            sx={{ mb: 0.5 }}
+                          >
+                            Lý do tư vấn:
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {selectedConsultation?.reason
+                              ? selectedConsultation.reason
+                              : 'Không có lý do tư vấn'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      {/* Ghi chú */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          mt: 1,
+                          width: '100%',
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          fontWeight={600}
+                          display="inline"
+                        >
+                          Ghi chú:
+                        </Typography>
+                        {selectedConsultation &&
+                          (editingNotes ? (
+                            <>
+                              <TextField
+                                size="small"
+                                value={notesValue}
+                                onChange={(e) => setNotesValue(e.target.value)}
+                                sx={{
+                                  minWidth: 260,
+                                  borderRadius: 2,
+                                  bgcolor: '#f8fafb',
+                                  flex: 1,
+                                }}
+                                multiline
+                                maxRows={4}
+                                placeholder="Nhập ghi chú..."
+                              />
+                              <Button
+                                size="small"
+                                variant="contained"
+                                onClick={() => setConfirmDialogOpen(true)}
+                                sx={{ ml: 1, borderRadius: 2 }}
+                                disabled={
+                                  notesValue ===
+                                  (selectedConsultation.notes || '')
+                                }
+                              >
+                                Lưu
+                              </Button>
+                              <Button
+                                size="small"
+                                onClick={() => setEditingNotes(false)}
+                                sx={{ ml: 1, borderRadius: 2 }}
+                              >
+                                Hủy
+                              </Button>
+                              {/* Dialog xác nhận lưu ghi chú */}
+                              <Dialog
+                                open={confirmDialogOpen}
+                                onClose={() => setConfirmDialogOpen(false)}
+                              >
+                                <DialogTitle>
+                                  Xác nhận cập nhật ghi chú
+                                </DialogTitle>
+                                <DialogContent>
+                                  Bạn có chắc chắn muốn lưu thay đổi ghi chú cho
+                                  buổi tư vấn này?
+                                </DialogContent>
+                                <DialogActions>
+                                  <Button
+                                    onClick={() => setConfirmDialogOpen(false)}
+                                  >
+                                    Hủy
+                                  </Button>
+                                  <Button
+                                    variant="contained"
+                                    onClick={async () => {
+                                      setConfirmDialogOpen(false);
+                                      const res =
+                                        await consultantService.updateConsultationNotes(
+                                          selectedConsultation.id ||
+                                            selectedConsultation.consultationId,
+                                          notesValue
+                                        );
+                                      if (res.success) {
+                                        toast.success(
+                                          'Cập nhật ghi chú thành công!'
+                                        );
+                                        setSelectedConsultation((prev) => ({
+                                          ...prev,
+                                          notes: notesValue,
+                                        }));
+                                        setEditingNotes(false);
+                                      } else {
+                                        toast.error(
+                                          res.message ||
+                                            'Cập nhật ghi chú thất bại'
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    Xác nhận
+                                  </Button>
+                                </DialogActions>
+                              </Dialog>
+                            </>
+                          ) : (
+                            <>
+                              <Typography
+                                variant="body2"
+                                display="inline"
+                                sx={{ ml: 1, flex: 1 }}
+                              >
+                                {selectedConsultation.notes
+                                  ? selectedConsultation.notes
+                                  : 'Không có ghi chú'}
                               </Typography>
-                              <Typography variant="body2">
-                                {selectedConsultation.feedback}
-                              </Typography>
-                              {selectedConsultation.rating && (
-                                <Box
-                                  sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    mt: 1,
-                                  }}
-                                >
-                                  <Typography variant="body2" mr={1}>
-                                    Đánh giá:
-                                  </Typography>
-                                  <Chip
-                                    label={`${selectedConsultation.rating}/5`}
-                                    color="primary"
-                                    size="small"
-                                  />
-                                </Box>
-                              )}
-                            </Box>
-                          )}{' '}
-                        </>
-                      )}
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  setNotesValue(
+                                    selectedConsultation.notes || ''
+                                  );
+                                  setEditingNotes(true);
+                                }}
+                                sx={{
+                                  ml: 1,
+                                  color: '#1976D2',
+                                  bgcolor: '#e3f2fd',
+                                  borderRadius: 2,
+                                  '&:hover': { bgcolor: '#bbdefb' },
+                                }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </>
+                          ))}
+                      </Box>
                     </CardContent>
                   </MedicalCard>
                 </Grid>
@@ -1818,12 +1922,17 @@ const MyConsultationsContent = () => {
               Đóng
             </MedicalButton>{' '}
             {selectedConsultation &&
-              selectedConsultation.status === 'pending' && (
+              selectedConsultation.status === 'PENDING' && (
                 <MedicalButton
                   variant="contained"
-                  onClick={() =>
-                    handleUpdateStatus(selectedConsultation.id, 'scheduled')
-                  }
+                  onClick={async () => {
+                    await handleUpdateStatus(
+                      selectedConsultation.id ||
+                        selectedConsultation.consultationId,
+                      'CONFIRMED'
+                    );
+                    setDetailsDialogOpen(false);
+                  }}
                   disabled={updateStatus.loading}
                   startIcon={
                     updateStatus.loading ? (
@@ -1839,12 +1948,17 @@ const MyConsultationsContent = () => {
                 </MedicalButton>
               )}
             {selectedConsultation &&
-              selectedConsultation.status === 'scheduled' && (
+              selectedConsultation.status === 'CONFIRMED' && (
                 <MedicalButton
                   variant="contained"
-                  onClick={() =>
-                    handleUpdateStatus(selectedConsultation.id, 'completed')
-                  }
+                  onClick={async () => {
+                    await handleUpdateStatus(
+                      selectedConsultation.id ||
+                        selectedConsultation.consultationId,
+                      'COMPLETED'
+                    );
+                    setDetailsDialogOpen(false);
+                  }}
                   disabled={updateStatus.loading}
                   startIcon={
                     updateStatus.loading ? (
@@ -1860,8 +1974,8 @@ const MyConsultationsContent = () => {
                 </MedicalButton>
               )}
             {selectedConsultation &&
-              (selectedConsultation.status === 'scheduled' ||
-                selectedConsultation.status === 'pending') && (
+              (selectedConsultation.status === 'PENDING' ||
+                selectedConsultation.status === 'CONFIRMED') && (
                 <MedicalButton
                   variant="outlined"
                   sx={{
@@ -1872,9 +1986,14 @@ const MyConsultationsContent = () => {
                       borderColor: '#C0392B',
                     },
                   }}
-                  onClick={() =>
-                    handleUpdateStatus(selectedConsultation.id, 'canceled')
-                  }
+                  onClick={async () => {
+                    await handleUpdateStatus(
+                      selectedConsultation.id ||
+                        selectedConsultation.consultationId,
+                      'CANCELED'
+                    );
+                    setDetailsDialogOpen(false);
+                  }}
                   disabled={updateStatus.loading}
                   startIcon={
                     updateStatus.loading ? (

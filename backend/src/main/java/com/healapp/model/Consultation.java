@@ -39,6 +39,12 @@ public class Consultation {
 
     private LocalDateTime updatedAt;
 
+    @Column(name = "notes", length = 1000)
+    private String notes;
+
+    @Column(name = "reason", length = 1000)
+    private String reason;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

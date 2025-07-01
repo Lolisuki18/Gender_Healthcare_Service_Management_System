@@ -26,6 +26,7 @@ import {
   Divider,
   Stack,
   Pagination,
+  TextField,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -87,61 +88,61 @@ const CardMediaWrapper = styled(CardMedia)(({ theme }) => ({
 }));
 
 const ConsultantAvatar = styled(Avatar)(({ theme }) => ({
-  width: 100,
-  height: 100,
-  position: 'absolute',
-  bottom: -40,
-  left: '50%',
-  transform: 'translateX(-50%)',
-  border: '4px solid white',
-  boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+  width: 90,
+  height: 90,
+  border: '4px solid #fff',
+  boxShadow: '0 4px 16px rgba(74,144,226,0.10)',
+  marginBottom: theme.spacing(1.5),
+  background: MEDICAL_GRADIENT,
+  color: '#fff',
+  fontWeight: 700,
+  fontSize: 36,
 }));
 
-const CardContentWrapper = styled(CardContent)(({ theme }) => ({
-  paddingTop: theme.spacing(6),
-  paddingBottom: theme.spacing(2),
+const ConsultantName = styled(Typography)(({ theme }) => ({
+  fontWeight: 700,
+  fontSize: 22,
+  color: '#1976d2',
+  marginBottom: theme.spacing(0.5),
+  textAlign: 'center',
+  background: MEDICAL_GRADIENT,
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
 }));
 
-const ConsultantName = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  marginBottom: theme.spacing(1),
-}));
-
-const RatingWrapper = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginBottom: theme.spacing(2),
-}));
-
-const DetailItem = styled(Box)(({ theme }) => ({
+const CardInfoRow = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  marginBottom: theme.spacing(1),
-  '& .MuiSvgIcon-root': {
-    marginRight: theme.spacing(1),
-    color: theme.palette.primary.main,
-  },
+  gap: 8,
+  marginBottom: theme.spacing(0.5),
+  color: '#1976d2',
+  fontWeight: 600,
+  fontSize: 16,
+  width: '100%',
 }));
 
-const BioText = styled(Typography)(({ theme }) => ({
-  marginTop: theme.spacing(2),
-  color: theme.palette.text.secondary,
+const CardBio = styled(Typography)(({ theme }) => ({
+  color: '#757575',
+  fontSize: 15,
+  fontWeight: 400,
+  margin: theme.spacing(1, 0, 2, 0),
+  textAlign: 'left',
+  width: '100%',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   display: '-webkit-box',
   WebkitLineClamp: 2,
-  lineClamp: 2, // For standard compatibility
   WebkitBoxOrient: 'vertical',
 }));
 
 const CardActionsWrapper = styled(CardActions)(({ theme }) => ({
-  padding: theme.spacing(2),
-  paddingTop: 0,
+  width: '100%',
   display: 'flex',
   justifyContent: 'space-between',
+  gap: 12,
+  marginTop: theme.spacing(1),
+  padding: 0,
 }));
 
 const LoadingContainer = styled(Box)(({ theme }) => ({
@@ -178,29 +179,78 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.primary.main,
 }));
 
-const timeSlots = [
-  '08:00-09:00',
-  '09:00-10:00',
-  '10:00-11:00',
-  '11:00-12:00',
-  '13:00-14:00',
-  '14:00-15:00',
-  '15:00-16:00',
-  '16:00-17:00',
+const timeSlotOptions = [
+  { value: '8-10', label: '08:00-10:00 sáng' },
+  { value: '10-12', label: '10:00-12:00 trưa' },
+  { value: '13-15', label: '13:00-15:00 chiều' },
+  { value: '15-17', label: '15:00-17:00 chiều' },
 ];
 
 const ConsultantCard = styled(Card)(({ theme }) => ({
-  height: '100%',
-  transition: 'all 0.3s ease',
-  borderRadius: theme.spacing(2),
-  overflow: 'visible',
-  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-  position: 'relative',
-  border: '1px solid rgba(226, 232, 240, 0.8)',
+  borderRadius: 28,
+  boxShadow: '0 8px 32px rgba(74, 144, 226, 0.10)',
+  background: '#fff',
+  padding: theme.spacing(3, 2, 2, 2),
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  minHeight: 420,
+  transition: 'transform 0.2s, box-shadow 0.2s',
   '&:hover': {
-    transform: 'translateY(-5px)',
-    boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+    transform: 'translateY(-6px) scale(1.03)',
+    boxShadow: '0 16px 40px rgba(74, 144, 226, 0.18)',
   },
+}));
+
+// Thêm style cho label gradient
+const GradientLabel = styled(Typography)(({ theme }) => ({
+  fontWeight: 700,
+  fontSize: 17,
+  background: MEDICAL_GRADIENT,
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  marginBottom: 2,
+  marginTop: 12,
+}));
+
+const MEDICAL_GRADIENT = 'linear-gradient(45deg, #4A90E2, #1ABC9C)';
+const CARD_SHADOW = '0 2px 8px rgba(74, 144, 226, 0.25)';
+
+const DialogHeader = styled(DialogTitle)(({ theme }) => ({
+  background: MEDICAL_GRADIENT,
+  color: '#fff',
+  fontWeight: 700,
+  fontSize: 22,
+}));
+
+const DialogSection = styled(DialogContent)(({ theme }) => ({
+  background: '#f7fafc',
+}));
+
+const DialogActionBar = styled(DialogActions)(({ theme }) => ({
+  background: '#f7fafc',
+  padding: theme.spacing(2),
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: 12,
+}));
+
+const StyledButton = styled(Button)(({ theme }) => ({
+  fontWeight: 600,
+  borderRadius: 24,
+  boxShadow: CARD_SHADOW,
+  textTransform: 'none',
+  fontSize: 16,
+  padding: '8px 24px',
+}));
+
+const RatingWrapper = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginBottom: theme.spacing(1),
+  gap: 4,
 }));
 
 const ConsultationPage = () => {
@@ -225,10 +275,15 @@ const ConsultationPage = () => {
     date: null,
     timeSlot: '',
     consultantId: null,
+    reason: '',
   });
 
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
+
+  // State cho loading và error khi fetch profile chi tiết
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState(null);
 
   // Fetch consultants on component mount
   useEffect(() => {
@@ -240,9 +295,6 @@ const ConsultationPage = () => {
     try {
       //Get consultants
       const consultants = await consultantService.getAllConsultants();
-      console.log('Consultants response:', consultants);
-      //Get profile of consultants
-      const profileConsultant = await consultantService.getProfileConsultants();
       if (consultants.success) {
         setConsultants(consultants.data);
       } else {
@@ -255,15 +307,37 @@ const ConsultationPage = () => {
         'Lỗi',
         'Không thể tải danh sách chuyên gia. Vui lòng thử lại sau.'
       );
+    } finally {
+      setLoading(false);
     }
   };
-  const handleOpenDetails = (consultant) => {
-    setDetailDialog({ open: true, consultant });
+
+  const handleOpenDetails = async (consultant) => {
+    setDetailDialog({ open: true, consultant: null });
+    setDetailLoading(true);
+    setDetailError(null);
+    try {
+      const res = await consultantService.getConsultantDetails(
+        consultant.userId || consultant.profileId
+      );
+      if (res && res.success) {
+        setDetailDialog({ open: true, consultant: res.data });
+      } else {
+        setDetailError(res?.message || 'Không thể tải thông tin chi tiết');
+      }
+    } catch (err) {
+      setDetailError('Không thể tải thông tin chi tiết');
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   const handleCloseDetails = () => {
     setDetailDialog({ open: false, consultant: null });
+    setDetailLoading(false);
+    setDetailError(null);
   };
+
   const handleOpenAppointment = async (consultant) => {
     // Check if user is authenticated with both userProfile and token
     const userProfile = localStorageUtil.get('userProfile');
@@ -291,6 +365,7 @@ const ConsultationPage = () => {
       date: null,
       timeSlot: '',
       consultantId: consultant.userId,
+      reason: '',
     });
   };
 
@@ -312,28 +387,28 @@ const ConsultationPage = () => {
       setFormError('Vui lòng chọn ngày hẹn');
       return;
     }
-
     if (!appointmentForm.timeSlot) {
       setFormError('Vui lòng chọn khung giờ');
       return;
     }
-
+    if (!appointmentForm.reason || appointmentForm.reason.trim() === '') {
+      setFormError('Vui lòng nhập lý do tư vấn');
+      return;
+    }
     setSubmitting(true);
     setFormError(null);
-
     try {
-      // Format date to LocalDate (yyyy-MM-dd)
+      // Format date to yyyy-MM-dd
       const formattedDate = format(appointmentForm.date, 'yyyy-MM-dd');
-
       const appointmentData = {
         consultantId: appointmentForm.consultantId,
         date: formattedDate,
         timeSlot: appointmentForm.timeSlot,
+        reason: appointmentForm.reason,
       };
-
+      // Gửi request đặt lịch
       const response =
-        await consultantService.scheduleAppointment(appointmentData);
-
+        await consultantService.bookConsultation(appointmentData);
       if (response.success) {
         toast.success('Đặt lịch hẹn thành công!');
         handleCloseAppointment();
@@ -343,7 +418,6 @@ const ConsultationPage = () => {
     } catch (err) {
       setFormError('Có lỗi xảy ra khi kết nối đến máy chủ');
       toast.error('Có lỗi xảy ra khi kết nối đến máy chủ');
-      console.error('Error scheduling appointment:', err);
     } finally {
       setSubmitting(false);
     }
@@ -414,8 +488,7 @@ const ConsultationPage = () => {
           {error}
         </Alert>
       ) : (
-        <Grid container spacing={3}>
-          {/* Use real data when API is available, mock data for development */}
+        <Grid container spacing={4}>
           {(consultants.length > 0 ? consultants : mockConsultants).map(
             (consultant) => (
               <Grid
@@ -423,100 +496,76 @@ const ConsultationPage = () => {
                 xs={12}
                 sm={6}
                 md={4}
+                lg={3}
                 key={consultant.profileId || consultant.userId}
               >
                 <ConsultantCard>
-                  <CardMediaWrapper
-                    image="https://source.unsplash.com/random/?doctor"
-                    title={consultant.fullName}
+                  <ConsultantAvatar
+                    src={
+                      consultant.avatar
+                        ? imageUrl.getFullImageUrl(consultant.avatar)
+                        : null
+                    }
+                    alt={consultant.fullName}
                   >
-                    <ConsultantAvatar
-                      src={
-                        consultant.avatar
-                          ? imageUrl.getFullImageUrl(consultant.avatar)
-                          : null
-                      }
-                      alt={consultant.fullName}
-                    >
-                      {consultant.fullName[0]}
-                    </ConsultantAvatar>
-                  </CardMediaWrapper>
-
-                  <CardContentWrapper>
-                    <ConsultantName>
-                      <Typography variant="h5" fontWeight={600}>
-                        {consultant.fullName}
-                      </Typography>
-                      {consultant.isActive && (
-                        <Chip
-                          icon={<VerifiedIcon fontSize="small" />}
-                          label="Xác thực"
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                          sx={{ ml: 1 }}
-                        />
-                      )}
-                    </ConsultantName>
-
-                    <RatingWrapper>
-                      <Rating
-                        value={consultant.rating || 4.5}
-                        precision={0.1}
-                        readOnly
-                        size="small"
-                        emptyIcon={<StarIcon fontSize="inherit" />}
-                      />
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ ml: 1 }}
-                      >
-                        ({consultant.rating || 4.5})
-                      </Typography>
-                    </RatingWrapper>
-
-                    <DetailItem>
-                      <SchoolIcon fontSize="small" />
-                      <Typography variant="body2" noWrap>
-                        {consultant.qualifications}
-                      </Typography>
-                    </DetailItem>
-
-                    <DetailItem>
-                      <WorkHistoryIcon fontSize="small" />
-                      <Typography variant="body2" noWrap>
-                        {consultant.experience
-                          ? consultant.experience.split(' ')[0]
-                          : '10'}{' '}
-                        năm kinh nghiệm
-                      </Typography>
-                    </DetailItem>
-
-                    <BioText variant="body2">{consultant.bio}</BioText>
-                  </CardContentWrapper>
-
-                  <Box sx={{ flexGrow: 1 }} />
-
-                  <CardActionsWrapper>
-                    <Button
-                      variant="outlined"
+                    {consultant.fullName[0]}
+                  </ConsultantAvatar>
+                  <ConsultantName>{consultant.fullName}</ConsultantName>
+                  <RatingWrapper>
+                    <Rating
+                      value={consultant.rating || 4.5}
+                      precision={0.1}
+                      readOnly
                       size="small"
+                      sx={{ color: '#FFD600' }}
+                    />
+                    <Typography
+                      variant="body2"
+                      color="#4A90E2"
+                      sx={{ ml: 0.5, fontWeight: 600 }}
+                    >
+                      ({consultant.rating || 4.5})
+                    </Typography>
+                  </RatingWrapper>
+                  <CardInfoRow>
+                    <SchoolIcon fontSize="small" />
+                    <span>{consultant.qualifications}</span>
+                  </CardInfoRow>
+                  <CardInfoRow>
+                    <WorkHistoryIcon fontSize="small" />
+                    <span>
+                      {consultant.experience ? consultant.experience : '—'} kinh
+                      nghiệm
+                    </span>
+                  </CardInfoRow>
+                  <CardBio>{consultant.bio}</CardBio>
+                  <CardActionsWrapper>
+                    <StyledButton
+                      variant="outlined"
                       color="primary"
                       onClick={() => handleOpenDetails(consultant)}
                       startIcon={<PersonIcon />}
+                      sx={{ borderRadius: 99, fontWeight: 600 }}
                     >
-                      Xem chi tiết
-                    </Button>
-                    <Button
+                      XEM CHI TIẾT
+                    </StyledButton>
+                    <StyledButton
                       variant="contained"
-                      size="small"
-                      color="primary"
+                      sx={{
+                        background: MEDICAL_GRADIENT,
+                        color: '#fff',
+                        borderRadius: 99,
+                        fontWeight: 600,
+                        '&:hover': {
+                          background: MEDICAL_GRADIENT,
+                          opacity: 0.9,
+                        },
+                      }}
                       onClick={() => handleOpenAppointment(consultant)}
                       startIcon={<EventAvailableIcon />}
                     >
-                      Đặt lịch hẹn
-                    </Button>
+                      ĐẶT LỊCH HẸN
+                    </StyledButton>
                   </CardActionsWrapper>
                 </ConsultantCard>
               </Grid>
@@ -530,121 +579,179 @@ const ConsultationPage = () => {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          style: {
+            borderRadius: 32,
+            boxShadow: CARD_SHADOW,
+            padding: 0,
+            background: '#fff',
+          },
+        }}
       >
-        {detailDialog.consultant && (
-          <>
-            <DialogTitle sx={{ pb: 1 }}>
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                Thông tin chi tiết tư vấn viên
-              </Typography>
-            </DialogTitle>
-            <DialogContent>
-              <Box
+        {detailLoading ? (
+          <DialogContent
+            sx={{
+              minHeight: 300,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <CircularProgress />
+          </DialogContent>
+        ) : detailError ? (
+          <DialogContent>
+            <Alert severity="error">{detailError}</Alert>
+          </DialogContent>
+        ) : (
+          detailDialog.consultant && (
+            <>
+              <DialogHeader
                 sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', md: 'row' },
-                  mb: 3,
+                  borderTopLeftRadius: 32,
+                  borderTopRightRadius: 32,
+                  fontSize: 24,
+                  padding: '32px 32px 16px 32px',
                 }}
               >
-                <AvatarSection>
-                  <DetailAvatar
-                    src={
-                      detailDialog.consultant.avatar
-                        ? imageUrl.getFullImageUrl(
-                            detailDialog.consultant.avatar
-                          )
-                        : null
-                    }
-                  >
-                    {detailDialog.consultant.fullName[0]}
-                  </DetailAvatar>
-
-                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-                    {detailDialog.consultant.fullName}
-                  </Typography>
-
-                  <RatingWrapper sx={{ mb: 1 }}>
-                    <Rating
-                      value={detailDialog.consultant.rating || 4.5}
-                      precision={0.1}
-                      readOnly
-                      size="small"
-                    />
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ ml: 1 }}
-                    >
-                      ({detailDialog.consultant.rating || 4.5})
-                    </Typography>
-                  </RatingWrapper>
-
-                  <Chip
-                    label={`Giới tính: ${
-                      detailDialog.consultant.gender === 'MALE' ? 'Nam' : 'Nữ'
-                    }`}
-                    color="primary"
-                    variant="outlined"
-                    size="small"
-                    sx={{ mb: 1 }}
-                  />
-
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<EventAvailableIcon />}
-                    onClick={() => {
-                      handleCloseDetails();
-                      handleOpenAppointment(detailDialog.consultant);
+                Thông tin chi tiết tư vấn viên
+              </DialogHeader>
+              <DialogSection
+                sx={{ padding: { xs: 2, md: 4 }, minWidth: { md: 700 } }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', md: 'row' },
+                    gap: 4,
+                  }}
+                >
+                  {/* Left: Avatar, tên, rating, giới tính, nút */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      minWidth: 240,
+                      mb: { xs: 2, md: 0 },
                     }}
-                    sx={{ mt: 2 }}
                   >
-                    Đặt lịch hẹn
-                  </Button>
-                </AvatarSection>
-
-                <Stack spacing={2} sx={{ flexGrow: 1 }}>
-                  <Box>
-                    <SectionTitle variant="subtitle1">Chuyên môn</SectionTitle>
-                    <Typography variant="body1">
-                      {detailDialog.consultant.qualifications}
+                    <DetailAvatar
+                      src={
+                        detailDialog.consultant.avatar
+                          ? imageUrl.getFullImageUrl(
+                              detailDialog.consultant.avatar
+                            )
+                          : null
+                      }
+                      alt={detailDialog.consultant.fullName}
+                      sx={{ width: 130, height: 130, mb: 2 }}
+                    >
+                      {detailDialog.consultant.fullName[0]}
+                    </DetailAvatar>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontWeight: 700,
+                        color: '#4A90E2',
+                        mb: 1,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {detailDialog.consultant.fullName}
+                    </Typography>
+                    <RatingWrapper sx={{ mb: 1 }}>
+                      <Rating
+                        value={detailDialog.consultant.rating || 4.5}
+                        precision={0.1}
+                        readOnly
+                        size="small"
+                      />
+                      <Typography
+                        variant="body2"
+                        color="#4A90E2"
+                        sx={{ ml: 1, fontWeight: 600 }}
+                      >
+                        ({detailDialog.consultant.rating || 4.5})
+                      </Typography>
+                    </RatingWrapper>
+                    <Chip
+                      label={`Giới tính: ${detailDialog.consultant.gender === 'MALE' ? 'Nam' : 'Nữ'}`}
+                      color="primary"
+                      variant="outlined"
+                      size="small"
+                      sx={{ mb: 2, fontWeight: 600 }}
+                    />
+                    <StyledButton
+                      variant="contained"
+                      sx={{
+                        background: MEDICAL_GRADIENT,
+                        color: '#fff',
+                        mt: 2,
+                        fontSize: 18,
+                        px: 4,
+                        py: 1.5,
+                        borderRadius: 99,
+                        boxShadow: CARD_SHADOW,
+                        '&:hover': {
+                          background: MEDICAL_GRADIENT,
+                          opacity: 0.9,
+                        },
+                      }}
+                      startIcon={<EventAvailableIcon />}
+                      onClick={() => {
+                        handleCloseDetails();
+                        handleOpenAppointment(detailDialog.consultant);
+                      }}
+                    >
+                      ĐẶT LỊCH HẸN
+                    </StyledButton>
+                  </Box>
+                  {/* Right: Thông tin chuyên môn, kinh nghiệm, giới thiệu */}
+                  <Box
+                    sx={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      gap: 2,
+                    }}
+                  >
+                    <GradientLabel>Chuyên môn</GradientLabel>
+                    <Typography
+                      variant="h6"
+                      sx={{ color: '#222', fontWeight: 500, mb: 1 }}
+                    >
+                      {detailDialog.consultant.qualifications || '—'}
+                    </Typography>
+                    <GradientLabel>Kinh nghiệm</GradientLabel>
+                    <Typography
+                      variant="h6"
+                      sx={{ color: '#222', fontWeight: 500, mb: 1 }}
+                    >
+                      {detailDialog.consultant.experience || '—'}
+                    </Typography>
+                    <GradientLabel>Giới thiệu</GradientLabel>
+                    <Typography
+                      variant="h6"
+                      sx={{ color: '#222', fontWeight: 500 }}
+                    >
+                      {detailDialog.consultant.bio || '—'}
                     </Typography>
                   </Box>
-
-                  <Box>
-                    <SectionTitle variant="subtitle1">Kinh nghiệm</SectionTitle>
-                    <Typography variant="body1">
-                      {detailDialog.consultant.experience}
-                    </Typography>
-                  </Box>
-
-                  <Box>
-                    <SectionTitle variant="subtitle1">Giới thiệu</SectionTitle>
-                    <Typography variant="body1" paragraph>
-                      {detailDialog.consultant.bio}
-                    </Typography>
-                  </Box>
-
-                  <DetailItem>
-                    <SchoolIcon />
-                    <Typography variant="body2" color="text.secondary">
-                      {detailDialog.consultant.qualifications}
-                    </Typography>
-                  </DetailItem>
-
-                  <DetailItem>
-                    <WorkHistoryIcon />
-                    <Typography variant="body2" color="text.secondary">
-                      {detailDialog.consultant.experience}
-                    </Typography>
-                  </DetailItem>
-                </Stack>
-              </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseDetails}>Đóng</Button>
-            </DialogActions>
-          </>
+                </Box>
+              </DialogSection>
+              <DialogActionBar>
+                <StyledButton
+                  onClick={handleCloseDetails}
+                  variant="outlined"
+                  color="primary"
+                >
+                  ĐÓNG
+                </StyledButton>
+              </DialogActionBar>
+            </>
+          )
         )}
       </Dialog>{' '}
       {/* Appointment Dialog */}
@@ -698,14 +805,28 @@ const ConsultationPage = () => {
                     startAdornment={
                       <ScheduleIcon sx={{ mr: 1, color: 'primary.main' }} />
                     }
+                    sx={{ background: '#fff', borderRadius: 2 }}
                   >
-                    {timeSlots.map((slot) => (
-                      <MenuItem key={slot} value={slot}>
-                        {slot}
+                    {timeSlotOptions.map((slot) => (
+                      <MenuItem key={slot.value} value={slot.value}>
+                        {slot.label}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
+
+                <TextField
+                  label="Lý do tư vấn (bắt buộc)"
+                  value={appointmentForm.reason}
+                  onChange={(e) => handleFormChange('reason', e.target.value)}
+                  required
+                  fullWidth
+                  multiline
+                  minRows={2}
+                  maxRows={4}
+                  sx={{ mt: 2, background: '#fff', borderRadius: 2 }}
+                  placeholder="Nhập lý do bạn muốn được tư vấn..."
+                />
               </Box>
             </DialogContent>
             <DialogActions

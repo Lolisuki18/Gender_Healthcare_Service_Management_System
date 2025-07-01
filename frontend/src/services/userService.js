@@ -470,6 +470,15 @@ export const userService = {
       return false;
     }
   },
+  // Lấy thông tin người dùng theo id
+  getUserById: async (userId) => {
+    try {
+      const response = await apiClient.get(`/users/${userId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
 };
 export const consultantService = {
   // Lấy danh sách bác sĩ

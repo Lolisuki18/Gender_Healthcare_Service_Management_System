@@ -7,6 +7,8 @@
  * - Quản lý thông tin chi tiết gói
  */
 
+// ======================= IMPORT CÁC THƯ VIỆN VÀ HÀM API =======================
+// Import các thư viện React, Material UI, các icon, các hàm gọi API, và Toast để hiển thị thông báo
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
@@ -53,22 +55,117 @@ import {
   deleteSTIPackage,
   getAllSTIServices,
 } from '@/services/stiService';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const STIPackageManagementContent = () => {
-  const [packages, setPackages] = useState([]); // State quản lý các dịch vụ có sẵn
-
-  // Fetch available services from backend
+  // ======================= STATE QUẢN LÝ DỮ LIỆU =======================
+  // Khai báo các biến state để quản lý dữ liệu gói, dịch vụ, filter, form, dialog, loading, error, v.v.
+  // packages: Danh sách các gói xét nghiệm STI
+  const [packages, setPackages] = useState([]);
+  // availableServices: Danh sách các dịch vụ xét nghiệm có thể chọn khi tạo/sửa gói
   const [availableServices, setAvailableServices] = useState([]);
+  // selectedServices: Danh sách ID dịch vụ được chọn cho gói hiện tại
+  const [selectedServices, setSelectedServices] = useState([]);
+  // formData: Dữ liệu form khi thêm/sửa gói
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: 0,
+    recommended_for: '',
+    isActive: true,
+    stiService: [],
+  });
+  // errors: Lưu lỗi validate form
+  const [errors, setErrors] = useState({
+    name: '',
+    description: '',
+    price: '',
+    services: '',
+  });
+  // Các state khác: Quản lý phân trang, tìm kiếm, filter trạng thái, loading, error, success, dialog mở/đóng, v.v.
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [openDialog, setOpenDialog] = useState(false);
+  const [currentPackage, setCurrentPackage] = useState(null);
+  const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
+  const [packageDetails, setPackageDetails] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
 
+  // ======================= FETCH DỮ LIỆU BAN ĐẦU =======================
+  // Chuyển đổi dữ liệu gói từ backend sang dạng frontend dễ dùng
+  const mapBackendPackageToFrontend = useCallback((pkg) => {
+    return {
+      id: pkg.id,
+      name: pkg.name,
+      description: pkg.description || '',
+      recommended_for: pkg.recommended_for || 'Tất cả',
+      price: pkg.price || 0,
+      isActive:
+        pkg.isActive !== undefined
+          ? pkg.isActive
+          : pkg.active !== undefined
+            ? pkg.active
+            : true,
+      services: Array.isArray(pkg.services)
+        ? pkg.services.map((service) => ({
+            id: service.id,
+            name: service.name,
+            price: service.price || 0,
+            description: service.description || '',
+            isActive:
+              service.isActive !== undefined
+                ? service.isActive
+                : service.active !== undefined
+                  ? service.active
+                  : true,
+          }))
+        : [],
+      createdAt: pkg.createdAt,
+      updatedAt: pkg.updatedAt,
+    };
+  }, []);
+
+  // Lấy danh sách tất cả các gói từ backend
+  const fetchAllPackages = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getAllSTIPackages();
+
+      const packagesArray = response.data || [];
+
+      const mappedPackages = Array.isArray(packagesArray)
+        ? packagesArray.map(mapBackendPackageToFrontend)
+        : [];
+
+      setPackages(mappedPackages);
+      return { success: true, data: mappedPackages };
+    } catch (err) {
+      console.error('Error fetching STI packages:', err);
+      toast.error(
+        'Không thể tải dữ liệu gói STI: ' +
+          (err.message || 'Lỗi không xác định')
+      );
+      setTimeout(() => setError(null), 5000);
+      return { success: false, error: err };
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setPackages, setError, mapBackendPackageToFrontend]);
+
+  // useEffect đầu tiên: Lấy danh sách dịch vụ xét nghiệm từ backend
   useEffect(() => {
     const fetchAvailableServices = async () => {
       try {
         const response = await getAllSTIServices();
         console.log('STI Services API response:', response);
 
-        // Log service field names for better understanding
         if (response.data && response.data.length > 0) {
           console.log(
             'Service field names from API:',
@@ -78,7 +175,6 @@ const STIPackageManagementContent = () => {
 
         const servicesArray = response.data || [];
 
-        // Map backend fields to frontend expected structure
         const mappedServices = Array.isArray(servicesArray)
           ? servicesArray.map((service) => ({
               id: service.id,
@@ -102,54 +198,43 @@ const STIPackageManagementContent = () => {
     };
 
     fetchAvailableServices();
-  }, []); // Chỉ chạy một lần khi component mount
-  // State management
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [openDialog, setOpenDialog] = useState(false);
-  const [currentPackage, setCurrentPackage] = useState(null);
-  const [selectedServices, setSelectedServices] = useState([]);
-  // State cho dialog xem chi tiết dịch vụ
-  const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
-  const [packageDetails, setPackageDetails] = useState(null);
-  // Add loading state for better UX
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: 0,
-    recommended_for: '', // Field này sẽ chỉ dùng cho frontend, không gửi lên backend
-    isActive: true, // Backend expects 'isActive', not 'active'
-    stiService: [], // This will be set based on selectedServices
-  });
-  // State cho validation errors
-  const [errors, setErrors] = useState({
-    name: '',
-    description: '',
-    price: '',
-    services: '',
-  });
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'active', 'inactive'
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
+  }, []);
 
-  // Handlers
+  // useEffect thứ hai: Lấy danh sách các gói xét nghiệm từ backend
+  useEffect(() => {
+    const loadPackages = async () => {
+      console.log('Initial component load - fetching packages');
+      const result = await fetchAllPackages();
+      console.log('Initial load result:', result);
+      if (result.success) {
+        toast.success('Đã tải dữ liệu gói STI thành công');
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    };
+
+    loadPackages();
+  }, [fetchAllPackages]);
+
+  // ======================= HANDLER CHO UI VÀ FORM =======================
+
+  // Chuyển trang bảng danh sách
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
+  // Đổi số dòng hiển thị mỗi trang
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
+  // Xử lý tìm kiếm theo tên/mô tả/đối tượng
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
     setPage(0);
   };
+
+  // Mở dialog thêm mới gói STI
   const handleOpenAddDialog = () => {
     setCurrentPackage(null);
     setSelectedServices([]);
@@ -161,7 +246,6 @@ const STIPackageManagementContent = () => {
       isActive: true,
       stiService: [],
     });
-    // Reset validation errors when opening dialog
     setErrors({
       name: '',
       description: '',
@@ -170,6 +254,8 @@ const STIPackageManagementContent = () => {
     });
     setOpenDialog(true);
   };
+
+  // Mở dialog chỉnh sửa gói STI đã chọn
   const handleOpenEditDialog = (pkg) => {
     setCurrentPackage(pkg);
     setSelectedServices(pkg.services.map((service) => service.id));
@@ -180,7 +266,6 @@ const STIPackageManagementContent = () => {
       recommended_for: pkg.recommended_for,
       isActive: pkg.isActive,
     });
-    // Reset validation errors when opening dialog
     setErrors({
       name: '',
       description: '',
@@ -189,27 +274,30 @@ const STIPackageManagementContent = () => {
     });
     setOpenDialog(true);
   };
+
+  // Đóng dialog thêm/sửa gói
   const handleCloseDialog = () => {
     setOpenDialog(false);
   };
 
-  // Hàm mở dialog xem chi tiết dịch vụ
+  // Mở dialog xem chi tiết gói
   const handleOpenDetailsDialog = (pkg) => {
     setPackageDetails(pkg);
     setOpenDetailsDialog(true);
   };
 
-  // Hàm đóng dialog xem chi tiết dịch vụ
+  // Đóng dialog xem chi tiết gói
   const handleCloseDetailsDialog = () => {
     setOpenDetailsDialog(false);
   };
+
+  // Chọn hoặc bỏ chọn một dịch vụ trong form
   const handleServiceChange = (serviceId) => {
     setSelectedServices((prev) => {
       const newSelected = prev.includes(serviceId)
         ? prev.filter((id) => id !== serviceId)
         : [...prev, serviceId];
 
-      // Clear services error when user selects services
       if (newSelected.length > 0 && errors.services) {
         setErrors((prev) => ({
           ...prev,
@@ -220,13 +308,14 @@ const STIPackageManagementContent = () => {
       return newSelected;
     });
   };
+
+  // Xử lý thay đổi giá trị các trường trong form
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
 
-    // Clear error when user types
     if (errors[field]) {
       setErrors((prev) => ({
         ...prev,
@@ -234,6 +323,8 @@ const STIPackageManagementContent = () => {
       }));
     }
   };
+
+  // Kiểm tra dữ liệu form trước khi lưu (validate)
   const validateForm = () => {
     const newErrors = {
       name: '',
@@ -243,7 +334,6 @@ const STIPackageManagementContent = () => {
     };
     let isValid = true;
 
-    // Validate name (required, max length 200 per DTO)
     if (!formData.name.trim()) {
       newErrors.name = 'Package name is required';
       isValid = false;
@@ -252,13 +342,11 @@ const STIPackageManagementContent = () => {
       isValid = false;
     }
 
-    // Validate price (required, must be a positive number)
     if (formData.price <= 0) {
       newErrors.price = 'Price is required and must be greater than 0';
       isValid = false;
     }
 
-    // Validate selected services (must select at least one)
     if (selectedServices.length === 0) {
       newErrors.services = 'At least one service must be selected';
       isValid = false;
@@ -267,19 +355,18 @@ const STIPackageManagementContent = () => {
     setErrors(newErrors);
     return isValid;
   };
-  //để lưu package mới hoặc cập nhật package hiện tại
+
+  // Lưu gói STI mới hoặc cập nhật gói đã có
   const handleSavePackage = async () => {
-    // Validate form before saving
     if (!validateForm()) {
       return;
     }
 
     try {
-      setLoading(true); // Get selected services data
+      setLoading(true);
       const selectedServicesData = availableServices.filter((service) =>
         selectedServices.includes(service.id)
-      ); // Prepare backend DTO data (STIPackageRequest)
-      // Đảm bảo selectedServices luôn là mảng ID (number)
+      );
       const stiServiceIds = Array.isArray(selectedServices)
         ? selectedServices
             .map((item) =>
@@ -294,14 +381,12 @@ const STIPackageManagementContent = () => {
         isActive: formData.isActive,
         stiService: stiServiceIds,
       };
-      // Log để kiểm tra
       console.log('selectedServices:', selectedServices);
       console.log('stiService gửi lên:', stiServiceIds);
       console.log('packageDTO gửi lên:', packageDTO);
 
       let response;
       if (currentPackage) {
-        // Remove the ID from packageDTO since it's in the URL
         const { id, ...packageDataWithoutId } = packageDTO;
         response = await updateSTIPackage(
           currentPackage.id,
@@ -312,23 +397,18 @@ const STIPackageManagementContent = () => {
         response = await createSTIPackage(packageDTO);
       }
 
-      // Log the raw response from the API
       console.log('API Response:', response);
 
-      // Check if the API call was successful
       if (!response || !response.success) {
         throw new Error(response?.message || 'API call was unsuccessful');
       }
 
-      // The actual package data will be in the data field
       const updatedPackageData = response.data;
       console.log('Updated Package Data from API:', updatedPackageData);
 
       if (!updatedPackageData) {
         throw new Error('No package data returned from API');
       }
-      // Map the API response to our frontend structure
-      // Log all the fields from the API response to understand field names
       console.log(
         'All fields from the API response:',
         Object.keys(updatedPackageData)
@@ -340,7 +420,6 @@ const STIPackageManagementContent = () => {
         description: updatedPackageData.description || '',
         price: updatedPackageData.price || 0,
         recommended_for: updatedPackageData.recommended_for || 'Tất cả',
-        // Handle the isActive/active inconsistency
         isActive:
           updatedPackageData.isActive !== undefined
             ? updatedPackageData.isActive
@@ -349,7 +428,6 @@ const STIPackageManagementContent = () => {
               : true,
         services: updatedPackageData.services
           ? updatedPackageData.services.map((service) => {
-              // Log service field names for debugging
               if (service) console.log('Service fields:', Object.keys(service));
 
               return {
@@ -357,7 +435,6 @@ const STIPackageManagementContent = () => {
                 name: service.name,
                 description: service.description || '',
                 price: service.price || 0,
-                // Handle the isActive/active inconsistency in services too
                 isActive:
                   service.isActive !== undefined
                     ? service.isActive
@@ -371,14 +448,10 @@ const STIPackageManagementContent = () => {
         updatedAt: updatedPackageData.updatedAt || new Date().toISOString(),
       };
 
-      // Update UI with the mappedPackage
       if (currentPackage) {
-        // For updates, update local state and refresh the packages list to ensure sync
         try {
-          // Fetch all packages after updating to ensure fresh data
           const refreshResult = await fetchAllPackages();
           if (!refreshResult.success) {
-            // Fallback to optimistic update if refresh fails
             setPackages(
               packages.map((pkg) =>
                 pkg.id === currentPackage.id ? mappedPackage : pkg
@@ -391,7 +464,6 @@ const STIPackageManagementContent = () => {
             'Failed to refresh packages after update:',
             refreshError
           );
-          // Fallback to optimistic update
           setPackages(
             packages.map((pkg) =>
               pkg.id === currentPackage.id ? mappedPackage : pkg
@@ -402,12 +474,9 @@ const STIPackageManagementContent = () => {
           );
         }
       } else {
-        // For new packages, refresh the entire list to ensure we have all data correctly
         try {
-          // Fetch all packages after creating a new one
           const result = await fetchAllPackages();
           if (!result.success) {
-            // Fallback if refresh fails
             setPackages([...packages, mappedPackage]);
           }
           toast.success(`Thêm gói STI ${mappedPackage.name} thành công`);
@@ -416,7 +485,6 @@ const STIPackageManagementContent = () => {
             'Failed to refresh packages after create:',
             refreshError
           );
-          // Still add the package to UI even if refresh failed
           setPackages([...packages, mappedPackage]);
           toast.success(
             `Thêm gói STI ${mappedPackage.name} thành công, nhưng danh sách chưa được làm mới`
@@ -433,25 +501,21 @@ const STIPackageManagementContent = () => {
       setLoading(false);
     }
   };
+
+  // Xóa một gói STI theo id
   const handleDeletePackage = async (id) => {
-    // Logic xóa gói
     if (window.confirm('Bạn có chắc chắn muốn xóa gói này?')) {
       try {
         setLoading(true);
 
-        // Call the API to delete the package
         const response = await deleteSTIPackage(id);
 
-        // Check if the deletion was successful based on the ApiResponse structure
         if (!response || !response.success) {
           throw new Error(response?.message || 'Could not delete the package');
         }
 
-        // Update state after successful deletion
-        // First update optimistically
         setPackages(packages.filter((pkg) => pkg.id !== id));
 
-        // Then refresh the list to ensure synchronization with backend
         try {
           await fetchAllPackages();
         } catch (refreshError) {
@@ -459,7 +523,6 @@ const STIPackageManagementContent = () => {
             'Failed to refresh packages after delete:',
             refreshError
           );
-          // We already updated optimistically, so no need to do anything else
         }
 
         toast.success('Xóa gói STI thành công');
@@ -475,33 +538,10 @@ const STIPackageManagementContent = () => {
       }
     }
   };
-  // Filter packages dựa trên searchTerm
-  const filteredPackages = Array.isArray(packages)
-    ? packages.filter((pkg) => {
-        // Lọc theo search
-        const matchesSearch =
-          (pkg.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (pkg.description || '')
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          (pkg.recommended_for || '')
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase());
-        // Lọc theo trạng thái
-        const matchesStatus =
-          statusFilter === 'all'
-            ? true
-            : statusFilter === 'active'
-              ? pkg.isActive
-              : !pkg.isActive;
-        // Lọc theo giá
-        const matchesPrice =
-          (!minPrice || pkg.price >= Number(minPrice)) &&
-          (!maxPrice || pkg.price <= Number(maxPrice));
-        return matchesSearch && matchesStatus && matchesPrice;
-      })
-    : [];
-  // Format price
+
+  // ======================= FILTER VÀ XỬ LÝ DỮ LIỆU HIỂN THỊ =======================
+
+  // Định dạng giá tiền sang VND
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -509,7 +549,7 @@ const STIPackageManagementContent = () => {
     }).format(price);
   };
 
-  // Helper function to calculate discount information
+  // Tính số tiền tiết kiệm và phần trăm giảm giá khi mua gói so với mua lẻ từng dịch vụ
   const calculateDiscount = (totalPrice, packagePrice) => {
     if (!totalPrice || !packagePrice || totalPrice <= 0) {
       return {
@@ -536,6 +576,7 @@ const STIPackageManagementContent = () => {
     };
   };
 
+  // Chuẩn hóa danh sách dịch vụ gửi lên backend (chỉ lấy id)
   const prepareServiceIdsForBackend = useCallback((services) => {
     if (!Array.isArray(services)) return [];
 
@@ -550,83 +591,31 @@ const STIPackageManagementContent = () => {
       .filter((id) => typeof id === 'number');
   }, []);
 
-  // Helper function to map backend package data to frontend format
-  const mapBackendPackageToFrontend = useCallback((pkg) => {
-    return {
-      id: pkg.id,
-      name: pkg.name,
-      description: pkg.description || '',
-      recommended_for: pkg.recommended_for || 'Tất cả',
-      price: pkg.price || 0,
-      // Handle the isActive/active inconsistency
-      isActive:
-        pkg.isActive !== undefined
-          ? pkg.isActive
-          : pkg.active !== undefined
-            ? pkg.active
-            : true,
-      services: Array.isArray(pkg.services)
-        ? pkg.services.map((service) => ({
-            id: service.id,
-            name: service.name,
-            price: service.price || 0,
-            description: service.description || '',
-            // Handle the isActive/active inconsistency in services
-            isActive:
-              service.isActive !== undefined
-                ? service.isActive
-                : service.active !== undefined
-                  ? service.active
-                  : true,
-          }))
-        : [],
-      createdAt: pkg.createdAt,
-      updatedAt: pkg.updatedAt,
-    };
-  }, []);
+  // Lọc danh sách gói theo tìm kiếm, trạng thái, khoảng giá
+  const filteredPackages = Array.isArray(packages)
+    ? packages.filter((pkg) => {
+        const matchesSearch =
+          (pkg.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (pkg.description || '')
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          (pkg.recommended_for || '')
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase());
+        const matchesStatus =
+          statusFilter === 'all'
+            ? true
+            : statusFilter === 'active'
+              ? pkg.isActive
+              : !pkg.isActive;
+        const matchesPrice =
+          (!minPrice || pkg.price >= Number(minPrice)) &&
+          (!maxPrice || pkg.price <= Number(maxPrice));
+        return matchesSearch && matchesStatus && matchesPrice;
+      })
+    : [];
 
-  // Helper function to fetch all packages from the API
-  const fetchAllPackages = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await getAllSTIPackages();
-
-      // Extract the data array from the response
-      const packagesArray = response.data || [];
-
-      // Map backend fields to frontend expected structure
-      const mappedPackages = Array.isArray(packagesArray)
-        ? packagesArray.map(mapBackendPackageToFrontend)
-        : [];
-
-      setPackages(mappedPackages);
-      return { success: true, data: mappedPackages };
-    } catch (err) {
-      console.error('Error fetching STI packages:', err);
-      toast.error(
-        'Không thể tải dữ liệu gói STI: ' +
-          (err.message || 'Lỗi không xác định')
-      );
-      setTimeout(() => setError(null), 5000);
-      return { success: false, error: err };
-    } finally {
-      setLoading(false);
-    }
-  }, [setLoading, setPackages, setError, mapBackendPackageToFrontend]);
-  // Load packages when the component mounts
-  useEffect(() => {
-    const loadPackages = async () => {
-      console.log('Initial component load - fetching packages');
-      const result = await fetchAllPackages();
-      console.log('Initial load result:', result);
-      if (result.success) {
-        toast.success('Đã tải dữ liệu gói STI thành công');
-        setTimeout(() => setSuccess(null), 3000);
-      }
-    };
-
-    loadPackages();
-  }, [fetchAllPackages]);
+  // ======================= UI HIỂN THỊ =======================
   return (
     <Box
       sx={{
@@ -636,7 +625,6 @@ const STIPackageManagementContent = () => {
         minHeight: '85vh',
       }}
     >
-      {/* Loading and Alert Messages */}
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
           <CircularProgress
@@ -690,8 +678,7 @@ const STIPackageManagementContent = () => {
         >
           Quản lý Gói STI
         </Typography>
-      </Box>{' '}
-      {/* Search and Add Button */}
+      </Box>
       <Box
         sx={{
           display: 'flex',
@@ -775,8 +762,7 @@ const STIPackageManagementContent = () => {
         >
           Thêm gói STI
         </Button>
-      </Box>{' '}
-      {/* Packages Table */}
+      </Box>
       <TableContainer
         component={Paper}
         sx={{
@@ -813,7 +799,7 @@ const STIPackageManagementContent = () => {
                 }}
               >
                 Tên gói
-              </TableCell>{' '}
+              </TableCell>
               <TableCell
                 sx={{
                   color: 'white',
@@ -888,9 +874,8 @@ const STIPackageManagementContent = () => {
                 Thao tác
               </TableCell>
             </TableRow>
-          </TableHead>{' '}
+          </TableHead>
           <TableBody>
-            {' '}
             {loading ? (
               <TableRow>
                 <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
@@ -904,7 +889,6 @@ const STIPackageManagementContent = () => {
               filteredPackages
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((pkg, index) => {
-                  // Tính % giảm giá dựa trên giá gói và tổng giá dịch vụ
                   const discountInfo = calculateDiscount(
                     pkg.services.reduce(
                       (sum, service) => sum + service.price,
@@ -947,7 +931,7 @@ const STIPackageManagementContent = () => {
                       </TableCell>
                       <TableCell sx={{ py: 1.5 }}>
                         {pkg.recommended_for}
-                      </TableCell>{' '}
+                      </TableCell>
                       <TableCell sx={{ py: 1.5 }}>
                         <Typography
                           variant="body2"
@@ -990,7 +974,6 @@ const STIPackageManagementContent = () => {
                             gap: 1,
                           }}
                         >
-                          {' '}
                           <Chip
                             label={`${pkg.services.length} dịch vụ`}
                             size="small"
@@ -1003,7 +986,6 @@ const STIPackageManagementContent = () => {
                             }}
                           />
                           <Tooltip title="Xem chi tiết dịch vụ">
-                            {' '}
                             <IconButton
                               size="small"
                               onClick={() => handleOpenDetailsDialog(pkg)}
@@ -1018,7 +1000,7 @@ const STIPackageManagementContent = () => {
                             </IconButton>
                           </Tooltip>
                         </Box>
-                      </TableCell>{' '}
+                      </TableCell>
                       <TableCell sx={{ py: 1.5 }}>
                         <Chip
                           label={
@@ -1043,7 +1025,6 @@ const STIPackageManagementContent = () => {
                           sx={{ display: 'flex', justifyContent: 'flex-end' }}
                         >
                           <Tooltip title="Chỉnh sửa">
-                            {' '}
                             <IconButton
                               size="small"
                               onClick={() => handleOpenEditDialog(pkg)}
@@ -1088,7 +1069,7 @@ const STIPackageManagementContent = () => {
               </TableRow>
             )}
           </TableBody>
-        </Table>{' '}
+        </Table>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
@@ -1108,8 +1089,7 @@ const STIPackageManagementContent = () => {
             '& .MuiTablePagination-displayedRows': { fontWeight: 500 },
           }}
         />
-      </TableContainer>{' '}
-      {/* Add/Edit Package Dialog */}{' '}
+      </TableContainer>
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
@@ -1154,7 +1134,6 @@ const STIPackageManagementContent = () => {
           <Box component="form">
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                {' '}
                 <TextField
                   fullWidth
                   label="Tên gói"
@@ -1197,7 +1176,7 @@ const STIPackageManagementContent = () => {
                     },
                   }}
                 />
-              </Grid>{' '}
+              </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -1238,7 +1217,6 @@ const STIPackageManagementContent = () => {
                 />
               </Grid>
               <Grid item xs={12} md={6}>
-                {' '}
                 <TextField
                   fullWidth
                   label="Giá gói (VNĐ)"
@@ -1296,7 +1274,7 @@ const STIPackageManagementContent = () => {
                   }}
                 />
               </Grid>
-            </Grid>{' '}
+            </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -1348,7 +1326,7 @@ const STIPackageManagementContent = () => {
                   },
                 }}
               />
-            </Grid>{' '}
+            </Grid>
             <Box
               sx={{
                 mt: 4,
@@ -1374,7 +1352,7 @@ const STIPackageManagementContent = () => {
               >
                 Các dịch vụ bao gồm trong gói{' '}
                 <span style={{ color: '#FF5252', fontSize: '1.1rem' }}>*</span>
-              </Typography>{' '}
+              </Typography>
               <Box
                 sx={{
                   display: 'flex',
@@ -1456,7 +1434,6 @@ const STIPackageManagementContent = () => {
                                 availableServices.map((s) => s.id)
                               );
 
-                              // Clear services error when selecting all
                               if (errors.services) {
                                 setErrors((prev) => ({
                                   ...prev,
@@ -1558,7 +1535,7 @@ const STIPackageManagementContent = () => {
                     ))}
                   </TableBody>
                 </Table>
-              </TableContainer>{' '}
+              </TableContainer>
               <Paper
                 elevation={0}
                 sx={{
@@ -1634,7 +1611,6 @@ const STIPackageManagementContent = () => {
                       color="error"
                       align="right"
                     >
-                      {' '}
                       {(() => {
                         const servicesTotal = availableServices
                           .filter((service) =>
@@ -1651,7 +1627,7 @@ const STIPackageManagementContent = () => {
                   </Grid>
                 </Grid>
               </Paper>
-            </Box>{' '}
+            </Box>
             <FormControl
               fullWidth
               margin="normal"
@@ -1678,7 +1654,7 @@ const STIPackageManagementContent = () => {
               </FormHelperText>
             </FormControl>
           </Box>
-        </DialogContent>{' '}
+        </DialogContent>
         <DialogActions
           sx={{
             px: 3.5,
@@ -1725,8 +1701,7 @@ const STIPackageManagementContent = () => {
             Lưu
           </Button>
         </DialogActions>
-      </Dialog>{' '}
-      {/* Dialog hiển thị chi tiết dịch vụ trong gói */}{' '}
+      </Dialog>
       <Dialog
         open={openDetailsDialog}
         onClose={handleCloseDetailsDialog}
@@ -1755,7 +1730,6 @@ const STIPackageManagementContent = () => {
         <DialogContent dividers sx={{ px: 3, py: 3 }}>
           {packageDetails && (
             <Box>
-              {' '}
               <Paper
                 elevation={0}
                 sx={{
@@ -1883,7 +1857,7 @@ const STIPackageManagementContent = () => {
                     </Typography>
                   </Grid>
                 </Grid>
-              </Paper>{' '}
+              </Paper>
               <Typography
                 variant="h6"
                 fontWeight="600"
@@ -1998,7 +1972,7 @@ const STIPackageManagementContent = () => {
                     ))}
                   </TableBody>
                 </Table>
-              </TableContainer>{' '}
+              </TableContainer>
               <Box
                 sx={{
                   background:
@@ -2076,7 +2050,6 @@ const STIPackageManagementContent = () => {
                       sx={{ fontWeight: '600', color: '#E53935' }}
                       align="right"
                     >
-                      {' '}
                       {(() => {
                         const servicesTotal = packageDetails.services.reduce(
                           (sum, service) => sum + service.price,
@@ -2094,7 +2067,7 @@ const STIPackageManagementContent = () => {
               </Box>
             </Box>
           )}
-        </DialogContent>{' '}
+        </DialogContent>
         <DialogActions
           sx={{ px: 3, py: 2.5, borderTop: '1px solid rgba(0,0,0,0.08)' }}
         >
@@ -2119,20 +2092,10 @@ const STIPackageManagementContent = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
     </Box>
   );
 };
 
+// ======================= EXPORT COMPONENT =======================
+// Export component để sử dụng ở nơi khác
 export default STIPackageManagementContent;
