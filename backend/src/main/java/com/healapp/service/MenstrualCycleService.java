@@ -103,7 +103,7 @@ public class MenstrualCycleService {
         try {
             // Kiểm tra người dùng có tồn tại hay không
             Optional<UserDtls> user = userRepository.findById(customerId);
-            if (user == null){
+            if (!user.isPresent()) {
                 return ApiResponse.error("Người dùng không tồn tại");
             }
 
@@ -386,6 +386,25 @@ public class MenstrualCycleService {
             return ApiResponse.success("Tính chu kỳ trung bình thành công", averageCycleLength);
         } catch (Exception e) {
             return ApiResponse.error("Lỗi khi tính chu kỳ trung bình: " + e.getMessage());
+        }
+    }
+
+    // Dự đoán chu kỳ kinh nguyệt tiếp theo
+    public ApiResponse<LocalDate> predictNextCycle() {
+        try {
+            Long userId = getCurrentUserId();
+            Optional<MenstrualCycle> latestCycleOpt = menstrualCycleRepository.findLatestCycleBeforeToday(userId, LocalDate.now());
+
+            if (!latestCycleOpt.isPresent()) {
+                return ApiResponse.error("Không tìm thấy chu kỳ kinh nguyệt gần nhất");
+            }
+
+            MenstrualCycle latestCycle = latestCycleOpt.get();
+            LocalDate nextCycleStartDate = latestCycle.getStartDate().plusDays(latestCycle.getCycleLength());
+
+            return ApiResponse.success("Dự đoán chu kỳ kinh nguyệt tiếp theo thành công", nextCycleStartDate);
+        } catch (Exception e) {
+            return ApiResponse.error("Lỗi khi dự đoán chu kỳ kinh nguyệt tiếp theo: " + e.getMessage());
         }
     }
 
