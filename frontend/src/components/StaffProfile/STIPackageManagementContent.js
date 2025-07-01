@@ -53,120 +53,11 @@ import {
   deleteSTIPackage,
   getAllSTIServices,
 } from '@/services/stiService';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const STIPackageManagementContent = () => {
-  const [packages, setPackages] = useState([
-    //     {
-    //       id: 1,
-    //       name: 'Xét nghiệm HIV',
-    //       description: 'Phát hiện kháng thể HIV trong máu',
-    //       price: 450000,
-    //       isActive: true,
-    //     },
-    //     {
-    //       id: 2,
-    //       name: 'Xét nghiệm Giang mai',
-    //       description: 'Kiểm tra vi khuẩn Treponema pallidum',
-    //       price: 350000,
-    //       isActive: true,
-    //     },
-    //     {
-    //       id: 3,
-    //       name: 'Xét nghiệm Lậu',
-    //       description: 'Xác định vi khuẩn lậu',
-    //       price: 450000,
-    //       isActive: true,
-    //     },
-    //   ],
-    // },
-    // {
-    //   id: 2,
-    //   name: 'Gói sàng lọc STI toàn diện',
-    //   description: 'Bao gồm tất cả các xét nghiệm STI',
-    //   price: 3200000,
-    //   recommended_for: 'Người có nhiều bạn tình',
-    //   isActive: true,
-    //   createdAt: '2025-04-15T10:20:00',
-    //   updatedAt: '2025-05-20T16:45:00',
-    //   services: [
-    //     {
-    //       id: 1,
-    //       name: 'Xét nghiệm HIV',
-    //       description: 'Phát hiện kháng thể HIV trong máu',
-    //       price: 450000,
-    //       isActive: true,
-    //     },
-    //     {
-    //       id: 2,
-    //       name: 'Xét nghiệm Giang mai',
-    //       description: 'Kiểm tra vi khuẩn Treponema pallidum',
-    //       price: 350000,
-    //       isActive: true,
-    //     },
-    //     {
-    //       id: 3,
-    //       name: 'Xét nghiệm Lậu',
-    //       description: 'Xác định vi khuẩn lậu',
-    //       price: 450000,
-    //       isActive: true,
-    //     },
-    //     {
-    //       id: 4,
-    //       name: 'Xét nghiệm Chlamydia',
-    //       description: 'Phát hiện vi khuẩn Chlamydia trachomatis',
-    //       price: 550000,
-    //       isActive: true,
-    //     },
-    //     {
-    //       id: 5,
-    //       name: 'Xét nghiệm HPV',
-    //       description: 'Phát hiện virus Human papillomavirus',
-    //       price: 850000,
-    //       isActive: true,
-    //     },
-    //     {
-    //       id: 6,
-    //       name: 'Xét nghiệm Herpes',
-    //       description: 'Phát hiện virus Herpes simplex',
-    //       price: 650000,
-    //       isActive: true,
-    //     },
-    //   ],
-    // },
-    // {
-    //   id: 3,
-    //   name: 'Gói STI theo giới tính',
-    //   description: 'Các xét nghiệm STI phù hợp với từng giới tính',
-    //   price: 2000000,
-    //   recommended_for: 'Phụ nữ trong độ tuổi sinh sản',
-    //   isActive: false,
-    //   createdAt: '2025-03-20T09:15:00',
-    //   updatedAt: '2025-06-05T11:10:00',
-    //   services: [
-    //     {
-    //       id: 1,
-    //       name: 'Xét nghiệm HIV',
-    //       description: 'Phát hiện kháng thể HIV trong máu',
-    //       price: 450000,
-    //       isActive: true,
-    //     },
-    //     {
-    //       id: 4,
-    //       name: 'Xét nghiệm Chlamydia',
-    //       description: 'Phát hiện vi khuẩn Chlamydia trachomatis',
-    //       price: 550000,
-    //       isActive: true,
-    //     },
-    //     {
-    //       id: 5,
-    //       name: 'Xét nghiệm HPV',
-    //       description: 'Phát hiện virus Human papillomavirus',
-    //       price: 850000,
-    //       isActive: true,
-    //     },
-    //   ],
-    // },
-  ]); // State quản lý các dịch vụ có sẵn
+  const [packages, setPackages] = useState([]); // State quản lý các dịch vụ có sẵn
 
   // Fetch available services from backend
   const [availableServices, setAvailableServices] = useState([]);
@@ -202,7 +93,7 @@ const STIPackageManagementContent = () => {
         setAvailableServices(mappedServices);
       } catch (err) {
         console.error('Error fetching available services:', err);
-        setError(
+        toast.error(
           'Không thể tải dữ liệu dịch vụ: ' +
             (err.message || 'Lỗi không xác định')
         );
@@ -241,6 +132,9 @@ const STIPackageManagementContent = () => {
     price: '',
     services: '',
   });
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'active', 'inactive'
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
 
   // Handlers
   const handleChangePage = (event, newPage) => {
@@ -385,163 +279,153 @@ const STIPackageManagementContent = () => {
       const selectedServicesData = availableServices.filter((service) =>
         selectedServices.includes(service.id)
       ); // Prepare backend DTO data (STIPackageRequest)
-      // Based on STIPackageController.java: name, description, price, isActive, stiService (array of IDs)
-      // Chuẩn bị dữ liệu cho API request
+      // Đảm bảo selectedServices luôn là mảng ID (number)
+      const stiServiceIds = Array.isArray(selectedServices)
+        ? selectedServices
+            .map((item) =>
+              typeof item === 'object' && item !== null ? item.id : item
+            )
+            .filter((id) => typeof id === 'number')
+        : [];
       const packageDTO = {
         name: formData.name,
         description: formData.description,
         price: formData.price,
-        isActive: formData.isActive, // Package status independent from service status
-        // Backend mong đợi mảng các ID đơn giản (Long), không phải object phức tạp
-        stiService: prepareServiceIdsForBackend(selectedServices), // Only IDs, doesn't change service status
+        isActive: formData.isActive,
+        stiService: stiServiceIds,
       };
-      try {
-        // Log the data we're sending to the API
-        console.log(
-          'Package data being sent:',
-          currentPackage ? 'UPDATE' : 'CREATE',
-          packageDTO
-        ); // Backend yêu cầu stiService là mảng các ID (Long), không phải object
-        // Sử dụng packageDTO trực tiếp vì chúng ta đã định nghĩa stiService là mảng ID
-        console.log('Using simple IDs for stiService:', packageDTO.stiService);
+      // Log để kiểm tra
+      console.log('selectedServices:', selectedServices);
+      console.log('stiService gửi lên:', stiServiceIds);
+      console.log('packageDTO gửi lên:', packageDTO);
 
-        let response;
-        if (currentPackage) {
-          // Remove the ID from packageDTO since it's in the URL
-          const { id, ...packageDataWithoutId } = packageDTO;
-          response = await updateSTIPackage(
-            currentPackage.id,
-            packageDataWithoutId
-          );
-        } else {
-          console.log('Creating new package with data:', packageDTO);
-          response = await createSTIPackage(packageDTO);
-        }
-
-        // Log the raw response from the API
-        console.log('API Response:', response);
-
-        // Check if the API call was successful
-        if (!response || !response.success) {
-          throw new Error(response?.message || 'API call was unsuccessful');
-        }
-
-        // The actual package data will be in the data field
-        const updatedPackageData = response.data;
-        console.log('Updated Package Data from API:', updatedPackageData);
-
-        if (!updatedPackageData) {
-          throw new Error('No package data returned from API');
-        }
-        // Map the API response to our frontend structure
-        // Log all the fields from the API response to understand field names
-        console.log(
-          'All fields from the API response:',
-          Object.keys(updatedPackageData)
+      let response;
+      if (currentPackage) {
+        // Remove the ID from packageDTO since it's in the URL
+        const { id, ...packageDataWithoutId } = packageDTO;
+        response = await updateSTIPackage(
+          currentPackage.id,
+          packageDataWithoutId
         );
+      } else {
+        console.log('Creating new package with data:', packageDTO);
+        response = await createSTIPackage(packageDTO);
+      }
 
-        const mappedPackage = {
-          id: updatedPackageData.id,
-          name: updatedPackageData.name,
-          description: updatedPackageData.description || '',
-          price: updatedPackageData.price || 0,
-          recommended_for: updatedPackageData.recommended_for || 'Tất cả',
-          // Handle the isActive/active inconsistency
-          isActive:
-            updatedPackageData.isActive !== undefined
-              ? updatedPackageData.isActive
-              : updatedPackageData.active !== undefined
-                ? updatedPackageData.active
-                : true,
-          services: updatedPackageData.services
-            ? updatedPackageData.services.map((service) => {
-                // Log service field names for debugging
-                if (service)
-                  console.log('Service fields:', Object.keys(service));
+      // Log the raw response from the API
+      console.log('API Response:', response);
 
-                return {
-                  id: service.id,
-                  name: service.name,
-                  description: service.description || '',
-                  price: service.price || 0,
-                  // Handle the isActive/active inconsistency in services too
-                  isActive:
-                    service.isActive !== undefined
-                      ? service.isActive
-                      : service.active !== undefined
-                        ? service.active
-                        : true,
-                };
-              })
-            : selectedServicesData,
-          createdAt: updatedPackageData.createdAt,
-          updatedAt: updatedPackageData.updatedAt || new Date().toISOString(),
-        };
+      // Check if the API call was successful
+      if (!response || !response.success) {
+        throw new Error(response?.message || 'API call was unsuccessful');
+      }
 
-        // Update UI with the mappedPackage
-        if (currentPackage) {
-          // For updates, update local state and refresh the packages list to ensure sync
-          try {
-            // Fetch all packages after updating to ensure fresh data
-            const refreshResult = await fetchAllPackages();
-            if (!refreshResult.success) {
-              // Fallback to optimistic update if refresh fails
-              setPackages(
-                packages.map((pkg) =>
-                  pkg.id === currentPackage.id ? mappedPackage : pkg
-                )
-              );
-            }
-            setSuccess(`Cập nhật gói STI ${mappedPackage.name} thành công`);
-          } catch (refreshError) {
-            console.error(
-              'Failed to refresh packages after update:',
-              refreshError
-            );
-            // Fallback to optimistic update
+      // The actual package data will be in the data field
+      const updatedPackageData = response.data;
+      console.log('Updated Package Data from API:', updatedPackageData);
+
+      if (!updatedPackageData) {
+        throw new Error('No package data returned from API');
+      }
+      // Map the API response to our frontend structure
+      // Log all the fields from the API response to understand field names
+      console.log(
+        'All fields from the API response:',
+        Object.keys(updatedPackageData)
+      );
+
+      const mappedPackage = {
+        id: updatedPackageData.id,
+        name: updatedPackageData.name,
+        description: updatedPackageData.description || '',
+        price: updatedPackageData.price || 0,
+        recommended_for: updatedPackageData.recommended_for || 'Tất cả',
+        // Handle the isActive/active inconsistency
+        isActive:
+          updatedPackageData.isActive !== undefined
+            ? updatedPackageData.isActive
+            : updatedPackageData.active !== undefined
+              ? updatedPackageData.active
+              : true,
+        services: updatedPackageData.services
+          ? updatedPackageData.services.map((service) => {
+              // Log service field names for debugging
+              if (service) console.log('Service fields:', Object.keys(service));
+
+              return {
+                id: service.id,
+                name: service.name,
+                description: service.description || '',
+                price: service.price || 0,
+                // Handle the isActive/active inconsistency in services too
+                isActive:
+                  service.isActive !== undefined
+                    ? service.isActive
+                    : service.active !== undefined
+                      ? service.active
+                      : true,
+              };
+            })
+          : selectedServicesData,
+        createdAt: updatedPackageData.createdAt,
+        updatedAt: updatedPackageData.updatedAt || new Date().toISOString(),
+      };
+
+      // Update UI with the mappedPackage
+      if (currentPackage) {
+        // For updates, update local state and refresh the packages list to ensure sync
+        try {
+          // Fetch all packages after updating to ensure fresh data
+          const refreshResult = await fetchAllPackages();
+          if (!refreshResult.success) {
+            // Fallback to optimistic update if refresh fails
             setPackages(
               packages.map((pkg) =>
                 pkg.id === currentPackage.id ? mappedPackage : pkg
               )
             );
-            setSuccess(
-              `Cập nhật gói STI ${mappedPackage.name} thành công, nhưng danh sách chưa được làm mới hoàn toàn`
-            );
           }
-        } else {
-          // For new packages, refresh the entire list to ensure we have all data correctly
-          try {
-            // Fetch all packages after creating a new one
-            const result = await fetchAllPackages();
-            if (!result.success) {
-              // Fallback if refresh fails
-              setPackages([...packages, mappedPackage]);
-            }
-            setSuccess(`Thêm gói STI ${mappedPackage.name} thành công`);
-          } catch (refreshError) {
-            console.error(
-              'Failed to refresh packages after create:',
-              refreshError
-            );
-            // Still add the package to UI even if refresh failed
-            setPackages([...packages, mappedPackage]);
-            setSuccess(
-              `Thêm gói STI ${mappedPackage.name} thành công, nhưng danh sách chưa được làm mới`
-            );
-          }
+          toast.success(`Cập nhật gói STI ${mappedPackage.name} thành công`);
+        } catch (refreshError) {
+          console.error(
+            'Failed to refresh packages after update:',
+            refreshError
+          );
+          // Fallback to optimistic update
+          setPackages(
+            packages.map((pkg) =>
+              pkg.id === currentPackage.id ? mappedPackage : pkg
+            )
+          );
+          toast.success(
+            `Cập nhật gói STI ${mappedPackage.name} thành công, nhưng danh sách chưa được làm mới hoàn toàn`
+          );
         }
-      } catch (apiError) {
-        console.error('API Error:', apiError);
-        throw new Error(`API Error: ${apiError.message || 'Unknown error'}`);
+      } else {
+        // For new packages, refresh the entire list to ensure we have all data correctly
+        try {
+          // Fetch all packages after creating a new one
+          const result = await fetchAllPackages();
+          if (!result.success) {
+            // Fallback if refresh fails
+            setPackages([...packages, mappedPackage]);
+          }
+          toast.success(`Thêm gói STI ${mappedPackage.name} thành công`);
+        } catch (refreshError) {
+          console.error(
+            'Failed to refresh packages after create:',
+            refreshError
+          );
+          // Still add the package to UI even if refresh failed
+          setPackages([...packages, mappedPackage]);
+          toast.success(
+            `Thêm gói STI ${mappedPackage.name} thành công, nhưng danh sách chưa được làm mới`
+          );
+        }
       }
-      setTimeout(() => setSuccess(null), 3000);
-      setOpenDialog(false);
-
-      // Luôn tải lại dữ liệu sau khi lưu thành công
-      await fetchAllPackages();
     } catch (err) {
       console.error('Error saving STI package:', err);
-      setError(
+      toast.error(
         'Không thể lưu gói STI: ' + (err.message || 'Lỗi không xác định')
       );
       setTimeout(() => setError(null), 5000);
@@ -578,11 +462,11 @@ const STIPackageManagementContent = () => {
           // We already updated optimistically, so no need to do anything else
         }
 
-        setSuccess('Xóa gói STI thành công');
+        toast.success('Xóa gói STI thành công');
         setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
         console.error('Error deleting STI package:', err);
-        setError(
+        toast.error(
           'Không thể xóa gói STI: ' + (err.message || 'Lỗi không xác định')
         );
         setTimeout(() => setError(null), 5000);
@@ -593,16 +477,29 @@ const STIPackageManagementContent = () => {
   };
   // Filter packages dựa trên searchTerm
   const filteredPackages = Array.isArray(packages)
-    ? packages.filter(
-        (pkg) =>
+    ? packages.filter((pkg) => {
+        // Lọc theo search
+        const matchesSearch =
           (pkg.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
           (pkg.description || '')
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
           (pkg.recommended_for || '')
             .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-      )
+            .includes(searchTerm.toLowerCase());
+        // Lọc theo trạng thái
+        const matchesStatus =
+          statusFilter === 'all'
+            ? true
+            : statusFilter === 'active'
+              ? pkg.isActive
+              : !pkg.isActive;
+        // Lọc theo giá
+        const matchesPrice =
+          (!minPrice || pkg.price >= Number(minPrice)) &&
+          (!maxPrice || pkg.price <= Number(maxPrice));
+        return matchesSearch && matchesStatus && matchesPrice;
+      })
     : [];
   // Format price
   const formatPrice = (price) => {
@@ -639,18 +536,6 @@ const STIPackageManagementContent = () => {
     };
   };
 
-  // Helper function to ensure stiService is an array of simple IDs
-  // const prepareServiceIdsForBackend = useCallback((services) => {
-  //   if (!services || !Array.isArray(services)) return [];
-
-  //   // Chỉ lấy ID từ mỗi dịch vụ
-  //   return services.map((service) => {
-  //     if (typeof service === 'number') return service;
-  //     if (typeof service === 'object' && service !== null)
-  //       return service.id || service.serviceId;
-  //     return service;
-  //   });
-  // }, []);
   const prepareServiceIdsForBackend = useCallback((services) => {
     if (!Array.isArray(services)) return [];
 
@@ -718,7 +603,7 @@ const STIPackageManagementContent = () => {
       return { success: true, data: mappedPackages };
     } catch (err) {
       console.error('Error fetching STI packages:', err);
-      setError(
+      toast.error(
         'Không thể tải dữ liệu gói STI: ' +
           (err.message || 'Lỗi không xác định')
       );
@@ -735,7 +620,7 @@ const STIPackageManagementContent = () => {
       const result = await fetchAllPackages();
       console.log('Initial load result:', result);
       if (result.success) {
-        setSuccess('Đã tải dữ liệu gói STI thành công');
+        toast.success('Đã tải dữ liệu gói STI thành công');
         setTimeout(() => setSuccess(null), 3000);
       }
     };
@@ -820,7 +705,7 @@ const STIPackageManagementContent = () => {
           value={searchTerm}
           onChange={handleSearch}
           sx={{
-            width: '60%',
+            width: '30%',
             '& .MuiOutlinedInput-root': {
               borderRadius: '12px',
               backgroundColor: 'white',
@@ -841,6 +726,34 @@ const STIPackageManagementContent = () => {
               </InputAdornment>
             ),
           }}
+        />
+        <FormControl sx={{ minWidth: 150, ml: 2 }}>
+          <InputLabel>Trạng thái</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Trạng thái"
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <MenuItem value="all">Tất cả</MenuItem>
+            <MenuItem value="active">Đang cung cấp</MenuItem>
+            <MenuItem value="inactive">Ngừng cung cấp</MenuItem>
+          </Select>
+        </FormControl>
+        <TextField
+          label="Giá từ"
+          type="number"
+          value={minPrice}
+          onChange={(e) => setMinPrice(e.target.value)}
+          sx={{ width: 120, ml: 2 }}
+          InputProps={{ inputProps: { min: 0 } }}
+        />
+        <TextField
+          label="Đến"
+          type="number"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+          sx={{ width: 120, ml: 1 }}
+          InputProps={{ inputProps: { min: 0 } }}
         />
         <Button
           variant="contained"
@@ -1285,58 +1198,6 @@ const STIPackageManagementContent = () => {
                   }}
                 />
               </Grid>{' '}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label="Mô tả"
-                  margin="normal"
-                  value={formData.description}
-                  onChange={(e) =>
-                    handleInputChange('description', e.target.value)
-                  }
-                  error={!!errors.description}
-                  helperText={
-                    errors.description
-                      ? errors.description
-                      : `${formData.description.length}/500 ký tự`
-                  }
-                  inputProps={{ maxLength: 500 }}
-                  variant="outlined"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '12px',
-                      backgroundColor: 'white',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                      border: '1px solid rgba(0,0,0,0.05)',
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#4A90E2',
-                      },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#1ABC9C',
-                        borderWidth: '2px',
-                      },
-                      '& textarea': {
-                        fontWeight: '500',
-                        color: '#344767',
-                        lineHeight: 1.6,
-                      },
-                    },
-                    '& .MuiInputLabel-root': {
-                      fontWeight: '500',
-                      color: '#344767',
-                      '&.Mui-focused': {
-                        color: '#1ABC9C',
-                      },
-                    },
-                    '& .MuiFormHelperText-root': {
-                      marginLeft: '4px',
-                      fontSize: '0.75rem',
-                    },
-                  }}
-                />
-              </Grid>{' '}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -1435,6 +1296,58 @@ const STIPackageManagementContent = () => {
                   }}
                 />
               </Grid>
+            </Grid>{' '}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="Mô tả"
+                margin="normal"
+                value={formData.description}
+                onChange={(e) =>
+                  handleInputChange('description', e.target.value)
+                }
+                error={!!errors.description}
+                helperText={
+                  errors.description
+                    ? errors.description
+                    : `${formData.description.length}/500 ký tự`
+                }
+                inputProps={{ maxLength: 500 }}
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    backgroundColor: 'white',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                    border: '1px solid rgba(0,0,0,0.05)',
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#4A90E2',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#1ABC9C',
+                      borderWidth: '2px',
+                    },
+                    '& textarea': {
+                      fontWeight: '500',
+                      color: '#344767',
+                      lineHeight: 1.6,
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    fontWeight: '500',
+                    color: '#344767',
+                    '&.Mui-focused': {
+                      color: '#1ABC9C',
+                    },
+                  },
+                  '& .MuiFormHelperText-root': {
+                    marginLeft: '4px',
+                    fontSize: '0.75rem',
+                  },
+                }}
+              />
             </Grid>{' '}
             <Box
               sx={{
@@ -2206,6 +2119,18 @@ const STIPackageManagementContent = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
     </Box>
   );
 };

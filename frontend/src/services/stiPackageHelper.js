@@ -21,19 +21,11 @@ export const createSTIPackage = async (packageData) => {
     if (!validatedData.stiService) {
       validatedData.stiService = [];
     } else if (Array.isArray(validatedData.stiService)) {
-      // Chuyển đổi thành mảng ID đơn giản
-      validatedData.stiService = validatedData.stiService.map((item) => {
-        // Nếu là số nguyên (id) thì giữ nguyên
-        if (typeof item === 'number') {
-          return item;
-        }
-        // Nếu là object thì lấy serviceId hoặc id
-        if (typeof item === 'object') {
-          return item.serviceId || item.id;
-        }
-        // Trường hợp khác
-        return item;
-      });
+      validatedData.stiService = validatedData.stiService
+        .map((item) =>
+          typeof item === 'object' && item !== null ? item.id : item
+        )
+        .filter((id) => typeof id === 'number');
     }
 
     console.log('Sending validated data to backend:', validatedData);

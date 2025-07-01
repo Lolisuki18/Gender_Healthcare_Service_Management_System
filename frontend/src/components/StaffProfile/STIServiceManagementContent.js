@@ -50,7 +50,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import {
   getAllSTIServices,
@@ -64,7 +65,6 @@ const STIServiceManagementContent = () => {
   // State management
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,6 +111,8 @@ const STIServiceManagementContent = () => {
     testType: 'QUANTITATIVE', // Default value
   });
 
+  const [statusFilter, setStatusFilter] = useState('all');
+
   // Fetch services on component mount
   useEffect(() => {
     fetchSTIServices();
@@ -119,26 +121,43 @@ const STIServiceManagementContent = () => {
   // Fetch STI Services
   const fetchSTIServices = async () => {
     setLoading(true);
-    setError(null);
     try {
       const response = await getAllSTIServices();
       setServices(response.data || []);
     } catch (err) {
       console.error('Error fetching services:', err);
-      setError(err.message || 'Failed to fetch services');
-      toast.error('Error', 'Failed to load STI services');
+      toast.error(err.message || 'Failed to load STI services');
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter services based on search
-  const filteredServices = services.filter(
-    (service) =>
+  // Helper function to get active status - handles both is_active (snake_case) and isActive (camelCase)
+  const getActiveStatus = (service) => {
+    // Check all possible field names from API responses and provide a default
+    return service.isActive !== undefined
+      ? service.isActive
+      : service.is_active !== undefined
+        ? service.is_active
+        : service.active !== undefined
+          ? service.active
+          : true;
+  };
+
+  // Filter services based on search and status
+  const filteredServices = services.filter((service) => {
+    const matchesSearch =
       service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (service.description &&
-        service.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+        service.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    let matchesStatus = true;
+    const isActive = getActiveStatus(service);
+    if (statusFilter === 'active') matchesStatus = isActive;
+    else if (statusFilter === 'inactive') matchesStatus = !isActive;
+
+    return matchesSearch && matchesStatus;
+  });
 
   // Pagination
   const handleChangePage = (event, newPage) => {
@@ -546,17 +565,6 @@ const STIServiceManagementContent = () => {
     }
     return 'N/A';
   };
-  // Helper function to get active status - handles both is_active (snake_case) and isActive (camelCase)
-  const getActiveStatus = (service) => {
-    // Check all possible field names from API responses and provide a default
-    return service.isActive !== undefined
-      ? service.isActive
-      : service.is_active !== undefined
-        ? service.is_active
-        : service.active !== undefined
-          ? service.active
-          : true;
-  };
 
   return (
     <Box
@@ -586,7 +594,7 @@ const STIServiceManagementContent = () => {
             letterSpacing: '0.5px',
           }}
         >
-          STI Service Management
+          Quản lý dịch vụ xét nghiệm STI
         </Typography>
         <Button
           variant="contained"
@@ -606,15 +614,15 @@ const STIServiceManagementContent = () => {
             },
           }}
         >
-          Add New Service
+          Thêm dịch vụ mới
         </Button>
       </Box>{' '}
       {/* Search and filters */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="Search services by name or description..."
+          placeholder="Tìm kiếm dịch vụ theo tên hoặc mô tả..."
           value={searchTerm}
           onChange={handleSearch}
           sx={{
@@ -637,13 +645,19 @@ const STIServiceManagementContent = () => {
             ),
           }}
         />
+        <FormControl sx={{ minWidth: 180 }}>
+          <InputLabel>Lọc trạng thái</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Lọc trạng thái"
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <MenuItem value="all">Tất cả</MenuItem>
+            <MenuItem value="active">Đang hoạt động</MenuItem>
+            <MenuItem value="inactive">Ngừng hoạt động</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
-      {/* Error message */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
       {/* Loading indicator */}
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
@@ -667,27 +681,27 @@ const STIServiceManagementContent = () => {
                 background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
               }}
             >
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>ID</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Mã</TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                Name
+                Tên dịch vụ
               </TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                Description
+                Mô tả
               </TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                Price
+                Giá
               </TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                Components
+                Thành phần xét nghiệm
               </TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                Status
+                Trạng thái
               </TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                Last Updated
+                Cập nhật lần cuối
               </TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                Actions
+                Hành động
               </TableCell>
             </TableRow>
           </TableHead>
@@ -695,7 +709,7 @@ const STIServiceManagementContent = () => {
             {filteredServices.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} align="center">
-                  {loading ? 'Loading...' : 'No services found'}
+                  {loading ? 'Đang tải...' : 'Không tìm thấy dịch vụ nào'}
                 </TableCell>
               </TableRow>
             ) : (
@@ -722,14 +736,14 @@ const STIServiceManagementContent = () => {
                         ? service.description.length > 50
                           ? `${service.description.substring(0, 50)}...`
                           : service.description
-                        : 'N/A'}
+                        : 'Không có'}
                     </TableCell>
                     <TableCell sx={{ fontWeight: 500 }}>
                       {formatPrice(service.price)}
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={`${service.componentCount} components`}
+                        label={`${service.componentCount} thành phần`}
                         size="small"
                         sx={{
                           background:
@@ -742,7 +756,11 @@ const STIServiceManagementContent = () => {
                     </TableCell>{' '}
                     <TableCell>
                       <Chip
-                        label={getActiveStatus(service) ? 'Active' : 'Inactive'}
+                        label={
+                          getActiveStatus(service)
+                            ? 'Đang hoạt động'
+                            : 'Ngừng hoạt động'
+                        }
                         size="small"
                         sx={{
                           backgroundColor: getActiveStatus(service)
@@ -762,7 +780,7 @@ const STIServiceManagementContent = () => {
                     <TableCell>{formatDate(service.updatedAt)}</TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={1}>
-                        <Tooltip title="View Details">
+                        <Tooltip title="Xem chi tiết">
                           <IconButton
                             size="small"
                             onClick={() => handleViewDetails(service.id)}
@@ -776,7 +794,7 @@ const STIServiceManagementContent = () => {
                             <VisibilityIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Edit">
+                        <Tooltip title="Chỉnh sửa">
                           <IconButton
                             size="small"
                             onClick={() => handleOpenEditDialog(service)}
@@ -790,7 +808,7 @@ const STIServiceManagementContent = () => {
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete">
+                        <Tooltip title="Xóa">
                           <IconButton
                             size="small"
                             onClick={() => handleDeletePrompt(service.id)}
@@ -837,6 +855,7 @@ const STIServiceManagementContent = () => {
           sx: {
             borderRadius: '12px',
             boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+            background: '#f8fafc',
           },
         }}
       >
@@ -844,331 +863,486 @@ const STIServiceManagementContent = () => {
           sx={{
             background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
             color: 'white',
-            fontWeight: 600,
-            fontSize: '1.25rem',
+            fontWeight: 700,
+            fontSize: '1.5rem',
             px: 3,
-            py: 2,
+            py: 2.5,
+            textAlign: 'center',
+            letterSpacing: '0.5px',
+            borderTopLeftRadius: '12px',
+            borderTopRightRadius: '12px',
           }}
         >
-          {currentService ? 'Edit STI Service' : 'Add New STI Service'}
+          {currentService ? 'Chỉnh sửa dịch vụ STI' : 'Thêm dịch vụ STI mới'}
         </DialogTitle>
-        <DialogContent dividers sx={{ px: 3, py: 3 }}>
+        <DialogContent dividers sx={{ px: 4, py: 4, background: '#f8fafc' }}>
           <Grid container spacing={3}>
-            {/* Basic Information */}{' '}
+            {/* Basic Information */}
             <Grid item xs={12}>
-              <Typography
-                variant="subtitle1"
-                gutterBottom
+              <Box
                 sx={{
-                  fontWeight: 600,
-                  color: '#4A90E2',
-                  fontSize: '1.1rem',
-                  borderLeft: '4px solid #1ABC9C',
-                  paddingLeft: 1.5,
-                  marginBottom: 2,
-                }}
-              >
-                Basic Information
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={8}>
-              <TextField
-                fullWidth
-                label="Service Name"
-                required
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                error={!!errors.name}
-                helperText={errors.name}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '8px',
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#4A90E2',
-                    },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#1ABC9C',
-                      borderWidth: '2px',
-                    },
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#1ABC9C',
-                  },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                label="Price (VND)"
-                type="number"
-                required
-                value={formData.price}
-                onChange={(e) => handleInputChange('price', e.target.value)}
-                error={!!errors.price}
-                helperText={errors.price}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">₫</InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '8px',
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#4A90E2',
-                    },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#1ABC9C',
-                      borderWidth: '2px',
-                    },
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#1ABC9C',
-                  },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Description"
-                multiline
-                rows={3}
-                value={formData.description || ''}
-                onChange={(e) =>
-                  handleInputChange('description', e.target.value)
-                }
-              />
-            </Grid>
-            {/* Status */}
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={formData.isActive}
-                  label="Status"
-                  onChange={(e) =>
-                    handleInputChange('isActive', e.target.value)
-                  }
-                >
-                  <MenuItem value={true}>Active</MenuItem>
-                  <MenuItem value={false}>Inactive</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            {/* Components Section */}
-            <Grid item xs={12}>
-              {' '}
-              <Divider sx={{ my: 3 }} />{' '}
-              <Typography
-                variant="subtitle1"
-                gutterBottom
-                sx={{
-                  fontWeight: 600,
-                  color: '#4A90E2',
-                  fontSize: '1.1rem',
-                  borderLeft: '4px solid #1ABC9C',
-                  paddingLeft: 1.5,
-                  marginBottom: 2,
-                }}
-              >
-                Test Components
-              </Typography>
-              {errors.components && (
-                <Typography color="error" variant="caption">
-                  {errors.components}
-                </Typography>
-              )}
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: 'block', mb: 1 }}
-              >
-                You can enable or disable individual components independently of
-                the overall service status.
-              </Typography>
-            </Grid>
-            {/* Component List */}
-            {formData.components.length > 0 && (
-              <Grid item xs={12}>
-                <TableContainer component={Paper} variant="outlined">
-                  <Table size="small">
-                    {' '}
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Test Name</TableCell>
-                        <TableCell>Unit</TableCell>
-                        <TableCell>Reference Range</TableCell>
-                        <TableCell>Interpretation</TableCell>
-                        <TableCell align="center">Status / Action</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {' '}
-                      {formData.components.map((component, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{component.testName}</TableCell>
-                          <TableCell>{component.unit}</TableCell>
-                          <TableCell>{component.referenceRange}</TableCell>
-                          <TableCell>
-                            {component.interpretation || 'N/A'}
-                          </TableCell>{' '}
-                          <TableCell align="center">
-                            <Stack
-                              direction="row"
-                              spacing={1}
-                              justifyContent="center"
-                            >
-                              <Box display="flex" alignItems="center">
-                                <Typography variant="caption" sx={{ mr: 0.5 }}>
-                                  {component.isActive !== false
-                                    ? 'Active'
-                                    : 'Inactive'}
-                                </Typography>
-                                <Switch
-                                  checked={component.isActive !== false}
-                                  onChange={(e) =>
-                                    handleComponentStatusChange(
-                                      index,
-                                      e.target.checked
-                                    )
-                                  }
-                                  size="small"
-                                  color="success"
-                                />
-                              </Box>
-                              <IconButton
-                                size="small"
-                                color="primary"
-                                onClick={() =>
-                                  handleOpenEditComponentDialog(
-                                    component,
-                                    index
-                                  )
-                                }
-                                sx={{ color: '#4A90E2' }}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => handleRemoveComponent(index)}
-                              >
-                                <CloseIcon fontSize="small" />
-                              </IconButton>
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Grid>
-            )}
-            {/* Add New Component */}
-            <Grid item xs={12}>
-              {' '}
-              <Paper
-                variant="outlined"
-                sx={{
+                  background: '#fff',
+                  borderRadius: 2,
+                  boxShadow: '0 1px 4px rgba(74,144,226,0.07)',
                   p: 3,
-                  borderRadius: '12px',
-                  background:
-                    'linear-gradient(to right bottom, rgba(74, 144, 226, 0.05), rgba(26, 188, 156, 0.05))',
-                  borderColor: 'rgba(26, 188, 156, 0.2)',
+                  mb: 2,
                 }}
               >
                 <Typography
                   variant="subtitle1"
                   gutterBottom
                   sx={{
-                    fontWeight: 600,
-                    color: '#1ABC9C',
-                    mb: 2,
+                    fontWeight: 700,
+                    color: '#4A90E2',
+                    fontSize: '1.1rem',
+                    borderLeft: '4px solid #1ABC9C',
+                    paddingLeft: 1.5,
+                    marginBottom: 2,
                   }}
                 >
-                  Add New Component
+                  Thông tin cơ bản
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={4} md={3}>
+                  <Grid item xs={12} sm={8}>
                     <TextField
-                      label="Component Name"
-                      value={newComponent.testName}
-                      onChange={(e) =>
-                        handleComponentChange('testName', e.target.value)
-                      }
                       fullWidth
-                      size="small"
+                      label="Tên dịch vụ *"
+                      required
+                      value={formData.name}
+                      onChange={(e) =>
+                        handleInputChange('name', e.target.value)
+                      }
+                      error={!!errors.name}
+                      helperText={errors.name}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '10px',
+                          background: '#f6fafd',
+                          fontWeight: 500,
+                          fontSize: '1.05rem',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#4A90E2',
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#1ABC9C',
+                            borderWidth: '2px',
+                          },
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                          color: '#1ABC9C',
+                        },
+                      }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={4} md={3}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Test Type</InputLabel>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      label="Giá (VND) *"
+                      type="number"
+                      required
+                      value={formData.price}
+                      onChange={(e) =>
+                        handleInputChange('price', e.target.value)
+                      }
+                      error={!!errors.price}
+                      helperText={errors.price}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">₫</InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '10px',
+                          background: '#f6fafd',
+                          fontWeight: 500,
+                          fontSize: '1.05rem',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#4A90E2',
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#1ABC9C',
+                            borderWidth: '2px',
+                          },
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                          color: '#1ABC9C',
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={4}>
+                    <FormControl fullWidth>
+                      <InputLabel>Trạng thái</InputLabel>
                       <Select
-                        value={newComponent.testType}
-                        label="Test Type"
+                        value={formData.isActive}
+                        label="Trạng thái"
                         onChange={(e) =>
-                          handleComponentChange('testType', e.target.value)
+                          handleInputChange('isActive', e.target.value)
                         }
+                        sx={{
+                          borderRadius: '10px',
+                          background: '#f6fafd',
+                          fontWeight: 500,
+                          fontSize: '1.05rem',
+                        }}
                       >
-                        <MenuItem value="QUANTITATIVE">
-                          Định lượng (Số)
-                        </MenuItem>
-                        <MenuItem value="BINARY">Định tính (Âm/Dương)</MenuItem>
+                        <MenuItem value={true}>Đang hoạt động</MenuItem>
+                        <MenuItem value={false}>Ngừng hoạt động</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={12} sm={4} md={2}>
+                  <Grid item size={12}>
                     <TextField
-                      label="Unit"
-                      value={newComponent.unit}
-                      onChange={(e) =>
-                        handleComponentChange('unit', e.target.value)
-                      }
                       fullWidth
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <TextField
-                      label="Reference Range"
-                      value={newComponent.referenceRange}
+                      label="Mô tả"
+                      multiline
+                      rows={3}
+                      value={formData.description || ''}
                       onChange={(e) =>
-                        handleComponentChange('referenceRange', e.target.value)
+                        handleInputChange('description', e.target.value)
                       }
-                      fullWidth
-                      size="small"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '10px',
+                          background: '#f6fafd',
+                          fontWeight: 500,
+                          fontSize: '1.05rem',
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#4A90E2',
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#1ABC9C',
+                            borderWidth: '2px',
+                          },
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                          color: '#1ABC9C',
+                        },
+                      }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={1}>
-                    <Button
-                      onClick={handleAddComponent}
-                      variant="contained"
-                      startIcon={<AddCircleIcon />}
-                      sx={{ height: '100%' }}
-                    >
-                      Add
-                    </Button>
                   </Grid>
                 </Grid>
-              </Paper>
+              </Box>
+            </Grid>
+            {/* Components Section */}
+            <Grid item xs={12}>
+              <Box
+                sx={{
+                  background: '#fff',
+                  borderRadius: 2,
+                  boxShadow: '0 1px 4px rgba(74,144,226,0.07)',
+                  p: 3,
+                }}
+              >
+                <Divider sx={{ my: 3 }} />
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{
+                    fontWeight: 700,
+                    color: '#4A90E2',
+                    fontSize: '1.1rem',
+                    borderLeft: '4px solid #1ABC9C',
+                    paddingLeft: 1.5,
+                    marginBottom: 2,
+                  }}
+                >
+                  Thành phần xét nghiệm
+                </Typography>
+                {errors.components && (
+                  <Typography color="error" variant="caption">
+                    {errors.components}
+                  </Typography>
+                )}
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mb: 1 }}
+                >
+                  Bạn có thể bật/tắt từng thành phần xét nghiệm độc lập với
+                  trạng thái của dịch vụ.
+                </Typography>
+                {/* Component List */}
+                {formData.components.length > 0 && (
+                  <TableContainer
+                    component={Paper}
+                    variant="outlined"
+                    sx={{ borderRadius: 2, mt: 2 }}
+                  >
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow
+                          sx={{
+                            background:
+                              'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                          }}
+                        >
+                          <TableCell sx={{ color: 'white', fontWeight: 700 }}>
+                            Tên xét nghiệm
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 700 }}>
+                            Đơn vị
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 700 }}>
+                            Khoảng tham chiếu
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 700 }}>
+                            Mô tả
+                          </TableCell>
+                          <TableCell
+                            align="center"
+                            sx={{ color: 'white', fontWeight: 700 }}
+                          >
+                            Trạng thái / Hành động
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {formData.components.map((component, index) => (
+                          <TableRow
+                            key={index}
+                            sx={{
+                              '&:hover': {
+                                background: 'rgba(74,144,226,0.07)',
+                              },
+                            }}
+                          >
+                            <TableCell>{component.testName}</TableCell>
+                            <TableCell>{component.unit}</TableCell>
+                            <TableCell>{component.referenceRange}</TableCell>
+                            <TableCell>
+                              {component.interpretation || 'Không có'}
+                            </TableCell>
+                            <TableCell align="center">
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                justifyContent="center"
+                              >
+                                <Box display="flex" alignItems="center">
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ mr: 0.5 }}
+                                  >
+                                    {component.isActive !== false
+                                      ? 'Đang hoạt động'
+                                      : 'Ngừng hoạt động'}
+                                  </Typography>
+                                  <Switch
+                                    checked={component.isActive !== false}
+                                    onChange={(e) =>
+                                      handleComponentStatusChange(
+                                        index,
+                                        e.target.checked
+                                      )
+                                    }
+                                    size="small"
+                                    color="success"
+                                  />
+                                </Box>
+                                <IconButton
+                                  size="small"
+                                  color="primary"
+                                  onClick={() =>
+                                    handleOpenEditComponentDialog(
+                                      component,
+                                      index
+                                    )
+                                  }
+                                  sx={{ color: '#4A90E2' }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleRemoveComponent(index)}
+                                >
+                                  <CloseIcon fontSize="small" />
+                                </IconButton>
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
+                {/* Add New Component */}
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    background:
+                      'linear-gradient(to right bottom, rgba(74, 144, 226, 0.05), rgba(26, 188, 156, 0.05))',
+                    borderColor: 'rgba(26, 188, 156, 0.2)',
+                    mt: 3,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    gutterBottom
+                    sx={{ fontWeight: 700, color: '#1ABC9C', mb: 2 }}
+                  >
+                    Thêm thành phần xét nghiệm
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item size={12} xs={12} sm={4} md={3}>
+                      <TextField
+                        label="Tên thành phần"
+                        value={newComponent.testName}
+                        onChange={(e) =>
+                          handleComponentChange('testName', e.target.value)
+                        }
+                        fullWidth
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '10px',
+                            background: '#f6fafd',
+                            fontWeight: 500,
+                            fontSize: '1.05rem',
+                          },
+                        }}
+                      />
+                    </Grid>
+                    <Grid item size={4} xs={12} sm={4} md={3}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Loại xét nghiệm</InputLabel>
+                        <Select
+                          value={newComponent.testType}
+                          label="Loại xét nghiệm"
+                          onChange={(e) =>
+                            handleComponentChange('testType', e.target.value)
+                          }
+                          sx={{
+                            borderRadius: '10px',
+                            background: '#f6fafd',
+                            fontWeight: 500,
+                            fontSize: '1.05rem',
+                          }}
+                        >
+                          <MenuItem value="QUANTITATIVE">
+                            Định lượng (Số)
+                          </MenuItem>
+                          <MenuItem value="BINARY">
+                            Định tính (Âm/Dương)
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item size={4} xs={12} sm={4} md={2}>
+                      <TextField
+                        label="Đơn vị"
+                        value={newComponent.unit}
+                        onChange={(e) =>
+                          handleComponentChange('unit', e.target.value)
+                        }
+                        fullWidth
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '10px',
+                            background: '#f6fafd',
+                            fontWeight: 500,
+                            fontSize: '1.05rem',
+                          },
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <TextField
+                        label="Khoảng tham chiếu"
+                        value={newComponent.referenceRange}
+                        onChange={(e) =>
+                          handleComponentChange(
+                            'referenceRange',
+                            e.target.value
+                          )
+                        }
+                        fullWidth
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '10px',
+                            background: '#f6fafd',
+                            fontWeight: 500,
+                            fontSize: '1.05rem',
+                          },
+                        }}
+                      />
+                    </Grid>
+                    <Grid
+                      item
+                      xs={12}
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        mt: 2,
+                        pr: 0,
+                      }}
+                    >
+                      <Button
+                        onClick={handleAddComponent}
+                        variant="contained"
+                        startIcon={<AddCircleIcon />}
+                        sx={{
+                          borderRadius: '24px',
+                          fontWeight: 700,
+                          fontSize: '1rem',
+                          background:
+                            'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                          color: '#fff',
+                          px: 3,
+                          py: 1,
+                          boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
+                          minWidth: '120px',
+                          '&:hover': {
+                            background:
+                              'linear-gradient(45deg, #3A80D2, #0AAC8C)',
+                          },
+                        }}
+                      >
+                        Thêm
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Box>
             </Grid>
           </Grid>
-        </DialogContent>{' '}
-        <DialogActions sx={{ px: 3, py: 2 }}>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            px: 4,
+            py: 3,
+            background: '#f8fafc',
+            borderRadius: '0 0 12px 12px',
+          }}
+        >
           <Button
             onClick={handleCloseDialog}
             sx={{
               color: '#4A90E2',
-              fontWeight: 600,
+              fontWeight: 700,
+              borderRadius: '24px',
+              fontSize: '1.1rem',
+              px: 4,
+              py: 1.2,
+              letterSpacing: '0.5px',
+              background: 'white',
+              border: '2px solid #4A90E2',
+              mr: 2,
               '&:hover': {
                 backgroundColor: 'rgba(74, 144, 226, 0.08)',
+                border: '2px solid #1ABC9C',
               },
             }}
           >
-            Cancel
+            HỦY
           </Button>
           <Button
             variant="contained"
@@ -1177,11 +1351,13 @@ const STIServiceManagementContent = () => {
             sx={{
               background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
               color: '#fff',
-              fontWeight: 600,
+              fontWeight: 700,
               boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-              px: 3,
-              py: 1,
-              borderRadius: '8px',
+              px: 4,
+              py: 1.2,
+              borderRadius: '24px',
+              fontSize: '1.1rem',
+              letterSpacing: '0.5px',
               '&:hover': {
                 background: 'linear-gradient(45deg, #3A80D2, #0AAC8C)',
                 boxShadow: '0 4px 12px rgba(74, 144, 226, 0.4)',
@@ -1191,7 +1367,7 @@ const STIServiceManagementContent = () => {
             {loading ? (
               <CircularProgress size={24} sx={{ color: 'white' }} />
             ) : (
-              'Save'
+              'LƯU'
             )}
           </Button>
         </DialogActions>
@@ -1215,66 +1391,184 @@ const STIServiceManagementContent = () => {
               sx={{
                 background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
                 color: 'white',
-                fontWeight: 600,
-                fontSize: '1.25rem',
+                fontWeight: 700,
+                fontSize: '1.5rem',
                 px: 3,
                 py: 2,
+                textAlign: 'center',
+                letterSpacing: '0.5px',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundImage: 'linear-gradient(90deg, #4A90E2, #1ABC9C)',
               }}
             >
-              Service Details: {selectedService.name}
+              <span
+                style={{
+                  background: 'linear-gradient(90deg, #4A90E2, #1ABC9C)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontWeight: 700,
+                  fontSize: '1.5rem',
+                }}
+              >
+                Chi tiết dịch vụ: {selectedService.name}
+              </span>
             </DialogTitle>
-            <DialogContent dividers sx={{ px: 3, py: 3 }}>
-              <Grid container spacing={2}>
+            <DialogContent
+              dividers
+              sx={{
+                px: 3,
+                py: 3,
+                background: '#f8fafc',
+                borderRadius: '0 0 12px 12px',
+              }}
+            >
+              <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2">Service ID</Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {selectedService.id}
-                  </Typography>
+                  <Box
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      borderRadius: 2,
+                      background: '#fff',
+                      boxShadow: '0 1px 4px rgba(74,144,226,0.07)',
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 700, color: '#4A90E2', mb: 0.5 }}
+                    >
+                      Mã dịch vụ
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {selectedService.id}
+                    </Typography>
+                  </Box>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2">Price</Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {formatPrice(selectedService.price)}
-                  </Typography>
+                  <Box
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      borderRadius: 2,
+                      background: '#fff',
+                      boxShadow: '0 1px 4px rgba(74,144,226,0.07)',
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 700, color: '#4A90E2', mb: 0.5 }}
+                    >
+                      Giá
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {formatPrice(selectedService.price)}
+                    </Typography>
+                  </Box>
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2">Description</Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {selectedService.description || 'No description provided'}
-                  </Typography>
-                </Grid>{' '}
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2">Status</Typography>
-                  <Chip
-                    label={
-                      getActiveStatus(selectedService) ? 'Active' : 'Inactive'
-                    }
-                    color={
-                      getActiveStatus(selectedService) ? 'success' : 'error'
-                    }
-                    size="small"
-                  />
+                  <Box
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      borderRadius: 2,
+                      background: '#fff',
+                      boxShadow: '0 1px 4px rgba(74,144,226,0.07)',
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 700, color: '#4A90E2', mb: 0.5 }}
+                    >
+                      Mô tả
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontWeight: 400,
+                        color: '#222',
+                        whiteSpace: 'pre-line',
+                      }}
+                    >
+                      {selectedService.description || 'Không có mô tả'}
+                    </Typography>
+                  </Box>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2">Last Updated</Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {formatDate(selectedService.updatedAt)}
-                  </Typography>
+                  <Box
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      borderRadius: 2,
+                      background: '#fff',
+                      boxShadow: '0 1px 4px rgba(74,144,226,0.07)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 700, color: '#4A90E2', mr: 1 }}
+                    >
+                      Trạng thái
+                    </Typography>
+                    <Chip
+                      label={
+                        getActiveStatus(selectedService)
+                          ? 'Đang hoạt động'
+                          : 'Ngừng hoạt động'
+                      }
+                      color={
+                        getActiveStatus(selectedService) ? 'success' : 'error'
+                      }
+                      size="medium"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                        px: 2,
+                        py: 0.5,
+                        borderRadius: 2,
+                      }}
+                    />
+                  </Box>
                 </Grid>
-                {/* Components */}{' '}
+                <Grid item xs={12} sm={6}>
+                  <Box
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      borderRadius: 2,
+                      background: '#fff',
+                      boxShadow: '0 1px 4px rgba(74,144,226,0.07)',
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 700, color: '#4A90E2', mb: 0.5 }}
+                    >
+                      Cập nhật lần cuối
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {formatDate(selectedService.updatedAt)}
+                    </Typography>
+                  </Box>
+                </Grid>
+                {/* Components */}
                 <Grid item xs={12}>
                   <Typography
                     variant="subtitle1"
                     sx={{
                       mt: 3,
                       mb: 2,
-                      fontWeight: 600,
+                      fontWeight: 700,
                       background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
+                      fontSize: '1.15rem',
                     }}
                   >
-                    Test Components ({selectedService.componentCount})
+                    Thành phần xét nghiệm ({selectedService.componentCount})
                   </Typography>
                   <TableContainer
                     component={Paper}
@@ -1286,7 +1580,6 @@ const STIServiceManagementContent = () => {
                       boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                     }}
                   >
-                    {' '}
                     <Table>
                       <TableHead>
                         <TableRow
@@ -1295,36 +1588,78 @@ const STIServiceManagementContent = () => {
                               'linear-gradient(45deg, #4A90E2, #1ABC9C)',
                           }}
                         >
-                          <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                            Component Name
+                          <TableCell
+                            sx={{
+                              color: 'white',
+                              fontWeight: 700,
+                              fontSize: '1rem',
+                            }}
+                          >
+                            Tên thành phần
                           </TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                            Unit
+                          <TableCell
+                            sx={{
+                              color: 'white',
+                              fontWeight: 700,
+                              fontSize: '1rem',
+                            }}
+                          >
+                            Đơn vị
                           </TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                            Normal Range
+                          <TableCell
+                            sx={{
+                              color: 'white',
+                              fontWeight: 700,
+                              fontSize: '1rem',
+                            }}
+                          >
+                            Khoảng tham chiếu
                           </TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                            Description
+                          <TableCell
+                            sx={{
+                              color: 'white',
+                              fontWeight: 700,
+                              fontSize: '1rem',
+                            }}
+                          >
+                            Mô tả
                           </TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                            Status
+                          <TableCell
+                            sx={{
+                              color: 'white',
+                              fontWeight: 700,
+                              fontSize: '1rem',
+                            }}
+                          >
+                            Trạng thái
                           </TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {selectedService.components.map((component) => (
-                          <TableRow key={component.componentId}>
-                            <TableCell>{component.componentName}</TableCell>
-                            <TableCell>{component.unit}</TableCell>
-                            <TableCell>{component.normalRange}</TableCell>
-                            <TableCell>
-                              {component.description || 'N/A'}{' '}
+                          <TableRow
+                            key={component.componentId}
+                            sx={{
+                              '&:hover': {
+                                background: 'rgba(74,144,226,0.07)',
+                              },
+                            }}
+                          >
+                            <TableCell sx={{ fontWeight: 500 }}>
+                              {component.componentName}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 500 }}>
+                              {component.unit}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 500 }}>
+                              {component.normalRange}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 400 }}>
+                              {component.description || 'Không có'}
                             </TableCell>
                             <TableCell>
                               <Chip
                                 label={
-                                  // Use our helper approach for consistent status handling
                                   (
                                     component.isActive !== undefined
                                       ? component.isActive
@@ -1334,8 +1669,8 @@ const STIServiceManagementContent = () => {
                                           ? component.active
                                           : true
                                   )
-                                    ? 'Active'
-                                    : 'Inactive'
+                                    ? 'Đang hoạt động'
+                                    : 'Ngừng hoạt động'
                                 }
                                 size="small"
                                 sx={{
@@ -1361,7 +1696,7 @@ const STIServiceManagementContent = () => {
                                   )
                                     ? '#0F9B8E'
                                     : '#DC2626',
-                                  fontWeight: 600,
+                                  fontWeight: 700,
                                   border: (
                                     component.isActive !== undefined
                                       ? component.isActive
@@ -1373,7 +1708,9 @@ const STIServiceManagementContent = () => {
                                   )
                                     ? '1px solid #1ABC9C'
                                     : '1px solid #DC2626',
-                                  fontSize: '0.75rem',
+                                  fontSize: '0.95rem',
+                                  borderRadius: 2,
+                                  px: 2,
                                 }}
                               />
                             </TableCell>
@@ -1384,30 +1721,39 @@ const STIServiceManagementContent = () => {
                   </TableContainer>
                 </Grid>
               </Grid>
-            </DialogContent>{' '}
-            <DialogActions sx={{ px: 3, py: 2 }}>
+            </DialogContent>
+            <DialogActions
+              sx={{
+                px: 3,
+                py: 2,
+                background: '#f8fafc',
+                borderRadius: '0 0 12px 12px',
+              }}
+            >
               <Button
                 onClick={handleCloseDetailDialog}
                 sx={{
                   background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
                   color: '#fff',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-                  px: 3,
-                  py: 1,
-                  borderRadius: '8px',
+                  px: 4,
+                  py: 1.2,
+                  borderRadius: '24px',
+                  fontSize: '1.1rem',
+                  letterSpacing: '0.5px',
                   '&:hover': {
                     background: 'linear-gradient(45deg, #3A80D2, #0AAC8C)',
                     boxShadow: '0 4px 12px rgba(74, 144, 226, 0.4)',
                   },
                 }}
               >
-                Close
+                ĐÓNG
               </Button>
             </DialogActions>
           </>
         )}
-      </Dialog>{' '}
+      </Dialog>
       {/* Edit Component Dialog */}
       <Dialog
         open={editComponentDialog}
@@ -1421,20 +1767,24 @@ const STIServiceManagementContent = () => {
           },
         }}
       >
-        {' '}
         <DialogTitle
           sx={{
             background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
             color: 'white',
-            fontWeight: 600,
+            fontWeight: 700,
             fontSize: '1.25rem',
             px: 3,
             py: 2,
+            textAlign: 'center',
+            letterSpacing: '0.5px',
+            borderTopLeftRadius: '12px',
+            borderTopRightRadius: '12px',
           }}
         >
-          Edit Component: {editingComponent?.testName || 'Test Component'}
+          Chỉnh sửa thành phần:{' '}
+          {editingComponent?.testName || 'Thành phần xét nghiệm'}
         </DialogTitle>
-        <DialogContent dividers sx={{ px: 3, py: 3 }}>
+        <DialogContent dividers sx={{ px: 4, py: 4, background: '#f8fafc' }}>
           {editingComponent && (
             <Grid container spacing={2}>
               <Grid item xs={12}>
@@ -1443,15 +1793,14 @@ const STIServiceManagementContent = () => {
                   color="text.secondary"
                   sx={{ mb: 2 }}
                 >
-                  Edit the component details below. Fields marked with an
-                  asterisk (*) are required.
+                  Chỉnh sửa thông tin thành phần bên dưới. Các trường có dấu *
+                  là bắt buộc.
                 </Typography>
               </Grid>
-              <Grid item xs={12}>
-                {' '}
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Test Name *"
+                  label="Tên thành phần *"
                   required
                   value={editingComponent.testName}
                   onChange={(e) =>
@@ -1459,41 +1808,49 @@ const STIServiceManagementContent = () => {
                   }
                   error={!editingComponent.testName}
                   helperText={
-                    !editingComponent.testName ? 'Test name is required' : ''
+                    !editingComponent.testName
+                      ? 'Tên thành phần là bắt buộc'
+                      : ''
                   }
                   sx={{
                     mb: 2,
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: '8px',
+                      borderRadius: '10px',
+                      background: '#f6fafd',
+                      fontWeight: 500,
+                      fontSize: '1.05rem',
                     },
                   }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
-                {' '}
                 <TextField
                   fullWidth
-                  label="Unit *"
+                  label="Đơn vị *"
                   required
                   value={editingComponent.unit}
                   onChange={(e) =>
                     handleEditComponentChange('unit', e.target.value)
                   }
                   error={!editingComponent.unit}
-                  helperText={!editingComponent.unit ? 'Unit is required' : ''}
+                  helperText={
+                    !editingComponent.unit ? 'Đơn vị là bắt buộc' : ''
+                  }
                   sx={{
                     mb: 2,
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: '8px',
+                      borderRadius: '10px',
+                      background: '#f6fafd',
+                      fontWeight: 500,
+                      fontSize: '1.05rem',
                     },
                   }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
-                {' '}
                 <TextField
                   fullWidth
-                  label="Reference Range *"
+                  label="Khoảng tham chiếu *"
                   required
                   value={editingComponent.referenceRange}
                   onChange={(e) =>
@@ -1502,21 +1859,24 @@ const STIServiceManagementContent = () => {
                   error={!editingComponent.referenceRange}
                   helperText={
                     !editingComponent.referenceRange
-                      ? 'Reference range is required'
+                      ? 'Khoảng tham chiếu là bắt buộc'
                       : ''
                   }
                   sx={{
                     mb: 2,
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: '8px',
+                      borderRadius: '10px',
+                      background: '#f6fafd',
+                      fontWeight: 500,
+                      fontSize: '1.05rem',
                     },
                   }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Interpretation"
+                  label="Mô tả"
                   multiline
                   rows={3}
                   value={editingComponent.interpretation || ''}
@@ -1526,7 +1886,10 @@ const STIServiceManagementContent = () => {
                   sx={{
                     mb: 2,
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: '8px',
+                      borderRadius: '10px',
+                      background: '#f6fafd',
+                      fontWeight: 500,
+                      fontSize: '1.05rem',
                     },
                   }}
                 />
@@ -1542,43 +1905,77 @@ const STIServiceManagementContent = () => {
                       color="success"
                     />
                   }
-                  label={`Status: ${editingComponent.isActive !== false ? 'Active' : 'Inactive'}`}
+                  label={
+                    <Typography
+                      sx={{
+                        fontWeight: 600,
+                        color:
+                          editingComponent.isActive !== false
+                            ? '#1ABC9C'
+                            : '#E53E3E',
+                      }}
+                    >
+                      Trạng thái:{' '}
+                      {editingComponent.isActive !== false
+                        ? 'Đang hoạt động'
+                        : 'Ngừng hoạt động'}
+                    </Typography>
+                  }
+                  sx={{ mt: 1, ml: 1 }}
                 />
               </Grid>
             </Grid>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
+        <DialogActions
+          sx={{
+            px: 4,
+            py: 3,
+            background: '#f8fafc',
+            borderRadius: '0 0 12px 12px',
+          }}
+        >
           <Button
             onClick={handleCloseEditComponentDialog}
             sx={{
               color: '#4A90E2',
-              fontWeight: 600,
+              fontWeight: 700,
+              borderRadius: '24px',
+              fontSize: '1.1rem',
+              px: 4,
+              py: 1.2,
+              letterSpacing: '0.5px',
+              background: 'white',
+              border: '2px solid #4A90E2',
+              mr: 2,
               '&:hover': {
                 backgroundColor: 'rgba(74, 144, 226, 0.08)',
+                border: '2px solid #1ABC9C',
               },
             }}
           >
-            Cancel
-          </Button>{' '}
+            HỦY
+          </Button>
           <Button
             variant="contained"
             onClick={handleSaveEditedComponent}
             sx={{
               background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
               color: '#fff',
-              fontWeight: 600,
+              fontWeight: 700,
               boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-              px: 3,
-              py: 1,
-              borderRadius: '8px',
+              px: 4,
+              py: 1.2,
+              borderRadius: '24px',
+              fontSize: '1.1rem',
+              letterSpacing: '0.5px',
               '&:hover': {
                 background: 'linear-gradient(45deg, #3A80D2, #0AAC8C)',
                 boxShadow: '0 4px 12px rgba(74, 144, 226, 0.4)',
               },
             }}
           >
-            Save Changes
+            LƯU THAY ĐỔI
           </Button>
         </DialogActions>
       </Dialog>
@@ -1652,6 +2049,18 @@ const STIServiceManagementContent = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
     </Box>
   );
 };
