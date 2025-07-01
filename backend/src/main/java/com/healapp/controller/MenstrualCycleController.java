@@ -45,7 +45,7 @@ public class MenstrualCycleController {
      * path: /menstrual-cycle
      */
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<MenstrualCycleResponse>> createMenstrualCycle(@RequestBody @Valid MenstrualCycleRequest request) {
         ApiResponse<MenstrualCycleResponse> response = menstrualCycleService.createMenstrualCycle(request);
         return ResponseEntity.ok(response);
@@ -57,7 +57,7 @@ public class MenstrualCycleController {
      * path: /menstrual-cycle
      */
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<List<MenstrualCycle>>> getAllMenstrualCycle(){
         Long userId = getCurrentUserId();
         ApiResponse<List<MenstrualCycle>> response = menstrualCycleService.getAllMenstrualCycle(userId);
@@ -70,7 +70,7 @@ public class MenstrualCycleController {
      * path: /menstrual-cycle/pregnancy-prob
      */
     @GetMapping("/pregnancy-prob")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<List<MenstrualCycleResponse>>> getAllMenstrualCycleWithPregnancyProb() {
         Long userId = getCurrentUserId();
         ApiResponse<List<MenstrualCycleResponse>> response = menstrualCycleService.getMenstrualCycleWithPregnancyProb(userId);
@@ -83,7 +83,7 @@ public class MenstrualCycleController {
      * path: /menstrual-cycle/{id}
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<MenstrualCycleResponse>> getMenstrualCycleById(@PathVariable Long id) {
         ApiResponse<MenstrualCycleResponse> response = menstrualCycleService.getMenstrualCycleById(id);
         return ResponseEntity.ok(response);
@@ -96,7 +96,7 @@ public class MenstrualCycleController {
      * path: /menstrual-cycle/{id}
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<MenstrualCycleResponse>> updateMenstrualCycle(@PathVariable Long id, @Valid @RequestBody MenstrualCycleRequest request) {
         ApiResponse<MenstrualCycleResponse> response = menstrualCycleService.updateMenstrualCycle(id, request);
         return ResponseEntity.ok(response);
@@ -109,7 +109,7 @@ public class MenstrualCycleController {
      * path: /menstrual-cycle/{id}
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<Void>> deleteMenstrualCycle(@PathVariable Long id) {
         ApiResponse<Void> response = menstrualCycleService.deleteMenstrualCycle(id);
         return ResponseEntity.ok(response);
@@ -122,7 +122,7 @@ public class MenstrualCycleController {
      * path: /menstrual-cycle/reminder
      */
     @PostMapping("/reminder")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<String>> sendOvulationReminder() {
         ApiResponse<String> response = menstrualCycleService.sendOvulationReminderEmail();        
         return ResponseEntity.ok(response);
@@ -138,7 +138,7 @@ public class MenstrualCycleController {
      * path: /menstrual-cycle/average
      */
     @GetMapping("/average")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<Double>> getAverageMenstrualCycle() {
         Long userId = getCurrentUserId();
         ApiResponse<Double> response = menstrualCycleService.calculateAverageCycleLength(userId);
@@ -151,10 +151,16 @@ public class MenstrualCycleController {
      * path: /menstrual-cycle/predict
      */
     @GetMapping("/predict")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<LocalDate>> predictNextCycle() {
-        ApiResponse<LocalDate> response = menstrualCycleService.predictNextCycle();
-        return ResponseEntity.ok(response);
+        try {
+            Long userId = getCurrentUserId();
+
+            ApiResponse<LocalDate> response = menstrualCycleService.predictNextCycle(userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("Lỗi server: " + e.getMessage()));
+        }
     }
 
 

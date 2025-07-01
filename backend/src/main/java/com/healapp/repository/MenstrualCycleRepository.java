@@ -20,4 +20,6 @@ public interface MenstrualCycleRepository extends JpaRepository<MenstrualCycle, 
     @Query("SELECT c FROM MenstrualCycle c WHERE c.user.id = :userId AND c.startDate <= :today ORDER BY c.startDate DESC")
     Optional<MenstrualCycle> findLatestCycleBeforeToday(@Param("userId") Long userId, @Param("today") LocalDate today);
 
+    @Query("SELECT mc FROM MenstrualCycle mc WHERE mc.user.id = :userId ORDER BY mc.startDate DESC")
+    Optional<MenstrualCycle> findLatestCycleByUserId(@Param("userId") Long userId);
 }

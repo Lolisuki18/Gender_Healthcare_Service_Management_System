@@ -390,20 +390,44 @@ public class MenstrualCycleService {
     }
 
     // Dự đoán chu kỳ kinh nguyệt tiếp theo
-    public ApiResponse<LocalDate> predictNextCycle() {
-        try {
-            Long userId = getCurrentUserId();
-            Optional<MenstrualCycle> latestCycleOpt = menstrualCycleRepository.findLatestCycleBeforeToday(userId, LocalDate.now());
+    // public ApiResponse<LocalDate> predictNextCycle() {
+    //     try {
+    //         Long userId = getCurrentUserId();
+    //         Optional<MenstrualCycle> latestCycleOpt = menstrualCycleRepository.findLatestCycleBeforeToday(userId, LocalDate.now());
 
+    //         if (!latestCycleOpt.isPresent()) {
+    //             return ApiResponse.error("Không tìm thấy chu kỳ kinh nguyệt gần nhất");
+    //         }
+
+    //         MenstrualCycle latestCycle = latestCycleOpt.get();
+    //         LocalDate nextCycleStartDate = latestCycle.getStartDate().plusDays(latestCycle.getCycleLength());
+
+    //         return ApiResponse.success("Dự đoán chu kỳ kinh nguyệt tiếp theo thành công", nextCycleStartDate);
+    //     } catch (Exception e) {
+    //         return ApiResponse.error("Lỗi khi dự đoán chu kỳ kinh nguyệt tiếp theo: " + e.getMessage());
+    //     }
+    // }
+    public ApiResponse<LocalDate> predictNextCycle(Long userId) {
+        try {
+            log.info("Predicting next cycle for userId: {}", userId);
+            
+            // Thử tìm chu kỳ gần nhất trước hôm nay
+            Optional<MenstrualCycle> latestCycleOpt = menstrualCycleRepository.findLatestCycleBeforeToday(userId, LocalDate.now());
+            
             if (!latestCycleOpt.isPresent()) {
-                return ApiResponse.error("Không tìm thấy chu kỳ kinh nguyệt gần nhất");
+                log.error("No menstrual cycle found for userId: {}", userId);
+                return ApiResponse.error("Không tìm thấy chu kỳ kinh nguyệt nào để dự đoán. Vui lòng thêm ít nhất một chu kỳ.");
             }
 
             MenstrualCycle latestCycle = latestCycleOpt.get();
+            log.info("Found latest cycle: startDate={}, cycleLength={}", latestCycle.getStartDate(), latestCycle.getCycleLength());
+            
             LocalDate nextCycleStartDate = latestCycle.getStartDate().plusDays(latestCycle.getCycleLength());
+            log.info("Predicted next cycle start date: {}", nextCycleStartDate);
 
             return ApiResponse.success("Dự đoán chu kỳ kinh nguyệt tiếp theo thành công", nextCycleStartDate);
         } catch (Exception e) {
+            log.error("Error predicting next cycle for userId: {}", getCurrentUserId(), e);
             return ApiResponse.error("Lỗi khi dự đoán chu kỳ kinh nguyệt tiếp theo: " + e.getMessage());
         }
     }
