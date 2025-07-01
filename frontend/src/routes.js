@@ -14,6 +14,9 @@ import ProfilePage from '@/pages/ProfilePage';
 // import AdminTestPage from "@/pages/AdminTestPage";
 import StiPage from '@/pages/StiPage';
 import StiDetailPage from '@/pages/StiDetailPage';
+import BlogPage from '@/pages/BlogPage';
+import BlogDetailPage from '@/pages/BlogDetailPage';
+import AboutPage from '@/pages/AboutPage';
 // Import Profile Components
 import AdminProfile from '@/components/AdminProfile/AdminProfile';
 
@@ -22,7 +25,7 @@ import localStorageUtil from './utils/localStorage';
 import ConsultationPage from './pages/ConsultantionPage';
 import TestRegistrationPage from '@/pages/TestRegistrationPage';
 import OvulationPage from './pages/OvulationPage';
-import AboutPage from './pages/AboutPage';
+
 
 const AppRoutes = () => {
   // Lấy thông tin user từ localStorage
@@ -62,8 +65,10 @@ const AppRoutes = () => {
         />
         <Route path="/consultation" element={<ConsultationPage />}></Route>
         <Route path="/sti-services" element={<StiPage />} />
-        <Route path="/ovulation" element={<OvulationPage />} />{' '}
-        <Route path="/about" element={<AboutPage />} />{' '}
+        <Route path="/ovulation" element={<OvulationPage />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:id" element={<BlogDetailPage />} />
+        <Route path="/about" element={<AboutPage />} />
         {/* Trang STI Test (đổi endpoint) */}
         {/* Homepage cho các role đã đăng nhập (trừ admin) */}
         <Route path="home" element={<HomePage />} />{' '}

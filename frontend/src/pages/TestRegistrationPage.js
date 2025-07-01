@@ -83,7 +83,7 @@ const useServices = () => {
         
         // Gọi 2 API song song để tối ưu thời gian tải
         const [servicesResponse, packagesResponse] = await Promise.all([
-          stiService.getAllSTIServices(),   // API lấy danh sách xét nghiệm lẻ
+          stiService.getActiveSTIServices(),   // API lấy danh sách xét nghiệm lẻ
           stiService.getAllSTIPackages(),   // API lấy danh sách gói xét nghiệm
         ]);
         
