@@ -39,7 +39,6 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '@/services/api';
 import localStorageUtil from '@/utils/localStorage';
 import { toast } from 'react-toastify';
-import { useDispatch } from 'react-redux';
 import { loginSuccess } from '@/redux/slices/authSlice';
 
 // Define animations
@@ -50,10 +49,7 @@ const float = keyframes`
 
 export const HomePage = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const [loaded, setLoaded] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
 
   // --- LIFECYCLE HOOKS ---
   useEffect(() => {
@@ -109,20 +105,6 @@ export const HomePage = () => {
         console.error('Error checking auth:', error);
         navigate('/test-registration');
       }
-    }
-  };
-
-  const handleLogin = (action) => {
-    if (action.type === loginSuccess.type) {
-      localStorage.setItem('user', JSON.stringify(action.payload.user));
-      localStorage.setItem('token', action.payload.token);
-      localStorage.setItem('isLoggedIn', 'true');
-      navigate('/');
-      window.location.reload();
-    } else {
-      toast.error(
-        'Login failed: ' + (action.payload?.message || 'Unknown error')
-      );
     }
   };
 

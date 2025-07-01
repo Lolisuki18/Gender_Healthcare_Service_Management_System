@@ -13,6 +13,7 @@ import { uploadUserAvatar } from "@/redux/thunks/userThunks";
 import { selectAvatar } from "@/redux/slices/authSlice";
 import localStorageUtil from "@/utils/localStorage";
 import imageUrl from "@/utils/imageUrl";
+import { notify } from "@/utils/notify";
 
 // Styled component cho input file
 const VisuallyHiddenInput = styled("input")({

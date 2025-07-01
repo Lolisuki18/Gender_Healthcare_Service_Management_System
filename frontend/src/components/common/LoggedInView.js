@@ -15,6 +15,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import localStorageUtil from "@/utils/localStorage";
 import imageUrl from "@/utils/imageUrl";
 import { listenToAvatarUpdates } from "@/utils/storageEvent";
+import { notify } from "@/utils/notify";
 
 const LoggedInView = ({ user, onLogout }) => {
   const theme = useTheme();

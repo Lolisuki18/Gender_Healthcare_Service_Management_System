@@ -23,9 +23,6 @@ const localStorageMiddleware = (store) => (next) => (action) => {
 
   // Kiểm tra nếu action thuộc danh sách cần đồng bộ
   if (USER_ACTIONS.includes(action.type)) {
-    const state = store.getState();
-    const { auth } = state;
-
     switch (action.type) {
       case "auth/loginSuccess":
         // Đã được xử lý trong action loginSuccess

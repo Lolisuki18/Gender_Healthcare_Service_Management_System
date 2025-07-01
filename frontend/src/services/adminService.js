@@ -1,5 +1,4 @@
 import apiClient from "./api";
-import axios from "axios";
 
 // Service cho các API liên quan đến người dùng
 export const adminService = {

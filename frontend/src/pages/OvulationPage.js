@@ -349,8 +349,6 @@ const OvulationPage = ({ stats = defaultStats }) => {
     return advice;
   };
 
-  const advice = getAdvice();
-
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
       <Container maxWidth="lg" className={styles.container}>

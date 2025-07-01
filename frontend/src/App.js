@@ -18,7 +18,7 @@
  */
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { CssBaseline } from '@mui/material';
@@ -29,7 +29,6 @@ import { UserProvider } from '@context/UserContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
-import MainLayout from './components/layouts/MainLayout';
 
 function App() {
   return (
@@ -38,20 +37,9 @@ function App() {
         <CustomThemeProvider>
           <UserProvider>
             <CssBaseline />
+            <ToastContainer position="top-right" autoClose={3000} />
             <BrowserRouter>
               <AppRoutes />
-              <ToastContainer
-                position="top-right"
-                autoClose={5000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="colored"
-              />
             </BrowserRouter>
           </UserProvider>
         </CustomThemeProvider>

@@ -2,6 +2,7 @@ import { userService } from "@/services/userService";
 import React, { useState } from "react";
 import useAuthCheck from "@/hooks/useAuthCheck";
 import LoggedInView from "@/components/common/LoggedInView";
+import { notify } from "@/utils/notify";
 
 import {
   Avatar,
@@ -481,7 +482,6 @@ const ForgotPasswordPage = () => {
                       borderRadius: 3,
                       background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
                       color: "#fff",
-                      fontWeight: 600,
                       boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
                       textTransform: "none",
                       fontSize: "1.1rem",

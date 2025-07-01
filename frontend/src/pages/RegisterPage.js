@@ -10,7 +10,6 @@ import {
   TextField,
   Typography,
   Divider,
-  useTheme,
   Card,
   CardContent,
   InputAdornment,
@@ -22,6 +21,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { notify } from "@/utils/notify";
 
 // --- ICONS ---
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
@@ -1015,7 +1015,6 @@ const RegisterPage = () => {
                   borderRadius: 3,
                   background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
                   color: "#fff",
-                  fontWeight: 600,
                   boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
                   textTransform: "none",
                   fontSize: "1.1rem",

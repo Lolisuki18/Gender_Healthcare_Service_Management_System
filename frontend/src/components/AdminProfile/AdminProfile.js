@@ -43,6 +43,7 @@ import SettingsContent from "@/components/AdminProfile/SettingsContent";
 import NoLoggedInView from "../common/NoLoggedInView";
 import localStorageUtil from "@/utils/localStorage";
 import { useNavigate } from "react-router-dom";
+import { notify } from "@/utils/notify";
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
