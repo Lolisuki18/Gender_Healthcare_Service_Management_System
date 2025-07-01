@@ -2,9 +2,10 @@ import { Container, Box, Typography, Card, Grid, Button } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { vi } from 'date-fns/locale';
-import ovulationAuthService from '../services/ovulationAuthService';
+import ovulationService from '../services/ovulationService';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { CheckCircle, Add } from '@mui/icons-material';
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
@@ -40,7 +41,7 @@ const OvulationPage = ({ stats = defaultStats }) => {
 
   React.useEffect(() => {
     const checkLogin = async () => {
-      const userData = await ovulationAuthService.getCurrentUser();
+      const userData = await ovulationService.getCurrentUser();
       if (userData) {
         setIsLoggedIn(true);
       } else {
@@ -54,6 +55,88 @@ const OvulationPage = ({ stats = defaultStats }) => {
       window.removeEventListener('storage', checkLogin);
     };
   }, []);
+
+
+  // Tất cả chu kỳ kinh nguyệt
+  const [menstrualCycles, setMenstrualCycles] = useState([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await ovulationService.getAllMenstrualCycles();
+        setMenstrualCycles(data);
+      } catch (err) {
+        console.error('Lỗi khi lấy dữ liệu chu kỳ:', err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Tỉ lệ mang thai
+  const [pregnancyProb, setPregnancyProb] = useState([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await ovulationService.getAllMenstrualCyclesWithPregnancyProb();
+        setPregnancyProb(data);
+      } catch (err) {
+        console.error('Lỗi khi lấy dữ liệu tỉ lệ mang thai:', err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Độ dài chu kỳ trung bình
+  const getAverageCycleLength = (menstrualCycles) => {
+    if (!menstrualCycles.length) return null;
+  
+    const total = menstrualCycles.reduce((sum, cycle) => sum + cycle.cycleLength, 0);
+    const average = total / menstrualCycles.length;
+  
+    return Math.round(average); // Làm tròn
+  };
+
+  const averageLengthCycles = getAverageCycleLength(menstrualCycles);
+
+  // Độ dài kỳ kinh trung bình
+  const getAveragePeriodLength = (menstrualCycles) => {
+    if (!menstrualCycles.length) return null;
+  
+    const total = menstrualCycles.reduce((sum, cycle) => sum + cycle.periodLength, 0);
+    const average = total / menstrualCycles.length;
+  
+    return Math.round(average); // Làm tròn
+  };
+
+  const averagePeriodLength = getAveragePeriodLength(menstrualCycles);
+
+  // Chu kỳ kinh nguyệt tiếp theo
+  const [nextCycle, setNextCycle] = useState(null);
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await ovulationService.predictNextCycle(menstrualCycles);
+      setNextCycle(data);
+    };
+    fetchData();
+  }, [menstrualCycles]);
+
+  // Tính độ đồng đều
+  const getConsistency = (menstrualCycles) => {
+    if (!menstrualCycles.length) return null;
+  
+    const consistency = 'unknown';
+    if (menstrualCycles.length >= 3) {
+      const variance = menstrualCycles.reduce((sum, length) => sum + Math.pow(length - averagePeriodLength, 2), 0) / menstrualCycles.length;
+      consistency = variance <= 4 ? 'regular' : 'irregular';
+    }
+  
+    return consistency; // Làm tròn
+  };
+
+  const consistency = getConsistency(menstrualCycles);
+
+
+
 
   // Data cho biểu đồ
   const chartData = {
@@ -234,15 +317,15 @@ const OvulationPage = ({ stats = defaultStats }) => {
       icon: <Calendar className={`${styles.icon} ${styles.pink}`} />,
       iconWrapper: `${styles.iconWrapper} ${styles.pink}`,
       label: 'Chu kỳ trung bình',
-      mainValue: `${stats.averageCycleLength} ngày`,
-      subValue: `${stats.totalCycles} chu kỳ đã ghi nhận`,
+      mainValue: averageLengthCycles ? `${averageLengthCycles} ngày` : 'Không có dữ liệu',
+      subValue: `${menstrualCycles.length} chu kỳ đã ghi nhận`,
       id: 'average-cycle',
     },
     {
       icon: <Clock className={`${styles.icon} ${styles.purple}`} />,
       iconWrapper: `${styles.iconWrapper} ${styles.purple}`,
       label: 'Kỳ kinh trung bình',
-      mainValue: `${stats.averagePeriodLength} ngày`,
+      mainValue: averagePeriodLength ? `${averagePeriodLength} ngày` : 'Không có dữ liệu',
       subValue: 'Độ dài kỳ kinh',
       id: 'average-period',
     },
@@ -250,7 +333,7 @@ const OvulationPage = ({ stats = defaultStats }) => {
       icon: <TrendingUp className={`${styles.icon} ${styles.indigo}`} />,
       iconWrapper: `${styles.iconWrapper} ${styles.indigo}`,
       label: 'Dự đoán kỳ tới',
-      mainValue: formatDate(stats.nextPredictedPeriod),
+      mainValue: nextCycle ? formatDate(nextCycle) : 'Không có dữ liệu',
       subValue: 'Ngày dự kiến',
       id: 'next-prediction',
       isSpecial: true,
@@ -265,9 +348,9 @@ const OvulationPage = ({ stats = defaultStats }) => {
       customContent: (
         <div className="mb-2">
           <span
-            className={`${styles.consistencyBadge} ${getConsistencyClass(stats.consistency)}`}
+            className={`${styles.consistencyBadge} ${getConsistencyClass(consistency)}`}
           >
-            {getConsistencyText(stats.consistency)}
+            {getConsistencyText(consistency)}
           </span>
         </div>
       ),
@@ -277,7 +360,7 @@ const OvulationPage = ({ stats = defaultStats }) => {
   const getAdvice = () => {
     const advice = [];
 
-    if (stats.consistency === 'regular') {
+    if (consistency === 'regular') {
       advice.push({
         icon: <Heart className="h-6 w-6 text-green-600" />,
         title: 'Chu kỳ đều đặn',
@@ -290,7 +373,7 @@ const OvulationPage = ({ stats = defaultStats }) => {
         ],
         color: 'green',
       });
-    } else if (stats.consistency === 'irregular') {
+    } else if (consistency === 'irregular') {
       advice.push({
         icon: <Activity className="h-6 w-6 text-yellow-600" />,
         title: 'Chu kỳ không đều',
@@ -348,6 +431,8 @@ const OvulationPage = ({ stats = defaultStats }) => {
 
     return advice;
   };
+
+  const advice = getAdvice();
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
@@ -478,7 +563,7 @@ const OvulationPage = ({ stats = defaultStats }) => {
                 </Box>
 
                 {/* Card: Chu kỳ đều đặn */}
-                <Card className={styles.adviceCardRegular}>
+                {/* <Card className={styles.adviceCardRegular}>
                   <Box className={styles.adviceCardHeader}>
                     <Box className={styles.adviceCardIconRegular}>
                       <FavoriteBorderIcon
@@ -507,10 +592,10 @@ const OvulationPage = ({ stats = defaultStats }) => {
                       Ngủ đủ 7-8 tiếng mỗi ngày
                     </ListItem>
                   </List>
-                </Card>
+                </Card> */}
 
                 {/* Card: Lời khuyên chung */}
-                <Card className={styles.adviceCardGeneral}>
+                {/* <Card className={styles.adviceCardGeneral}>
                   <Box className={styles.adviceCardHeader}>
                     <Box className={styles.adviceCardIconGeneral}>
                       <FavoriteBorderIcon
@@ -541,7 +626,31 @@ const OvulationPage = ({ stats = defaultStats }) => {
                       Theo dõi và ghi chép đều đặn
                     </ListItem>
                   </List>
-                </Card>
+                </Card> */}
+
+                {advice.map((item, index) => (
+                  <Card key={index} className={styles.adviceCardRegular}>
+                    <Box className={styles.adviceCardHeader}>
+                      <Box className={styles.adviceCardIconRegular}>
+                        {item.icon}
+                      </Box>
+                      <Typography variant="subtitle1" className={styles.adviceCardTitleRegular}>
+                        {item.title}
+                      </Typography>
+                    </Box>
+                    <Typography className={styles.adviceCardTextRegular}>
+                      {item.description}
+                    </Typography>
+                    <List className={styles.adviceCardList}>
+                      {item.tips.map((tip, tipIndex) => (
+                        <ListItem key={tipIndex} className={styles.adviceCardListItem}>
+                          {tip}
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Card>
+                ))}
+
 
                 {/* Lưu ý */}
                 <Box className={styles.healthAdviceNote}>

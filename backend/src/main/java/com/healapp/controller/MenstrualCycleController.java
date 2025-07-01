@@ -1,5 +1,6 @@
 package com.healapp.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.apache.catalina.connector.Response;
@@ -141,6 +142,18 @@ public class MenstrualCycleController {
     public ResponseEntity<ApiResponse<Double>> getAverageMenstrualCycle() {
         Long userId = getCurrentUserId();
         ApiResponse<Double> response = menstrualCycleService.calculateAverageCycleLength(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    /*
+     * description: dự đoán chu kỳ kinh nguyệt tiếp theo
+     * method: GET
+     * path: /menstrual-cycle/predict
+     */
+    @GetMapping("/predict")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    public ResponseEntity<ApiResponse<LocalDate>> predictNextCycle() {
+        ApiResponse<LocalDate> response = menstrualCycleService.predictNextCycle();
         return ResponseEntity.ok(response);
     }
 
