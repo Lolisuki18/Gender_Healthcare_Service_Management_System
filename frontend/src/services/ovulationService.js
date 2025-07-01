@@ -1,6 +1,6 @@
 import apiClient from '@services/api';
 
-const API_URL = '/menstrual-cycles';
+const API_URL = '/menstrual-cycle';
 
 
 const ovulationService = {

@@ -124,13 +124,13 @@ const OvulationPage = ({ stats = defaultStats }) => {
   const getConsistency = (menstrualCycles) => {
     if (!menstrualCycles.length) return null;
   
-    const consistency = 'unknown';
+    let consistency = 'unknown';
     if (menstrualCycles.length >= 3) {
       const variance = menstrualCycles.reduce((sum, length) => sum + Math.pow(length - averagePeriodLength, 2), 0) / menstrualCycles.length;
       consistency = variance <= 4 ? 'regular' : 'irregular';
     }
   
-    return consistency; // Làm tròn
+    return consistency;
   };
 
   const consistency = getConsistency(menstrualCycles);
@@ -318,7 +318,7 @@ const OvulationPage = ({ stats = defaultStats }) => {
       iconWrapper: `${styles.iconWrapper} ${styles.pink}`,
       label: 'Chu kỳ trung bình',
       mainValue: averageLengthCycles ? `${averageLengthCycles} ngày` : 'Không có dữ liệu',
-      subValue: `${menstrualCycles.length} chu kỳ đã ghi nhận`,
+      subValue: menstrualCycles.length ? `${menstrualCycles.length} chu kỳ đã ghi nhận` : '0 chu kỳ đã ghi nhận',
       id: 'average-cycle',
     },
     {
