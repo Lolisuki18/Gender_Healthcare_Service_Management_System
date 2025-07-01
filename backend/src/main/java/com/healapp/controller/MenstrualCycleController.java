@@ -150,18 +150,18 @@ public class MenstrualCycleController {
      * method: GET
      * path: /menstrual-cycle/predict
      */
-    @GetMapping("/predict")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
-    public ResponseEntity<ApiResponse<LocalDate>> predictNextCycle() {
-        try {
-            Long userId = getCurrentUserId();
+    // @GetMapping("/predict")
+    // @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
+    // public ResponseEntity<ApiResponse<LocalDate>> predictNextCycle() {
+    //     try {
+    //         Long userId = getCurrentUserId();
 
-            ApiResponse<LocalDate> response = menstrualCycleService.predictNextCycle(userId);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponse.error("Lỗi server: " + e.getMessage()));
-        }
-    }
+    //         ApiResponse<LocalDate> response = menstrualCycleService.predictNextCycle(userId);
+    //         return ResponseEntity.ok(response);
+    //     } catch (Exception e) {
+    //         return ResponseEntity.ok(ApiResponse.error("Lỗi server: " + e.getMessage()));
+    //     }
+    // }
 
 
     private Long getCurrentUserId() {
