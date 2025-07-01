@@ -1,30 +1,10 @@
 package com.healapp.service;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.dto.ChangePasswordRequest;
-import com.healapp.dto.CreateAccountRequest;
-import com.healapp.dto.LoginRequest;
-import com.healapp.dto.LoginResponse;
-import com.healapp.dto.RegisterRequest;
-import com.healapp.model.ConsultantProfile;
-import com.healapp.model.Gender;
-import com.healapp.model.Role;
-import com.healapp.model.UserDtls;
-import com.healapp.repository.ConsultantProfileRepository;
-import com.healapp.repository.RoleRepository;
-import com.healapp.repository.UserRepository;
-import com.healapp.dto.ForgotPasswordRequest;
-import com.healapp.dto.ResetPasswordRequest;
-import com.healapp.dto.UpdateEmailRequest;
-import com.healapp.dto.UpdateProfileRequest;
-import com.healapp.dto.UserResponse;
-import com.healapp.dto.UserUpdateRequest;
-import com.healapp.dto.VerificationCodeRequest;
-import com.healapp.service.EmailService;
-import com.healapp.service.PasswordResetService;
-import com.healapp.service.PasswordResetService.RateLimitException;
-import jakarta.mail.MessagingException;
-import jakarta.validation.Valid;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,11 +13,29 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.ChangePasswordRequest;
+import com.healapp.dto.CreateAccountRequest;
+import com.healapp.dto.ForgotPasswordRequest;
+import com.healapp.dto.LoginRequest;
+import com.healapp.dto.LoginResponse;
+import com.healapp.dto.RegisterRequest;
+import com.healapp.dto.ResetPasswordRequest;
+import com.healapp.dto.UpdateEmailRequest;
+import com.healapp.dto.UpdateProfileRequest;
+import com.healapp.dto.UserResponse;
+import com.healapp.dto.UserUpdateRequest;
+import com.healapp.dto.VerificationCodeRequest;
+import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Gender;
+import com.healapp.model.Role;
+import com.healapp.model.UserDtls;
+import com.healapp.repository.ConsultantProfileRepository;
+import com.healapp.repository.RoleRepository;
+import com.healapp.repository.UserRepository;
+
+import jakarta.mail.MessagingException;
+import jakarta.validation.Valid;
 
 @Service
 public class UserService {
@@ -614,6 +612,11 @@ public class UserService {
         } catch (Exception e) {
             return ApiResponse.error("Failed to save avatar file: " + e.getMessage());
         }
+    }
+
+    public Long getUserIdByUsername(String username) {
+        Optional<UserDtls> userOpt = userRepository.findByUsername(username);
+        return userOpt.map(UserDtls::getId).orElse(null);
     }
 
     private UserResponse mapUserToResponse(UserDtls user) {
