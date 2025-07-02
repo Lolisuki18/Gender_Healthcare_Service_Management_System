@@ -1,4 +1,4 @@
-import { Container, Box, Typography, Card, Grid } from '@mui/material';
+import { Container, Box, Typography, Card, Modal, Backdrop, Fade } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { vi } from 'date-fns/locale';
@@ -27,9 +27,6 @@ import {
   Lightbulb,
   Edit,
   Trash2,
-  Bell,
-  BellOff,
-  Pause,
 } from 'lucide-react';
 import MenstrualCycleForm from '../components/MenstrualCycle/MenstrualCycleForm.js';
 
@@ -335,112 +332,73 @@ const OvulationPage = ({ stats }) => {
     }
   };
 
-  // Hàm lấy thông tin trạng thái nhắc nhở
-  const getReminderStatusInfo = (cycle) => {
-    if (!cycle.reminderEnabled) {
-      return {
-        icon: <BellOff className={styles.reminderIcon} />,
-        text: 'Không có nhắc nhở',
-        className: styles.reminderDisabled,
-      };
-    }
-
-    const status = cycle.reminderStatus || 'active';
-    switch (status) {
-      case 'active':
-        return {
-          icon: <Bell className={styles.reminderIcon} />,
-          text: 'Nhắc nhở đang hoạt động',
-          className: styles.reminderActive,
-        };
-      case 'paused':
-        return {
-          icon: <Pause className={styles.reminderIcon} />,
-          text: 'Nhắc nhở tạm dừng',
-          className: styles.reminderPaused,
-        };
-      case 'disabled':
-        return {
-          icon: <BellOff className={styles.reminderIcon} />,
-          text: 'Nhắc nhở đã tắt',
-          className: styles.reminderDisabled,
-        };
-      default:
-        return {
-          icon: <Bell className={styles.reminderIcon} />,
-          text: 'Nhắc nhở đang hoạt động',
-          className: styles.reminderActive,
-        };
-    }
-  };
-
   const consistency = getConsistency(menstrualCycles);
   console.log('🎯 [Main] Kết quả consistency đã tính:', consistency);
 
   // Data cho biểu đồ
-  const chartData = {
-    labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5'],
-    datasets: [
-      {
-        label: 'Chu kỳ thực tế',
-        data: [28, 29, 28, 28, 28],
-        borderColor: '#E91E63',
-        backgroundColor: '#E91E63',
-        tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: '#E91E63',
-      },
-      {
-        label: 'Trung bình',
-        data: [28, 28, 28, 28, 28],
-        borderColor: '#9C27B0',
-        backgroundColor: '#9C27B0',
-        borderDash: [5, 5],
-        tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: '#9C27B0',
-      },
-    ],
-  };
+  // const chartData = {
+  //   labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5'],
+  //   datasets: [
+  //     {
+  //       label: 'Chu kỳ thực tế',
+  //       data: [28, 29, 28, 28, 28],
+  //       borderColor: '#E91E63',
+  //       backgroundColor: '#E91E63',
+  //       tension: 0.4,
+  //       pointRadius: 4,
+  //       pointBackgroundColor: '#E91E63',
+  //     },
+  //     {
+  //       label: 'Trung bình',
+  //       data: [28, 28, 28, 28, 28],
+  //       borderColor: '#9C27B0',
+  //       backgroundColor: '#9C27B0',
+  //       borderDash: [5, 5],
+  //       tension: 0.4,
+  //       pointRadius: 4,
+  //       pointBackgroundColor: '#9C27B0',
+  //     },
+  //   ],
+  // };
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: false,
-        min: 20,
-        max: 35,
-        ticks: {
-          stepSize: 2,
-          color: '#666',
-          font: {
-            size: 12,
-          },
-        },
-        grid: {
-          color: 'rgba(0,0,0,0.05)',
-          drawBorder: false,
-        },
-      },
-      x: {
-        grid: {
-          display: false,
-        },
-        ticks: {
-          color: '#666',
-          font: {
-            size: 12,
-          },
-        },
-      },
-    },
-  };
+  // const chartOptions = {
+  //   responsive: true,
+  //   maintainAspectRatio: false,
+  //   plugins: {
+  //     legend: {
+  //       display: false,
+  //     },
+  //   },
+  //   scales: {
+  //     y: {
+  //       beginAtZero: false,
+  //       min: 20,
+  //       max: 35,
+  //       ticks: {
+  //         stepSize: 2,
+  //         color: '#666',
+  //         font: {
+  //           size: 12,
+  //         },
+  //       },
+  //       grid: {
+  //         color: 'rgba(0,0,0,0.05)',
+  //         drawBorder: false,
+  //       },
+  //     },
+  //     x: {
+  //       grid: {
+  //         display: false,
+  //       },
+  //       ticks: {
+  //         color: '#666',
+  //         font: {
+  //           size: 12,
+  //         },
+  //       },
+  //     },
+  //   },
+  // };
 
   const [expandedSection, setExpandedSection] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -539,7 +497,7 @@ const OvulationPage = ({ stats }) => {
       case 'irregular':
         return styles.irregular;
       default:
-        return styles.unknown;
+        return styles.regular;
     }
   };
 
@@ -550,7 +508,7 @@ const OvulationPage = ({ stats }) => {
       case 'irregular':
         return 'Không đều';
       default:
-        return 'Chưa đủ dữ liệu';
+        return 'Bình thường';
     }
   };
 
@@ -753,73 +711,20 @@ const OvulationPage = ({ stats }) => {
 
   const handleSubmitCycle = async (data) => {
     try {
-      if (data.saveToDatabase) {
-        // Lưu vào database
-        await ovulationService.createMenstrualCycle(data);
-
-        // Refetch dữ liệu để cập nhật UI
-        await fetchMenstrualCycles(true);
-
-        // Reset về trang đầu để hiển thị chu kỳ mới nhất
-        setCurrentPage(1);
-
-        setShowForm(false);
-        setCalculationResult(null); // Clear calculation result
-
-        // Show success message
-        const successMessage = document.createElement('div');
-        successMessage.innerHTML = '✅ Đã cập nhật dữ liệu thành công!';
-        successMessage.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: linear-gradient(135deg, #10b981, #059669);
-          color: white;
-          padding: 12px 24px;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-          z-index: 10000;
-          font-weight: 600;
-          animation: slideInRight 0.3s ease-out;
-        `;
-        document.body.appendChild(successMessage);
-
-        // Remove success message after 3 seconds
-        setTimeout(() => {
-          if (document.body.contains(successMessage)) {
-            successMessage.style.animation = 'slideOutRight 0.3s ease-in';
-            setTimeout(() => {
-              if (document.body.contains(successMessage)) {
-                document.body.removeChild(successMessage);
-              }
-            }, 300);
-          }
-        }, 3000);
-
-        alert('Ghi nhận chu kỳ mới thành công!');
-
-        // Scroll to top để người dùng thấy dữ liệu mới
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        // Chỉ tính toán và hiển thị kết quả
-        const calculatedData = calculateCycleData(data);
-        setCalculationResult(calculatedData);
-        setShowForm(false);
-        // Scroll to result section
-        setTimeout(() => {
-          const resultElement = document.getElementById('calculation-result');
-          if (resultElement) {
-            resultElement.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 100);
-      }
+      // Chỉ tính toán và hiển thị kết quả
+      const calculatedData = calculateCycleData(data);
+      setCalculationResult(calculatedData);
+      setShowForm(false);
+      // Scroll to result section
+      setTimeout(() => {
+        const resultElement = document.getElementById('calculation-result');
+        if (resultElement) {
+          resultElement.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     } catch (error) {
       console.error('Lỗi khi xử lý chu kỳ:', error);
-      alert(
-        data.saveToDatabase
-          ? 'Ghi nhận chu kỳ thất bại!'
-          : 'Tính toán thất bại!'
-      );
+      alert('Tính toán thất bại!');
     }
   };
 
@@ -978,6 +883,68 @@ const OvulationPage = ({ stats }) => {
   const handleCancelEdit = () => {
     setShowEditForm(false);
     setEditingCycle(null);
+  };
+
+  // Hàm xử lý lưu chu kỳ đã tính toán vào database
+  const handleSaveCycleToDatabase = async () => {
+    try {
+      if (!calculationResult) return;
+      
+      // Chuẩn bị dữ liệu từ calculationResult
+      const cycleData = {
+        startDate: calculationResult.startDate,
+        numberOfDays: calculationResult.periodLength,
+        cycleLength: calculationResult.cycleLength,
+      };
+
+      // Gọi API để lưu vào database
+      await ovulationService.createMenstrualCycle(cycleData);
+
+      // Refetch dữ liệu để cập nhật UI
+      await fetchMenstrualCycles(true);
+
+      // Reset về trang đầu để hiển thị chu kỳ mới nhất
+      setCurrentPage(1);
+
+      // Thông báo thành công
+      const successMessage = document.createElement('div');
+      successMessage.innerHTML = '✅ Đã lưu chu kỳ thành công!';
+      successMessage.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        z-index: 10000;
+        font-weight: 600;
+        animation: slideInRight 0.3s ease-out;
+      `;
+      document.body.appendChild(successMessage);
+
+      // Remove success message after 3 seconds
+      setTimeout(() => {
+        if (document.body.contains(successMessage)) {
+          successMessage.style.animation = 'slideOutRight 0.3s ease-in';
+          setTimeout(() => {
+            if (document.body.contains(successMessage)) {
+              document.body.removeChild(successMessage);
+            }
+          }, 300);
+        }
+      }, 3000);
+
+      alert('Lưu chu kỳ thành công!');
+      setCalculationResult(null); // Clear calculation result
+      
+      // Scroll to top để người dùng thấy dữ liệu mới
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      console.error('Lỗi khi lưu chu kỳ:', error);
+      alert('Lưu chu kỳ thất bại!');
+    }
   };
 
   return (
@@ -1139,32 +1106,6 @@ const OvulationPage = ({ stats }) => {
                                     {formatDate(cycle.ovulationDate)}
                                   </Typography>
                                 </Box>
-
-                                {/* Reminder status */}
-                                <Box className={styles.cycleDetailItem}>
-                                  <Typography
-                                    className={styles.cycleDetailLabel}
-                                  >
-                                    Trạng thái nhắc nhở:
-                                  </Typography>
-                                  <Typography
-                                    className={styles.cycleDetailValue}
-                                  >
-                                    {getReminderStatusInfo(cycle).text}
-                                  </Typography>
-                                </Box>
-
-                                {/* Reminder status badge */}
-                                <Box
-                                  className={`${styles.cycleReminderBadge} ${getReminderStatusInfo(cycle).className}`}
-                                >
-                                  {getReminderStatusInfo(cycle).icon}
-                                  <Typography
-                                    className={styles.cycleReminderText}
-                                  >
-                                    {getReminderStatusInfo(cycle).text}
-                                  </Typography>
-                                </Box>
                               </Box>
                             </Card>
                           ))}
@@ -1269,17 +1210,61 @@ const OvulationPage = ({ stats }) => {
                   </Box>
                 )}
 
-                {/* Form chỉnh sửa chu kỳ */}
-                {showEditForm && editingCycle && (
-                  <Box sx={{ marginBottom: 4 }}>
-                    <MenstrualCycleForm
-                      onSubmit={handleSubmitEditCycle}
-                      onCancel={handleCancelEdit}
-                      initialData={editingCycle}
-                      isEditMode={true}
-                    />
-                  </Box>
-                )}
+                {/* Form chỉnh sửa chu kỳ - Modal */}
+                <Modal
+                  open={showEditForm && !!editingCycle}
+                  onClose={handleCancelEdit}
+                  closeAfterTransition
+                  BackdropComponent={Backdrop}
+                  BackdropProps={{
+                    timeout: 500,
+                    sx: {
+                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                      backdropFilter: 'blur(8px)',
+                    }
+                  }}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: { xs: 1, sm: 2 },
+                    zIndex: 1300,
+                  }}
+                >
+                  <Fade in={showEditForm && !!editingCycle}>
+                    <Box
+                      sx={{
+                        outline: 'none',
+                        width: { xs: '95vw', sm: '90vw', md: '600px' },
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        backgroundColor: 'transparent',
+                        borderRadius: '20px',
+                        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+                        '&::-webkit-scrollbar': {
+                          width: '8px',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          borderRadius: '10px',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                          background: 'rgba(255, 255, 255, 0.3)',
+                          borderRadius: '10px',
+                        },
+                      }}
+                    >
+                      {editingCycle && (
+                        <MenstrualCycleForm
+                          onSubmit={handleSubmitEditCycle}
+                          onCancel={handleCancelEdit}
+                          initialData={editingCycle}
+                          isEditMode={true}
+                        />
+                      )}
+                    </Box>
+                  </Fade>
+                </Modal>
 
                 {/* Kết quả tính toán */}
                 {calculationResult && (
@@ -1430,16 +1415,36 @@ const OvulationPage = ({ stats }) => {
 
                       {/* Button actions */}
                       <Box sx={{ textAlign: 'center', marginTop: 3 }}>
-                        <button
-                          className={styles.addCycleButton}
-                          onClick={() => {
-                            setCalculationResult(null);
-                            setShowForm(true);
-                          }}
-                          style={{ marginRight: '12px' }}
-                        >
-                          Tính toán lại
-                        </button>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', gap: '12px', flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+                          <button
+                            className={styles.addCycleButton}
+                            onClick={() => {
+                              setCalculationResult(null);
+                              setShowForm(true);
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+                              <path d="M21 12a9 9 0 01-9 9"></path>
+                              <path d="M3 12a9 9 0 019-9"></path>
+                              <path d="M12 7l-3-3 3-3"></path>
+                              <path d="M12 17l3 3-3 3"></path>
+                            </svg>
+                            Tính toán lại
+                          </button>
+                          {isLoggedIn && (
+                            <button
+                              className={styles.saveButton}
+                              onClick={handleSaveCycleToDatabase}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                <polyline points="7 3 7 8 15 8"></polyline>
+                              </svg>
+                              Lưu chu kỳ vào hồ sơ
+                            </button>
+                          )}
+                        </Box>
                         <button
                           className={styles.resetButton}
                           onClick={() => setCalculationResult(null)}
@@ -1451,9 +1456,13 @@ const OvulationPage = ({ stats }) => {
                       {/* Lưu ý */}
                       <Box className={styles.healthAdviceNote}>
                         <b>Lưu ý:</b> Đây chỉ là kết quả tính toán dự đoán. Kết
-                        quả thực tế có thể khác do nhiều yếu tố ảnh hưởng. Để có
-                        dữ liệu chính xác hơn, hãy chọn "Bạn đang tính chỉ số
-                        cho chính mình?" và lưu thông tin vào hồ sơ.
+                        quả thực tế có thể khác do nhiều yếu tố ảnh hưởng.
+                        {isLoggedIn && (
+                          <span> Bạn có thể lưu kết quả tính toán này vào hồ sơ bằng cách bấm nút "Lưu chu kỳ vào hồ sơ".</span>
+                        )}
+                        {!isLoggedIn && (
+                          <span> Đăng nhập để lưu chu kỳ vào hồ sơ cá nhân của bạn.</span>
+                        )}
                       </Box>
                     </Card>
                   </Box>

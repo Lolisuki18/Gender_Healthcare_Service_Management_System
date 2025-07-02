@@ -3,13 +3,11 @@ import {
   Box, 
   Button, 
   TextField, 
-  Checkbox, 
-  FormControlLabel, 
   Typography,
   Divider
 } from "@mui/material";
 import { makeStyles } from '@mui/styles';
-import { CalendarToday, Timer, Loop, Notifications, Person } from '@mui/icons-material';
+import { CalendarToday, Timer, Loop } from '@mui/icons-material';
 
 const useStyles = makeStyles({
   formContainer: {
@@ -266,6 +264,21 @@ const useStyles = makeStyles({
     letterSpacing: 0.1,
     lineHeight: 1.4,
   },
+  warningText: {
+    fontSize: '0.875rem',
+    color: '#f59e0b',
+    marginTop: 8,
+    fontWeight: 500,
+    letterSpacing: 0.1,
+    lineHeight: 1.4,
+    padding: '8px 12px',
+    backgroundColor: '#fffbeb',
+    border: '1px solid #fed7aa',
+    borderRadius: 8,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
 });
 
 const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode = false }) => {
@@ -274,10 +287,12 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
     startDate: "",
     numberOfDays: "",
     cycleLength: "",
-    reminderEnabled: false,
-    saveToDatabase: false,
   });
   const [dateError, setDateError] = useState("");
+  const [warnings, setWarnings] = useState({
+    numberOfDays: "",
+    cycleLength: "",
+  });
 
   // Initialize form with initialData when in edit mode
   React.useEffect(() => {
@@ -294,11 +309,56 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
         startDate: formatDateForInput(initialData.startDate),
         numberOfDays: initialData.numberOfDays || "",
         cycleLength: initialData.cycleLength || "",
-        reminderEnabled: initialData.reminderEnabled || false,
-        saveToDatabase: true, // Always save when editing
       });
+      
+      // Check for warnings with initial data
+      if (initialData.numberOfDays && initialData.cycleLength) {
+        checkAllWarnings(initialData.numberOfDays, initialData.cycleLength);
+      }
     }
   }, [isEditMode, initialData]);
+
+  // Hàm kiểm tra dữ liệu bất thường cho cả hai field
+  const checkAllWarnings = (numberOfDaysValue, cycleLengthValue) => {
+    const newWarnings = {
+      numberOfDays: "",
+      cycleLength: "",
+    };
+    
+    const days = Number(numberOfDaysValue);
+    const length = Number(cycleLengthValue);
+    
+    // Kiểm tra số ngày hành kinh
+    if (days > 0) {
+      if (days === 1) {
+        newWarnings.numberOfDays = "⚠️ Kỳ kinh chỉ 1 ngày là rất bất thường, nên tham khảo bác sĩ";
+      } else if (days < 3) {
+        newWarnings.numberOfDays = "⚠️ Kỳ kinh ngắn hơn 3 ngày có thể không bình thường";
+      } else if (days > 7) {
+        newWarnings.numberOfDays = "⚠️ Kỳ kinh dài hơn 7 ngày có thể không bình thường";
+      }
+    }
+    
+    // Kiểm tra độ dài chu kỳ
+    if (length > 0) {
+      if (length < 15) {
+        newWarnings.cycleLength = "⚠️ Chu kỳ quá ngắn, có thể không đúng hoặc cần khám bác sĩ";
+      } else if (length < 21) {
+        newWarnings.cycleLength = "⚠️ Chu kỳ ngắn hơn 21 ngày có thể không bình thường";
+      } else if (length > 35 && length <= 90) {
+        newWarnings.cycleLength = "⚠️ Chu kỳ dài hơn 35 ngày có thể không bình thường";
+      } else if (length > 90) {
+        newWarnings.cycleLength = "⚠️ Chu kỳ quá dài, có thể không đúng hoặc cần khám bác sĩ";
+      }
+    }
+    
+    // Kiểm tra cross-field validation
+    if (days > 0 && length > 0 && days > length) {
+      newWarnings.numberOfDays = "⚠️ Số ngày hành kinh không thể dài hơn chu kỳ";
+    }
+    
+    setWarnings(newWarnings);
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -317,10 +377,22 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
       }
     }
     
-    setForm((prev) => ({
-      ...prev,
+    // Update form first
+    const updatedForm = {
+      ...form,
       [name]: type === "checkbox" ? checked : value,
-    }));
+    };
+    
+    setForm(updatedForm);
+    
+    // Kiểm tra cảnh báo cho dữ liệu bất thường chỉ khi thay đổi numberOfDays hoặc cycleLength
+    if (name === "numberOfDays" || name === "cycleLength") {
+      // Use the updated values to check warnings
+      const numberOfDaysValue = name === "numberOfDays" ? value : updatedForm.numberOfDays;
+      const cycleLengthValue = name === "cycleLength" ? value : updatedForm.cycleLength;
+      
+      checkAllWarnings(numberOfDaysValue, cycleLengthValue);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -340,10 +412,12 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
       startDate: "",
       numberOfDays: "",
       cycleLength: "",
-      reminderEnabled: false,
-      saveToDatabase: false,
     });
     setDateError(""); // Clear error on successful submit
+    setWarnings({
+      numberOfDays: "",
+      cycleLength: "",
+    }); // Clear warnings on successful submit
   };
 
   const handleReset = () => {
@@ -351,10 +425,12 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
       startDate: "",
       numberOfDays: "",
       cycleLength: "",
-      reminderEnabled: false,
-      saveToDatabase: false,
     });
     setDateError(""); // Clear date error when resetting
+    setWarnings({
+      numberOfDays: "",
+      cycleLength: "",
+    }); // Clear warnings when resetting
   };
 
   return (
@@ -420,9 +496,15 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
                 className={classes.textField}
                 placeholder="Ví dụ: 5"
               />
-              <Typography className={classes.helpText}>
-                Thường từ 3-7 ngày
-              </Typography>
+              {warnings.numberOfDays ? (
+                <Typography className={classes.warningText}>
+                  {warnings.numberOfDays}
+                </Typography>
+              ) : (
+                <Typography className={classes.helpText}>
+                  Thường từ 3-7 ngày
+                </Typography>
+              )}
             </Box>
 
             {/* Độ dài chu kỳ */}
@@ -442,65 +524,54 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
                 className={classes.textField}
                 placeholder="Ví dụ: 28"
               />
-              <Typography className={classes.helpText}>
-                Khoảng cách từ ngày đầu kỳ này đến ngày đầu kỳ trước
-              </Typography>
+              {warnings.cycleLength ? (
+                <Typography className={classes.warningText}>
+                  {warnings.cycleLength}
+                </Typography>
+              ) : (
+                <Typography className={classes.helpText}>
+                  Khoảng cách từ ngày đầu kỳ này đến ngày đầu kỳ trước
+                </Typography>
+              )}
             </Box>
 
             <Divider className={classes.divider} />
 
-            {/* Tính cho chính mình - chỉ hiển thị khi không ở edit mode */}
-            {!isEditMode && (
-              <Box className={classes.checkboxWrapper}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={form.saveToDatabase}
-                      onChange={handleChange}
-                      name="saveToDatabase"
-                      color="primary"
-                    />
-                  }
-                  label={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Person className={classes.notificationIcon} />
-                      Bạn đang tính chỉ số cho chính mình?
-                    </Box>
-                  }
-                  className={classes.checkboxLabel}
-                />
-                <Typography className={classes.helpText}>
-                  {form.saveToDatabase 
-                    ? "Dữ liệu sẽ được lưu vào hồ sơ cá nhân của bạn" 
-                    : "Chỉ tính toán và hiển thị kết quả mà không lưu trữ"}
-                </Typography>
-              </Box>
-            )}
 
-            {/* Nhắc nhở - chỉ hiển thị khi saveToDatabase = true hoặc khi edit mode */}
-            {(form.saveToDatabase || isEditMode) && (
-              <Box className={classes.checkboxWrapper}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={form.reminderEnabled}
-                      onChange={handleChange}
-                      name="reminderEnabled"
-                      color="primary"
-                    />
-                  }
-                  label={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Notifications className={classes.notificationIcon} />
-                      Bật nhắc nhở ngày rụng trứng
-                    </Box>
-                  }
-                  className={classes.checkboxLabel}
-                />
-              </Box>
-            )}
-          </Box>
         </Box>
+
+        {/* Thông báo tổng hợp về dữ liệu bất thường */}
+        {(warnings.numberOfDays || warnings.cycleLength) && (
+          <Box 
+            sx={{
+              marginTop: 3,
+              padding: '16px',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffeaa7',
+              borderRadius: '12px',
+              color: '#856404',
+            }}
+          >
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontSize: '1rem', 
+                fontWeight: 600, 
+                marginBottom: 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              ⚠️ Lưu ý về dữ liệu
+            </Typography>
+            <Typography sx={{ fontSize: '0.9rem', lineHeight: 1.5 }}>
+              Dữ liệu bạn nhập có một số điểm bất thường. Điều này có thể bình thường đối với một số người, 
+              nhưng nếu bạn lo lắng, hãy tham khảo ý kiến bác sĩ chuyên khoa để được tư vấn chính xác.
+            </Typography>
+          </Box>
+        )}
+      </Box>
 
         {/* Actions */}
         <Box className={classes.actions}>
@@ -525,7 +596,7 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
             variant="contained" 
             className={classes.submitButton}
           >
-            {isEditMode ? 'Cập nhật chu kỳ' : (form.saveToDatabase ? 'Lưu chu kỳ' : 'Tính toán')}
+            {isEditMode ? 'Cập nhật chu kỳ' : 'Tính toán'}
           </Button>
         </Box>
       </form>
