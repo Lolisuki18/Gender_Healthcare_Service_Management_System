@@ -448,6 +448,16 @@ function TestRegistrationPage() {
   const [detailType, setDetailType] = useState('single');               // Loại chi tiết ('single' hoặc 'package')
   const [loadingDetail, setLoadingDetail] = useState(false);            // Trạng thái loading chi tiết
 
+  // ===== STATE QUẢN LÝ DIALOG THÔNG TIN THẺ =====
+  const [cardDialogOpen, setCardDialogOpen] = useState(false);           // Hiển thị dialog nhập thông tin thẻ
+  const [cardInfo, setCardInfo] = useState({                             // Thông tin thẻ
+    cardNumber: '',
+    expiryMonth: '',
+    expiryYear: '',
+    cvc: '',
+    cardHolderName: ''
+  });
+
   // ===== ROUTER HOOKS =====
   const location = useLocation();  // Hook để lấy location object (state từ navigate)
   const navigate = useNavigate();  // Hook để điều hướng giữa các trang
@@ -669,6 +679,38 @@ function TestRegistrationPage() {
     return true;
   };
 
+  /**
+   * Xử lý khi thay đổi phương thức thanh toán
+   * @param {string} method - Phương thức thanh toán được chọn
+   */
+  const handlePaymentMethodChange = (method) => {
+    setPaymentMethod(method);
+    
+    // Nếu chọn VISA, mở dialog nhập thông tin thẻ
+    if (method === 'visa') {
+      setCardDialogOpen(true);
+    }
+  };
+
+  /**
+   * Xử lý khi đóng dialog thông tin thẻ
+   */
+  const handleCloseCardDialog = () => {
+    setCardDialogOpen(false);
+    // Nếu đóng dialog mà chưa nhập thông tin, chuyển về cash
+    if (!cardInfo.cardNumber || !cardInfo.cardHolderName) {
+      setPaymentMethod('cash');
+    }
+  };
+
+  /**
+   * Xử lý khi lưu thông tin thẻ
+   */
+  const handleSaveCardInfo = (cardData) => {
+    setCardInfo(cardData);
+    setCardDialogOpen(false);
+  };
+
   // ===============================
   // BOOKING API HANDLER - Xử lý đặt lịch xét nghiệm
   // ===============================
@@ -758,6 +800,15 @@ function TestRegistrationPage() {
     // Thêm serviceId hoặc packageId tùy theo loại đã chọn
     if (serviceId) payload.serviceId = serviceId;
     if (packageId) payload.packageId = packageId;
+    
+    // Thêm thông tin thẻ nếu chọn VISA
+    if (paymentMethod === 'visa') {
+      payload.cardNumber = cardInfo.cardNumber;
+      payload.expiryMonth = cardInfo.expiryMonth;
+      payload.expiryYear = cardInfo.expiryYear;
+      payload.cvc = cardInfo.cvc;
+      payload.cardHolderName = cardInfo.cardHolderName;
+    }
     
     console.log('Payload gửi đăng ký:', payload);
     
@@ -1214,7 +1265,7 @@ function TestRegistrationPage() {
                   {/* Radio group để chọn payment method */}
                   <RadioGroup
                     value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    onChange={(e) => handlePaymentMethodChange(e.target.value)}
                     sx={{ mb: 2 }}
                   >
                     {/* Option thanh toán tiền mặt */}
@@ -1314,6 +1365,15 @@ function TestRegistrationPage() {
                           <Typography sx={{ fontWeight: 600, color: '#616161' }}>Ghi chú:</Typography>
                           <Typography sx={{ fontWeight: 500, color: '#212121', maxWidth: '60%', textAlign: 'right' }}>
                             {note}
+                          </Typography>
+                        </Box>
+                      )}
+                      {/* Thông tin thẻ (nếu chọn VISA) */}
+                      {paymentMethod === 'visa' && cardInfo.cardNumber && (
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography sx={{ fontWeight: 600, color: '#616161' }}>Thẻ:</Typography>
+                          <Typography sx={{ fontWeight: 700, color: '#212121' }}>
+                            **** **** **** {cardInfo.cardNumber.slice(-4)}
                           </Typography>
                         </Box>
                       )}
@@ -1430,10 +1490,291 @@ function TestRegistrationPage() {
           message={bookingMessage}
           onClose={() => navigate('/')}
         />
+
+        {/* Dialog nhập thông tin thẻ */}
+        <CardInfoDialog
+          open={cardDialogOpen}
+          cardInfo={cardInfo}
+          onClose={handleCloseCardDialog}
+          onSave={handleSaveCardInfo}
+        />
       </Container>
     </Box>
   );
 }
+
+// ===== COMPONENT DIALOG NHẬP THÔNG TIN THẺ =====
+const CardInfoDialog = ({ open, cardInfo, onClose, onSave }) => {
+  const [formData, setFormData] = useState(cardInfo);
+  const [errors, setErrors] = useState({});
+
+  // Reset form khi dialog mở
+  useEffect(() => {
+    if (open) {
+      setFormData(cardInfo);
+      setErrors({});
+    }
+  }, [open, cardInfo]);
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error khi user bắt đầu nhập
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Validate card number (16 digits)
+    if (!formData.cardNumber || formData.cardNumber.length !== 16) {
+      newErrors.cardNumber = 'Số thẻ phải có 16 chữ số';
+    }
+
+    // Validate expiry month (1-12)
+    if (!formData.expiryMonth || formData.expiryMonth < 1 || formData.expiryMonth > 12) {
+      newErrors.expiryMonth = 'Tháng hết hạn phải từ 1-12';
+    }
+
+    // Validate expiry year (current year or later)
+    const currentYear = new Date().getFullYear();
+    if (!formData.expiryYear || formData.expiryYear < currentYear) {
+      newErrors.expiryYear = 'Năm hết hạn phải từ năm hiện tại trở đi';
+    }
+
+    // Validate CVC (3-4 digits)
+    if (!formData.cvc || formData.cvc.length < 3 || formData.cvc.length > 4) {
+      newErrors.cvc = 'CVC phải có 3-4 chữ số';
+    }
+
+    // Validate card holder name
+    if (!formData.cardHolderName || formData.cardHolderName.trim().length < 2) {
+      newErrors.cardHolderName = 'Tên chủ thẻ phải có ít nhất 2 ký tự';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = () => {
+    if (validateForm()) {
+      onSave(formData);
+    }
+  };
+
+  return (
+    <Box
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: open ? 'flex' : 'none',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        p: 2,
+      }}
+      onClick={onClose}
+    >
+      <Box
+        sx={{
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: 3,
+          p: 4,
+          maxWidth: 500,
+          width: '100%',
+          maxHeight: '90vh',
+          overflow: 'auto',
+          boxShadow: '0 8px 32px rgba(33,150,243,0.12)',
+          border: '1px solid rgba(33, 150, 243, 0.08)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Typography variant="h5" fontWeight={700} mb={3} textAlign="center" color="#1565c0">
+          💳 Nhập thông tin thẻ Visa
+        </Typography>
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {/* Số thẻ */}
+          <Box>
+            <Typography variant="body2" fontWeight={600} mb={1} color="#616161">
+              Số thẻ *
+            </Typography>
+            <input
+              type="text"
+              value={formData.cardNumber}
+              onChange={(e) => handleInputChange('cardNumber', e.target.value.replace(/\D/g, '').slice(0, 16))}
+              placeholder="1234 5678 9012 3456"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: `2px solid ${errors.cardNumber ? '#f44336' : '#e0e0e0'}`,
+                borderRadius: '8px',
+                fontSize: '16px',
+                outline: 'none',
+                transition: 'border-color 0.3s',
+              }}
+            />
+            {errors.cardNumber && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                {errors.cardNumber}
+              </Typography>
+            )}
+          </Box>
+
+          {/* Tháng và năm hết hạn */}
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2" fontWeight={600} mb={1} color="#616161">
+                Tháng hết hạn *
+              </Typography>
+              <input
+                type="number"
+                value={formData.expiryMonth}
+                onChange={(e) => handleInputChange('expiryMonth', e.target.value.slice(0, 2))}
+                placeholder="MM"
+                min="1"
+                max="12"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: `2px solid ${errors.expiryMonth ? '#f44336' : '#e0e0e0'}`,
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  outline: 'none',
+                  transition: 'border-color 0.3s',
+                }}
+              />
+              {errors.expiryMonth && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                  {errors.expiryMonth}
+                </Typography>
+              )}
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2" fontWeight={600} mb={1} color="#616161">
+                Năm hết hạn *
+              </Typography>
+              <input
+                type="number"
+                value={formData.expiryYear}
+                onChange={(e) => handleInputChange('expiryYear', e.target.value.slice(0, 4))}
+                placeholder="YYYY"
+                min={new Date().getFullYear()}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: `2px solid ${errors.expiryYear ? '#f44336' : '#e0e0e0'}`,
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  outline: 'none',
+                  transition: 'border-color 0.3s',
+                }}
+              />
+              {errors.expiryYear && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                  {errors.expiryYear}
+                </Typography>
+              )}
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2" fontWeight={600} mb={1} color="#616161">
+                CVC *
+              </Typography>
+              <input
+                type="text"
+                value={formData.cvc}
+                onChange={(e) => handleInputChange('cvc', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                placeholder="123"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: `2px solid ${errors.cvc ? '#f44336' : '#e0e0e0'}`,
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  outline: 'none',
+                  transition: 'border-color 0.3s',
+                }}
+              />
+              {errors.cvc && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                  {errors.cvc}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+
+          {/* Tên chủ thẻ */}
+          <Box>
+            <Typography variant="body2" fontWeight={600} mb={1} color="#616161">
+              Tên chủ thẻ *
+            </Typography>
+            <input
+              type="text"
+              value={formData.cardHolderName}
+              onChange={(e) => handleInputChange('cardHolderName', e.target.value)}
+              placeholder="NGUYEN VAN A"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: `2px solid ${errors.cardHolderName ? '#f44336' : '#e0e0e0'}`,
+                borderRadius: '8px',
+                fontSize: '16px',
+                outline: 'none',
+                transition: 'border-color 0.3s',
+                textTransform: 'uppercase',
+              }}
+            />
+            {errors.cardHolderName && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                {errors.cardHolderName}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+
+        {/* Nút hành động */}
+        <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
+          <Button
+            variant="outlined"
+            onClick={onClose}
+            sx={{
+              flex: 1,
+              py: 1.5,
+              borderColor: '#2196F3',
+              color: '#2196F3',
+              '&:hover': {
+                borderColor: '#1976D2',
+                backgroundColor: 'rgba(33,150,243,0.08)',
+              },
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            sx={{
+              flex: 1,
+              py: 1.5,
+              background: 'linear-gradient(45deg, #2196F3, #00BFA5)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #00BFA5, #2196F3)',
+              },
+            }}
+          >
+            Lưu thông tin
+          </Button>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
 
 // ===============================
 // PROPTYPES & EXPORT
