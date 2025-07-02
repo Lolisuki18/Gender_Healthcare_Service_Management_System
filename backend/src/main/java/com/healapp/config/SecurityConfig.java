@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +27,10 @@ import org.springframework.security.web.authentication.logout.LogoutSuccessHandl
 
 import com.healapp.model.UserDtls;
 import com.healapp.repository.UserRepository;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -83,6 +83,26 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/sti-packages").permitAll()
                         .requestMatchers(HttpMethod.GET, "/sti-packages/{packageId}").permitAll()
 
+                        // ========= BLOG PUBLIC ENDPOINTS =========
+                        .requestMatchers(HttpMethod.GET, "/blog").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/blog/{postId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/blog/category/{categoryId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/blog/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/blog/latest").permitAll()
+
+                        // ========= RATING PUBLIC ENDPOINTS =========
+                        .requestMatchers(HttpMethod.GET, "/ratings/consultant/{consultantId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/ratings/sti-service/{serviceId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/ratings/sti-package/{packageId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/ratings/summary/consultant/{consultantId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/ratings/summary/sti-service/{serviceId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/ratings/summary/sti-package/{packageId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/ratings/testimonials").permitAll()
+
+                        // ========= QUESTION PUBLIC ENDPOINTS =========
+                        .requestMatchers(HttpMethod.GET, "/questions/answered").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/questions/search").permitAll()
+
                         // ========= AUTHENTICATED USER ENDPOINTS =========
                         // USER PROFILE MANAGEMENT
                         .requestMatchers(HttpMethod.GET, "/users/profile").authenticated()
@@ -111,12 +131,36 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/sti-services/packages").permitAll()
                         .requestMatchers(HttpMethod.GET, "/sti-services/packages/{packageId}").permitAll()
 
+                        // ========= BLOG AUTHENTICATED ENDPOINTS =========
+                        .requestMatchers(HttpMethod.POST, "/blog").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/blog/{postId}").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/blog/{postId}").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/blog/my-posts").authenticated()
+
+                        // ========= RATING AUTHENTICATED ENDPOINTS =========
+                        .requestMatchers(HttpMethod.POST, "/ratings/consultant/{consultantId}").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/ratings/sti-service/{serviceId}").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/ratings/sti-package/{packageId}").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/ratings/{ratingId}").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/ratings/{ratingId}").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/ratings/my-ratings").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/ratings/can-rate/{targetType}/{targetId}").authenticated()
+
+                        // ========= QUESTION AUTHENTICATED ENDPOINTS =========
+                        .requestMatchers(HttpMethod.POST, "/questions").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/questions/category/{categoryId}").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/questions/my-questions").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/questions/{questionId}").authenticated()
+
                         // ========= CONSULTANT ENDPOINTS =========
                         // API Consultant Profile Management
                         .requestMatchers(HttpMethod.PUT, "/consultants/profile/{userId}").hasRole("CONSULTANT")
 
                         // API Consultations (Consultant actions)
                         .requestMatchers(HttpMethod.GET, "/consultations/assigned").hasRole("CONSULTANT")
+
+                        // ========= CONSULTANT QUESTION ENDPOINTS =========
+                        .requestMatchers(HttpMethod.PUT, "/questions/{questionId}/answer").hasRole("CONSULTANT")
 
                         // ========= STAFF ENDPOINTS =========
                         // STI Services management
@@ -138,6 +182,27 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/sti-services/packages").hasRole("STAFF")
                         .requestMatchers(HttpMethod.PUT, "/sti-services/packages/{packageId}").hasRole("STAFF")
                         .requestMatchers(HttpMethod.DELETE, "/sti-services/packages/{packageId}").hasRole("STAFF")
+
+                        // ========= BLOG STAFF ENDPOINTS =========
+                        .requestMatchers(HttpMethod.PUT, "/blog/{postId}/status").hasRole("STAFF")
+
+                        // ========= RATING STAFF ENDPOINTS =========
+                        .requestMatchers(HttpMethod.GET, "/ratings/staff/all").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/ratings/staff/consultation").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/ratings/staff/sti-service").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/ratings/staff/sti-package").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/ratings/staff/summary/all").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/ratings/staff/summary/consultation").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/ratings/staff/summary/sti-service").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/ratings/staff/summary/sti-package").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.POST, "/ratings/staff/reply/{ratingId}").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.PUT, "/ratings/staff/reply/{ratingId}").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.DELETE, "/ratings/staff/reply/{ratingId}").hasRole("STAFF")
+
+                        // ========= QUESTION STAFF ENDPOINTS =========
+                        .requestMatchers(HttpMethod.PUT, "/questions/{questionId}/status").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.DELETE, "/questions/{questionId}").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/questions/status/{status}").hasRole("STAFF")
 
                         // ========= ADMIN ENDPOINTS =========
                         // API User & Admin Management
