@@ -182,6 +182,12 @@ apiClient.interceptors.response.use(
           // Refresh token cũng hết hạn, đăng xuất user
           localStorageUtil.remove('token');
 
+          // Nếu có flag skipAutoRedirect, không redirect và không alert
+          if (error.config?.skipAutoRedirect) {
+            console.log('🔄 Skipping auto-redirect for refresh token failure due to skipAutoRedirect flag');
+            return Promise.reject(error);
+          }
+
           // Thông báo cho người dùng
           alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
 
@@ -191,7 +197,15 @@ apiClient.interceptors.response.use(
           }
         }
       } else {
-        console.log('❌ No refresh token available, redirecting to login');
+        console.log('❌ No refresh token available');
+        
+        // Nếu có flag skipAutoRedirect, không redirect
+        if (error.config?.skipAutoRedirect) {
+          console.log('🔄 Skipping auto-redirect for no refresh token due to skipAutoRedirect flag');
+          return Promise.reject(error);
+        }
+
+        console.log('🔄 Redirecting to login');
         // Không có refresh token, chuyển về trang login
         localStorageUtil.remove('token');
 

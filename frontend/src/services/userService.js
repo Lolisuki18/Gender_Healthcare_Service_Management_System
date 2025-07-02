@@ -43,11 +43,16 @@ export const userService = {
   },
 
   // Lấy thông tin người dùng hiện tại
-  getCurrentUser: async () => {
+  getCurrentUser: async (skipAutoRedirect = false) => {
     try {
-      const response = await apiClient.get('/users/profile');
+      console.log("🔍 [userService.getCurrentUser] skipAutoRedirect:", skipAutoRedirect);
+      const response = await apiClient.get('/users/profile', {
+        skipAutoRedirect
+      });
+      console.log("✅ [userService.getCurrentUser] Success:", response.data);
       return response.data;
     } catch (error) {
+      console.log("❌ [userService.getCurrentUser] Error:", error);
       throw error.response?.data || error;
     }
   },

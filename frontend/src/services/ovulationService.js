@@ -6,9 +6,12 @@ const API_URL = '/menstrual-cycle';
 const ovulationService = {
   getCurrentUser: async () => {
     try {
+      console.log('🔍 [ovulationService] Calling getCurrentUser with skipAutoRedirect flag');
       const response = await apiClient.get("/users/profile", { skipAutoRedirect: true });
+      console.log('✅ [ovulationService] getCurrentUser success:', response.data);
       return response.data;
     } catch (error) {
+      console.log('❌ [ovulationService] getCurrentUser error:', error);
       // Không redirect, chỉ trả về null nếu lỗi 401 hoặc không có user
       return null;
     }
@@ -37,9 +40,12 @@ const ovulationService = {
   // Lấy tất cả menstrual cycle
   getAllMenstrualCycles: async () => {
     try {
-      const response = await apiClient.get(API_URL);
+      console.log('🔍 [ovulationService] Calling getAllMenstrualCycles with skipAutoRedirect flag');
+      const response = await apiClient.get(API_URL, { skipAutoRedirect: true });
+      console.log('✅ [ovulationService] getAllMenstrualCycles success:', response.data);
       return response.data;
     } catch (error) {
+      console.log('❌ [ovulationService] getAllMenstrualCycles error:', error);
       throw error.response?.data || error;
     }
   },
@@ -47,9 +53,12 @@ const ovulationService = {
   // Lấy tất cả menstrual cycle với tỉ lệ mang thai
   getAllMenstrualCyclesWithPregnancyProb: async () => {
     try {
-      const response = await apiClient.get(`${API_URL}/pregnancy-prob`);
+      console.log('🔍 [ovulationService] Calling getAllMenstrualCyclesWithPregnancyProb with skipAutoRedirect flag');
+      const response = await apiClient.get(`${API_URL}/pregnancy-prob`, { skipAutoRedirect: true });
+      console.log('✅ [ovulationService] getAllMenstrualCyclesWithPregnancyProb success:', response.data);
       return response.data;
     } catch (error) {
+      console.log('❌ [ovulationService] getAllMenstrualCyclesWithPregnancyProb error:', error);
       throw error.response?.data || error;
     }
   },
@@ -91,14 +100,14 @@ const ovulationService = {
 
   // ===================================== Tính toán =====================================
   // Dự đoán chu kỳ kinh nguyệt tiếp theo
-  predictNextCycle: async () => {
-    try {
-      const response = await apiClient.get(`${API_URL}/predict`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
+  // predictNextCycle: async () => {
+  //   try {
+  //     const response = await apiClient.get(`${API_URL}/predict`);
+  //     return response.data;
+  //   } catch (error) {
+  //     throw error.response?.data || error;
+  //   }
+  // },
 
 };
 

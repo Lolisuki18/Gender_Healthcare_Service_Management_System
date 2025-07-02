@@ -1,0 +1,20 @@
+// Test script to verify ovulation page fix
+console.log("=== Testing Ovulation Page Fix ===");
+console.log("1. Navigate to http://localhost:3000/ovulation");
+console.log("2. Open Developer Tools > Console");
+console.log("3. Clear localStorage to simulate no login");
+console.log("4. Reload the page");
+console.log("");
+console.log("Expected behavior:");
+console.log("✅ Should see debug logs showing skipAutoRedirect=true");
+console.log("✅ Should NOT redirect to /login");
+console.log("✅ Should show ovulation page with login button");
+console.log("");
+console.log("Debug logs to look for:");
+console.log("- [UserContext] Calling fetchCurrentUser with skipAutoRedirect=true");
+console.log("- [fetchCurrentUser] skipAutoRedirect parameter: true");
+console.log("- [userService.getCurrentUser] skipAutoRedirect: true");
+console.log("- [API] Skipping auto-redirect due to skipAutoRedirect flag");
+console.log("");
+console.log("To clear localStorage, run in browser console:");
+console.log("localStorage.clear()");

@@ -613,7 +613,7 @@ const OvulationPage = ({ stats }) => {
       });
     }
 
-    if (getAverageCycleLength(menstrualCycles) < 21) {
+    if (getAverageCycleLength(menstrualCycles) < 21 && getAverageCycleLength(menstrualCycles) !== null) {
       advice.push({
         icon: <Zap className="h-6 w-6 text-red-600" />,
         title: 'Chu kỳ ngắn',

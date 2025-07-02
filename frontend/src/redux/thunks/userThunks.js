@@ -218,9 +218,10 @@ export const updateProfile = createAsyncThunk(
  */
 export const fetchCurrentUser = createAsyncThunk(
   "auth/fetchCurrentUser",
-  async (_, { dispatch }) => {
+  async (skipAutoRedirect = false, { dispatch }) => {
     try {
-      const response = await userService.getCurrentUser();
+      console.log("🔍 [fetchCurrentUser] skipAutoRedirect parameter:", skipAutoRedirect);
+      const response = await userService.getCurrentUser(skipAutoRedirect);
 
       if (response.success) {
         dispatch(loginSuccess(response.data));
@@ -231,6 +232,7 @@ export const fetchCurrentUser = createAsyncThunk(
         );
       }
     } catch (error) {
+      console.log("❌ [fetchCurrentUser] Error:", error);
       // Nếu là lỗi 401 Unauthorized, thực hiện đăng xuất
       if (error.response?.status === 401) {
         dispatch(logout());
