@@ -183,7 +183,7 @@ const OvulationPage = ({ stats }) => {
     if (!Array.isArray(menstrualCycles) || menstrualCycles.length === 0) return null;
 
     try {
-      const lastCycle = menstrualCycles[menstrualCycles.length - 1];
+      const lastCycle = menstrualCycles[0];
       const cycleLength = lastCycle.cycleLength;
 
       let nextCycleStart = new Date(lastCycle.startDate);
@@ -217,6 +217,24 @@ const OvulationPage = ({ stats }) => {
   
   //   return consistency;
   // };
+
+  const getAverageCycleLengthOfCurrentCycles = (menstrualCycles) => {
+    if (!Array.isArray(menstrualCycles) || menstrualCycles.length === 0) return null;
+
+    try {
+      // Lấy 3 chu kỳ gần nhất để đánh giá
+      const recentCycles = menstrualCycles.slice(0, 3);
+      const total = recentCycles.reduce((sum, cycle) => sum + (cycle.cycleLength || 0), 0);
+      const average = total / recentCycles.length;
+      return Math.round(average);
+    } catch (error) {
+      console.error('Lỗi khi tính average cycle length:', error);
+      return null;
+    }
+  };
+
+  const averageCycleLengthOfCurrentCycles = getAverageCycleLengthOfCurrentCycles(menstrualCycles);
+
   const getConsistency = (menstrualCycles) => {
     console.log('🔍 [getConsistency] Input data:', menstrualCycles);
     
@@ -613,7 +631,7 @@ const OvulationPage = ({ stats }) => {
       });
     }
 
-    if (getAverageCycleLength(menstrualCycles) < 21 && getAverageCycleLength(menstrualCycles) !== null) {
+    if (averageCycleLengthOfCurrentCycles < 21 && averageCycleLengthOfCurrentCycles !== null) {
       advice.push({
         icon: <Zap className="h-6 w-6 text-red-600" />,
         title: 'Chu kỳ ngắn',
@@ -625,7 +643,7 @@ const OvulationPage = ({ stats }) => {
         ],
         color: 'red',
       });
-    } else if (getAverageCycleLength(menstrualCycles) > 35) {
+    } else if (averageCycleLengthOfCurrentCycles > 35) {
       advice.push({
         icon: <Lightbulb className="h-6 w-6 text-blue-600" />,
         title: 'Chu kỳ dài',

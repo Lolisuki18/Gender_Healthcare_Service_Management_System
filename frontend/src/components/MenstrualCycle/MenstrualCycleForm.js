@@ -303,14 +303,14 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
-    // Validate start date - chỉ cho phép nhập ngày trong quá khứ hoặc ngày hiện tại
+    // Validate start date - chỉ cho phép nhập ngày trong quá khứ, không cho phép ngày hôm nay
     if (name === "startDate" && value) {
       const selectedDate = new Date(value);
       const today = new Date();
-      today.setHours(23, 59, 59, 999); // Set to end of today for comparison
+      today.setHours(0, 0, 0, 0); // Set to beginning of today for comparison
       
-      if (selectedDate > today) {
-        setDateError("Ngày bắt đầu chu kỳ chỉ có thể là ngày trong quá khứ hoặc hôm nay");
+      if (selectedDate >= today) {
+        setDateError("Ngày bắt đầu chu kỳ chỉ có thể là ngày trong quá khứ");
         return; // Don't update form if date is invalid
       } else {
         setDateError(""); // Clear error if date is valid
@@ -389,14 +389,14 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
                 className={classes.textField}
                 placeholder="Chọn ngày bắt đầu"
                 inputProps={{ 
-                  max: new Date().toISOString().split('T')[0] // Chỉ cho phép chọn ngày từ quá khứ đến hôm nay
+                  max: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Chỉ cho phép chọn ngày trước hôm nay
                 }}
                 error={!!dateError}
                 helperText={dateError}
               />
               {!dateError && (
                 <Typography className={classes.helpText}>
-                  Ngày đầu tiên của kỳ kinh nguyệt (chỉ có thể chọn ngày trong quá khứ hoặc hôm nay)
+                  Ngày đầu tiên của kỳ kinh nguyệt (chỉ có thể chọn ngày trong quá khứ)
                 </Typography>
               )}
             </Box>
@@ -416,7 +416,7 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
                 onChange={handleChange}
                 fullWidth
                 required
-                inputProps={{ min: 1, max: 10 }}
+                inputProps={{ min: 1, max: 30 }}
                 className={classes.textField}
                 placeholder="Ví dụ: 5"
               />
@@ -438,7 +438,7 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
                 onChange={handleChange}
                 fullWidth
                 required
-                inputProps={{ min: 21, max: 40 }}
+                inputProps={{ min: 1, max: 90 }}
                 className={classes.textField}
                 placeholder="Ví dụ: 28"
               />
