@@ -179,6 +179,7 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.primary.main,
 }));
 
+// Định nghĩa lại timeSlotOptions dùng code gốc làm value
 const timeSlotOptions = [
   { value: '8-10', label: '08:00-10:00 sáng' },
   { value: '10-12', label: '10:00-12:00 trưa' },
@@ -253,6 +254,14 @@ const RatingWrapper = styled(Box)(({ theme }) => ({
   gap: 4,
 }));
 
+// Map từ giá trị API sang value của timeSlotOptions
+const slotValueMap = {
+  '8-10': '08:00-10:00 sáng',
+  '10-12': '10:00-12:00 trưa',
+  '13-15': '13:00-15:00 chiều',
+  '15-17': '15:00-17:00 chiều',
+};
+
 const ConsultationPage = () => {
   const [consultants, setConsultants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -285,10 +294,56 @@ const ConsultationPage = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(null);
 
+  // State for available slots
+  const [availableSlots, setAvailableSlots] = useState([]);
+
   // Fetch consultants on component mount
   useEffect(() => {
     fetchConsultants();
   }, []);
+
+  // Fetch available slots khi mở dialog hoặc đổi ngày/consultant
+  useEffect(() => {
+    const fetchSlots = async () => {
+      if (
+        appointmentDialog.open &&
+        appointmentForm.date &&
+        appointmentForm.consultantId
+      ) {
+        const formattedDate = format(appointmentForm.date, 'yyyy-MM-dd');
+        const res = await consultantService.getAvailableTimeSlots(
+          appointmentForm.consultantId,
+          formattedDate
+        );
+        if (res.success && Array.isArray(res.data)) {
+          // Chỉ lấy slot code gốc có available: true
+          setAvailableSlots(
+            res.data.filter((slot) => slot.available).map((slot) => slot.slot)
+          );
+        } else {
+          setAvailableSlots([]);
+        }
+      } else {
+        setAvailableSlots([]);
+      }
+    };
+    fetchSlots();
+  }, [
+    appointmentDialog.open,
+    appointmentForm.date,
+    appointmentForm.consultantId,
+  ]);
+
+  // Reset lại timeSlot nếu không còn hợp lệ khi availableSlots thay đổi
+  useEffect(() => {
+    if (
+      appointmentForm.timeSlot &&
+      availableSlots.length > 0 &&
+      !availableSlots.includes(appointmentForm.timeSlot)
+    ) {
+      handleFormChange('timeSlot', '');
+    }
+  }, [availableSlots]);
 
   const fetchConsultants = async () => {
     setLoading(true);
@@ -391,10 +446,7 @@ const ConsultationPage = () => {
       setFormError('Vui lòng chọn khung giờ');
       return;
     }
-    if (!appointmentForm.reason || appointmentForm.reason.trim() === '') {
-      setFormError('Vui lòng nhập lý do tư vấn');
-      return;
-    }
+    // Không còn validate lý do tư vấn
     setSubmitting(true);
     setFormError(null);
     try {
@@ -404,7 +456,7 @@ const ConsultationPage = () => {
         consultantId: appointmentForm.consultantId,
         date: formattedDate,
         timeSlot: appointmentForm.timeSlot,
-        reason: appointmentForm.reason,
+        reason: appointmentForm.reason, // vẫn gửi lên nếu có
       };
       // Gửi request đặt lịch
       const response =
@@ -794,6 +846,12 @@ const ConsultationPage = () => {
                   />
                 </LocalizationProvider>
 
+                {availableSlots.length === 0 && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    Không còn khung giờ trống cho ngày này, vui lòng chọn ngày
+                    khác.
+                  </Alert>
+                )}
                 <FormControl fullWidth margin="normal">
                   <InputLabel>Chọn khung giờ</InputLabel>
                   <Select
@@ -806,9 +864,17 @@ const ConsultationPage = () => {
                       <ScheduleIcon sx={{ mr: 1, color: 'primary.main' }} />
                     }
                     sx={{ background: '#fff', borderRadius: 2 }}
+                    disabled={availableSlots.length === 0}
                   >
                     {timeSlotOptions.map((slot) => (
-                      <MenuItem key={slot.value} value={slot.value}>
+                      <MenuItem
+                        key={slot.value}
+                        value={slot.value}
+                        disabled={
+                          availableSlots.length === 0 ||
+                          !availableSlots.includes(slot.value)
+                        }
+                      >
                         {slot.label}
                       </MenuItem>
                     ))}
@@ -816,16 +882,15 @@ const ConsultationPage = () => {
                 </FormControl>
 
                 <TextField
-                  label="Lý do tư vấn (bắt buộc)"
+                  label="Lý do tư vấn"
                   value={appointmentForm.reason}
                   onChange={(e) => handleFormChange('reason', e.target.value)}
-                  required
                   fullWidth
                   multiline
                   minRows={2}
                   maxRows={4}
                   sx={{ mt: 2, background: '#fff', borderRadius: 2 }}
-                  placeholder="Nhập lý do bạn muốn được tư vấn..."
+                  placeholder="Nhập lý do bạn muốn được tư vấn... (không bắt buộc)"
                 />
               </Box>
             </DialogContent>

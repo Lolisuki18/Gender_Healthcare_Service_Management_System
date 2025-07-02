@@ -24,7 +24,7 @@
  * - expandedItems: object - Trạng thái mở/đóng của sub-menus
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   Drawer,
   List,
@@ -39,7 +39,7 @@ import {
   Collapse,
   IconButton,
   Chip,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Dashboard as DashboardIcon,
   Person as PersonIcon,
@@ -53,11 +53,11 @@ import {
   ExpandMore,
   Close as CloseIcon,
   Lock as LockIcon,
-} from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-import localStorageUtil from "@/utils/localStorage";
-import imageUrl from "@/utils/imageUrl";
-import { listenToAvatarUpdates } from "@/utils/storageEvent";
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+import localStorageUtil from '@/utils/localStorage';
+import imageUrl from '@/utils/imageUrl';
+import { listenToAvatarUpdates } from '@/utils/storageEvent';
 
 // Constants
 const drawerWidth = 280; // Chiều rộng cố định của sidebar
@@ -67,48 +67,48 @@ const drawerWidth = 280; // Chiều rộng cố định của sidebar
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
   width: drawerWidth,
   flexShrink: 0,
-  "& .MuiDrawer-paper": {
+  '& .MuiDrawer-paper': {
     width: drawerWidth,
-    boxSizing: "border-box",
+    boxSizing: 'border-box',
     background:
-      "linear-gradient(165deg, #F5F7FA 0%, #E3F2FD 50%, #F5F7FA 100%)",
-    borderRight: "1px solid rgba(74, 144, 226, 0.15)",
-    color: "#2D3748",
-    backdropFilter: "blur(20px)",
+      'linear-gradient(165deg, #F5F7FA 0%, #E3F2FD 50%, #F5F7FA 100%)',
+    borderRight: '1px solid rgba(74, 144, 226, 0.15)',
+    color: '#2D3748',
+    backdropFilter: 'blur(20px)',
   },
 }));
 
 // User profile section styling
 const UserProfile = styled(Box)(({ theme }) => ({
   padding: theme.spacing(3, 2),
-  textAlign: "center",
-  background: "rgba(255, 255, 255, 0.8)",
-  backdropFilter: "blur(20px)",
-  borderBottom: "1px solid rgba(74, 144, 226, 0.15)",
-  position: "relative",
+  textAlign: 'center',
+  background: 'rgba(255, 255, 255, 0.8)',
+  backdropFilter: 'blur(20px)',
+  borderBottom: '1px solid rgba(74, 144, 226, 0.15)',
+  position: 'relative',
 }));
 
 // Custom styled list item với hover effects và transitions
 const StyledListItem = styled(ListItemButton)(({ theme }) => ({
-  margin: "6px 12px",
-  borderRadius: "12px",
-  transition: "all 0.3s ease", // Smooth transitions
-  minHeight: "48px",
-  "&:hover": {
-    backgroundColor: "rgba(74, 144, 226, 0.08)", // Light medical blue hover
-    transform: "translateX(4px)", // Subtle slide effect
-    boxShadow: "0 4px 12px rgba(74, 144, 226, 0.15)",
+  margin: '6px 12px',
+  borderRadius: '12px',
+  transition: 'all 0.3s ease', // Smooth transitions
+  minHeight: '48px',
+  '&:hover': {
+    backgroundColor: 'rgba(74, 144, 226, 0.08)', // Light medical blue hover
+    transform: 'translateX(4px)', // Subtle slide effect
+    boxShadow: '0 4px 12px rgba(74, 144, 226, 0.15)',
   },
-  "&.Mui-selected": {
-    backgroundColor: "rgba(74, 144, 226, 0.15)", // Medical blue selected    borderLeft: "3px solid #4A90E2", // Medical blue border
-    "&:hover": {
-      backgroundColor: "rgba(74, 144, 226, 0.2)", // Lighter medical blue hover
+  '&.Mui-selected': {
+    backgroundColor: 'rgba(74, 144, 226, 0.15)', // Medical blue selected    borderLeft: "3px solid #4A90E2", // Medical blue border
+    '&:hover': {
+      backgroundColor: 'rgba(74, 144, 226, 0.2)', // Lighter medical blue hover
     },
-    "& .MuiListItemIcon-root": {
-      color: "#4A90E2", // Medical blue icon
+    '& .MuiListItemIcon-root': {
+      color: '#4A90E2', // Medical blue icon
     },
-    "& .MuiListItemText-primary": {
-      color: "#2D3748", // Dark text for medical theme
+    '& .MuiListItemText-primary': {
+      color: '#2D3748', // Dark text for medical theme
       fontWeight: 600,
     },
   },
@@ -116,9 +116,9 @@ const StyledListItem = styled(ListItemButton)(({ theme }) => ({
 
 const LogoSection = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
-  textAlign: "center",
-  borderBottom: "1px solid rgba(74, 144, 226, 0.15)", // Medical blue border
-  background: "rgba(255, 255, 255, 0.8)", // Light background for medical theme
+  textAlign: 'center',
+  borderBottom: '1px solid rgba(74, 144, 226, 0.15)', // Medical blue border
+  background: 'rgba(255, 255, 255, 0.8)', // Light background for medical theme
 }));
 
 const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
@@ -140,70 +140,58 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
   // Mỗi item có thể có sub-items cho menu phân cấp
   const menuItems = [
     {
-      id: "dashboard",
-      label: "Tổng quan",
+      id: 'dashboard',
+      label: 'Tổng quan',
       icon: <DashboardIcon />,
-      path: "/customer/dashboard", // Path không được sử dụng (tab-based navigation)
+      path: '/customer/dashboard', // Path không được sử dụng (tab-based navigation)
     },
     {
-      id: "profile",
-      label: "Hồ sơ cá nhân",
+      id: 'profile',
+      label: 'Hồ sơ cá nhân',
       icon: <PersonIcon />,
-      path: "/customer/profile",
+      path: '/customer/profile',
     },
     {
-      id: "security",
-      label: "Bảo mật",
+      id: 'security',
+      label: 'Bảo mật',
       icon: <LockIcon />,
-      path: "/customer/security",
+      path: '/customer/security',
     },
     {
-      id: "appointments",
-      label: "Lịch hẹn",
+      id: 'appointments',
+      label: 'Lịch hẹn',
       icon: <CalendarIcon />,
-      path: "/customer/appointments", // Note: Hiện tại dùng tab system
+      path: '/customer/appointments', // Note: Hiện tại dùng tab system
     },
     {
-      id: "medical-history",
-      label: "Lịch sử khám",
+      id: 'medical-history',
+      label: 'Lịch sử khám',
       icon: <HistoryIcon />,
-      path: "/customer/medical-history",
+      path: '/customer/medical-history',
     },
     {
-      id: "payments",
-      label: "Thanh toán",
+      id: 'invoices',
+      label: 'Hóa đơn',
       icon: <PaymentIcon />,
-      // Sub-menu cho các chức năng thanh toán
-      subItems: [
-        {
-          id: "payment-history",
-          label: "Lịch sử thanh toán",
-          path: "/customer/payments/history",
-        },
-        {
-          id: "invoices",
-          label: "Hóa đơn",
-          path: "/customer/payments/invoices",
-        },
-      ],
+      path: '/customer/payments/invoices',
     },
     {
-      id: "notifications",
-      label: "Thông báo",
+      id: 'notifications',
+      label: 'Thông báo',
       icon: <NotificationsIcon />,
-      path: "/customer/notifications",
+      path: '/customer/notifications',
     },
     {
-      id: "help",
-      label: "Trợ giúp",
+      id: 'help',
+      label: 'Trợ giúp',
       icon: <HelpIcon />,
-      path: "/customer/help",
+      path: '/customer/help',
     },
     {
-      id: "questions",
-      label: "Câu hỏi đã đặt",
+      id: 'questions',
+      label: 'Câu hỏi đã đặt',
       icon: <QuestionIcon />,
-      path: "/customer/questions",
+      path: '/customer/questions',
     },
   ]; // Thêm useState để quản lý key để force re-render component
   const [refreshKey, setRefreshKey] = useState(0);
@@ -213,8 +201,8 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
   useEffect(() => {
     const refreshUserData = () => {
       try {
-        const userProfileFromStorage = localStorageUtil.get("userProfile");
-        const userDataFromStorage = localStorageUtil.get("user");
+        const userProfileFromStorage = localStorageUtil.get('userProfile');
+        const userDataFromStorage = localStorageUtil.get('user');
 
         setUserProfile(userProfileFromStorage || {});
         setUserData(userDataFromStorage || {});
@@ -225,14 +213,14 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
             userProfileFromStorage.data.avatar
           );
           console.log(
-            "CustomerSidebar: Setting avatar from userProfile.data:",
+            'CustomerSidebar: Setting avatar from userProfile.data:',
             fullAvatarUrl
           );
           setAvatarUrl(fullAvatarUrl);
 
           // Lưu vào sessionStorage để đồng bộ giữa các component
           sessionStorage.setItem(
-            "last_updated_avatar",
+            'last_updated_avatar',
             userProfileFromStorage.data.avatar
           );
         } else if (userProfileFromStorage?.avatar) {
@@ -240,14 +228,14 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
             userProfileFromStorage.avatar
           );
           console.log(
-            "CustomerSidebar: Setting avatar from userProfile root:",
+            'CustomerSidebar: Setting avatar from userProfile root:',
             fullAvatarUrl
           );
           setAvatarUrl(fullAvatarUrl);
 
           // Lưu vào sessionStorage để đồng bộ
           sessionStorage.setItem(
-            "last_updated_avatar",
+            'last_updated_avatar',
             userProfileFromStorage.avatar
           );
         } else if (userDataFromStorage?.avatar) {
@@ -255,7 +243,7 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
             userDataFromStorage.avatar
           );
           console.log(
-            "CustomerSidebar: Setting avatar from userData:",
+            'CustomerSidebar: Setting avatar from userData:',
             fullAvatarUrl
           );
           setAvatarUrl(fullAvatarUrl);
@@ -264,7 +252,7 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
         // Force refresh để đảm bảo UI cập nhật
         forceRefresh();
       } catch (error) {
-        console.error("Error refreshing user data in CustomerSidebar:", error);
+        console.error('Error refreshing user data in CustomerSidebar:', error);
       }
     };
 
@@ -272,26 +260,26 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
 
     // Lắng nghe sự kiện storage để cập nhật khi localStorage thay đổi
     const handleStorageChange = (e) => {
-      console.log("Storage event detected in CustomerSidebar:", e.key);
+      console.log('Storage event detected in CustomerSidebar:', e.key);
       if (
-        e.key === "userProfile" ||
-        e.key === "avatar_sync_trigger" ||
-        e.key === "last_updated_avatar" ||
-        e.key === "user"
+        e.key === 'userProfile' ||
+        e.key === 'avatar_sync_trigger' ||
+        e.key === 'last_updated_avatar' ||
+        e.key === 'user'
       ) {
         console.log(
-          "Avatar update detected via storage event in CustomerSidebar"
+          'Avatar update detected via storage event in CustomerSidebar'
         );
         refreshUserData();
       }
     };
 
-    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener('storage', handleStorageChange);
 
     // Lắng nghe sự kiện direct update
     const handleDirectAvatarUpdate = (event) => {
       console.log(
-        "Direct avatar update event received in CustomerSidebar:",
+        'Direct avatar update event received in CustomerSidebar:',
         event.detail
       );
       if (event.detail && event.detail.avatarUrl) {
@@ -299,12 +287,12 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       }
     };
 
-    window.addEventListener("avatar_updated", handleDirectAvatarUpdate);
+    window.addEventListener('avatar_updated', handleDirectAvatarUpdate);
 
     // Đăng ký lắng nghe sự kiện cập nhật avatar từ hệ thống event
     const unsubscribe = listenToAvatarUpdates((newAvatarUrl) => {
       console.log(
-        "Avatar update from listenToAvatarUpdates in CustomerSidebar:",
+        'Avatar update from listenToAvatarUpdates in CustomerSidebar:',
         newAvatarUrl
       );
       refreshUserData();
@@ -312,9 +300,9 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
 
     // Cleanup function
     return () => {
-      console.log("Cleaning up event listeners in CustomerSidebar");
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("avatar_updated", handleDirectAvatarUpdate);
+      console.log('Cleaning up event listeners in CustomerSidebar');
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('avatar_updated', handleDirectAvatarUpdate);
       if (unsubscribe) unsubscribe();
     };
   }, []);
@@ -324,7 +312,7 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
   // Final check for avatar data from localStorage after component mount
   useEffect(() => {
     const timer = setTimeout(() => {
-      const freshUserProfile = localStorageUtil.get("userProfile");
+      const freshUserProfile = localStorageUtil.get('userProfile');
 
       // Update if we have fresh data with avatar
       if (freshUserProfile?.data?.avatar || freshUserProfile?.avatar) {
@@ -367,51 +355,51 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       anchor="left"
       open={open}
       sx={{
-        display: { xs: open ? "block" : "none", md: "block" },
-        "& .MuiDrawer-paper": {
-          position: { xs: "fixed", md: "relative" },
-          zIndex: { xs: 1300, md: "auto" },
+        display: { xs: open ? 'block' : 'none', md: 'block' },
+        '& .MuiDrawer-paper': {
+          position: { xs: 'fixed', md: 'relative' },
+          zIndex: { xs: 1300, md: 'auto' },
         },
       }}
     >
       {/* Header with close button for mobile */}
       <Box
         sx={{
-          display: { xs: "flex", md: "none" },
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: { xs: 'flex', md: 'none' },
+          justifyContent: 'space-between',
+          alignItems: 'center',
           p: 2,
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         }}
       >
         <Typography
           variant="h6"
           sx={{
             fontWeight: 700,
-            background: "linear-gradient(45deg, #3b82f6, #8b5cf6)",
-            backgroundClip: "text",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
+            background: 'linear-gradient(45deg, #3b82f6, #8b5cf6)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
           }}
         >
           Healthcare
         </Typography>
-        <IconButton onClick={onClose} sx={{ color: "#fff" }}>
+        <IconButton onClick={onClose} sx={{ color: '#fff' }}>
           <CloseIcon />
         </IconButton>
       </Box>
 
       {/* Logo Section for Desktop */}
-      <LogoSection sx={{ display: { xs: "none", md: "block" } }}>
-        {" "}
+      <LogoSection sx={{ display: { xs: 'none', md: 'block' } }}>
+        {' '}
         <Typography
           variant="h5"
           sx={{
             fontWeight: 700,
-            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical blue to teal
-            backgroundClip: "text",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
+            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)', // Medical blue to teal
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
             mb: 1,
           }}
         >
@@ -420,8 +408,8 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
         <Typography
           variant="body2"
           sx={{
-            color: "#607D8B", // Blue-gray for text
-            fontSize: "12px",
+            color: '#607D8B', // Blue-gray for text
+            fontSize: '12px',
           }}
         >
           Gender Healthcare Service
@@ -430,12 +418,12 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
 
       {/* User Profile Section */}
       <UserProfile>
-        <Box sx={{ position: "relative", display: "inline-block", mb: 2 }}>
-          {" "}
+        <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
+          {' '}
           <Avatar
             src={(() => {
               // Ưu tiên lấy trực tiếp từ userProfile mới nhất trong localStorage
-              const freshUserProfile = localStorageUtil.get("userProfile");
+              const freshUserProfile = localStorageUtil.get('userProfile');
               if (freshUserProfile?.data?.avatar) {
                 return imageUrl.getFullImageUrl(freshUserProfile.data.avatar);
               } else if (freshUserProfile?.avatar) {
@@ -445,28 +433,28 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
               // Nếu không có trong localStorage thì dùng state
               return avatarUrl;
             })()}
-            alt={userProfile?.data?.fullName || userProfile?.fullName || "User"}
+            alt={userProfile?.data?.fullName || userProfile?.fullName || 'User'}
             imgProps={{
-              loading: "eager",
+              loading: 'eager',
               // Force refresh avatar on each render by adding timestamp
               key: `sidebar-avatar-${Date.now()}-${refreshKey}`,
               onError: () => {
-                console.log("CustomerSidebar avatar failed to load");
+                console.log('CustomerSidebar avatar failed to load');
                 forceRefresh();
               },
               onLoad: () => {
-                console.log("CustomerSidebar avatar loaded successfully");
+                console.log('CustomerSidebar avatar loaded successfully');
               },
             }}
             sx={{
               width: { xs: 60, md: 80 },
               height: { xs: 60, md: 80 },
-              margin: "0 auto",
-              background: "linear-gradient(135deg, #4A90E2, #1ABC9C)",
-              fontSize: { xs: "24px", md: "32px" },
+              margin: '0 auto',
+              background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
+              fontSize: { xs: '24px', md: '32px' },
               fontWeight: 700,
-              boxShadow: "0 8px 32px rgba(74, 144, 226, 0.3)",
-              border: "3px solid rgba(255, 255, 255, 0.6)", // Light border for medical theme
+              boxShadow: '0 8px 32px rgba(74, 144, 226, 0.3)',
+              border: '3px solid rgba(255, 255, 255, 0.6)', // Light border for medical theme
             }}
           >
             {!avatarUrl && !userProfile?.avatar && !userProfile?.data?.avatar
@@ -474,71 +462,71 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
                 userProfile?.fullName?.[0] ||
                 userProfile?.data?.email?.[0] ||
                 userProfile?.email?.[0] ||
-                "U"
+                'U'
               : null}
           </Avatar>
           <Box
             sx={{
-              position: "absolute",
+              position: 'absolute',
               bottom: -2,
-              right: "50%",
-              transform: "translateX(50%)",
+              right: '50%',
+              transform: 'translateX(50%)',
               width: 20,
               height: 20,
-              borderRadius: "50%",
-              background: "linear-gradient(45deg, #4CAF50, #2ECC71)", // Medical green
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "2px solid rgba(255, 255, 255, 0.2)",
-              boxShadow: "0 2px 8px rgba(16, 185, 129, 0.3)",
+              borderRadius: '50%',
+              background: 'linear-gradient(45deg, #4CAF50, #2ECC71)', // Medical green
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid rgba(255, 255, 255, 0.2)',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
             }}
           >
             <Box
               sx={{
                 width: 6,
                 height: 6,
-                borderRadius: "50%",
-                background: "#fff",
+                borderRadius: '50%',
+                background: '#fff',
               }}
             />
           </Box>
-        </Box>{" "}
+        </Box>{' '}
         <Typography
           variant="h6"
           sx={{
             fontWeight: 600,
             mb: 0.5,
-            fontSize: { xs: "16px", md: "18px" },
-            color: "#2D3748", // Dark text for medical theme
+            fontSize: { xs: '16px', md: '18px' },
+            color: '#2D3748', // Dark text for medical theme
           }}
         >
-          {userProfile?.data?.fullName || userProfile?.fullName || "Khách hàng"}
+          {userProfile?.data?.fullName || userProfile?.fullName || 'Khách hàng'}
         </Typography>
         <Typography
           variant="body2"
           sx={{
-            color: "#4A5568", // Muted text for medical theme
-            fontSize: "13px",
+            color: '#4A5568', // Muted text for medical theme
+            fontSize: '13px',
             mb: 1,
-            wordBreak: "break-all",
+            wordBreak: 'break-all',
           }}
         >
           {userProfile?.data?.email ||
             userProfile?.email ||
             userData?.email ||
-            "email@example.com"}
-        </Typography>{" "}
+            'email@example.com'}
+        </Typography>{' '}
         <Chip
           label="Đã xác thực"
           size="small"
           sx={{
-            background: "linear-gradient(45deg, #4CAF50, #2ECC71)", // Medical green
-            color: "#fff",
+            background: 'linear-gradient(45deg, #4CAF50, #2ECC71)', // Medical green
+            color: '#fff',
             fontWeight: 500,
-            fontSize: "11px",
-            height: "24px",
-            boxShadow: "0 2px 8px rgba(76, 175, 80, 0.25)",
+            fontSize: '11px',
+            height: '24px',
+            boxShadow: '0 2px 8px rgba(76, 175, 80, 0.25)',
           }}
         />
       </UserProfile>
@@ -552,15 +540,15 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
                 selected={selectedItem === item.id}
                 onClick={() => handleItemClick(item)}
               >
-                {" "}
+                {' '}
                 <ListItemIcon
                   sx={{
                     color:
                       selectedItem === item.id
-                        ? "#4A90E2" // Medical blue
-                        : "#4A5568", // Dark gray for unselected
+                        ? '#4A90E2' // Medical blue
+                        : '#4A5568', // Dark gray for unselected
                     minWidth: 40,
-                    transition: "color 0.3s ease",
+                    transition: 'color 0.3s ease',
                   }}
                 >
                   {item.icon}
@@ -568,16 +556,16 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
                 <ListItemText
                   primary={item.label}
                   sx={{
-                    "& .MuiTypography-root": {
-                      fontSize: "14px",
+                    '& .MuiTypography-root': {
+                      fontSize: '14px',
                       fontWeight: selectedItem === item.id ? 600 : 500,
-                      color: selectedItem === item.id ? "#2D3748" : "#4A5568",
-                      transition: "all 0.3s ease",
+                      color: selectedItem === item.id ? '#2D3748' : '#4A5568',
+                      transition: 'all 0.3s ease',
                     },
                   }}
                 />
                 {item.subItems && (
-                  <Box sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
+                  <Box sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
                     {expandedItems[item.id] ? <ExpandLess /> : <ExpandMore />}
                   </Box>
                 )}
@@ -594,7 +582,7 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
                 <List component="div" disablePadding>
                   {item.subItems.map((subItem) => (
                     <ListItem key={subItem.id} disablePadding>
-                      {" "}
+                      {' '}
                       <StyledListItem
                         selected={selectedItem === subItem.id}
                         onClick={() => {
@@ -610,18 +598,18 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
                           mr: 1,
                           borderLeft:
                             selectedItem === subItem.id
-                              ? "2px solid #3b82f6"
-                              : "2px solid transparent",
+                              ? '2px solid #3b82f6'
+                              : '2px solid transparent',
                         }}
                       >
                         <ListItemIcon
                           sx={{
                             color:
                               selectedItem === subItem.id
-                                ? "#4A90E2"
-                                : "#4A5568",
+                                ? '#4A90E2'
+                                : '#4A5568',
                             minWidth: 40,
-                            transition: "color 0.3s ease",
+                            transition: 'color 0.3s ease',
                           }}
                         >
                           {item.icon}
@@ -629,15 +617,15 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
                         <ListItemText
                           primary={subItem.label}
                           sx={{
-                            "& .MuiTypography-root": {
-                              fontSize: "13px",
+                            '& .MuiTypography-root': {
+                              fontSize: '13px',
                               fontWeight:
                                 selectedItem === subItem.id ? 600 : 400,
                               color:
                                 selectedItem === subItem.id
-                                  ? "#2D3748"
-                                  : "#4A5568",
-                              transition: "all 0.3s ease",
+                                  ? '#2D3748'
+                                  : '#4A5568',
+                              transition: 'all 0.3s ease',
                             },
                           }}
                         />
@@ -651,7 +639,7 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
         ))}
       </List>
 
-      <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)", mx: 2 }} />
+      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', mx: 2 }} />
     </StyledDrawer>
   );
 };

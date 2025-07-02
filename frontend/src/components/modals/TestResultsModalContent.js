@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -29,6 +29,10 @@ import {
   PictureAsPdf as PdfIcon,
 } from '@mui/icons-material';
 import stiService from '../../services/stiService';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
+import ExportTestResultPDF from './ExportTestResultPDF';
 
 // Styled Components
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
@@ -130,6 +134,8 @@ const TestResultsModalContent = ({ testId, onClose }) => {
   const [viewMode, setViewMode] = useState('package'); // 'package' or 'component'
   const [testPackageInfo, setTestPackageInfo] = useState(null);
   const [expandedAccordions, setExpandedAccordions] = useState({});
+  const printRef = useRef();
+  const [showExportUI, setShowExportUI] = useState(false);
 
   // Handler for accordion expansion
   const handleAccordionChange = (panel) => (_, isExpanded) => {
@@ -168,6 +174,7 @@ const TestResultsModalContent = ({ testId, onClose }) => {
           serviceId: response.data.serviceId,
           packageName: response.data.serviceName, // In the response, serviceName has package name too
           serviceName: response.data.serviceName,
+          customerName: response.data.customerName,
         };
       }
       return { isPackage: false };
@@ -211,10 +218,14 @@ const TestResultsModalContent = ({ testId, onClose }) => {
 
             // Create package info with test metadata
             setTestPackageInfo({
+              ...testTypeInfo,
               testId: testId,
               packageId: testTypeInfo.packageId,
               packageName: testTypeInfo.packageName || 'Gói xét nghiệm STI',
-              customerName: data[0]?.reviewerName || 'Khách hàng',
+              customerName:
+                testTypeInfo.customerName ||
+                data[0]?.customerName ||
+                'Khách hàng',
               reviewedAt: data[0]?.reviewedAt,
               completedComponents: data.length,
               totalComponents: data.length,
@@ -236,12 +247,13 @@ const TestResultsModalContent = ({ testId, onClose }) => {
             // For single service tests, use standard component view
             if (data.length > 0) {
               setTestPackageInfo({
+                ...testTypeInfo,
                 testId: data[0].testId,
                 packageName:
                   testTypeInfo.serviceName ||
                   data[0].testName ||
                   `Xét nghiệm ${data[0].componentName}`,
-                customerName: data[0].reviewerName || 'Khách hàng',
+                customerName: data[0].customerName || 'Khách hàng',
                 reviewedAt: data[0].reviewedAt,
                 completedComponents: data.length,
                 totalComponents: data.length,
@@ -308,6 +320,73 @@ const TestResultsModalContent = ({ testId, onClose }) => {
     }
   }, [testId]);
 
+  const handleExportPDF = async () => {
+    const element = printRef.current;
+    if (!element) return;
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save('ket_qua_xet_nghiem.pdf');
+  };
+
+  // Chuẩn hóa dữ liệu để truyền sang ExportTestResultPDF
+  const getExportData = () => {
+    let info = {};
+    let rows = [];
+    let conclusion = '';
+    let customerName = '';
+    if (viewMode === 'package' && testPackageInfo) {
+      customerName = testPackageInfo.customerName || 'Khách hàng';
+      info = {
+        testId: testPackageInfo.testId || testId,
+        customerName,
+        date:
+          Array.isArray(testPackageInfo.reviewedAt) &&
+          testPackageInfo.reviewedAt.length >= 3
+            ? `${testPackageInfo.reviewedAt[2]}/${testPackageInfo.reviewedAt[1]}/${testPackageInfo.reviewedAt[0]}`
+            : 'Không xác định',
+        packageName: testPackageInfo.packageName,
+      };
+      rows = (testPackageInfo.components || []).flatMap((comp) =>
+        (comp.results || []).map((r) => ({
+          ...r,
+          date: info.date,
+          reviewerName: customerName,
+        }))
+      );
+      conclusion = rows.some((r) => r.resultValue?.toLowerCase() !== 'negative')
+        ? 'Đã phát hiện dấu hiệu bất thường trong xét nghiệm. Vui lòng tham khảo ý kiến bác sĩ để được tư vấn chi tiết.'
+        : 'Tất cả các chỉ số đều trong giới hạn bình thường. Kết quả xét nghiệm âm tính.';
+    } else if (results && results.length > 0) {
+      customerName = results[0]?.customerName || 'Khách hàng';
+      info = {
+        testId: results[0]?.testId || testId,
+        customerName,
+        date:
+          Array.isArray(results[0]?.reviewedAt) &&
+          results[0].reviewedAt.length >= 3
+            ? `${results[0].reviewedAt[2]}/${results[0].reviewedAt[1]}/${results[0].reviewedAt[0]}`
+            : 'Không xác định',
+        packageName: results[0]?.testName || '',
+      };
+      rows = results.map((r) => ({
+        ...r,
+        date:
+          Array.isArray(r.reviewedAt) && r.reviewedAt.length >= 3
+            ? `${r.reviewedAt[2]}/${r.reviewedAt[1]}/${r.reviewedAt[0]}`
+            : 'Không xác định',
+        reviewerName: customerName,
+      }));
+      conclusion = rows.some((r) => r.resultValue?.toLowerCase() !== 'negative')
+        ? 'Đã phát hiện dấu hiệu dương tính trong xét nghiệm. Vui lòng tham khảo ý kiến bác sĩ để được tư vấn chi tiết.'
+        : 'Tất cả các chỉ số đều trong giới hạn bình thường. Kết quả xét nghiệm âm tính.';
+    }
+    return { info, rows, conclusion };
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -335,128 +414,370 @@ const TestResultsModalContent = ({ testId, onClose }) => {
       : 100;
 
     return (
-      <Box sx={{ mt: 3 }}>
-        {/* Package Header */}
-        <Box sx={{ mb: 3 }}>
-          <Typography
-            variant="h6"
+      <>
+        <div ref={printRef}>
+          <Box sx={{ mt: 3 }}>
+            {/* Package Header */}
+            <Box sx={{ mb: 3 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                  color: '#3b82f6',
+                  display: 'flex',
+                  alignItems: 'center',
+                  mb: 2,
+                }}
+              >
+                <ScienceIcon sx={{ mr: 1 }} />
+                {testPackageInfo.packageName || 'Gói xét nghiệm STI'}
+              </Typography>
+
+              {/* Status Message */}
+              <Alert
+                icon={<CheckIcon fontSize="inherit" />}
+                severity="success"
+                sx={{ mb: 2 }}
+              >
+                {results.some(
+                  (result) => result.resultValue?.toLowerCase() !== 'negative'
+                )
+                  ? 'Đã phát hiện chỉ số bất thường trong xét nghiệm. Vui lòng tham khảo ý kiến bác sĩ.'
+                  : 'Đã cập nhật kết quả xét nghiệm thành công. Tất cả các chỉ số đều bình thường.'}
+              </Alert>
+
+              {/* Test Information */}
+              <TestInfoCard>
+                <CardContent>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Typography variant="body2" color="text.secondary">
+                        Mã xét nghiệm:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="500">
+                        #{testPackageInfo.testId || testId}
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Typography variant="body2" color="text.secondary">
+                        Khách hàng:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="500">
+                        {testPackageInfo.customerName || 'Khách hàng'}
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Typography variant="body2" color="text.secondary">
+                        Ngày xét nghiệm:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="500">
+                        {Array.isArray(testPackageInfo.reviewedAt) &&
+                        testPackageInfo.reviewedAt.length >= 3
+                          ? `${testPackageInfo.reviewedAt[2]}/${testPackageInfo.reviewedAt[1]}/${testPackageInfo.reviewedAt[0]}`
+                          : 'Không xác định'}
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Typography variant="body2" color="text.secondary">
+                        Mã gói:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="500">
+                        {testPackageInfo.packageId
+                          ? `P${testPackageInfo.packageId}`
+                          : 'Không xác định'}
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Typography variant="body2" color="text.secondary">
+                        Người đánh giá:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="500">
+                        {results[0]?.reviewerName || 'Không xác định'}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </TestInfoCard>
+
+              {/* Progress Bar */}
+              <ProgressContainer>
+                <Box sx={{ width: '100%', mr: 1 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={progress}
+                    sx={{
+                      height: 10,
+                      borderRadius: 5,
+                      backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                      '& .MuiLinearProgress-bar': {
+                        borderRadius: 5,
+                        backgroundColor: '#10b981',
+                      },
+                    }}
+                  />
+                </Box>
+                <ProgressText color="text.secondary">
+                  {Math.round(progress)}% hoàn thành
+                </ProgressText>
+              </ProgressContainer>
+            </Box>
+
+            {/* Components List */}
+            <Box>
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 2,
+                  fontWeight: 600,
+                  color: '#3b82f6',
+                }}
+              >
+                Danh sách các dịch vụ trong gói xét nghiệm:
+              </Typography>
+
+              {error && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
+
+              {/* Accordion Test Components - Group by Component Type */}
+              {testPackageInfo.components &&
+                testPackageInfo.components.map((component, index) => (
+                  <TestComponentAccordion
+                    key={`panel-${index}`}
+                    expanded={expandedAccordions[`panel-${index}`] !== false}
+                    onChange={handleAccordionChange(`panel-${index}`)}
+                  >
+                    <TestComponentSummary
+                      expandIcon={<ExpandMoreIcon />}
+                      aria-controls={`panel-${index}-content`}
+                      id={`panel-${index}-header`}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography sx={{ fontWeight: 500 }}>
+                          {component.componentName || `Xét nghiệm ${index + 1}`}
+                        </Typography>
+                        <Box>
+                          {component.hasResults && (
+                            <StatusChip
+                              label={
+                                component.results.some(
+                                  (r) =>
+                                    r.resultValue?.toLowerCase() !== 'negative'
+                                )
+                                  ? 'Bất thường'
+                                  : 'Bình thường'
+                              }
+                              size="small"
+                              completed={
+                                component.results.some(
+                                  (r) =>
+                                    r.resultValue?.toLowerCase() !== 'negative'
+                                )
+                                  ? false
+                                  : true
+                              }
+                            />
+                          )}
+                        </Box>
+                      </Box>
+                    </TestComponentSummary>
+                    <AccordionDetails>
+                      {/* Component Results Table */}
+                      {component.results && component.results.length > 0 ? (
+                        <StyledTableContainer component={Paper}>
+                          <Table size="small" aria-label="test results table">
+                            <TableHead>
+                              <StyledTableRow>
+                                <StyledTableCell>
+                                  Thành phần xét nghiệm
+                                </StyledTableCell>
+                                <StyledTableCell align="center">
+                                  Kết quả
+                                </StyledTableCell>
+                                <StyledTableCell align="center">
+                                  Giới hạn bình thường
+                                </StyledTableCell>
+                                <StyledTableCell align="center">
+                                  Đơn vị
+                                </StyledTableCell>
+                              </StyledTableRow>
+                            </TableHead>
+                            <TableBody>
+                              {component.results.map((result, resultIdx) => (
+                                <StyledTableRow
+                                  key={`result-${index}-${resultIdx}`}
+                                >
+                                  <StyledTableCell component="th" scope="row">
+                                    {result.componentName}
+                                  </StyledTableCell>
+                                  <StyledTableCell align="center">
+                                    <Typography
+                                      sx={{
+                                        fontWeight: 600,
+                                        color:
+                                          result.resultValue?.toLowerCase() ===
+                                          'negative'
+                                            ? '#10b981'
+                                            : '#e53e3e',
+                                      }}
+                                    >
+                                      {translateValue(
+                                        result.resultValue,
+                                        'result'
+                                      )}
+                                    </Typography>
+                                  </StyledTableCell>
+                                  <StyledTableCell align="center">
+                                    {translateValue(
+                                      result.normalRange,
+                                      'range'
+                                    )}
+                                  </StyledTableCell>
+                                  <StyledTableCell align="center">
+                                    {translateValue(result.unit, 'unit')}
+                                  </StyledTableCell>
+                                </StyledTableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </StyledTableContainer>
+                      ) : (
+                        <Alert severity="info">
+                          Chưa có kết quả chi tiết cho thành phần xét nghiệm
+                          này.
+                        </Alert>
+                      )}
+
+                      {/* Interpretation if available */}
+                      {component.results.some(
+                        (r) => r.resultValue?.toLowerCase() !== 'negative'
+                      ) && (
+                        <Box
+                          sx={{
+                            mt: 2,
+                            p: 2,
+                            bgcolor: 'rgba(229, 62, 62, 0.05)',
+                            borderRadius: 1,
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{ color: '#e53e3e', fontWeight: 500 }}
+                          >
+                            Lưu ý: Có kết quả bất thường cần được bác sĩ tư vấn
+                            chi tiết.
+                          </Typography>
+                        </Box>
+                      )}
+                    </AccordionDetails>
+                  </TestComponentAccordion>
+                ))}
+            </Box>
+
+            {/* Summary Box */}
+            <Box
+              sx={{
+                mt: 4,
+                mb: 3,
+                p: 3,
+                bgcolor: '#f0f9ff',
+                borderRadius: 2,
+                border: '1px solid #bae6fd',
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{ mb: 2, color: '#0369a1', fontWeight: 600 }}
+              >
+                Kết luận xét nghiệm
+              </Typography>
+              <Typography variant="body1">
+                {results.some(
+                  (result) => result.resultValue?.toLowerCase() !== 'negative'
+                )
+                  ? 'Đã phát hiện dấu hiệu bất thường trong xét nghiệm. Vui lòng tham khảo ý kiến bác sĩ để được tư vấn chi tiết.'
+                  : 'Tất cả các chỉ số đều trong giới hạn bình thường. Kết quả xét nghiệm âm tính.'}
+              </Typography>
+            </Box>
+          </Box>
+        </div>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+          <Button variant="outlined" sx={{ mr: 2 }} onClick={onClose}>
+            Đóng
+          </Button>
+          <Button
+            variant="contained"
+            sx={{ bgcolor: '#3b82f6' }}
+            onClick={() => setShowExportUI(true)}
+          >
+            Xuất file PDF
+          </Button>
+        </Box>
+        {showExportUI && (
+          <ExportTestResultPDF
+            logo="/logo192.png"
+            testInfo={getExportData().info}
+            results={getExportData().rows}
+            conclusion={getExportData().conclusion}
+            onClose={() => setShowExportUI(false)}
+          />
+        )}
+      </>
+    );
+  }
+
+  // Component View - For individual tests
+  return (
+    <>
+      <div ref={printRef}>
+        <Box sx={{ mt: 3 }}>
+          <Box
             sx={{
-              fontWeight: 600,
-              color: '#3b82f6',
               display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
               mb: 2,
             }}
           >
-            <ScienceIcon sx={{ mr: 1 }} />
-            {testPackageInfo.packageName || 'Gói xét nghiệm STI'}
-          </Typography>
-
-          {/* Status Message */}
-          <Alert
-            icon={<CheckIcon fontSize="inherit" />}
-            severity="success"
-            sx={{ mb: 2 }}
-          >
-            {results.some(
-              (result) => result.resultValue?.toLowerCase() !== 'negative'
-            )
-              ? 'Đã phát hiện chỉ số bất thường trong xét nghiệm. Vui lòng tham khảo ý kiến bác sĩ.'
-              : 'Đã cập nhật kết quả xét nghiệm thành công. Tất cả các chỉ số đều bình thường.'}
-          </Alert>
-
-          {/* Test Information */}
-          <TestInfoCard>
-            <CardContent>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="body2" color="text.secondary">
-                    Mã xét nghiệm:
-                  </Typography>
-                  <Typography variant="body1" fontWeight="500">
-                    #{testPackageInfo.testId || testId}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="body2" color="text.secondary">
-                    Khách hàng:
-                  </Typography>
-                  <Typography variant="body1" fontWeight="500">
-                    {testPackageInfo.customerName || 'Khách hàng'}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="body2" color="text.secondary">
-                    Ngày xét nghiệm:
-                  </Typography>
-                  <Typography variant="body1" fontWeight="500">
-                    {Array.isArray(testPackageInfo.reviewedAt) &&
-                    testPackageInfo.reviewedAt.length >= 3
-                      ? `${testPackageInfo.reviewedAt[2]}/${testPackageInfo.reviewedAt[1]}/${testPackageInfo.reviewedAt[0]}`
-                      : 'Không xác định'}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="body2" color="text.secondary">
-                    Mã gói:
-                  </Typography>
-                  <Typography variant="body1" fontWeight="500">
-                    {testPackageInfo.packageId
-                      ? `P${testPackageInfo.packageId}`
-                      : 'Không xác định'}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="body2" color="text.secondary">
-                    Người đánh giá:
-                  </Typography>
-                  <Typography variant="body1" fontWeight="500">
-                    {results[0]?.reviewerName || 'Không xác định'}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </TestInfoCard>
-
-          {/* Progress Bar */}
-          <ProgressContainer>
-            <Box sx={{ width: '100%', mr: 1 }}>
-              <LinearProgress
-                variant="determinate"
-                value={progress}
-                sx={{
-                  height: 10,
-                  borderRadius: 5,
-                  backgroundColor: 'rgba(74, 144, 226, 0.1)',
-                  '& .MuiLinearProgress-bar': {
-                    borderRadius: 5,
-                    backgroundColor: '#10b981',
-                  },
-                }}
-              />
-            </Box>
-            <ProgressText color="text.secondary">
-              {Math.round(progress)}% hoàn thành
-            </ProgressText>
-          </ProgressContainer>
-        </Box>
-
-        {/* Components List */}
-        <Box>
-          <Typography
-            variant="h6"
-            sx={{
-              mb: 2,
-              fontWeight: 600,
-              color: '#3b82f6',
-            }}
-          >
-            Danh sách các dịch vụ trong gói xét nghiệm:
-          </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                color: '#3b82f6',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <ScienceIcon sx={{ mr: 1 }} />
+              Kết quả xét nghiệm
+            </Typography>
+            <Chip
+              label={
+                results.some((r) => r.resultValue?.toLowerCase() !== 'negative')
+                  ? 'DƯƠNG TÍNH'
+                  : 'ÂM TÍNH'
+              }
+              color={
+                results.some((r) => r.resultValue?.toLowerCase() !== 'negative')
+                  ? 'error'
+                  : 'success'
+              }
+              variant="filled"
+            />
+          </Box>
 
           {error && (
             <Alert severity="warning" sx={{ mb: 2 }}>
@@ -464,432 +785,222 @@ const TestResultsModalContent = ({ testId, onClose }) => {
             </Alert>
           )}
 
-          {/* Accordion Test Components - Group by Component Type */}
-          {testPackageInfo.components &&
-            testPackageInfo.components.map((component, index) => (
-              <TestComponentAccordion
-                key={`panel-${index}`}
-                expanded={expandedAccordions[`panel-${index}`] !== false}
-                onChange={handleAccordionChange(`panel-${index}`)}
-              >
-                <TestComponentSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  aria-controls={`panel-${index}-content`}
-                  id={`panel-${index}-header`}
+          {/* Test Info Section */}
+          <Card sx={{ mb: 3, borderRadius: '8px' }}>
+            <CardContent>
+              <Grid container>
+                {/* Left column - Test icon */}
+                <Grid
+                  item
+                  xs={2}
+                  md={1}
+                  sx={{ display: 'flex', justifyContent: 'center' }}
                 >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Typography sx={{ fontWeight: 500 }}>
-                      {component.componentName || `Xét nghiệm ${index + 1}`}
-                    </Typography>
-                    <Box>
-                      {component.hasResults && (
-                        <StatusChip
-                          label={
-                            component.results.some(
-                              (r) => r.resultValue?.toLowerCase() !== 'negative'
-                            )
-                              ? 'Bất thường'
-                              : 'Bình thường'
-                          }
-                          size="small"
-                          completed={
-                            component.results.some(
-                              (r) => r.resultValue?.toLowerCase() !== 'negative'
-                            )
-                              ? false
-                              : true
-                          }
-                        />
-                      )}
-                    </Box>
-                  </Box>
-                </TestComponentSummary>
-                <AccordionDetails>
-                  {/* Component Results Table */}
-                  {component.results && component.results.length > 0 ? (
-                    <StyledTableContainer component={Paper}>
-                      <Table size="small" aria-label="test results table">
-                        <TableHead>
-                          <StyledTableRow>
-                            <StyledTableCell>
-                              Thành phần xét nghiệm
-                            </StyledTableCell>
-                            <StyledTableCell align="center">
-                              Kết quả
-                            </StyledTableCell>
-                            <StyledTableCell align="center">
-                              Giới hạn bình thường
-                            </StyledTableCell>
-                            <StyledTableCell align="center">
-                              Đơn vị
-                            </StyledTableCell>
-                          </StyledTableRow>
-                        </TableHead>
-                        <TableBody>
-                          {component.results.map((result, resultIdx) => (
-                            <StyledTableRow
-                              key={`result-${index}-${resultIdx}`}
-                            >
-                              <StyledTableCell component="th" scope="row">
-                                {result.componentName}
-                              </StyledTableCell>
-                              <StyledTableCell align="center">
-                                <Typography
-                                  sx={{
-                                    fontWeight: 600,
-                                    color:
-                                      result.resultValue?.toLowerCase() ===
-                                      'negative'
-                                        ? '#10b981'
-                                        : '#e53e3e',
-                                  }}
-                                >
-                                  {translateValue(result.resultValue, 'result')}
-                                </Typography>
-                              </StyledTableCell>
-                              <StyledTableCell align="center">
-                                {translateValue(result.normalRange, 'range')}
-                              </StyledTableCell>
-                              <StyledTableCell align="center">
-                                {translateValue(result.unit, 'unit')}
-                              </StyledTableCell>
-                            </StyledTableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </StyledTableContainer>
-                  ) : (
-                    <Alert severity="info">
-                      Chưa có kết quả chi tiết cho thành phần xét nghiệm này.
-                    </Alert>
-                  )}
+                  <ScienceIcon color="primary" sx={{ fontSize: '2.5rem' }} />
+                </Grid>
 
-                  {/* Interpretation if available */}
-                  {component.results.some(
-                    (r) => r.resultValue?.toLowerCase() !== 'negative'
-                  ) && (
-                    <Box
-                      sx={{
-                        mt: 2,
-                        p: 2,
-                        bgcolor: 'rgba(229, 62, 62, 0.05)',
-                        borderRadius: 1,
-                      }}
+                {/* Middle column - Test Info */}
+                <Grid item xs={10} md={7}>
+                  <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                    {testPackageInfo?.packageName ||
+                      results[0]?.testName ||
+                      'Xét nghiệm phát hiện sớm virus HIV trong máu'}
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 1 }}
                     >
+                      <strong>Mã xét nghiệm:</strong> #
+                      {results[0]?.testId || testId || '3'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Khách hàng:</strong>{' '}
+                      {results[0]?.reviewerName || 'Khách hàng'}
+                    </Typography>
+                    {results[0]?.reviewedAt && (
                       <Typography
                         variant="body2"
-                        sx={{ color: '#e53e3e', fontWeight: 500 }}
+                        color="text.secondary"
+                        sx={{ mt: 1 }}
                       >
-                        Lưu ý: Có kết quả bất thường cần được bác sĩ tư vấn chi
-                        tiết.
+                        <strong>Ngày làm xét nghiệm:</strong>{' '}
+                        {Array.isArray(results[0]?.reviewedAt) &&
+                        results[0].reviewedAt.length >= 3
+                          ? `${results[0].reviewedAt[2]}/${results[0].reviewedAt[1]}/${results[0].reviewedAt[0]}`
+                          : 'Không xác định'}
                       </Typography>
-                    </Box>
-                  )}
-                </AccordionDetails>
-              </TestComponentAccordion>
-            ))}
-        </Box>
+                    )}
+                  </Box>
+                </Grid>
 
-        {/* Summary Box */}
-        <Box
-          sx={{
-            mt: 4,
-            mb: 3,
-            p: 3,
-            bgcolor: '#f0f9ff',
-            borderRadius: 2,
-            border: '1px solid #bae6fd',
-          }}
-        >
-          <Typography
-            variant="h6"
-            sx={{ mb: 2, color: '#0369a1', fontWeight: 600 }}
-          >
-            Kết luận xét nghiệm
-          </Typography>
-          <Typography variant="body1">
-            {results.some(
-              (result) => result.resultValue?.toLowerCase() !== 'negative'
-            )
-              ? 'Đã phát hiện dấu hiệu bất thường trong xét nghiệm. Vui lòng tham khảo ý kiến bác sĩ để được tư vấn chi tiết.'
-              : 'Tất cả các chỉ số đều trong giới hạn bình thường. Kết quả xét nghiệm âm tính.'}
-          </Typography>
-        </Box>
-
-        {/* Action Buttons */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-          <Button variant="outlined" sx={{ mr: 2 }} onClick={onClose}>
-            Đóng
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<PdfIcon />}
-            sx={{ bgcolor: '#3b82f6' }}
-            disabled
-          >
-            Xuất file PDF (sắp ra mắt)
-          </Button>
-        </Box>
-      </Box>
-    );
-  }
-
-  // Component View - For individual tests
-  return (
-    <Box sx={{ mt: 3 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-        }}
-      >
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 600,
-            color: '#3b82f6',
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          <ScienceIcon sx={{ mr: 1 }} />
-          Kết quả xét nghiệm
-        </Typography>
-        <Chip
-          label={
-            results.some((r) => r.resultValue?.toLowerCase() !== 'negative')
-              ? 'DƯƠNG TÍNH'
-              : 'ÂM TÍNH'
-          }
-          color={
-            results.some((r) => r.resultValue?.toLowerCase() !== 'negative')
-              ? 'error'
-              : 'success'
-          }
-          variant="filled"
-        />
-      </Box>
-
-      {error && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {/* Test Info Section */}
-      <Card sx={{ mb: 3, borderRadius: '8px' }}>
-        <CardContent>
-          <Grid container>
-            {/* Left column - Test icon */}
-            <Grid
-              item
-              xs={2}
-              md={1}
-              sx={{ display: 'flex', justifyContent: 'center' }}
-            >
-              <ScienceIcon color="primary" sx={{ fontSize: '2.5rem' }} />
-            </Grid>
-
-            {/* Middle column - Test Info */}
-            <Grid item xs={10} md={7}>
-              <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                {testPackageInfo?.packageName ||
-                  results[0]?.testName ||
-                  'Xét nghiệm phát hiện sớm virus HIV trong máu'}
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 1 }}
+                {/* Right column - status info */}
+                <Grid
+                  item
+                  xs={12}
+                  md={4}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                  }}
                 >
-                  <strong>Mã xét nghiệm:</strong> #
-                  {results[0]?.testId || testId || '3'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  <strong>Khách hàng:</strong>{' '}
-                  {results[0]?.reviewerName || 'Khách hàng'}
-                </Typography>
-                {results[0]?.reviewedAt && (
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 1 }}
-                  >
-                    <strong>Ngày làm xét nghiệm:</strong>{' '}
-                    {Array.isArray(results[0]?.reviewedAt) &&
-                    results[0].reviewedAt.length >= 3
-                      ? `${results[0].reviewedAt[2]}/${results[0].reviewedAt[1]}/${results[0].reviewedAt[0]}`
-                      : 'Không xác định'}
-                  </Typography>
-                )}
-              </Box>
-            </Grid>
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Trạng thái:
+                    </Typography>
+                    <Chip
+                      label="ĐÃ CÓ KẾT QUẢ"
+                      size="small"
+                      color="success"
+                      sx={{ fontWeight: 600, mt: 0.5 }}
+                    />
+                  </Box>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
 
-            {/* Right column - status info */}
-            <Grid
-              item
-              xs={12}
-              md={4}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-              }}
-            >
-              <Box sx={{ textAlign: 'right' }}>
-                <Typography variant="body2" color="text.secondary">
-                  Trạng thái:
+          {/* Test Components Section */}
+          <Box sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Box
+                sx={{
+                  bgcolor: '#3b82f6',
+                  color: 'white',
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mr: 1,
+                }}
+              >
+                <Typography variant="body2" fontWeight="bold">
+                  {results.length}
                 </Typography>
-                <Chip
-                  label="ĐÃ CÓ KẾT QUẢ"
-                  size="small"
-                  color="success"
-                  sx={{ fontWeight: 600, mt: 0.5 }}
-                />
               </Box>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+              <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                Các thành phần xét nghiệm
+              </Typography>
+            </Box>
 
-      {/* Test Components Section */}
-      <Box sx={{ mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            {/* Component Results Table */}
+            <StyledTableContainer component={Paper}>
+              <Table size="small" aria-label="test results table">
+                <TableHead>
+                  <StyledTableRow>
+                    <StyledTableCell>Thành phần</StyledTableCell>
+                    <StyledTableCell>Đơn vị</StyledTableCell>
+                    <StyledTableCell>Giới hạn bình thường</StyledTableCell>
+                    <StyledTableCell>Kết quả</StyledTableCell>
+                    <StyledTableCell>Thời gian</StyledTableCell>
+                    <StyledTableCell>Người đánh giá</StyledTableCell>
+                  </StyledTableRow>
+                </TableHead>
+                <TableBody>
+                  {results.map((result, index) => (
+                    <StyledTableRow key={`result-${index}`}>
+                      <StyledTableCell component="th" scope="row">
+                        {result.componentName || 'HIV Antibody'}
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        {translateValue(
+                          result.unit || 'Positive/Negative',
+                          'unit'
+                        )}
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <ResultBadge
+                          label={translateValue(
+                            result.normalRange || 'Negative',
+                            'range'
+                          )}
+                          size="small"
+                          status="negative"
+                        />
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <ResultBadge
+                          label={translateValue(
+                            result.resultValue || 'Negative',
+                            'result'
+                          )}
+                          size="small"
+                          status={
+                            result.resultValue?.toLowerCase() === 'negative'
+                              ? 'negative'
+                              : 'positive'
+                          }
+                        />
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        {Array.isArray(result.reviewedAt) &&
+                        result.reviewedAt.length >= 6
+                          ? `${result.reviewedAt[2]}/${result.reviewedAt[1]}/${result.reviewedAt[0]} ${result.reviewedAt[3]}:${result.reviewedAt[4]}`
+                          : 'Không xác định'}
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        {result.reviewerName || 'Không xác định'}
+                      </StyledTableCell>
+                    </StyledTableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </StyledTableContainer>
+          </Box>
+
+          {/* Result Summary */}
           <Box
             sx={{
-              bgcolor: '#3b82f6',
-              color: 'white',
-              width: 24,
-              height: 24,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mr: 1,
+              mt: 4,
+              mb: 3,
+              p: 3,
+              bgcolor: '#f0f9ff',
+              borderRadius: 2,
+              border: '1px solid #bae6fd',
             }}
           >
-            <Typography variant="body2" fontWeight="bold">
-              {results.length}
+            <Typography
+              variant="h6"
+              sx={{ mb: 2, color: '#0369a1', fontWeight: 600 }}
+            >
+              Kết luận xét nghiệm
+            </Typography>
+            <Typography variant="body1">
+              {results.some(
+                (result) => result.resultValue?.toLowerCase() !== 'negative'
+              )
+                ? 'Đã phát hiện dấu hiệu dương tính trong xét nghiệm. Vui lòng tham khảo ý kiến bác sĩ để được tư vấn chi tiết.'
+                : 'Tất cả các chỉ số đều trong giới hạn bình thường. Kết quả xét nghiệm âm tính.'}
             </Typography>
           </Box>
-          <Typography variant="h6" sx={{ fontWeight: 500 }}>
-            Các thành phần xét nghiệm
-          </Typography>
         </Box>
-
-        {/* Component Results Table */}
-        <StyledTableContainer component={Paper}>
-          <Table size="small" aria-label="test results table">
-            <TableHead>
-              <StyledTableRow>
-                <StyledTableCell>Thành phần</StyledTableCell>
-                <StyledTableCell>Đơn vị</StyledTableCell>
-                <StyledTableCell>Giới hạn bình thường</StyledTableCell>
-                <StyledTableCell>Kết quả</StyledTableCell>
-                <StyledTableCell>Thời gian</StyledTableCell>
-                <StyledTableCell>Người đánh giá</StyledTableCell>
-              </StyledTableRow>
-            </TableHead>
-            <TableBody>
-              {results.map((result, index) => (
-                <StyledTableRow key={`result-${index}`}>
-                  <StyledTableCell component="th" scope="row">
-                    {result.componentName || 'HIV Antibody'}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {translateValue(result.unit || 'Positive/Negative', 'unit')}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    <ResultBadge
-                      label={translateValue(
-                        result.normalRange || 'Negative',
-                        'range'
-                      )}
-                      size="small"
-                      status="negative"
-                    />
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    <ResultBadge
-                      label={translateValue(
-                        result.resultValue || 'Negative',
-                        'result'
-                      )}
-                      size="small"
-                      status={
-                        result.resultValue?.toLowerCase() === 'negative'
-                          ? 'negative'
-                          : 'positive'
-                      }
-                    />
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {Array.isArray(result.reviewedAt) &&
-                    result.reviewedAt.length >= 6
-                      ? `${result.reviewedAt[2]}/${result.reviewedAt[1]}/${result.reviewedAt[0]} ${result.reviewedAt[3]}:${result.reviewedAt[4]}`
-                      : 'Không xác định'}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {result.reviewerName || 'Không xác định'}
-                  </StyledTableCell>
-                </StyledTableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </StyledTableContainer>
-      </Box>
-
-      {/* Result Summary */}
-      <Box
-        sx={{
-          mt: 4,
-          mb: 3,
-          p: 3,
-          bgcolor: '#f0f9ff',
-          borderRadius: 2,
-          border: '1px solid #bae6fd',
-        }}
-      >
-        <Typography
-          variant="h6"
-          sx={{ mb: 2, color: '#0369a1', fontWeight: 600 }}
-        >
-          Kết luận xét nghiệm
-        </Typography>
-        <Typography variant="body1">
-          {results.some(
-            (result) => result.resultValue?.toLowerCase() !== 'negative'
-          )
-            ? 'Đã phát hiện dấu hiệu dương tính trong xét nghiệm. Vui lòng tham khảo ý kiến bác sĩ để được tư vấn chi tiết.'
-            : 'Tất cả các chỉ số đều trong giới hạn bình thường. Kết quả xét nghiệm âm tính.'}
-        </Typography>
-      </Box>
-
-      {/* Action Buttons */}
+      </div>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
         <Button variant="outlined" sx={{ mr: 2 }} onClick={onClose}>
           Đóng
         </Button>
         <Button
           variant="contained"
-          startIcon={<PdfIcon />}
           sx={{ bgcolor: '#3b82f6' }}
-          disabled
+          onClick={() => setShowExportUI(true)}
         >
-          Xuất file PDF (sắp ra mắt)
+          Xuất file PDF
         </Button>
       </Box>
-    </Box>
+      {showExportUI && (
+        <ExportTestResultPDF
+          logo="/logo192.png"
+          testInfo={getExportData().info}
+          results={getExportData().rows}
+          conclusion={getExportData().conclusion}
+          onClose={() => setShowExportUI(false)}
+        />
+      )}
+    </>
   );
 };
 

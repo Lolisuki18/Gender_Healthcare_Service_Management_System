@@ -59,6 +59,8 @@ import { formatDateDisplay } from '../../utils/dateUtils.js';
 import stiService from '../../services/stiService.js';
 // Import notification system
 import { toast } from 'react-toastify';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 // Styled Paper Component với hiệu ứng glass morphism hiện đại
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -339,8 +341,46 @@ const MedicalHistoryContent = () => {
     }
   };
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Lịch sử khám bệnh', 14, 16);
+
+    const tableColumn = [
+      'Ngày khám',
+      'Bác sĩ',
+      'Dịch vụ',
+      'Trạng thái',
+      'Ghi chú',
+    ];
+    const tableRows = medicalRecords.map((record) => [
+      formatDateDisplay(record.date),
+      record.doctor,
+      record.diagnosis,
+      record.displayStatus || record.status,
+      record.notes || '',
+    ]);
+
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 22,
+      styles: { font: 'helvetica', fontSize: 10 },
+    });
+
+    doc.save('lich_su_kham_benh.pdf');
+  };
+
   return (
     <Box sx={{ maxWidth: '1200px', mx: 'auto', p: { xs: 2, md: 4 } }}>
+      {/* Nút xuất PDF bệnh án */}
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleExportPDF}
+        sx={{ mb: 2, mr: 2 }}
+      >
+        Xuất PDF bệnh án
+      </Button>
       <Zoom in={true} style={{ transitionDelay: '100ms' }}>
         <StyledPaper
           sx={{

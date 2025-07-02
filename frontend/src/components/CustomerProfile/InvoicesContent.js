@@ -16,7 +16,7 @@
  * - Historical invoice archive
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -45,6 +45,10 @@ import {
   FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import axios from 'axios';
+import apiClient from '@/services/api';
+import { formatDateDisplay } from '@/utils/dateUtils';
+import ExportInvoicePDF from '@/components/modals/ExportInvoicePDF';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)', // Light glass background for medical
@@ -71,80 +75,98 @@ const StyledTableHead = styled(TableCell)(({ theme }) => ({
 const InvoicesContent = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [openInvoiceDialog, setOpenInvoiceDialog] = useState(false);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [openExportPDF, setOpenExportPDF] = useState(false);
+  const [exportInvoice, setExportInvoice] = useState(null);
 
-  // Mock invoice data
-  const invoices = [
-    {
-      id: 'INV-2024-001',
-      date: '2024-01-15',
-      service: 'Khám sản khoa tổng quát',
-      doctor: 'BS. Nguyễn Thị Hoa',
-      amount: 500000,
-      status: 'paid',
-      paymentMethod: 'Thẻ tín dụng',
-      paymentDate: '2024-01-15',
-      description: 'Khám định kỳ, siêu âm thai',
-    },
-    {
-      id: 'INV-2024-002',
-      date: '2024-01-20',
-      service: 'Xét nghiệm máu tổng quát',
-      doctor: 'BS. Trần Văn An',
-      amount: 300000,
-      status: 'paid',
-      paymentMethod: 'Tiền mặt',
-      paymentDate: '2024-01-20',
-      description: 'Xét nghiệm định kỳ',
-    },
-    {
-      id: 'INV-2024-003',
-      date: '2024-02-01',
-      service: 'Khám chuyên khoa tim mạch',
-      doctor: 'BS. Lê Minh Tuấn',
-      amount: 800000,
-      status: 'pending',
-      paymentMethod: '',
-      paymentDate: '',
-      description: 'Khám chuyên sâu, điện tim',
-    },
-    {
-      id: 'INV-2024-004',
-      date: '2024-02-10',
-      service: 'Siêu âm tổng quát',
-      doctor: 'BS. Phạm Thị Mai',
-      amount: 400000,
-      status: 'overdue',
-      paymentMethod: '',
-      paymentDate: '',
-      description: 'Siêu âm bụng, tuyến giáp',
-    },
-  ];
+  // Fetch invoices from API
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiClient.get('/sti-services/my-tests');
+        // API trả về { data: { data: [STITestResponse, ...] } }
+        setInvoices(res.data?.data || []);
+      } catch (err) {
+        setError('Không thể tải danh sách hóa đơn.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInvoices();
+  }, []);
+
+  // Map status/paymentStatus sang màu và text
   const getStatusColor = (status) => {
     switch (status) {
-      case 'paid':
+      case 'COMPLETED':
         return {
           bg: 'linear-gradient(45deg, #4CAF50, #2ECC71)',
-          text: 'Đã thanh toán',
+          text: 'Đã hoàn thành',
         };
-      case 'pending':
+      case 'PENDING':
         return {
           bg: 'linear-gradient(45deg, #F39C12, #E67E22)',
-          text: 'Chờ thanh toán',
+          text: 'Chờ xác nhận',
         };
-      case 'overdue':
+      case 'CONFIRMED':
+        return {
+          bg: 'linear-gradient(45deg, #3498DB, #4A90E2)',
+          text: 'Đã xác nhận',
+        };
+      case 'SAMPLED':
+        return {
+          bg: 'linear-gradient(45deg, #8e44ad, #6c3483)',
+          text: 'Đã lấy mẫu',
+        };
+      case 'RESULTED':
+        return {
+          bg: 'linear-gradient(45deg, #00b894, #00cec9)',
+          text: 'Có kết quả',
+        };
+      case 'CANCELED':
         return {
           bg: 'linear-gradient(45deg, #E74C3C, #C0392B)',
-          text: 'Quá hạn',
+          text: 'Đã hủy',
         };
       default:
         return {
           bg: 'linear-gradient(45deg, #607D8B, #455A64)',
-          text: 'Không xác định',
+          text: status || 'Không xác định',
+        };
+    }
+  };
+
+  const getPaymentStatusColor = (paymentStatus) => {
+    switch (paymentStatus) {
+      case 'COMPLETED':
+        return {
+          bg: 'linear-gradient(45deg, #4CAF50, #2ECC71)',
+          text: 'Đã thanh toán',
+        };
+      case 'PENDING':
+        return {
+          bg: 'linear-gradient(45deg, #F39C12, #E67E22)',
+          text: 'Chờ thanh toán',
+        };
+      case 'FAILED':
+        return {
+          bg: 'linear-gradient(45deg, #E74C3C, #C0392B)',
+          text: 'Thanh toán thất bại',
+        };
+      default:
+        return {
+          bg: 'linear-gradient(45deg, #607D8B, #455A64)',
+          text: paymentStatus || 'Không xác định',
         };
     }
   };
 
   const formatCurrency = (amount) => {
+    if (!amount) return '0 ₫';
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -157,22 +179,50 @@ const InvoicesContent = () => {
   };
 
   const handleDownloadInvoice = (invoiceId) => {
-    // Mock download action
+    // TODO: Gọi API tải PDF hóa đơn
     console.log(`Downloading invoice ${invoiceId}`);
   };
 
   const handlePayInvoice = (invoiceId) => {
-    // Mock payment action
+    // TODO: Gọi API thanh toán hóa đơn
     console.log(`Processing payment for invoice ${invoiceId}`);
+  };
+
+  const handleOpenExportPDF = (invoice) => {
+    setExportInvoice(invoice);
+    setOpenExportPDF(true);
+  };
+
+  const handleCloseExportPDF = () => {
+    setOpenExportPDF(false);
+    setExportInvoice(null);
   };
 
   // Summary statistics
   const totalInvoices = invoices.length;
-  const paidInvoices = invoices.filter((inv) => inv.status === 'paid').length;
+  const paidInvoices = invoices.filter(
+    (inv) => inv.paymentStatus === 'COMPLETED'
+  ).length;
   const pendingAmount = invoices
-    .filter((inv) => inv.status !== 'paid')
-    .reduce((sum, inv) => sum + inv.amount, 0);
-  const totalAmount = invoices.reduce((sum, inv) => sum + inv.amount, 0);
+    .filter((inv) => inv.paymentStatus !== 'COMPLETED')
+    .reduce((sum, inv) => sum + (inv.totalPrice || 0), 0);
+  const totalAmount = invoices.reduce(
+    (sum, inv) => sum + (inv.totalPrice || 0),
+    0
+  );
+
+  if (loading)
+    return (
+      <Box p={4}>
+        <Typography>Đang tải hóa đơn...</Typography>
+      </Box>
+    );
+  if (error)
+    return (
+      <Box p={4}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
 
   return (
     <Box>
@@ -242,27 +292,33 @@ const InvoicesContent = () => {
                 <StyledTableHead>Mã hóa đơn</StyledTableHead>
                 <StyledTableHead>Ngày tạo</StyledTableHead>
                 <StyledTableHead>Dịch vụ</StyledTableHead>
-                <StyledTableHead>Bác sĩ</StyledTableHead>
+                <StyledTableHead>Nhân viên đảm nhận</StyledTableHead>
                 <StyledTableHead>Số tiền</StyledTableHead>
                 <StyledTableHead>Trạng thái</StyledTableHead>
+                <StyledTableHead>Thanh toán</StyledTableHead>
                 <StyledTableHead>Thao tác</StyledTableHead>
               </TableRow>
             </TableHead>
             <TableBody>
               {invoices.map((invoice) => {
                 const statusInfo = getStatusColor(invoice.status);
+                const paymentInfo = getPaymentStatusColor(
+                  invoice.paymentStatus
+                );
                 return (
-                  <TableRow key={invoice.id} hover>
+                  <TableRow key={invoice.testId || invoice.paymentId} hover>
                     <StyledTableCell sx={{ fontWeight: 600 }}>
-                      {invoice.id}
+                      {invoice.testId || invoice.paymentId}
                     </StyledTableCell>
                     <StyledTableCell>
-                      {new Date(invoice.date).toLocaleDateString('vi-VN')}
+                      {formatDateDisplay(invoice.createdAt)}
                     </StyledTableCell>
-                    <StyledTableCell>{invoice.service}</StyledTableCell>
-                    <StyledTableCell>{invoice.doctor}</StyledTableCell>
+                    <StyledTableCell>{invoice.serviceName}</StyledTableCell>
+                    <StyledTableCell>
+                      {invoice.staffName || invoice.consultantName || ''}
+                    </StyledTableCell>
                     <StyledTableCell sx={{ fontWeight: 600 }}>
-                      {formatCurrency(invoice.amount)}
+                      {formatCurrency(invoice.totalPrice)}
                     </StyledTableCell>
                     <StyledTableCell>
                       <Chip
@@ -270,6 +326,18 @@ const InvoicesContent = () => {
                         size="small"
                         sx={{
                           background: statusInfo.bg,
+                          color: '#fff',
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                        }}
+                      />
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      <Chip
+                        label={paymentInfo.text}
+                        size="small"
+                        sx={{
+                          background: paymentInfo.bg,
                           color: '#fff',
                           fontWeight: 600,
                           fontSize: '0.75rem',
@@ -293,21 +361,31 @@ const InvoicesContent = () => {
                         </IconButton>{' '}
                         <IconButton
                           size="small"
-                          onClick={() => handleDownloadInvoice(invoice.id)}
+                          onClick={() => handleOpenExportPDF(invoice)}
                           sx={{
                             color: '#4CAF50',
                             '&:hover': {
                               backgroundColor: 'rgba(76, 175, 80, 0.1)',
                             },
                           }}
+                          disabled={invoice.paymentStatus !== 'COMPLETED'}
+                          title={
+                            invoice.paymentStatus !== 'COMPLETED'
+                              ? 'Chỉ xuất hóa đơn khi đã thanh toán'
+                              : 'Tải hóa đơn PDF'
+                          }
                         >
                           <DownloadIcon fontSize="small" />
                         </IconButton>
-                        {invoice.status !== 'paid' && (
+                        {invoice.paymentStatus !== 'COMPLETED' && (
                           <Button
                             size="small"
                             variant="contained"
-                            onClick={() => handlePayInvoice(invoice.id)}
+                            onClick={() =>
+                              handlePayInvoice(
+                                invoice.testId || invoice.paymentId
+                              )
+                            }
                             sx={{
                               background:
                                 'linear-gradient(45deg, #4A90E2, #3498DB)',
@@ -352,73 +430,107 @@ const InvoicesContent = () => {
         >
           Chi tiết hóa đơn
         </DialogTitle>
-        <DialogContent sx={{ p: 3 }}>
+        <DialogContent sx={{ p: { xs: 1, md: 4 } }}>
           {selectedInvoice && (
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                {' '}
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 3,
+                alignItems: 'flex-start',
+                justifyContent: 'center',
+                minHeight: 220,
+              }}
+            >
+              {/* Icon hóa đơn lớn đầu tiên */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: 120,
+                }}
+              >
+                <ReceiptIcon
+                  sx={{ fontSize: 60, color: '#4A90E2', mb: 1, opacity: 0.18 }}
+                />
                 <Typography
-                  variant="subtitle2"
-                  sx={{ color: '#4A5568', mb: 1 }}
+                  variant="caption"
+                  sx={{ color: '#4A90E2', fontWeight: 600 }}
                 >
+                  HÓA ĐƠN
+                </Typography>
+              </Box>
+              {/* Thông tin hóa đơn */}
+              <Box
+                sx={{
+                  background: 'rgba(74,144,226,0.06)',
+                  borderRadius: 3,
+                  p: 2,
+                  minWidth: 180,
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
                   Mã hóa đơn
                 </Typography>
                 <Typography
-                  variant="body1"
-                  sx={{ color: '#2D3748', mb: 2, fontWeight: 600 }}
+                  variant="h6"
+                  sx={{ color: '#2D3748', fontWeight: 700 }}
                 >
-                  {selectedInvoice.id}
+                  {selectedInvoice.testId || selectedInvoice.paymentId}
                 </Typography>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: '#4A5568', mb: 1 }}
-                >
-                  Dịch vụ
-                </Typography>
-                <Typography variant="body1" sx={{ color: '#2D3748', mb: 2 }}>
-                  {selectedInvoice.service}
-                </Typography>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: '#4A5568', mb: 1 }}
-                >
-                  Bác sĩ phụ trách
-                </Typography>
-                <Typography variant="body1" sx={{ color: '#2D3748', mb: 2 }}>
-                  {selectedInvoice.doctor}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                {' '}
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: '#4A5568', mb: 1 }}
-                >
+                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
                   Ngày tạo
                 </Typography>
-                <Typography variant="body1" sx={{ color: '#2D3748', mb: 2 }}>
-                  {new Date(selectedInvoice.date).toLocaleDateString('vi-VN')}
+                <Typography variant="body2" sx={{ color: '#2D3748' }}>
+                  {formatDateDisplay(selectedInvoice.createdAt)}
                 </Typography>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: '#4A5568', mb: 1 }}
-                >
+                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
+                  Dịch vụ
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#2D3748' }}>
+                  {selectedInvoice.serviceName}
+                </Typography>
+                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
+                  Nhân viên đảm nhận
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#2D3748' }}>
+                  {selectedInvoice.staffName ||
+                    selectedInvoice.consultantName ||
+                    ''}
+                </Typography>
+              </Box>
+              {/* Số tiền và trạng thái */}
+              <Box
+                sx={{
+                  background: 'rgba(76,175,80,0.04)',
+                  borderRadius: 3,
+                  p: 2,
+                  minWidth: 160,
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
                   Số tiền
                 </Typography>
                 <Typography
-                  variant="body1"
-                  sx={{
-                    color: '#2D3748',
-                    mb: 2,
-                    fontWeight: 600,
-                    fontSize: '1.25rem',
-                  }}
+                  variant="h5"
+                  sx={{ color: '#27ae60', fontWeight: 700 }}
                 >
-                  {formatCurrency(selectedInvoice.amount)}
-                </Typography>{' '}
+                  {formatCurrency(selectedInvoice.totalPrice)}
+                </Typography>
                 <Typography
                   variant="subtitle2"
-                  sx={{ color: '#4A5568', mb: 1 }}
+                  sx={{ color: '#4A5568', mt: 1 }}
                 >
                   Trạng thái
                 </Typography>
@@ -428,61 +540,83 @@ const InvoicesContent = () => {
                     background: getStatusColor(selectedInvoice.status).bg,
                     color: '#fff',
                     fontWeight: 600,
-                    mb: 2,
+                    px: 2,
+                    fontSize: '1rem',
+                    mb: 1,
                   }}
                 />
-              </Grid>
-              <Grid item xs={12}>
-                {' '}
-                <Divider
-                  sx={{ backgroundColor: 'rgba(74, 144, 226, 0.15)', my: 2 }}
+                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
+                  Thanh toán
+                </Typography>
+                <Chip
+                  label={
+                    getPaymentStatusColor(selectedInvoice.paymentStatus).text
+                  }
+                  sx={{
+                    background: getPaymentStatusColor(
+                      selectedInvoice.paymentStatus
+                    ).bg,
+                    color: '#fff',
+                    fontWeight: 600,
+                    px: 2,
+                    fontSize: '1rem',
+                  }}
                 />
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: '#4A5568', mb: 1 }}
-                >
-                  Mô tả
+              </Box>
+              {/* Ghi chú và thanh toán */}
+              <Box
+                sx={{
+                  background: 'rgba(74,144,226,0.03)',
+                  borderRadius: 3,
+                  p: 2,
+                  minWidth: 180,
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
+                  Ghi chú khách hàng
                 </Typography>
-                <Typography variant="body1" sx={{ color: '#2D3748', mb: 2 }}>
-                  {selectedInvoice.description}
+                <Typography variant="body2" sx={{ color: '#2D3748' }}>
+                  {selectedInvoice.customerNotes || 'Không có'}
                 </Typography>
-                {selectedInvoice.status === 'paid' && (
+                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
+                  Ghi chú bác sĩ/nhân viên
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#2D3748' }}>
+                  {selectedInvoice.consultantNotes || 'Không có'}
+                </Typography>
+                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
+                  Phương thức thanh toán
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#2D3748' }}>
+                  {selectedInvoice.paymentMethod || '---'}
+                </Typography>
+                {selectedInvoice.paymentStatus === 'COMPLETED' && (
                   <>
-                    {' '}
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ color: '#4A5568', mb: 1 }}
-                    >
-                      Phương thức thanh toán
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ color: '#2D3748', mb: 1 }}
-                    >
-                      {selectedInvoice.paymentMethod}
-                    </Typography>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ color: '#4A5568', mb: 1 }}
-                    >
+                    <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
                       Ngày thanh toán
                     </Typography>
-                    <Typography variant="body1" sx={{ color: '#2D3748' }}>
-                      {new Date(selectedInvoice.paymentDate).toLocaleDateString(
-                        'vi-VN'
-                      )}
+                    <Typography variant="body2" sx={{ color: '#2D3748' }}>
+                      {formatDateDisplay(selectedInvoice.paidAt)}
                     </Typography>
                   </>
                 )}
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           )}
         </DialogContent>{' '}
         <DialogActions
           sx={{ p: 3, borderTop: '1px solid rgba(74, 144, 226, 0.15)' }}
         >
           <Button
-            onClick={() => handleDownloadInvoice(selectedInvoice?.id)}
+            onClick={() =>
+              handleDownloadInvoice(
+                selectedInvoice?.testId || selectedInvoice?.paymentId
+              )
+            }
             startIcon={<DownloadIcon />}
             sx={{
               background: 'linear-gradient(45deg, #4CAF50, #2ECC71)',
@@ -502,6 +636,12 @@ const InvoicesContent = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      {openExportPDF && exportInvoice && (
+        <ExportInvoicePDF
+          invoice={exportInvoice}
+          onClose={handleCloseExportPDF}
+        />
+      )}
     </Box>
   );
 };

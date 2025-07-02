@@ -396,14 +396,10 @@ const consultantService = {
   getAvailableTimeSlots: async (consultantId, date) => {
     try {
       const response = await apiClient.get(
-        `/consultants/${consultantId}/availability?date=${date}`
+        `/consultations/available-slots?consultantId=${consultantId}&date=${date}`
       );
-      return {
-        success: true,
-        data: response.data,
-      };
+      return response.data;
     } catch (error) {
-      console.error('Error fetching available time slots:', error);
       return {
         success: false,
         message:
