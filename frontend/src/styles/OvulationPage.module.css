@@ -296,6 +296,12 @@ body, #root {
   }
 }
 
+/* Loading spinner animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .dashboard {
@@ -613,6 +619,27 @@ body, #root {
   transform: translateY(-2px) scale(1.03);
 }
 
+/* Add Cycle Button Container */
+.addCycleButtonContainer {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 40px 20px !important;
+  margin: 32px 0 !important;
+  position: relative !important;
+}
+
+.addCycleButtonContainer::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent 0%, rgba(162, 89, 230, 0.3) 20%, rgba(162, 89, 230, 0.6) 50%, rgba(162, 89, 230, 0.3) 80%, transparent 100%) !important;
+  z-index: 0 !important;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .headerDashboard {
@@ -713,82 +740,164 @@ body, #root {
   margin-top: 32px;
   margin-bottom: 16px;
 }
+
 .healthAdviceCard {
-  padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(162,89,230,0.08);
+  padding: 36px;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(162, 89, 230, 0.12);
   margin-bottom: 24px;
-  background: #fff;
+  background: linear-gradient(135deg, #fff 0%, #fafbff 100%);
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
 }
+
+.healthAdviceCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #e57399, #a259e6, #7c3aed, #059669);
+  border-radius: 20px 20px 0 0;
+}
+
 .healthAdviceHeader {
   display: flex;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 28px;
+  padding-top: 8px;
 }
+
 .healthAdviceIconWrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20px;
+  box-shadow: 0 6px 20px rgba(229, 115, 153, 0.25);
+  border: 3px solid #fff;
+}
+
+.healthAdviceIcon {
+  color: #e57399;
+  font-size: 32px !important;
+}
+
+.healthAdviceTitle {
+  font-weight: 800;
+  color: #1a202c;
+  font-size: 1.5rem;
+  letter-spacing: -0.025em;
+}
+
+.healthAdviceSubtitle {
+  color: #718096;
+  font-size: 1rem;
+  margin-top: 4px;
+}
+.adviceCardRegular {
+  background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.adviceCardRegular:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  border-color: #e57399;
+}
+
+.adviceCardRegular::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #e57399, #a259e6, #7c3aed);
+  border-radius: 16px 16px 0 0;
+}
+
+.adviceCardHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.adviceCardIconRegular {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #ede7f6;
+  background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 16px;
+  box-shadow: 0 4px 12px rgba(229, 115, 153, 0.2);
+  border: 2px solid #fff;
 }
-.healthAdviceIcon {
-  color: #a259e6;
-  font-size: 28px !important;
+
+.adviceCardIconRegularIcon {
+  color: #e57399;
+  font-size: 24px !important;
 }
-.healthAdviceTitle {
+
+.adviceCardTitleRegular {
   font-weight: 700;
-  color: #3d2067;
+  color: #2d3748;
+  font-size: 1.25rem;
+  letter-spacing: -0.025em;
 }
-.healthAdviceSubtitle {
-  color: #888;
-  font-size: 15px;
+
+.adviceCardTextRegular {
+  color: #4a5568;
+  margin-bottom: 16px;
+  font-size: 1rem;
+  line-height: 1.6;
 }
-.adviceCardRegular {
-  background: #f4fef6;
-  border: 2px solid #b2f2c8;
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: none;
+
+.adviceCardList {
+  padding-left: 0;
+  margin: 0;
 }
-.adviceCardHeader {
+
+.adviceCardListItem {
   display: flex;
-  align-items: center;
-  margin-bottom: 8px;
+  align-items: flex-start;
+  padding: 8px 0;
+  color: #2d3748;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  position: relative;
+  padding-left: 24px;
 }
-.adviceCardIconRegular {
-  width: 32px;
-  height: 32px;
+
+.adviceCardListItem::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, #e57399, #a259e6);
+  color: white;
   border-radius: 50%;
-  background: #e8f5e9;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 8px;
-}
-.adviceCardIconRegularIcon {
-  color: #219653;
-  font-size: 20px !important;
-}
-.adviceCardTitleRegular {
-  font-weight: 700;
-  color: #219653;
-}
-.adviceCardTextRegular {
-  color: #222;
-  margin-bottom: 8px;
-}
-.adviceCardList {
-  padding-left: 16px;
-}
-.adviceCardListItem {
-  display: list-item;
-  padding: 0;
-  color: #444;
+  font-size: 10px;
+  font-weight: bold;
 }
 .adviceCardGeneral {
   background: #fdf5f8;
@@ -821,13 +930,30 @@ body, #root {
   margin-bottom: 8px;
 }
 .healthAdviceNote {
-  background: #ede7f6;
-  border-radius: 8px;
-  padding: 12px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+  padding: 20px;
   text-align: center;
-  color: #7c4dff;
-  font-weight: 500;
+  color: #3730a3;
+  font-weight: 600;
   font-size: 15px;
+  margin-top: 24px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.healthAdviceNote::before {
+  content: '💡';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  padding: 4px 8px;
+  border-radius: 50%;
+  font-size: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .addButtonCard {
   background: var(--card-bg);
@@ -1087,7 +1213,7 @@ body, #root {
   margin-bottom: 1rem;
 }
 .carePhaseIcon {
-  weight: 40px;
+  width: 40px;
   height: 40px;
   background: #fff;
   border-radius: 50%;
@@ -1303,13 +1429,808 @@ body, #root {
   padding: 0.75rem;  
 }
 
-.statValue{
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #111827; 
+/* Cycle List Styles */
+.cycleListCard {
+  background: var(--card-bg) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--shadow) !important;
+  border: 1px solid #f3f4f6 !important;
+  overflow: hidden !important;
+  transition: var(--transition) !important;
 }
 
-.statSubtext{
+.cycleListCard:hover {
+  box-shadow: 0 8px 32px rgba(162,89,230,0.12) !important;
+  transform: translateY(-2px);
+}
+
+.cycleListHeader {
+  padding: 24px 32px 20px 32px !important;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%) !important;
+  color: #fff !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  position: relative !important;
+}
+
+.cycleListHeader::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+}
+
+.cycleListIconWrapper {
+  background: rgba(255,255,255,0.2) !important;
+  padding: 12px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.cycleListIcon {
+  width: 24px !important;
+  height: 24px !important;
+  color: #fff !important;
+}
+
+.cycleListTitle {
+  font-weight: 700 !important;
+  font-size: 1.4rem !important;
+  margin: 0 !important;
+  color: #fff !important;
+  letter-spacing: 0.5px !important;
+}
+
+.cycleListSubtitle {
+  font-size: 1rem !important;
+  opacity: 0.95 !important;
+  margin: 4px 0 0 0 !important;
+  color: #fff !important;
+  font-weight: 400 !important;
+}
+
+.cycleListContainer {
+  padding: 24px 32px 32px 32px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.cycleItem {
+  background: #fff !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  border: 2px solid rgba(229, 115, 153, 0.1) !important;
+  transition: var(--transition) !important;
+  box-shadow: 0 2px 8px rgba(162,89,230,0.06) !important;
+}
+
+.cycleItem:hover {
+  border-color: rgba(229, 115, 153, 0.2) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(162,89,230,0.12) !important;
+}
+
+.cycleItemHeader {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  margin-bottom: 16px !important;
+}
+
+.cycleItemIconWrapper {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%) !important;
+  padding: 10px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+}
+
+.cycleItemIcon {
+  width: 20px !important;
+  height: 20px !important;
+  color: #fff !important;
+}
+
+.cycleItemInfo {
+  flex: 1 !important;
+}
+
+.cycleItemTitle {
+  font-weight: 600 !important;
+  font-size: 1.1rem !important;
+  color: #1f2937 !important;
+  margin: 0 0 4px 0 !important;
+  letter-spacing: 0.2px !important;
+}
+
+.cycleItemDate {
+  font-size: 0.95rem !important;
+  color: #6b7280 !important;
+  margin: 0 !important;
+  font-weight: 500 !important;
+}
+
+.cycleItemDetails {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  gap: 16px !important;
+  padding-top: 16px !important;
+  border-top: 1px solid #f3f4f6 !important;
+}
+
+.cycleDetailItem {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+.cycleDetailLabel {
+  font-size: 0.875rem !important;
+  color: #6b7280 !important;
+  font-weight: 500 !important;
+  margin: 0 !important;
+}
+
+.cycleDetailValue {
+  font-size: 1rem !important;
+  color: #1f2937 !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+}
+
+.cycleReminderBadge {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: linear-gradient(135deg, rgba(229, 115, 153, 0.1) 0%, rgba(162, 89, 230, 0.1) 100%) !important;
+  padding: 8px 12px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(229, 115, 153, 0.2) !important;
+  grid-column: span 2 !important;
+}
+
+.cycleReminderIcon {
+  width: 16px !important;
+  height: 16px !important;
+  color: var(--primary) !important;
+}
+
+.cycleReminderText {
+  font-size: 0.875rem !important;
+  color: var(--primary) !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+}
+
+.emptyCycleList {
+  padding: 60px 32px !important;
+  text-align: center !important;
+  background: #fff !important;
+}
+
+.emptyCycleIcon {
+  width: 64px !important;
+  height: 64px !important;
+  color: #d1d5db !important;
+  margin: 0 auto 20px auto !important;
+}
+
+.emptyCycleTitle {
+  font-size: 1.2rem !important;
+  font-weight: 600 !important;
+  color: #6b7280 !important;
+  margin: 0 0 8px 0 !important;
+}
+
+.emptyCycleDescription {
+  font-size: 1rem !important;
+  color: #9ca3af !important;
+  margin: 0 !important;
+  line-height: 1.5 !important;
+}
+
+/* Responsive design for cycle list */
+@media (max-width: 768px) {
+  .cycleListHeader,
+  .cycleListContainer {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+  
+  .cycleItemDetails {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .cycleReminderBadge {
+    grid-column: span 1 !important;
+  }
+}
+
+/* Add Cycle Button Styles */
+.addCycleButton {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 20px !important;
+  padding: 20px 40px !important;
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 16px !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 8px 32px rgba(162,89,230,0.3) !important;
+  letter-spacing: 0.8px !important;
+  min-width: 280px !important;
+  max-width: 400px !important;
+  margin: 0 auto !important;
+  position: relative !important;
+  overflow: hidden !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  text-transform: uppercase !important;
+  z-index: 1 !important;
+}
+
+.addCycleButton::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+  transition: left 0.5s ease !important;
+  z-index: -1 !important;
+}
+
+.addCycleButton:hover {
+  background: linear-gradient(135deg, #d5618b 0%, #8e47cc 100%) !important;
+  transform: translateY(-4px) scale(1.05) !important;
+  box-shadow: 0 12px 40px rgba(162,89,230,0.4) !important;
+}
+
+.addCycleButton:hover::before {
+  left: 100% !important;
+}
+
+.addCycleButton:active {
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 8px 32px rgba(162,89,230,0.3) !important;
+}
+
+.addCycleButtonIcon {
+  width: 24px !important;
+  height: 24px !important;
+  color: #fff !important;
+  transition: transform 0.3s ease !important;
+}
+
+.addCycleButton:hover .addCycleButtonIcon {
+  transform: rotate(15deg) scale(1.1) !important;
+}
+
+/* Advice Card Color Variants */
+.adviceCardGreen {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1px solid #bbf7d0;
+}
+
+.adviceCardGreen::before {
+  background: linear-gradient(90deg, #059669, #10b981, #34d399);
+}
+
+.adviceCardGreen .adviceCardIconRegular {
+  background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+}
+
+.adviceCardGreen .adviceCardIconRegularIcon {
+  color: #059669;
+}
+
+.adviceCardYellow {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+}
+
+.adviceCardYellow::before {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24, #fcd34d);
+}
+
+.adviceCardYellow .adviceCardIconRegular {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.adviceCardYellow .adviceCardIconRegularIcon {
+  color: #f59e0b;
+}
+
+.adviceCardRed {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fecaca;
+}
+
+.adviceCardRed::before {
+  background: linear-gradient(90deg, #dc2626, #ef4444, #f87171);
+}
+
+.adviceCardRed .adviceCardIconRegular {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+}
+
+.adviceCardRed .adviceCardIconRegularIcon {
+  color: #dc2626;
+}
+
+.adviceCardBlue {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+}
+
+.adviceCardBlue::before {
+  background: linear-gradient(90deg, #2563eb, #3b82f6, #60a5fa);
+}
+
+.adviceCardBlue .adviceCardIconRegular {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.adviceCardBlue .adviceCardIconRegularIcon {
+  color: #2563eb;
+}
+
+.adviceCardPink {
+  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+  border: 1px solid #f9a8d4;
+}
+
+.adviceCardPink::before {
+  background: linear-gradient(90deg, #e91e63, #ec4899, #f472b6);
+}
+
+.adviceCardPink .adviceCardIconRegular {
+  background: linear-gradient(135deg, #fce7f3 0%, #f9a8d4 100%);
+}
+
+.adviceCardPink .adviceCardIconRegularIcon {
+  color: #e91e63;
+}
+
+/* Hover effects for color variants */
+.adviceCardGreen:hover {
+  border-color: #059669;
+  box-shadow: 0 12px 32px rgba(5, 150, 105, 0.15);
+}
+
+.adviceCardYellow:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 12px 32px rgba(245, 158, 11, 0.15);
+}
+
+.adviceCardRed:hover {
+  border-color: #dc2626;
+  box-shadow: 0 12px 32px rgba(220, 38, 38, 0.15);
+}
+
+.adviceCardBlue:hover {
+  border-color: #2563eb;
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.15);
+}
+
+.adviceCardPink:hover {
+  border-color: #e91e63;
+  box-shadow: 0 12px 32px rgba(233, 30, 99, 0.15);
+}
+
+/* Responsive design for advice cards */
+@media (max-width: 768px) {
+  .healthAdviceCard {
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  
+  .adviceCardRegular {
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  
+  .healthAdviceIconWrapper {
+    width: 48px;
+    height: 48px;
+    margin-right: 16px;
+  }
+  
+  .healthAdviceIcon {
+    font-size: 24px !important;
+  }
+  
+  .adviceCardIconRegular {
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
+  }
+  
+  .adviceCardIconRegularIcon {
+    font-size: 20px !important;
+  }
+  
+  .healthAdviceTitle {
+    font-size: 1.25rem;
+  }
+  
+  .adviceCardTitleRegular {
+    font-size: 1.1rem;
+  }
+}
+
+/* Animation for advice cards loading */
+.adviceCardRegular {
+  animation: fadeInUp 0.6s ease-out;
+  animation-fill-mode: both;
+}
+
+.adviceCardRegular:nth-child(1) { animation-delay: 0.1s; }
+.adviceCardRegular:nth-child(2) { animation-delay: 0.2s; }
+.adviceCardRegular:nth-child(3) { animation-delay: 0.3s; }
+.adviceCardRegular:nth-child(4) { animation-delay: 0.4s; }
+.adviceCardRegular:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Icon rotation on hover */
+.adviceCardIconRegular {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.adviceCardRegular:hover .adviceCardIconRegular {
+  transform: rotate(5deg) scale(1.05);
+}
+
+/* Smooth transitions for list items */
+.adviceCardListItem {
+  transition: all 0.2s ease;
+}
+
+.adviceCardListItem:hover {
+  transform: translateX(4px);
+  color: #1a202c;
+}
+
+/* Reset button for calculation result */
+.resetButton {
+  color: #6b7280;
+  background-color: #f9fafb;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  text-transform: none;
+  font-size: 1rem;
+  border: 2px solid #e5e7eb;
+  min-width: 140px;
+  letter-spacing: 0.3px;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.resetButton:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.resetButton:active {
+  transform: translateY(0px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Refetch loading overlay */
+.refetchOverlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #e57399;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.refetchText {
+  color: #e57399;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Success message animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Pagination Styles */
+.paginationContainer {
+  padding: 24px 32px;
+  border-top: 1px solid #f1f5f9;
+  background: linear-gradient(135deg, #fafbff 0%, #f8fafc 100%);
+  border-radius: 0 0 16px 16px;
+}
+
+.paginationInfo {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.paginationText {
+  color: #64748b;
   font-size: 0.875rem;
-  color: #4b5563;         
+  font-weight: 500;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.paginationButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  min-width: 80px;
+  justify-content: center;
+}
+
+.paginationButton:hover:not(.disabled) {
+  background: linear-gradient(135deg, #e57399 0%, #a259e6 100%);
+  border-color: #e57399;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(229, 115, 153, 0.2);
+}
+
+.paginationButton.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.paginationIcon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.pageNumbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pageNumber {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pageNumber:hover {
+  background: linear-gradient(135deg, #e57399 0%, #a259e6 100%);
+  border-color: #e57399;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(229, 115, 153, 0.2);
+}
+
+.pageNumber.active {
+  background: linear-gradient(135deg, #e57399 0%, #a259e6 100%);
+  border-color: #e57399;
+  color: white;
+  box-shadow: 0 4px 12px rgba(229, 115, 153, 0.3);
+  transform: scale(1.05);
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .paginationContainer {
+    padding: 16px 20px;
+  }
+  
+  .paginationControls {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .pageNumbers {
+    margin: 0;
+    order: -1;
+  }
+  
+  .paginationButton {
+    width: 120px;
+  }
+}
+
+/* Cycle Item Actions */
+.cycleItemActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.editButton,
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.editButton {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.editButton:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+.editButton:active {
+  transform: translateY(0px) scale(0.95);
+}
+
+.deleteButton {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.deleteButton:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+.deleteButton:active {
+  transform: translateY(0px) scale(0.95);
+}
+
+.actionIcon {
+  width: 18px !important;
+  height: 18px !important;
+  color: white !important;
+  transition: transform 0.2s ease;
+}
+
+.editButton:hover .actionIcon {
+  transform: rotate(5deg);
+}
+
+.deleteButton:hover .actionIcon {
+  transform: rotate(-5deg);
+}
+
+/* Responsive design for action buttons */
+@media (max-width: 768px) {
+  .cycleItemActions {
+    gap: 6px;
+  }
+  
+  .editButton,
+  .deleteButton {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .actionIcon {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .cycleItemHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .cycleItemActions {
+    align-self: flex-end;
+    margin-left: 0;
+  }
 }

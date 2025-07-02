@@ -28,4 +28,8 @@ public class ConsultationResponse {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private String notes;
+
+    private String reason;
 }

@@ -20,4 +20,8 @@ public class ConsultationRequest {
 
     @NotEmpty(message = "Time slot is required")
     private String timeSlot;
+
+    private String notes;
+
+    private String reason;
 }

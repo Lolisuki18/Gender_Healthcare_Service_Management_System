@@ -14,8 +14,8 @@ const consultantService = {
   //Lấy toàn bộ consultant
   getAllConsultants: async () => {
     try {
-      const reponse = await apiClient.get(`/consultations/consultants`);
-      return reponse.data;
+      const response = await apiClient.get(`/consultants`);
+      return response.data;
     } catch (error) {
       throw error.response?.data || error;
     }
@@ -236,15 +236,21 @@ const consultantService = {
     }
   },
 
+  // Cập nhật trạng thái lịch tư vấn
   updateConsultationStatus: async (consultationId, data) => {
     try {
       const response = await apiClient.put(
-        `/consultants/consultations/${consultationId}/status`,
+        `/consultations/${consultationId}/status`,
         data
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || 'Không thể cập nhật trạng thái',
+        error,
+      };
     }
   },
 
@@ -368,19 +374,16 @@ const consultantService = {
   //   }
   // },
 
-  // Đặt lịch hẹn với tư vấn viên
-  scheduleAppointment: async (appointmentData) => {
+  // Đặt lịch hẹn với tư vấn viên (chuẩn backend mới)
+  bookConsultation: async (appointmentData) => {
     try {
-      const response = await apiClient.post(
-        '/consultations/schedule',
-        appointmentData
-      );
+      const response = await apiClient.post('/consultations', appointmentData);
       return {
-        success: true,
-        data: response.data,
+        success: response.data.success,
+        data: response.data.data,
+        message: response.data.message,
       };
     } catch (error) {
-      console.error('Error scheduling appointment:', error);
       return {
         success: false,
         message: error.response?.data?.message || 'Không thể đặt lịch hẹn',
@@ -425,6 +428,63 @@ const consultantService = {
         success: false,
         message:
           error.response?.data?.message || 'Không thể lấy thông tin lịch hẹn',
+        error,
+      };
+    }
+  },
+
+  // Lấy danh sách lịch tư vấn của chuyên viên ở trạng thái chờ xác nhận
+  getMyPendingConsultations: async () => {
+    try {
+      const response = await apiClient.get('/consultants/consultations', {
+        params: { status: 'pending' },
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Lấy tất cả lịch tư vấn được giao cho chuyên viên
+  getAssignedConsultations: async () => {
+    try {
+      const response = await apiClient.get('/consultations/assigned');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Cập nhật ghi chú cho consultation
+  updateConsultationNotes: async (consultationId, notes) => {
+    try {
+      const response = await apiClient.put(
+        `/consultations/${consultationId}/notes`,
+        { notes }
+      );
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể cập nhật ghi chú',
+        error,
+      };
+    }
+  },
+
+  // Lấy lịch hẹn (consultations) của customer hiện tại
+  getMyConsultations: async () => {
+    try {
+      const response = await apiClient.get('/consultations/my-consultations');
+      return {
+        success: response.data.success,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể lấy lịch hẹn',
         error,
       };
     }

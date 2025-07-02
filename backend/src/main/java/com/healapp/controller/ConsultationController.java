@@ -188,4 +188,19 @@ public class ConsultationController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
+    // Cập nhật ghi chú cho consultation
+    @PutMapping("/{consultationId}/notes")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF') or hasRole('CONSULTANT')")
+    public ResponseEntity<ApiResponse<ConsultationResponse>> updateConsultationNotes(
+            @PathVariable Long consultationId,
+            @RequestBody(required = true) java.util.Map<String, String> body) {
+        String notes = body.get("notes");
+        ApiResponse<ConsultationResponse> response = consultationService.updateConsultationNotes(consultationId, notes);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 }

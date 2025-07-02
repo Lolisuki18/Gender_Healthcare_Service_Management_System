@@ -55,12 +55,17 @@ import {
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import { formatDateDisplay } from '../../utils/dateUtils.js';
+import {
+  formatDateDisplay,
+  formatDateTime,
+  formatDateTimeFromArray,
+} from '../../utils/dateUtils.js';
 import {
   mockGetMySTITests,
   mockCancelSTITest,
 } from '../../dataDemo/mockStiData.js';
 import { toast } from 'react-toastify';
+import consultantService from '../../services/consultantService';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)',
@@ -97,9 +102,11 @@ const AppointmentsContent = () => {
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const response = await mockGetMySTITests();
-      if (response && response.data) {
+      const response = await consultantService.getMyConsultations();
+      if (response && response.success && response.data) {
         setAppointments(response.data);
+      } else {
+        toast.error(response.message || 'Không thể tải danh sách lịch hẹn');
       }
     } catch (error) {
       toast.error('Không thể tải danh sách lịch hẹn');
@@ -205,7 +212,7 @@ const AppointmentsContent = () => {
             fontSize: '16px',
           }}
         >
-          Quản lý và theo dõi các cuộc hẹn xét nghiệm của bạn
+          Quản lý và theo dõi các cuộc hẹn tư vấn của bạn
         </Typography>
       </StyledPaper>
 
@@ -222,24 +229,21 @@ const AppointmentsContent = () => {
           <Grid item xs={12} md={6} lg={4} key={appointment.testId}>
             <AppointmentCard>
               <CardContent sx={{ p: 3 }}>
-                {/* Status Badge */}
+                {/* Tiêu đề: Lịch hẹn tư vấn với tư vấn viên ... */}
                 <Box
                   sx={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'flex-start',
+                    alignItems: 'center',
                     mb: 2,
                   }}
                 >
                   <Typography
                     variant="h6"
-                    sx={{
-                      fontWeight: 600,
-                      color: '#2D3748',
-                      fontSize: '18px',
-                    }}
+                    sx={{ fontWeight: 600, color: '#2D3748', fontSize: '18px' }}
                   >
-                    {appointment.serviceName}
+                    Lịch hẹn tư vấn với tư vấn viên{' '}
+                    {appointment.consultantName || ''}
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Chip
@@ -253,6 +257,23 @@ const AppointmentsContent = () => {
                         mr: 1,
                       }}
                     />
+                    {appointment.meetUrl && (
+                      <Button
+                        href={appointment.meetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          ml: 1,
+                          fontSize: 12,
+                          textTransform: 'none',
+                          borderRadius: 2,
+                        }}
+                      >
+                        Vào phòng họp
+                      </Button>
+                    )}
                     <IconButton
                       aria-label="more"
                       aria-controls={
@@ -263,142 +284,169 @@ const AppointmentsContent = () => {
                       aria-haspopup="true"
                       onClick={(event) => handleMenuClick(event, appointment)}
                       size="small"
-                      sx={{
-                        color: '#718096',
-                        p: 0.5,
-                      }}
+                      sx={{ color: '#718096', p: 0.5 }}
                     >
                       <MoreVertIcon />
                     </IconButton>
-                    <Menu
-                      id={`long-menu-${appointment.testId}`}
-                      MenuListProps={{
-                        'aria-labelledby': 'long-button',
-                      }}
-                      anchorEl={anchorEl}
-                      open={openMenuId === appointment.testId}
-                      onClose={handleMenuClose}
-                      PaperProps={{
-                        style: {
-                          maxHeight: 48 * 4.5,
-                          width: '20ch',
-                          borderRadius: '12px',
-                          boxShadow: '0px 4px 20px rgba(0,0,0,0.1)',
-                        },
-                      }}
-                    >
-                      <MenuItem onClick={handleOpenDetailDialog}>
-                        <ListItemIcon>
-                          <VisibilityIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText>Xem chi tiết</ListItemText>
-                      </MenuItem>
-
-                      {appointment.status === 'PENDING' && (
-                        <MenuItem
-                          onClick={() => {
-                            setOpenCancelDialog(true);
-                          }}
-                          sx={{ color: (theme) => theme.palette.error.main }}
-                        >
-                          <ListItemIcon
-                            sx={{ color: (theme) => theme.palette.error.main }}
-                          >
-                            <CancelIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText>Hủy lịch hẹn</ListItemText>
-                        </MenuItem>
-                      )}
-                    </Menu>
                   </Box>
                 </Box>
 
-                {/* Doctor Info */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <DoctorIcon sx={{ color: '#4A90E2', fontSize: 18, mr: 1 }} />{' '}
-                  {/* Medical green */}
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#4A5568', // Dark blue-gray for text
-                      fontWeight: 500,
-                    }}
-                  >
-                    {appointment.doctorName}
-                  </Typography>
-                </Box>
-
-                {/* Date & Time */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                {/* Thời gian bắt đầu */}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                   <CalendarIcon
-                    sx={{ color: '#4CAF50', fontSize: 18, mr: 1 }}
+                    sx={{ color: '#4CAF50', fontSize: 22, mr: 1 }}
                   />
                   <Typography
                     variant="body2"
-                    sx={{
-                      color: '#4A5568', // Dark blue-gray for text
-                      fontWeight: 500,
-                    }}
+                    sx={{ fontWeight: 600, minWidth: 110 }}
                   >
-                    {formatDateDisplay(appointment.appointmentDate)}
+                    Thời gian bắt đầu:
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#2D3748', fontStyle: 'normal', ml: 1 }}
+                  >
+                    {Array.isArray(appointment.startTime)
+                      ? formatDateTimeFromArray(appointment.startTime)
+                      : appointment.startTime &&
+                          ![
+                            'Thời gian không hợp lệ',
+                            'Lỗi định dạng thời gian',
+                          ].includes(formatDateTime(appointment.startTime))
+                        ? formatDateTime(appointment.startTime)
+                        : 'Chưa cập nhật'}
+                  </Typography>
+                </Box>
+                {/* Thời gian kết thúc */}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                  <CalendarIcon
+                    sx={{ color: '#F39C12', fontSize: 22, mr: 1 }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, minWidth: 110 }}
+                  >
+                    Thời gian kết thúc:
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#2D3748', fontStyle: 'normal', ml: 1 }}
+                  >
+                    {Array.isArray(appointment.endTime)
+                      ? formatDateTimeFromArray(appointment.endTime)
+                      : appointment.endTime &&
+                          ![
+                            'Thời gian không hợp lệ',
+                            'Lỗi định dạng thời gian',
+                          ].includes(formatDateTime(appointment.endTime))
+                        ? formatDateTime(appointment.endTime)
+                        : 'Chưa cập nhật'}
                   </Typography>
                 </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <TimeIcon sx={{ color: '#F39C12', fontSize: 18, mr: 1 }} />{' '}
-                  {/* Medical orange */}
+                {/* Bằng cấp, kinh nghiệm */}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, minWidth: 110 }}
+                  >
+                    Bằng cấp:
+                  </Typography>
                   <Typography
                     variant="body2"
                     sx={{
-                      color: '#4A5568', // Dark blue-gray for text
-                      fontWeight: 500,
+                      color: appointment.consultantQualifications
+                        ? '#2D3748'
+                        : '#A0AEC0',
+                      fontStyle: appointment.consultantQualifications
+                        ? 'normal'
+                        : 'italic',
+                      ml: 1,
                     }}
                   >
-                    {appointment.appointmentTime}
+                    {appointment.consultantQualifications || 'Chưa cập nhật'}
                   </Typography>
                 </Box>
-
-                {/* Price */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, minWidth: 110 }}
+                  >
+                    Kinh nghiệm:
+                  </Typography>
                   <Typography
                     variant="body2"
                     sx={{
-                      color: '#4A5568',
-                      fontWeight: 500,
+                      color: appointment.consultantExperience
+                        ? '#2D3748'
+                        : '#A0AEC0',
+                      fontStyle: appointment.consultantExperience
+                        ? 'normal'
+                        : 'italic',
+                      ml: 1,
                     }}
                   >
-                    Giá: {(appointment.price || 0).toLocaleString('vi-VN')} đ
+                    {appointment.consultantExperience || 'Chưa cập nhật'}
                   </Typography>
                 </Box>
 
-                {/* Payment Method */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#4A5568',
-                      fontWeight: 500,
-                    }}
-                  >
-                    Phương thức thanh toán: {appointment.paymentMethod}
-                  </Typography>
-                </Box>
-
-                {/* Notes */}
-                {appointment.notes && (
+                {/* Lý do tư vấn */}
+                {appointment.reason && (
                   <Box
-                    sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}
+                    sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.5 }}
                   >
                     <Typography
                       variant="body2"
-                      sx={{
-                        color: '#4A5568',
-                        fontStyle: 'italic',
-                      }}
+                      sx={{ fontWeight: 600, minWidth: 110 }}
                     >
-                      Ghi chú: {appointment.notes}
+                      Lý do tư vấn:
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: '#4A5568', fontStyle: 'italic', ml: 1 }}
+                    >
+                      {appointment.reason}
                     </Typography>
                   </Box>
+                )}
+
+                {/* Ghi chú tư vấn viên */}
+                {appointment.notes && (
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.5 }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 600, minWidth: 110 }}
+                    >
+                      Ghi chú tư vấn viên:
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: '#4A5568', fontStyle: 'italic', ml: 1 }}
+                    >
+                      {appointment.notes}
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Ngày tạo lịch hẹn */}
+                {appointment.createdAt && (
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#A0AEC0', mt: 2, display: 'block' }}
+                  >
+                    Ngày tạo:{' '}
+                    {Array.isArray(appointment.createdAt)
+                      ? formatDateTimeFromArray(appointment.createdAt)
+                      : appointment.createdAt &&
+                          ![
+                            'Thời gian không hợp lệ',
+                            'Lỗi định dạng thời gian',
+                          ].includes(formatDateTime(appointment.createdAt))
+                        ? formatDateTime(appointment.createdAt)
+                        : 'Chưa cập nhật'}
+                  </Typography>
                 )}
               </CardContent>
             </AppointmentCard>
@@ -469,68 +517,111 @@ const AppointmentsContent = () => {
         <DialogTitle>Chi tiết lịch hẹn</DialogTitle>
         <DialogContent dividers>
           {selectedAppointment ? (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  {selectedAppointment.serviceName}
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Chip
+                  label={getStatusText(selectedAppointment.status)}
+                  size="small"
+                  sx={{
+                    background: getStatusColor(selectedAppointment.status),
+                    color: '#fff',
+                    fontWeight: 500,
+                    fontSize: '11px',
+                    mr: 2,
+                  }}
+                />
+                {selectedAppointment.meetUrl && (
+                  <Button
+                    href={selectedAppointment.meetUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      fontSize: 12,
+                      textTransform: 'none',
+                      borderRadius: 2,
+                    }}
+                  >
+                    Vào phòng họp
+                  </Button>
+                )}
+              </Box>
+              <Box sx={{ mb: 1.5 }}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    fontWeight: 600,
+                    minWidth: 110,
+                    display: 'inline-block',
+                  }}
+                >
+                  Tư vấn viên:
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Trạng thái: {getStatusText(selectedAppointment.status)}
+                <Typography
+                  variant="body1"
+                  sx={{ ml: 1, display: 'inline-block' }}
+                >
+                  {selectedAppointment.consultantName || 'Chưa cập nhật'}
                 </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  <CalendarIcon
-                    fontSize="small"
-                    sx={{ verticalAlign: 'middle', mr: 1 }}
-                  />
-                  Ngày: {formatDateDisplay(selectedAppointment.appointmentDate)}
+              </Box>
+              <Box sx={{ mb: 1.5 }}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    fontWeight: 600,
+                    minWidth: 110,
+                    display: 'inline-block',
+                  }}
+                >
+                  Bằng cấp:
                 </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  <TimeIcon
-                    fontSize="small"
-                    sx={{ verticalAlign: 'middle', mr: 1 }}
-                  />
-                  Giờ: {selectedAppointment.appointmentTime}
+                <Typography
+                  variant="body1"
+                  sx={{ ml: 1, display: 'inline-block' }}
+                >
+                  {selectedAppointment.consultantQualifications ||
+                    'Chưa cập nhật'}
                 </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  <DoctorIcon
-                    fontSize="small"
-                    sx={{ verticalAlign: 'middle', mr: 1 }}
-                  />
-                  Bác sĩ: {selectedAppointment.doctorName || 'Chưa chỉ định'}
+              </Box>
+              <Box sx={{ mb: 1.5 }}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    fontWeight: 600,
+                    minWidth: 110,
+                    display: 'inline-block',
+                  }}
+                >
+                  Kinh nghiệm:
                 </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  Giá:{' '}
-                  {(selectedAppointment.price || 0).toLocaleString('vi-VN')} đ
+                <Typography
+                  variant="body1"
+                  sx={{ ml: 1, display: 'inline-block' }}
+                >
+                  {selectedAppointment.consultantExperience || 'Chưa cập nhật'}
                 </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  Phương thức thanh toán: {selectedAppointment.paymentMethod}
+              </Box>
+              <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center' }}>
+                <CalendarIcon sx={{ color: '#4CAF50', fontSize: 22, mr: 1 }} />
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: 600, minWidth: 110 }}
+                >
+                  Thời gian:
                 </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  Ghi chú của khách hàng:{' '}
-                  {selectedAppointment.notes || 'Không có'}
+                <Typography variant="body1" sx={{ ml: 1 }}>
+                  {selectedAppointment.startTime &&
+                  !isNaN(new Date(selectedAppointment.startTime).getTime())
+                    ? `${new Date(selectedAppointment.startTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}`
+                    : 'Chưa cập nhật'}
+                  {selectedAppointment.endTime &&
+                  !isNaN(new Date(selectedAppointment.endTime).getTime())
+                    ? ` - ${new Date(selectedAppointment.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+                    : ''}
                 </Typography>
-              </Grid>
-              {selectedAppointment.consultantNotes && (
-                <Grid item xs={12}>
-                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    Ghi chú của tư vấn viên:{' '}
-                    {selectedAppointment.consultantNotes}
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
+              </Box>
+            </Box>
           ) : (
             <Typography>Không có thông tin chi tiết để hiển thị.</Typography>
           )}

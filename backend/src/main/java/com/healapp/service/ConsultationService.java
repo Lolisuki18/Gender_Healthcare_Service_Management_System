@@ -161,6 +161,8 @@ public class ConsultationService {
             consultation.setStartTime(consultationStartTime);
             consultation.setEndTime(consultationEndTime);
             consultation.setStatus(ConsultationStatus.PENDING);
+            consultation.setNotes(request.getNotes());
+            consultation.setReason(request.getReason());
 
             Consultation savedConsultation = consultationRepository.save(consultation);
             ConsultationResponse response = convertToResponse(savedConsultation);
@@ -378,7 +380,21 @@ public class ConsultationService {
         }
     }
 
-    
+    public ApiResponse<ConsultationResponse> updateConsultationNotes(Long consultationId, String notes) {
+        try {
+            Optional<Consultation> consultationOpt = consultationRepository.findById(consultationId);
+            if (consultationOpt.isEmpty()) {
+                return ApiResponse.error("Consultation not found");
+            }
+            Consultation consultation = consultationOpt.get();
+            consultation.setNotes(notes);
+            Consultation updated = consultationRepository.save(consultation);
+            ConsultationResponse response = convertToResponse(updated);
+            return ApiResponse.success("Notes updated successfully", response);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to update notes: " + e.getMessage());
+        }
+    }
 
     private ConsultationResponse convertToResponse(Consultation consultation) {
         ConsultationResponse response = new ConsultationResponse();
@@ -408,6 +424,8 @@ public class ConsultationService {
 
         response.setCreatedAt(consultation.getCreatedAt());
         response.setUpdatedAt(consultation.getUpdatedAt());
+        response.setNotes(consultation.getNotes());
+        response.setReason(consultation.getReason());
         return response;
     }
 }

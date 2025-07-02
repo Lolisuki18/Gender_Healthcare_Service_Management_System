@@ -84,30 +84,28 @@ const DateTimeSelection = ({
           alignItems: 'center' // Căn giữa nội dung
         }}>
           
-          {/* Header phần chọn ngày với gradient đẹp mắt */}
+          {/* Header phần chọn ngày với nền sáng */}
           <Box sx={{ 
             display: 'flex', 
             alignItems: 'center', 
             mb: 2,
             width: '100%',
             justifyContent: 'center',
-            background: 'linear-gradient(135deg, #2196F3, #00BFA5)', // Gradient xanh dương sang xanh ngọc
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 255, 0.9))', // Nền trắng nhẹ
             borderRadius: '12px',
             p: 1.5,
-            boxShadow: '0 4px 15px rgba(33, 150, 243, 0.25)', // Đổ bóng xanh nhẹ
-            border: '1px solid rgba(33, 150, 243, 0.1)' // Viền mỏng
+            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)', // Đổ bóng nhẹ
           }}>
             <CalendarTodayIcon sx={{ 
               mr: 1, 
               fontSize: '1.3rem', 
-              color: 'white',
-              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' // Đổ bóng cho icon
+              color: '#2196F3',
+              filter: 'drop-shadow(0 2px 4px rgba(33, 150, 243, 0.3))' // Đổ bóng xanh cho icon
             }} />
             <Typography variant="h6" sx={{ 
               fontWeight: 700, 
               fontSize: '1.15rem', 
-              color: 'white',
-              textShadow: '0 1px 2px rgba(0,0,0,0.1)', // Đổ bóng cho text
+              color: '#000',
               letterSpacing: '0.5px' // Giãn chữ nhẹ
             }}>
               Chọn ngày
@@ -130,22 +128,22 @@ const DateTimeSelection = ({
               sx={{ 
                 // ===== STYLE CHO HEADER CALENDAR =====
                 '& .MuiPickersCalendarHeader-root': {
-                  background: 'linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(0, 191, 165, 0.1))', // Gradient nhẹ
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 255, 0.9))', // Nền trắng nhẹ
                   borderRadius: '12px 12px 0 0', // Bo góc trên
                   paddingTop: 1.5,
                   paddingBottom: 1.5,
-                  backdropFilter: 'blur(10px)', // Hiệu ứng blur
+                  border: '1px solid rgba(33, 150, 243, 0.2)', // Viền xanh nhẹ
                 },
                 
                 // ===== STYLE CHO TEXT THÁNG/NĂM =====
                 '& .MuiPickersCalendarHeader-label': {
-                  color: '#2196F3', // Màu xanh dương
+                  color: '#000', // Màu đen
                   fontWeight: 600,
                 },
                 
                 // ===== STYLE CHO CÁC NÚT ĐIỀU HƯỚNG =====
                 '& .MuiIconButton-root': {
-                  color: '#2196F3',
+                  color: '#000',
                   '&:hover': {
                     backgroundColor: 'rgba(33, 150, 243, 0.1)', // Hover nhẹ
                   },
@@ -156,16 +154,16 @@ const DateTimeSelection = ({
                   borderRadius: '50%', // Hình tròn
                   fontSize: '0.9rem',
                   fontWeight: 400,
-                  color: '#9e9e9e', // Màu xám nhẹ cho ngày thường
+                  color: '#000', // Màu đen cho ngày thường
                   border: 'none',
                   '&:hover': {
-                    backgroundColor: 'rgba(33, 150, 243, 0.08)', // Hover nhẹ
+                    backgroundColor: 'rgba(33, 150, 243, 0.1)', // Hover nhẹ
                   },
                   
                   // ===== STYLE CHO NGÀY ĐƯỢC CHỌN =====
                   '&.Mui-selected': {
                     background: 'linear-gradient(135deg, #2196F3, #00BFA5)', // Gradient xanh
-                    color: 'white', // Text trắng cho ngày được chọn
+                    color: 'white', // Text trắng cho ngày được chọn để dễ đọc
                     fontWeight: 700,
                     boxShadow: '0 4px 15px rgba(33, 150, 243, 0.4)', // Đổ bóng
                     transform: 'scale(1.1)', // Phóng to nhẹ
@@ -190,10 +188,9 @@ const DateTimeSelection = ({
                 
                 // ===== STYLE CHO NỀN CALENDAR =====
                 '& .MuiDayCalendar-root': {
-                  background: 'linear-gradient(135deg, rgba(248, 250, 255, 0.9), rgba(232, 245, 253, 0.8))', // Nền xanh nhẹ
+                  background: 'white', // Nền trắng sạch
                   borderRadius: '0 0 12px 12px', // Bo góc dưới
                   padding: 2.5,
-                  backdropFilter: 'blur(10px)',
                 },
                 
                 // ===== STYLE CHO KHUNG TỔNG THỂ =====
@@ -201,14 +198,13 @@ const DateTimeSelection = ({
                   border: '2px solid rgba(33, 150, 243, 0.3)', // Viền xanh
                   borderRadius: '12px',
                   overflow: 'hidden',
-                  boxShadow: '0 8px 25px rgba(33, 150, 243, 0.2), 0 4px 12px rgba(33, 150, 243, 0.1)', // Đổ bóng xanh
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)', // Đổ bóng nhẹ
                   backgroundColor: 'white',
-                  backdropFilter: 'blur(20px)',
                 },
                 
                 // ===== STYLE CHO LABEL CÁC THỨ TRONG TUẦN =====
                 '& .MuiDayCalendar-weekDayLabel': {
-                  color: '#2196F3',
+                  color: '#000',
                   fontWeight: 600,
                   fontSize: '0.85rem',
                 },
@@ -228,28 +224,26 @@ const DateTimeSelection = ({
           minWidth: { xs: '100%', md: '300px' } // Chiều rộng tối thiểu
         }}>
           
-          {/* Header phần chọn giờ với gradient xanh ngọc */}
+          {/* Header phần chọn giờ với nền sáng */}
           <Box sx={{ 
             display: 'flex', 
             alignItems: 'center', 
             mb: 2,
-            background: 'linear-gradient(135deg, #00BFA5, #00ACC1)', // Gradient xanh ngọc
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 255, 0.9))', // Nền trắng nhẹ
             borderRadius: '12px',
             p: 1.5,
-            boxShadow: '0 4px 15px rgba(0, 191, 165, 0.25)', // Đổ bóng xanh ngọc
-            border: '1px solid rgba(0, 191, 165, 0.1)'
+            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)', // Đổ bóng nhẹ
           }}>
             <AccessTimeIcon sx={{ 
               mr: 1, 
               fontSize: '1.3rem', 
-              color: 'white',
-              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+              color: '#00BFA5',
+              filter: 'drop-shadow(0 2px 4px rgba(0, 191, 165, 0.3))'
             }} />
             <Typography variant="h6" sx={{ 
               fontWeight: 700, 
               fontSize: '1.15rem', 
-              color: 'white',
-              textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+              color: '#000',
               letterSpacing: '0.5px'
             }}>
               Chọn giờ khám
@@ -291,12 +285,12 @@ const DateTimeSelection = ({
                     minHeight: '40px',
                     
                     // ===== LOGIC MÀU SẮC PHỨC TẠP =====
-                    // Background: Xám nhạt cho disabled, gradient xanh ngọc cho selected, trắng trong suốt cho normal
+                    // Background: Xám nhạt cho disabled, gradient xanh ngọc cho selected, trắng cho normal
                     background: !isValid 
                       ? 'linear-gradient(135deg, rgba(158, 158, 158, 0.12), rgba(158, 158, 158, 0.08))' 
                       : isSelected 
                         ? 'linear-gradient(135deg, #00BFA5, #00ACC1)' 
-                        : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 253, 251, 0.8))',
+                        : 'white',
                     
                     // Border color tương ứng với background
                     borderColor: !isValid 
@@ -310,7 +304,7 @@ const DateTimeSelection = ({
                       ? 'rgba(0, 0, 0, 0.26)' // Xám nhạt cho disabled
                       : isSelected 
                         ? 'white'  // Trắng cho selected
-                        : '#00BFA5', // Xanh ngọc cho normal
+                        : '#000', // Đen cho normal
                     
                     // Box shadow
                     boxShadow: isSelected && isValid 
@@ -326,7 +320,7 @@ const DateTimeSelection = ({
                     '&:hover': !isValid ? {} : {
                       background: isSelected 
                         ? 'linear-gradient(135deg, #00ACC1, #0097A7)' // Gradient đậm hơn cho selected
-                        : 'linear-gradient(135deg, rgba(0, 191, 165, 0.15), rgba(0, 172, 193, 0.1))', // Xanh nhạt cho normal
+                        : 'rgba(0, 191, 165, 0.1)', // Xanh nhạt cho normal
                       borderColor: isSelected ? 'rgba(0, 191, 165, 0.8)' : '#00BFA5',
                       transform: 'translateY(-2px) scale(1.02)', // Nâng lên và phóng to nhẹ
                       boxShadow: isSelected 
@@ -343,23 +337,6 @@ const DateTimeSelection = ({
                     },
                     
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Animation mượt mà
-                    
-                    // ===== HIỆU ỨNG GẠCH NGANG CHO KHUNG GIỜ ĐÃ QUA =====
-                    // Tạo đường gạch ngang màu đỏ cho khung giờ không hợp lệ
-                    ...((!isValid) && {
-                      '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        width: '70%',
-                        height: '2px',
-                        backgroundColor: '#f44336', // Màu đỏ
-                        transform: 'translate(-50%, -50%)',
-                        borderRadius: '1px',
-                        zIndex: 1
-                      }
-                    })
                   }}
                 >
                   {time}
@@ -389,14 +366,14 @@ const DateTimeSelection = ({
                   <Box sx={{ 
                     mt: 2,
                     p: 2,
-                    backgroundColor: 'rgba(0, 191, 165, 0.08)', // Nền xanh ngọc nhẹ
+                    backgroundColor: 'rgba(0, 191, 165, 0.05)', // Nền xanh ngọc rất nhẹ
                     borderRadius: '8px',
                     border: '1px solid rgba(0, 191, 165, 0.2)' // Viền xanh ngọc
                   }}>
                     <Typography 
                       variant="body2" 
                       sx={{ 
-                        color: '#00BFA5',
+                        color: '#000',
                         fontWeight: 600,
                         fontSize: '0.9rem',
                         display: 'flex',
@@ -410,7 +387,7 @@ const DateTimeSelection = ({
                     <Typography 
                       variant="body2" 
                       sx={{ 
-                        color: '#212121',
+                        color: '#000',
                         fontSize: '0.85rem',
                         lineHeight: 1.5
                       }}
@@ -427,14 +404,14 @@ const DateTimeSelection = ({
                   <Box sx={{ 
                     mt: 2,
                     p: 2,
-                    backgroundColor: 'rgba(255, 193, 7, 0.08)', // Nền vàng nhẹ cho cảnh báo
+                    backgroundColor: 'rgba(255, 193, 7, 0.05)', // Nền vàng rất nhẹ cho cảnh báo
                     borderRadius: '8px',
                     border: '1px solid rgba(255, 193, 7, 0.3)' // Viền vàng
                   }}>
                     <Typography 
                       variant="body2" 
                       sx={{ 
-                        color: '#f57c00', // Màu cam cho cảnh báo
+                        color: '#000', // Màu đen cho cảnh báo
                         fontWeight: 600,
                         fontSize: '0.9rem',
                         display: 'flex',
@@ -448,7 +425,7 @@ const DateTimeSelection = ({
                     <Typography 
                       variant="body2" 
                       sx={{ 
-                        color: '#212121',
+                        color: '#000',
                         fontSize: '0.85rem',
                         lineHeight: 1.5
                       }}
@@ -465,14 +442,14 @@ const DateTimeSelection = ({
                   <Box sx={{ 
                     mt: 2,
                     p: 2,
-                    backgroundColor: 'rgba(0, 191, 165, 0.08)', // Nền xanh ngọc nhẹ
+                    backgroundColor: 'rgba(0, 191, 165, 0.05)', // Nền xanh ngọc rất nhẹ
                     borderRadius: '8px',
                     border: '1px solid rgba(0, 191, 165, 0.2)'
                   }}>
                     <Typography 
                       variant="body2" 
                       sx={{ 
-                        color: '#00BFA5',
+                        color: '#000',
                         fontWeight: 600,
                         fontSize: '0.9rem',
                         display: 'flex',
@@ -509,7 +486,7 @@ const DateTimeSelection = ({
               <Typography 
                 variant="body2" 
                 sx={{ 
-                  color: 'rgba(0, 191, 165, 0.7)',
+                  color: '#000',
                   fontStyle: 'italic',
                   fontWeight: 500
                 }}
@@ -531,15 +508,11 @@ const DateTimeSelection = ({
           sx={{ 
             fontWeight: 700, 
             fontSize: '1.15rem',
-            background: 'linear-gradient(135deg, #2196F3, #00BFA5)', // Gradient xanh
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
+            color: '#000', // Màu đen thay vì gradient
             mb: 2,
             display: 'flex',
             alignItems: 'center',
             gap: 1,
-            filter: 'drop-shadow(0 1px 2px rgba(33, 150, 243, 0.3))' // Đổ bóng nhẹ
           }}
         >
           📝 Ghi chú (tùy chọn)
@@ -557,8 +530,7 @@ const DateTimeSelection = ({
             // ===== STYLE CHO CONTAINER INPUT =====
             '& .MuiOutlinedInput-root': {
               borderRadius: '12px', // Bo góc
-              background: 'linear-gradient(135deg, rgba(248, 250, 255, 0.9), rgba(232, 245, 253, 0.8))', // Nền gradient nhẹ
-              backdropFilter: 'blur(10px)', // Hiệu ứng blur
+              background: 'white', // Nền trắng sạch
               
               // ===== STYLE CHO VIỀN =====
               '& fieldset': {
@@ -585,15 +557,12 @@ const DateTimeSelection = ({
             // ===== STYLE CHO TEXT TRONG INPUT =====
             '& .MuiInputBase-input': {
               fontSize: '0.95rem',
-              color: '#1976D2', // Màu text xanh
+              color: '#000', // Màu text đen
               fontWeight: 500,
               
               // ===== STYLE CHO PLACEHOLDER =====
               '&::placeholder': {
-                background: 'linear-gradient(135deg, #2196F3, #00BFA5)', // Gradient cho placeholder
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
+                color: '#666', // Màu xám cho placeholder
                 opacity: 0.8,
               },
             },
@@ -606,7 +575,7 @@ const DateTimeSelection = ({
           sx={{ 
             mt: 1,
             display: 'block',
-            color: 'rgba(158, 158, 158, 0.8)', // Màu xám nhạt
+            color: '#666', // Màu xám đen
             fontSize: '0.75rem',
             fontStyle: 'italic'
           }}

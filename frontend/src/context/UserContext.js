@@ -49,7 +49,9 @@ export const UserProvider = ({ children }) => {
 
         if (token) {
           // Nếu có token, lấy thông tin người dùng từ API
-          await dispatch(fetchCurrentUser()).unwrap();
+          // Sử dụng skipAutoRedirect để tránh redirect tự động trên các trang public
+          console.log("🔍 [UserContext] Calling fetchCurrentUser with skipAutoRedirect=true");
+          await dispatch(fetchCurrentUser(true)).unwrap();
           console.log("UserContext: Đã tải thông tin người dùng từ API");
         } else {
           console.log("UserContext: Không tìm thấy token trong localStorage");
