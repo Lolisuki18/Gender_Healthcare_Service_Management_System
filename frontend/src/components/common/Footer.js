@@ -15,20 +15,58 @@
  * - Tự động điều chỉnh màu sắc dựa trên chế độ sáng/tối
  */
 
-import React from "react";
-import { Box, Container, Typography, Link, Grid, Divider } from "@mui/material";
-import { Email, Phone, LocationOn } from "@mui/icons-material";
+import React from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Link,
+  Grid,
+  Divider,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
+import {
+  Email,
+  Phone,
+  LocationOn,
+  Facebook,
+  Instagram,
+  LinkedIn,
+  KeyboardArrowUp,
+} from '@mui/icons-material';
+import { useMediaQuery } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { useState } from 'react';
 
 const Footer = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [showScroll, setShowScroll] = useState(false);
+
+  // Scroll to top logic
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setShowScroll(window.scrollY > 200);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleScrollTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <Box
       component="footer"
       sx={{
-        background: "linear-gradient(135deg, #2C5282 0%, #1ABC9C 100%)",
-        color: "white",
-        mt: "auto",
+        background: 'linear-gradient(135deg, #2C5282 0%, #1ABC9C 100%)',
+        color: 'white',
+        mt: 'auto',
         py: 4,
-        borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        position: 'relative',
       }}
     >
       <Container maxWidth="lg">
@@ -40,11 +78,21 @@ const Footer = () => {
               gutterBottom
               sx={{
                 fontWeight: 700,
-                mb: 2,
-                color: "white",
+                mb: 1,
+                color: 'white',
               }}
             >
               Gender Health Care
+            </Typography>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontStyle: 'italic',
+                opacity: 0.85,
+                mb: 1,
+              }}
+            >
+              "Chăm sóc sức khỏe - Tôn trọng sự đa dạng"
             </Typography>
             <Typography
               variant="body2"
@@ -57,6 +105,60 @@ const Footer = () => {
               Dịch vụ chăm sóc sức khỏe chuyên biệt cho mọi bản dạng giới tính.
               Chúng tôi cam kết mang đến dịch vụ y tế chất lượng cao và an toàn.
             </Typography>
+            {/* Social Media Icons */}
+            <Box sx={{ display: 'flex', gap: 1.5, mt: 1 }}>
+              <Tooltip title="Facebook">
+                <IconButton
+                  component="a"
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener"
+                  sx={{
+                    color: '#fff',
+                    bgcolor: 'rgba(255,255,255,0.08)',
+                    transition: 'all 0.3s',
+                    '&:hover': { bgcolor: '#1877f2', color: '#fff' },
+                  }}
+                  size="small"
+                >
+                  <Facebook fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Instagram">
+                <IconButton
+                  component="a"
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener"
+                  sx={{
+                    color: '#fff',
+                    bgcolor: 'rgba(255,255,255,0.08)',
+                    transition: 'all 0.3s',
+                    '&:hover': { bgcolor: '#E1306C', color: '#fff' },
+                  }}
+                  size="small"
+                >
+                  <Instagram fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="LinkedIn">
+                <IconButton
+                  component="a"
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener"
+                  sx={{
+                    color: '#fff',
+                    bgcolor: 'rgba(255,255,255,0.08)',
+                    transition: 'all 0.3s',
+                    '&:hover': { bgcolor: '#0A66C2', color: '#fff' },
+                  }}
+                  size="small"
+                >
+                  <LinkedIn fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Box>
           </Grid>
 
           {/* Quick Links */}
@@ -67,31 +169,36 @@ const Footer = () => {
               sx={{
                 fontWeight: 600,
                 mb: 2,
-                color: "white",
+                color: 'white',
               }}
             >
               Liên kết nhanh
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {[
-                { href: "/", label: "Trang chủ" },
-                { href: "/sti-services", label: "Xét nghiệm STIs" },
-                { href: "/blog", label: "Blogs" },
-                { href: "/about", label: "Giới thiệu" },
-                { href: "/ovulation", label: "Chu kì rụng trứng" },
-                { href: "/pill-reminder", label: "Nhắc uống thuốc" },
+                { href: '/', label: 'Trang chủ' },
+                { href: '/sti-services', label: 'Xét nghiệm STIs' },
+                { href: '/blog', label: 'Blogs' },
+                { href: '/about', label: 'Giới thiệu' },
+                { href: '/ovulation', label: 'Chu kì rụng trứng' },
+                { href: '/pill-reminder', label: 'Nhắc uống thuốc' },
               ].map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   sx={{
-                    color: "rgba(255, 255, 255, 0.8)",
-                    textDecoration: "none",
-                    fontSize: "0.9rem",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      color: "white",
-                      transform: "translateX(4px)",
+                    color: 'rgba(255, 255, 255, 0.85)',
+                    textDecoration: 'none',
+                    fontSize: '0.95rem',
+                    fontWeight: 500,
+                    borderRadius: 1,
+                    px: 1,
+                    py: 0.5,
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      color: '#1ABC9C',
+                      bgcolor: 'rgba(255,255,255,0.15)',
+                      pl: 2,
                     },
                   }}
                 >
@@ -109,25 +216,25 @@ const Footer = () => {
               sx={{
                 fontWeight: 600,
                 mb: 2,
-                color: "white",
+                color: 'white',
               }}
             >
               Thông tin liên hệ
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Email sx={{ fontSize: 18, opacity: 0.8 }} />
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
                   info@genderhealthcare.com
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Phone sx={{ fontSize: 18, opacity: 0.8 }} />
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
                   +84 123 456 789
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <LocationOn sx={{ fontSize: 18, opacity: 0.8 }} />
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
                   FPT University, Hà Nội
@@ -140,7 +247,7 @@ const Footer = () => {
         <Divider
           sx={{
             my: 3,
-            borderColor: "rgba(255, 255, 255, 0.2)",
+            borderColor: 'rgba(255, 255, 255, 0.2)',
             opacity: 0.6,
           }}
         />
@@ -148,41 +255,30 @@ const Footer = () => {
         {/* Bottom Section */}
         <Box
           sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between',
+            alignItems: 'center',
             gap: 2,
           }}
         >
-          <Typography
-            variant="body2"
-            sx={{
-              opacity: 0.8,
-              textAlign: { xs: "center", sm: "left" },
-            }}
-          >
-            © {new Date().getFullYear()} Gender Health Care. All rights
-            reserved.
-          </Typography>
-
           <Box
             sx={{
-              display: "flex",
+              display: 'flex',
               gap: 2,
-              flexWrap: "wrap",
-              justifyContent: { xs: "center", sm: "flex-end" },
+              flexWrap: 'wrap',
+              justifyContent: { xs: 'center', sm: 'flex-end' },
             }}
           >
             <Link
               href="/privacy"
               sx={{
-                color: "rgba(255, 255, 255, 0.8)",
-                textDecoration: "none",
-                fontSize: "0.875rem",
-                transition: "color 0.3s ease",
-                "&:hover": {
-                  color: "white",
+                color: 'rgba(255, 255, 255, 0.8)',
+                textDecoration: 'none',
+                fontSize: '0.875rem',
+                transition: 'color 0.3s ease',
+                '&:hover': {
+                  color: '#1ABC9C',
                 },
               }}
             >
@@ -192,12 +288,12 @@ const Footer = () => {
             <Link
               href="/terms"
               sx={{
-                color: "rgba(255, 255, 255, 0.8)",
-                textDecoration: "none",
-                fontSize: "0.875rem",
-                transition: "color 0.3s ease",
-                "&:hover": {
-                  color: "white",
+                color: 'rgba(255, 255, 255, 0.8)',
+                textDecoration: 'none',
+                fontSize: '0.875rem',
+                transition: 'color 0.3s ease',
+                '&:hover': {
+                  color: '#1ABC9C',
                 },
               }}
             >
@@ -205,7 +301,42 @@ const Footer = () => {
             </Link>
           </Box>
         </Box>
+        {/* Copyright */}
+        <Box sx={{ mt: 3 }}>
+          <Typography
+            variant="body2"
+            sx={{
+              opacity: 0.8,
+              textAlign: 'center',
+              fontSize: isMobile ? '0.85rem' : '1rem',
+              mt: 1,
+            }}
+          >
+            © {new Date().getFullYear()} Gender Health Care. All rights
+            reserved.
+          </Typography>
+        </Box>
       </Container>
+      {/* Scroll to Top Button */}
+      {showScroll && (
+        <IconButton
+          onClick={handleScrollTop}
+          sx={{
+            position: 'fixed',
+            bottom: 32,
+            right: 32,
+            bgcolor: '#1ABC9C',
+            color: '#fff',
+            boxShadow: 3,
+            zIndex: 1200,
+            '&:hover': { bgcolor: '#2C5282' },
+            transition: 'all 0.3s',
+          }}
+          size="large"
+        >
+          <KeyboardArrowUp fontSize="inherit" />
+        </IconButton>
+      )}
     </Box>
   );
 };
