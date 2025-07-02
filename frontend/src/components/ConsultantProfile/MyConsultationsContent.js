@@ -1275,35 +1275,27 @@ const MyConsultationsContent = () => {
                   spacing={3}
                   sx={{
                     mb: 3,
-                    justifyContent: 'center',
                     alignItems: 'stretch',
                   }}
                 >
-                  <Grid
-                    item
-                    xs={12}
-                    md={6}
-                    sx={{ display: 'flex', justifyContent: 'center' }}
-                  >
+                  <Grid item xs={12} md={6}>
                     <MedicalCard
                       variant="outlined"
                       sx={{
                         flex: 1,
                         display: 'flex',
                         flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
                         borderRadius: 3,
                         boxShadow: '0 2px 12px 0 rgba(32,40,45,0.07)',
                         minHeight: 220,
                         px: 4,
                         py: 3,
                         bgcolor: '#fff',
-                        maxWidth: 420,
                         width: '100%',
+                        height: '100%',
                       }}
                     >
-                      <CardContent sx={{ p: 0, width: '100%' }}>
+                      <CardContent sx={{ p: 0, width: '100%', height: '100%' }}>
                         <Typography
                           variant="h6"
                           sx={{
@@ -1522,31 +1514,24 @@ const MyConsultationsContent = () => {
                       </CardContent>
                     </MedicalCard>
                   </Grid>
-                  <Grid
-                    item
-                    xs={12}
-                    md={6}
-                    sx={{ display: 'flex', justifyContent: 'center' }}
-                  >
+                  <Grid item xs={12} md={6}>
                     <MedicalCard
                       variant="outlined"
                       sx={{
                         flex: 1,
                         display: 'flex',
                         flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
                         borderRadius: 3,
                         boxShadow: '0 2px 12px 0 rgba(32,40,45,0.07)',
                         minHeight: 220,
                         px: 4,
                         py: 3,
                         bgcolor: '#fff',
-                        maxWidth: 420,
                         width: '100%',
+                        height: '100%',
                       }}
                     >
-                      <CardContent sx={{ p: 0, width: '100%' }}>
+                      <CardContent sx={{ p: 0, width: '100%', height: '100%' }}>
                         <Typography
                           variant="h6"
                           sx={{
@@ -1631,7 +1616,7 @@ const MyConsultationsContent = () => {
                                 ? 'Tư vấn qua video'
                                 : selectedConsultation.type === 'chat'
                                   ? 'Tư vấn qua chat'
-                                  : 'Tư vấn trực tiếp'}
+                                  : 'Tư vấn trực tuyến'}
                             </Typography>
                           </Box>{' '}
                           <Box
