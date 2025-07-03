@@ -27,8 +27,8 @@
  * - success: Màu xanh lá cho xác nhận tích cực
  */
 
-import React from "react";
-import ReactDOM from "react-dom/client";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 import {
   Dialog,
   DialogTitle,
@@ -38,14 +38,15 @@ import {
   Button,
   Box,
   IconButton,
-} from "@mui/material";
+  TextField,
+} from '@mui/material';
 import {
   Warning as WarningIcon,
   Error as ErrorIcon,
   Info as InfoIcon,
   CheckCircle as SuccessIcon,
   Close as CloseIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 
 // Icons cho từng loại dialog
 const DIALOG_ICONS = {
@@ -58,32 +59,32 @@ const DIALOG_ICONS = {
 // Colors cho từng loại dialog
 const DIALOG_COLORS = {
   danger: {
-    icon: "#EF4444",
-    confirm: "#EF4444",
-    confirmHover: "#DC2626",
-    background: "#FEF2F2",
-    border: "#FECACA",
+    icon: '#EF4444',
+    confirm: '#EF4444',
+    confirmHover: '#DC2626',
+    background: '#FEF2F2',
+    border: '#FECACA',
   },
   warning: {
-    icon: "#F59E0B",
-    confirm: "#F59E0B",
-    confirmHover: "#D97706",
-    background: "#FFFBEB",
-    border: "#FDE68A",
+    icon: '#F59E0B',
+    confirm: '#F59E0B',
+    confirmHover: '#D97706',
+    background: '#FFFBEB',
+    border: '#FDE68A',
   },
   info: {
-    icon: "#3B82F6",
-    confirm: "#3B82F6",
-    confirmHover: "#2563EB",
-    background: "#EFF6FF",
-    border: "#BFDBFE",
+    icon: '#3B82F6',
+    confirm: '#3B82F6',
+    confirmHover: '#2563EB',
+    background: '#EFF6FF',
+    border: '#BFDBFE',
   },
   success: {
-    icon: "#10B981",
-    confirm: "#10B981",
-    confirmHover: "#059669",
-    background: "#ECFDF5",
-    border: "#BBF7D0",
+    icon: '#10B981',
+    confirm: '#10B981',
+    confirmHover: '#059669',
+    background: '#ECFDF5',
+    border: '#BBF7D0',
   },
 };
 
@@ -122,57 +123,57 @@ const ConfirmDialog = ({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: "16px !important", // ✅ Force border radius with !important
-          background: "rgba(255, 255, 255, 0.98)",
-          backdropFilter: "blur(20px)",
+          borderRadius: '16px !important', // ✅ Force border radius with !important
+          background: 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(20px)',
           border: `2px solid ${colors.border}`,
-          boxShadow: "0 25px 50px rgba(0, 0, 0, 0.15)",
-          overflow: "visible",
+          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
+          overflow: 'visible',
           // ✅ Additional border radius fixes
-          "& .MuiDialog-paper": {
-            borderRadius: "16px !important",
+          '& .MuiDialog-paper': {
+            borderRadius: '16px !important',
           },
-          "&.MuiPaper-root": {
-            borderRadius: "16px !important",
+          '&.MuiPaper-root': {
+            borderRadius: '16px !important',
           },
           // ✅ Ensure all child elements respect the border radius
-          "& *": {
-            "&:first-of-type": {
-              borderTopLeftRadius: "16px",
-              borderTopRightRadius: "16px",
+          '& *': {
+            '&:first-of-type': {
+              borderTopLeftRadius: '16px',
+              borderTopRightRadius: '16px',
             },
-            "&:last-of-type": {
-              borderBottomLeftRadius: "16px",
-              borderBottomRightRadius: "16px",
+            '&:last-of-type': {
+              borderBottomLeftRadius: '16px',
+              borderBottomRightRadius: '16px',
             },
           },
         },
       }}
       BackdropProps={{
         sx: {
-          backgroundColor: "rgba(0, 0, 0, 0.6)",
-          backdropFilter: "blur(8px)",
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(8px)',
         },
       }}
       // ✅ Add style prop as additional override
       style={{
-        "& .MuiDialog-paper": {
-          borderRadius: "16px",
+        '& .MuiDialog-paper': {
+          borderRadius: '16px',
         },
       }}
     >
       {/* Header với icon */}
       <DialogTitle
         sx={{
-          textAlign: "center",
+          textAlign: 'center',
           pt: 4,
           pb: 2,
-          position: "relative",
+          position: 'relative',
           background: colors.background,
           borderBottom: `1px solid ${colors.border}`,
           // ✅ Ensure header has proper border radius
-          borderTopLeftRadius: "16px !important",
-          borderTopRightRadius: "16px !important",
+          borderTopLeftRadius: '16px !important',
+          borderTopRightRadius: '16px !important',
           margin: 0, // Remove any default margins
         }}
       >
@@ -181,15 +182,15 @@ const ConfirmDialog = ({
           <IconButton
             onClick={handleCancel}
             sx={{
-              position: "absolute",
+              position: 'absolute',
               right: 16,
               top: 16,
-              color: "#6B7280",
-              "&:hover": {
-                backgroundColor: "rgba(107, 114, 128, 0.1)",
-                transform: "scale(1.1)",
+              color: '#6B7280',
+              '&:hover': {
+                backgroundColor: 'rgba(107, 114, 128, 0.1)',
+                transform: 'scale(1.1)',
               },
-              transition: "all 0.2s ease",
+              transition: 'all 0.2s ease',
             }}
           >
             <CloseIcon />
@@ -199,8 +200,8 @@ const ConfirmDialog = ({
         {/* Icon */}
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "center",
+            display: 'flex',
+            justifyContent: 'center',
             mb: 2,
             color: colors.icon,
           }}
@@ -213,8 +214,8 @@ const ConfirmDialog = ({
           variant="h5"
           sx={{
             fontWeight: 700,
-            color: "#1F2937",
-            fontSize: "1.5rem",
+            color: '#1F2937',
+            fontSize: '1.5rem',
           }}
         >
           {title}
@@ -224,7 +225,7 @@ const ConfirmDialog = ({
       {/* Content */}
       <DialogContent
         sx={{
-          textAlign: "center",
+          textAlign: 'center',
           py: 3,
           px: 4,
           margin: 0, // Remove any default margins
@@ -233,8 +234,8 @@ const ConfirmDialog = ({
         <Typography
           variant="body1"
           sx={{
-            color: "#4B5563",
-            fontSize: "1.1rem",
+            color: '#4B5563',
+            fontSize: '1.1rem',
             lineHeight: 1.6,
           }}
         >
@@ -245,13 +246,13 @@ const ConfirmDialog = ({
       {/* Actions */}
       <DialogActions
         sx={{
-          justifyContent: "center",
+          justifyContent: 'center',
           gap: 2,
           p: 3,
           pt: 1,
           // ✅ Ensure footer has proper border radius
-          borderBottomLeftRadius: "16px !important",
-          borderBottomRightRadius: "16px !important",
+          borderBottomLeftRadius: '16px !important',
+          borderBottomRightRadius: '16px !important',
           margin: 0, // Remove any default margins
         }}
       >
@@ -264,18 +265,18 @@ const ConfirmDialog = ({
             minWidth: 120,
             py: 1.5,
             px: 3,
-            borderRadius: "12px !important", // ✅ Force button border radius
-            borderColor: "#D1D5DB",
-            color: "#6B7280",
-            fontSize: "1rem",
+            borderRadius: '12px !important', // ✅ Force button border radius
+            borderColor: '#D1D5DB',
+            color: '#6B7280',
+            fontSize: '1rem',
             fontWeight: 600,
-            "&:hover": {
-              borderColor: "#9CA3AF",
-              backgroundColor: "rgba(107, 114, 128, 0.05)",
-              transform: "translateY(-1px)",
-              borderRadius: "12px !important", // ✅ Maintain border radius on hover
+            '&:hover': {
+              borderColor: '#9CA3AF',
+              backgroundColor: 'rgba(107, 114, 128, 0.05)',
+              transform: 'translateY(-1px)',
+              borderRadius: '12px !important', // ✅ Maintain border radius on hover
             },
-            transition: "all 0.2s ease",
+            transition: 'all 0.2s ease',
           }}
         >
           {cancelText}
@@ -290,18 +291,18 @@ const ConfirmDialog = ({
             minWidth: 120,
             py: 1.5,
             px: 3,
-            borderRadius: "12px !important", // ✅ Force button border radius
+            borderRadius: '12px !important', // ✅ Force button border radius
             backgroundColor: colors.confirm,
-            fontSize: "1rem",
+            fontSize: '1rem',
             fontWeight: 600,
             boxShadow: `0 4px 12px ${colors.confirm}40`,
-            "&:hover": {
+            '&:hover': {
               backgroundColor: colors.confirmHover,
-              transform: "translateY(-2px)",
+              transform: 'translateY(-2px)',
               boxShadow: `0 8px 25px ${colors.confirm}50`,
-              borderRadius: "12px !important", // ✅ Maintain border radius on hover
+              borderRadius: '12px !important', // ✅ Maintain border radius on hover
             },
-            transition: "all 0.3s ease",
+            transition: 'all 0.3s ease',
           }}
         >
           {confirmText}
@@ -317,19 +318,19 @@ const ConfirmDialog = ({
 const showConfirmDialog = (options) => {
   return new Promise((resolve) => {
     // Parse options
-    const config = typeof options === "string" ? { message: options } : options;
+    const config = typeof options === 'string' ? { message: options } : options;
 
     const {
-      title = "Xác nhận",
-      message = "Bạn có chắc chắn muốn thực hiện hành động này?",
-      confirmText = "Có",
-      cancelText = "Hủy",
-      type = "info",
+      title = 'Xác nhận',
+      message = 'Bạn có chắc chắn muốn thực hiện hành động này?',
+      confirmText = 'Có',
+      cancelText = 'Hủy',
+      type = 'info',
       showCloseButton = true,
     } = config;
 
     // Tạo container
-    const container = document.createElement("div");
+    const container = document.createElement('div');
     document.body.appendChild(container);
     const root = ReactDOM.createRoot(container);
 
@@ -391,9 +392,9 @@ export const confirmDialog = {
    */
   danger: (message, options = {}) =>
     showConfirmDialog({
-      type: "danger",
-      title: "Cảnh báo",
-      confirmText: "Xóa",
+      type: 'danger',
+      title: 'Cảnh báo',
+      confirmText: 'Xóa',
       message,
       ...options,
     }),
@@ -403,9 +404,9 @@ export const confirmDialog = {
    */
   warning: (message, options = {}) =>
     showConfirmDialog({
-      type: "warning",
-      title: "Cảnh báo",
-      confirmText: "Tiếp tục",
+      type: 'warning',
+      title: 'Cảnh báo',
+      confirmText: 'Tiếp tục',
       message,
       ...options,
     }),
@@ -415,9 +416,9 @@ export const confirmDialog = {
    */
   info: (message, options = {}) =>
     showConfirmDialog({
-      type: "info",
-      title: "Thông báo",
-      confirmText: "Đồng ý",
+      type: 'info',
+      title: 'Thông báo',
+      confirmText: 'Đồng ý',
       message,
       ...options,
     }),
@@ -427,11 +428,409 @@ export const confirmDialog = {
    */
   success: (message, options = {}) =>
     showConfirmDialog({
-      type: "success",
-      title: "Xác nhận",
-      confirmText: "Đồng ý",
+      type: 'success',
+      title: 'Xác nhận',
+      confirmText: 'Đồng ý',
       message,
       ...options,
+    }),
+
+  /**
+   * Dialog xác nhận từ chối/hủy (màu đỏ, nút 'Từ chối')
+   */
+  cancel: (message, options = {}) =>
+    showConfirmDialog({
+      type: 'danger',
+      title: 'Xác nhận từ chối',
+      confirmText: 'Từ chối',
+      message,
+      ...options,
+    }),
+
+  /**
+   * Dialog nhập nội dung trả lời câu hỏi
+   * @param {Object} options
+   *   - question: {content, customerName, createdAt}
+   *   - defaultAnswer: string
+   *   - title: string
+   *   - confirmText: string
+   *   - cancelText: string
+   * @returns {Promise<string|null>} Nội dung trả lời hoặc null nếu hủy
+   */
+  answer: (options = {}) =>
+    new Promise((resolve) => {
+      const {
+        question = {},
+        defaultAnswer = '',
+        title = 'Trả lời câu hỏi',
+        confirmText = 'Gửi trả lời',
+        cancelText = 'Hủy',
+      } = options;
+
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      const root = ReactDOM.createRoot(container);
+
+      const cleanup = () => {
+        setTimeout(() => {
+          root.unmount();
+          if (container.parentNode) container.parentNode.removeChild(container);
+        }, 300);
+      };
+
+      const DialogAnswer = () => {
+        const [open, setOpen] = React.useState(true);
+        const [answer, setAnswer] = React.useState(defaultAnswer);
+        const [error, setError] = React.useState('');
+
+        const handleClose = () => {
+          setOpen(false);
+          cleanup();
+          resolve(null);
+        };
+
+        const handleSend = () => {
+          if (!answer.trim()) {
+            setError('Vui lòng nhập nội dung trả lời.');
+            return;
+          }
+          setOpen(false);
+          cleanup();
+          resolve(answer.trim());
+        };
+
+        return (
+          <Dialog
+            open={open}
+            onClose={handleClose}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: 4,
+                boxShadow: '0 8px 32px rgba(74,144,226,0.18)',
+                overflow: 'visible',
+              },
+            }}
+          >
+            <DialogTitle
+              sx={{
+                background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 22,
+                letterSpacing: 0.5,
+                py: 2.5,
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center' }}>
+                <svg width={28} height={28} style={{ marginRight: 8 }}>
+                  <circle cx={14} cy={14} r={14} fill="#fff" />
+                  <text
+                    x={14}
+                    y={20}
+                    textAnchor="middle"
+                    fontSize={18}
+                    fill="#4A90E2"
+                  >
+                    ?
+                  </text>
+                </svg>
+              </span>
+              Trả lời câu hỏi
+            </DialogTitle>
+            <DialogContent
+              sx={{
+                pt: 3,
+                px: 4,
+                background: 'linear-gradient(135deg, #fff 80%, #f8fafc 100%)',
+              }}
+            >
+              {/* PHẦN 1: Thông tin người hỏi */}
+              <Box sx={{ mb: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: 700, color: '#1976d2' }}
+                >
+                  {question.customerName}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ color: '#64748b', fontSize: 13 }}
+                >
+                  {question.createdAt ? `lúc ${question.createdAt}` : ''}
+                </Typography>
+              </Box>
+              {/* PHẦN 2: Nội dung câu hỏi */}
+              <Box
+                sx={{
+                  background: '#f4f8fb',
+                  borderRadius: 2,
+                  p: 2,
+                  mb: 2,
+                  boxShadow: '0 1px 4px #4A90E215',
+                }}
+              >
+                <Typography
+                  variant="body1"
+                  sx={{ color: '#222', fontWeight: 500 }}
+                >
+                  {question.content}
+                </Typography>
+              </Box>
+              {/* PHẦN 3: Ô nhập trả lời */}
+              <TextField
+                label="Nội dung trả lời"
+                value={answer}
+                onChange={(e) => {
+                  setAnswer(e.target.value);
+                  setError('');
+                }}
+                fullWidth
+                multiline
+                minRows={4}
+                error={!!error}
+                helperText={error}
+                autoFocus
+                sx={{
+                  background: '#fff',
+                  borderRadius: 2,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    fontSize: '1.08rem',
+                    background: '#fff',
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#4A90E2',
+                      borderWidth: 2,
+                    },
+                  },
+                  mb: 2,
+                }}
+              />
+            </DialogContent>
+            <DialogActions sx={{ px: 4, pb: 3, gap: 2 }}>
+              <Button
+                onClick={handleClose}
+                variant="outlined"
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  px: 4,
+                  color: '#4A90E2',
+                  borderColor: '#b2dfdb',
+                  '&:hover': { background: '#e3f2fd', borderColor: '#4A90E2' },
+                }}
+              >
+                HỦY
+              </Button>
+              <Button
+                onClick={handleSend}
+                variant="contained"
+                sx={{
+                  borderRadius: 2,
+                  background:
+                    'linear-gradient(90deg, #4A90E2 60%, #1ABC9C 100%)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  px: 4,
+                  boxShadow: '0 2px 8px #4A90E222',
+                  '&:hover': {
+                    background:
+                      'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
+                  },
+                }}
+              >
+                GỬI TRẢ LỜI
+              </Button>
+            </DialogActions>
+          </Dialog>
+        );
+      };
+
+      root.render(<DialogAnswer />);
+    }),
+
+  /**
+   * Dialog xem chi tiết câu trả lời cho câu hỏi
+   * @param {Object} options
+   *   - question: {title, content, customerName, createdAt, category}
+   *   - answer: string
+   *   - title: string
+   *   - closeText: string
+   * @returns {Promise<void>}
+   */
+  viewAnswer: (options = {}) =>
+    new Promise((resolve) => {
+      const {
+        question = {},
+        answer = '',
+        title = 'Chi tiết câu hỏi',
+        closeText = 'Đóng',
+      } = options;
+
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      const root = ReactDOM.createRoot(container);
+
+      const cleanup = () => {
+        setTimeout(() => {
+          root.unmount();
+          if (container.parentNode) container.parentNode.removeChild(container);
+        }, 300);
+      };
+
+      const DialogView = () => {
+        const [open, setOpen] = React.useState(true);
+
+        const handleClose = () => {
+          setOpen(false);
+          cleanup();
+          resolve();
+        };
+
+        return (
+          <Dialog
+            open={open}
+            onClose={handleClose}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: 4,
+                boxShadow: '0 8px 32px rgba(74,144,226,0.18)',
+                overflow: 'visible',
+              },
+            }}
+          >
+            <DialogTitle
+              sx={{
+                background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 22,
+                letterSpacing: 0.5,
+                py: 2.5,
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center' }}>
+                <svg width={28} height={28} style={{ marginRight: 8 }}>
+                  <circle cx={14} cy={14} r={14} fill="#fff" />
+                  <text
+                    x={14}
+                    y={20}
+                    textAnchor="middle"
+                    fontSize={18}
+                    fill="#4A90E2"
+                  >
+                    &#128065;
+                  </text>
+                </svg>
+              </span>
+              {title}
+            </DialogTitle>
+            <DialogContent
+              sx={{
+                pt: 3,
+                px: 4,
+                background: 'linear-gradient(135deg, #fff 80%, #f8fafc 100%)',
+              }}
+            >
+              <Box sx={{ mb: 1 }}>
+                {question.title && (
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 600, color: '#1976d2' }}
+                  >
+                    Tiêu đề:
+                  </Typography>
+                )}
+                {question.title && (
+                  <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                    {question.title}
+                  </Typography>
+                )}
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Nội dung:
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  {question.content}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ color: '#64748b', fontSize: 13, mb: 1 }}
+                >
+                  Người hỏi: {question.customerName}{' '}
+                  {question.createdAt && `| Ngày tạo: ${question.createdAt}`}
+                  {question.category && (
+                    <span style={{ marginLeft: 8 }}>
+                      <span
+                        style={{
+                          background: '#e3f2fd',
+                          color: '#1976d2',
+                          borderRadius: 8,
+                          padding: '2px 8px',
+                          fontSize: 12,
+                          fontWeight: 500,
+                          marginLeft: 4,
+                        }}
+                      >
+                        {question.category}
+                      </span>
+                    </span>
+                  )}
+                </Typography>
+              </Box>
+              <Typography
+                variant="subtitle2"
+                sx={{ color: '#10b981', fontWeight: 700, mb: 1 }}
+              >
+                Câu trả lời:
+              </Typography>
+              <Box
+                sx={{
+                  background: '#e8f5e9',
+                  borderRadius: 2,
+                  p: 2,
+                  mb: 2,
+                  fontWeight: 500,
+                  fontSize: 16,
+                  color: '#222',
+                }}
+              >
+                {answer}
+              </Box>
+            </DialogContent>
+            <DialogActions sx={{ px: 4, pb: 3 }}>
+              <Button
+                onClick={handleClose}
+                variant="outlined"
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  px: 4,
+                  color: '#4A90E2',
+                  borderColor: '#b2dfdb',
+                  '&:hover': { background: '#e3f2fd', borderColor: '#4A90E2' },
+                }}
+              >
+                {closeText}
+              </Button>
+            </DialogActions>
+          </Dialog>
+        );
+      };
+
+      root.render(<DialogView />);
     }),
 };
 

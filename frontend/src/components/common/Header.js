@@ -365,7 +365,7 @@ const Header = () => {
                 G
               </Box>
             </Box>
-            Gender Health Care
+            Gender Healthcare Service
           </Typography>{' '}
           {/* Navigation Links */}
           <Box

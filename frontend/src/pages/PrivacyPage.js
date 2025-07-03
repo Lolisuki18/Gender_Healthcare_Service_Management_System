@@ -272,7 +272,7 @@ const PrivacyPage = () => {
                 letterSpacing: 1.5,
               }}
             >
-              Chính sách bảo mật
+              Gender Healthcare Service
             </Typography>
             <Typography
               variant="subtitle1"
@@ -280,8 +280,7 @@ const PrivacyPage = () => {
               textAlign="center"
               sx={{ opacity: 0.85 }}
             >
-              Chúng tôi cam kết bảo vệ quyền riêng tư và thông tin cá nhân của
-              bạn.
+              Chính sách bảo mật thông tin cá nhân của bạn.
             </Typography>
           </Box>
           {sections.map((section, idx) => (

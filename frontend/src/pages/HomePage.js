@@ -172,12 +172,12 @@ export const HomePage = () => {
                   fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' },
                   mb: 3,
                   textShadow: '0px 2px 4px rgba(0,0,0,0.2)',
-                  color: '#FFFFFF', // Changed to white color
+                  color: '#FFFFFF',
                   animation: `${float} 6s ease-in-out infinite`,
                   lineHeight: 1.2,
                 }}
               >
-                Gender Health Care
+                Gender Healthcare Service
               </Typography>
               <Typography
                 variant="h5"
@@ -192,8 +192,8 @@ export const HomePage = () => {
                   lineHeight: 1.6,
                 }}
               >
-                Giải pháp chăm sóc sức khỏe chuyên biệt cho mọi cá nhân với dịch
-                vụ toàn diện, tôn trọng và thấu hiểu nhu cầu của bạn
+                Dịch vụ chăm sóc sức khỏe giới tính toàn diện, hiện đại và tôn
+                trọng sự đa dạng.
               </Typography>
               <Stack
                 direction={{ xs: 'column', sm: 'row' }}

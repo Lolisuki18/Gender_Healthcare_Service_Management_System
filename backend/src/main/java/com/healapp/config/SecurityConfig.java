@@ -78,7 +78,7 @@ public class SecurityConfig {
                         // STI Services public endpoints
                         .requestMatchers(HttpMethod.GET, "/sti-services").permitAll()
                         .requestMatchers(HttpMethod.GET, "/sti-services/{serviceId}").permitAll()
-                        
+
                         // STI Packages public endpoints
                         .requestMatchers(HttpMethod.GET, "/sti-packages").permitAll()
                         .requestMatchers(HttpMethod.GET, "/sti-packages/{packageId}").permitAll()
@@ -200,9 +200,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/ratings/staff/reply/{ratingId}").hasRole("STAFF")
 
                         // ========= QUESTION STAFF ENDPOINTS =========
-                        .requestMatchers(HttpMethod.PUT, "/questions/{questionId}/status").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.PUT, "/questions/{questionId}/status")
+                        .hasAnyRole("STAFF", "CONSULTANT")
                         .requestMatchers(HttpMethod.DELETE, "/questions/{questionId}").hasRole("STAFF")
-                        .requestMatchers(HttpMethod.GET, "/questions/status/{status}").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/questions/status/{status}").hasAnyRole("STAFF", "CONSULTANT")
 
                         // ========= ADMIN ENDPOINTS =========
                         // API User & Admin Management

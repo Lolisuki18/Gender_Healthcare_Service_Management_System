@@ -4,8 +4,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.healapp.model.CategoryQuestion;
 import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
+import com.healapp.repository.CategoryQuestionRepository;
 import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
 
@@ -18,11 +20,14 @@ public class DataInitializerConfig implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CategoryQuestionRepository categoryQuestionRepository;
 
-    public DataInitializerConfig(RoleRepository roleRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public DataInitializerConfig(RoleRepository roleRepository, UserRepository userRepository,
+            PasswordEncoder passwordEncoder, CategoryQuestionRepository categoryQuestionRepository) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.categoryQuestionRepository = categoryQuestionRepository;
     }
 
     @Override
@@ -55,6 +60,10 @@ public class DataInitializerConfig implements CommandLineRunner {
         } else {
             System.out.println("Admin account already exists.");
         }
+
+        // Tạo dữ liệu mẫu cho bảng category_questions nếu chưa có
+        createCategoryQuestionsIfNotExists();
+        System.out.println("Category question already exists.");
     }
 
     private void createRoleIfNotExists(String roleName) {
@@ -64,6 +73,32 @@ public class DataInitializerConfig implements CommandLineRunner {
             role.setCreatedAt(LocalDateTime.now());
             role.setUpdatedAt(LocalDateTime.now());
             roleRepository.save(role);
+        }
+    }
+
+    private void createCategoryQuestionsIfNotExists() {
+        if (categoryQuestionRepository.count() == 0) {
+            CategoryQuestion cq1 = new CategoryQuestion();
+            cq1.setName("Sức khỏe sinh sản");
+            cq1.setDescription("Các câu hỏi về sức khỏe sinh sản");
+
+            CategoryQuestion cq2 = new CategoryQuestion();
+            cq2.setName("Tư vấn tâm lý");
+            cq2.setDescription("Các câu hỏi về tư vấn tâm lý");
+
+            CategoryQuestion cq3 = new CategoryQuestion();
+            cq3.setName("Dinh dưỡng");
+            cq3.setDescription("Các câu hỏi về dinh dưỡng");
+
+            CategoryQuestion cq4 = new CategoryQuestion();
+            cq3.setName("Khác");
+            cq3.setDescription("Khác với các loại trên");
+
+            categoryQuestionRepository.save(cq1);
+            categoryQuestionRepository.save(cq2);
+            categoryQuestionRepository.save(cq3);
+            categoryQuestionRepository.save(cq4);
+
         }
     }
 }
