@@ -7,7 +7,7 @@
  * - Đánh dấu đã giải quyết
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -36,6 +36,13 @@ import {
   Skeleton,
   Avatar,
   Alert,
+  Stack,
+  Tabs,
+  Tab,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -47,7 +54,12 @@ import {
   CalendarToday as CalendarTodayIcon,
   Send as SendIcon,
   HelpOutline as HelpOutlineIcon,
+  Close as CloseIcon,
+  HourglassEmpty as HourglassEmptyIcon,
 } from '@mui/icons-material';
+import questionService from '../../services/questionService';
+import { formatDateTimeFromArray } from '../../utils/dateUtils';
+import { confirmDialog } from '../../utils/confirmDialog';
 
 // Define theme colors and styles
 const theme = {
@@ -67,44 +79,72 @@ const theme = {
 };
 
 const QuestionResponseContent = () => {
-  // Mock data - sẽ được thay thế bằng API calls
-  const [questions, setQuestions] = useState([
-    {
-      id: 1,
-      customerId: 101,
-      customerName: 'Trần Thị Hoa',
-      question: 'Tôi muốn biết thông tin về dịch vụ xét nghiệm STI?',
-      createdAt: '2025-06-01',
-      status: 'pending',
-    },
-    {
-      id: 2,
-      customerId: 102,
-      customerName: 'Nguyễn Văn Nam',
-      question: 'Quy trình tư vấn trước xét nghiệm như thế nào?',
-      createdAt: '2025-06-05',
-      status: 'answered',
-    },
-    {
-      id: 3,
-      customerId: 103,
-      customerName: 'Lê Thu Trang',
-      question: 'Khi nào có kết quả xét nghiệm?',
-      createdAt: '2025-06-10',
-      status: 'pending',
-    },
-  ]);
-  // State management
+  const [questions, setQuestions] = useState([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [openDialog, setOpenDialog] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [response, setResponse] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('all'); // "all", "pending", "answered", "resolved"
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [openDetailDialog, setOpenDetailDialog] = useState(false);
+  const [detailQuestion, setDetailQuestion] = useState(null);
+  const [openRejectDialog, setOpenRejectDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectError, setRejectError] = useState('');
+  const [rejectingId, setRejectingId] = useState(null);
 
-  // Handlers
+  // Lấy danh sách câu hỏi từ backend (gộp nhiều trạng thái)
+  const fetchQuestions = async (
+    status = filterStatus,
+    pageNum = page,
+    size = rowsPerPage
+  ) => {
+    setLoading(true);
+    setError('');
+    try {
+      let allQuestions = [];
+      let total = 0;
+      if (status === 'ALL') {
+        const statuses = ['PROCESSING', 'CONFIRMED', 'ANSWERED', 'CANCELED'];
+        for (const st of statuses) {
+          const res = await questionService.getQuestionsByStatus(st, {
+            page: 0,
+            size: 100,
+            sort: 'createdAt',
+            direction: 'DESC',
+          });
+          if (res.data.data && res.data.data.content) {
+            allQuestions = allQuestions.concat(res.data.data.content);
+            total += res.data.data.totalElements || 0;
+          }
+        }
+      } else {
+        const res = await questionService.getQuestionsByStatus(status, {
+          page: pageNum,
+          size,
+          sort: 'createdAt',
+          direction: 'DESC',
+        });
+        allQuestions = res.data.data.content || [];
+        total = res.data.data.totalElements || 0;
+      }
+      setQuestions(allQuestions);
+      setTotalElements(total);
+    } catch (err) {
+      setError('Không thể tải danh sách câu hỏi.');
+      setQuestions([]);
+      setTotalElements(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchQuestions();
+    // eslint-disable-next-line
+  }, [page, rowsPerPage, filterStatus]);
+
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
@@ -114,65 +154,87 @@ const QuestionResponseContent = () => {
     setPage(0);
   };
 
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-    setPage(0);
-  };
-
-  const handleOpenReplyDialog = (question) => {
-    setCurrentQuestion(question);
-    setResponse('');
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-  };
-
-  const handleResponseChange = (event) => {
-    setResponse(event.target.value);
-  };
-
-  const handleSubmitResponse = () => {
-    // Logic gửi câu trả lời
-    const updatedQuestions = questions.map((q) =>
-      q.id === currentQuestion.id ? { ...q, status: 'answered' } : q
-    );
-    setQuestions(updatedQuestions);
-    setOpenDialog(false);
-  };
-
-  const handleMarkResolved = (id) => {
-    const updatedQuestions = questions.map((q) =>
-      q.id === id ? { ...q, status: 'resolved' } : q
-    );
-    setQuestions(updatedQuestions);
-  };
-  // Thêm handler cho việc lọc theo trạng thái
-  const handleStatusFilter = (status) => {
-    setStatusFilter(status);
-    setPage(0);
-  };
-
-  // Handler để làm mới dữ liệu
   const handleRefresh = () => {
-    setLoading(true); // Giả lập tải dữ liệu
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
+    fetchQuestions();
   };
 
-  // Filter questions dựa trên searchTerm và statusFilter
+  // Duyệt hoặc từ chối câu hỏi
+  const handleApprove = async (questionId) => {
+    const result = await confirmDialog.success(
+      'Bạn có chắc chắn muốn duyệt câu hỏi này?'
+    );
+    if (!result) return;
+    setLoading(true);
+    try {
+      await questionService.updateQuestionStatus(questionId, {
+        status: 'CONFIRMED',
+      });
+      fetchQuestions();
+    } catch (err) {
+      setError('Duyệt câu hỏi thất bại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleOpenRejectDialog = async (questionId) => {
+    const result = await confirmDialog.cancel(
+      'Bạn có chắc chắn muốn từ chối câu hỏi này?'
+    );
+    if (!result) return;
+    setRejectingId(questionId);
+    setRejectReason('');
+    setRejectError('');
+    setOpenRejectDialog(true);
+  };
+  const handleCloseRejectDialog = () => {
+    setOpenRejectDialog(false);
+    setRejectingId(null);
+    setRejectReason('');
+    setRejectError('');
+  };
+  const handleConfirmReject = async () => {
+    if (!rejectReason.trim()) {
+      setRejectError('Vui lòng nhập lý do từ chối.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await questionService.updateQuestionStatus(rejectingId, {
+        status: 'CANCELED',
+        rejectionReason: rejectReason,
+      });
+      handleCloseRejectDialog();
+      fetchQuestions();
+    } catch (err) {
+      setRejectError('Từ chối câu hỏi thất bại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter questions theo searchTerm (áp dụng trên FE)
   const filteredQuestions = questions.filter((question) => {
+    const matchStatus =
+      filterStatus === 'ALL' ? true : question.status === filterStatus;
     const matchesSearch =
-      question.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      question.question.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === 'all' || question.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
+      (question.customerName &&
+        question.customerName
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())) ||
+      (question.content &&
+        question.content.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchStatus && matchesSearch;
   });
+
+  const handleOpenDetailDialog = (question) => {
+    setDetailQuestion(question);
+    setOpenDetailDialog(true);
+  };
+  const handleCloseDetailDialog = () => {
+    setOpenDetailDialog(false);
+    setDetailQuestion(null);
+  };
+
   return (
     <Box
       sx={{
@@ -186,211 +248,102 @@ const QuestionResponseContent = () => {
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 2.5, md: 3.5 },
+          p: { xs: 3, md: 4 },
           mb: 3,
-          borderRadius: 2,
+          borderRadius: 3,
           position: 'relative',
-          background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+          background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
           color: '#fff',
-          boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+          boxShadow: '0 4px 24px 0 rgba(74, 144, 226, 0.10)',
           overflow: 'hidden',
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            width: '30%',
-            height: '100%',
-            background:
-              'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 100%)',
-            zIndex: 0,
-          },
+          minHeight: 120,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 3,
         }}
       >
-        {' '}
-        <Box
+        <Avatar
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            position: 'relative',
-            zIndex: 1,
+            bgcolor: '#fff',
+            color: theme.primary,
+            width: 64,
+            height: 64,
+            fontSize: 36,
+            boxShadow: '0 2px 8px #1abc9c22',
+            mr: 3,
           }}
         >
-          <Avatar
-            sx={{
-              mr: 2.5,
-              bgcolor: 'rgba(255, 255, 255, 0.2)',
-              color: '#fff',
-              width: 52,
-              height: 52,
-            }}
-          >
-            <HelpOutlineIcon fontSize="medium" />
-          </Avatar>
-          <Box>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 600,
-                mb: 0.75,
-                letterSpacing: '0.2px',
-              }}
-            >
-              Trả lời câu hỏi
+          <HelpOutlineIcon fontSize="inherit" />
+        </Avatar>
+        <Box>
+          <Typography variant="h4" fontWeight={700} mb={1} letterSpacing={0.5}>
+            Trả lời câu hỏi
+          </Typography>
+          <Typography variant="body1" sx={{ opacity: 0.92, fontWeight: 400 }}>
+            Quản lý và phản hồi các câu hỏi từ khách hàng
+          </Typography>
+        </Box>
+        <Box sx={{ flex: 1 }} />
+        {/* Stats */}
+        <Stack direction="row" spacing={3} alignItems="center">
+          <Box textAlign="center">
+            <Typography variant="h5" fontWeight={700}>
+              {totalElements}
             </Typography>
-            <Typography
-              variant="body2"
-              sx={{ fontWeight: 400, opacity: 0.9, letterSpacing: '0.2px' }}
-            >
-              Quản lý và phản hồi các câu hỏi từ khách hàng
+            <Typography variant="caption" color="#e0f2f1">
+              Tổng câu hỏi
             </Typography>
           </Box>
-        </Box>{' '}
-        {loading && (
-          <LinearProgress
-            sx={{
-              mt: 2,
-              borderRadius: 1,
-              height: 4,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              '.MuiLinearProgress-bar': {
-                backgroundColor: 'rgba(255,255,255,0.9)',
-              },
-            }}
-          />
-        )}
-        {/* Số liệu thống kê */}{' '}
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 2,
-            mt: 3,
-          }}
-        >
-          {[
-            {
-              label: 'Tổng câu hỏi',
-              value: questions.length,
-              icon: <QuestionAnswerIcon />,
-              color: 'rgba(255, 255, 255, 0.2)',
-            },
-            {
-              label: 'Chờ trả lời',
-              value: questions.filter((q) => q.status === 'pending').length,
-              icon: <HelpOutlineIcon />,
-              color: 'rgba(255, 255, 255, 0.2)',
-            },
-            {
-              label: 'Đã trả lời',
-              value: questions.filter((q) => q.status === 'answered').length,
-              icon: <ReplyIcon />,
-              color: 'rgba(255, 255, 255, 0.2)',
-            },
-            {
-              label: 'Đã giải quyết',
-              value: questions.filter((q) => q.status === 'resolved').length,
-              icon: <CheckCircleIcon />,
-              color: 'rgba(255, 255, 255, 0.2)',
-            },
-          ].map((stat, index) => (
-            <Card
-              key={index}
-              sx={{
-                minWidth: {
-                  xs: '100%',
-                  sm: 'calc(50% - 8px)',
-                  md: 'calc(25% - 12px)',
-                },
-                flexGrow: 1,
-                backgroundColor: 'rgba(255, 255, 255, 0.18)',
-                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-                borderRadius: 1.5,
-                overflow: 'hidden',
-              }}
-            >
-              <CardContent
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  p: 2,
-                }}
-              >
-                <Avatar
-                  sx={{
-                    bgcolor: stat.color,
-                    color: '#ffffff',
-                    width: 40,
-                    height: 40,
-                    mr: 2,
-                  }}
-                >
-                  {stat.icon}
-                </Avatar>
-                <Box>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 600,
-                      fontSize: '1.75rem',
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    {stat.value}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: 500,
-                      fontSize: '0.8rem',
-                      opacity: 0.95,
-                    }}
-                  >
-                    {stat.label}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
+          <Box textAlign="center">
+            <Typography variant="h5" fontWeight={700}>
+              {questions.filter((q) => q.status === 'PROCESSING').length}
+            </Typography>
+            <Typography variant="caption" color="#ffe082">
+              Chờ duyệt
+            </Typography>
+          </Box>
+          <Box textAlign="center">
+            <Typography variant="h5" fontWeight={700}>
+              {questions.filter((q) => q.status === 'ANSWERED').length}
+            </Typography>
+            <Typography variant="caption" color="#b9f6ca">
+              Đã trả lời
+            </Typography>
+          </Box>
+          <Box textAlign="center">
+            <Typography variant="h5" fontWeight={700}>
+              {questions.filter((q) => q.status === 'CANCELED').length}
+            </Typography>
+            <Typography variant="caption" color="#ff8a80">
+              Đã huỷ
+            </Typography>
+          </Box>
+        </Stack>
       </Paper>
-      {/* Toolbar */}
+      {/* Filter & Search */}
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'space-between',
-          mb: 3,
           flexWrap: 'wrap',
           gap: 2,
+          mb: 3,
+          alignItems: 'center',
         }}
       >
-        {' '}
         <TextField
           size="small"
           placeholder="Tìm kiếm câu hỏi hoặc khách hàng..."
           value={searchTerm}
-          onChange={handleSearch}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(0);
+          }}
           sx={{
-            flexGrow: 1,
-            minWidth: '250px',
-            maxWidth: '450px',
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 2,
-              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
-              backgroundColor: '#fff',
-              transition: 'all 0.2s',
-              border: '1px solid rgba(74, 144, 226, 0.08)',
-              '&:hover': {
-                boxShadow: '0 4px 12px rgba(74, 144, 226, 0.2)',
-              },
-              '&.Mui-focused': {
-                boxShadow: `0 0 0 2px ${theme.primary}30`,
-                borderColor: theme.primary,
-              },
-            },
-            '& .MuiInputBase-input': {
-              padding: '10px 14px',
-            },
+            minWidth: 260,
+            maxWidth: 400,
+            borderRadius: 2,
+            background: '#fff',
+            boxShadow: '0 2px 8px #4A90E215',
           }}
           InputProps={{
             startAdornment: (
@@ -400,444 +353,437 @@ const QuestionResponseContent = () => {
             ),
           }}
         />
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          {' '}
-          <Button
-            startIcon={<RefreshIcon />}
-            onClick={handleRefresh}
-            variant="outlined"
-            sx={{
-              borderRadius: 2,
-              borderColor: theme.primary,
-              color: theme.primary,
-              backgroundColor: '#fff',
-              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-              fontWeight: 600,
-              '&:hover': {
-                borderColor: theme.primary,
-                backgroundColor: `${theme.primary}10`,
-              },
+        <FormControl
+          size="small"
+          sx={{
+            minWidth: 180,
+            borderRadius: 2,
+            background: '#fff',
+            boxShadow: '0 2px 8px #4A90E215',
+          }}
+        >
+          <InputLabel id="status-filter-label">Lọc trạng thái</InputLabel>
+          <Select
+            labelId="status-filter-label"
+            value={filterStatus}
+            label="Lọc trạng thái"
+            onChange={(e) => {
+              setFilterStatus(e.target.value);
+              setPage(0);
             }}
           >
-            Làm mới
-          </Button>{' '}
-          {/* Bộ lọc trạng thái */}
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {[
-              { value: 'all', label: 'Tất cả', color: theme.primary },
-              { value: 'pending', label: 'Chờ trả lời', color: theme.warning },
-              { value: 'answered', label: 'Đã trả lời', color: theme.info },
-              {
-                value: 'resolved',
-                label: 'Đã giải quyết',
-                color: theme.success,
-              },
-            ].map((item) => (
-              <Chip
-                key={item.value}
-                label={item.label}
-                onClick={() => handleStatusFilter(item.value)}
-                sx={{
-                  borderRadius: 2,
-                  fontWeight: 600,
-                  backgroundColor:
-                    statusFilter === item.value ? `${item.color}20` : '#fff',
-                  color:
-                    statusFilter === item.value ? item.color : theme.textLight,
-                  border: `1px solid ${statusFilter === item.value ? item.color : '#e2e8f0'}`,
-                  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    backgroundColor:
-                      statusFilter === item.value
-                        ? `${item.color}30`
-                        : '#f8fafc',
-                  },
-                }}
-              />
-            ))}
-          </Box>
-        </Box>
-      </Box>{' '}
-      {/* Questions Table */}{' '}
+            <MenuItem value="ALL">Tất cả</MenuItem>
+            <MenuItem value="PROCESSING">Chờ duyệt</MenuItem>
+            <MenuItem value="CONFIRMED">Đã duyệt</MenuItem>
+            <MenuItem value="ANSWERED">Đã trả lời</MenuItem>
+            <MenuItem value="CANCELED">Đã huỷ</MenuItem>
+          </Select>
+        </FormControl>
+        <Button
+          startIcon={<RefreshIcon />}
+          onClick={handleRefresh}
+          variant="outlined"
+          sx={{
+            borderRadius: 2,
+            color: theme.primary,
+            fontWeight: 600,
+            ml: 'auto',
+            background: '#fff',
+            boxShadow: '0 2px 8px #4A90E215',
+            '&:hover': { background: '#e3f2fd' },
+          }}
+        >
+          Làm mới
+        </Button>
+      </Box>
+      {/* Table */}
       <Paper
         elevation={0}
         sx={{
-          borderRadius: 2,
+          borderRadius: 3,
           overflow: 'hidden',
-          boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-          border: '1px solid rgba(74, 144, 226, 0.1)',
-          backgroundColor: '#ffffff',
+          boxShadow: '0 4px 24px 0 rgba(74, 144, 226, 0.08)',
+          border: '1px solid #e3f2fd',
+          background: '#fff',
         }}
       >
-        {loading ? (
-          <Box sx={{ p: 3 }}>
-            {[1, 2, 3].map((item) => (
-              <Box
-                key={item}
-                sx={{ mb: 2, display: 'flex', alignItems: 'center' }}
+        <TableContainer>
+          <Table sx={{ minWidth: 800 }}>
+            <TableHead>
+              <TableRow
+                sx={{
+                  background:
+                    'linear-gradient(90deg, #e3f2fd 0%, #b2dfdb 100%)',
+                }}
               >
-                <Skeleton
-                  variant="circular"
-                  width={40}
-                  height={40}
-                  sx={{ mr: 2 }}
-                />
-                <Box sx={{ width: '100%' }}>
-                  <Skeleton width="40%" height={24} />
-                  <Skeleton width="70%" height={20} />
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        ) : filteredQuestions.length === 0 ? (
-          <Box sx={{ py: 6, textAlign: 'center' }}>
-            <Avatar
-              sx={{
-                mx: 'auto',
-                mb: 2,
-                width: 70,
-                height: 70,
-                bgcolor: `${theme.primary}10`,
-                color: theme.primary,
-              }}
-            >
-              <HelpOutlineIcon sx={{ fontSize: 40 }} />
-            </Avatar>
-            <Typography variant="h6" sx={{ color: theme.text, mb: 1 }}>
-              Không tìm thấy câu hỏi nào
-            </Typography>
-            <Typography variant="body2" sx={{ color: theme.textLight }}>
-              Thử thay đổi tìm kiếm hoặc bộ lọc
-            </Typography>
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table sx={{ minWidth: 650 }}>
-              <TableHead>
-                {' '}
-                <TableRow
-                  sx={{
-                    background:
-                      'linear-gradient(to right, rgba(74, 144, 226, 0.06), rgba(26, 188, 156, 0.04))',
-                    borderBottom: '2px solid rgba(74, 144, 226, 0.15)',
-                  }}
+                <TableCell sx={{ fontWeight: 700, color: theme.text, py: 2 }}>
+                  ID
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: theme.text, py: 2 }}>
+                  <PersonOutlineIcon
+                    fontSize="small"
+                    sx={{ mr: 1, color: theme.primary }}
+                  />
+                  Khách hàng
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: theme.text, py: 2 }}>
+                  Câu hỏi
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: theme.text, py: 2 }}>
+                  <CalendarTodayIcon
+                    fontSize="small"
+                    sx={{ mr: 1, color: theme.primary }}
+                  />
+                  Ngày tạo
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: theme.text, py: 2 }}>
+                  Trạng thái
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{ fontWeight: 700, color: theme.text, py: 2 }}
                 >
-                  <TableCell sx={{ fontWeight: 600, color: theme.text, py: 2 }}>
-                    ID
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: theme.text, py: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <PersonOutlineIcon
-                        fontSize="small"
-                        sx={{ mr: 1, color: theme.primary }}
-                      />
-                      Khách hàng
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: theme.text, py: 2 }}>
-                    Câu hỏi
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: theme.text, py: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <CalendarTodayIcon
-                        fontSize="small"
-                        sx={{ mr: 1, color: theme.primary }}
-                      />
-                      Ngày tạo
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: theme.text, py: 2 }}>
-                    Trạng thái
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ fontWeight: 600, color: theme.text, py: 2 }}
-                  >
-                    Thao tác
+                  Thao tác
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <LinearProgress />
                   </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredQuestions
+              ) : filteredQuestions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                    <Avatar
+                      sx={{
+                        mx: 'auto',
+                        mb: 2,
+                        width: 70,
+                        height: 70,
+                        bgcolor: '#e3f2fd',
+                        color: theme.primary,
+                      }}
+                    >
+                      <HelpOutlineIcon sx={{ fontSize: 40 }} />
+                    </Avatar>
+                    <Typography variant="h6" sx={{ color: theme.text, mb: 1 }}>
+                      Không tìm thấy câu hỏi nào
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: theme.textLight }}>
+                      Thử thay đổi tìm kiếm hoặc bộ lọc
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredQuestions
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((question) => {
                     const statusColor =
-                      question.status === 'pending'
+                      question.status === 'PROCESSING'
                         ? theme.warning
-                        : question.status === 'answered'
-                          ? theme.info
-                          : theme.success;
-
+                        : question.status === 'ANSWERED'
+                          ? theme.success
+                          : question.status === 'CANCELED'
+                            ? theme.error
+                            : question.status === 'CONFIRMED'
+                              ? theme.info
+                              : theme.textLight;
                     return (
-                      <TableRow
-                        key={question.id}
-                        hover
-                        sx={{
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          '&:hover': {
-                            backgroundColor: 'rgba(74, 144, 226, 0.04)',
-                          },
-                          borderLeft: `3px solid ${statusColor}`,
-                          '&:nth-of-type(even)': {
-                            backgroundColor: 'rgba(249, 250, 252, 0.7)',
-                          },
-                        }}
-                      >
-                        <TableCell sx={{ color: theme.text }}>
-                          {question.id}
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Avatar
-                              sx={{
-                                width: 36,
-                                height: 36,
-                                fontSize: '1rem',
-                                bgcolor: `${theme.primary}`,
-                                background: theme.gradient,
-                                mr: 1.5,
-                              }}
-                            >
-                              {question.customerName.charAt(0)}
-                            </Avatar>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 600, color: theme.text }}
-                            >
-                              {question.customerName}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Tooltip title={question.question} placement="top">
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                maxWidth: 400,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                color: theme.text,
-                              }}
-                            >
-                              {question.question}
-                            </Typography>
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell>
-                          <Typography
-                            variant="body2"
-                            sx={{ color: theme.textLight }}
+                      <React.Fragment key={question.id}>
+                        <TableRow
+                          hover
+                          sx={{
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            '&:hover': { backgroundColor: '#e3f2fd' },
+                            borderLeft: `4px solid ${statusColor}`,
+                          }}
+                        >
+                          <TableCell
+                            sx={{ color: theme.text, fontWeight: 600 }}
                           >
-                            {question.createdAt}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {' '}
-                          <Chip
-                            label={
-                              question.status === 'pending'
-                                ? 'Chờ trả lời'
-                                : question.status === 'answered'
-                                  ? 'Đã trả lời'
-                                  : 'Đã giải quyết'
-                            }
-                            size="small"
-                            sx={{
-                              fontWeight: 600,
-                              backgroundColor: `${statusColor}15`,
-                              color: statusColor,
-                              borderRadius: 2,
-                              border: `1px solid ${statusColor}30`,
-                              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          <Tooltip title="Trả lời">
-                            <span>
-                              {' '}
-                              <IconButton
-                                size="small"
-                                disabled={question.status === 'resolved'}
-                                onClick={() => handleOpenReplyDialog(question)}
+                            #{question.id}
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Avatar
                                 sx={{
-                                  bgcolor:
-                                    question.status !== 'resolved'
-                                      ? `${theme.primary}10`
-                                      : 'transparent',
-                                  color:
-                                    question.status !== 'resolved'
-                                      ? theme.primary
-                                      : theme.textLight,
+                                  width: 36,
+                                  height: 36,
+                                  fontSize: '1rem',
+                                  bgcolor: theme.primary,
+                                  background: theme.gradient,
                                   mr: 1.5,
-                                  width: 32,
-                                  height: 32,
-                                  border:
-                                    question.status !== 'resolved'
-                                      ? `1px solid ${theme.primary}30`
-                                      : 'none',
-                                  boxShadow:
-                                    question.status !== 'resolved'
-                                      ? '0 2px 8px rgba(74, 144, 226, 0.25)'
-                                      : 'none',
-                                  '&:hover': {
-                                    bgcolor:
-                                      question.status !== 'resolved'
-                                        ? `${theme.primary}20`
-                                        : 'transparent',
-                                  },
                                 }}
                               >
-                                <ReplyIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                          <Tooltip title="Đánh dấu đã giải quyết">
-                            <span>
-                              {' '}
-                              <IconButton
-                                size="small"
-                                disabled={
-                                  question.status === 'pending' ||
-                                  question.status === 'resolved'
-                                }
-                                onClick={() => handleMarkResolved(question.id)}
+                                {question.customerName.charAt(0)}
+                              </Avatar>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 600, color: theme.text }}
+                              >
+                                {question.customerName}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Tooltip title={question.content} placement="top">
+                              <Typography
+                                variant="body2"
                                 sx={{
-                                  bgcolor:
-                                    question.status === 'answered'
-                                      ? `${theme.success}10`
-                                      : 'transparent',
-                                  color:
-                                    question.status === 'answered'
-                                      ? theme.success
-                                      : theme.textLight,
-                                  width: 32,
-                                  height: 32,
-                                  border:
-                                    question.status === 'answered'
-                                      ? `1px solid ${theme.success}30`
-                                      : 'none',
-                                  boxShadow:
-                                    question.status === 'answered'
-                                      ? '0 2px 8px rgba(16, 185, 129, 0.25)'
-                                      : 'none',
-                                  '&:hover': {
-                                    bgcolor:
-                                      question.status === 'answered'
-                                        ? `${theme.success}20`
-                                        : 'transparent',
-                                  },
+                                  maxWidth: 400,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  color: theme.text,
                                 }}
                               >
-                                <CheckCircleIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
+                                {question.content}
+                              </Typography>
+                            </Tooltip>
+                          </TableCell>
+                          <TableCell>
+                            <Typography
+                              variant="body2"
+                              sx={{ color: theme.textLight }}
+                            >
+                              {formatDateTimeFromArray(question.createdAt)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={
+                                question.status === 'PROCESSING'
+                                  ? 'Chờ duyệt'
+                                  : question.status === 'CONFIRMED'
+                                    ? 'Đã duyệt'
+                                    : question.status === 'ANSWERED'
+                                      ? 'Đã trả lời'
+                                      : question.status === 'CANCELED'
+                                        ? 'Đã huỷ'
+                                        : question.status
+                              }
+                              size="small"
+                              icon={
+                                question.status === 'PROCESSING' ? (
+                                  <HourglassEmptyIcon
+                                    sx={{ color: theme.warning }}
+                                  />
+                                ) : question.status === 'CONFIRMED' ? (
+                                  <CheckCircleIcon sx={{ color: theme.info }} />
+                                ) : question.status === 'ANSWERED' ? (
+                                  <ReplyIcon sx={{ color: theme.success }} />
+                                ) : question.status === 'CANCELED' ? (
+                                  <CloseIcon sx={{ color: theme.error }} />
+                                ) : null
+                              }
+                              sx={{
+                                fontWeight: 600,
+                                backgroundColor:
+                                  question.status === 'PROCESSING'
+                                    ? `${theme.warning}15`
+                                    : question.status === 'CONFIRMED'
+                                      ? `${theme.info}15`
+                                      : question.status === 'ANSWERED'
+                                        ? `${theme.success}15`
+                                        : question.status === 'CANCELED'
+                                          ? `${theme.error}15`
+                                          : '#e2e8f0',
+                                color:
+                                  question.status === 'PROCESSING'
+                                    ? theme.warning
+                                    : question.status === 'CONFIRMED'
+                                      ? theme.info
+                                      : question.status === 'ANSWERED'
+                                        ? theme.success
+                                        : question.status === 'CANCELED'
+                                          ? theme.error
+                                          : theme.textLight,
+                                borderRadius: 2,
+                                border: `1px solid ${
+                                  question.status === 'PROCESSING'
+                                    ? theme.warning
+                                    : question.status === 'CONFIRMED'
+                                      ? theme.info
+                                      : question.status === 'ANSWERED'
+                                        ? theme.success
+                                        : question.status === 'CANCELED'
+                                          ? theme.error
+                                          : '#e2e8f0'
+                                }30`,
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                minWidth: 110,
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              justifyContent="flex-end"
+                            >
+                              {question.status === 'PROCESSING' && (
+                                <>
+                                  <Tooltip title="Duyệt câu hỏi">
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => handleApprove(question.id)}
+                                      sx={{
+                                        color: '#10b981',
+                                        bgcolor: '#e0f2f1',
+                                        borderRadius: '50%',
+                                        '&:hover': { bgcolor: '#b2dfdb' },
+                                      }}
+                                    >
+                                      <CheckCircleIcon />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Từ chối câu hỏi">
+                                    <IconButton
+                                      size="small"
+                                      onClick={() =>
+                                        handleOpenRejectDialog(question.id)
+                                      }
+                                      sx={{
+                                        color: '#ef4444',
+                                        bgcolor: '#ffebee',
+                                        borderRadius: '50%',
+                                        '&:hover': { bgcolor: '#ffcdd2' },
+                                      }}
+                                    >
+                                      <CloseIcon />
+                                    </IconButton>
+                                  </Tooltip>
+                                </>
+                              )}
+                              {question.status === 'CONFIRMED' && (
+                                <Tooltip title="Xem chi tiết">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() =>
+                                      handleOpenDetailDialog(question)
+                                    }
+                                    sx={{
+                                      color: theme.info,
+                                      bgcolor: '#e3f2fd',
+                                      borderRadius: '50%',
+                                      '&:hover': { bgcolor: '#b2ebf2' },
+                                    }}
+                                  >
+                                    <HelpOutlineIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                              {question.status === 'ANSWERED' && (
+                                <Tooltip title="Xem chi tiết">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() =>
+                                      handleOpenDetailDialog(question)
+                                    }
+                                    sx={{
+                                      color: theme.success,
+                                      bgcolor: '#e8f5e9',
+                                      borderRadius: '50%',
+                                      '&:hover': { bgcolor: '#b9f6ca' },
+                                    }}
+                                  >
+                                    <ReplyIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                              {question.status === 'CANCELED' && (
+                                <Tooltip title="Xem chi tiết">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() =>
+                                      handleOpenDetailDialog(question)
+                                    }
+                                    sx={{
+                                      color: theme.error,
+                                      bgcolor: '#ffebee',
+                                      borderRadius: '50%',
+                                      '&:hover': { bgcolor: '#ffcdd2' },
+                                    }}
+                                  >
+                                    <CloseIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
                     );
-                  })}
-              </TableBody>
-            </Table>
-            <Divider />
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={filteredQuestions.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              sx={{
-                color: theme.text,
-                '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows':
-                  {
-                    margin: 0,
-                    color: theme.textLight,
-                  },
-                '.MuiTablePagination-select': {
-                  color: theme.text,
+                  })
+              )}
+            </TableBody>
+          </Table>
+          <Divider />
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={filteredQuestions.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            sx={{
+              color: theme.text,
+              '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows':
+                {
+                  margin: 0,
+                  color: theme.textLight,
                 },
-                '.MuiTablePagination-actions': {
-                  color: theme.primary,
-                },
-              }}
-            />
-          </TableContainer>
-        )}
+              '.MuiTablePagination-select': { color: theme.text },
+              '.MuiTablePagination-actions': { color: theme.primary },
+            }}
+          />
+        </TableContainer>
       </Paper>
-      {/* Reply Dialog */}{' '}
+      {/* Dialog chi tiết */}
       <Dialog
-        open={openDialog}
-        onClose={handleCloseDialog}
-        maxWidth="md"
+        open={openDetailDialog}
+        onClose={handleCloseDetailDialog}
+        maxWidth="sm"
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: 2,
-            boxShadow: '0 10px 40px rgba(74, 144, 226, 0.25)',
-            overflow: 'hidden',
-            border: '1px solid rgba(74, 144, 226, 0.1)',
+            borderRadius: 3,
+            boxShadow: '0 10px 40px #4A90E230',
+            border: '1px solid #e3f2fd',
           },
         }}
       >
-        {' '}
         <DialogTitle
           sx={{
-            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+            background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
             color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            py: 2.5,
-            position: 'relative',
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: '30%',
-              height: '100%',
-              background:
-                'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 100%)',
-              zIndex: 0,
-            },
+            fontWeight: 700,
+            fontSize: 22,
+            letterSpacing: 0.5,
+            py: 2,
+            borderTopLeftRadius: 12,
+            borderTopRightRadius: 12,
           }}
         >
-          <Avatar
-            sx={{
-              bgcolor: 'rgba(255,255,255,0.2)',
-              mr: 2,
-              width: 46,
-              height: 46,
-              zIndex: 1,
-            }}
-          >
-            <ReplyIcon />
-          </Avatar>
-          <Typography
-            variant="h6"
-            component="span"
-            sx={{ fontWeight: 600, letterSpacing: '0.2px', zIndex: 1 }}
-          >
-            Trả lời câu hỏi
-          </Typography>
+          Chi tiết câu hỏi
         </DialogTitle>
         <DialogContent sx={{ pt: 3, px: { xs: 2, md: 3 } }}>
-          {currentQuestion && (
+          {detailQuestion && (
             <Box>
-              {' '}
               <Paper
                 variant="outlined"
                 sx={{
                   p: 3,
                   mb: 3,
-                  bgcolor: 'rgba(248, 250, 252, 0.8)',
+                  bgcolor: '#f8fafc',
                   borderRadius: 2,
-                  borderColor: 'rgba(74, 144, 226, 0.15)',
-                  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
+                  borderColor: '#e3f2fd',
+                  boxShadow: '0 2px 8px #4A90E215',
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -849,29 +795,25 @@ const QuestionResponseContent = () => {
                       background: theme.gradient,
                     }}
                   >
-                    {currentQuestion.customerName.charAt(0)}
+                    {detailQuestion.customerName.charAt(0)}
                   </Avatar>
                   <Box>
                     <Typography
                       variant="subtitle1"
                       sx={{ fontWeight: 600, color: theme.text }}
                     >
-                      {currentQuestion.customerName}
+                      {detailQuestion.customerName}
                     </Typography>
                     <Typography
                       variant="caption"
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        color: theme.textLight,
-                      }}
+                      sx={{ color: theme.textLight }}
                     >
-                      <CalendarTodayIcon fontSize="inherit" sx={{ mr: 0.5 }} />
-                      Ngày hỏi: {currentQuestion.createdAt}
+                      <CalendarTodayIcon fontSize="inherit" sx={{ mr: 0.5 }} />{' '}
+                      Ngày hỏi:{' '}
+                      {formatDateTimeFromArray(detailQuestion.createdAt)}
                     </Typography>
                   </Box>
                 </Box>
-
                 <Typography
                   variant="body1"
                   gutterBottom
@@ -883,102 +825,149 @@ const QuestionResponseContent = () => {
                     borderRadius: 2,
                     borderLeft: `4px solid ${theme.primary}`,
                     fontStyle: 'italic',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                    boxShadow: '0 2px 8px #0001',
                   }}
                 >
-                  {currentQuestion.question}
+                  {detailQuestion.content}
                 </Typography>
+                {/* Hiển thị lý do huỷ nếu có */}
+                {detailQuestion.status === 'CANCELED' &&
+                  detailQuestion.rejectionReason && (
+                    <Box
+                      sx={{
+                        mt: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        background: '#ffebee',
+                        color: theme.error,
+                        p: 2,
+                        borderRadius: 2,
+                        fontWeight: 500,
+                        fontStyle: 'italic',
+                        gap: 1,
+                      }}
+                    >
+                      <CloseIcon sx={{ color: theme.error }} />
+                      Lý do huỷ: {detailQuestion.rejectionReason}
+                    </Box>
+                  )}
               </Paper>
-              <Typography
-                variant="subtitle1"
-                sx={{ fontWeight: 600, mb: 1, color: theme.text }}
-              >
-                Câu trả lời của bạn:
-              </Typography>
-              <TextField
-                fullWidth
-                multiline
-                rows={5}
-                placeholder="Nhập nội dung trả lời chi tiết và hữu ích cho khách hàng..."
-                margin="normal"
-                value={response}
-                onChange={handleResponseChange}
-                variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    backgroundColor: '#fff',
-                    '&.Mui-focused': {
-                      boxShadow: `0 0 0 2px ${theme.primary}40`,
-                    },
-                  },
-                }}
-                InputProps={{
-                  sx: { p: 2 },
-                }}
-              />
-              <Box sx={{ mt: 2 }}>
-                <Alert
-                  severity="info"
-                  sx={{
-                    mb: 2,
-                    borderRadius: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    '& .MuiAlert-icon': {
-                      color: theme.info,
-                      opacity: 0.9,
-                    },
-                  }}
-                >
-                  <Typography variant="body2">
-                    Câu trả lời của bạn sẽ được gửi trực tiếp đến khách hàng.
-                    Hãy đảm bảo thông tin chuyên môn, cung cấp sự hỗ trợ cần
-                    thiết và thân thiện.
+              {detailQuestion.answer && (
+                <Box mt={2}>
+                  <Typography
+                    variant="subtitle2"
+                    fontWeight={600}
+                    mb={1}
+                    color={theme.success}
+                  >
+                    Câu trả lời:
                   </Typography>
-                </Alert>
-              </Box>
+                  <Typography
+                    variant="body1"
+                    sx={{ background: '#e0f7fa', p: 2, borderRadius: 2 }}
+                  >
+                    {detailQuestion.answer}
+                  </Typography>
+                </Box>
+              )}
             </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2.5, borderTop: '1px solid #e2e8f0' }}>
+        <DialogActions>
+          <Button onClick={handleCloseDetailDialog} variant="outlined">
+            Đóng
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={openRejectDialog}
+        onClose={handleCloseRejectDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            boxShadow: '0 8px 40px 0 rgba(239,68,68,0.15)',
+            border: '1.5px solid #fecaca',
+            background: 'linear-gradient(135deg, #fff 80%, #fff1f2 100%)',
+            p: 0,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            fontWeight: 700,
+            fontSize: 22,
+            color: '#ef4444',
+            background: 'linear-gradient(90deg, #fff1f2 0%, #ffe4e6 100%)',
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            pb: 2,
+            pt: 3,
+          }}
+        >
+          <CloseIcon sx={{ color: '#ef4444', fontSize: 28 }} />
+          Lý do từ chối câu hỏi
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2, px: 3 }}>
+          <TextField
+            label="Nhập lý do từ chối"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            fullWidth
+            multiline
+            rows={4}
+            autoFocus
+            error={!!rejectError}
+            helperText={rejectError}
+            sx={{
+              mt: 2,
+              background: '#fff',
+              borderRadius: 2,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': { borderColor: '#fecaca' },
+                '&:hover fieldset': { borderColor: '#ef4444' },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#ef4444',
+                  borderWidth: 2,
+                },
+              },
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 2 }}>
           <Button
-            onClick={handleCloseDialog}
+            onClick={handleCloseRejectDialog}
             variant="outlined"
             sx={{
-              borderRadius: 3,
+              borderRadius: 2,
+              color: '#ef4444',
+              borderColor: '#fecaca',
+              fontWeight: 600,
               px: 3,
-              borderColor: '#e2e8f0',
-              color: theme.textLight,
-              '&:hover': {
-                borderColor: theme.textLight,
-                backgroundColor: '#f8fafc',
-              },
+              '&:hover': { background: '#fff1f2', borderColor: '#ef4444' },
             }}
           >
-            Hủy
-          </Button>{' '}
+            HỦY
+          </Button>
           <Button
+            onClick={handleConfirmReject}
             variant="contained"
-            onClick={handleSubmitResponse}
-            disabled={!response || !response.trim()}
-            startIcon={<SendIcon />}
             sx={{
               borderRadius: 2,
-              px: 3,
-              py: 1,
-              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-              fontWeight: 600,
-              '&:hover': {
-                boxShadow: '0 4px 12px rgba(74, 144, 226, 0.3)',
-              },
-              '&.Mui-disabled': {
-                background: '#e2e8f0',
-              },
+              background: 'linear-gradient(90deg, #ef4444 60%, #f87171 100%)',
+              color: '#fff',
+              fontWeight: 700,
+              px: 4,
+              boxShadow: '0 2px 8px #ef444422',
+              '&:hover': { background: '#dc2626' },
             }}
           >
-            Gửi trả lời
+            TỪ CHỐI
           </Button>
         </DialogActions>
       </Dialog>

@@ -25,4 +25,5 @@ public class QuestionResponse {
     private String updaterName;
     private Long replierId;
     private String replierName;
+    private String rejectionReason;
 }

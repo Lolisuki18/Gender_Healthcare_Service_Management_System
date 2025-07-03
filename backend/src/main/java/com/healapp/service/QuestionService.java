@@ -243,16 +243,18 @@ public class QuestionService {
         } catch (Exception e) {
             return ApiResponse.error("Failed to delete question: " + e.getMessage());
         }
-    }    public ApiResponse<Page<QuestionResponse>> searchQuestions(String query, Pageable pageable) {
+    }
+
+    public ApiResponse<Page<QuestionResponse>> searchQuestions(String query, Pageable pageable) {
         try {
             if (query == null || query.trim().isEmpty()) {
                 return ApiResponse.error("Search query cannot be empty");
             }
-            
+
             // Search only in answered questions that are public
             Page<Question> questions = questionRepository.searchAnsweredQuestions(query.trim(), pageable);
             Page<QuestionResponse> questionResponses = questions.map(this::convertToResponse);
-            
+
             return ApiResponse.success("Questions searched successfully", questionResponses);
         } catch (Exception e) {
             return ApiResponse.error("Failed to search questions: " + e.getMessage());
@@ -302,6 +304,9 @@ public class QuestionService {
             response.setReplierName(question.getReplier().getFullName());
         }
 
+        // Set rejection reason if available
+        response.setRejectionReason(question.getRejectionReason());
+
         return response;
     }
 
@@ -332,6 +337,9 @@ public class QuestionService {
             response.setReplierId(question.getReplier().getId());
             response.setReplierName(question.getReplier().getFullName());
         }
+
+        // Set rejection reason if available
+        response.setRejectionReason(question.getRejectionReason());
 
         return response;
     }

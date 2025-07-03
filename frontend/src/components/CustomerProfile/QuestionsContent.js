@@ -16,7 +16,7 @@
  * - Pagination support
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -36,7 +36,11 @@ import {
   InputAdornment,
   Avatar,
   Tooltip,
-} from "@mui/material";
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 import {
   QuestionAnswer as QuestionIcon,
   Search as SearchIcon,
@@ -46,122 +50,111 @@ import {
   FilterAlt as FilterAltIcon,
   CheckCircle as CheckCircleIcon,
   AccessTime as AccessTimeIcon,
-} from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
+  HelpOutline as HelpOutlineIcon,
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+import Slide from '@mui/material/Slide';
+import questionService from '../../services/questionService';
+import {
+  formatDateDisplay,
+  formatDateTime,
+  formatDateTimeFromArray,
+} from '../../utils/dateUtils';
+import Pagination from '@mui/material/Pagination';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Styled Components
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.95)",
-  backdropFilter: "blur(20px)",
-  borderRadius: "20px",
-  border: "1px solid rgba(74, 144, 226, 0.15)",
-  color: "#2D3748",
-  boxShadow: "0 8px 32px 0 rgba(74, 144, 226, 0.1)",
+  background: 'rgba(255, 255, 255, 0.95)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  border: '1px solid rgba(74, 144, 226, 0.15)',
+  color: '#2D3748',
+  boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.1)',
 }));
 
 const QuestionCard = styled(Card)(({ theme }) => ({
-  background: "linear-gradient(145deg, #FFFFFF, #F5F7FA)",
-  backdropFilter: "blur(20px)",
-  borderRadius: "16px",
-  border: "1px solid rgba(74, 144, 226, 0.12)",
+  background: 'linear-gradient(145deg, #FFFFFF, #F5F7FA)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '16px',
+  border: '1px solid rgba(74, 144, 226, 0.12)',
   marginBottom: theme.spacing(3),
-  transition: "all 0.3s ease",
-  boxShadow: "0 4px 15px 0 rgba(0, 0, 0, 0.05)",
-  "&:hover": {
-    transform: "translateY(-3px)",
-    boxShadow: "0 10px 25px 0 rgba(74, 144, 226, 0.2)",
+  transition: 'all 0.3s ease',
+  boxShadow: '0 4px 15px 0 rgba(0, 0, 0, 0.05)',
+  '&:hover': {
+    transform: 'translateY(-3px)',
+    boxShadow: '0 10px 25px 0 rgba(74, 144, 226, 0.2)',
   },
 }));
 
 const StyledTab = styled(Tab)(({ theme }) => ({
-  color: "#4A5568",
-  "&.Mui-selected": {
-    color: "#4A90E2",
+  color: '#4A5568',
+  '&.Mui-selected': {
+    color: '#4A90E2',
     fontWeight: 600,
   },
 }));
 
 const StatusChip = styled(Chip)(({ status }) => ({
-  fontWeight: 600,
-  fontSize: "0.85rem",
-  padding: "4px 0",
-  height: "28px",
-  color: "#fff",
+  fontWeight: 700,
+  fontSize: '1rem',
+  padding: '0 18px',
+  height: '38px',
+  color: '#fff',
   background:
-    status === "answered"
-      ? "linear-gradient(45deg, #4CAF50, #2ECC71)"
-      : "linear-gradient(45deg, #F39C12, #E67E22)",
+    status === 'answered'
+      ? 'linear-gradient(90deg, #4CAF50 60%, #2ECC71 100%)'
+      : 'linear-gradient(90deg, #ff9800 60%, #f57c00 100%)',
   boxShadow:
-    status === "answered"
-      ? "0 3px 10px rgba(76, 175, 80, 0.3)"
-      : "0 3px 10px rgba(243, 156, 18, 0.3)",
+    status === 'answered'
+      ? '0 4px 16px rgba(76, 175, 80, 0.18)'
+      : '0 4px 16px rgba(255, 152, 0, 0.18)',
+  borderRadius: '20px',
+  letterSpacing: '0.5px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  transition: 'all 0.2s',
+  '& .MuiChip-icon': {
+    fontSize: 22,
+    marginRight: 8,
+  },
+  '&:hover': {
+    filter: 'brightness(1.08)',
+    boxShadow:
+      status === 'answered'
+        ? '0 6px 24px rgba(76, 175, 80, 0.28)'
+        : '0 6px 24px rgba(255, 152, 0, 0.28)',
+  },
 }));
-
-// Mock data cho câu hỏi
-const mockQuestions = [
-  {
-    id: 1,
-    question:
-      "Tôi có triệu chứng đau đầu và sốt nhẹ kéo dài 3 ngày, có nên đi khám không?",
-    date: "2025-05-28T10:30:00",
-    status: "answered",
-    answer:
-      "Dựa trên triệu chứng của bạn, tôi khuyên bạn nên đặt lịch khám để được kiểm tra. Đau đầu kèm sốt có thể là dấu hiệu của nhiều vấn đề sức khỏe. Hãy theo dõi nhiệt độ và uống đủ nước trong thời gian chờ đợi.",
-    doctorName: "BS. Nguyễn Văn A",
-    answeredAt: "2025-05-29T14:20:00",
-    category: "Đa khoa",
-  },
-  {
-    id: 2,
-    question:
-      "Tôi muốn biết thêm về dịch vụ khám sức khỏe định kỳ của phòng khám?",
-    date: "2025-05-30T15:45:00",
-    status: "pending",
-    category: "Dịch vụ",
-  },
-  {
-    id: 3,
-    question:
-      "Tôi có nên tiêm vaccine phòng cúm hàng năm không? Tôi 35 tuổi và khỏe mạnh.",
-    date: "2025-05-25T08:15:00",
-    status: "answered",
-    answer:
-      "Việc tiêm vaccine cúm hàng năm được khuyến nghị cho mọi người từ 6 tháng tuổi trở lên, kể cả những người khỏe mạnh như bạn. Vaccine giúp bảo vệ không chỉ bạn mà còn cả những người xung quanh có hệ miễn dịch yếu hơn.",
-    doctorName: "BS. Trần Thị B",
-    answeredAt: "2025-05-26T11:30:00",
-    category: "Vaccine",
-  },
-  {
-    id: 4,
-    question:
-      "Tôi đang dùng thuốc huyết áp và muốn biết có thể dùng đồng thời với thuốc cảm cúm không?",
-    date: "2025-06-01T09:20:00",
-    status: "pending",
-    category: "Dược phẩm",
-  },
-  {
-    id: 5,
-    question: "Tôi có nên cho con 2 tuổi uống vitamin tổng hợp không?",
-    date: "2025-05-20T16:00:00",
-    status: "answered",
-    answer:
-      "Trẻ em 2 tuổi có thể nhận đủ vitamin và khoáng chất từ chế độ ăn uống đa dạng, cân bằng. Nếu bạn lo lắng về dinh dưỡng của con, hãy tham khảo ý kiến bác sĩ nhi khoa trước khi cho trẻ dùng bất kỳ loại vitamin nào.",
-    doctorName: "BS. Lê Thị C",
-    answeredAt: "2025-05-21T10:45:00",
-    category: "Nhi khoa",
-  },
-];
 
 const QuestionsContent = () => {
   const [tabValue, setTabValue] = useState(0);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [expandedQuestions, setExpandedQuestions] = useState({});
   const [showNewQuestionForm, setShowNewQuestionForm] = useState(false);
   const [newQuestion, setNewQuestion] = useState({
-    question: "",
-    category: "",
+    question: '',
+    category: '',
   });
+  const questionInputRef = React.useRef(null);
+  const [categories, setCategories] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 5;
+  const tabStatusMap = [null, 'ANSWERED', 'PENDING', 'CANCELED'];
+
+  React.useEffect(() => {
+    if (showNewQuestionForm && questionInputRef.current) {
+      setTimeout(() => questionInputRef.current.focus(), 200);
+    }
+  }, [showNewQuestionForm]);
 
   // Handle tab change
   const handleTabChange = (event, newValue) => {
@@ -189,55 +182,134 @@ const QuestionsContent = () => {
     }));
   };
 
-  // Submit new question
-  const handleSubmitQuestion = () => {
-    // Here you would integrate with your API
-    console.log("Submitting question:", newQuestion);
-
-    // Reset form and hide it
-    setNewQuestion({
-      question: "",
-      category: "",
-    });
-    setShowNewQuestionForm(false);
-
-    // Provide user feedback (in a real app, you'd show a notification)
-    alert("Câu hỏi đã được gửi thành công!");
+  // Lấy danh mục khi mở dialog
+  const fetchCategories = async () => {
+    setCategoryLoading(true);
+    try {
+      const res = await questionService.getCategories();
+      setCategories(res.data.data || []);
+    } catch (err) {
+      setCategories([]);
+    } finally {
+      setCategoryLoading(false);
+    }
   };
 
+  // Lấy toàn bộ câu hỏi của khách hàng (không phân trang ở API)
+  const fetchQuestions = async () => {
+    setLoading(true);
+    try {
+      // Lấy tối đa 100 câu hỏi, nếu muốn nhiều hơn có thể tăng size
+      const res = await questionService.getMyQuestions({
+        page: 0,
+        size: 100,
+      });
+      setQuestions(res.data.data.content || []);
+    } catch (err) {
+      setQuestions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Khi mở dialog đặt câu hỏi mới
+  const handleOpenNewQuestion = () => {
+    setShowNewQuestionForm(true);
+    fetchCategories();
+  };
+
+  // Khi gửi câu hỏi mới
+  const handleSubmitQuestion = async () => {
+    if (!newQuestion.question) {
+      toast.warn('Vui lòng nhập câu hỏi.');
+      return;
+    }
+    if (!newQuestion.category) {
+      toast.warn('Vui lòng chọn danh mục.');
+      return;
+    }
+    setSubmitLoading(true);
+    try {
+      await questionService.createQuestion({
+        content: newQuestion.question,
+        categoryQuestionId: newQuestion.category,
+      });
+      setNewQuestion({ question: '', category: '' });
+      setShowNewQuestionForm(false);
+      toast.success('Câu hỏi đã được gửi thành công!');
+      fetchQuestions();
+      setPage(1);
+    } catch (err) {
+      toast.error('Gửi câu hỏi thất bại. Vui lòng thử lại.');
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchQuestions();
+    // eslint-disable-next-line
+  }, []);
+
+  // Khi đổi tab/filter thì reset về trang 1
+  useEffect(() => {
+    setPage(1);
+  }, [tabValue, searchTerm, categoryFilter]);
+
   // Filter questions based on search, category, and tab
-  const filteredQuestions = mockQuestions.filter((q) => {
-    // Filter by tab (All, Answered, Pending)
-    if (tabValue === 1 && q.status !== "answered") return false;
-    if (tabValue === 2 && q.status !== "pending") return false;
+  const filteredQuestions = questions.filter((q) => {
+    // Filter by tab (All, Answered, Pending, Canceled)
+    if (tabValue === 1 && q.status !== 'ANSWERED') return false;
+    if (tabValue === 2 && q.status !== 'PROCESSING' && q.status !== 'CONFIRMED')
+      return false;
+    if (tabValue === 3 && q.status !== 'CANCELED') return false;
 
     // Filter by search term
     const matchesSearch =
-      q.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (q.category &&
-        q.category.toLowerCase().includes(searchTerm.toLowerCase()));
+      (q.content &&
+        q.content.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (q.categoryName &&
+        q.categoryName.toLowerCase().includes(searchTerm.toLowerCase()));
 
     // Filter by category
     const matchesCategory =
-      categoryFilter === "all" || q.category === categoryFilter;
+      categoryFilter === 'all' ||
+      (q.categoryName && q.categoryName === categoryFilter);
 
     return matchesSearch && matchesCategory;
   });
 
+  const paginatedQuestions = filteredQuestions.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+  const filteredTotalPages = Math.max(
+    1,
+    Math.ceil(filteredQuestions.length / pageSize)
+  );
+
   // Format date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Intl.DateTimeFormat('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     }).format(date);
   };
 
   // Get unique categories for filter
-  const categories = ["all", ...new Set(mockQuestions.map((q) => q.category))];
+  const uniqueCategories = [
+    'all',
+    ...new Set(questions.map((q) => q.categoryName)),
+  ];
+
+  // Pagination handler
+  const handlePageChange = (event, value) => {
+    setPage(value);
+  };
 
   return (
     <Box>
@@ -246,198 +318,257 @@ const QuestionsContent = () => {
         sx={{
           p: { xs: 2.5, md: 4 },
           mb: 4,
-          borderRadius: "20px",
-          boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+          borderRadius: '20px',
+          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
         }}
       >
         <Box
           sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            justifyContent: "space-between",
-            alignItems: { xs: "flex-start", sm: "center" },
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between',
+            alignItems: { xs: 'flex-start', sm: 'center' },
             mb: 3,
             gap: 2,
           }}
         >
-          {" "}
+          {' '}
           <Typography
             variant="h4"
             fontWeight={700}
             sx={{
-              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical blue to teal
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              letterSpacing: "0.5px",
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)', // Medical blue to teal
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              letterSpacing: '0.5px',
             }}
           >
             Câu hỏi của tôi
-          </Typography>{" "}
+          </Typography>{' '}
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={toggleNewQuestionForm}
+            onClick={handleOpenNewQuestion}
             sx={{
-              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical blue to teal
-              borderRadius: "12px",
-              textTransform: "none",
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)', // Medical blue to teal
+              borderRadius: '12px',
+              textTransform: 'none',
               fontWeight: 600,
-              boxShadow: "0 8px 15px rgba(74, 144, 226, 0.5)",
-              padding: "10px 20px",
-              fontSize: "1rem",
-              alignSelf: { xs: "stretch", sm: "auto" },
-              "&:hover": {
-                background: "linear-gradient(45deg, #357ABD, #16A085)",
-                boxShadow: "0 10px 20px rgba(74, 144, 226, 0.6)",
+              boxShadow: '0 8px 15px rgba(74, 144, 226, 0.5)',
+              padding: '10px 20px',
+              fontSize: '1rem',
+              alignSelf: { xs: 'stretch', sm: 'auto' },
+              '&:hover': {
+                background: 'linear-gradient(45deg, #357ABD, #16A085)',
+                boxShadow: '0 10px 20px rgba(74, 144, 226, 0.6)',
               },
             }}
           >
             Đặt câu hỏi mới
           </Button>
-        </Box>{" "}
-        {/* New Question Form */}
-        {showNewQuestionForm && (
-          <StyledPaper
+        </Box>{' '}
+        <Dialog
+          open={showNewQuestionForm}
+          onClose={toggleNewQuestionForm}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 5,
+              boxShadow: '0 8px 40px 0 rgba(74, 144, 226, 0.18)',
+              p: 0,
+              overflow: 'visible',
+              background: 'linear-gradient(135deg, #fafdff 80%, #e0f7fa 100%)',
+            },
+          }}
+          TransitionComponent={Slide}
+          transitionDuration={400}
+        >
+          <DialogTitle
             sx={{
-              p: { xs: 2.5, md: 4 },
-              mb: 4,
-              background:
-                "linear-gradient(145deg, rgba(74, 144, 226, 0.15), rgba(26, 188, 156, 0.1))",
-              borderRadius: "16px",
-              border: "1px solid rgba(74, 144, 226, 0.3)",
-              boxShadow: "0 8px 20px rgba(74, 144, 226, 0.2)",
+              fontWeight: 700,
+              fontSize: '1.25rem',
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              pb: 0,
+              pt: 3,
+              pl: 3,
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-              <Box
-                sx={{
-                  width: 5,
-                  height: 28,
-                  background: "linear-gradient(180deg, #3b82f6, #8b5cf6)",
-                  mr: 2,
-                  borderRadius: 5,
-                }}
-              />{" "}
-              <Typography
-                variant="h5"
-                fontWeight={700}
-                sx={{ color: "#2D3748" }}
+            <HelpOutlineIcon sx={{ fontSize: 22, color: '#4A90E2', mr: 1 }} />
+            Đặt câu hỏi mới
+          </DialogTitle>
+          <DialogContent
+            dividers={false}
+            sx={{
+              px: { xs: 3, sm: 5 },
+              pt: 2,
+              pb: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2.5,
+            }}
+          >
+            <TextField
+              fullWidth
+              name="question"
+              label={
+                <span style={{ fontWeight: 600, color: '#357ABD' }}>
+                  Câu hỏi của bạn *
+                </span>
+              }
+              multiline
+              rows={4}
+              value={newQuestion.question}
+              onChange={(e) => {
+                setNewQuestion((prev) => ({
+                  ...prev,
+                  question: e.target.value,
+                }));
+              }}
+              variant="outlined"
+              placeholder="Nhập câu hỏi của bạn ở đây..."
+              inputRef={questionInputRef}
+              sx={{
+                background: '#fff',
+                borderRadius: 2,
+                mt: 1,
+                mb: 0.5,
+                '& .MuiInputBase-input': {
+                  color: '#2D3748',
+                  fontSize: '1rem',
+                  lineHeight: '1.6',
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#357ABD',
+                  fontWeight: 600,
+                },
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '& fieldset': { borderColor: '#b3d4fc' },
+                  '&:hover fieldset': {
+                    borderColor: '#4A90E2',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#1ABC9C',
+                    borderWidth: '2px',
+                  },
+                },
+              }}
+              onKeyDown={(e) => {
+                if (
+                  e.key === 'Enter' &&
+                  (e.ctrlKey || e.metaKey) &&
+                  newQuestion.question &&
+                  newQuestion.category
+                ) {
+                  handleSubmitQuestion();
+                }
+              }}
+            />
+            <FormControl
+              fullWidth
+              variant="outlined"
+              sx={{
+                background: '#fff',
+                borderRadius: 2,
+                mb: 0.5,
+                '& .MuiInputLabel-root': {
+                  color: '#357ABD',
+                  fontWeight: 600,
+                },
+                '& .MuiSelect-select': { color: '#2D3748' },
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '& fieldset': { borderColor: '#b3d4fc' },
+                  '&:hover fieldset': {
+                    borderColor: '#4A90E2',
+                  },
+                  '&.Mui-focused fieldset': { borderColor: '#1ABC9C' },
+                },
+              }}
+            >
+              <InputLabel>Danh mục *</InputLabel>
+              <Select
+                name="category"
+                value={newQuestion.category}
+                onChange={handleInputChange}
+                label="Danh mục *"
               >
-                Đặt câu hỏi mới
-              </Typography>
-            </Box>
-
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  name="question"
-                  label="Câu hỏi của bạn"
-                  multiline
-                  rows={4}
-                  value={newQuestion.question}
-                  onChange={handleInputChange}
-                  variant="outlined"
-                  placeholder="Nhập câu hỏi của bạn ở đây..."
-                  sx={{
-                    "& .MuiInputBase-input": {
-                      color: "#2D3748", // Màu đậm hơn cho text trên nền sáng
-                      fontSize: "1rem",
-                      lineHeight: "1.6",
-                    },
-                    "& .MuiInputLabel-root": {
-                      color: "#4A5568", // Màu tối hơn cho label
-                      fontWeight: 500,
-                    },
-                    "& .MuiOutlinedInput-root": {
-                      "& fieldset": { borderColor: "rgba(255, 255, 255, 0.3)" },
-                      "&:hover fieldset": {
-                        borderColor: "rgba(255, 255, 255, 0.5)",
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: "#3b82f6",
-                        borderWidth: "2px",
-                      },
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl
-                  fullWidth
-                  variant="outlined"
-                  sx={{
-                    "& .MuiInputLabel-root": {
-                      color: "rgba(255, 255, 255, 0.85)",
-                    },
-                    "& .MuiSelect-select": { color: "#fff" },
-                    "& .MuiOutlinedInput-root": {
-                      "& fieldset": { borderColor: "rgba(255, 255, 255, 0.3)" },
-                      "&:hover fieldset": {
-                        borderColor: "rgba(255, 255, 255, 0.5)",
-                      },
-                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
-                    },
-                  }}
-                >
-                  <InputLabel>Danh mục</InputLabel>
-                  <Select
-                    name="category"
-                    value={newQuestion.category}
-                    onChange={handleInputChange}
-                    label="Danh mục"
+                {categories.map((category) => (
+                  <MenuItem
+                    key={category.categoryQuestionId}
+                    value={category.categoryQuestionId}
                   >
-                    <MenuItem value="Đa khoa">Đa khoa</MenuItem>
-                    <MenuItem value="Nhi khoa">Nhi khoa</MenuItem>
-                    <MenuItem value="Vaccine">Vaccine</MenuItem>
-                    <MenuItem value="Dược phẩm">Dược phẩm</MenuItem>
-                    <MenuItem value="Dịch vụ">Dịch vụ</MenuItem>
-                    <MenuItem value="Khác">Khác</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid
-                item
-                xs={12}
-                sm={6}
-                sx={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  alignItems: "flex-start",
-                }}
-              >
-                {" "}
-                <Button
-                  variant="contained"
-                  onClick={handleSubmitQuestion}
-                  disabled={!newQuestion.question || !newQuestion.category}
-                  sx={{
-                    background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical blue to teal
-                    borderRadius: "12px",
-                    textTransform: "none",
-                    fontWeight: 600,
-                    px: 4,
-                    py: 1.5,
-                    opacity:
-                      !newQuestion.question || !newQuestion.category ? 0.5 : 1,
-                    "&:hover": {
-                      background: "linear-gradient(45deg, #3498DB, #16A085)", // Darker medical blue to teal
-                    },
-                  }}
-                >
-                  Gửi câu hỏi
-                </Button>
-              </Grid>
-            </Grid>
-          </StyledPaper>
-        )}
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </DialogContent>
+          <DialogActions
+            sx={{
+              background: '#fafdff',
+              borderBottomLeftRadius: 40,
+              borderBottomRightRadius: 40,
+              px: { xs: 3, sm: 5 },
+              py: 2.5,
+              mt: 0,
+              justifyContent: 'flex-end',
+              gap: 2,
+            }}
+          >
+            <Button
+              onClick={toggleNewQuestionForm}
+              sx={{
+                color: '#F50057',
+                fontWeight: 600,
+                borderRadius: 2,
+                px: 3,
+                fontSize: '1rem',
+              }}
+            >
+              HỦY
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSubmitQuestion}
+              disabled={!newQuestion.question || !newQuestion.category}
+              sx={{
+                background: 'linear-gradient(90deg, #4A90E2 60%, #1ABC9C 100%)',
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 700,
+                fontSize: '1rem',
+                px: 4,
+                py: 1.5,
+                boxShadow: '0 4px 16px rgba(74, 144, 226, 0.15)',
+                opacity:
+                  !newQuestion.question || !newQuestion.category ? 0.5 : 1,
+                transition: 'all 0.2s',
+                '&:hover': {
+                  background:
+                    'linear-gradient(90deg, #357ABD 60%, #16A085 100%)',
+                  boxShadow: '0 8px 24px rgba(74, 144, 226, 0.22)',
+                },
+              }}
+            >
+              Gửi câu hỏi
+            </Button>
+          </DialogActions>
+        </Dialog>
         <Box
           sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
             gap: 2,
-            alignItems: { xs: "stretch", md: "center" },
+            alignItems: { xs: 'stretch', md: 'center' },
           }}
         >
           {/* Search field */}
@@ -448,16 +579,16 @@ const QuestionsContent = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             sx={{
-              "& .MuiInputBase-input": {
-                color: "#2D3748", // Màu tối hơn cho text trên nền sáng
-                padding: "14px 14px 14px 0",
+              '& .MuiInputBase-input': {
+                color: '#2D3748', // Màu tối hơn cho text trên nền sáng
+                padding: '14px 14px 14px 0',
               },
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
-                "& fieldset": { borderColor: "rgba(74, 144, 226, 0.3)" }, // Màu viền xanh y tế                "&:hover fieldset": { borderColor: "rgba(74, 144, 226, 0.5)" },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#4A90E2",
-                  borderWidth: "2px",
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
+                '& fieldset': { borderColor: 'rgba(74, 144, 226, 0.3)' }, // Màu viền xanh y tế                "&:hover fieldset": { borderColor: "rgba(74, 144, 226, 0.5)" },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#4A90E2',
+                  borderWidth: '2px',
                 },
               },
               flexGrow: 1,
@@ -465,41 +596,41 @@ const QuestionsContent = () => {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start" sx={{ ml: 1 }}>
-                  <SearchIcon sx={{ color: "#4A5568" }} />
+                  <SearchIcon sx={{ color: '#4A5568' }} />
                 </InputAdornment>
               ),
             }}
           />
-          {/* Category filter */}{" "}
+          {/* Category filter */}{' '}
           <FormControl sx={{ minWidth: 200 }} variant="outlined">
-            <InputLabel sx={{ color: "#4A5568" }}>Danh mục</InputLabel>
+            <InputLabel sx={{ color: '#4A5568' }}>Danh mục</InputLabel>
             <Select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               label="Danh mục"
               sx={{
-                color: "#2D3748", // Màu text đậm hơn
-                borderRadius: "12px",
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "rgba(74, 144, 226, 0.3)",
+                color: '#2D3748', // Màu text đậm hơn
+                borderRadius: '12px',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(74, 144, 226, 0.3)',
                 },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "rgba(74, 144, 226, 0.5)",
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(74, 144, 226, 0.5)',
                 },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#4A90E2",
-                  borderWidth: "2px",
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#4A90E2',
+                  borderWidth: '2px',
                 },
               }}
               startAdornment={
                 <InputAdornment position="start" sx={{ ml: 1 }}>
-                  <FilterAltIcon sx={{ color: "#4A5568" }} />
+                  <FilterAltIcon sx={{ color: '#4A5568' }} />
                 </InputAdornment>
               }
             >
               <MenuItem value="all">Tất cả danh mục</MenuItem>
-              {categories
-                .filter((c) => c !== "all")
+              {uniqueCategories
+                .filter((c) => c !== 'all')
                 .map((category) => (
                   <MenuItem key={category} value={category}>
                     {category}
@@ -508,274 +639,318 @@ const QuestionsContent = () => {
             </Select>
           </FormControl>
         </Box>
-      </StyledPaper>{" "}
-      {/* Tabs for question status filtering */}{" "}
+      </StyledPaper>{' '}
+      {/* Tabs for question status filtering */}{' '}
       <Box
         sx={{
           mb: 4,
-          backgroundColor: "rgba(255, 255, 255, 0.8)",
-          borderRadius: "12px",
-          padding: "4px",
-          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
-          border: "1px solid rgba(74, 144, 226, 0.15)",
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          borderRadius: '12px',
+          padding: '4px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+          border: '1px solid rgba(74, 144, 226, 0.15)',
         }}
       >
-        {" "}
+        {' '}
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
           variant="fullWidth"
           TabIndicatorProps={{
             sx: {
-              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical blue to teal
-              height: "100%",
-              borderRadius: "8px",
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+              height: '100%',
+              borderRadius: '8px',
               zIndex: 0,
             },
           }}
           sx={{
-            minHeight: "48px",
-            "& .Mui-selected": {
-              color: "#2D3748 !important", // Màu text tối cho trạng thái selected
-              fontWeight: "700 !important",
+            minHeight: '48px',
+            '& .Mui-selected': {
+              color: '#2D3748 !important',
+              fontWeight: '700 !important',
               zIndex: 1,
             },
           }}
         >
           <StyledTab
             label={
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <QuestionIcon sx={{ fontSize: 20 }} />
                 Tất cả
               </Box>
             }
-            sx={{ borderRadius: "8px", zIndex: 1 }}
+            sx={{ borderRadius: '8px', zIndex: 1 }}
           />
           <StyledTab
             label={
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <CheckCircleIcon sx={{ color: "#10b981", fontSize: 18 }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CheckCircleIcon sx={{ color: '#10b981', fontSize: 18 }} />
                 Đã trả lời
               </Box>
             }
-            sx={{ borderRadius: "8px", zIndex: 1 }}
+            sx={{ borderRadius: '8px', zIndex: 1 }}
           />
           <StyledTab
             label={
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <AccessTimeIcon sx={{ color: "#f59e0b", fontSize: 18 }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AccessTimeIcon sx={{ color: '#f59e0b', fontSize: 18 }} />
                 Đang chờ
               </Box>
             }
-            sx={{ borderRadius: "8px", zIndex: 1 }}
+            sx={{ borderRadius: '8px', zIndex: 1 }}
+          />
+          <StyledTab
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <HelpOutlineIcon sx={{ color: '#ef4444', fontSize: 18 }} />
+                Đã huỷ
+              </Box>
+            }
+            sx={{ borderRadius: '8px', zIndex: 1 }}
           />
         </Tabs>
       </Box>
       {/* Questions list */}
       {filteredQuestions.length > 0 ? (
-        filteredQuestions.map((question) => (
-          <QuestionCard key={question.id} sx={{ mb: 3 }}>
-            <CardContent sx={{ padding: { xs: 2.5, md: 3 } }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  flexDirection: { xs: "column", sm: "row" },
-                  alignItems: { xs: "flex-start", sm: "center" },
-                  mb: 2,
-                }}
-              >
+        <>
+          {paginatedQuestions.map((question) => (
+            <QuestionCard key={question.id} sx={{ mb: 3 }}>
+              <CardContent sx={{ padding: { xs: 2.5, md: 3 } }}>
                 <Box
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    mb: { xs: 1.5, sm: 0 },
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    mb: 2,
                   }}
                 >
-                  {question.status === "answered" ? (
-                    <Tooltip title="Đã trả lời">
-                      {" "}
-                      <CheckCircleIcon
-                        sx={{ color: "#4CAF50", mr: 1.5, fontSize: 20 }} // Medical green
-                      />
-                    </Tooltip>
-                  ) : (
-                    <Tooltip title="Đang chờ">
-                      {" "}
-                      <AccessTimeIcon
-                        sx={{ color: "#F39C12", mr: 1.5, fontSize: 20 }} // Medical orange
-                      />
-                    </Tooltip>
-                  )}{" "}
-                  <Typography
-                    variant="body1"
-                    color="#2D3748" // Màu text tối cho ngày tháng
+                  <Box
                     sx={{
-                      fontWeight: 500,
-                      letterSpacing: "0.3px",
-                      fontSize: "0.95rem",
+                      display: 'flex',
+                      alignItems: 'center',
+                      mb: { xs: 1.5, sm: 0 },
                     }}
                   >
-                    {formatDate(question.date)}
-                  </Typography>
-                </Box>
-                <StatusChip
-                  label={
-                    question.status === "answered" ? "Đã trả lời" : "Đang chờ"
-                  }
-                  size="small"
-                  status={question.status}
-                  icon={
-                    question.status === "answered" ? (
-                      <CheckCircleIcon fontSize="small" />
+                    {question.status === 'ANSWERED' ? (
+                      <Tooltip title="Đã trả lời">
+                        <CheckCircleIcon
+                          sx={{ color: '#4CAF50', mr: 1.5, fontSize: 20 }}
+                        />
+                      </Tooltip>
+                    ) : question.status === 'CANCELED' ? (
+                      <Tooltip title="Đã huỷ">
+                        <HelpOutlineIcon
+                          sx={{ color: '#ef4444', mr: 1.5, fontSize: 20 }}
+                        />
+                      </Tooltip>
                     ) : (
-                      <AccessTimeIcon fontSize="small" />
-                    )
-                  }
-                />
-              </Box>{" "}
-              <Typography
-                variant="h6"
-                fontWeight={700}
-                sx={{
-                  mb: 2.5,
-                  fontSize: "1.1rem",
-                  lineHeight: 1.5,
-                  letterSpacing: "0.3px",
-                  color: "#2D3748", // Màu text tối cho nội dung câu hỏi
-                }}
-              >
-                {question.question}
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: { xs: "column", sm: "row" },
-                  justifyContent: "space-between",
-                  alignItems: { xs: "flex-start", sm: "center" },
-                  gap: 1.5,
-                }}
-              >
-                {" "}
-                <Chip
-                  label={question.category}
-                  size="small"
-                  sx={{
-                    background: "rgba(74, 144, 226, 0.1)",
-                    color: "#4A5568", // Màu text tối cho category
-                    fontWeight: 500,
-                    borderRadius: "8px",
-                    border: "1px solid rgba(74, 144, 226, 0.2)",
-                  }}
-                />
-                {question.status === "answered" && (
-                  <Button
-                    endIcon={
-                      expandedQuestions[question.id] ? (
-                        <ExpandLessIcon />
+                      <Tooltip title="Đang chờ">
+                        <AccessTimeIcon
+                          sx={{ color: '#F39C12', mr: 1.5, fontSize: 20 }}
+                        />
+                      </Tooltip>
+                    )}
+                    <Typography
+                      variant="body1"
+                      color="#2D3748"
+                      sx={{
+                        fontWeight: 500,
+                        letterSpacing: '0.3px',
+                        fontSize: '0.95rem',
+                      }}
+                    >
+                      {Array.isArray(question.createdAt)
+                        ? formatDateTimeFromArray(question.createdAt)
+                        : 'Chưa cập nhật'}
+                    </Typography>
+                  </Box>
+                  <StatusChip
+                    label={
+                      question.status === 'ANSWERED'
+                        ? 'Đã trả lời'
+                        : question.status === 'CANCELED'
+                          ? 'Đã huỷ'
+                          : 'Đang chờ'
+                    }
+                    size="small"
+                    status={
+                      question.status === 'ANSWERED'
+                        ? 'answered'
+                        : question.status === 'CANCELED'
+                          ? 'canceled'
+                          : 'pending'
+                    }
+                    icon={
+                      question.status === 'ANSWERED' ? (
+                        <CheckCircleIcon fontSize="small" />
+                      ) : question.status === 'CANCELED' ? (
+                        <HelpOutlineIcon
+                          fontSize="small"
+                          style={{ color: '#ef4444' }}
+                        />
                       ) : (
-                        <ExpandMoreIcon />
+                        <AccessTimeIcon fontSize="small" />
                       )
                     }
-                    onClick={() => toggleQuestionExpand(question.id)}
+                    sx={
+                      question.status === 'CANCELED'
+                        ? {
+                            background:
+                              'linear-gradient(90deg, #ff8a80 60%, #ef4444 100%)',
+                            color: '#fff',
+                            boxShadow: '0 4px 16px rgba(239, 68, 68, 0.18)',
+                          }
+                        : {}
+                    }
+                  />
+                </Box>
+                <Typography
+                  variant="h6"
+                  fontWeight={700}
+                  sx={{
+                    mb: 2.5,
+                    fontSize: '1.1rem',
+                    lineHeight: 1.5,
+                    letterSpacing: '0.3px',
+                    color: '#2D3748',
+                  }}
+                >
+                  {question.content}
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    justifyContent: 'space-between',
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: 1.5,
+                  }}
+                >
+                  <Chip
+                    label={question.categoryName}
+                    size="small"
                     sx={{
-                      color: "#3b82f6",
-                      textTransform: "none",
+                      background: 'rgba(74, 144, 226, 0.1)',
+                      color: '#4A5568',
+                      fontWeight: 500,
+                      borderRadius: '8px',
+                      border: '1px solid rgba(74, 144, 226, 0.2)',
+                    }}
+                  />
+                  {/* Người huỷ hoặc Người trả lời */}
+                  {question.status === 'CANCELED' && question.updaterName ? (
+                    <Typography
+                      variant="body2"
+                      color="#4A5568"
+                      sx={{ fontSize: '0.95rem', fontWeight: 500 }}
+                    >
+                      Người huỷ: {question.updaterName}
+                    </Typography>
+                  ) : question.status === 'ANSWERED' && question.replierName ? (
+                    <Typography
+                      variant="body2"
+                      color="#4A5568"
+                      sx={{ fontSize: '0.95rem', fontWeight: 500 }}
+                    >
+                      Người trả lời: {question.replierName}
+                    </Typography>
+                  ) : null}
+                </Box>
+                {/* Nếu bị huỷ thì hiển thị lý do huỷ nổi bật */}
+                {question.status === 'CANCELED' && question.rejectionReason && (
+                  <Box
+                    sx={{
+                      mt: 3,
+                      p: 2.5,
+                      borderRadius: '10px',
+                      background:
+                        'linear-gradient(90deg, #ffebee 60%, #ffcdd2 100%)',
+                      color: '#ef4444',
                       fontWeight: 600,
-                      borderRadius: "8px",
-                      "&:hover": {
-                        background: "rgba(59, 130, 246, 0.15)",
-                      },
+                      fontStyle: 'italic',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      border: '1px solid #ffcdd2',
                     }}
                   >
-                    {expandedQuestions[question.id]
-                      ? "Ẩn câu trả lời"
-                      : "Xem câu trả lời"}
-                  </Button>
+                    <HelpOutlineIcon sx={{ color: '#ef4444', mr: 1 }} />
+                    Lý do huỷ: {question.rejectionReason}
+                  </Box>
                 )}
-              </Box>
-              {/* Answer section - only show if expanded and answered */}
-              {expandedQuestions[question.id] &&
-                question.status === "answered" && (
+                {/* Nếu có câu trả lời và không bị huỷ */}
+                {question.status === 'ANSWERED' && question.answer && (
                   <Box
                     sx={{
                       mt: 3,
                       pt: 3,
-                      borderTop: "1px solid rgba(74, 144, 226, 0.2)",
-                      animation: "fadeIn 0.5s ease-in-out",
-                      "@keyframes fadeIn": {
-                        "0%": {
-                          opacity: 0,
-                          transform: "translateY(-10px)",
-                        },
-                        "100%": {
-                          opacity: 1,
-                          transform: "translateY(0)",
-                        },
+                      borderTop: '1px solid rgba(74, 144, 226, 0.2)',
+                      animation: 'fadeIn 0.5s ease-in-out',
+                      '@keyframes fadeIn': {
+                        '0%': { opacity: 0, transform: 'translateY(-10px)' },
+                        '100%': { opacity: 1, transform: 'translateY(0)' },
                       },
                     }}
                   >
                     <Box
-                      sx={{ display: "flex", alignItems: "center", mb: 2.5 }}
+                      sx={{ display: 'flex', alignItems: 'center', mb: 2.5 }}
                     >
-                      {" "}
                       <Avatar
                         sx={{
                           width: 36,
                           height: 36,
                           background:
-                            "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical colors
+                            'linear-gradient(45deg, #4A90E2, #1ABC9C)',
                           mr: 1.5,
                           fontWeight: 700,
-                          fontSize: "1rem",
-                          border: "2px solid rgba(74, 144, 226, 0.2)",
-                          color: "#fff", // Text trong avatar vẫn màu trắng để nổi bật
+                          fontSize: '1rem',
+                          border: '2px solid rgba(74, 144, 226, 0.2)',
+                          color: '#fff',
                         }}
                       >
-                        {question.doctorName.split(" ").pop().charAt(0)}
+                        {question.replierName
+                          ? question.replierName.split(' ').pop().charAt(0)
+                          : '?'}
                       </Avatar>
                       <Box>
                         <Typography
                           variant="body1"
-                          color="#2D3748" // Màu text tối
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: "0.95rem",
-                            mb: 0.3,
-                          }}
+                          color="#2D3748"
+                          sx={{ fontWeight: 700, fontSize: '0.95rem', mb: 0.3 }}
                         >
-                          {question.doctorName}
+                          {question.replierName || 'Chuyên gia'}
                         </Typography>
                         <Typography
                           variant="body2"
-                          color="#4A5568" // Màu text tối hơn
-                          sx={{
-                            fontSize: "0.85rem",
-                          }}
+                          color="#4A5568"
+                          sx={{ fontSize: '0.85rem' }}
                         >
-                          Trả lời lúc: {formatDate(question.answeredAt)}
+                          Trả lời lúc:{' '}
+                          {Array.isArray(question.updatedAt)
+                            ? formatDateTimeFromArray(question.updatedAt)
+                            : 'Chưa cập nhật'}
                         </Typography>
                       </Box>
-                    </Box>{" "}
+                    </Box>
                     <Box
                       sx={{
                         p: 3,
-                        borderRadius: "14px",
+                        borderRadius: '14px',
                         background:
-                          "linear-gradient(145deg, rgba(76, 175, 80, 0.15), rgba(46, 204, 113, 0.08))", // Medical green
-                        border: "1px solid rgba(76, 175, 80, 0.3)",
-                        boxShadow: "0 4px 15px rgba(46, 204, 113, 0.15)",
+                          'linear-gradient(145deg, rgba(76, 175, 80, 0.15), rgba(46, 204, 113, 0.08))',
+                        border: '1px solid rgba(76, 175, 80, 0.3)',
+                        boxShadow: '0 4px 15px rgba(46, 204, 113, 0.15)',
                       }}
                     >
-                      {" "}
                       <Typography
                         variant="body1"
                         sx={{
                           lineHeight: 1.8,
-                          fontSize: "1rem",
-                          letterSpacing: "0.3px",
-                          color: "#2D3748", // Màu text tối cho nội dung câu trả lời
-                          // Loại bỏ text shadow không cần thiết
+                          fontSize: '1rem',
+                          letterSpacing: '0.3px',
+                          color: '#2D3748',
                         }}
                       >
                         {question.answer}
@@ -783,26 +958,38 @@ const QuestionsContent = () => {
                     </Box>
                   </Box>
                 )}
-            </CardContent>
-          </QuestionCard>
-        ))
+              </CardContent>
+            </QuestionCard>
+          ))}
+          {/* Thanh phân trang */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <Pagination
+              count={filteredTotalPages}
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
+              shape="rounded"
+              size="large"
+            />
+          </Box>
+        </>
       ) : (
         <Box
           sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
             py: 8,
-            background: "rgba(255, 255, 255, 0.8)", // Nền sáng hơn
-            borderRadius: "16px",
-            border: "1px solid rgba(74, 144, 226, 0.15)", // Viền màu medical
-            boxShadow: "0 4px 15px rgba(0, 0, 0, 0.05)",
+            background: 'rgba(255, 255, 255, 0.8)', // Nền sáng hơn
+            borderRadius: '16px',
+            border: '1px solid rgba(74, 144, 226, 0.15)', // Viền màu medical
+            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.05)',
           }}
         >
-          {" "}
+          {' '}
           <QuestionIcon
-            sx={{ fontSize: 64, color: "rgba(74, 144, 226, 0.3)", mb: 2 }}
+            sx={{ fontSize: 64, color: 'rgba(74, 144, 226, 0.3)', mb: 2 }}
           />
           <Typography
             variant="h6"
@@ -811,28 +998,28 @@ const QuestionsContent = () => {
             sx={{ mb: 1 }}
           >
             Không tìm thấy câu hỏi nào
-          </Typography>{" "}
+          </Typography>{' '}
           <Typography
             variant="body2"
             color="#4A5568" // Text color đậm hơn cho phù hợp với nền sáng
-            sx={{ mb: 3, textAlign: "center" }}
+            sx={{ mb: 3, textAlign: 'center' }}
           >
             Hãy thử thay đổi bộ lọc hoặc đặt câu hỏi mới
-          </Typography>{" "}
+          </Typography>{' '}
           <Button
             variant="outlined"
             startIcon={<AddIcon />}
-            onClick={toggleNewQuestionForm}
+            onClick={handleOpenNewQuestion}
             sx={{
-              color: "#4A90E2", // Medical blue
-              borderColor: "#4A90E2",
-              borderRadius: "10px",
-              textTransform: "none",
+              color: '#4A90E2', // Medical blue
+              borderColor: '#4A90E2',
+              borderRadius: '10px',
+              textTransform: 'none',
               fontWeight: 600,
-              padding: "8px 20px",
-              "&:hover": {
-                borderColor: "#1ABC9C", // Medical teal
-                background: "rgba(74, 144, 226, 0.1)",
+              padding: '8px 20px',
+              '&:hover': {
+                borderColor: '#1ABC9C', // Medical teal
+                background: 'rgba(74, 144, 226, 0.1)',
               },
             }}
           >
@@ -840,6 +1027,7 @@ const QuestionsContent = () => {
           </Button>
         </Box>
       )}
+      <ToastContainer position="top-center" autoClose={3000} />
     </Box>
   );
 };

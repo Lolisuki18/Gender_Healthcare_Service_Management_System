@@ -41,7 +41,7 @@ public class QuestionController {
     }
 
     @PutMapping("/{questionId}/status")
-    @PreAuthorize("hasRole('STAFF')")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
     public ResponseEntity<ApiResponse<QuestionResponse>> updateQuestionStatus(
             @PathVariable Long questionId,
             @Valid @RequestBody QuestionStatusRequest request,
@@ -55,7 +55,7 @@ public class QuestionController {
     }
 
     @PutMapping("/{questionId}/answer")
-    @PreAuthorize("hasAnyRole('STAFF', 'CONSULTANT')")
+    @PreAuthorize("hasAnyRole('ROLE_CONSULTANT', 'ROLE_STAFF')")
     public ResponseEntity<ApiResponse<QuestionResponse>> answerQuestion(
             @PathVariable Long questionId,
             @Valid @RequestBody QuestionAnswerRequest request,
@@ -69,7 +69,7 @@ public class QuestionController {
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('STAFF', 'CONSULTANT')")
+    @PreAuthorize("hasAnyRole('ROLE_CONSULTANT', 'ROLE_STAFF')")
     public ResponseEntity<ApiResponse<Page<QuestionResponse>>> getQuestionsByStatus(
             @PathVariable QuestionStatus status,
             @RequestParam(defaultValue = "0") int page,
@@ -117,7 +117,7 @@ public class QuestionController {
     }
 
     @DeleteMapping("/{questionId}")
-    @PreAuthorize("hasRole('STAFF')")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
     public ResponseEntity<ApiResponse<Void>> deleteQuestion(
             @PathVariable Long questionId,
             Authentication authentication) {

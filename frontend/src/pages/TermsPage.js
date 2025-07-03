@@ -202,7 +202,7 @@ const TermsPage = () => {
                 letterSpacing: 1.5,
               }}
             >
-              Điều khoản Dịch vụ
+              Gender Healthcare Service
             </Typography>
             <Typography
               variant="subtitle1"
@@ -210,8 +210,7 @@ const TermsPage = () => {
               textAlign="center"
               sx={{ opacity: 0.85 }}
             >
-              Vui lòng đọc kỹ các điều khoản dưới đây trước khi sử dụng dịch vụ
-              của chúng tôi.
+              Vui lòng đọc kỹ các điều khoản dưới đây trước khi sử dụng dịch vụ.
             </Typography>
           </Box>
           {sections.map((section, idx) => (

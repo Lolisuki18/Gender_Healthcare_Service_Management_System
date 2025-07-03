@@ -21,7 +21,7 @@
  * StaffProfile → StaffSidebar → Content Components
  */
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -29,30 +29,31 @@ import {
   useMediaQuery,
   useTheme,
   Chip,
-} from "@mui/material";
-import { Menu as MenuIcon } from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-import StaffSidebar from "./StaffSideBar";
+} from '@mui/material';
+import { Menu as MenuIcon } from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+import DynamicSideBar from '@/components/common/DynamicSideBar';
+import localStorageUtil from '@/utils/localStorage';
 
 // Import content components
-import QuestionResponseContent from "./QuestionResponseContent";
-import STIServiceManagementContent from "./STIServiceManagementContent";
-import STITestManagementContent from "./STITestManagementContent";
-import STIPackageManagementContent from "./STIPackageManagementContent";
-import BlogManagementContent from "./BlogManagementContent";
-import ReviewManagementContent from "./ReviewManagementContent";
-import ProfileContent from "./ProfileContent";
-import CategoryManagementContent from "./CategoryManagementContent";
+import QuestionResponseContent from './QuestionResponseContent';
+import STIServiceManagementContent from './STIServiceManagementContent';
+import STITestManagementContent from './STITestManagementContent';
+import STIPackageManagementContent from './STIPackageManagementContent';
+import BlogManagementContent from './BlogManagementContent';
+import ReviewManagementContent from './ReviewManagementContent';
+import ProfileContent from './ProfileContent';
+import CategoryManagementContent from './CategoryManagementContent';
 
 // Styled component cho nội dung chính
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
   flexGrow: 1,
-  transition: theme.transitions.create(["margin", "width"], {
+  transition: theme.transitions.create(['margin', 'width'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
   marginLeft: sidebarOpen ? 0 : `-280px`, // Sidebar width: 280px
-  [theme.breakpoints.down("md")]: {
+  [theme.breakpoints.down('md')]: {
     marginLeft: 0, // Mobile: không có margin
   },
 }));
@@ -60,9 +61,10 @@ const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
 const StaffProfile = ({ user = {} }) => {
   // Hook để detect responsive breakpoints
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md")); // State management
+  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // State management
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Mặc định mở trên desktop, đóng trên mobile
-  const [selectedMenuItem, setSelectedMenuItem] = useState("profile"); // Mặc định hiển thị hồ sơ cá nhân
+  const [selectedMenuItem, setSelectedMenuItem] = useState('profile'); // Mặc định hiển thị hồ sơ cá nhân
+  const userData = localStorageUtil.get('userProfile')?.data || {};
 
   // Handler functions
   const handleSidebarToggle = () => {
@@ -74,21 +76,21 @@ const StaffProfile = ({ user = {} }) => {
   }; // Hàm render nội dung động dựa trên menu item được chọn
   const renderContent = () => {
     switch (selectedMenuItem) {
-      case "questionResponse":
+      case 'questionResponse':
         return <QuestionResponseContent />;
-      case "stiService":
+      case 'stiService':
         return <STIServiceManagementContent />;
-      case "stiTest":
+      case 'stiTest':
         return <STITestManagementContent />;
-      case "stiPackage":
+      case 'stiPackage':
         return <STIPackageManagementContent />;
-      case "blog":
+      case 'blog':
         return <BlogManagementContent />;
-      case "review":
+      case 'review':
         return <ReviewManagementContent />;
-      case "profile":
+      case 'profile':
         return <ProfileContent />;
-      case "categoryManagement":
+      case 'categoryManagement':
         return <CategoryManagementContent />;
       default:
         return <ProfileContent />;
@@ -96,24 +98,24 @@ const StaffProfile = ({ user = {} }) => {
   }; // Hàm để lấy tiêu đề trang dựa trên menu item
   const getPageTitle = () => {
     switch (selectedMenuItem) {
-      case "questionResponse":
-        return "Trả lời câu hỏi";
-      case "stiService":
-        return "Quản lý dịch vụ STI";
-      case "stiTest":
-        return "Quản lý STI Test";
-      case "stiPackage":
-        return "Quản lý STI Packages";
-      case "blog":
-        return "Quản lý Blog";
-      case "review":
-        return "Quản lý đánh giá";
-      case "profile":
-        return "Hồ sơ cá nhân";
-      case "categoryManagement":
-        return "Quản lý danh mục";
+      case 'questionResponse':
+        return 'Trả lời câu hỏi';
+      case 'stiService':
+        return 'Quản lý dịch vụ STI';
+      case 'stiTest':
+        return 'Quản lý STI Test';
+      case 'stiPackage':
+        return 'Quản lý STI Packages';
+      case 'blog':
+        return 'Quản lý Blog';
+      case 'review':
+        return 'Quản lý đánh giá';
+      case 'profile':
+        return 'Hồ sơ cá nhân';
+      case 'categoryManagement':
+        return 'Quản lý danh mục';
       default:
-        return "Hồ sơ cá nhân";
+        return 'Hồ sơ cá nhân';
     }
   };
 
@@ -121,19 +123,19 @@ const StaffProfile = ({ user = {} }) => {
     // Container chính với medical background gradient
     <Box
       sx={{
-        display: "flex",
-        minHeight: "100vh",
+        display: 'flex',
+        minHeight: '100vh',
         background:
-          "linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 30%, #f5fafe 70%, #ffffff 100%)", // Medical light gradient
+          'linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 30%, #f5fafe 70%, #ffffff 100%)', // Medical light gradient
       }}
     >
       {/* Sidebar Navigation Component */}
-      <StaffSidebar
+      <DynamicSideBar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         selectedItem={selectedMenuItem}
         onItemSelect={handleMenuItemSelect}
-        user={user}
+        user={userData}
       />
 
       {/* Main Content Area */}
@@ -141,14 +143,14 @@ const StaffProfile = ({ user = {} }) => {
         {/* Header Section với medical glass effect */}
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             p: 3,
-            background: "rgba(255, 255, 255, 0.85)", // Medical glass effect
-            backdropFilter: "blur(25px)",
-            borderBottom: "1px solid rgba(74, 144, 226, 0.12)",
-            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+            background: 'rgba(255, 255, 255, 0.85)', // Medical glass effect
+            backdropFilter: 'blur(25px)',
+            borderBottom: '1px solid rgba(74, 144, 226, 0.12)',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
           }}
         >
           {/* Mobile menu button */}
@@ -157,7 +159,7 @@ const StaffProfile = ({ user = {} }) => {
               onClick={handleSidebarToggle}
               sx={{
                 mr: 2,
-                color: "#2D3748",
+                color: '#2D3748',
               }}
             >
               <MenuIcon />
@@ -165,16 +167,16 @@ const StaffProfile = ({ user = {} }) => {
           )}
 
           {/* Page title với medical styling */}
-          <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
             <Typography
               variant="h4"
               sx={{
                 fontWeight: 700,
-                color: "#2D3748",
-                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
+                color: '#2D3748',
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)', // Medical gradient
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
               }}
             >
               {getPageTitle()}
@@ -185,10 +187,10 @@ const StaffProfile = ({ user = {} }) => {
             label="Nhân viên"
             size="small"
             sx={{
-              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)", // Medical gradient
-              color: "#fff",
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)', // Medical gradient
+              color: '#fff',
               fontWeight: 600,
-              boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
             }}
           />
         </Box>
