@@ -1,6 +1,18 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from './BlogCard.module.css';
+import {
+  Card,
+  CardContent,
+  CardMedia,
+  Typography,
+  Button,
+  Box,
+  Chip,
+  Avatar
+} from '@mui/material';
+import PersonIcon from '@mui/icons-material/Person';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { getBlogImageUrl, getAvatarUrl } from '../../utils/imageUrl';
 
 function formatDateVN(date) {
@@ -30,83 +42,219 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
 
   const getBlogStatusBadge = (status) => {
     const statusMap = {
-      'CONFIRMED': { text: 'Đã duyệt', class: 'confirmed' },
-      'PROCESSING': { text: 'Đang xử lý', class: 'processing' },
-      'CANCELED': { text: 'Đã hủy', class: 'canceled' }
+      'CONFIRMED': { text: 'Đã duyệt', color: 'success' },
+      'PROCESSING': { text: 'Đang xử lý', color: 'warning' },
+      'CANCELED': { text: 'Đã hủy', color: 'error' }
     };
-    return statusMap[status] || { text: status, class: 'default' };
+    return statusMap[status] || { text: status, color: 'default' };
   };
 
   return (
-    <article className={styles.blogCard} onClick={handleReadMore}>
-      <div className={styles.blogCardImage}>
-        <img
-          src={getBlogImageUrl(post.thumbnailImage || post.existingThumbnail)}
+    <Card 
+      sx={{ 
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        borderRadius: '16px',
+        backgroundColor: '#ffffff',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        border: '1px solid #e3f2fd',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+          transform: 'translateY(-2px)',
+        }
+      }}
+      onClick={handleReadMore}
+    >
+      {/* Image Section */}
+      <Box sx={{ position: 'relative' }}>
+        <CardMedia
+          component="img"
+          sx={{ 
+            width: { xs: '100%', sm: '300px' },
+            height: { xs: '200px', sm: '180px' },
+            objectFit: 'cover'
+          }}
+          image={getBlogImageUrl(post.thumbnailImage || post.existingThumbnail)}
           alt={post.title || 'Blog thumbnail'}
-          onError={e => { e.target.src = getBlogImageUrl('/img/blog/default.jpg'); }}
+          onError={(e) => { 
+            e.target.src = getBlogImageUrl('/img/blog/default.jpg'); 
+          }}
         />
+        
+        {/* Status Badge */}
         {post.status && post.status !== 'CONFIRMED' && (
-          <div className={`${styles.statusBadge} ${styles[getBlogStatusBadge(post.status).class]}`}>
-            <div className={styles.statusIcon}>
-              {post.status === 'PROCESSING' && (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
-              )}
-              {post.status === 'CANCELED' && (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-              )}
-            </div>
-            {getBlogStatusBadge(post.status).text}
-          </div>
+          <Chip
+            label={getBlogStatusBadge(post.status).text}
+            color={getBlogStatusBadge(post.status).color}
+            size="small"
+            sx={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              fontWeight: 600,
+              fontSize: '0.75rem'
+            }}
+          />
         )}
-        <div className={styles.imageOverlay}>
-          <div className={styles.overlayContent}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            <span>Xem chi tiết</span>
-          </div>
-        </div>
-      </div>
-      <div className={styles.blogCardContent}>
-        <div className={styles.blogCardMeta}>
-          <span className={styles.category}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-            {post.categoryName}
-          </span>
-          <span className={styles.date}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            {formatDateVN(post.createdAt)}
-          </span>
-        </div>
-        <h3 className={styles.blogCardTitle} title={post.title}>{post.title}</h3>
-        <p className={styles.blogCardExcerpt}>{getCleanContentPreview(post.content, truncateContent)}</p>
-        <div className={styles.blogCardFooter}>
-          <div className={styles.authorInfo}>
-            <div className={styles.authorAvatarWrapper}>
-              <img
-                src={getAvatarUrl(post.authorAvatar)}
-                alt={post.authorName || 'Tác giả'}
-                className={styles.authorAvatar}
-                onError={e => { e.target.src = getAvatarUrl('/img/avatar/default.jpg'); }}
-              />
-              <div className={styles.authorStatus}></div>
-            </div>
-            <div className={styles.authorDetails}>
-              <span className={styles.authorName}>{post.authorName || 'Admin'}</span>
-              <span className={styles.authorRole}>Tác giả</span>
-            </div>
-          </div>
-          <button
-            onClick={e => { e.stopPropagation(); handleReadMore(); }}
-            className={styles.readMoreBtn}
-            aria-label={`Đọc thêm bài viết: ${post.title}`}
+        
+        {/* Overlay on hover */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: 0,
+            transition: 'opacity 0.3s ease',
+            '.MuiCard-root:hover &': {
+              opacity: 1
+            }
+          }}
+        >
+          <Box sx={{ textAlign: 'center', color: 'white' }}>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Xem chi tiết
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Content Section */}
+      <CardContent sx={{ 
+        flex: 1, 
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between'
+      }}>
+        <Box>
+          {/* Meta Info */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexWrap: 'wrap',
+            gap: 2, 
+            mb: 2,
+            alignItems: 'center'
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500, fontSize: '0.8rem' }}>
+                {post.categoryName}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <CalendarTodayIcon sx={{ fontSize: '0.8rem', color: '#3b82f6' }} />
+              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500, fontSize: '0.8rem' }}>
+                {formatDateVN(post.createdAt)}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Title */}
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 600,
+              color: '#1e293b',
+              mb: 1,
+              lineHeight: 1.4,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}
           >
-            <span>Đọc thêm</span>
-            <div className={styles.btnIcon}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17l9.2-9.2M17 17V7H7"></path></svg>
-            </div>
-          </button>
-        </div>
-      </div>
-    </article>
+            {post.title}
+          </Typography>
+
+          {/* Excerpt */}
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#64748b',
+              lineHeight: 1.6,
+              mb: 2,
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}
+          >
+            {getCleanContentPreview(post.content, truncateContent)}
+          </Typography>
+        </Box>
+
+        {/* Footer */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          pt: 2,
+          borderTop: '1px solid #f1f5f9'
+        }}>
+          {/* Author Info */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Avatar 
+              src={getAvatarUrl(post.authorAvatar)}
+              sx={{ 
+                width: 32, 
+                height: 32,
+                border: '2px solid #f1f5f9'
+              }}
+            >
+              <PersonIcon sx={{ fontSize: '1rem' }} />
+            </Avatar>
+            <Box>
+              <Typography variant="caption" sx={{ 
+                color: '#1e293b', 
+                fontWeight: 500,
+                fontSize: '0.85rem'
+              }}>
+                {post.authorName || 'Admin'}
+              </Typography>
+              <Typography variant="caption" sx={{ 
+                display: 'block',
+                color: '#64748b',
+                fontSize: '0.75rem'
+              }}>
+                Tác giả
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Read More Button */}
+          <Button
+            variant="contained"
+            size="small"
+            endIcon={<ArrowForwardIcon />}
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              handleReadMore(); 
+            }}
+            sx={{
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              fontWeight: 500,
+              fontSize: '0.8rem',
+              textTransform: 'none',
+              borderRadius: '6px',
+              '&:hover': {
+                backgroundColor: '#2563eb',
+                transform: 'translateX(2px)'
+              }
+            }}
+          >
+            Đọc thêm
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 

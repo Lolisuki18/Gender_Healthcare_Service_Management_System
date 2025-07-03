@@ -262,7 +262,7 @@ const ServiceSelection = ({
                     <Box
                       sx={{
                         position: 'absolute',                  // Định vị tuyệt đối
-                        top: 20,                               // Cách top 20px
+                        bottom: 20,                            // Cách bottom 20px
                         right: 20,                             // Cách right 20px
                         width: 32,                             // Kích thước 32x32px
                         height: 32,
@@ -525,7 +525,7 @@ const ServiceSelection = ({
                     <Box
                       sx={{
                         position: 'absolute',
-                        top: 20,
+                        bottom: 20,
                         right: 20,
                         width: 32,
                         height: 32,
@@ -543,10 +543,10 @@ const ServiceSelection = ({
                   )}
 
                   {/* Popular Badge */}
-                  <Box
+                  {/* <Box
                     sx={{
                       position: 'absolute',
-                      top: 15,
+                      bottom: 15,
                       left: 15,
                       bgcolor: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
                       background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
@@ -556,11 +556,12 @@ const ServiceSelection = ({
                       borderRadius: 2,
                       fontSize: 12,
                       fontWeight: 700,
-                      zIndex: 1,
+                      zIndex: 3,
+                      boxShadow: '0 2px 8px rgba(74,144,226,0.3)',
                     }}
                   >
                     🔥 PHỔ BIẾN
-                  </Box>
+                  </Box> */}
 
                   <CardContent sx={{ p: 2.5, pt: 3.5 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>

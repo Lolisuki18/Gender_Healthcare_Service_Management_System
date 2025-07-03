@@ -138,8 +138,15 @@ export default function StiDetailPage() {
       // ===== NẾU ĐÃ ĐĂNG NHẬP - CHUYỂN ĐẾN TRANG ĐĂNG KÝ =====
       if (response.status === 200) {
         if (selectedPackage) {
-          // Chuyển với dữ liệu gói đã chọn
-          navigate('/test-registration', { state: { selectedPackage } });
+          // Chuyển với dữ liệu gói đã chọn và bỏ qua bước chọn dịch vụ
+          navigate('/test-registration', { 
+            state: { 
+              selectedPackage,
+              activeStep: 1, // Chuyển thẳng đến bước chọn ngày giờ
+              initialStep: 1,
+              skipServiceSelection: true
+            } 
+          });
         } else {
           // Chuyển không có gói nào được chọn trước
           navigate('/test-registration');
@@ -174,7 +181,7 @@ export default function StiDetailPage() {
           width: { xs: 150, md: 300 },
           height: { xs: 150, md: 300 },
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(74,144,226,0.08) 0%, rgba(255,255,255,0) 70%)',
+          background: 'radial-gradient(circle, rgba(33,150,243,0.08) 0%, rgba(255,255,255,0) 70%)',
           top: { xs: -50, md: -100 },
           left: { xs: -50, md: -100 },
           zIndex: 0,
@@ -186,7 +193,7 @@ export default function StiDetailPage() {
           width: { xs: 200, md: 400 },
           height: { xs: 200, md: 400 },
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(26,188,156,0.08) 0%, rgba(255,255,255,0) 70%)',
+          background: 'radial-gradient(circle, rgba(0,191,165,0.08) 0%, rgba(255,255,255,0) 70%)',
           bottom: { xs: -100, md: -200 },
           right: { xs: -100, md: -200 },
           zIndex: 0,
@@ -201,17 +208,17 @@ export default function StiDetailPage() {
               mb: 4, 
               fontWeight: 700, 
               color: '#fff',
-              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)', 
+              background: 'linear-gradient(45deg, #2196F3, #00BFA5)', 
               borderRadius: 50, 
               px: 4, 
               py: 1.5, 
               textTransform: 'none',
-              boxShadow: '0 4px 16px rgba(74, 144, 226, 0.3)',
+              boxShadow: '0 4px 16px rgba(33, 150, 243, 0.3)',
               transition: 'all 0.3s ease',
               '&:hover': { 
-                background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                background: 'linear-gradient(45deg, #00BFA5, #2196F3)',
                 transform: 'translateY(-2px)',
-                boxShadow: '0 8px 24px rgba(74, 144, 226, 0.4)'
+                boxShadow: '0 8px 24px rgba(33, 150, 243, 0.4)'
               } 
             }}
             onClick={() => navigate(-1)}
@@ -231,11 +238,11 @@ export default function StiDetailPage() {
                 py: 1,
                 fontSize: '0.9rem',
                 fontWeight: 600,
-                background: 'linear-gradient(45deg, rgba(255,107,107,0.1), rgba(74,144,226,0.1))',
-                color: '#FF6B6B',
-                border: '1px solid rgba(255,107,107,0.2)',
+                background: 'linear-gradient(45deg, rgba(33,150,243,0.1), rgba(0,191,165,0.1))',
+                color: '#2196F3',
+                border: '1px solid rgba(33,150,243,0.2)',
                 '&:hover': {
-                  background: 'linear-gradient(45deg, rgba(255,107,107,0.15), rgba(74,144,226,0.15))',
+                  background: 'linear-gradient(45deg, rgba(33,150,243,0.15), rgba(0,191,165,0.15))',
                 },
               }}
             />
@@ -247,7 +254,7 @@ export default function StiDetailPage() {
                 fontWeight: 900,
                 fontSize: { xs: '2.2rem', sm: '3rem', md: '3.8rem' },
                 color: 'transparent',
-                background: 'linear-gradient(135deg, #FF6B6B 0%, #4A90E2 50%, #1ABC9C 100%)',
+                background: 'linear-gradient(135deg, #2196F3 0%, #00BFA5 50%, #2196F3 100%)',
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -255,7 +262,7 @@ export default function StiDetailPage() {
                 lineHeight: 1.1,
                 letterSpacing: '-2px',
                 mb: 3,
-                textShadow: '0 4px 8px rgba(255, 107, 107, 0.1)',
+                textShadow: '0 4px 8px rgba(33, 150, 243, 0.1)',
               }}
             >
               Xét nghiệm STI
@@ -269,8 +276,8 @@ export default function StiDetailPage() {
                 mx: 'auto',
                 mb: 4,
                 borderRadius: 4,
-                background: 'linear-gradient(90deg, #FF6B6B 0%, #4A90E2 50%, #1ABC9C 100%)',
-                boxShadow: '0 4px 12px rgba(255, 107, 107, 0.3)',
+                background: 'linear-gradient(90deg, #2196F3 0%, #00BFA5 50%, #2196F3 100%)',
+                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
               }}
             />
             
@@ -299,9 +306,9 @@ export default function StiDetailPage() {
               sx={{ mt: 4 }}
             >
               {[
-                { number: '15+', label: 'Loại xét nghiệm', color: '#FF6B6B' },
-                { number: '98%', label: 'Độ chính xác', color: '#4A90E2' },
-                { number: '2-5 ngày', label: 'Có kết quả', color: '#1ABC9C' },
+                { number: '15+', label: 'Loại xét nghiệm', color: '#2196F3' },
+                { number: '98%', label: 'Độ chính xác', color: '#00BFA5' },
+                { number: '2-5 ngày', label: 'Có kết quả', color: '#2196F3' },
               ].map((stat, index) => (
                 <Paper
                   key={index}
@@ -355,10 +362,10 @@ export default function StiDetailPage() {
             sx={{ 
               background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,255,0.95) 100%)',
               borderRadius: 5, 
-              boxShadow: '0 20px 60px rgba(255,107,107,0.08)', 
+              boxShadow: '0 20px 60px rgba(33,150,243,0.08)', 
               p: { xs: 4, md: 6 }, 
               mb: 8,
-              border: '1px solid rgba(255,107,107,0.1)',
+              border: '1px solid rgba(33,150,243,0.1)',
               position: 'relative',
               overflow: 'hidden',
               backdropFilter: 'blur(20px)',
@@ -368,7 +375,7 @@ export default function StiDetailPage() {
                 width: 400,
                 height: 400,
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(255,107,107,0.05) 0%, rgba(255,255,255,0) 70%)',
+                background: 'radial-gradient(circle, rgba(33,150,243,0.05) 0%, rgba(255,255,255,0) 70%)',
                 top: -200,
                 right: -200,
                 zIndex: 0,
@@ -379,7 +386,7 @@ export default function StiDetailPage() {
                 width: 300,
                 height: 300,
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(74,144,226,0.05) 0%, rgba(255,255,255,0) 70%)',
+                background: 'radial-gradient(circle, rgba(0,191,165,0.05) 0%, rgba(255,255,255,0) 70%)',
                 bottom: -150,
                 left: -150,
                 zIndex: 0,
@@ -393,9 +400,9 @@ export default function StiDetailPage() {
                   sx={{
                     width: 64,
                     height: 64,
-                    background: 'linear-gradient(45deg, #FF6B6B, #4A90E2)',
+                    background: 'linear-gradient(45deg, #2196F3, #00BFA5)',
                     mr: 3,
-                    boxShadow: '0 8px 24px rgba(255,107,107,0.3)',
+                    boxShadow: '0 8px 24px rgba(33,150,243,0.3)',
                   }}
                 >
                   <CheckIcon sx={{ fontSize: '2rem', color: 'white' }} />
@@ -406,7 +413,7 @@ export default function StiDetailPage() {
                     fontWeight={900} 
                     sx={{
                       color: 'transparent',
-                      background: 'linear-gradient(45deg, #FF6B6B, #4A90E2)',
+                      background: 'linear-gradient(45deg, #2196F3, #00BFA5)',
                       backgroundClip: 'text',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
@@ -432,9 +439,9 @@ export default function StiDetailPage() {
                 <Grid item xs={12} md={6}>
                   <Box sx={{ 
                     p: 4,
-                    background: 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,107,107,0.05) 100%)',
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(33,150,243,0.05) 100%)',
                     borderRadius: 4,
-                    border: '1px solid rgba(255,107,107,0.15)',
+                    border: '1px solid rgba(33,150,243,0.15)',
                     height: '100%'
                   }}>
                     <Typography 
@@ -442,7 +449,7 @@ export default function StiDetailPage() {
                       fontWeight={800} 
                       mb={3} 
                       sx={{
-                        color: '#FF6B6B',
+                        color: '#2196F3',
                         display: 'flex',
                         alignItems: 'center',
                         fontSize: '1.3rem'
@@ -467,7 +474,7 @@ export default function StiDetailPage() {
                               width: 28,
                               height: 28,
                               borderRadius: '50%',
-                              background: 'linear-gradient(45deg, #FF6B6B, #FF8E8E)',
+                              background: 'linear-gradient(45deg, #2196F3, #00BFA5)',
                               color: 'white',
                               display: 'flex',
                               alignItems: 'center',
@@ -489,9 +496,9 @@ export default function StiDetailPage() {
                 <Grid item xs={12} md={6}>
                   <Box sx={{ 
                     p: 4,
-                    background: 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(74,144,226,0.05) 100%)',
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(0,191,165,0.05) 100%)',
                     borderRadius: 4,
-                    border: '1px solid rgba(74,144,226,0.15)',
+                    border: '1px solid rgba(0,191,165,0.15)',
                     height: '100%'
                   }}>
                     <Typography 
@@ -499,7 +506,7 @@ export default function StiDetailPage() {
                       fontWeight={800} 
                       mb={3} 
                       sx={{
-                        color: '#4A90E2',
+                        color: '#00BFA5',
                         display: 'flex',
                         alignItems: 'center',
                         fontSize: '1.3rem'
@@ -520,7 +527,7 @@ export default function StiDetailPage() {
                       ].map((reason, index) => (
                         <ListItem key={index}>
                           <ListItemIcon sx={{ minWidth: 36 }}>
-                            <CheckIcon sx={{ color: '#4A90E2', fontSize: 24, fontWeight: 'bold' }} />
+                            <CheckIcon sx={{ color: '#00BFA5', fontSize: 24, fontWeight: 'bold' }} />
                           </ListItemIcon>
                           <ListItemText primary={reason} />
                         </ListItem>
@@ -533,9 +540,9 @@ export default function StiDetailPage() {
                 <Grid item xs={12}>
                   <Box sx={{ 
                     p: 4,
-                    background: 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(26,188,156,0.05) 100%)',
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(33,150,243,0.05) 100%)',
                     borderRadius: 4,
-                    border: '1px solid rgba(26,188,156,0.15)',
+                    border: '1px solid rgba(33,150,243,0.15)',
                     mt: 2
                   }}>
                     <Typography 
@@ -543,7 +550,7 @@ export default function StiDetailPage() {
                       fontWeight={800} 
                       mb={3} 
                       sx={{
-                        color: '#1ABC9C',
+                        color: '#2196F3',
                         display: 'flex',
                         alignItems: 'center',
                         fontSize: '1.3rem'
@@ -568,7 +575,7 @@ export default function StiDetailPage() {
                             transition: 'all 0.3s ease',
                             '&:hover': {
                               transform: 'translateX(10px)',
-                              boxShadow: '0 4px 16px rgba(26,188,156,0.15)'
+                              boxShadow: '0 4px 16px rgba(33,150,243,0.15)'
                             }
                           }}>
                             <Typography sx={{ fontSize: '1.5rem', mr: 2 }}>{item.icon}</Typography>
@@ -595,9 +602,9 @@ export default function StiDetailPage() {
                 py: 1,
                 fontSize: '0.9rem',
                 fontWeight: 600,
-                background: 'linear-gradient(45deg, rgba(26,188,156,0.1), rgba(74,144,226,0.1))',
-                color: '#1ABC9C',
-                border: '1px solid rgba(26,188,156,0.2)',
+                background: 'linear-gradient(45deg, rgba(33,150,243,0.1), rgba(0,191,165,0.1))',
+                color: '#2196F3',
+                border: '1px solid rgba(33,150,243,0.2)',
               }}
             />
             
@@ -607,7 +614,7 @@ export default function StiDetailPage() {
               mb={2}
               sx={{
                 color: 'transparent',
-                background: 'linear-gradient(135deg, #1ABC9C 0%, #4A90E2 100%)',
+                background: 'linear-gradient(135deg, #2196F3 0%, #00BFA5 100%)',
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -624,8 +631,8 @@ export default function StiDetailPage() {
                 mx: 'auto',
                 mb: 4,
                 borderRadius: 3,
-                background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
-                boxShadow: '0 4px 12px rgba(26, 188, 156, 0.3)',
+                background: 'linear-gradient(90deg, #2196F3 0%, #00BFA5 100%)',
+                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
               }}
             />
             
@@ -662,16 +669,16 @@ export default function StiDetailPage() {
                   overflow: 'hidden',
                   position: 'relative',
                   background: 'linear-gradient(180deg, #ffffff 0%, #f8faff 100%)',
-                  border: '1px solid rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(33,150,243,0.2)',
                   backdropFilter: 'blur(20px)',
                   '&:hover': {
                     transform: 'translateY(-15px) scale(1.02)',
-                    boxShadow: '0 25px 60px rgba(74,144,226,0.2)',
+                    boxShadow: '0 25px 60px rgba(33,150,243,0.2)',
                     '& .package-header': {
-                      background: 'linear-gradient(135deg, #1ABC9C, #4A90E2)',
+                      background: 'linear-gradient(135deg, #2196F3, #00BFA5)',
                     },
                     '& .package-button': {
-                      background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                      background: 'linear-gradient(45deg, #00BFA5, #2196F3)',
                       transform: 'translateY(-2px)',
                     }
                   }
@@ -680,7 +687,7 @@ export default function StiDetailPage() {
                   <Box 
                     className="package-header"
                     sx={{
-                      background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
+                      background: 'linear-gradient(135deg, #2196F3, #00BFA5)',
                       color: 'white',
                       py: 3,
                       px: 3,
@@ -735,21 +742,21 @@ export default function StiDetailPage() {
                       {pkg.description}
                     </Typography>
                     
-                    {/* Price Display */}
+                    {/* Price Display - Thay đổi gradient màu giá */}
                     <Box sx={{ 
                       textAlign: 'center',
                       p: 2,
                       mb: 3,
                       borderRadius: 3,
-                      background: 'linear-gradient(135deg, rgba(74,144,226,0.08), rgba(26,188,156,0.08))',
-                      border: '1px solid rgba(74,144,226,0.15)'
+                      background: 'linear-gradient(135deg, rgba(33,150,243,0.08), rgba(0,191,165,0.08))',
+                      border: '1px solid rgba(33,150,243,0.15)'
                     }}>
                       <Typography 
                         variant="h4"
                         fontWeight={900} 
                         sx={{
                           color: 'transparent',
-                          background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                          background: 'linear-gradient(45deg, #2196F3, #00BFA5)',
                           backgroundClip: 'text',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
@@ -774,7 +781,7 @@ export default function StiDetailPage() {
                         className="package-button"
                         variant="contained"
                         sx={{
-                          background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                          background: 'linear-gradient(45deg, #2196F3, #00BFA5)',
                           color: '#fff',
                           fontWeight: 700,
                           borderRadius: 50,
@@ -782,12 +789,12 @@ export default function StiDetailPage() {
                           py: 1.5,
                           minWidth: 120,
                           fontSize: '1rem',
-                          boxShadow: '0 4px 16px rgba(74, 144, 226, 0.25)',
+                          boxShadow: '0 4px 16px rgba(33, 150, 243, 0.25)',
                           textTransform: 'none',
                           transition: 'all 0.3s ease',
                           '&:hover': {
-                            background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
-                            boxShadow: '0 8px 24px rgba(74, 144, 226, 0.35)',
+                            background: 'linear-gradient(45deg, #00BFA5, #2196F3)',
+                            boxShadow: '0 8px 24px rgba(33, 150, 243, 0.35)',
                           },
                         }}
                         onClick={() => handleTestRegistration(pkg)}
@@ -803,15 +810,15 @@ export default function StiDetailPage() {
                           py: 1.5,
                           minWidth: 100,
                           fontSize: '1rem',
-                          borderColor: '#4A90E2',
+                          borderColor: '#2196F3',
                           borderWidth: 2,
-                          color: '#4A90E2',
+                          color: '#2196F3',
                           textTransform: 'none',
                           transition: 'all 0.3s ease',
                           '&:hover': {
-                            borderColor: '#1ABC9C',
-                            color: '#1ABC9C',
-                            background: 'rgba(26,188,156,0.08)',
+                            borderColor: '#00BFA5',
+                            color: '#00BFA5',
+                            background: 'rgba(33, 150, 243, 0.08)',
                             borderWidth: 2,
                           },
                         }}

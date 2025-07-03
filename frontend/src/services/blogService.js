@@ -25,39 +25,33 @@ const blogService = {
   },
 
   /**
-   * Lấy danh sách blog đã CONFIRMED (public)
-   */
-  getConfirmedBlogs: async (page = 0, size = 20) => {
-    const response = await apiClient.get(`/blog/status/CONFIRMED?page=${page}&size=${size}`);
-    if (!response.data.success) {
-      throw new Error(response.data.message || "Failed to fetch confirmed blogs");
-    }
-    // Trả về mảng blog
-    return response.data.data && response.data.data.content ? response.data.data.content : [];
-  },
-
-  /**
-   * Lấy chi tiết blog (public)
+   * Lấy thông tin chi tiết một bài viết
+   * @param {number} id ID của bài viết
+   * @returns {Promise} Promise chứa kết quả từ API
    */
   getBlogById: async (id) => {
-    const response = await apiClient.get(`/blog/${id}`);
-    if (!response.data.success) {
-      throw new Error(response.data.message || "Failed to fetch blog details");
+    try {
+      const response = await apiClient.get(`/admin/blogs/${id}`);
+      if (!response.data.success) {
+        throw new Error(
+          response.data.message || "Failed to fetch blog details"
+        );
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error(`Error fetching blog ${id}:`, error);
+      throw new Error(error.response?.data?.message || error.message);
     }
-    return response.data.data;
   },
 
   /**
    * Tạo bài viết mới
-   * @param {Object} blogData Dữ liệu bài viết (FormData)
+   * @param {Object} blogData Dữ liệu bài viết
    * @returns {Promise} Promise chứa kết quả từ API
    */
   createBlog: async (blogData) => {
     try {
-      // Nếu blogData là FormData, không set Content-Type, để axios tự động set multipart/form-data
-      const response = await apiClient.post("/blog", blogData, {
-        headers: blogData instanceof FormData ? {} : { 'Content-Type': 'application/json' }
-      });
+      const response = await apiClient.post("/admin/blogs", blogData);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to create blog");
       }
@@ -76,10 +70,7 @@ const blogService = {
    */
   updateBlog: async (id, blogData) => {
     try {
-      // Sử dụng endpoint đúng: /blog/{id}
-      const response = await apiClient.put(`/blog/${id}`, blogData, {
-        headers: blogData instanceof FormData ? {} : { 'Content-Type': 'application/json' }
-      });
+      const response = await apiClient.put(`/admin/blogs/${id}`, blogData);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to update blog");
       }
@@ -97,8 +88,7 @@ const blogService = {
    */
   deleteBlog: async (id) => {
     try {
-      // Sử dụng endpoint đúng: /blog/{id}
-      const response = await apiClient.delete(`/blog/${id}`);
+      const response = await apiClient.delete(`/admin/blogs/${id}`);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to delete blog");
       }
@@ -116,8 +106,7 @@ const blogService = {
    */
   publishBlog: async (id) => {
     try {
-      // Sử dụng endpoint đúng: /blog/{id}/status
-      const response = await apiClient.put(`/blog/${id}/status`);
+      const response = await apiClient.put(`/admin/blogs/${id}/publish`);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to publish blog");
       }
@@ -135,8 +124,7 @@ const blogService = {
    */
   unpublishBlog: async (id) => {
     try {
-      // Sử dụng endpoint đúng: /blog/{id}/status
-      const response = await apiClient.put(`/blog/${id}/status`);
+      const response = await apiClient.put(`/admin/blogs/${id}/unpublish`);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to unpublish blog");
       }
@@ -153,69 +141,376 @@ const blogService = {
    */
   getCategories: async () => {
     try {
-      const response = await apiClient.get("/categories");
+      const response = await apiClient.get("/admin/blog-categories");
       if (!response.data.success) {
         throw new Error(
           response.data.message || "Failed to fetch blog categories"
         );
       }
-      return Array.isArray(response.data.data) ? response.data.data : [];
+      return response.data.data;
     } catch (error) {
       console.error("Error fetching blog categories:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
-  // Category management
-  createCategory: async (data) => {
-    try {
-      const response = await apiClient.post("/categories", data);
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to create category");
-      }
-      return response.data.data;
-    } catch (error) {
-      console.error("Error creating category:", error);
-      throw new Error(error.response?.data?.message || error.message);
-    }
-  },
+  // ===== CÁC CHỨC NĂNG MỚI THÊM VÀO =====
 
-  updateCategory: async (id, data) => {
+  /**
+   * Lấy tất cả bài viết với phân trang (cho public)
+   * @param {Object} params - Tham số query (page, size, sortBy, sortDir)
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  getPublicBlogs: async (params = {}) => {
     try {
-      const response = await apiClient.put(`/categories/${id}`, data);
+      const { page = 0, size = 10, sortBy = 'createdAt', sortDir = 'desc' } = params;
+      const response = await apiClient.get('/blog', {
+        params: { page, size, sortBy, sortDir },
+        skipAuthInterceptor: true // Bypass authentication cho public API
+      });
+      
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to update category");
+        throw new Error(response.data.message || "Failed to fetch public blogs");
       }
-      return response.data.data;
+      return response.data;
     } catch (error) {
-      console.error(`Error updating category ${id}:`, error);
-      throw new Error(error.response?.data?.message || error.message);
-    }
-  },
-
-  deleteCategory: async (id) => {
-    try {
-      const response = await apiClient.delete(`/categories/${id}`);
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to delete category");
-      }
-      return true;
-    } catch (error) {
-      console.error(`Error deleting category ${id}:`, error);
+      console.error("Error fetching public blogs:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * Tìm kiếm blog theo query (public)
+   * Lấy chi tiết bài viết (cho public)
+   * @param {number} id - ID của bài viết
+   * @returns {Promise} Promise chứa kết quả từ API
    */
-  searchBlogs: async (query, page = 0, size = 100) => {
-    const response = await apiClient.get(`/blog/search?query=${encodeURIComponent(query)}&page=${page}&size=${size}`);
-    if (!response.data.success) {
-      throw new Error(response.data.message || "Failed to search blogs");
+  getPublicBlogById: async (id) => {
+    try {
+      const response = await apiClient.get(`/blog/${id}`, {
+        skipAuthInterceptor: true // Bypass authentication cho public API
+      });
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to fetch blog details");
+      }
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching public blog ${id}:`, error);
+      throw new Error(error.response?.data?.message || error.message);
     }
-    return response.data.data && response.data.data.content ? response.data.data.content : [];
   },
+
+  /**
+   * Tạo bài viết mới với file upload
+   * @param {FormData} formData - Form data chứa blog data và files
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  createBlogWithFiles: async (formData) => {
+    try {
+      const response = await apiClient.post('/blog', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to create blog");
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error creating blog with files:", error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  /**
+   * Cập nhật bài viết với file upload
+   * @param {number} id - ID của bài viết
+   * @param {FormData} formData - Form data chứa blog data và files
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  updateBlogWithFiles: async (id, formData) => {
+    try {
+      const response = await apiClient.put(`/blog/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to update blog");
+      }
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating blog with files ${id}:`, error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  /**
+   * Xóa bài viết (user)
+   * @param {number} id - ID của bài viết
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  deleteUserBlog: async (id) => {
+    try {
+      const response = await apiClient.delete(`/blog/${id}`);
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to delete blog");
+      }
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting user blog ${id}:`, error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  /**
+   * Cập nhật trạng thái bài viết (Staff/Admin only)
+   * @param {number} id - ID của bài viết
+   * @param {Object} statusData - Dữ liệu trạng thái {status, reviewNotes}
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  updateBlogStatus: async (id, statusData) => {
+    try {
+      const response = await apiClient.put(`/blog/${id}/status`, statusData);
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to update blog status");
+      }
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating blog status ${id}:`, error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  /**
+   * Lấy bài viết theo trạng thái
+   * @param {string} status - Trạng thái (DRAFT, PENDING, CONFIRMED, REJECTED)
+   * @param {Object} params - Tham số query
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  getBlogsByStatus: async (status, params = {}) => {
+    try {
+      const { page = 0, size = 10, sortBy = 'createdAt', sortDir = 'desc' } = params;
+      const response = await apiClient.get(`/blog/status/${status}`, {
+        params: { page, size, sortBy, sortDir }
+      });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to fetch blogs by status");
+      }
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching blogs with status ${status}:`, error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  /**
+   * Lấy bài viết của tôi
+   * @param {Object} params - Tham số query
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  getMyBlogs: async (params = {}) => {
+    try {
+      const { page = 0, size = 10, sortBy = 'createdAt', sortDir = 'desc' } = params;
+      const response = await apiClient.get('/blog/my-posts', {
+        params: { page, size, sortBy, sortDir }
+      });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to fetch my blogs");
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching my blogs:", error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  /**
+   * Lấy bài viết theo danh mục
+   * @param {number} categoryId - ID danh mục
+   * @param {Object} params - Tham số query
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  getBlogsByCategory: async (categoryId, params = {}) => {
+    try {
+      const { page = 0, size = 10, sortBy = 'createdAt', sortDir = 'desc' } = params;
+      
+      // Đảm bảo categoryId là số hợp lệ
+      if (!categoryId || isNaN(parseInt(categoryId))) {
+        throw new Error('Category ID không hợp lệ');
+      }
+      
+      // Sửa URL endpoint đúng
+      const response = await apiClient.get(`/blog/category/${categoryId}`, {
+        params: { page, size, sortBy, sortDir }
+      });
+      
+      // Log response để debug
+      console.log(`GET /blog/category/${categoryId} response:`, response.data);
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to fetch blogs by category");
+      }
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching blogs for category ${categoryId}:`, error);
+      // Trả về object tương thích với code xử lý trong BlogDetailPage
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể lấy danh sách bài viết theo chuyên mục',
+        error
+      };
+    }
+  },
+
+  /**
+   * Tìm kiếm bài viết
+   * @param {string} query - Từ khóa tìm kiếm
+   * @param {Object} params - Tham số query
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  searchBlogs: async (query, params = {}) => {
+    try {
+      const { 
+        page = 0, 
+        size = 10, 
+        sortBy = 'createdAt', 
+        sortDir = 'desc',
+        categoryId 
+      } = params;
+      
+      const searchParams = { query, page, size, sortBy, sortDir };
+      if (categoryId) {
+        searchParams.categoryId = categoryId;
+      }
+      
+      const response = await apiClient.get('/blog/search', {
+        params: searchParams
+      });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to search blogs");
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error searching blogs:", error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  /**
+   * Lấy bài viết mới nhất
+   * @param {number} limit - Số lượng bài viết
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  getLatestBlogs: async (limit = 3) => {
+    try {
+      const response = await apiClient.get('/blog/latest', {
+        params: { limit }
+      });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to fetch latest blogs");
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching latest blogs:", error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  // ===== HELPER FUNCTIONS =====
+
+  /**
+   * Tạo FormData cho việc tạo/cập nhật blog post
+   * @param {Object} blogData - Dữ liệu blog
+   * @param {File} thumbnailFile - File thumbnail
+   * @param {Array} sectionFiles - Array các file ảnh cho sections
+   * @returns {FormData} FormData object để gửi lên server
+   */
+  createBlogFormData: (blogData, thumbnailFile, sectionFiles = []) => {
+    const formData = new FormData();
+
+    // Thêm request data (JSON)
+    const requestData = {
+      title: blogData.title,
+      description: blogData.description,
+      content: blogData.content,
+      categoryId: blogData.categoryId,
+      tags: blogData.tags || [],
+      sections: blogData.sections || []
+    };
+
+    formData.append('request', new Blob([JSON.stringify(requestData)], {
+      type: 'application/json'
+    }));
+
+    // Thêm thumbnail
+    if (thumbnailFile) {
+      formData.append('thumbnail', thumbnailFile);
+    }
+
+    // Thêm section images
+    if (sectionFiles && sectionFiles.length > 0) {
+      const validFiles = [];
+      const validIndexes = [];
+
+      sectionFiles.forEach((fileData, index) => {
+        if (fileData && fileData.file) {
+          validFiles.push(fileData.file);
+          validIndexes.push(fileData.sectionIndex || index);
+        }
+      });
+
+      validFiles.forEach(file => {
+        formData.append('sectionImages', file);
+      });
+
+      validIndexes.forEach(index => {
+        formData.append('sectionImageIndexes', index);
+      });
+    }
+
+    return formData;
+  },
+
+  /**
+   * Helper function để format blog data từ API response
+   * @param {Object} blogResponse - Response từ API
+   * @returns {Object} Formatted blog data
+   */
+  formatBlogData: (blogResponse) => {
+    if (!blogResponse) return null;
+
+    // Tạo cấu trúc category phù hợp nếu chỉ có categoryId và categoryName
+    const category = blogResponse.categoryId ? {
+      id: blogResponse.categoryId,
+      name: blogResponse.categoryName || 'Chưa phân loại'
+    } : null;
+
+    return {
+      id: blogResponse.id,
+      title: blogResponse.title,
+      description: blogResponse.description,
+      content: blogResponse.content,
+      thumbnailImage: blogResponse.thumbnailImage || blogResponse.displayThumbnail,
+      category: category, // Sử dụng đối tượng category đã tạo
+      author: {
+        id: blogResponse.authorId,
+        fullName: blogResponse.authorName,
+        avatar: blogResponse.authorAvatar
+      },
+      status: blogResponse.status,
+      createdAt: blogResponse.createdAt,
+      updatedAt: blogResponse.updatedAt,
+      sections: blogResponse.sections || [],
+      tags: blogResponse.tags || [],
+      views: blogResponse.views || 0
+    };
+  }
 };
 
 export default blogService;

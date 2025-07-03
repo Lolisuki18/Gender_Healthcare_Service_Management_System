@@ -1,868 +1,958 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import PropTypes from 'prop-types'; // Import PropTypes để validate props
 import {
-  Box,
-  Button,
-  Typography,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  Grid,
-  Chip,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button,
+  Typography, Box, List, ListItem, ListItemText, Chip,
+  IconButton, CircularProgress, Collapse, Paper, Grid
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import CloseIcon from '@mui/icons-material/Close';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import MonetizationOnOutlinedIcon from '@mui/icons-material/MonetizationOnOutlined';
 
-// ===== HÀM HELPER TRÍCH XUẤT THÔNG TIN XÉT NGHIỆM =====
-// Hàm này xử lý và chuẩn hóa dữ liệu từ service để hiển thị
-const extractTestMetrics = (service) => {
-  if (!service) return null; // Trả về null nếu không có dữ liệu service
-  
-  const metrics = {};
-
-  // Thêm thời gian có kết quả ước tính (mặc định 2-3 ngày)
-  metrics.resultTime = '2-3 ngày có kết quả';
-
-  return metrics;
-};
-
-// ===== COMPONENT DIALOG CHI TIẾT DỊCH VỤ =====
-// Component này hiển thị thông tin chi tiết của dịch vụ xét nghiệm đơn lẻ hoặc gói xét nghiệm
+/**
+ * Component hiển thị chi tiết gói xét nghiệm hoặc xét nghiệm đơn lẻ
+ * 
+ * @param {boolean} open - Trạng thái hiển thị/ẩn dialog
+ * @param {function} onClose - Hàm xử lý khi đóng dialog
+ * @param {object} detailData - Dữ liệu chi tiết gói xét nghiệm/xét nghiệm
+ * @param {string} detailType - Loại chi tiết ('package' hoặc 'single')
+ * @param {boolean} loadingDetail - Trạng thái đang tải dữ liệu
+ * @param {function} onOpenDetail - Hàm xử lý khi mở chi tiết một xét nghiệm
+ * @param {function} onSelectService - Hàm xử lý khi chọn một dịch vụ
+ */
 const ServiceDetailDialog = ({
-  open,           // Trạng thái mở/đóng dialog
-  onClose,        // Hàm đóng dialog
-  detailData,     // Dữ liệu chi tiết dịch vụ/gói
-  detailType,     // Loại dịch vụ: 'single' (đơn lẻ) hoặc 'package' (gói)
-  loadingDetail,  // Trạng thái loading khi tải dữ liệu chi tiết
-  onOpenDetail,   // Hàm mở chi tiết dịch vụ con trong gói
-  onSelectService // Hàm chọn dịch vụ để đăng ký
+  open,
+  onClose,
+  detailData,
+  detailType,
+  loadingDetail,
+  onOpenDetail,
+  onSelectService
 }) => {
-  const navigate = useNavigate(); // Hook điều hướng trang
+  const navigate = useNavigate();
   
-  // ===== STATES QUẢN LÝ VIỆC XEM CHI TIẾT DỊCH VỤ TRONG GÓI =====
-  const [viewingServiceInPackage, setViewingServiceInPackage] = useState(null); // Dịch vụ đang xem chi tiết trong gói
-  const [originalPackageData, setOriginalPackageData] = useState(null); // Dữ liệu gói gốc khi đang xem chi tiết dịch vụ con
+  // State quản lý các mục xét nghiệm đã mở chi tiết trong gói
+  const [expandedItems, setExpandedItems] = useState({});
 
-  // ===== HÀM XỬ LÝ ĐĂNG KÝ DỊCH VỤ =====
+  /**
+   * Xử lý việc mở/đóng chi tiết từng mục xét nghiệm trong gói
+   * @param {number} itemId - ID của mục cần mở/đóng
+   */
+  const handleToggleExpand = (itemId) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }));
+  };
+
+  /**
+   * Xử lý khi người dùng chọn đăng ký gói dịch vụ hoặc xét nghiệm đơn lẻ
+   * Đóng dialog và chuyển đến trang đăng ký với dữ liệu đã chọn
+   */
   const handleRegisterService = () => {
-    if (detailType === 'single') {
-      // Với dịch vụ đơn lẻ: set dịch vụ được chọn
-      if (onSelectService) {
-        onSelectService('single', 0);
-      }
-    } else {
-      // Với gói dịch vụ: điều hướng đến trang đăng ký với dữ liệu gói
-      navigate('/test-registration', { state: { selectedPackage: detailData } });
-    }
     onClose();
-  };
-
-  // ===== HÀM XỬ LÝ ĐÓNG DIALOG NÂNG CAO =====
-  // Hàm này xử lý việc đóng dialog với logic phức tạp cho việc quay lại từ chi tiết dịch vụ
-  const handleDialogClose = (event, reason) => {
-    // Nếu đang xem chi tiết dịch vụ trong gói, quay lại view gói thay vì đóng dialog
-    if (viewingServiceInPackage && originalPackageData) {
-      setViewingServiceInPackage(null); // Reset về null để hiển thị gói
-      // Không đóng dialog, chỉ reset về view gói
-      return;
-    }
-    
-    // Ngăn không cho đóng dialog khi click backdrop trong lúc đang loading
-    if (reason === 'backdropClick' && loadingDetail) {
-      return;
-    }
-    
-    // Reset tất cả states khi đóng dialog hoàn toàn
-    setViewingServiceInPackage(null);
-    setOriginalPackageData(null);
-    
-    // Luôn gọi onClose để cleanup state ở component cha
-    if (onClose) {
-      onClose();
+    // Gửi dữ liệu khác nhau tùy thuộc vào loại (gói hoặc xét nghiệm đơn lẻ)
+    if (detailType === 'package') {
+      navigate('/test-registration', { 
+        state: { 
+          selectedPackage: detailData,
+          activeStep: 1, // Sử dụng activeStep thay vì startStep
+          initialStep: 1, // Thêm initialStep để đảm bảo tương thích
+          skipServiceSelection: true // Thêm flag để bỏ qua bước chọn dịch vụ
+        } 
+      });
+    } else {
+      navigate('/test-registration', { 
+        state: { 
+          selectedTest: detailData, // Gửi xét nghiệm đơn lẻ
+          activeStep: 1, // Sử dụng activeStep thay vì startStep
+          initialStep: 1, // Thêm initialStep để đảm bảo tương thích
+          skipServiceSelection: true // Thêm flag để bỏ qua bước chọn dịch vụ
+        } 
+      });
     }
   };
 
-  // ===== XÁC ĐỊNH DỮ LIỆU HIỂN THỊ =====
-  // Logic phức tạp để quyết định hiển thị dữ liệu nào:
-  // - Nếu đang xem chi tiết dịch vụ trong gói: hiển thị dữ liệu dịch vụ đó
-  // - Nếu đã lưu dữ liệu gói gốc: hiển thị dữ liệu gói đó  
-  // - Ngược lại: hiển thị dữ liệu được truyền vào từ props
-  const displayData = viewingServiceInPackage || (originalPackageData || detailData);
-  const displayType = viewingServiceInPackage ? 'single' : (originalPackageData ? 'package' : detailType);
+  // Hiển thị loading khi đang tải dữ liệu
+  if (loadingDetail) {
+    return (
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <DialogContent sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+          <CircularProgress sx={{ color: '#2196F3' }} />
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
-  // ===== GIAO DIỆN DIALOG =====
+  // Không hiển thị gì nếu không có dữ liệu
+  if (!detailData) return null;
+
   return (
     <Dialog 
       open={open} 
-      onClose={handleDialogClose} 
+      onClose={onClose} 
       maxWidth="md" 
       fullWidth
       PaperProps={{
-        style: {
-          borderRadius: 24, // Bo góc dialog
-          overflow: 'hidden', // Ẩn nội dung tràn
-          boxShadow: "0 25px 80px rgba(0, 0, 0, 0.20)" // Đổ bóng đậm
+        sx: {
+          borderRadius: 3,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
         }
       }}
     >
-      <Box sx={{ 
-        position: 'relative', 
-        p: 0, 
-        background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f4ff 100%)', // Nền gradient xanh nhạt
-        display: 'flex',
-        flexDirection: 'column',
-        height: 'auto',
-        maxHeight: '90vh' // Giới hạn chiều cao dialog
+      {/* Tiêu đề dialog - Hiển thị khác nhau tùy loại gói/xét nghiệm đơn lẻ */}
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: '1px solid rgba(0,0,0,0.1)',
+        py: 2.5,
+        px: 3,
+        background: 'linear-gradient(135deg, #2196F3, #00BFA5)',
+        color: 'white',
+        borderRadius: '12px 12px 0 0'
       }}>
-        
-        {/* ===== CÁC HÌNH TRANG TRÍ NỀN ===== */}
-        {/* Hình tròn trang trí phía trên bên phải */}
-        <Box
-          sx={{
-            position: 'absolute',
-            width: { xs: 200, md: 300 }, // Responsive: mobile 200px, desktop 300px
-            height: { xs: 200, md: 300 },
-            borderRadius: '50%', // Hình tròn
-            background: 'radial-gradient(circle, rgba(74,144,226,0.08) 0%, rgba(255,255,255,0) 70%)', // Gradient xanh dương mờ
-            top: -100, // Đẩy ra ngoài phía trên
-            right: -100, // Đẩy ra ngoài phía phải
-            zIndex: 0, // Nằm dưới nội dung
-            pointerEvents: 'none', // Không can thiệp vào tương tác
-          }}
-        />
-        
-        {/* Hình tròn trang trí phía dưới bên trái */}
-        <Box
-          sx={{
-            position: 'absolute',
-            width: { xs: 200, md: 300 },
-            height: { xs: 200, md: 300 },
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(26,188,156,0.08) 0%, rgba(255,255,255,0) 70%)', // Gradient xanh ngọc mờ
-            bottom: -100, // Đẩy ra ngoài phía dưới
-            left: -100, // Đẩy ra ngoài phía trái
-            zIndex: 0,
-            pointerEvents: 'none',
-          }}
-        />
-        
-        {/* ===== HEADER DIALOG VỚI GRADIENT ===== */}
-        {/* Header cố định với gradient đẹp */}
+        <Typography variant="h6" fontWeight={700} sx={{ textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+          {detailType === 'package' ? 'Chi tiết gói xét nghiệm' : 'Chi tiết xét nghiệm'}
+        </Typography>
+        <IconButton onClick={onClose} sx={{ color: 'white' }}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      
+      <DialogContent sx={{ p: 0 }}>
+        {/* Phần 1: Thông tin chung về gói/xét nghiệm - tên, mô tả, giá */}
         <Box sx={{ 
-          py: 4, // Padding vertical 32px
-          px: 4, // Padding horizontal 32px
-          background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)', // Gradient xanh dương sang xanh ngọc
-          color: 'white', // Text màu trắng
+          p: 3, 
+          mb: 3, 
+          background: 'linear-gradient(135deg, rgba(33,150,243,0.08), rgba(0,191,165,0.05))',
+          borderBottom: '1px solid rgba(33,150,243,0.2)',
+          borderRadius: '0 0 12px 12px',
           position: 'relative',
-          zIndex: 1, // Nằm trên các element trang trí
-          textAlign: 'center', // Căn giữa text
-          flexShrink: 0
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '3px',
+            background: 'linear-gradient(90deg, #2196F3, #00BFA5, #2196F3)',
+          }
         }}>
-          <Typography 
-            sx={{ 
-              fontWeight: 800, 
-              fontSize: 28, 
-              textAlign: 'center', 
-              textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              mb: 1.5,
-              letterSpacing: '-0.5px'
-            }}
-          >
-            {displayType === 'single' ? '🔬 Chi tiết xét nghiệm' : '📦 Chi tiết gói xét nghiệm'}
+          <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#2d3748' }}>
+            {detailData.name}
           </Typography>
-          <Typography 
-            variant="body1" 
-            sx={{ 
-              textAlign: 'center', 
-              opacity: 0.95, 
-              maxWidth: '85%', 
-              mx: 'auto',
-              fontWeight: 400,
-              lineHeight: 1.7,
-              fontSize: '1.1rem'
-            }}
-          >
-            {displayData?.name || 'Chi tiết dịch vụ'}
+          
+          <Typography variant="body1" paragraph sx={{ color: '#4a5568', mb: 3, lineHeight: 1.6 }}>
+            {detailData.description}
           </Typography>
-        </Box>
-        
-        {/* Price badge */}
-        <Box 
-          sx={{ 
+          
+          {/* Hiển thị giá tiền */}
+          <Box sx={{ 
             display: 'flex', 
-            justifyContent: 'center', 
-            position: 'relative',
-            zIndex: 5,
-            mt: 3,
-            mb: 3
-          }}
-        >
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              bgcolor: 'white', 
-              py: 2, 
-              px: 5, 
-              borderRadius: 50,
-              boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
-              border: '1px solid rgba(74,144,226,0.15)'
-            }}
-          >
-            <Typography 
-              fontWeight={800} 
-              fontSize={28} 
-              sx={{ 
-                background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}
-            >
-              {displayData?.price?.toLocaleString('vi-VN')} đ
+            alignItems: 'center', 
+            gap: 2, 
+            mb: 2,
+            p: 2,
+            borderRadius: 2,
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.8), rgba(248,250,252,0.6))',
+            border: '1px solid rgba(74,174,181,0.2)',
+            boxShadow: '0 2px 8px rgba(74,174,181,0.1)'
+          }}>
+            <MonetizationOnOutlinedIcon sx={{ color: '#4aaeb5', fontSize: '1.5rem' }} />
+            <Typography variant="h6" fontWeight={700} color="#4aaeb5">
+              {detailData.price?.toLocaleString('vi-VN')} đ
+              <Typography component="span" variant="body2" sx={{ ml: 1, fontWeight: 500, color: '#6b7280' }}>
+                (Đã bao gồm tư vấn miễn phí)
+              </Typography>
             </Typography>
           </Box>
         </Box>
         
-        {/* Scrollable content area */}
-        <Box 
-          sx={{ 
-            p: 0, 
-            position: 'relative', 
-            zIndex: 1,
-            overflowY: 'auto',
-            flexGrow: 1,
-            px: 4,
-            pb: 4
-          }}
-        >
-          {loadingDetail ? (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-              <CircularProgress />
-            </Box>
-          ) : displayData ? (
-            <Box>
-              {/* For single service details */}
-              {displayType === 'single' && (
-                <>
-                  {/* Description section */}
-                  <Box 
-                    sx={{ 
-                      p: 4, 
-                      bgcolor: 'rgba(255,255,255,0.8)', 
-                      borderRadius: 4,
-                      boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
-                      border: '1px solid rgba(0,0,0,0.05)',
-                      backdropFilter: 'blur(10px)',
-                      mb: 4
-                    }}
-                  >
-                    <Typography 
-                      variant="h6" 
-                      fontWeight={800} 
-                      sx={{ 
-                        mb: 3, 
-                        color: '#2d3748',
-                        display: 'inline-block',
-                        position: 'relative',
-                        '&::after': {
-                          content: '""',
-                          position: 'absolute',
-                          width: '40%',
-                          height: 3,
-                          borderRadius: 2,
-                          background: 'linear-gradient(90deg, #4A90E2, rgba(74,144,226,0))',
-                          bottom: -8,
-                          left: 0
-                        }
-                      }}
-                    >
-                      Mô tả dịch vụ
+        {/* Phần 2: Chi tiết xét nghiệm đơn lẻ - chỉ hiển thị nếu là xét nghiệm lẻ */}
+        {detailType !== 'package' && detailData.components && detailData.components.length > 0 && (
+          <Box sx={{ px: 3, pb: 3 }}>
+            <Box sx={{ 
+              p: 3, 
+              background: 'linear-gradient(135deg, rgba(248,250,252,0.9) 0%, rgba(235,245,246,0.8) 50%, rgba(255,255,255,0.95) 100%)',
+              borderRadius: 2, 
+              border: '1px solid rgba(74,174,181,0.25)',
+              boxShadow: '0 4px 16px rgba(74,174,181,0.08)',
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '2px',
+                background: 'linear-gradient(90deg, #2196F3, #00BFA5)',
+                borderRadius: '2px 2px 0 0'
+              }
+            }}>
+              <Grid container spacing={2}>
+                {/* Cột bên trái - Thông tin chi tiết về xét nghiệm */}
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ color: '#2d3748' }}>
+                      Thông tin chi tiết
                     </Typography>
-                    <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, fontSize: '1.05rem' }}>
-                      {displayData.description || 'Xét nghiệm giúp phát hiện sớm các bệnh lây truyền qua đường tình dục.'}
-                    </Typography>
-                    
-                    {displayData.components && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', mt: 3 }}>
-                        <Chip 
-                          label={`${displayData.components.length} chỉ số xét nghiệm`}
-                          color="primary"
-                          size="medium"
-                          sx={{ 
-                            borderRadius: 6,
-                            bgcolor: 'rgba(74, 144, 226, 0.1)', 
-                            color: 'primary.main',
-                            fontWeight: 600,
-                            fontSize: '0.9rem',
-                            height: 32,
-                            px: 1
-                          }}
-                        />
-                        <Typography variant="body2" color="text.secondary" sx={{ ml: 2, fontWeight: 500 }}>
-                          • {extractTestMetrics(displayData)?.resultTime || '2-3 ngày có kết quả'}
+                    <Box sx={{ pl: 2, borderLeft: '3px solid #4aaeb5' }}>
+                      {/* Hiển thị loại mẫu xét nghiệm từ API nếu có */}
+                      {detailData.components && detailData.components.length > 0 && detailData.components[0].sampleType && (
+                        <Box sx={{ display: 'flex', mb: 1 }}>
+                          <Typography variant="body2" sx={{ width: '140px', color: '#6b7280' }}>
+                            Loại mẫu xét nghiệm:
+                          </Typography>
+                          <Typography variant="body2" fontWeight={500} sx={{ color: '#374151' }}>
+                            {detailData.components[0].sampleType}
+                          </Typography>
+                        </Box>
+                      )}
+                      <Box sx={{ display: 'flex', mb: 1 }}>
+                        <Typography variant="body2" sx={{ width: '140px', color: '#6b7280' }}>
+                          Thời gian có kết quả:
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500} sx={{ color: '#374151' }}>
+                          {detailData.time || '2-3 ngày'}
                         </Typography>
                       </Box>
-                    )}
+                      <Box sx={{ display: 'flex' }}>
+                        <Typography variant="body2" sx={{ width: '140px', color: '#6b7280' }}>
+                          Độ chính xác:
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500} sx={{ color: '#374151' }}>
+                          {detailData.accuracy || '> 99%'}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Grid>
+                
+                {/* Cột bên phải - Chỉ định xét nghiệm */}
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ color: '#2d3748' }}>
+                    Chỉ định xét nghiệm
+                  </Typography>
+                  <Box sx={{ pl: 2, borderLeft: '3px solid #FF6B6B' }}>
+                    <Typography variant="body2" sx={{ color: '#374151', lineHeight: 1.6 }}>
+                      {detailData.indication || 'Người có nguy cơ cao tiếp xúc với các bệnh lây truyền qua đường tình dục.'}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+              
+              {/* Bảng hiển thị các chỉ số xét nghiệm - lấy từ API */}
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ mb: 2, color: '#4aaeb5', display: 'flex', alignItems: 'center' }}>
+                  <CheckCircleOutlineIcon sx={{ mr: 1, fontSize: '1.2rem' }} />
+                  Các chỉ số xét nghiệm ({detailData.components.length})
+                </Typography>
+                
+                <Box sx={{ 
+                  bgcolor: 'rgba(255,255,255,0.95)', 
+                  borderRadius: 2, 
+                  border: '1px solid rgba(74,174,181,0.15)', 
+                  overflow: 'hidden',
+                  boxShadow: '0 2px 8px rgba(74,174,181,0.05)'
+                }}>
+                  {/* Tiêu đề các cột trong bảng */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    background: 'linear-gradient(135deg, rgba(33,150,243,0.12), rgba(0,191,165,0.08))',
+                    p: 1.5,
+                    borderBottom: '1px solid rgba(33,150,243,0.2)'
+                  }}>
+                    <Typography variant="body2" fontWeight={600} sx={{ width: '40%', color: '#2d3748' }}>Tên chỉ số</Typography>
+                    <Typography variant="body2" fontWeight={600} sx={{ width: '20%', color: '#2d3748' }}>Đơn vị</Typography>
+                    <Typography variant="body2" fontWeight={600} sx={{ width: '40%', color: '#2d3748' }}>Giá trị tham chiếu</Typography>
                   </Box>
                   
-                  {/* Test components section */}
-                  {displayData && displayData.components && displayData.components.length > 0 ? (
-                    <>
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          px: 0, 
-                          mb: 3,
-                          fontWeight: 800, 
-                          color: '#2d3748',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <Box 
-                          component="span" 
-                          sx={{ 
-                            width: 32, 
-                            height: 32, 
-                            borderRadius: '50%', 
-                            background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
-                            color: 'white', 
-                            display: 'inline-flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            fontSize: '0.9rem',
-                            fontWeight: 700,
-                            mr: 1.5,
-                            boxShadow: '0 3px 10px rgba(74,144,226,0.25)'
-                          }}
-                        >
-                          {displayData.components?.length || 0}
-                        </Box>
-                        Chỉ số xét nghiệm chi tiết
-                      </Typography>
-                      
-                      <Box 
-                        sx={{ 
-                          p: 4,
-                          borderRadius: 4,
-                          background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(247,250,252,0.95) 100%)',
-                          border: '1px solid rgba(0,0,0,0.05)',
-                          boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
-                        }}
-                      >
-                        {(displayData.components || []).map((component, idx) => (
-                          <Box
-                            key={component.id || idx}
-                            sx={{
-                              p: 3,
-                              mb: idx === (displayData.components || []).length - 1 ? 0 : 3,
-                              borderRadius: 3,
-                              bgcolor: 'white',
-                              boxShadow: '0 5px 20px rgba(0,0,0,0.05)',
-                              border: '1px solid rgba(0,0,0,0.02)',
-                              transition: 'all 0.3s ease',
-                              '&:hover': {
-                                boxShadow: '0 8px 25px rgba(74,144,226,0.1)',
-                                transform: 'translateY(-3px)',
-                                borderColor: 'rgba(74,144,226,0.08)'
-                              }
-                            }}
-                          >
-                            <Grid container spacing={3}>
-                              <Grid item xs={12} sm={4}>
-                                <Typography 
-                                  fontWeight={700} 
-                                  color="primary.dark"
-                                  fontSize="1.1rem"
-                                  sx={{ 
-                                    pb: 1,
-                                    borderBottom: '2px solid',
-                                    borderColor: 'rgba(74,144,226,0.2)',
-                                    display: 'inline-block'
-                                  }}
-                                >
-                                  {component.componentName || component.testName}
-                                </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1.5 }}>
-                                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                    Đơn vị:
-                                  </Typography>
-                                  <Chip 
-                                    size="small" 
-                                    label={component.unit} 
-                                    sx={{ 
-                                      ml: 1,
-                                      height: 22, 
-                                      fontSize: '0.75rem', 
-                                      bgcolor: 'rgba(0,0,0,0.04)', 
-                                      fontWeight: 600 
-                                    }} 
-                                  />
-                                </Box>
-                              </Grid>
-                              <Grid item xs={12} sm={8}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                                    Chỉ số bình thường:
-                                  </Typography>
-                                  <Chip 
-                                    size="small" 
-                                    label={component.normalRange || component.referenceRange} 
-                                    color="success"
-                                    sx={{ 
-                                      ml: 1.5,
-                                      fontSize: '0.75rem', 
-                                      height: 24,
-                                      bgcolor: 'rgba(56, 161, 105, 0.1)',
-                                      color: 'success.dark',
-                                      fontWeight: 600
-                                    }} 
-                                  />
-                                </Box>
-                                <Typography 
-                                  variant="body2" 
-                                  color="text.secondary" 
-                                  sx={{ 
-                                    fontSize: '0.95rem',
-                                    fontStyle: 'italic',
-                                    px: 2,
-                                    py: 1.5,
-                                    borderLeft: '3px solid',
-                                    borderColor: 'rgba(74,144,226,0.2)',
-                                    bgcolor: 'rgba(74,144,226,0.03)',
-                                    borderRadius: '0 6px 6px 0',
-                                    lineHeight: 1.6
-                                  }}
-                                >
-                                  {component.interpretation || component.description || 'Chỉ số quan trọng trong xét nghiệm'}
-                                </Typography>
-                              </Grid>
-                            </Grid>
-                          </Box>
-                        ))}
-                      </Box>
-                    </>
-                  ) : (
-                    <Box sx={{ 
-                      p: 4,
-                      textAlign: 'center',
-                      bgcolor: 'rgba(255,255,255,0.8)',
-                      borderRadius: 4,
-                      border: '1px solid rgba(0,0,0,0.05)'
-                    }}>
-                      <Typography variant="body1" color="text.secondary">
-                        Thông tin chi tiết chỉ số xét nghiệm sẽ được cập nhật sau.
-                      </Typography>
-                    </Box>
-                  )}
-                </>
-              )}
-              
-              {/* For package details */}
-              {displayType === 'package' && (
-                <>
-                  {/* Package overview */}
-                  <Box 
-                    sx={{ 
-                      p: 4, 
-                      bgcolor: 'rgba(255,255,255,0.8)', 
-                      borderRadius: 4,
-                      boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
-                      border: '1px solid rgba(0,0,0,0.05)',
-                      backdropFilter: 'blur(10px)',
-                      mb: 4
-                    }}
-                  >
-                    <Typography 
-                      variant="h6" 
-                      fontWeight={800} 
+                  {/* Danh sách các chỉ số xét nghiệm từ API */}
+                  {detailData.components.map((component, idx) => (
+                    <Box 
+                      key={component.componentId || component.id || idx}
                       sx={{ 
-                        mb: 3, 
-                        color: '#2d3748',
-                        display: 'inline-block',
-                        position: 'relative',
-                        '&::after': {
-                          content: '""',
-                          position: 'absolute',
-                          width: '40%',
-                          height: 3,
-                          borderRadius: 2,
-                          background: 'linear-gradient(90deg, #4A90E2, rgba(74,144,226,0))',
-                          bottom: -8,
-                          left: 0
+                        display: 'flex', 
+                        p: 1.5,
+                        borderBottom: idx === detailData.components.length - 1 ? 'none' : '1px solid rgba(33,150,243,0.1)',
+                        '&:nth-of-type(odd)': {
+                          background: 'linear-gradient(135deg, rgba(248,250,252,0.6), rgba(235,245,246,0.4))'
+                        },
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, rgba(33,150,243,0.08), rgba(0,191,165,0.05))',
+                          transition: 'all 0.2s ease'
                         }
                       }}
                     >
-                      📋 Mô tả gói xét nghiệm
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, fontSize: '1.05rem', mb: 3 }}>
-                      {displayData.description || 'Gói xét nghiệm toàn diện giúp phát hiện sớm các bệnh lây truyền qua đường tình dục.'}
-                    </Typography>
-                    
-                    {/* Package stats */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
-                      <Chip 
-                        label={`${displayData.services?.length || 0} xét nghiệm`}
-                        color="primary"
-                        size="medium"
-                        sx={{ 
-                          borderRadius: 6,
-                          bgcolor: 'rgba(74, 144, 226, 0.1)', 
-                          color: 'primary.main',
-                          fontWeight: 600,
-                          fontSize: '0.9rem',
-                          height: 32,
-                          px: 1
-                        }}
-                      />
-                      <Chip 
-                        label={`${displayData.services?.reduce((total, service) => total + (service.components?.length || 0), 0) || 0} chỉ số`}
-                        color="success"
-                        size="medium"
-                        sx={{ 
-                          borderRadius: 6,
-                          bgcolor: 'rgba(56, 161, 105, 0.1)', 
-                          color: 'success.main',
-                          fontWeight: 600,
-                          fontSize: '0.9rem',
-                          height: 32,
-                          px: 1
-                        }}
-                      />
-                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                        • Kết quả trong 2-3 ngày làm việc
+                      {/* Tên chỉ số - hỗ trợ cả hai cấu trúc API */}
+                      <Typography variant="body2" sx={{ width: '40%', color: '#374151', fontWeight: 500 }}>
+                        {component.componentName || component.testName}
+                      </Typography>
+                      {/* Đơn vị đo */}
+                      <Typography variant="body2" sx={{ width: '20%', color: '#6b7280' }}>
+                        {component.unit || '-'}
+                      </Typography>
+                      {/* Giá trị tham chiếu/bình thường */}
+                      <Typography variant="body2" sx={{ width: '40%' }}>
+                        <Box component="span" sx={{ 
+                          py: 0.3, 
+                          px: 1, 
+                          borderRadius: 1,
+                          bgcolor: 'rgba(56,161,105,0.1)',
+                          color: '#059669',
+                          fontSize: '0.85rem',
+                          fontWeight: 600
+                        }}>
+                          {component.normalRange || component.referenceRange || 'Xem kết quả'}
+                        </Box>
                       </Typography>
                     </Box>
-                  </Box>
-
-                  {/* Services in package */}
-                  {displayData.services && displayData.services.length > 0 && (
-                    <>
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          px: 0, 
-                          mb: 3,
-                          fontWeight: 800, 
-                          color: '#2d3748',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <Box 
-                          component="span" 
-                          sx={{ 
-                            width: 32, 
-                            height: 32, 
-                            borderRadius: '50%', 
-                            background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
-                            color: 'white', 
-                            display: 'inline-flex', 
-                            alignItems: 'center', 
+                  ))}
+                </Box>
+              </Box>
+              
+              {/* Phần giải thích ý nghĩa kết quả xét nghiệm - chỉ hiển thị nếu có dữ liệu */}
+              {detailData.components.some(comp => comp.description || comp.interpretation) && (
+                <Box sx={{ 
+                  mt: 3, 
+                  p: 2.5, 
+                  background: 'linear-gradient(135deg, rgba(33,150,243,0.08) 0%, rgba(235,245,246,0.12) 100%)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(33,150,243,0.15)',
+                  boxShadow: '0 2px 8px rgba(33,150,243,0.05)',
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    width: '4px',
+                    background: 'linear-gradient(180deg, #2196F3, #00BFA5)',
+                    borderRadius: '0 2px 2px 0'
+                  }
+                }}>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ color: '#2196F3' }}>
+                    Ý nghĩa kết quả xét nghiệm
+                  </Typography>
+                  <List disablePadding>
+                    {/* Danh sách giải thích từng chỉ số */}
+                    {detailData.components.map((component, idx) => (
+                      component.description || component.interpretation ? (
+                        <ListItem key={idx} sx={{ px: 0, py: 0.5 }}>
+                          <ListItemText
+                            primary={
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: '#2d3748' }}>
+                                {component.componentName || component.testName}:
+                              </Typography>
+                            }
+                            secondary={
+                              <Typography variant="body2" sx={{ color: '#4a5568', mt: 0.5, lineHeight: 1.5 }}>
+                                {component.description || component.interpretation}
+                              </Typography>
+                            }
+                          />
+                        </ListItem>
+                      ) : null
+                    ))}
+                  </List>
+                </Box>
+              )}
+              
+              {/* Lưu ý quan trọng về xét nghiệm - nếu có */}
+              {detailData.note && (
+                <Box sx={{ 
+                  mt: 2, 
+                  p: 2.5, 
+                  background: 'linear-gradient(135deg, rgba(33,150,243,0.08) 0%, rgba(0,191,165,0.12) 100%)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(33,150,243,0.2)',
+                  boxShadow: '0 2px 8px rgba(33,150,243,0.08)',
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    width: '4px',
+                    background: 'linear-gradient(180deg, #2196F3, #00BFA5)',
+                    borderRadius: '0 2px 2px 0'
+                  }
+                }}>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ color: '#2196F3', display: 'flex', alignItems: 'center' }}>
+                    <InfoOutlinedIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                    Lưu ý quan trọng
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#374151', lineHeight: 1.6 }}>{detailData.note}</Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        )}
+        
+        {/* Phần 3: Chi tiết gói xét nghiệm - chỉ hiển thị nếu là gói */}
+        {detailType === 'package' && detailData.services && detailData.services.length > 0 && (
+          <Box sx={{ px: 3, pb: 2 }}>
+            <Typography variant="h6" fontWeight={700} gutterBottom sx={{ 
+              display: 'flex',
+              alignItems: 'center',
+              color: 'white',
+              mb: 3,
+              p: 3,
+              background: 'linear-gradient(135deg, #2196F3 0%, #00BFA5 50%, #2196F3 100%)',
+              borderRadius: 3,
+              border: '2px solid rgba(255,255,255,0.3)',
+              boxShadow: '0 8px 24px rgba(33,150,243,0.25)',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '100%',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%)',
+                pointerEvents: 'none'
+              }
+            }}>
+              <CheckCircleOutlineIcon sx={{ 
+                mr: 1.5, 
+                color: 'white',
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                borderRadius: '50%',
+                p: 1,
+                fontSize: '2rem',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }} />
+              Danh sách xét nghiệm trong gói ({detailData.services.length} xét nghiệm)
+            </Typography>
+            
+            {/* Danh sách các xét nghiệm có trong gói */}
+            <List sx={{ width: '100%', pt: 0 }}>
+              {detailData.services.map((service, index) => (
+                <Paper
+                  key={service.id}
+                  elevation={0}
+                  sx={{ 
+                    mb: 3,
+                    border: '2px solid transparent',
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 30%, #ebf5f6 70%, #ffffff 100%)',
+                    boxShadow: '0 6px 20px rgba(74,174,181,0.12)',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    position: 'relative',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: '4px',
+                      background: `linear-gradient(90deg, 
+                        ${index % 4 === 0 ? '#4aaeb5' : 
+                          index % 4 === 1 ? '#69d4db' : 
+                          index % 4 === 2 ? '#5cbcc3' : '#7dd3db'}, 
+                        ${index % 4 === 0 ? '#69d4db' : 
+                          index % 4 === 1 ? '#4aaeb5' : 
+                          index % 4 === 2 ? '#69d4db' : '#4aaeb5'})`,
+                    },
+                    '&:hover': {
+                      boxShadow: '0 12px 40px rgba(74,174,181,0.25)',
+                      transform: 'translateY(-4px) scale(1.02)',
+                      borderColor: 'rgba(74,174,181,0.3)',
+                      '&::before': {
+                        height: '6px',
+                      }
+                    }
+                  }}
+                >
+                  <ListItem
+                    alignItems="flex-start"
+                    sx={{
+                      flexDirection: 'column',
+                      p: 0,
+                    }}
+                  >
+                    {/* Phần hiển thị rút gọn (luôn hiển thị) - tên và giá */}
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        width: '100%',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 3,
+                        cursor: 'pointer',
+                        background: expandedItems[service.id] 
+                          ? 'linear-gradient(135deg, rgba(33,150,243,0.15), rgba(0,191,165,0.12))' 
+                          : 'transparent',
+                        transition: 'all 0.3s ease',
+                        borderRadius: expandedItems[service.id] ? '16px 16px 0 0' : '16px',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, rgba(33,150,243,0.1), rgba(0,191,165,0.08))',
+                        },
+                        borderBottom: expandedItems[service.id] ? '2px solid rgba(33,150,243,0.2)' : 'none'
+                      }}
+                      onClick={() => handleToggleExpand(service.id)}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {/* Số thứ tự */}
+                        <Box
+                          sx={{
+                            width: 42,
+                            height: 42,
+                            borderRadius: '50%',
+                            background: `linear-gradient(135deg, 
+                              ${index % 4 === 0 ? '#2196F3' : 
+                                index % 4 === 1 ? '#00BFA5' : 
+                                index % 4 === 2 ? '#2196F3' : '#00BFA5'}, 
+                              ${index % 4 === 0 ? '#00BFA5' : 
+                                index % 4 === 1 ? '#2196F3' : 
+                                index % 4 === 2 ? '#00BFA5' : '#2196F3'})`,
+                            display: 'flex',
+                            alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '0.9rem',
-                            fontWeight: 700,
-                            mr: 1.5,
-                            boxShadow: '0 3px 10px rgba(74,144,226,0.25)'
+                            color: 'white',
+                            fontWeight: 'bold',
+                            mr: 3,
+                            fontSize: '1.1rem',
+                            boxShadow: '0 4px 12px rgba(74,174,181,0.3)',
+                            border: '3px solid rgba(255,255,255,0.9)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              transform: 'scale(1.1)',
+                              boxShadow: '0 6px 16px rgba(74,174,181,0.4)',
+                            }
                           }}
                         >
-                          {displayData.services?.length || 0}
+                          {index + 1}
                         </Box>
-                        Các xét nghiệm trong gói
-                      </Typography>
+                        <Box>
+                          {/* Tên xét nghiệm */}
+                          <Typography fontWeight={700} sx={{ 
+                            color: '#2d3748', 
+                            fontSize: '1.1rem',
+                            mb: 0.5,
+                            textShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                          }}>
+                            {service.name}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, gap: 1 }}>
+                            {/* Giá xét nghiệm */}
+                            <Chip 
+                              label={`${service.price?.toLocaleString('vi-VN')} đ`}
+                              size="small"
+                              sx={{ 
+                                fontSize: '0.8rem',
+                                background: `linear-gradient(135deg, 
+                                  ${index % 4 === 0 ? 'rgba(33,150,243,0.15)' : 
+                                    index % 4 === 1 ? 'rgba(0,191,165,0.15)' : 
+                                    index % 4 === 2 ? 'rgba(33,150,243,0.15)' : 'rgba(0,191,165,0.15)'}, 
+                                  rgba(255,255,255,0.8))`,
+                                color: '#2196F3',
+                                fontWeight: 700,
+                                mr: 1.5,
+                                border: '1px solid rgba(33,150,243,0.2)',
+                                boxShadow: '0 2px 4px rgba(33,150,243,0.1)'
+                              }}
+                            />
+                            {/* Thời gian có kết quả */}
+                            <Typography variant="body2" sx={{ 
+                              color: '#6b7280',
+                              backgroundColor: 'rgba(248,250,252,0.8)',
+                              padding: '2px 8px',
+                              borderRadius: 1,
+                              fontSize: '0.8rem',
+                              fontWeight: 500
+                            }}>
+                              {service.time || '2-3 ngày có kết quả'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
                       
-                      <Box 
-                        sx={{ 
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 2.5
+                      {/* Nút mở rộng/thu gọn chi tiết */}
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleExpand(service.id);
                         }}
+                        size="small"
                       >
-                        {(displayData.services || []).map((service, idx) => (
-                          <Box
-                            key={service.id || idx}
-                            sx={{
-                              p: 3,
-                              borderRadius: 3,
-                              bgcolor: 'white',
-                              boxShadow: '0 5px 20px rgba(0,0,0,0.05)',
-                              border: '1px solid rgba(0,0,0,0.02)',
-                              transition: 'all 0.3s ease',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              '&:hover': {
-                                boxShadow: '0 8px 25px rgba(74,144,226,0.1)',
-                                transform: 'translateY(-2px)',
-                                borderColor: 'rgba(74,144,226,0.08)'
-                              }
-                            }}
-                            onClick={() => {
-                              // Set state to view this service detail using available data
-                              setOriginalPackageData(displayData);
-                              setViewingServiceInPackage(service);
-                              // Don't call onOpenDetail - use service data already available
-                              // This ensures fast loading and no API calls
-                            }}
-                          >
-                            {/* Service info */}
-                            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                              {/* Index number circle */}
-                              <Box 
-                                sx={{ 
-                                  width: 32, 
-                                  height: 32, 
-                                  borderRadius: '50%', 
-                                  background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
-                                  color: 'white', 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'center',
-                                  fontSize: '0.9rem',
-                                  fontWeight: 700,
-                                  mr: 3,
-                                  flexShrink: 0,
-                                  boxShadow: '0 3px 10px rgba(74,144,226,0.25)'
-                                }}
-                              >
-                                {idx + 1}
-                              </Box>
-                              
-                              {/* Service details */}
-                              <Box sx={{ flex: 1 }}>
-                                <Typography 
-                                  fontWeight={700} 
-                                  color="primary.dark"
-                                  fontSize="1.1rem"
-                                  sx={{ mb: 0.5 }}
-                                >
-                                  {service.name}
-                                </Typography>
-                                <Typography 
-                                  variant="body2" 
-                                  color="text.secondary" 
-                                  sx={{ 
-                                    fontSize: '0.9rem',
-                                    lineHeight: 1.5,
-                                    mb: 1
-                                  }}
-                                >
-                                  {service.description}
-                                </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                  <Chip 
-                                    size="small" 
-                                    label={`${service.components?.length || 0} chỉ số`}
-                                    color="success"
-                                    sx={{ 
-                                      fontSize: '0.75rem', 
-                                      height: 22,
-                                      bgcolor: 'rgba(56, 161, 105, 0.1)',
-                                      color: 'success.dark',
-                                      fontWeight: 600
-                                    }} 
-                                  />
-                                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                                    • Nhấp để xem chi tiết
+                        {expandedItems[service.id] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                      </IconButton>
+                    </Box>
+
+                    {/* Phần chi tiết xét nghiệm - chỉ hiển thị khi mở rộng */}
+                    <Collapse in={expandedItems[service.id]} sx={{ width: '100%' }}>
+                      <Box sx={{ 
+                        p: 4, 
+                        pt: 2, 
+                        background: 'linear-gradient(135deg, rgba(248,250,252,0.8) 0%, rgba(235,245,246,0.6) 50%, rgba(255,255,255,0.9) 100%)',
+                        position: 'relative',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: '2px',
+                          background: `linear-gradient(90deg, 
+                            ${index % 4 === 0 ? '#4aaeb5' : 
+                              index % 4 === 1 ? '#69d4db' : 
+                              index % 4 === 2 ? '#5cbcc3' : '#7dd3db'}, 
+                            ${index % 4 === 0 ? '#69d4db' : 
+                              index % 4 === 1 ? '#4aaeb5' : 
+                              index % 4 === 2 ? '#69d4db' : '#4aaeb5'})`
+                        }
+                      }}>
+                        {/* Mô tả xét nghiệm */}
+                        <Typography variant="body2" paragraph sx={{ 
+                          color: '#4a5568', 
+                          mb: 3, 
+                          lineHeight: 1.7,
+                          backgroundColor: 'rgba(255,255,255,0.8)',
+                          padding: 2,
+                          borderRadius: 2,
+                          border: '1px solid rgba(74,174,181,0.15)',
+                          boxShadow: '0 2px 8px rgba(74,174,181,0.05)'
+                        }}>
+                          {service.description || 'Xét nghiệm này giúp phát hiện kịp thời các bệnh lây truyền qua đường tình dục, đảm bảo sức khỏe sinh sản tối ưu.'}
+                        </Typography>
+                        
+                        <Grid container spacing={2}>
+                          {/* Cột thông tin chi tiết xét nghiệm */}
+                          <Grid item xs={12} md={6}>
+                            <Box sx={{ 
+                              mb: 2,
+                              p: 2,
+                              backgroundColor: 'rgba(255,255,255,0.7)',
+                              borderRadius: 2,
+                              border: '1px solid rgba(74,174,181,0.1)'
+                            }}>
+                              <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ 
+                                color: '#2d3748',
+                                display: 'flex',
+                                alignItems: 'center',
+                                mb: 1.5
+                              }}>
+                                <Box sx={{
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: '50%',
+                                  backgroundColor: '#4aaeb5',
+                                  mr: 1
+                                }} />
+                                Thông tin chi tiết
+                              </Typography>
+                              <Box sx={{ 
+                                pl: 2, 
+                                borderLeft: `3px solid ${index % 4 === 0 ? '#4aaeb5' : 
+                                  index % 4 === 1 ? '#69d4db' : 
+                                  index % 4 === 2 ? '#5cbcc3' : '#7dd3db'}`,
+                                backgroundColor: 'rgba(248,250,252,0.5)',
+                                borderRadius: 1,
+                                p: 1.5
+                              }}>
+                                {/* Hiển thị loại mẫu xét nghiệm - cần sửa đổi để hiển thị đúng */}
+                                {service.components && service.components.length > 0 && (
+                                  <Box sx={{ display: 'flex', mb: 1 }}>
+                                    <Typography variant="body2" sx={{ width: '140px', color: '#6b7280' }}>
+                                      Loại mẫu xét nghiệm:
+                                    </Typography>
+                                    <Typography variant="body2" fontWeight={500} sx={{ color: '#374151' }}>
+                                      {service.components[0].sampleType || 
+                                       (service.components[0].componentId ? 'Máu' : 'Huyết thanh/Huyết tương')}
+                                    </Typography>
+                                  </Box>
+                                )}
+                                {/* Thời gian có kết quả */}
+                                <Box sx={{ display: 'flex', mb: 1 }}>
+                                  <Typography variant="body2" sx={{ width: '140px', color: '#6b7280' }}>
+                                    Thời gian có kết quả:
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight={500} sx={{ color: '#374151' }}>
+                                    {service.time || '2-3 ngày'}
+                                  </Typography>
+                                </Box>
+                                {/* Độ chính xác */}
+                                <Box sx={{ display: 'flex' }}>
+                                  <Typography variant="body2" sx={{ width: '140px', color: '#6b7280' }}>
+                                    Độ chính xác:
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight={500} sx={{ color: '#374151' }}>
+                                    {service.accuracy || '> 99%'}
                                   </Typography>
                                 </Box>
                               </Box>
                             </Box>
-
-                            {/* Price and arrow */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-                              <Chip 
-                                size="medium" 
-                                label={`${service.price?.toLocaleString('vi-VN')} đ`}
-                                sx={{ 
-                                  height: 32, 
-                                  fontSize: '0.85rem', 
-                                  bgcolor: 'rgba(74,144,226,0.1)', 
-                                  color: 'primary.main',
-                                  fontWeight: 700,
-                                  px: 1.5
-                                }} 
-                              />
-                              <Button 
-                                variant="outlined"
-                                size="small"
-                                sx={{ 
-                                  color: 'primary.main', 
-                                  borderColor: 'primary.main',
-                                  fontWeight: 600,
-                                  fontSize: '0.8rem',
-                                  height: 32,
-                                  minWidth: 'auto',
-                                  px: 2,
-                                  borderRadius: 2,
-                                  textTransform: 'none',
-                                  '&:hover': {
-                                    bgcolor: 'rgba(74,144,226,0.08)',
-                                    borderColor: 'primary.main',
-                                  }
-                                }}
-                              >
-                                Chi tiết
-                              </Button>
+                          </Grid>
+                          
+                          {/* Cột chỉ định xét nghiệm */}
+                          <Grid item xs={12} md={6}>
+                            <Box sx={{ 
+                              p: 2,
+                              backgroundColor: 'rgba(255,255,255,0.7)',
+                              borderRadius: 2,
+                              border: '1px solid rgba(255,107,107,0.2)'
+                            }}>
+                              <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ 
+                                color: '#2d3748',
+                                display: 'flex',
+                                alignItems: 'center',
+                                mb: 1.5
+                              }}>
+                                <Box sx={{
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: '50%',
+                                  backgroundColor: '#FF6B6B',
+                                  mr: 1
+                                }} />
+                                Chỉ định xét nghiệm
+                              </Typography>
+                              <Box sx={{ 
+                                pl: 2, 
+                                borderLeft: '3px solid #FF6B6B',
+                                backgroundColor: 'rgba(254,202,202,0.1)',
+                                borderRadius: 1,
+                                p: 1.5
+                              }}>
+                                <Typography variant="body2" sx={{ color: '#374151', lineHeight: 1.7 }}>
+                                  {service.indication || 'Người có nguy cơ cao tiếp xúc với các bệnh lây truyền qua đường tình dục.'}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Grid>
+                        </Grid>
+                        
+                        {/* Bảng các chỉ số xét nghiệm */}
+                        {service.components && service.components.length > 0 && (
+                          <Box sx={{ mt: 4 }}>
+                            <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ 
+                              mb: 3, 
+                              color: 'white', 
+                              display: 'flex', 
+                              alignItems: 'center',
+                              p: 2.5,
+                              background: `linear-gradient(135deg, 
+                                ${index % 4 === 0 ? '#4aaeb5' : 
+                                  index % 4 === 1 ? '#69d4db' : 
+                                  index % 4 === 2 ? '#5cbcc3' : '#7dd3db'}, 
+                                ${index % 4 === 0 ? '#69d4db' : 
+                                  index % 4 === 1 ? '#4aaeb5' : 
+                                  index % 4 === 2 ? '#69d4db' : '#4aaeb5'})`,
+                              borderRadius: 2,
+                              boxShadow: '0 4px 12px rgba(74,174,181,0.2)'
+                            }}>
+                              <CheckCircleOutlineIcon sx={{ 
+                                mr: 1, 
+                                fontSize: '1.3rem',
+                                backgroundColor: 'rgba(255,255,255,0.2)',
+                                borderRadius: '50%',
+                                p: 0.5
+                              }} />
+                              Các chỉ số xét nghiệm ({service.components.length})
+                            </Typography>
+                            
+                            <Box sx={{ 
+                              bgcolor: 'rgba(255,255,255,0.95)', 
+                              borderRadius: 3, 
+                              border: '2px solid rgba(74,174,181,0.15)', 
+                              overflow: 'hidden',
+                              boxShadow: '0 4px 16px rgba(74,174,181,0.1)'
+                            }}>
+                              {/* Tiêu đề các cột */}
+                              <Box sx={{ 
+                                display: 'flex', 
+                                background: `linear-gradient(135deg, 
+                                  ${index % 4 === 0 ? 'rgba(74,174,181,0.15)' : 
+                                    index % 4 === 1 ? 'rgba(105,212,219,0.15)' : 
+                                    index % 4 === 2 ? 'rgba(92,188,195,0.15)' : 'rgba(125,211,219,0.15)'}, 
+                                  rgba(248,250,252,0.8))`,
+                                p: 2,
+                                borderBottom: '2px solid rgba(74,174,181,0.2)'
+                              }}>
+                                <Typography variant="body2" fontWeight={600} sx={{ width: '40%', color: '#2d3748' }}>Tên chỉ số</Typography>
+                                <Typography variant="body2" fontWeight={600} sx={{ width: '20%', color: '#2d3748' }}>Đơn vị</Typography>
+                                <Typography variant="body2" fontWeight={600} sx={{ width: '40%', color: '#2d3748' }}>Giá trị tham chiếu</Typography>
+                              </Box>
+                              
+                              {/* Danh sách chi tiết các chỉ số */}
+                              {service.components.map((component, idx) => (
+                                <Box 
+                                  key={component.componentId || component.id || idx}
+                                  sx={{ 
+                                    display: 'flex', 
+                                    p: 1.5,
+                                    borderBottom: idx === service.components.length - 1 ? 'none' : '1px solid rgba(74,174,181,0.1)',
+                                    '&:nth-of-type(odd)': {
+                                      bgcolor: 'rgba(248,250,252,0.5)'
+                                    },
+                                    '&:hover': {
+                                      bgcolor: 'rgba(74,174,181,0.05)'
+                                    }
+                                  }}
+                                >
+                                  {/* Tên chỉ số */}
+                                  <Typography variant="body2" sx={{ width: '40%', color: '#374151', fontWeight: 500 }}>
+                                    {component.componentName || component.testName}
+                                  </Typography>
+                                  {/* Đơn vị */}
+                                  <Typography variant="body2" sx={{ width: '20%', color: '#6b7280' }}>
+                                    {component.unit || '-'}
+                                  </Typography>
+                                  {/* Giá trị tham chiếu */}
+                                  <Typography variant="body2" sx={{ width: '40%' }}>
+                                    <Box component="span" sx={{ 
+                                      py: 0.3, 
+                                      px: 1, 
+                                      borderRadius: 1,
+                                      bgcolor: 'rgba(56,161,105,0.1)',
+                                      color: '#059669',
+                                      fontSize: '0.85rem',
+                                      fontWeight: 600
+                                    }}>
+                                      {component.normalRange || component.referenceRange || 'Xem kết quả'}
+                                    </Box>
+                                  </Typography>
+                                </Box>
+                              ))}
                             </Box>
                           </Box>
-                        ))}
+                        )}
+                        
+                        {/* Ý nghĩa kết quả xét nghiệm - chỉ hiển thị khi có dữ liệu */}
+                        {service.components && service.components.some(comp => comp.description || comp.interpretation) && (
+                          <Box sx={{ mt: 3, p: 2, backgroundColor: 'rgba(74,174,181,0.05)', borderRadius: 2 }}>
+                            <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ color: '#4aaeb5' }}>
+                              Ý nghĩa kết quả xét nghiệm
+                            </Typography>
+                            <List disablePadding>
+                              {/* Liệt kê ý nghĩa của từng chỉ số */}
+                              {service.components.map((component, idx) => (
+                                component.description || component.interpretation ? (
+                                  <ListItem key={idx} sx={{ px: 0, py: 0.5 }}>
+                                    <ListItemText
+                                      primary={
+                                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#2d3748' }}>
+                                          {component.componentName || component.testName}:
+                                        </Typography>
+                                      }
+                                      secondary={
+                                        <Typography variant="body2" sx={{ color: '#4a5568', mt: 0.5, lineHeight: 1.5 }}>
+                                          {component.description || component.interpretation}
+                                        </Typography>
+                                      }
+                                    />
+                                  </ListItem>
+                                ) : null
+                              ))}
+                            </List>
+                          </Box>
+                        )}
+                        
+                        {/* Lưu ý quan trọng về xét nghiệm này */}
+                        {service.note && (
+                          <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(255,107,107,0.08)', borderRadius: 2 }}>
+                            <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ color: '#FF6B6B', display: 'flex', alignItems: 'center' }}>
+                              <InfoOutlinedIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                              Lưu ý quan trọng
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#374151', lineHeight: 1.6 }}>{service.note}</Typography>
+                          </Box>
+                        )}
                       </Box>
-                    </>
-                  )}
-                </>
-              )}
-            </Box>
-          ) : !loadingDetail ? (
-            <Box sx={{ p: 4, textAlign: 'center' }}>
-              <Typography variant="h6" color="error" sx={{ mb: 2 }}>
-                ⚠️ Không thể tải chi tiết dịch vụ
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Đã xảy ra lỗi khi tải thông tin chi tiết. Vui lòng thử lại hoặc liên hệ hỗ trợ nếu vấn đề vẫn tiếp tục.
-              </Typography>
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  // Try to reload detail data with proper error handling
-                  const serviceId = detailData?.id;
-                  if (serviceId && onOpenDetail) {
-                    onOpenDetail(serviceId, detailType);
-                  } else {
-                    // If no serviceId available, just close the dialog
-                    handleDialogClose(null, 'retryFailed');
-                  }
-                }}
-                sx={{
-                  borderRadius: 6,
-                  borderColor: '#4A90E2',
-                  color: '#4A90E2',
-                  '&:hover': {
-                    bgcolor: 'rgba(74,144,226,0.08)',
-                  }
-                }}
-              >
-                Thử lại
-              </Button>
-            </Box>
-          ) : null}
-        </Box>
+                    </Collapse>
+                  </ListItem>
+                </Paper>
+              ))}
+            </List>
+          </Box>
+        )}
+      </DialogContent>
+      
+      {/* Phần chân dialog - chứa các nút thao tác */}
+      <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+        {/* Nút đăng ký gói - chỉ hiển thị khi xem chi tiết gói */}
+        {detailType === 'package' && (
+          <Button
+            variant="contained"
+            onClick={handleRegisterService}
+            sx={{
+              background: 'linear-gradient(45deg, #2196F3, #00BFA5)',
+              color: '#fff',
+              fontWeight: 700,
+              borderRadius: 50,
+              px: 4,
+              py: 1,
+              textTransform: 'none',
+              boxShadow: '0 4px 16px rgba(33,150,243,0.25)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #00BFA5, #2196F3)',
+                boxShadow: '0 8px 24px rgba(33,150,243,0.35)',
+              },
+            }}
+          >
+            Đăng ký gói này
+          </Button>
+        )}
         
-        {/* Footer - remains fixed */}
-        <DialogActions 
-          sx={{ 
-            justifyContent: 'space-between', 
-            p: 3, 
-            bgcolor: 'rgba(255,255,255,0.8)',
-            flexShrink: 0,
-            borderTop: '1px solid rgba(0,0,0,0.05)',
-            backdropFilter: 'blur(10px)'
+        {/* Nút đăng ký xét nghiệm - chỉ hiển thị khi xem chi tiết xét nghiệm đơn lẻ */}
+        {detailType !== 'package' && detailData.components && detailData.components.length > 0 && (
+          <Button
+            variant="contained"
+            onClick={handleRegisterService}
+            sx={{
+              background: 'linear-gradient(45deg, #2196F3, #00BFA5)',
+              color: '#fff',
+              fontWeight: 700,
+              borderRadius: 50,
+              px: 4,
+              py: 1,
+              textTransform: 'none',
+              boxShadow: '0 4px 16px rgba(33,150,243,0.25)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #00BFA5, #2196F3)',
+                boxShadow: '0 8px 24px rgba(33,150,243,0.35)',
+              },
+            }}
+          >
+            Đăng ký xét nghiệm này
+          </Button>
+        )}
+        
+        {/* Nút đóng dialog */}
+        <Button
+          onClick={onClose}
+          sx={{
+            color: '#2196F3',
+            fontWeight: 600,
+            textTransform: 'none'
           }}
         >
-          {viewingServiceInPackage ? (
-            // When viewing service in package, show back button
-            <>
-              <Button 
-                onClick={() => {
-                  setViewingServiceInPackage(null);
-                  // Don't close dialog, just go back to package view
-                }} 
-                variant="outlined" 
-                sx={{ 
-                  borderRadius: 8, 
-                  fontWeight: 600, 
-                  minWidth: 120,
-                  py: 1.2,
-                  borderColor: 'rgba(74,144,226,0.3)',
-                  color: '#4A90E2',
-                  '&:hover': {
-                    borderColor: '#4A90E2',
-                    bgcolor: 'rgba(74,144,226,0.08)'
-                  }
-                }}
-              >
-                ← Quay lại gói
-              </Button>
-              <Button 
-                onClick={() => handleDialogClose(null, 'closeClick')} 
-                variant="outlined" 
-                sx={{ 
-                  borderRadius: 8, 
-                  fontWeight: 600, 
-                  minWidth: 120,
-                  py: 1.2,
-                  borderColor: 'rgba(0,0,0,0.2)',
-                  color: 'text.secondary',
-                  '&:hover': {
-                    borderColor: 'primary.main',
-                    bgcolor: 'rgba(74,144,226,0.08)'
-                  }
-                }}
-              >
-                Đóng
-              </Button>
-            </>
-          ) : (
-            // Normal view (single service or package)
-            <>
-              <Button 
-                onClick={() => handleDialogClose(null, 'closeClick')} 
-                variant="outlined" 
-                sx={{ 
-                  borderRadius: 8, 
-                  fontWeight: 600, 
-                  minWidth: 120,
-                  py: 1.2,
-                  borderColor: 'rgba(0,0,0,0.2)',
-                  color: 'text.secondary',
-                  '&:hover': {
-                    borderColor: 'primary.main',
-                    bgcolor: 'rgba(74,144,226,0.08)'
-                  }
-                }}
-              >
-                Đóng
-              </Button>
-              <Button
-                variant="contained"
-                sx={{
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  minWidth: 150,
-                  py: 1.2,
-                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
-                    transform: 'translateY(-3px)',
-                    boxShadow: '0 8px 20px rgba(74, 144, 226, 0.3)',
-                  },
-                  transition: 'all 0.3s ease',
-                }}
-                onClick={handleRegisterService}
-              >
-                Đăng ký ngay
-              </Button>
-            </>
-          )}
-        </DialogActions>
-      </Box>
+          Đóng
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 };
 
-// ===== ĐỊNH NGHĨA PROP TYPES =====
-// Xác định kiểu dữ liệu cho các props để đảm bảo tính chính xác
 ServiceDetailDialog.propTypes = {
-  open: PropTypes.bool.isRequired,           // Trạng thái mở/đóng dialog (bắt buộc, boolean)
-  onClose: PropTypes.func.isRequired,        // Hàm đóng dialog (bắt buộc, function)
-  detailData: PropTypes.object,              // Dữ liệu chi tiết dịch vụ/gói (tùy chọn, object)
-  detailType: PropTypes.oneOf(['single', 'package']), // Loại dịch vụ (tùy chọn, chỉ nhận 'single' hoặc 'package')
-  loadingDetail: PropTypes.bool,             // Trạng thái loading (tùy chọn, boolean)
-  onOpenDetail: PropTypes.func,              // Hàm mở chi tiết dịch vụ con (tùy chọn, function)
-  onSelectService: PropTypes.func            // Hàm chọn dịch vụ để đăng ký (tùy chọn, function)
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  detailData: PropTypes.object,
+  detailType: PropTypes.oneOf(['single', 'package']),
+  loadingDetail: PropTypes.bool,
+  onOpenDetail: PropTypes.func,
+  onSelectService: PropTypes.func
 };
 
-// Export component để sử dụng ở các file khác
 export default ServiceDetailDialog;

@@ -477,9 +477,29 @@ function TestRegistrationPage() {
       if (idx !== -1) {
         setActiveTab('package');                           // Chuyển sang tab package
         setSelectedService({ type: 'package', idx });     // Pre-select package
+        
+        // Nếu có flag skipServiceSelection hoặc initialStep/activeStep, chuyển thẳng đến bước chọn ngày giờ
+        if (location.state.skipServiceSelection || location.state.initialStep === 1 || location.state.activeStep === 1) {
+          setActiveStep(1); // Chuyển đến bước chọn ngày & giờ
+        }
       }
     }
-  }, [location.state, packages]);
+
+    // Kiểm tra nếu có selectedTest (xét nghiệm đơn lẻ) từ state và singleTests đã được load
+    if (location.state?.selectedTest && singleTests.length > 0) {
+      // Tìm index của test trong danh sách
+      const idx = singleTests.findIndex(test => test.id === location.state.selectedTest.id);
+      if (idx !== -1) {
+        setActiveTab('single');                            // Chuyển sang tab single test
+        setSelectedService({ type: 'single', idx });      // Pre-select test
+        
+        // Nếu có flag skipServiceSelection hoặc initialStep/activeStep, chuyển thẳng đến bước chọn ngày giờ
+        if (location.state.skipServiceSelection || location.state.initialStep === 1 || location.state.activeStep === 1) {
+          setActiveStep(1); // Chuyển đến bước chọn ngày & giờ
+        }
+      }
+    }
+  }, [location.state, packages, singleTests]);
 
   // Memoized values with enhanced data using helper functions
   const paginatedSingleTests = useMemo(() => {
@@ -1551,8 +1571,7 @@ function TestRegistrationPage() {
               color: '#fff',
               textTransform: 'none',
               position: 'relative',
-              overflow: 'hidden',
-              '&:hover': {
+              overflow: 'hidden',                '&:hover': {
                 background: activeStep === STEPS.length - 1 
                   ? isBooking 
                     ? 'linear-gradient(45deg, #f59e0b, #d97706)' 
