@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 // Import hooks để điều hướng và lấy dữ liệu từ URL
 import { useLocation, useNavigate } from 'react-router-dom';
+// Import toast để hiển thị thông báo
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // ===== IMPORT CÁC COMPONENT UI TỪ MATERIAL-UI =====
 import {
@@ -441,6 +444,8 @@ function TestRegistrationPage() {
   const [bookingMessage, setBookingMessage] = useState('');              // Thông báo kết quả đặt lịch
   const [paymentMethod, setPaymentMethod] = useState('cash');            // Phương thức thanh toán
   const [isBooking, setIsBooking] = useState(false);                     // Trạng thái đang xử lý đặt lịch
+  const [paymentFailed, setPaymentFailed] = useState(false);             // Trạng thái thanh toán thất bại
+  const [paymentFailedMessage, setPaymentFailedMessage] = useState('');  // Thông báo thanh toán thất bại
   
   // ===== STATE QUẢN LÝ DIALOG CHI TIẾT =====
   const [detailOpen, setDetailOpen] = useState(false);                   // Hiển thị dialog chi tiết
@@ -526,6 +531,9 @@ function TestRegistrationPage() {
    */
   const handleSelectService = (type, idx) => {
     setSelectedService({ type, idx });
+    // Reset thông báo thanh toán thất bại khi thay đổi dịch vụ
+    setPaymentFailed(false);
+    setPaymentFailedMessage('');
   };
 
   /**
@@ -621,6 +629,9 @@ function TestRegistrationPage() {
     } else {
       // Chuyển sang bước tiếp theo
       setActiveStep((prev) => prev + 1);
+      // Reset thông báo thanh toán thất bại khi chuyển bước
+      setPaymentFailed(false);
+      setPaymentFailedMessage('');
     }
   };
 
@@ -629,6 +640,9 @@ function TestRegistrationPage() {
    */
   const handleBack = () => {
     setActiveStep((prev) => prev - 1);
+    // Reset thông báo thanh toán thất bại khi quay lại bước trước
+    setPaymentFailed(false);
+    setPaymentFailedMessage('');
   };
 
   // ===============================
@@ -686,6 +700,10 @@ function TestRegistrationPage() {
   const handlePaymentMethodChange = (method) => {
     setPaymentMethod(method);
     
+    // Reset thông báo thanh toán thất bại khi thay đổi phương thức thanh toán
+    setPaymentFailed(false);
+    setPaymentFailedMessage('');
+    
     // Nếu chọn VISA, mở dialog nhập thông tin thẻ
     if (method === 'visa') {
       setCardDialogOpen(true);
@@ -723,7 +741,7 @@ function TestRegistrationPage() {
     // Xác định loại dịch vụ được chọn và lấy ID tương ứng
     let serviceId = null, packageId = null;
     if (!selectedService || selectedService.idx == null) {
-      alert('Vui lòng chọn dịch vụ hoặc gói xét nghiệm!');
+      toast.error('Vui lòng chọn dịch vụ hoặc gói xét nghiệm!');
       return;
     }
     
@@ -731,14 +749,14 @@ function TestRegistrationPage() {
       // Lấy ID xét nghiệm đơn đã chọn
       serviceId = filteredSingleTests[selectedService.idx]?.id;
       if (!serviceId) {
-        alert('Không tìm thấy dịch vụ xét nghiệm đã chọn!');
+        toast.error('Không tìm thấy dịch vụ xét nghiệm đã chọn!');
         return;
       }
     } else if (selectedService.type === 'package') {
       // Lấy ID gói xét nghiệm đã chọn
       packageId = filteredPackages[selectedService.idx]?.id;
       if (!packageId) {
-        alert('Không tìm thấy gói xét nghiệm đã chọn!');
+        toast.error('Không tìm thấy gói xét nghiệm đã chọn!');
         return;
       }
     }
@@ -746,9 +764,9 @@ function TestRegistrationPage() {
     // Validate lại lần cuối trước khi gửi
     if (!isValidAppointmentTime(selectedDate, selectedTime)) {
       if (!selectedDate || !selectedTime) {
-        alert('Vui lòng chọn đầy đủ ngày và giờ hẹn!');
+        toast.error('Vui lòng chọn đầy đủ ngày và giờ hẹn!');
       } else {
-        alert('Không thể đặt lịch cho khung giờ đã qua hoặc quá gần giờ hiện tại. Vui lòng chọn khung giờ cách ít nhất 2 tiếng từ bây giờ!');
+        toast.error('Không thể đặt lịch cho khung giờ đã qua hoặc quá gần giờ hiện tại. Vui lòng chọn khung giờ cách ít nhất 2 tiếng từ bây giờ!');
       }
       return;
     }
@@ -814,12 +832,12 @@ function TestRegistrationPage() {
     
     // Validate payload lần cuối trước khi gửi
     if (!payload.appointmentDate) {
-      alert('Vui lòng chọn ngày và giờ hẹn!');
+      toast.error('Vui lòng chọn ngày và giờ hẹn!');
       return;
     }
     
     if (!payload.serviceId && !payload.packageId) {
-      alert('Vui lòng chọn dịch vụ hoặc gói xét nghiệm!');
+      toast.error('Vui lòng chọn dịch vụ hoặc gói xét nghiệm!');
       return;
     }
     
@@ -833,7 +851,31 @@ function TestRegistrationPage() {
       console.log('Response từ API:', res);
       
       // Kiểm tra kết quả thành công (có thể có nhiều format khác nhau)
-      if (res.data.success === true || res.data.testId || (res.data.data && res.data.data.testId)) {
+      if (res.data.testId && res.data.paymentStatus === 'FAILED') {
+        // Trường hợp đặt lịch thành công nhưng thanh toán thất bại
+        setBookingSuccess(true);
+        
+        const serviceName = selectedService.type === 'single' 
+          ? filteredSingleTests[selectedService.idx]?.name 
+          : filteredPackages[selectedService.idx]?.name;
+        
+        const appointmentInfo = selectedDate && selectedTime 
+          ? `vào ${selectedDate.toLocaleDateString('vi-VN')} lúc ${selectedTime}`
+          : '';
+        
+        const successMessage = `Lịch hẹn "${serviceName}" ${appointmentInfo} đã được đặt thành công!`;
+        const paymentMessage = res.data.message || 'Thanh toán thất bại, bạn có thể thử lại sau.';
+        
+        setBookingMessage(successMessage + ' ' + paymentMessage);
+        
+        // Hiển thị toast cảnh báo về thanh toán
+        toast.warning('Đặt lịch thành công!', successMessage + ' ' + paymentMessage);
+        
+        // Hiển thị thông báo thanh toán thất bại trong form
+        setPaymentFailed(true);
+        setPaymentFailedMessage(paymentMessage);
+      } else if (res.data.success === true && res.data.data && res.data.data.testId) {
+        // Trường hợp đặt lịch thành công hoàn toàn
         setBookingSuccess(true);
         
         // Tạo thông báo thành công chi tiết và thân thiện
@@ -848,8 +890,29 @@ function TestRegistrationPage() {
         const detailedMessage = `Lịch hẹn "${serviceName}" ${appointmentInfo} đã được ghi nhận thành công. Chúng tôi sẽ liên hệ với bạn để xác nhận chi tiết.`;
         
         setBookingMessage(res.data.message || detailedMessage);
+        
+        // Hiển thị toast thành công
+        toast.success('Đặt lịch thành công!', res.data.message || detailedMessage);
+      } else if (res.data.testId && res.data.paymentStatus !== 'FAILED') {
+        // Trường hợp đặt lịch thành công với format cũ
+        setBookingSuccess(true);
+        
+        const serviceName = selectedService.type === 'single' 
+          ? filteredSingleTests[selectedService.idx]?.name 
+          : filteredPackages[selectedService.idx]?.name;
+        
+        const appointmentInfo = selectedDate && selectedTime 
+          ? `vào ${selectedDate.toLocaleDateString('vi-VN')} lúc ${selectedTime}`
+          : '';
+        
+        const detailedMessage = `Lịch hẹn "${serviceName}" ${appointmentInfo} đã được ghi nhận thành công. Chúng tôi sẽ liên hệ với bạn để xác nhận chi tiết.`;
+        
+        setBookingMessage(res.data.message || detailedMessage);
+        
+        // Hiển thị toast thành công
+        toast.success('Đặt lịch thành công!', res.data.message || detailedMessage);
       } else {
-        // Xử lý trường hợp đặt lịch thất bại
+        // Xử lý trường hợp đặt lịch thất bại hoàn toàn
         const errorMessage = res.data.message || 'Đăng ký thất bại';
         console.error('Booking failed:', res.data);
         
@@ -858,7 +921,7 @@ function TestRegistrationPage() {
           detailedError += '\nChi tiết lỗi: ' + JSON.stringify(res.data.errors);
         }
         
-        alert(detailedError);
+        toast.error('Đặt lịch thất bại', detailedError);
       }
     } catch (err) {
       // Xử lý lỗi khi gọi API
@@ -879,7 +942,7 @@ function TestRegistrationPage() {
         errorMessage += `\nMã lỗi: ${err.response.status}`;
       }
       
-      alert(errorMessage);
+      toast.error('Lỗi đặt lịch', errorMessage);
     } finally {
       setIsBooking(false);
     }
@@ -910,6 +973,8 @@ function TestRegistrationPage() {
   // ===============================
   // UI RENDERING - Giao diện chính
   // ===============================
+  
+
   
   return (
     <Box sx={{ 
@@ -1301,6 +1366,64 @@ function TestRegistrationPage() {
                       }
                     />
                   </RadioGroup>
+                  
+                  {/* Thông báo thanh toán thất bại */}
+                  {paymentFailed && (
+                    <Box sx={{
+                      background: 'rgba(255, 193, 7, 0.1)',
+                      border: '1px solid #ffc107',
+                      borderRadius: 3,
+                      p: 3,
+                      mt: 3,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                    }}>
+                      <Box sx={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        background: '#ffc107',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>
+                        <Typography sx={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                          ⚠️
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography sx={{ 
+                          fontWeight: 600, 
+                          color: '#d68910', 
+                          mb: 0.5,
+                          fontSize: '1rem'
+                        }}>
+                          Thanh toán không thành công
+                        </Typography>
+                        <Typography sx={{ 
+                          color: '#8d6e63', 
+                          fontSize: '0.9rem',
+                          lineHeight: 1.4
+                        }}>
+                          {paymentFailedMessage}
+                        </Typography>
+                        <Typography sx={{ 
+                          color: '#2196F3', 
+                          fontSize: '0.85rem',
+                          fontWeight: 500,
+                          mt: 1,
+                          cursor: 'pointer',
+                          '&:hover': {
+                            textDecoration: 'underline'
+                          }
+                        }}>
+                          💡 Bạn có thể thử lại với phương thức thanh toán khác hoặc liên hệ hỗ trợ
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
                 </Box>
 
                 {/* Tóm tắt thông tin đặt lịch */}
@@ -1489,6 +1612,8 @@ function TestRegistrationPage() {
           open={bookingSuccess}
           message={bookingMessage}
           onClose={() => navigate('/')}
+          paymentFailed={paymentFailed}
+          paymentFailedMessage={paymentFailedMessage}
         />
 
         {/* Dialog nhập thông tin thẻ */}

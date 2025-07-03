@@ -1,28 +1,29 @@
 package com.healapp.service;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.dto.BankTransactionResponse;
-import com.healapp.model.Payment;
-import com.healapp.model.PaymentMethod;
-import com.healapp.model.PaymentStatus;
-import com.healapp.model.STIService;
-import com.healapp.model.STITest;
-import com.healapp.model.UserDtls;
-import com.healapp.repository.PaymentRepository;
-import lombok.extern.slf4j.Slf4j;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.BankTransactionResponse;
+import com.healapp.model.Payment;
+import com.healapp.model.PaymentMethod;
+import com.healapp.model.PaymentStatus;
+import com.healapp.model.STITest;
+import com.healapp.model.UserDtls;
+import com.healapp.repository.PaymentRepository;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -123,12 +124,13 @@ public class PaymentService {
                 // Payment failed
                 processingPayment.setPaymentStatus(PaymentStatus.FAILED);
                 processingPayment.setNotes("Stripe error: " + stripeResponse.getMessage());
-                paymentRepository.save(processingPayment);
+                Payment failedPayment = paymentRepository.save(processingPayment);
 
                 log.warn("Stripe payment failed - Payment ID: {}, Error: {}",
-                        processingPayment.getPaymentId(), stripeResponse.getMessage());
+                        failedPayment.getPaymentId(), stripeResponse.getMessage());
 
-                return ApiResponse.error("Payment failed: " + stripeResponse.getMessage());
+                // Trả về payment record thay vì chỉ error message để tránh tạo duplicate
+                return new ApiResponse<>(false, "Payment failed: " + stripeResponse.getMessage(), failedPayment);
             }
 
         } catch (Exception e) {
@@ -496,7 +498,11 @@ public class PaymentService {
     }
 
     public Optional<Payment> getPaymentByService(String serviceType, Long serviceId) {
-        return paymentRepository.findByServiceTypeAndServiceId(serviceType, serviceId);
+        List<Payment> payments = paymentRepository.findByServiceTypeAndServiceIdOrderByCreatedAtDesc(serviceType, serviceId);
+        if (payments.size() > 1) {
+            log.warn("Found {} payment records for {} service ID: {}", payments.size(), serviceType, serviceId);
+        }
+        return payments.stream().findFirst();
     }
 
     public Optional<Payment> getCompletedPaymentByService(String serviceType, Long serviceId) {

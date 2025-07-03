@@ -132,7 +132,7 @@ const GradientButton = styled(Button)(({ theme }) => ({
 
 // ===== COMPONENT CHÍNH =====
 // Component dialog thông báo đặt lịch thành công với giao diện đẹp mắt và nhiều hiệu ứng
-const BookingSuccessDialog = ({ open, message, onClose }) => {
+const BookingSuccessDialog = ({ open, message, onClose, paymentFailed, paymentFailedMessage }) => {
   return (
     <StyledDialog 
       open={open} 
@@ -354,6 +354,64 @@ const BookingSuccessDialog = ({ open, message, onClose }) => {
           </Box>
         </Box>
 
+        {/* Thông báo thanh toán thất bại */}
+        {paymentFailed && (
+          <Box sx={{
+            background: 'rgba(255, 193, 7, 0.1)',
+            border: '1px solid #ffc107',
+            borderRadius: 3,
+            p: 3,
+            mt: 3,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+          }}>
+            <Box sx={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              background: '#ffc107',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Typography sx={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                ⚠️
+              </Typography>
+            </Box>
+            <Box>
+              <Typography sx={{ 
+                fontWeight: 600, 
+                color: '#d68910', 
+                mb: 0.5,
+                fontSize: '1rem'
+              }}>
+                Thanh toán không thành công
+              </Typography>
+              <Typography sx={{ 
+                color: '#8d6e63', 
+                fontSize: '0.9rem',
+                lineHeight: 1.4
+              }}>
+                {paymentFailedMessage}
+              </Typography>
+              <Typography sx={{ 
+                color: '#4A90E2', 
+                fontSize: '0.85rem',
+                fontWeight: 500,
+                mt: 1,
+                cursor: 'pointer',
+                '&:hover': {
+                  textDecoration: 'underline'
+                }
+              }}>
+                💡 Bạn có thể thử lại với phương thức thanh toán khác hoặc liên hệ hỗ trợ
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
         {/* Lời cảm ơn cuối */}
         <Typography 
           variant="body2" 
@@ -389,6 +447,8 @@ BookingSuccessDialog.propTypes = {
   open: PropTypes.bool.isRequired, // Bắt buộc: trạng thái mở/đóng dialog
   message: PropTypes.string, // Tùy chọn: thông điệp tùy chỉnh để hiển thị
   onClose: PropTypes.func.isRequired, // Bắt buộc: hàm callback khi đóng dialog
+  paymentFailed: PropTypes.bool, // Tùy chọn: trạng thái thanh toán thất bại
+  paymentFailedMessage: PropTypes.string, // Tùy chọn: thông báo lỗi thanh toán
 };
 
 // Export component để sử dụng ở nơi khác

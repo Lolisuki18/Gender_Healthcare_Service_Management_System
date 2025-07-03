@@ -275,6 +275,23 @@ public class STIServiceController {
         return getResponseEntity(response);
     }
 
+    /*
+     * description: Thử thanh toán lại cho test có payment thất bại
+     * path: /sti-services/tests/{testId}/retry-payment
+     * method: POST
+     * body: STITestRequest (chỉ cần paymentMethod và thông tin thẻ nếu là VISA)
+     */
+    @PostMapping("/tests/{testId}/retry-payment")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<STITestResponse>> retryPayment(
+            @PathVariable Long testId,
+            @Valid @RequestBody STITestRequest request) {
+
+        Long userId = getCurrentUserId();
+        ApiResponse<STITestResponse> response = stiTestService.retryPayment(testId, request, userId);
+        return getResponseEntity(response);
+    }
+
     @GetMapping("/tests/{testId}/results")
     @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<List<TestResultResponse>>> getTestResults(@PathVariable Long testId) {
@@ -290,11 +307,9 @@ public class STIServiceController {
     }
 
     private <T> ResponseEntity<ApiResponse<T>> getResponseEntity(ApiResponse<T> response) {
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
-        }
+        // Luôn trả về 200 OK, ngay cả khi có lỗi thanh toán
+        // Frontend sẽ xử lý hiển thị thông báo phù hợp dựa trên response.success
+        return ResponseEntity.ok(response);
     }
 
 }
