@@ -2,6 +2,16 @@ import apiClient from '@services/api';
 
 const API_URL = '/sti-services';
 
+// Get conclusion options for test results
+export const getConclusionOptions = async () => {
+  try {
+    const response = await apiClient.get(`${API_URL}/conclusion-options`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
 // Create a new STI service (Staff only)
 export const createSTIService = async (serviceData) => {
   try {

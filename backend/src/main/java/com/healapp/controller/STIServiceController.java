@@ -1,6 +1,8 @@
 package com.healapp.controller;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,7 @@ import com.healapp.dto.STITestResponse;
 import com.healapp.dto.STITestStatusUpdateRequest;
 import com.healapp.dto.TestResultRequest;
 import com.healapp.dto.TestResultResponse;
+import com.healapp.model.TestConclusion;
 import com.healapp.service.STIServiceService;
 import com.healapp.service.STITestService;
 import com.healapp.service.UserService;
@@ -298,6 +301,43 @@ public class STIServiceController {
         Long userId = getCurrentUserId();
         ApiResponse<List<TestResultResponse>> response = stiTestService.getTestResults(testId, userId);
         return getResponseEntity(response);
+    }
+
+    @GetMapping("/conclusion-options")
+    public ResponseEntity<ApiResponse<List<ConclusionOption>>> getConclusionOptions() {
+        List<ConclusionOption> options = Stream.of(TestConclusion.values())
+                .map(conclusion -> new ConclusionOption(conclusion.name(), conclusion.getDisplayName()))
+                .collect(Collectors.toList());
+        
+        ApiResponse<List<ConclusionOption>> response = ApiResponse.success("Conclusion options retrieved successfully", options);
+        return ResponseEntity.ok(response);
+    }
+
+    // DTO class for conclusion options
+    public static class ConclusionOption {
+        private String value;
+        private String label;
+
+        public ConclusionOption(String value, String label) {
+            this.value = value;
+            this.label = label;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public void setLabel(String label) {
+            this.label = label;
+        }
     }
 
     private Long getCurrentUserId() {

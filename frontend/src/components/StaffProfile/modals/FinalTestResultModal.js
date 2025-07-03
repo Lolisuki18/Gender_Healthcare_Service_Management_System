@@ -30,6 +30,7 @@ import {
   PersonOutline as PersonOutlineIcon,
   InfoOutlined as InfoOutlinedIcon,
 } from '@mui/icons-material';
+import ConclusionDisplay from '../../common/ConclusionDisplay';
 import {
   getTestResultsByTestId,
   getSTIServiceById,
@@ -85,6 +86,8 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
           resultValue: result.resultValue,
           unit: result.unit,
           normalRange: result.normalRange || result.referenceRange,
+          conclusion: result.conclusion,
+          conclusionDisplayName: result.conclusionDisplayName,
         });
         return acc;
       }, {});
@@ -254,6 +257,9 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
                 <TableCell sx={{ fontWeight: 'bold', color: '#475569' }}>
                   Chỉ số bình thường
                 </TableCell>
+                <TableCell sx={{ fontWeight: 'bold', color: '#475569' }}>
+                  Kết luận
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -278,6 +284,12 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
                     </TableCell>
                     <TableCell>{comp.unit || '-'}</TableCell>
                     <TableCell>{comp.normalRange || '-'}</TableCell>
+                    <TableCell>
+                      <ConclusionDisplay 
+                        conclusion={comp.conclusion}
+                        conclusionDisplayName={comp.conclusionDisplayName}
+                      />
+                    </TableCell>
                   </TableRow>
                 );
               })}

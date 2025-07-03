@@ -105,6 +105,9 @@ const ExportTestResultPDF = ({
                 <TableCell>
                   <b>Kết quả</b>
                 </TableCell>
+                <TableCell>
+                  <b>Kết luận</b>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -124,6 +127,16 @@ const ExportTestResultPDF = ({
                       }}
                     >
                       {row.resultValue}
+                    </TableCell>
+                    <TableCell
+                      style={{
+                        fontSize: '0.875rem',
+                        color: row.conclusion ? '#374151' : '#9ca3af',
+                        fontStyle: row.conclusion ? 'normal' : 'italic',
+                        fontWeight: row.conclusion ? 'bold' : 'normal',
+                      }}
+                    >
+                      {row.conclusionDisplayName || row.conclusion || 'Chưa có kết luận'}
                     </TableCell>
                   </TableRow>
                 ))}

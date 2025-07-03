@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -50,8 +52,9 @@ public class TestResult {
     @Column(name = "normal_range", columnDefinition = "NVARCHAR(100)")
     private String normalRange;
 
-    @Column(name = "conclusion", columnDefinition = "NVARCHAR(500)")
-    private String conclusion;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "conclusion", columnDefinition = "NVARCHAR(50)")
+    private TestConclusion conclusion;
 
     @Column(name = "reviewed_by")
     private Long reviewedBy;

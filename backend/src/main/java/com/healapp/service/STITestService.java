@@ -1200,6 +1200,7 @@ public class STITestService {
         response.setNormalRange(result.getNormalRange());
         response.setUnit(result.getUnit());
         response.setConclusion(result.getConclusion());
+        response.setConclusionDisplayName(result.getConclusion() != null ? result.getConclusion().getDisplayName() : null);
         response.setReviewedBy(result.getReviewedBy());
         response.setReviewedAt(result.getReviewedAt());
 

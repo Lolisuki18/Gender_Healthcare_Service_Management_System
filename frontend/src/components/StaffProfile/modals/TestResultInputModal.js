@@ -23,7 +23,12 @@ import {
   CardActionArea,
   CardContent,
   Grid,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
+import { getConclusionOptions } from '../../../services/stiService';
 
 const MEDICAL_GRADIENT = 'linear-gradient(45deg, #4A90E2, #1ABC9C)';
 const FONT_FAMILY = '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
@@ -47,6 +52,35 @@ const TestResultInputModal = ({
   const [touchedMap, setTouchedMap] = useState({});
   const [results, setResults] = useState([]);
   const [touched, setTouched] = useState({});
+  const [conclusionOptions, setConclusionOptions] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState(false);
+
+  // Load conclusion options
+  useEffect(() => {
+    const loadConclusionOptions = async () => {
+      try {
+        setLoadingOptions(true);
+        const response = await getConclusionOptions();
+        if (response.success && response.data) {
+          setConclusionOptions(response.data);
+        }
+      } catch (error) {
+        console.error('Error loading conclusion options:', error);
+        // Fallback to default options
+        setConclusionOptions([
+          { value: 'INFECTED', label: 'Bị nhiễm' },
+          { value: 'NOT_INFECTED', label: 'Không bị nhiễm' },
+          { value: 'ABNORMAL', label: 'Bất thường' },
+        ]);
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
+    if (open) {
+      loadConclusionOptions();
+    }
+  }, [open]);
 
   useEffect(() => {
     const initializeState = (serviceId, componentsToMap) => {
@@ -73,6 +107,7 @@ const TestResultInputModal = ({
             resultValue: existingResult?.resultValue || comp.resultValue || '',
             unit: comp.unit || '',
             normalRange: comp.normalRange || comp.referenceRange || '',
+            conclusion: existingResult?.conclusion || '',
           };
         });
       }
@@ -94,13 +129,13 @@ const TestResultInputModal = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [components, open, isPackage, selectedService, test?.testResults]);
 
-  const handleChange = (idx, value) => {
+  const handleChange = (idx, field, value) => {
     if (isPackage && selectedService && selectedService.id) {
       const svcId = selectedService.id;
       setResultsMap((prev) => ({
         ...prev,
         [svcId]: prev[svcId].map((r, i) =>
-          i === idx ? { ...r, resultValue: value } : r
+          i === idx ? { ...r, [field]: value } : r
         ),
       }));
       setTouchedMap((prev) => ({
@@ -109,7 +144,7 @@ const TestResultInputModal = ({
       }));
     } else {
       setResults((prev) =>
-        prev.map((r, i) => (i === idx ? { ...r, resultValue: value } : r))
+        prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r))
       );
       setTouched((prev) => ({ ...prev, [idx]: true }));
     }
@@ -302,6 +337,15 @@ const TestResultInputModal = ({
               >
                 Khoảng bình thường
               </TableCell>
+              <TableCell
+                sx={{
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontFamily: FONT_FAMILY,
+                }}
+              >
+                Kết luận
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -321,7 +365,7 @@ const TestResultInputModal = ({
                         value={
                           resultsMap[selectedService.id][idx]?.resultValue || ''
                         }
-                        onChange={(e) => handleChange(idx, e.target.value)}
+                        onChange={(e) => handleChange(idx, 'resultValue', e.target.value)}
                         error={
                           touchedMap[selectedService.id]?.[idx] &&
                           !resultsMap[selectedService.id][idx]?.resultValue
@@ -340,6 +384,25 @@ const TestResultInputModal = ({
                     <TableCell>
                       {comp.normalRange || comp.referenceRange}
                     </TableCell>
+                    <TableCell>
+                      <FormControl fullWidth size="small">
+                        <Select
+                          value={resultsMap[selectedService.id][idx]?.conclusion || ''}
+                          onChange={(e) => handleChange(idx, 'conclusion', e.target.value)}
+                          disabled={loading}
+                          displayEmpty
+                        >
+                          <MenuItem value="" disabled>
+                            Chọn kết luận
+                          </MenuItem>
+                          {conclusionOptions.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </TableCell>
                   </TableRow>
                 ))
               : !isPackage &&
@@ -353,7 +416,7 @@ const TestResultInputModal = ({
                         variant="outlined"
                         size="small"
                         value={results[idx]?.resultValue || ''}
-                        onChange={(e) => handleChange(idx, e.target.value)}
+                        onChange={(e) => handleChange(idx, 'resultValue', e.target.value)}
                         error={touched[idx] && !results[idx]?.resultValue}
                         helperText={
                           touched[idx] && !results[idx]?.resultValue
@@ -367,6 +430,25 @@ const TestResultInputModal = ({
                     <TableCell>{comp.unit}</TableCell>
                     <TableCell>
                       {comp.normalRange || comp.referenceRange}
+                    </TableCell>
+                    <TableCell>
+                      <FormControl fullWidth size="small">
+                        <Select
+                          value={results[idx]?.conclusion || ''}
+                          onChange={(e) => handleChange(idx, 'conclusion', e.target.value)}
+                          disabled={loading}
+                          displayEmpty
+                        >
+                          <MenuItem value="" disabled>
+                            Chọn kết luận
+                          </MenuItem>
+                          {conclusionOptions.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
                     </TableCell>
                   </TableRow>
                 ))}
