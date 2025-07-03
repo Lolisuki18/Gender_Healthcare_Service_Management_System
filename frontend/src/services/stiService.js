@@ -753,6 +753,16 @@ export const updateTestResults = async (testId, resultsData) => {
   }
 };
 
+// Category Question management
+const getQuestionCategories = async () => {
+  const res = await apiClient.get("/question-categories");
+  // Chuẩn hóa lấy mảng từ res.data.data
+  return Array.isArray(res.data.data) ? res.data.data : [];
+};
+const createQuestionCategory = (data) => apiClient.post("/question-categories", data);
+const updateQuestionCategory = (id, data) => apiClient.put(`/question-categories/${id}`, data);
+const deleteQuestionCategory = (id) => apiClient.delete(`/question-categories/${id}`);
+
 // Export as a default object with all functions
 const stiService = {
   createSTIService,
@@ -783,6 +793,10 @@ const stiService = {
   getActiveSTIServices,
   savePartialTestResults,
   updateTestResults,
+  getQuestionCategories,
+  createQuestionCategory,
+  updateQuestionCategory,
+  deleteQuestionCategory,
 
   // New function to get services within a package
   // getServicesInPackage: async (packageId) => {

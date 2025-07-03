@@ -42,6 +42,7 @@ import STIPackageManagementContent from "./STIPackageManagementContent";
 import BlogManagementContent from "./BlogManagementContent";
 import ReviewManagementContent from "./ReviewManagementContent";
 import ProfileContent from "./ProfileContent";
+import CategoryManagementContent from "./CategoryManagementContent";
 
 // Styled component cho nội dung chính
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
@@ -87,6 +88,8 @@ const StaffProfile = ({ user = {} }) => {
         return <ReviewManagementContent />;
       case "profile":
         return <ProfileContent />;
+      case "categoryManagement":
+        return <CategoryManagementContent />;
       default:
         return <ProfileContent />;
     }
@@ -107,6 +110,8 @@ const StaffProfile = ({ user = {} }) => {
         return "Quản lý đánh giá";
       case "profile":
         return "Hồ sơ cá nhân";
+      case "categoryManagement":
+        return "Quản lý danh mục";
       default:
         return "Hồ sơ cá nhân";
     }
