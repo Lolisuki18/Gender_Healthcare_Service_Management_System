@@ -76,7 +76,7 @@ public class STIServiceController {
      * method: GET
      */
     @GetMapping("/staff")
-    @PreAuthorize("hasRole('ROLE_STAFF')")
+    @PreAuthorize("hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getAllSTIServices() {
         ApiResponse<List<STIServiceResponse>> response = stiServiceService.getAllSTIServices();
         return ResponseEntity.ok(response);
@@ -92,7 +92,6 @@ public class STIServiceController {
         ApiResponse<List<STIServiceResponse>> response = stiServiceService.getActiveSTIServices();
         return ResponseEntity.ok(response);
     }
-
 
     /*
      * description: Lấy thông tin một dịch vụ xét nghiệm STI theo ID
@@ -261,10 +260,10 @@ public class STIServiceController {
      * method: PUT
      * body: List<TestResultRequest>
      * {
-     *   "componentId": 1,
-     *   "resultValue": "120",
-     *   "normalRange": "100-140",
-     *   "unit": "mg/dL"
+     * "componentId": 1,
+     * "resultValue": "120",
+     * "normalRange": "100-140",
+     * "unit": "mg/dL"
      * }
      */
     @PutMapping("/staff/tests/{testId}/update-results")
@@ -308,8 +307,9 @@ public class STIServiceController {
         List<ConclusionOption> options = Stream.of(TestConclusion.values())
                 .map(conclusion -> new ConclusionOption(conclusion.name(), conclusion.getDisplayName()))
                 .collect(Collectors.toList());
-        
-        ApiResponse<List<ConclusionOption>> response = ApiResponse.success("Conclusion options retrieved successfully", options);
+
+        ApiResponse<List<ConclusionOption>> response = ApiResponse.success("Conclusion options retrieved successfully",
+                options);
         return ResponseEntity.ok(response);
     }
 

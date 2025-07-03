@@ -21,7 +21,7 @@
  * AdminProfile → AdminSidebar → Content Components
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Typography,

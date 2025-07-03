@@ -59,11 +59,11 @@ import {
   deleteSTIService,
   getSTIServiceById,
 } from '../../services/stiService';
+import useSTIServicesAndPackages from '../../hooks/useSTIServicesAndPackages';
 
 const STIServiceManagementContent = () => {
+  const { services, loading, error, reload } = useSTIServicesAndPackages();
   // State management
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,25 +111,6 @@ const STIServiceManagementContent = () => {
   });
 
   const [statusFilter, setStatusFilter] = useState('all');
-
-  // Fetch services on component mount
-  useEffect(() => {
-    fetchSTIServices();
-  }, []);
-
-  // Fetch STI Services
-  const fetchSTIServices = async () => {
-    setLoading(true);
-    try {
-      const response = await getAllSTIServices();
-      setServices(response.data || []);
-    } catch (err) {
-      console.error('Error fetching services:', err);
-      toast.error(err.message || 'Failed to load STI services');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Helper function to get active status - handles both is_active (snake_case) and isActive (camelCase)
   const getActiveStatus = (service) => {
@@ -425,7 +406,6 @@ const STIServiceManagementContent = () => {
   // View service details
   const handleViewDetails = async (serviceId) => {
     try {
-      setLoading(true);
       const response = await getSTIServiceById(serviceId);
       if (response.success && response.data) {
         setSelectedService(response.data);
@@ -434,8 +414,6 @@ const STIServiceManagementContent = () => {
     } catch (err) {
       console.error('Error fetching service details:', err);
       toast.error('Error', 'Failed to load service details');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -459,18 +437,16 @@ const STIServiceManagementContent = () => {
     if (!deleteServiceId) return;
 
     try {
-      setLoading(true);
       const response = await deleteSTIService(deleteServiceId);
       if (response.success) {
         toast.success('Success', 'Service deleted successfully');
         // Refresh services
-        fetchSTIServices();
+        reload();
       }
     } catch (err) {
       console.error('Error deleting service:', err);
       toast.error('Error', err.message || 'Failed to delete service');
     } finally {
-      setLoading(false);
       handleCloseDeleteDialog();
     }
   }; // Save service (create/update)
@@ -480,7 +456,6 @@ const STIServiceManagementContent = () => {
       return;
     }
     try {
-      setLoading(true);
       // Prepare DTO data for backend
       const serviceData = {
         name: formData.name,
@@ -532,13 +507,11 @@ const STIServiceManagementContent = () => {
       }
 
       // Refresh services
-      fetchSTIServices();
+      reload();
       handleCloseDialog();
     } catch (err) {
       console.error('Error saving service:', err);
       toast.error('Error', err.message || 'Failed to save service');
-    } finally {
-      setLoading(false);
     }
   };
 

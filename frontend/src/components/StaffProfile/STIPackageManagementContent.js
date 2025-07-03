@@ -57,14 +57,14 @@ import {
 } from '@/services/stiService';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import useSTIServicesAndPackages from '../../hooks/useSTIServicesAndPackages';
 
 const STIPackageManagementContent = () => {
-  // ======================= STATE QUẢN LÝ DỮ LIỆU =======================
-  // Khai báo các biến state để quản lý dữ liệu gói, dịch vụ, filter, form, dialog, loading, error, v.v.
-  // packages: Danh sách các gói xét nghiệm STI
-  const [packages, setPackages] = useState([]);
+  const { services, packages, loading, error, reload } =
+    useSTIServicesAndPackages();
   // availableServices: Danh sách các dịch vụ xét nghiệm có thể chọn khi tạo/sửa gói
-  const [availableServices, setAvailableServices] = useState([]);
+  const availableServices = services;
+  // packages: Danh sách các gói xét nghiệm STI (đã chuẩn hóa)
   // selectedServices: Danh sách ID dịch vụ được chọn cho gói hiện tại
   const [selectedServices, setSelectedServices] = useState([]);
   // formData: Dữ liệu form khi thêm/sửa gói
@@ -91,129 +91,10 @@ const STIPackageManagementContent = () => {
   const [currentPackage, setCurrentPackage] = useState(null);
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
   const [packageDetails, setPackageDetails] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-
-  // ======================= FETCH DỮ LIỆU BAN ĐẦU =======================
-  // Chuyển đổi dữ liệu gói từ backend sang dạng frontend dễ dùng
-  const mapBackendPackageToFrontend = useCallback((pkg) => {
-    return {
-      id: pkg.id,
-      name: pkg.name,
-      description: pkg.description || '',
-      recommended_for: pkg.recommended_for || 'Tất cả',
-      price: pkg.price || 0,
-      isActive:
-        pkg.isActive !== undefined
-          ? pkg.isActive
-          : pkg.active !== undefined
-            ? pkg.active
-            : true,
-      services: Array.isArray(pkg.services)
-        ? pkg.services.map((service) => ({
-            id: service.id,
-            name: service.name,
-            price: service.price || 0,
-            description: service.description || '',
-            isActive:
-              service.isActive !== undefined
-                ? service.isActive
-                : service.active !== undefined
-                  ? service.active
-                  : true,
-          }))
-        : [],
-      createdAt: pkg.createdAt,
-      updatedAt: pkg.updatedAt,
-    };
-  }, []);
-
-  // Lấy danh sách tất cả các gói từ backend
-  const fetchAllPackages = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await getAllSTIPackages();
-
-      const packagesArray = response.data || [];
-
-      const mappedPackages = Array.isArray(packagesArray)
-        ? packagesArray.map(mapBackendPackageToFrontend)
-        : [];
-
-      setPackages(mappedPackages);
-      return { success: true, data: mappedPackages };
-    } catch (err) {
-      console.error('Error fetching STI packages:', err);
-      toast.error(
-        'Không thể tải dữ liệu gói STI: ' +
-          (err.message || 'Lỗi không xác định')
-      );
-      setTimeout(() => setError(null), 5000);
-      return { success: false, error: err };
-    } finally {
-      setLoading(false);
-    }
-  }, [setLoading, setPackages, setError, mapBackendPackageToFrontend]);
-
-  // useEffect đầu tiên: Lấy danh sách dịch vụ xét nghiệm từ backend
-  useEffect(() => {
-    const fetchAvailableServices = async () => {
-      try {
-        const response = await getAllSTIServices();
-        console.log('STI Services API response:', response);
-
-        if (response.data && response.data.length > 0) {
-          console.log(
-            'Service field names from API:',
-            Object.keys(response.data[0])
-          );
-        }
-
-        const servicesArray = response.data || [];
-
-        const mappedServices = Array.isArray(servicesArray)
-          ? servicesArray.map((service) => ({
-              id: service.id,
-              name: service.name,
-              description: service.description || '',
-              price: service.price || 0,
-              isActive:
-                service.isActive !== undefined ? service.isActive : true,
-            }))
-          : [];
-
-        setAvailableServices(mappedServices);
-      } catch (err) {
-        console.error('Error fetching available services:', err);
-        toast.error(
-          'Không thể tải dữ liệu dịch vụ: ' +
-            (err.message || 'Lỗi không xác định')
-        );
-        setTimeout(() => setError(null), 5000);
-      }
-    };
-
-    fetchAvailableServices();
-  }, []);
-
-  // useEffect thứ hai: Lấy danh sách các gói xét nghiệm từ backend
-  useEffect(() => {
-    const loadPackages = async () => {
-      console.log('Initial component load - fetching packages');
-      const result = await fetchAllPackages();
-      console.log('Initial load result:', result);
-      if (result.success) {
-        toast.success('Đã tải dữ liệu gói STI thành công');
-        setTimeout(() => setSuccess(null), 3000);
-      }
-    };
-
-    loadPackages();
-  }, [fetchAllPackages]);
 
   // ======================= HANDLER CHO UI VÀ FORM =======================
 
@@ -363,7 +244,6 @@ const STIPackageManagementContent = () => {
     }
 
     try {
-      setLoading(true);
       const selectedServicesData = availableServices.filter((service) =>
         selectedServices.includes(service.id)
       );
@@ -450,13 +330,9 @@ const STIPackageManagementContent = () => {
 
       if (currentPackage) {
         try {
-          const refreshResult = await fetchAllPackages();
+          const refreshResult = await reload();
           if (!refreshResult.success) {
-            setPackages(
-              packages.map((pkg) =>
-                pkg.id === currentPackage.id ? mappedPackage : pkg
-              )
-            );
+            // setPackages(packages.map((pkg) => pkg.id === currentPackage.id ? mappedPackage : pkg));
           }
           toast.success(`Cập nhật gói STI ${mappedPackage.name} thành công`);
         } catch (refreshError) {
@@ -464,20 +340,16 @@ const STIPackageManagementContent = () => {
             'Failed to refresh packages after update:',
             refreshError
           );
-          setPackages(
-            packages.map((pkg) =>
-              pkg.id === currentPackage.id ? mappedPackage : pkg
-            )
-          );
+          // setPackages(packages.map((pkg) => pkg.id === currentPackage.id ? mappedPackage : pkg));
           toast.success(
             `Cập nhật gói STI ${mappedPackage.name} thành công, nhưng danh sách chưa được làm mới hoàn toàn`
           );
         }
       } else {
         try {
-          const result = await fetchAllPackages();
+          const result = await reload();
           if (!result.success) {
-            setPackages([...packages, mappedPackage]);
+            // setPackages([...packages, mappedPackage]);
           }
           toast.success(`Thêm gói STI ${mappedPackage.name} thành công`);
         } catch (refreshError) {
@@ -485,7 +357,7 @@ const STIPackageManagementContent = () => {
             'Failed to refresh packages after create:',
             refreshError
           );
-          setPackages([...packages, mappedPackage]);
+          // setPackages([...packages, mappedPackage]);
           toast.success(
             `Thêm gói STI ${mappedPackage.name} thành công, nhưng danh sách chưa được làm mới`
           );
@@ -496,9 +368,6 @@ const STIPackageManagementContent = () => {
       toast.error(
         'Không thể lưu gói STI: ' + (err.message || 'Lỗi không xác định')
       );
-      setTimeout(() => setError(null), 5000);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -506,18 +375,16 @@ const STIPackageManagementContent = () => {
   const handleDeletePackage = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa gói này?')) {
       try {
-        setLoading(true);
-
         const response = await deleteSTIPackage(id);
 
         if (!response || !response.success) {
           throw new Error(response?.message || 'Could not delete the package');
         }
 
-        setPackages(packages.filter((pkg) => pkg.id !== id));
+        // setPackages(packages.filter((pkg) => pkg.id !== id));
 
         try {
-          await fetchAllPackages();
+          await reload();
         } catch (refreshError) {
           console.error(
             'Failed to refresh packages after delete:',
@@ -532,9 +399,6 @@ const STIPackageManagementContent = () => {
         toast.error(
           'Không thể xóa gói STI: ' + (err.message || 'Lỗi không xác định')
         );
-        setTimeout(() => setError(null), 5000);
-      } finally {
-        setLoading(false);
       }
     }
   };
@@ -641,7 +505,7 @@ const STIPackageManagementContent = () => {
             mb: 3,
             borderRadius: '8px',
           }}
-          onClose={() => setError(null)}
+          onClose={() => {}}
         >
           {error}
         </Alert>
