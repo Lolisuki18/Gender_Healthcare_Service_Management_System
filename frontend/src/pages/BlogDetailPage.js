@@ -28,9 +28,10 @@ import SendIcon from '@mui/icons-material/Send';
 import ForumIcon from '@mui/icons-material/Forum';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import VerifiedIcon from '@mui/icons-material/Verified';
-// import blogService from '@/services/blogService'; // Comment out API service
-import { getBlogById, getRelatedBlogs } from '@/dataDemo/mockBlogData'; // Import mock data functions
-import { getQuestionsByBlogId, submitQuestion } from '@/dataDemo/mockQuestionData'; // Import mock question functions
+import blogService from '@/services/blogService'; // Sử dụng API service
+import { getFullImageUrl } from '../utils/imageUrl';
+// import { getBlogById, getRelatedBlogs } from '@/dataDemo/mockBlogData'; // Bỏ mock data
+// import { getQuestionsByBlogId, submitQuestion } from '@/dataDemo/mockQuestionData'; // Bỏ mock question
 
 const BlogDetailPage = () => {
   // ===== STATE MANAGEMENT =====
@@ -38,10 +39,6 @@ const BlogDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [relatedBlogs, setRelatedBlogs] = useState([]);
-  const [question, setQuestion] = useState('');
-  const [questionSubmitting, setQuestionSubmitting] = useState(false);
-  const [questionSubmitted, setQuestionSubmitted] = useState(false);
-  const [existingQuestions, setExistingQuestions] = useState([]);
   
   const { id } = useParams();
   const navigate = useNavigate();
@@ -51,40 +48,34 @@ const BlogDetailPage = () => {
     const fetchBlogDetail = async () => {
       try {
         setLoading(true);
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Use mock data instead of API
-        const data = getBlogById(id);
+        const data = await blogService.getBlogById(id);
         if (!data) {
           throw new Error('Blog không tồn tại');
         }
         setBlog(data);
-        
-        // Get related blogs
-        const related = getRelatedBlogs(parseInt(id), 3);
-        setRelatedBlogs(related);
-        
-        // Get existing questions for this blog
-        const questions = getQuestionsByBlogId(parseInt(id));
-        setExistingQuestions(questions);
-        
+        // TODO: Nếu muốn lấy related blogs, có thể gọi thêm API search hoặc latest
+        setRelatedBlogs([]); // Tạm thời bỏ liên quan
       } catch (err) {
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-
     if (id) {
       fetchBlogDetail();
     }
   }, [id]);
 
   // ===== UTILITY FUNCTIONS =====
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Chưa cập nhật';
-    const date = new Date(dateString);
+  const formatDate = (dateInput) => {
+    if (!dateInput) return 'Chưa cập nhật';
+    let date = dateInput;
+    if (Array.isArray(date) && date.length >= 3) {
+      date = new Date(date[0], date[1] - 1, date[2], date[3] || 0, date[4] || 0, date[5] || 0, date[6] || 0);
+    } else if (!(date instanceof Date)) {
+      date = new Date(date);
+    }
+    if (isNaN(date.getTime())) return 'Chưa cập nhật';
     return date.toLocaleDateString('vi-VN', {
       year: 'numeric',
       month: 'long',
@@ -114,38 +105,6 @@ const BlogDetailPage = () => {
 
   const handleRelatedBlogClick = (blogId) => {
     navigate(`/blog/${blogId}`);
-  };
-
-  const handleQuestionChange = (event) => {
-    setQuestion(event.target.value);
-  };
-
-  const handleQuestionSubmit = async (event) => {
-    event.preventDefault();
-    if (!question.trim()) return;
-
-    try {
-      setQuestionSubmitting(true);
-      
-      // Use mock API to submit question
-      const newQuestion = await submitQuestion(blog.id, question.trim());
-      
-      // Update existing questions list
-      setExistingQuestions(prev => [newQuestion, ...prev]);
-      
-      setQuestionSubmitted(true);
-      setQuestion('');
-      
-      // Reset success message after 3 seconds
-      setTimeout(() => {
-        setQuestionSubmitted(false);
-      }, 3000);
-      
-    } catch (error) {
-      console.error('Error submitting question:', error);
-    } finally {
-      setQuestionSubmitting(false);
-    }
   };
 
   // ===== LOADING SKELETON =====
@@ -283,11 +242,11 @@ const BlogDetailPage = () => {
             boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
           }}>
             {/* Hero Image */}
-            {blog.imageUrl && (
+            {(blog.displayThumbnail || blog.thumbnailImage || blog.existingThumbnail) && (
               <Box
                 sx={{
                   height: '400px',
-                  backgroundImage: `url(${blog.imageUrl})`,
+                  backgroundImage: `url(${getFullImageUrl(blog.displayThumbnail || blog.thumbnailImage || blog.existingThumbnail)})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   position: 'relative'
@@ -304,9 +263,9 @@ const BlogDetailPage = () => {
                   }}
                 >
                   {/* Category */}
-                  {blog.category && (
+                  {blog.categoryName && (
                     <Chip
-                      label={blog.category}
+                      label={blog.categoryName}
                       sx={{
                         backgroundColor: 'rgba(255,255,255,0.9)',
                         color: '#1976d2',
@@ -359,7 +318,7 @@ const BlogDetailPage = () => {
                     <PersonIcon sx={{ fontSize: '1rem' }} />
                   </Avatar>
                   <Typography variant="body1" sx={{ color: '#546e7a', fontWeight: 500 }}>
-                    {blog.author || 'Admin'}
+                    {blog.authorName || 'Admin'}
                   </Typography>
                 </Box>
 
@@ -386,53 +345,6 @@ const BlogDetailPage = () => {
                     </Typography>
                   </Box>
                 )}
-              </Box>
-
-              {/* Action Buttons */}
-              <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<ShareIcon />}
-                  onClick={handleShare}
-                  sx={{
-                    backgroundColor: '#1976d2',
-                    color: 'white',
-                    fontWeight: 600,
-                    py: 1,
-                    px: 2.5,
-                    borderRadius: '8px',
-                    textTransform: 'none',
-                    fontSize: '0.9rem',
-                    boxShadow: '0 4px 15px rgba(25, 118, 210, 0.2)',
-                    '&:hover': {
-                      backgroundColor: '#1565c0',
-                      boxShadow: '0 6px 20px rgba(25, 118, 210, 0.3)'
-                    }
-                  }}
-                >
-                  Chia sẻ
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<FavoriteIcon />}
-                  sx={{
-                    borderColor: '#f50057',
-                    color: '#f50057',
-                    fontWeight: 600,
-                    py: 1,
-                    px: 2.5,
-                    borderRadius: '8px',
-                    textTransform: 'none',
-                    fontSize: '0.9rem',
-                    '&:hover': {
-                      backgroundColor: '#f50057',
-                      color: 'white',
-                      borderColor: '#f50057'
-                    }
-                  }}
-                >
-                  Yêu thích
-                </Button>
               </Box>
 
               {/* Blog Content */}
@@ -508,351 +420,41 @@ const BlogDetailPage = () => {
                 }}
                 dangerouslySetInnerHTML={{ __html: blog.content }}
               />
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Question Section */}
-        {blog && (
-          <Card sx={{ 
-            borderRadius: '16px', 
-            mt: 6,
-            mb: 6,
-            backgroundColor: '#ffffff',
-            border: '1px solid #e3f2fd',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
-          }}>
-            <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-              <Box sx={{ 
-                display: 'flex', 
-                flexDirection: { xs: 'column', sm: 'row' },
-                alignItems: { xs: 'flex-start', sm: 'center' }, 
-                gap: 2, 
-                mb: 3 
-              }}>
-                <QuestionAnswerIcon sx={{ 
-                  fontSize: '1.8rem', 
-                  color: '#1976d2'
-                }} />
-                <Typography 
-                  variant="h4" 
-                  sx={{ 
-                    fontWeight: 700,
-                    color: '#1a237e',
-                    fontSize: { xs: '1.3rem', md: '1.6rem' }
-                  }}
-                >
-                  Đặt câu hỏi cho bác sĩ
-                </Typography>
-              </Box>
-
-              <Typography 
-                variant="body1" 
-                sx={{ 
-                  color: '#546e7a',
-                  fontSize: '1rem',
-                  lineHeight: 1.6,
-                  mb: 3
-                }}
-              >
-                Bạn có thắc mắc gì về bài viết này? Hãy đặt câu hỏi và bác sĩ chuyên khoa sẽ tư vấn cho bạn.
-              </Typography>
-
-              {questionSubmitted && (
-                <Alert 
-                  severity="success" 
-                  sx={{ 
-                    mb: 3,
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                    border: '1px solid rgba(76, 175, 80, 0.2)',
-                    '& .MuiAlert-message': {
-                      fontSize: '0.95rem',
-                      fontWeight: 500
-                    }
-                  }}
-                >
-                  Câu hỏi của bạn đã được gửi thành công! Bác sĩ sẽ phản hồi sớm nhất có thể.
-                </Alert>
-              )}
-
-              <Box component="form" onSubmit={handleQuestionSubmit}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  placeholder="Nhập câu hỏi của bạn tại đây..."
-                  value={question}
-                  onChange={handleQuestionChange}
-                  disabled={questionSubmitting}
-                  sx={{
-                    mb: 2.5,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '12px',
-                      backgroundColor: '#f8fbff',
-                      fontSize: '1rem',
-                      '& fieldset': {
-                        borderColor: '#e3f2fd',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: '#1976d2',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#1976d2',
-                        borderWidth: '2px',
-                      },
-                    },
-                    '& .MuiOutlinedInput-input': {
-                      padding: '14px',
-                      '&::placeholder': {
-                        color: '#90a4ae',
-                        opacity: 1
-                      }
-                    }
-                  }}
-                />
-
-                <Box sx={{ 
-                  display: 'flex', 
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  justifyContent: 'space-between', 
-                  alignItems: { xs: 'stretch', sm: 'center' },
-                  gap: { xs: 2, sm: 0 }
-                }}>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      color: '#90a4ae',
-                      fontSize: '0.85rem',
-                      order: { xs: 2, sm: 1 }
-                    }}
-                  >
-                    * Câu hỏi sẽ được bác sĩ chuyên khoa tư vấn trong vòng 24h
-                  </Typography>
-                  
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    startIcon={questionSubmitting ? null : <SendIcon />}
-                    disabled={!question.trim() || questionSubmitting}
-                    sx={{
-                      backgroundColor: '#1976d2',
-                      color: 'white',
-                      fontWeight: 600,
-                      py: 1.2,
-                      px: 3,
-                      borderRadius: '8px',
-                      textTransform: 'none',
-                      fontSize: '0.95rem',
-                      minWidth: '130px',
-                      boxShadow: '0 4px 15px rgba(25, 118, 210, 0.2)',
-                      order: { xs: 1, sm: 2 },
-                      '&:hover': {
-                        backgroundColor: '#1565c0',
-                        boxShadow: '0 6px 20px rgba(25, 118, 210, 0.3)'
-                      },
-                      '&:disabled': {
-                        backgroundColor: '#e0e0e0',
-                        color: '#999',
-                        boxShadow: 'none'
-                      }
-                    }}
-                  >
-                    {questionSubmitting ? 'Đang gửi...' : 'Gửi câu hỏi'}
-                  </Button>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Existing Questions Section */}
-        {blog && existingQuestions.length > 0 && (
-          <Card sx={{ 
-            borderRadius: '24px', 
-            mt: 6,
-            mb: 6,
-            backgroundColor: '#ffffff',
-            border: '1px solid #e0e0e0',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
-          }}>
-            <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
-              <Box sx={{ 
-                display: 'flex', 
-                flexDirection: { xs: 'column', sm: 'row' },
-                alignItems: { xs: 'flex-start', sm: 'center' }, 
-                gap: 2, 
-                mb: 4 
-              }}>
-                <ForumIcon sx={{ 
-                  fontSize: '2rem', 
-                  color: '#1976d2',
-                  filter: 'drop-shadow(0 2px 4px rgba(25, 118, 210, 0.2))'
-                }} />
-                <Typography 
-                  variant="h4" 
-                  sx={{ 
-                    fontWeight: 800,
-                    color: '#2c3e50',
-                    fontSize: { xs: '1.5rem', md: '2rem' }
-                  }}
-                >
-                  Câu hỏi từ độc giả ({existingQuestions.length})
-                </Typography>
-              </Box>
-
-              <Box sx={{ mt: 4 }}>
-                {existingQuestions.map((question, index) => (
-                  <Box 
-                    key={question.id}
-                    sx={{ 
-                      mb: 4,
-                      pb: 4,
-                      borderBottom: index < existingQuestions.length - 1 ? '1px solid #e0e0e0' : 'none'
-                    }}
-                  >
-                    {/* Question */}
-                    <Box sx={{ 
-                      backgroundColor: '#f8f9fa',
-                      borderRadius: '16px',
-                      p: 3,
-                      mb: 3,
-                      border: '1px solid #e9ecef'
-                    }}>
-                      <Box sx={{ 
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2,
-                        mb: 2
-                      }}>
-                        <Avatar 
-                          sx={{ 
-                            width: 40, 
-                            height: 40,
-                            backgroundColor: '#1976d2',
-                            fontSize: '1rem',
-                            fontWeight: 700
-                          }}
-                        >
-                          {question.userName.charAt(0)}
-                        </Avatar>
-                        <Box>
-                          <Typography 
-                            variant="subtitle1" 
-                            sx={{ 
-                              fontWeight: 700,
-                              color: '#2c3e50',
-                              fontSize: '1.1rem'
-                            }}
-                          >
-                            {question.userName}
-                          </Typography>
-                          <Typography 
-                            variant="caption" 
-                            sx={{ 
-                              color: '#6c757d',
-                              fontSize: '0.9rem'
-                            }}
-                          >
-                            {formatDate(question.createdAt)}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          label={question.status === 'answered' ? 'Đã trả lời' : 'Chờ trả lời'}
-                          size="small"
-                          sx={{
-                            ml: 'auto',
-                            backgroundColor: question.status === 'answered' ? '#e8f5e8' : '#fff3cd',
-                            color: question.status === 'answered' ? '#2e7d32' : '#856404',
-                            fontWeight: 600,
-                            fontSize: '0.8rem'
-                          }}
-                        />
-                      </Box>
-                      <Typography 
-                        variant="body1" 
-                        sx={{ 
-                          lineHeight: 1.7,
-                          color: '#4a5568',
-                          fontSize: '1.1rem'
-                        }}
-                      >
-                        {question.question}
+              {/* Blog Sections */}
+              {Array.isArray(blog.sections) && blog.sections.length > 0 && (
+                <Box sx={{ mt: 6 }}>
+                  {blog.sections.map((section, idx) => (
+                    <Box key={section.id || idx} sx={{ mb: 5 }}>
+                      <Typography variant="h4" sx={{ fontWeight: 700, color: '#1976d2', mb: 1 }}>
+                        {section.sectionTitle}
                       </Typography>
-                    </Box>
-
-                    {/* Doctor Reply */}
-                    {question.status === 'answered' && question.doctorReply && (
-                      <Box sx={{ 
-                        backgroundColor: 'rgba(25, 118, 210, 0.05)',
-                        borderRadius: '16px',
-                        p: 3,
-                        border: '1px solid rgba(25, 118, 210, 0.1)',
-                        position: 'relative'
-                      }}>
-                        <Box sx={{ 
+                      {section.displaySectionImage || section.sectionImage || section.existingSectionImage ? (
+                        <Box sx={{
+                          width: '100%',
+                          minHeight: 180,
+                          background: '#f8fbff',
+                          borderRadius: '12px',
+                          mb: 2,
+                          overflow: 'hidden',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 2,
-                          mb: 2
+                          justifyContent: 'center',
                         }}>
-                          <Avatar 
-                            sx={{ 
-                              width: 40, 
-                              height: 40,
-                              backgroundColor: '#1976d2',
-                              fontSize: '1rem',
-                              fontWeight: 700
-                            }}
-                          >
-                            <MedicalServicesIcon sx={{ fontSize: '1.2rem' }} />
-                          </Avatar>
-                          <Box>
-                            <Typography 
-                              variant="subtitle1" 
-                              sx={{ 
-                                fontWeight: 700,
-                                color: '#1976d2',
-                                fontSize: '1.1rem'
-                              }}
-                            >
-                              {question.doctorReply.doctorName}
-                            </Typography>
-                            <Typography 
-                              variant="caption" 
-                              sx={{ 
-                                color: '#6c757d',
-                                fontSize: '0.9rem'
-                              }}
-                            >
-                              {question.doctorReply.doctorTitle} • {formatDate(question.doctorReply.repliedAt)}
-                            </Typography>
-                          </Box>
-                          <VerifiedIcon sx={{ 
-                            color: '#1976d2',
-                            fontSize: '1.2rem',
-                            ml: 'auto'
-                          }} />
+                          <img
+                            src={getFullImageUrl(section.displaySectionImage || section.sectionImage || section.existingSectionImage)}
+                            alt={section.sectionTitle || `Section ${idx + 1}`}
+                            style={{ maxWidth: '100%', maxHeight: 320, objectFit: 'cover' }}
+                          />
                         </Box>
-                        <Typography 
-                          variant="body1" 
-                          sx={{ 
-                            lineHeight: 1.7,
-                            color: '#4a5568',
-                            fontSize: '1.1rem',
-                            backgroundColor: 'white',
-                            borderRadius: '12px',
-                            p: 2.5,
-                            border: '1px solid rgba(25, 118, 210, 0.1)'
-                          }}
-                        >
-                          {question.doctorReply.content}
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
-                ))}
-              </Box>
+                      ) : null}
+                      <Typography variant="body1" sx={{ color: '#37474f', fontSize: '1.1rem' }}>
+                        {section.sectionContent}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </CardContent>
           </Card>
         )}

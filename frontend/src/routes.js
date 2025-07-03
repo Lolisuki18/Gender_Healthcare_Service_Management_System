@@ -27,6 +27,7 @@ import ConsultationPage from './pages/ConsultantionPage';
 import TestRegistrationPage from '@/pages/TestRegistrationPage';
 import OvulationPage from './pages/OvulationPage';
 import PrivacyPage from '@/pages/PrivacyPage';
+import BlogCreatePage from './pages/BlogCreatePage';
 
 const AppRoutes = () => {
   // Lấy thông tin user từ localStorage
@@ -69,6 +70,7 @@ const AppRoutes = () => {
         <Route path="/ovulation" element={<OvulationPage />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:id" element={<BlogDetailPage />} />
+        <Route path="/blog/create" element={<BlogCreatePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />

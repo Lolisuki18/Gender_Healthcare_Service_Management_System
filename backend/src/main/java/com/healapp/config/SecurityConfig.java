@@ -239,6 +239,7 @@ public class SecurityConfig {
                         // All other admin endpoints
                         .requestMatchers("/admin/**").hasRole("ADMIN") // Default rule: all other endpoints require
                                                                        // authentication
+
                         .anyRequest().authenticated())
 
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
