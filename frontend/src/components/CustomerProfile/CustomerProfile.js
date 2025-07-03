@@ -32,18 +32,18 @@ import {
 } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import DynamicSideBar from '@/components/common/DynamicSideBar';
+import DynamicSideBar from '@/components/siderBar/DynamicSideBar';
 import localStorageUtil from '@/utils/localStorage';
-import ProfileContent from '@/components/CustomerProfile/ProfileContent';
+import ProfileContent from '@/components/siderBar/ProfileContent';
 import AppointmentsContent from '@/components/CustomerProfile/AppointmentsContent';
 import DashboardContent from '@/components/CustomerProfile/DashboardContent';
-import MedicalHistoryContent from '@/components/CustomerProfile/MedicalHistoryContent';
+import MedicalHistoryContent from '@/components/siderBar/MedicalHistoryContent';
 import PaymentHistoryContent from '@/components/CustomerProfile/PaymentHistoryContent';
-import InvoicesContent from '@/components/CustomerProfile/InvoicesContent';
+import InvoicesContent from '@/components/siderBar/InvoicesContent';
 import NotificationsContent from '@/components/CustomerProfile/NotificationsContent';
 import HelpContent from '@/components/CustomerProfile/HelpContent';
 import QuestionsContent from '@/components/CustomerProfile/QuestionsContent';
-import SecurityContent from '@/components/CustomerProfile/SecurityContent';
+import SecurityContent from '@/components/siderBar/SecurityContent';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar

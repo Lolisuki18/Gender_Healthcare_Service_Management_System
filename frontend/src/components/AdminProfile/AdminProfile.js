@@ -43,7 +43,7 @@ import NoLoggedInView from '../common/NoLoggedInView';
 import localStorageUtil from '@/utils/localStorage';
 import { useNavigate } from 'react-router-dom';
 import { notify } from '@/utils/notify';
-import DynamicSideBar from '@/components/common/DynamicSideBar';
+import DynamicSideBar from '@/components/siderBar/DynamicSideBar';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar

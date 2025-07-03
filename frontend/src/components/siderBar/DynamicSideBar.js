@@ -21,6 +21,8 @@ import {
   Close as CloseIcon,
 } from '@mui/icons-material';
 import { sidebarMenuConfig } from './sidebarConfig';
+import { useUser } from '@/context/UserContext';
+import imageUrl from '../../utils/imageUrl';
 
 // Constants
 const drawerWidth = 280;
@@ -81,13 +83,8 @@ const LogoSection = styled(Box)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.8)',
 }));
 
-const DynamicSideBar = ({
-  open,
-  onClose,
-  selectedItem,
-  onItemSelect,
-  user,
-}) => {
+const DynamicSideBar = ({ open, onClose, selectedItem, onItemSelect }) => {
+  const { user } = useUser();
   const [expandedItems, setExpandedItems] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
   const userRole = user?.role || 'CUSTOMER';
@@ -178,7 +175,9 @@ const DynamicSideBar = ({
       <UserProfile>
         <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
           <Avatar
-            src={user?.avatar}
+            src={
+              user?.avatar ? imageUrl.getFullImageUrl(user.avatar) : undefined
+            }
             alt={user?.fullName || 'User'}
             imgProps={{
               loading: 'eager',

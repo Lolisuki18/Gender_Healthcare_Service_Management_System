@@ -28,7 +28,7 @@ import {
 } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import DynamicSideBar from '@/components/common/DynamicSideBar';
+import DynamicSideBar from '@/components/siderBar/DynamicSideBar';
 import localStorageUtil from '@/utils/localStorage';
 
 // Import content components
@@ -36,10 +36,12 @@ import MyQuestionsContent from './MyQuestionsContent';
 // New components to be created
 // The following components will be created in this task
 import ConsultantProfileContent from './ConsultantProfileContent';
-import ConsultantSecurityContent from './ConsultantSecurityContent';
+import ConsultantSecurityContent from '../siderBar/SecurityContent';
 import MyConsultationsContent from './MyConsultationsContent';
 import STITestsContent from './STITestsContent';
 import MyReviewsContent from './MyReviewsContent';
+import MedicalHistoryContent from '../siderBar/MedicalHistoryContent';
+import InvoicesContent from '../siderBar/InvoicesContent';
 
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
   flexGrow: 1,
@@ -103,6 +105,10 @@ const ConsultantProfile = ({ user = {} }) => {
         return <STITestsContent />;
       case 'my-reviews':
         return <MyReviewsContent />;
+      case 'medical-history':
+        return <MedicalHistoryContent />;
+      case 'invoices':
+        return <InvoicesContent />;
       default:
         return <ConsultantProfileContent />;
     }

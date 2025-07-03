@@ -432,6 +432,7 @@ public class UserService {
             user.setFullName(request.getFullName());
             user.setPhone(request.getPhone());
             user.setBirthDay(request.getBirthDay());
+            user.setAddress(request.getAddress());
 
             if (request.getGender() != null && !request.getGender().trim().isEmpty()) {
                 try {

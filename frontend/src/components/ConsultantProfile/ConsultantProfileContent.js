@@ -26,6 +26,9 @@ import {
   Stack,
   Chip,
   Card,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -47,6 +50,11 @@ import {
 import { styled } from '@mui/material/styles';
 import AvatarUpload from '../common/AvatarUpload';
 import apiClient from '../../services/api';
+import {
+  formatDateTimeFromArray,
+  formatDateDisplay,
+} from '../../utils/dateUtils';
+import imageUrl from '../../utils/imageUrl';
 
 // Styled components - giống ProfileContent
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -369,11 +377,42 @@ const ConsultantProfileContent = () => {
         setUserProfile(userData);
 
         // Prepare form data with personal info
+        let dobValue = '';
+        if (Array.isArray(userData.birthDay)) {
+          dobValue = userData.birthDay;
+        } else if (
+          typeof userData.birthDay === 'string' &&
+          userData.birthDay.match(/^\d{4}-\d{2}-\d{2}$/)
+        ) {
+          dobValue = userData.birthDay;
+        } else if (
+          typeof userData.birthDay === 'number' ||
+          (typeof userData.birthDay === 'string' &&
+            userData.birthDay.match(/^\d{7,8}$/))
+        ) {
+          // Trường hợp nhận được 2025724 hoặc 20250724
+          const str = userData.birthDay.toString();
+          if (str.length === 7) {
+            // 2025724 -> 2025,7,24
+            dobValue = [
+              parseInt(str.slice(0, 4)),
+              parseInt(str.slice(4, 5)),
+              parseInt(str.slice(5, 7)),
+            ];
+          } else if (str.length === 8) {
+            // 20250724 -> 2025,07,24
+            dobValue = [
+              parseInt(str.slice(0, 4)),
+              parseInt(str.slice(4, 6)),
+              parseInt(str.slice(6, 8)),
+            ];
+          }
+        }
         const personalInfo = {
           fullName: userData.fullName || '',
           email: userData.email || '',
-          phone: userData.phoneNumber || userData.phone || '', // Try both phoneNumber and phone
-          dob: userData.dob || '',
+          phone: userData.phoneNumber || userData.phone || '',
+          dob: dobValue,
           gender: userData.gender || '',
           address: userData.address || '',
           avatar: userData.avatar || '',
@@ -467,7 +506,7 @@ const ConsultantProfileContent = () => {
       const personalInfoPayload = {
         fullName: formData.fullName,
         phone: formData.phone,
-        dob: formData.dob,
+        birthDay: formData.dob,
         gender: formData.gender,
         address: formData.address,
       };
@@ -524,19 +563,6 @@ const ConsultantProfileContent = () => {
   const handleCloseAvatarModal = () => {
     setIsAvatarModalOpen(false);
     setAvatarError('');
-  };
-
-  /**
-   * Handle avatar upload success
-   */
-  const handleAvatarUploadSuccess = (avatarPath) => {
-    setFormData((prev) => ({ ...prev, avatar: avatarPath }));
-    setIsAvatarModalOpen(false);
-    setAvatarError('');
-    // Reload data để sync với server
-    loadProfileData();
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 3000);
   };
 
   /**
@@ -741,7 +767,11 @@ const ConsultantProfileContent = () => {
                   }}
                 >
                   <Avatar
-                    src={formData.avatar}
+                    src={
+                      formData.avatar
+                        ? imageUrl.getFullImageUrl(formData.avatar)
+                        : undefined
+                    }
                     sx={{
                       width: { xs: 100, md: 140 },
                       height: { xs: 100, md: 140 },
@@ -866,7 +896,7 @@ const ConsultantProfileContent = () => {
                         variant="body1"
                         sx={{ fontWeight: 600, color: '#2D3748' }}
                       >
-                        {formData.dob || 'Chưa cập nhật'}
+                        {formatDateDisplay(formData.dob)}
                       </Typography>
                     </Paper>
                   </Grid>
@@ -932,12 +962,12 @@ const ConsultantProfileContent = () => {
                         spacing={1}
                         sx={{ mb: 1 }}
                       >
-                        <EmailIcon sx={{ fontSize: 16, color: '#38A169' }} />
+                        <AddressIcon sx={{ fontSize: 16, color: '#38A169' }} />
                         <Typography
                           variant="body2"
                           sx={{ color: '#4A5568', fontWeight: 600 }}
                         >
-                          Email liên hệ
+                          Địa chỉ hiện tại
                         </Typography>
                       </Stack>
                       <Typography
@@ -948,7 +978,7 @@ const ConsultantProfileContent = () => {
                           wordBreak: 'break-word',
                         }}
                       >
-                        {formData.email || 'Chưa cập nhật'}
+                        {formData.address || 'Chưa cập nhật'}
                       </Typography>
                     </Paper>
                   </Grid>
@@ -1092,35 +1122,12 @@ const ConsultantProfileContent = () => {
                 iconColor="#4A90E2"
               />
             </Grid>{' '}
-            <Grid item xs={12}>
-              <FieldInfoBox
-                icon={<EmailIcon />}
-                label="Email"
-                name="email"
-                value={formData.email}
-                type="email"
-                isEditing={isEditing}
-                disabled={true}
-                iconColor="#E53E3E"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FieldInfoBox
-                icon={<PhoneIcon />}
-                label="Số điện thoại"
-                name="phone"
-                value={formData.phone}
-                onChange={handleFormChange}
-                isEditing={isEditing}
-                iconColor="#38A169"
-              />
-            </Grid>
             <Grid item xs={12} sm={6}>
               <FieldInfoBox
                 icon={<CakeIcon />}
                 label="Ngày sinh"
                 name="dob"
-                value={formData.dob}
+                value={formatDateDisplay(formData.dob)}
                 onChange={handleFormChange}
                 isEditing={isEditing}
                 type="date"
@@ -1220,16 +1227,66 @@ const ConsultantProfileContent = () => {
           </Grid>{' '}
         </Box>
       </StyledPaper>
-      {/* Avatar Upload Modal */}
+      {/* Avatar Upload Modal (Dialog style giống ProfileContent.js) */}
       {isAvatarModalOpen && (
-        <AvatarUpload
+        <Dialog
           open={isAvatarModalOpen}
           onClose={handleCloseAvatarModal}
-          onAvatarChange={handleAvatarUploadSuccess}
-          onError={handleAvatarUploadError}
-          currentAvatar={formData.avatar}
-          error={avatarError}
-        />
+          aria-labelledby="avatar-dialog-title"
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: '16px',
+              boxShadow: 24,
+            },
+          }}
+        >
+          <DialogTitle
+            id="avatar-dialog-title"
+            sx={{ fontWeight: 700, textAlign: 'center' }}
+          >
+            Cập nhật ảnh đại diện
+          </DialogTitle>
+          <DialogContent>
+            {avatarError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {avatarError}
+              </Alert>
+            )}
+            <AvatarUpload
+              currentImage={formData.avatar}
+              onUploadSuccess={(avatarPath) => {
+                setFormData((prev) => ({ ...prev, avatar: avatarPath }));
+                setUserProfile((prev) =>
+                  prev ? { ...prev, avatar: avatarPath } : prev
+                );
+                // Cập nhật localStorage giống ProfileContent.js
+                const user = JSON.parse(localStorage.getItem('user'));
+                if (user) {
+                  user.avatar = avatarPath;
+                  localStorage.setItem('user', JSON.stringify(user));
+                }
+                const userProfile = JSON.parse(
+                  localStorage.getItem('userProfile')
+                );
+                if (userProfile && userProfile.data) {
+                  userProfile.data.avatar = avatarPath;
+                  localStorage.setItem(
+                    'userProfile',
+                    JSON.stringify(userProfile)
+                  );
+                }
+                setIsAvatarModalOpen(false);
+                setAvatarError('');
+                setSuccess(true);
+                setTimeout(() => setSuccess(false), 2000);
+              }}
+              onUploadError={handleAvatarUploadError}
+              onClose={handleCloseAvatarModal}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </Box>
   );

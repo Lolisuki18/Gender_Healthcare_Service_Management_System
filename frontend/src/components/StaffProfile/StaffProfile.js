@@ -32,7 +32,7 @@ import {
 } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import DynamicSideBar from '@/components/common/DynamicSideBar';
+import DynamicSideBar from '@/components/siderBar/DynamicSideBar';
 import localStorageUtil from '@/utils/localStorage';
 
 // Import content components
@@ -42,8 +42,11 @@ import STITestManagementContent from './STITestManagementContent';
 import STIPackageManagementContent from './STIPackageManagementContent';
 import BlogManagementContent from './BlogManagementContent';
 import ReviewManagementContent from './ReviewManagementContent';
-import ProfileContent from './ProfileContent';
+import ProfileContent from '@/components/siderBar/ProfileContent';
 import CategoryManagementContent from './CategoryManagementContent';
+import SecurityContent from '../siderBar/SecurityContent';
+import MedicalHistoryContent from '../siderBar/MedicalHistoryContent';
+import InvoicesContent from '../siderBar/InvoicesContent';
 
 // Styled component cho nội dung chính
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
@@ -92,6 +95,12 @@ const StaffProfile = ({ user = {} }) => {
         return <ProfileContent />;
       case 'categoryManagement':
         return <CategoryManagementContent />;
+      case 'security':
+        return <SecurityContent />;
+      case 'medical-history':
+        return <MedicalHistoryContent />;
+      case 'invoices':
+        return <InvoicesContent />;
       default:
         return <ProfileContent />;
     }

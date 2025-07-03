@@ -25,4 +25,7 @@ public class UpdateProfileRequest {
     private String gender;
 
     private LocalDate birthDay;
+
+    @Size(max = 255, message = "Address must not exceed 255 characters")
+    private String address;
 }

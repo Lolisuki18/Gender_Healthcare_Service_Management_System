@@ -1030,7 +1030,7 @@ const ProfileContent = () => {
                         fontWeight: 500,
                       }}
                     >
-                      Khách hàng
+                      {userData?.role === 'STAFF' ? 'Nhân viên' : 'Khách hàng'}
                     </Typography>
 
                     <Typography
@@ -1040,7 +1040,9 @@ const ProfileContent = () => {
                         fontSize: '14px',
                       }}
                     >
-                      ID: {userData?.id || 'GUEST'}
+                      {userData?.role === 'STAFF'
+                        ? `Mã nhân viên: ${userData?.id || 'N/A'}`
+                        : `ID: ${userData?.id || 'GUEST'}`}
                     </Typography>
                   </Stack>
 

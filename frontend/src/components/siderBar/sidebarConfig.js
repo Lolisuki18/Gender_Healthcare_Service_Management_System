@@ -12,6 +12,9 @@ import {
   Star as StarIcon,
   Help as HelpIcon,
   Lock as LockIcon,
+  Payment as PaymentIcon,
+  HelpOutline as HelpOutlineIcon,
+  Article as BlogIcon,
   // Blog icon có thể cần import từ @mui/icons-material nếu có
 } from '@mui/icons-material';
 
@@ -62,8 +65,15 @@ export const sidebarMenuConfig = [
     roles: ['STAFF', 'CONSULTANT', 'CUSTOMER'],
   },
   {
+    id: 'security',
+    label: 'Bảo mật',
+    icon: <LockIcon />,
+    roles: ['CONSULTANT', 'CUSTOMER', 'STAFF'],
+  },
+
+  {
     id: 'questionResponse',
-    label: 'Trả lời câu hỏi',
+    label: 'Xác nhận câu hỏi',
     icon: <ReplyIcon />,
     roles: ['STAFF'],
   },
@@ -89,8 +99,9 @@ export const sidebarMenuConfig = [
     id: 'blog',
     label: 'Quản lý Blog',
     icon: <SettingsIcon />,
-    roles: ['STAFF', 'CONSULTANT', 'CUSTOMER'],
+    roles: ['STAFF'],
   },
+
   {
     id: 'review',
     label: 'Quản lý đánh giá',
@@ -129,14 +140,20 @@ export const sidebarMenuConfig = [
     icon: <StarIcon />,
     roles: ['CONSULTANT'],
   },
-  {
-    id: 'security',
-    label: 'Bảo mật',
-    icon: <LockIcon />,
-    roles: ['CONSULTANT', 'CUSTOMER'],
-  },
 
   // CUSTOMER
+  //   {
+  //     id: 'profile',
+  //     label: 'Hồ sơ cá nhân',
+  //     icon: <PersonIcon />,
+  //     roles: ['CUSTOMER'],
+  //   },
+  //   {
+  //     id: 'security',
+  //     label: 'Bảo mật',
+  //     icon: <LockIcon />,
+  //     roles: ['CUSTOMER'],
+  //   },
   {
     id: 'appointments',
     label: 'Lịch hẹn',
@@ -147,13 +164,13 @@ export const sidebarMenuConfig = [
     id: 'medical-history',
     label: 'Lịch sử khám',
     icon: <AnalyticsIcon />,
-    roles: ['CUSTOMER'],
+    roles: ['CUSTOMER', 'STAFF', 'CONSULTANT'],
   },
   {
     id: 'invoices',
     label: 'Hóa đơn',
-    icon: <SettingsIcon />,
-    roles: ['CUSTOMER'],
+    icon: <PaymentIcon />,
+    roles: ['CUSTOMER', 'STAFF', 'CONSULTANT'],
   },
   {
     id: 'notifications',
@@ -166,5 +183,25 @@ export const sidebarMenuConfig = [
     label: 'Trợ giúp',
     icon: <HelpIcon />,
     roles: ['CUSTOMER'],
+  },
+  {
+    id: 'questions',
+    label: 'Câu hỏi đã đặt',
+    icon: <HelpOutlineIcon />,
+    roles: ['CUSTOMER'],
+  },
+
+  //   {
+  //     id: 'payment-history',
+  //     label: 'Lịch sử thanh toán',
+  //     icon: <PaymentIcon />,
+  //     roles: ['CUSTOMER'],
+  //   },
+  //Dùng chung
+  {
+    id: 'myBlogs',
+    label: 'Blog của tôi ',
+    icon: <BlogIcon />,
+    roles: ['STAFF', 'CONSULTANT', 'CUSTOMER'],
   },
 ];
