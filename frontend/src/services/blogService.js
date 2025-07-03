@@ -25,33 +25,39 @@ const blogService = {
   },
 
   /**
-   * Lấy thông tin chi tiết một bài viết
-   * @param {number} id ID của bài viết
-   * @returns {Promise} Promise chứa kết quả từ API
+   * Lấy danh sách blog đã CONFIRMED (public)
+   */
+  getConfirmedBlogs: async (page = 0, size = 20) => {
+    const response = await apiClient.get(`/blog/status/CONFIRMED?page=${page}&size=${size}`);
+    if (!response.data.success) {
+      throw new Error(response.data.message || "Failed to fetch confirmed blogs");
+    }
+    // Trả về mảng blog
+    return response.data.data && response.data.data.content ? response.data.data.content : [];
+  },
+
+  /**
+   * Lấy chi tiết blog (public)
    */
   getBlogById: async (id) => {
-    try {
-      const response = await apiClient.get(`/admin/blogs/${id}`);
-      if (!response.data.success) {
-        throw new Error(
-          response.data.message || "Failed to fetch blog details"
-        );
-      }
-      return response.data.data;
-    } catch (error) {
-      console.error(`Error fetching blog ${id}:`, error);
-      throw new Error(error.response?.data?.message || error.message);
+    const response = await apiClient.get(`/blog/${id}`);
+    if (!response.data.success) {
+      throw new Error(response.data.message || "Failed to fetch blog details");
     }
+    return response.data.data;
   },
 
   /**
    * Tạo bài viết mới
-   * @param {Object} blogData Dữ liệu bài viết
+   * @param {Object} blogData Dữ liệu bài viết (FormData)
    * @returns {Promise} Promise chứa kết quả từ API
    */
   createBlog: async (blogData) => {
     try {
-      const response = await apiClient.post("/admin/blogs", blogData);
+      // Nếu blogData là FormData, không set Content-Type, để axios tự động set multipart/form-data
+      const response = await apiClient.post("/blog", blogData, {
+        headers: blogData instanceof FormData ? {} : { 'Content-Type': 'application/json' }
+      });
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to create blog");
       }
@@ -70,7 +76,10 @@ const blogService = {
    */
   updateBlog: async (id, blogData) => {
     try {
-      const response = await apiClient.put(`/admin/blogs/${id}`, blogData);
+      // Sử dụng endpoint đúng: /blog/{id}
+      const response = await apiClient.put(`/blog/${id}`, blogData, {
+        headers: blogData instanceof FormData ? {} : { 'Content-Type': 'application/json' }
+      });
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to update blog");
       }
@@ -88,7 +97,8 @@ const blogService = {
    */
   deleteBlog: async (id) => {
     try {
-      const response = await apiClient.delete(`/admin/blogs/${id}`);
+      // Sử dụng endpoint đúng: /blog/{id}
+      const response = await apiClient.delete(`/blog/${id}`);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to delete blog");
       }
@@ -106,7 +116,8 @@ const blogService = {
    */
   publishBlog: async (id) => {
     try {
-      const response = await apiClient.put(`/admin/blogs/${id}/publish`);
+      // Sử dụng endpoint đúng: /blog/{id}/status
+      const response = await apiClient.put(`/blog/${id}/status`);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to publish blog");
       }
@@ -124,7 +135,8 @@ const blogService = {
    */
   unpublishBlog: async (id) => {
     try {
-      const response = await apiClient.put(`/admin/blogs/${id}/unpublish`);
+      // Sử dụng endpoint đúng: /blog/{id}/status
+      const response = await apiClient.put(`/blog/${id}/status`);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to unpublish blog");
       }
@@ -192,6 +204,17 @@ const blogService = {
       console.error(`Error deleting category ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
+  },
+
+  /**
+   * Tìm kiếm blog theo query (public)
+   */
+  searchBlogs: async (query, page = 0, size = 100) => {
+    const response = await apiClient.get(`/blog/search?query=${encodeURIComponent(query)}&page=${page}&size=${size}`);
+    if (!response.data.success) {
+      throw new Error(response.data.message || "Failed to search blogs");
+    }
+    return response.data.data && response.data.data.content ? response.data.data.content : [];
   },
 };
 

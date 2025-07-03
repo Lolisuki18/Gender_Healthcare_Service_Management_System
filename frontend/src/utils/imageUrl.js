@@ -13,30 +13,12 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
  * @param {string} path - Đường dẫn tương đối (ví dụ: /img/avatar/image.jpg)
  * @returns {string} URL đầy đủ cho hình ảnh
  */
-export const getFullImageUrl = (path) => {
-  console.log("getFullImageUrl - input path:", path);
-
-  if (!path) {
-    console.log("getFullImageUrl - path is null or undefined, returning null");
-    return null;
-  }
-
-  // Nếu đường dẫn đã là URL đầy đủ, trả về nguyên gốc
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    console.log(
-      "getFullImageUrl - path is already a full URL, returning as is"
-    );
-    return path;
-  }
-
-  // Đảm bảo path bắt đầu bằng dấu "/"
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-
-  // Kết hợp base URL với đường dẫn
-  const fullUrl = `${API_BASE_URL}${normalizedPath}`;
-  console.log("getFullImageUrl - constructed full URL:", fullUrl);
-  return fullUrl;
-};
+export function getFullImageUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  // Nếu là đường dẫn tương đối /img/... thì nối domain backend
+  return `http://localhost:8080${url}`;
+}
 
 /**
  * Kiểm tra xem một chuỗi có phải là URL hình ảnh hợp lệ không
@@ -52,6 +34,18 @@ export const isImageUrl = (url) => {
 
   return extensions.some((ext) => lowercaseUrl.endsWith(ext));
 };
+
+export function getBlogImageUrl(path) {
+  if (!path) return '/img/blog/default.jpg';
+  if (path.startsWith('http')) return path;
+  return `http://localhost:8080${path}`;
+}
+
+export function getAvatarUrl(path) {
+  if (!path) return '/img/avatar/default.jpg';
+  if (path.startsWith('http')) return path;
+  return `http://localhost:8080${path}`;
+}
 
 // Tạo đối tượng để export
 const imageUrl = {

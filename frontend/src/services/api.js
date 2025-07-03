@@ -21,9 +21,9 @@ import axios from 'axios';
 // Tạo config object trước
 const config = {
   baseURL: 'http://localhost:8080',
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // headers: {
+  //   'Content-Type': 'application/json', // Đã xóa để axios tự động nhận diện
+  // },
 };
 
 const apiClient = axios.create(config);
