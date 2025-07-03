@@ -28,7 +28,8 @@ import {
 } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import ConsultantSidebar from './ConsultantSideBar';
+import DynamicSideBar from '@/components/common/DynamicSideBar';
+import localStorageUtil from '@/utils/localStorage';
 
 // Import content components
 import MyQuestionsContent from './MyQuestionsContent';
@@ -64,6 +65,8 @@ const ConsultantProfile = ({ user = {} }) => {
   const handleMenuItemSelect = (itemId) => {
     setSelectedMenuItem(itemId);
   };
+
+  const userData = localStorageUtil.get('userProfile')?.data || {};
 
   // Updated function to get page title based on menu item
   const getPageTitle = () => {
@@ -113,11 +116,12 @@ const ConsultantProfile = ({ user = {} }) => {
           'linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 30%, #f5fafe 70%, #ffffff 100%)', // Medical light theme
       }}
     >
-      <ConsultantSidebar
+      <DynamicSideBar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         selectedItem={selectedMenuItem}
         onItemSelect={handleMenuItemSelect}
+        user={userData}
       />
 
       <MainContent sidebarOpen={sidebarOpen}>

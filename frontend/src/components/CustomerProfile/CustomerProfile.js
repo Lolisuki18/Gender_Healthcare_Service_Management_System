@@ -21,7 +21,7 @@
  * CustomerProfile → CustomerSidebar → Content Components
  */
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -29,32 +29,33 @@ import {
   useMediaQuery,
   useTheme,
   Chip,
-} from "@mui/material";
-import { Menu as MenuIcon } from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-import CustomerSidebar from "@/components/CustomerProfile/CustomerSideBar";
-import ProfileContent from "@/components/CustomerProfile/ProfileContent";
-import AppointmentsContent from "@/components/CustomerProfile/AppointmentsContent";
-import DashboardContent from "@/components/CustomerProfile/DashboardContent";
-import MedicalHistoryContent from "@/components/CustomerProfile/MedicalHistoryContent";
-import PaymentHistoryContent from "@/components/CustomerProfile/PaymentHistoryContent";
-import InvoicesContent from "@/components/CustomerProfile/InvoicesContent";
-import NotificationsContent from "@/components/CustomerProfile/NotificationsContent";
-import HelpContent from "@/components/CustomerProfile/HelpContent";
-import QuestionsContent from "@/components/CustomerProfile/QuestionsContent";
-import SecurityContent from "@/components/CustomerProfile/SecurityContent";
+} from '@mui/material';
+import { Menu as MenuIcon } from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+import DynamicSideBar from '@/components/common/DynamicSideBar';
+import localStorageUtil from '@/utils/localStorage';
+import ProfileContent from '@/components/CustomerProfile/ProfileContent';
+import AppointmentsContent from '@/components/CustomerProfile/AppointmentsContent';
+import DashboardContent from '@/components/CustomerProfile/DashboardContent';
+import MedicalHistoryContent from '@/components/CustomerProfile/MedicalHistoryContent';
+import PaymentHistoryContent from '@/components/CustomerProfile/PaymentHistoryContent';
+import InvoicesContent from '@/components/CustomerProfile/InvoicesContent';
+import NotificationsContent from '@/components/CustomerProfile/NotificationsContent';
+import HelpContent from '@/components/CustomerProfile/HelpContent';
+import QuestionsContent from '@/components/CustomerProfile/QuestionsContent';
+import SecurityContent from '@/components/CustomerProfile/SecurityContent';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
 // Responsive: trên mobile sidebar sẽ overlay thay vì push content
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
   flexGrow: 1,
-  transition: theme.transitions.create(["margin", "width"], {
+  transition: theme.transitions.create(['margin', 'width'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
   marginLeft: sidebarOpen ? 0 : `-280px`, // Sidebar width: 280px
-  [theme.breakpoints.down("md")]: {
+  [theme.breakpoints.down('md')]: {
     marginLeft: 0, // Mobile: không có margin
   },
 }));
@@ -62,11 +63,12 @@ const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
 const CustomerProfile = () => {
   // Hook để detect responsive breakpoints
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // State management
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Mặc định mở trên desktop, đóng trên mobile
-  const [selectedMenuItem, setSelectedMenuItem] = useState("profile"); // Tab mặc định
+  const [selectedMenuItem, setSelectedMenuItem] = useState('profile'); // Tab mặc định
+  const user = localStorageUtil.get('userProfile')?.data || {};
 
   // Handler functions
   const handleSidebarToggle = () => {
@@ -79,25 +81,25 @@ const CustomerProfile = () => {
   // Đây là core logic của tab navigation system
   const renderContent = () => {
     switch (selectedMenuItem) {
-      case "profile":
+      case 'profile':
         return <ProfileContent />; // Thông tin cá nhân
-      case "appointments":
+      case 'appointments':
         return <AppointmentsContent />; // Quản lý lịch hẹn
-      case "dashboard":
+      case 'dashboard':
         return <DashboardContent />; // Tổng quan, thống kê
-      case "medical-history":
+      case 'medical-history':
         return <MedicalHistoryContent />; // Lịch sử khám bệnh
-      case "payment-history":
+      case 'payment-history':
         return <PaymentHistoryContent />; // Lịch sử thanh toán
-      case "invoices":
+      case 'invoices':
         return <InvoicesContent />; // Hóa đơn
-      case "notifications":
+      case 'notifications':
         return <NotificationsContent />; // Thông báo
-      case "help":
+      case 'help':
         return <HelpContent />; // Hỗ trợ, FAQ
-      case "questions":
+      case 'questions':
         return <QuestionsContent />; // Câu hỏi đã đặt
-      case "security":
+      case 'security':
         return <SecurityContent />; // Bảo mật
       default:
         return <ProfileContent />; // Fallback về profile
@@ -108,86 +110,87 @@ const CustomerProfile = () => {
     // Container chính với full height và dark gradient background
     <Box
       sx={{
-        display: "flex",
-        minHeight: "100vh",
+        display: 'flex',
+        minHeight: '100vh',
         background:
-          "linear-gradient(135deg, #F5F7FA 0%, #E3F2FD 50%, #F5F7FA 100%)", // Light medical theme gradient
+          'linear-gradient(135deg, #F5F7FA 0%, #E3F2FD 50%, #F5F7FA 100%)', // Light medical theme gradient
       }}
     >
       {/* Sidebar Navigation Component */}
-      <CustomerSidebar
+      <DynamicSideBar
         open={sidebarOpen} // Trạng thái mở/đóng
         onClose={() => setSidebarOpen(false)} // Callback để đóng sidebar (mobile)
         selectedItem={selectedMenuItem} // Menu item hiện tại
         onItemSelect={handleMenuItemSelect} // Callback khi chọn menu
+        user={user}
       />
 
       {/* Main Content Area */}
       <MainContent sidebarOpen={sidebarOpen}>
-        {/* Header Section với glass morphism effect */}{" "}
+        {/* Header Section với glass morphism effect */}{' '}
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             p: 3,
-            background: "rgba(255, 255, 255, 0.90)",
-            backdropFilter: "blur(20px)",
-            borderBottom: "1px solid rgba(74, 144, 226, 0.15)", // Medical blue border
+            background: 'rgba(255, 255, 255, 0.90)',
+            backdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(74, 144, 226, 0.15)', // Medical blue border
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            {" "}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {' '}
             <IconButton
               onClick={handleSidebarToggle}
               sx={{
-                color: "#2D3748",
+                color: '#2D3748',
                 mr: 2,
-                display: { md: "none" },
-                background: "rgba(74, 144, 226, 0.1)",
-                "&:hover": {
-                  background: "rgba(74, 144, 226, 0.2)",
+                display: { md: 'none' },
+                background: 'rgba(74, 144, 226, 0.1)',
+                '&:hover': {
+                  background: 'rgba(74, 144, 226, 0.2)',
                 },
               }}
             >
               <MenuIcon />
-            </IconButton>{" "}
+            </IconButton>{' '}
             <Typography
               variant="h4"
               sx={{
-                color: "#2D3748",
+                color: '#2D3748',
                 fontWeight: 700,
-                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
               }}
             >
-              {selectedMenuItem === "profile" && "Hồ sơ cá nhân"}
-              {selectedMenuItem === "dashboard" && "Tổng quan"}
-              {selectedMenuItem === "appointments" && "Lịch hẹn"}
-              {selectedMenuItem === "medical-history" && "Lịch sử khám"}
-              {selectedMenuItem === "payment-history" && "Lịch sử thanh toán"}
-              {selectedMenuItem === "invoices" && "Hóa đơn"}{" "}
-              {selectedMenuItem === "notifications" && "Thông báo"}
-              {selectedMenuItem === "settings" && "Cài đặt"}
-              {selectedMenuItem === "help" && "Trợ giúp"}
-              {selectedMenuItem === "questions" && "Câu hỏi đã đặt"}
-              {selectedMenuItem === "security" && "Bảo mật"}
+              {selectedMenuItem === 'profile' && 'Hồ sơ cá nhân'}
+              {selectedMenuItem === 'dashboard' && 'Tổng quan'}
+              {selectedMenuItem === 'appointments' && 'Lịch hẹn'}
+              {selectedMenuItem === 'medical-history' && 'Lịch sử khám'}
+              {selectedMenuItem === 'payment-history' && 'Lịch sử thanh toán'}
+              {selectedMenuItem === 'invoices' && 'Hóa đơn'}{' '}
+              {selectedMenuItem === 'notifications' && 'Thông báo'}
+              {selectedMenuItem === 'settings' && 'Cài đặt'}
+              {selectedMenuItem === 'help' && 'Trợ giúp'}
+              {selectedMenuItem === 'questions' && 'Câu hỏi đã đặt'}
+              {selectedMenuItem === 'security' && 'Bảo mật'}
             </Typography>
-          </Box>{" "}
+          </Box>{' '}
           <Chip
             label="Đã xác thực"
             color="success"
             size="small"
             sx={{
-              background: "linear-gradient(45deg, #4CAF50, #2ECC71)", // Medical green
-              color: "#fff",
+              background: 'linear-gradient(45deg, #4CAF50, #2ECC71)', // Medical green
+              color: '#fff',
               fontWeight: 600,
-              boxShadow: "0 2px 8px rgba(76, 175, 80, 0.25)",
+              boxShadow: '0 2px 8px rgba(76, 175, 80, 0.25)',
             }}
           />
-        </Box>{" "}
+        </Box>{' '}
         {/* Content */}
         <Box sx={{ p: { xs: 2, md: 4 } }}>{renderContent()}</Box>
       </MainContent>
