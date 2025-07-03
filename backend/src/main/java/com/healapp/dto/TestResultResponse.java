@@ -1,9 +1,10 @@
 package com.healapp.dto;
 
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -19,6 +20,7 @@ public class TestResultResponse {
     private String resultValue;
     private String normalRange;
     private String unit;
+    private String conclusion;
     private Long reviewedBy;
     private String reviewerName;
     private LocalDateTime reviewedAt;

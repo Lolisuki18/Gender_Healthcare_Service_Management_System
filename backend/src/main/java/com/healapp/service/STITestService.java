@@ -758,6 +758,7 @@ public class STITestService {
                 testResult.setResultValue(resultReq.getResultValue());
                 testResult.setNormalRange(resultReq.getNormalRange());
                 testResult.setUnit(resultReq.getUnit());
+                testResult.setConclusion(resultReq.getConclusion());
                 testResult.setReviewedBy(userId);
                 testResult.setReviewedAt(LocalDateTime.now());
 
@@ -1198,6 +1199,7 @@ public class STITestService {
         response.setResultValue(result.getResultValue());
         response.setNormalRange(result.getNormalRange());
         response.setUnit(result.getUnit());
+        response.setConclusion(result.getConclusion());
         response.setReviewedBy(result.getReviewedBy());
         response.setReviewedAt(result.getReviewedAt());
 
@@ -1386,6 +1388,7 @@ public class STITestService {
         response.setResultValue(result.getResultValue());
         response.setNormalRange(result.getNormalRange());
         response.setUnit(result.getUnit());
+        response.setConclusion(result.getConclusion());
         response.setReviewedBy(result.getReviewedBy());
         response.setReviewedAt(result.getReviewedAt());
         response.setCreatedAt(result.getCreatedAt());

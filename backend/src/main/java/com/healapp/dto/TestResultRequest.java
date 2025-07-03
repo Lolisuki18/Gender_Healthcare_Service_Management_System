@@ -8,4 +8,5 @@ public class TestResultRequest {
     private String resultValue;
     private String normalRange;
     private String unit;
+    private String conclusion;
 }
