@@ -33,6 +33,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import ExportTestResultPDF from './ExportTestResultPDF';
+import ConclusionDisplay from '../common/ConclusionDisplay';
 
 // Styled Components
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
@@ -613,6 +614,9 @@ const TestResultsModalContent = ({ testId, onClose }) => {
                                 <StyledTableCell align="center">
                                   Đơn vị
                                 </StyledTableCell>
+                                <StyledTableCell align="center">
+                                  Kết luận
+                                </StyledTableCell>
                               </StyledTableRow>
                             </TableHead>
                             <TableBody>
@@ -648,6 +652,12 @@ const TestResultsModalContent = ({ testId, onClose }) => {
                                   </StyledTableCell>
                                   <StyledTableCell align="center">
                                     {translateValue(result.unit, 'unit')}
+                                  </StyledTableCell>
+                                  <StyledTableCell align="center">
+                                    <ConclusionDisplay 
+                                      conclusion={result.conclusion}
+                                      conclusionDisplayName={result.conclusionDisplayName}
+                                    />
                                   </StyledTableCell>
                                 </StyledTableRow>
                               ))}
@@ -896,6 +906,7 @@ const TestResultsModalContent = ({ testId, onClose }) => {
                     <StyledTableCell>Đơn vị</StyledTableCell>
                     <StyledTableCell>Giới hạn bình thường</StyledTableCell>
                     <StyledTableCell>Kết quả</StyledTableCell>
+                    <StyledTableCell>Kết luận</StyledTableCell>
                     <StyledTableCell>Thời gian</StyledTableCell>
                     <StyledTableCell>Người đánh giá</StyledTableCell>
                   </StyledTableRow>
@@ -934,6 +945,12 @@ const TestResultsModalContent = ({ testId, onClose }) => {
                               ? 'negative'
                               : 'positive'
                           }
+                        />
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <ConclusionDisplay 
+                          conclusion={result.conclusion}
+                          conclusionDisplayName={result.conclusionDisplayName}
                         />
                       </StyledTableCell>
                       <StyledTableCell>

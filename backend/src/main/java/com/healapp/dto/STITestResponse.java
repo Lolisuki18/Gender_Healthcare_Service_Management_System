@@ -1,11 +1,11 @@
 package com.healapp.dto;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -42,6 +42,10 @@ public class STITestResponse {
     private String qrPaymentReference;
     private LocalDateTime qrExpiresAt;
     private String qrCodeUrl;
+
+    // Payment failure and retry information
+    private String paymentFailureReason;
+    private Boolean canRetryPayment;
 
     private String customerNotes;
     private String consultantNotes;

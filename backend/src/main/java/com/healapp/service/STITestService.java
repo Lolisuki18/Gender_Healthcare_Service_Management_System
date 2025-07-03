@@ -20,7 +20,6 @@ import com.healapp.dto.STITestResponse;
 import com.healapp.dto.STITestStatusUpdateRequest;
 import com.healapp.dto.TestResultRequest;
 import com.healapp.dto.TestResultResponse;
-import com.healapp.exception.PaymentException;
 import com.healapp.model.PackageService;
 import com.healapp.model.Payment;
 import com.healapp.model.PaymentMethod;
@@ -33,6 +32,7 @@ import com.healapp.model.ServiceTestComponent;
 import com.healapp.model.TestResult;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.PackageServiceRepository;
+import com.healapp.repository.PaymentRepository;
 import com.healapp.repository.STIPackageRepository;
 import com.healapp.repository.STIServiceRepository;
 import com.healapp.repository.STITestRepository;
@@ -73,57 +73,83 @@ public class STITestService {
     @Autowired
     private PackageServiceRepository packageServiceRepository;
 
-    @Transactional(rollbackFor = Exception.class)
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Transactional
     public ApiResponse<STITestResponse> bookTest(STITestRequest request, Long customerId) {
         log.info("User {} booking STI test", customerId);
 
-        // Validate request
-        if (!request.isValid()) {
-            return ApiResponse.error("Must specify either serviceId or packageId, not both");
-        }
+        try {
+            log.info("Step 1: Validating request");
+            // Validate request
+            if (!request.isValid()) {
+                log.warn("Invalid request for user {}: serviceId={}, packageId={}", 
+                    customerId, request.getServiceId(), request.getPackageId());
+                return ApiResponse.error("Must specify either serviceId or packageId, not both");
+            }
+            log.info("Step 1: Request validation passed");
 
+        log.info("Step 2: Finding customer");
         Optional<UserDtls> customerOpt = userRepository.findById(customerId);
         if (customerOpt.isEmpty()) {
+            log.warn("Customer not found: {}", customerId);
             return ApiResponse.error("Customer not found");
         }
         UserDtls customer = customerOpt.get();
+        log.info("Step 2: Customer found: {}", customer.getFullName());
 
+        log.info("Step 3: Validating appointment date");
         if (request.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(2))) {
+            log.warn("Appointment date too soon: {}", request.getAppointmentDate());
             return ApiResponse.error("Appointment must be at least 2 hours from now");
         }
+        log.info("Step 3: Appointment date validation passed");
 
+        log.info("Step 4: Validating payment method");
         PaymentMethod paymentMethod;
         try {
             paymentMethod = PaymentMethod.valueOf(request.getPaymentMethod().toUpperCase());
+            log.info("Step 4: Payment method validated: {}", paymentMethod);
         } catch (IllegalArgumentException e) {
+            log.warn("Invalid payment method: {}", request.getPaymentMethod());
             return ApiResponse.error("Invalid payment method: " + request.getPaymentMethod());
         }
 
+        log.info("Step 5: Creating STI test object");
         STITest stiTest;
         BigDecimal totalPrice;
         if (request.isServiceBooking()) {
             // Service booking
-            log.info("Booking service ID: {}", request.getServiceId());
+            log.info("Step 5a: Booking service ID: {}", request.getServiceId());
             Optional<STIService> serviceOpt = stiServiceRepository.findById(request.getServiceId());
             if (serviceOpt.isEmpty()) {
+                log.warn("STI service not found: {}", request.getServiceId());
                 return ApiResponse.error("STI service not found");
             }
             STIService stiService = serviceOpt.get();
+            log.info("Step 5a: STI service found: {}", stiService.getName());
 
             if (!stiService.getIsActive()) {
+                log.warn("STI service is not active: {}", stiService.getName());
                 return ApiResponse.error("STI service is not available");
             }
+            log.info("Step 5a: STI service is active");
 
             // Validate có ít nhất 1 active component
+            log.info("Step 5a: Validating active components");
             boolean hasActiveComponents = stiService.getTestComponents() != null
                     && stiService.getTestComponents().stream()
                             .anyMatch(component -> Boolean.TRUE.equals(component.getIsActive()));
 
             if (!hasActiveComponents) {
+                log.warn("STI service has no active components: {}", stiService.getName());
                 return ApiResponse.error("STI service has no active test components available");
             }
+            log.info("Step 5a: Active components validation passed");
 
             totalPrice = stiService.getPrice();
+            log.info("Step 5a: Service price: {}", totalPrice);
             stiTest = STITest.builder()
                     .customer(customer)
                     .stiService(stiService)
@@ -132,22 +158,28 @@ public class STITestService {
                     .totalPrice(totalPrice)
                     .status(STITestStatus.PENDING)
                     .build();
+            log.info("Step 5a: STI test object created for service");
 
         } else {
             // Package booking
-            log.info("Booking package ID: {}", request.getPackageId());
+            log.info("Step 5b: Booking package ID: {}", request.getPackageId());
             Optional<STIPackage> packageOpt = stiPackageRepository
                     .findByIdWithServicesAndComponents(request.getPackageId());
             if (packageOpt.isEmpty()) {
+                log.warn("STI package not found: {}", request.getPackageId());
                 return ApiResponse.error("STI package not found");
             }
             STIPackage stiPackage = packageOpt.get();
+            log.info("Step 5b: STI package found: {}", stiPackage.getPackageName());
 
             if (!stiPackage.getIsActive()) {
+                log.warn("STI package is not active: {}", stiPackage.getPackageName());
                 return ApiResponse.error("STI package is not available");
             }
+            log.info("Step 5b: STI package is active");
 
             // Validate có ít nhất 1 active component trong package
+            log.info("Step 5b: Validating active components in package");
             List<PackageService> packageServices = packageServiceRepository
                     .findByStiPackage_PackageId(stiPackage.getPackageId());
             boolean hasActiveComponents = packageServices != null
@@ -159,10 +191,13 @@ public class STITestService {
                                             .anyMatch(component -> Boolean.TRUE.equals(component.getIsActive())));
 
             if (!hasActiveComponents) {
+                log.warn("STI package has no active components: {}", stiPackage.getPackageName());
                 return ApiResponse.error("STI package has no active test components available");
             }
+            log.info("Step 5b: Active components validation passed");
 
             totalPrice = stiPackage.getPackagePrice();
+            log.info("Step 5b: Package price: {}", totalPrice);
             stiTest = STITest.builder()
                     .customer(customer)
                     .stiPackage(stiPackage)
@@ -171,30 +206,64 @@ public class STITestService {
                     .totalPrice(totalPrice)
                     .status(STITestStatus.PENDING)
                     .build();
+            log.info("Step 5b: STI test object created for package");
         }
 
-        STITest savedTest = stiTestRepository.save(stiTest);
-        log.info("Created STI Test ID: {} for user: {}", savedTest.getTestId(), customerId);
+        log.info("Step 6: Saving STI test to database");
+        STITest savedTest;
+        try {
+            savedTest = stiTestRepository.save(stiTest);
+            log.info("Step 6: STI Test saved successfully - ID: {} for user: {}", savedTest.getTestId(), customerId);
+        } catch (Exception e) {
+            log.error("Step 6: Error saving STI test: {}", e.getMessage(), e);
+            return ApiResponse.error("Error creating test booking: " + e.getMessage());
+        }
 
         // Tạo TestResults
-        if (request.isPackageBooking()) {
-            createTestResultsForPackage(savedTest);
-        } else {
-            createTestResultsForService(savedTest);
+        log.info("Step 7: Creating test results");
+        try {
+            if (request.isPackageBooking()) {
+                createTestResultsForPackage(savedTest);
+            } else {
+                createTestResultsForService(savedTest);
+            }
+            log.info("Step 7: Test results created successfully");
+        } catch (Exception e) {
+            log.error("Step 7: Error creating test results for test {}: {}", savedTest.getTestId(), e.getMessage(), e);
+            // Don't rollback the transaction, just log the error
         }
 
+        // Xử lý thanh toán - không rollback nếu thất bại
+        log.info("Step 8: Processing payment");
         ApiResponse<Payment> paymentResult = processPaymentForTest(savedTest, paymentMethod, request);
+        log.info("Step 8: Payment processing completed - success: {}", paymentResult.isSuccess());
+
+        log.info("Step 9: Converting to response");
+        STITestResponse response;
+        try {
+            response = convertToResponse(savedTest);
+            log.info("Step 9: Response conversion completed");
+        } catch (Exception e) {
+            log.error("Step 9: Error converting test to response: {}", e.getMessage(), e);
+            return ApiResponse.error("Error processing test booking: " + e.getMessage());
+        }
 
         if (!paymentResult.isSuccess()) {
-            log.warn("Payment failed for user {}: {}", customerId, paymentResult.getMessage());
-            throw new PaymentException("Payment failed: " + paymentResult.getMessage());
+            log.warn("Step 10: Payment failed for user {}: {}", customerId, paymentResult.getMessage());
+            
+            // Không rollback, trả về thông báo lỗi thanh toán nhưng test đã được tạo
+            String errorMessage = "Đặt lịch thành công nhưng thanh toán thất bại: " + paymentResult.getMessage();
+            if (paymentMethod == PaymentMethod.COD) {
+                errorMessage = "Đặt lịch thành công - Thanh toán khi nhận";
+            }
+            
+            log.info("Step 10: Returning booking success with payment failure");
+            return new ApiResponse<>(false, errorMessage, response);
         }
 
         Payment payment = paymentResult.getData();
-        log.info("Payment successful - Test ID: {}, Payment ID: {}, Status: {}",
+        log.info("Step 10: Payment successful - Test ID: {}, Payment ID: {}, Status: {}",
                 savedTest.getTestId(), payment.getPaymentId(), payment.getPaymentStatus());
-
-        STITestResponse response = convertToResponse(savedTest);
 
         String message = request.isPackageBooking() ? "STI package test scheduled successfully"
                 : "STI test scheduled successfully";
@@ -206,11 +275,18 @@ public class STITestService {
             message += " - QR code generated, awaiting payment";
         }
 
+        log.info("Step 10: Returning booking success with payment success");
         return ApiResponse.success(message, response);
+        } catch (Exception e) {
+            log.error("FATAL ERROR in bookTest for user {}: {}", customerId, e.getMessage(), e);
+            return ApiResponse.error("An unexpected error occurred while booking the test: " + e.getMessage());
+        }
     }
 
     private ApiResponse<Payment> processPaymentForTest(STITest stiTest, PaymentMethod paymentMethod,
             STITestRequest request) {
+        log.info("Processing payment for test {} with method {}", stiTest.getTestId(), paymentMethod);
+        
         String description;
         if (stiTest.getStiService() != null) {
             description = "STI Test: " + stiTest.getStiService().getName();
@@ -219,6 +295,7 @@ public class STITestService {
         } else {
             description = "STI Test";
         }
+        log.info("Payment description: {}", description);
 
         ApiResponse<Payment> paymentResult;
 
@@ -242,22 +319,77 @@ public class STITestService {
                     break;
 
                 default:
-                    throw new PaymentException("Unsupported payment method: " + paymentMethod);
+                    // Tạo payment failed cho unsupported method
+                    try {
+                        Payment failedPayment = createFailedPayment(stiTest, paymentMethod, description, 
+                                "Unsupported payment method: " + paymentMethod);
+                        return new ApiResponse<>(false, "Unsupported payment method: " + paymentMethod, failedPayment);
+                    } catch (Exception e) {
+                        log.error("Error creating failed payment record for unsupported method: {}", e.getMessage(), e);
+                        return new ApiResponse<>(false, "Unsupported payment method: " + paymentMethod, null);
+                    }
             }
 
+            // Kiểm tra kết quả thanh toán
             if (!paymentResult.isSuccess()) {
-                throw new PaymentException(paymentResult.getMessage());
+                // Nếu đã có payment record (từ PaymentService), trả về luôn
+                if (paymentResult.getData() != null) {
+                    log.info("Payment failed but payment record already exists - Payment ID: {}", 
+                            paymentResult.getData().getPaymentId());
+                    return paymentResult;
+                }
+                
+                // Chỉ tạo payment failed mới nếu chưa có payment record
+                try {
+                    Payment failedPayment = createFailedPayment(stiTest, paymentMethod, description, 
+                            paymentResult.getMessage());
+                    return new ApiResponse<>(false, paymentResult.getMessage(), failedPayment);
+                } catch (Exception e) {
+                    log.error("Error creating failed payment record: {}", e.getMessage(), e);
+                    return new ApiResponse<>(false, paymentResult.getMessage(), null);
+                }
             }
 
             return paymentResult;
 
-        } catch (PaymentException e) {
-            // Re-throw PaymentException
-            throw e;
         } catch (Exception e) {
             log.error("Unexpected error processing payment: {}", e.getMessage(), e);
-            throw new PaymentException("Payment processing failed: " + e.getMessage());
+            // Tạo payment failed cho unexpected errors
+            try {
+                Payment failedPayment = createFailedPayment(stiTest, paymentMethod, description, 
+                        "Payment processing failed: " + e.getMessage());
+                return new ApiResponse<>(false, "Payment processing failed: " + e.getMessage(), failedPayment);
+            } catch (Exception createPaymentException) {
+                log.error("Error creating failed payment record for unexpected error: {}", createPaymentException.getMessage(), createPaymentException);
+                return new ApiResponse<>(false, "Payment processing failed: " + e.getMessage(), null);
+            }
         }
+    }
+
+    /**
+     * Tạo payment record với trạng thái FAILED
+     */
+    private Payment createFailedPayment(STITest stiTest, PaymentMethod paymentMethod, String description, String failureReason) {
+        Payment failedPayment = Payment.builder()
+                .userId(stiTest.getCustomer().getId())
+                .serviceType("STI")
+                .serviceId(stiTest.getTestId())
+                .paymentMethod(paymentMethod)
+                .paymentStatus(PaymentStatus.FAILED)
+                .amount(stiTest.getTotalPrice())
+                .currency("VND")
+                .description(description)
+                .notes("Payment failed: " + failureReason)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        // Lưu payment failed vào database
+        Payment savedPayment = paymentRepository.save(failedPayment);
+        log.info("Created failed payment record ID: {} for test ID: {}, reason: {}", 
+                savedPayment.getPaymentId(), stiTest.getTestId(), failureReason);
+        
+        return savedPayment;
     }
 
     private ApiResponse<Payment> processVisaPaymentWithValidation(STITest stiTest, STITestRequest request) {
@@ -301,7 +433,7 @@ public class STITestService {
             description = "STI Test";
         }
 
-        return paymentService.processStripePayment(
+        ApiResponse<Payment> stripeResult = paymentService.processStripePayment(
                 stiTest.getCustomer().getId(),
                 "STI",
                 stiTest.getTestId(),
@@ -312,6 +444,26 @@ public class STITestService {
                 request.getExpiryYear().trim(),
                 request.getCvc().trim(),
                 request.getCardHolderName().trim());
+        
+        // Cải thiện thông báo lỗi Stripe
+        if (!stripeResult.isSuccess()) {
+            String errorMessage = stripeResult.getMessage();
+            if (errorMessage.contains("Sending credit card numbers directly to the Stripe API")) {
+                errorMessage = "Thông tin thẻ không hợp lệ. Vui lòng kiểm tra lại thông tin thẻ hoặc thử phương thức thanh toán khác.";
+            } else if (errorMessage.contains("card was declined")) {
+                errorMessage = "Thẻ bị từ chối. Vui lòng kiểm tra lại thông tin thẻ hoặc liên hệ ngân hàng.";
+            } else if (errorMessage.contains("insufficient funds")) {
+                errorMessage = "Thẻ không đủ số dư. Vui lòng kiểm tra lại số dư thẻ.";
+            } else if (errorMessage.contains("expired")) {
+                errorMessage = "Thẻ đã hết hạn. Vui lòng sử dụng thẻ khác.";
+            } else if (errorMessage.contains("invalid")) {
+                errorMessage = "Thông tin thẻ không hợp lệ. Vui lòng kiểm tra lại.";
+            }
+            
+            return new ApiResponse<>(false, errorMessage, stripeResult.getData());
+        }
+        
+        return stripeResult;
     }
 
     private ApiResponse<Payment> processQRPaymentWithValidation(STITest stiTest, STITestRequest request,
@@ -606,6 +758,7 @@ public class STITestService {
                 testResult.setResultValue(resultReq.getResultValue());
                 testResult.setNormalRange(resultReq.getNormalRange());
                 testResult.setUnit(resultReq.getUnit());
+                testResult.setConclusion(resultReq.getConclusion());
                 testResult.setReviewedBy(userId);
                 testResult.setReviewedAt(LocalDateTime.now());
 
@@ -989,6 +1142,16 @@ public class STITestService {
                 response.setPaidAt(payment.getPaidAt());
                 response.setPaymentTransactionId(payment.getTransactionId());
 
+                // Add payment failure information
+                if (payment.getPaymentStatus() == PaymentStatus.FAILED) {
+                    response.setPaymentFailureReason(payment.getNotes());
+                    response.setCanRetryPayment(true);
+                } else if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
+                    response.setCanRetryPayment(true);
+                } else {
+                    response.setCanRetryPayment(false);
+                }
+
                 // Stripe payment specific
                 if (payment.getPaymentMethod() == PaymentMethod.VISA) {
                     response.setStripePaymentIntentId(payment.getStripePaymentIntentId());
@@ -1007,12 +1170,14 @@ public class STITestService {
             } else {
                 response.setPaymentMethod("UNKNOWN");
                 response.setPaymentStatus("PENDING");
+                response.setCanRetryPayment(false);
                 log.debug("No payment found for STI test ID: {}", stiTest.getTestId());
             }
         } catch (Exception e) {
             log.error("Error retrieving payment information for test {}: {}", stiTest.getTestId(), e.getMessage());
             response.setPaymentMethod("UNKNOWN");
             response.setPaymentStatus("ERROR");
+            response.setCanRetryPayment(false);
         }
 
         // Additional information
@@ -1034,6 +1199,8 @@ public class STITestService {
         response.setResultValue(result.getResultValue());
         response.setNormalRange(result.getNormalRange());
         response.setUnit(result.getUnit());
+        response.setConclusion(result.getConclusion());
+        response.setConclusionDisplayName(result.getConclusion() != null ? result.getConclusion().getDisplayName() : null);
         response.setReviewedBy(result.getReviewedBy());
         response.setReviewedAt(result.getReviewedAt());
 
@@ -1222,6 +1389,7 @@ public class STITestService {
         response.setResultValue(result.getResultValue());
         response.setNormalRange(result.getNormalRange());
         response.setUnit(result.getUnit());
+        response.setConclusion(result.getConclusion());
         response.setReviewedBy(result.getReviewedBy());
         response.setReviewedAt(result.getReviewedAt());
         response.setCreatedAt(result.getCreatedAt());
@@ -1306,6 +1474,86 @@ public class STITestService {
         } catch (Exception e) {
             log.error("Error updating test results for test {}: {}", testId, e.getMessage(), e);
             return ApiResponse.error("Error updating test results: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Retry payment for a test with failed payment
+     * Allows users to retry payment with different payment method or card details
+     */
+    @Transactional
+    public ApiResponse<STITestResponse> retryPayment(Long testId, STITestRequest request, Long userId) {
+        try {
+            log.info("Retrying payment for test {} by user {}", testId, userId);
+
+            Optional<STITest> testOpt = stiTestRepository.findById(testId);
+            if (testOpt.isEmpty()) {
+                return ApiResponse.error("STI test not found");
+            }
+
+            STITest test = testOpt.get();
+
+            // Check if user owns this test
+            if (!test.getCustomer().getId().equals(userId)) {
+                return ApiResponse.error("You can only retry payment for your own tests");
+            }
+
+            // Check if test is in PENDING status (can only retry for pending tests)
+            if (test.getStatus() != STITestStatus.PENDING) {
+                return ApiResponse.error("Payment can only be retried for tests in PENDING status");
+            }
+
+            // Get existing failed payment
+            Optional<Payment> existingPaymentOpt = paymentService.getPaymentByService("STI", testId);
+            if (existingPaymentOpt.isEmpty()) {
+                return ApiResponse.error("No payment record found for this test");
+            }
+
+            Payment existingPayment = existingPaymentOpt.get();
+            
+            // Check if payment is failed or pending (can retry)
+            if (existingPayment.getPaymentStatus() != PaymentStatus.FAILED && 
+                existingPayment.getPaymentStatus() != PaymentStatus.PENDING) {
+                return ApiResponse.error("Payment cannot be retried - current status: " + existingPayment.getPaymentStatus());
+            }
+
+            // Validate payment method
+            PaymentMethod paymentMethod;
+            try {
+                paymentMethod = PaymentMethod.valueOf(request.getPaymentMethod().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error("Invalid payment method: " + request.getPaymentMethod());
+            }
+
+            // Process new payment
+            ApiResponse<Payment> paymentResult = processPaymentForTest(test, paymentMethod, request);
+
+            if (!paymentResult.isSuccess()) {
+                log.warn("Payment retry failed for test {}: {}", testId, paymentResult.getMessage());
+                return new ApiResponse<>(false, "Payment retry failed: " + paymentResult.getMessage(), 
+                        convertToResponse(test));
+            }
+
+            Payment newPayment = paymentResult.getData();
+            log.info("Payment retry successful - Test ID: {}, New Payment ID: {}, Status: {}",
+                    test.getTestId(), newPayment.getPaymentId(), newPayment.getPaymentStatus());
+
+            STITestResponse response = convertToResponse(test);
+
+            String message = "Payment retry successful";
+            if (paymentMethod == PaymentMethod.COD) {
+                message += " - Payment on delivery";
+            } else if (newPayment.getPaymentStatus() == PaymentStatus.COMPLETED) {
+                message += " - Payment processed";
+            } else if (paymentMethod == PaymentMethod.QR_CODE && newPayment.getPaymentStatus() == PaymentStatus.PENDING) {
+                message += " - QR code generated, awaiting payment";
+            }
+
+            return ApiResponse.success(message, response);
+
+        } catch (Exception e) {
+            log.error("Error retrying payment for test {}: {}", testId, e.getMessage(), e);
+            return ApiResponse.error("Error retrying payment: " + e.getMessage());
         }
     }
 }

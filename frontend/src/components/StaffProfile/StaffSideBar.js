@@ -94,6 +94,12 @@ const staffMenuItems = [
     icon: SettingsIcon,
     description: "Quản lý đánh giá",
   },
+  {
+    id: "categoryManagement",
+    label: "Quản lý danh mục",
+    icon: SettingsIcon,
+    description: "Quản lý danh mục blog & câu hỏi",
+  },
 ];
 
 const StaffSidebar = ({ open, onClose, selectedItem, onItemSelect, user }) => {

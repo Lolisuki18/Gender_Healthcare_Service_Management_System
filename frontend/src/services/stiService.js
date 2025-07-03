@@ -2,6 +2,16 @@ import apiClient from '@services/api';
 
 const API_URL = '/sti-services';
 
+// Get conclusion options for test results
+export const getConclusionOptions = async () => {
+  try {
+    const response = await apiClient.get(`${API_URL}/conclusion-options`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
 // Create a new STI service (Staff only)
 export const createSTIService = async (serviceData) => {
   try {
@@ -743,6 +753,16 @@ export const updateTestResults = async (testId, resultsData) => {
   }
 };
 
+// Category Question management
+const getQuestionCategories = async () => {
+  const res = await apiClient.get("/question-categories");
+  // Chuẩn hóa lấy mảng từ res.data.data
+  return Array.isArray(res.data.data) ? res.data.data : [];
+};
+const createQuestionCategory = (data) => apiClient.post("/question-categories", data);
+const updateQuestionCategory = (id, data) => apiClient.put(`/question-categories/${id}`, data);
+const deleteQuestionCategory = (id) => apiClient.delete(`/question-categories/${id}`);
+
 // Export as a default object with all functions
 const stiService = {
   createSTIService,
@@ -773,6 +793,10 @@ const stiService = {
   getActiveSTIServices,
   savePartialTestResults,
   updateTestResults,
+  getQuestionCategories,
+  createQuestionCategory,
+  updateQuestionCategory,
+  deleteQuestionCategory,
 
   // New function to get services within a package
   // getServicesInPackage: async (packageId) => {

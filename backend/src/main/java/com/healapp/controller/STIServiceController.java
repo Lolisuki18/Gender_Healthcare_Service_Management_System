@@ -1,6 +1,8 @@
 package com.healapp.controller;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,7 @@ import com.healapp.dto.STITestResponse;
 import com.healapp.dto.STITestStatusUpdateRequest;
 import com.healapp.dto.TestResultRequest;
 import com.healapp.dto.TestResultResponse;
+import com.healapp.model.TestConclusion;
 import com.healapp.service.STIServiceService;
 import com.healapp.service.STITestService;
 import com.healapp.service.UserService;
@@ -275,12 +278,66 @@ public class STIServiceController {
         return getResponseEntity(response);
     }
 
+    /*
+     * description: Thử thanh toán lại cho test có payment thất bại
+     * path: /sti-services/tests/{testId}/retry-payment
+     * method: POST
+     * body: STITestRequest (chỉ cần paymentMethod và thông tin thẻ nếu là VISA)
+     */
+    @PostMapping("/tests/{testId}/retry-payment")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<STITestResponse>> retryPayment(
+            @PathVariable Long testId,
+            @Valid @RequestBody STITestRequest request) {
+
+        Long userId = getCurrentUserId();
+        ApiResponse<STITestResponse> response = stiTestService.retryPayment(testId, request, userId);
+        return getResponseEntity(response);
+    }
+
     @GetMapping("/tests/{testId}/results")
     @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<List<TestResultResponse>>> getTestResults(@PathVariable Long testId) {
         Long userId = getCurrentUserId();
         ApiResponse<List<TestResultResponse>> response = stiTestService.getTestResults(testId, userId);
         return getResponseEntity(response);
+    }
+
+    @GetMapping("/conclusion-options")
+    public ResponseEntity<ApiResponse<List<ConclusionOption>>> getConclusionOptions() {
+        List<ConclusionOption> options = Stream.of(TestConclusion.values())
+                .map(conclusion -> new ConclusionOption(conclusion.name(), conclusion.getDisplayName()))
+                .collect(Collectors.toList());
+        
+        ApiResponse<List<ConclusionOption>> response = ApiResponse.success("Conclusion options retrieved successfully", options);
+        return ResponseEntity.ok(response);
+    }
+
+    // DTO class for conclusion options
+    public static class ConclusionOption {
+        private String value;
+        private String label;
+
+        public ConclusionOption(String value, String label) {
+            this.value = value;
+            this.label = label;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public void setLabel(String label) {
+            this.label = label;
+        }
     }
 
     private Long getCurrentUserId() {
@@ -290,11 +347,9 @@ public class STIServiceController {
     }
 
     private <T> ResponseEntity<ApiResponse<T>> getResponseEntity(ApiResponse<T> response) {
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
-        }
+        // Luôn trả về 200 OK, ngay cả khi có lỗi thanh toán
+        // Frontend sẽ xử lý hiển thị thông báo phù hợp dựa trên response.success
+        return ResponseEntity.ok(response);
     }
 
 }

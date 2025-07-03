@@ -141,15 +141,55 @@ const blogService = {
    */
   getCategories: async () => {
     try {
-      const response = await apiClient.get("/admin/blog-categories");
+      const response = await apiClient.get("/categories");
       if (!response.data.success) {
         throw new Error(
           response.data.message || "Failed to fetch blog categories"
         );
       }
-      return response.data.data;
+      return Array.isArray(response.data.data) ? response.data.data : [];
     } catch (error) {
       console.error("Error fetching blog categories:", error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  // Category management
+  createCategory: async (data) => {
+    try {
+      const response = await apiClient.post("/categories", data);
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to create category");
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error("Error creating category:", error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  updateCategory: async (id, data) => {
+    try {
+      const response = await apiClient.put(`/categories/${id}`, data);
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to update category");
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error(`Error updating category ${id}:`, error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  deleteCategory: async (id) => {
+    try {
+      const response = await apiClient.delete(`/categories/${id}`);
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to delete category");
+      }
+      return true;
+    } catch (error) {
+      console.error(`Error deleting category ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },

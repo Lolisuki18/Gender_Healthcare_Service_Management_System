@@ -1,11 +1,22 @@
 package com.healapp.model;
 
-import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "test_results")
@@ -40,6 +51,10 @@ public class TestResult {
 
     @Column(name = "normal_range", columnDefinition = "NVARCHAR(100)")
     private String normalRange;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "conclusion", columnDefinition = "NVARCHAR(50)")
+    private TestConclusion conclusion;
 
     @Column(name = "reviewed_by")
     private Long reviewedBy;
