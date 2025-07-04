@@ -1,0 +1,506 @@
+.pageBg {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #faf7fc 0%, #ede7f6 100%);
+  padding: 24px;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(162,89,230,0.08);
+  border: 1px solid #f3f4f6;
+  padding: 32px 28px 28px 28px;
+  margin-bottom: 32px;
+  transition: box-shadow 0.22s, transform 0.22s;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.iconWrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ede7f6;
+  font-size: 2rem;
+}
+.iconWrapper.pink { background: #ffe2ec; }
+.iconWrapper.purple { background: #ede7f6; }
+.iconWrapper.blue { background: #e3f2fd; }
+.iconWrapper.green { background: #d1fae5; }
+.iconWrapper.yellow { background: #fef9c3; }
+.iconWrapper.red { background: #fee2e2; }
+
+.cardTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #181c32;
+  margin-bottom: 4px;
+}
+.cardDescription {
+  color: #666;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.benefitsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+@media (min-width: 600px) {
+  .benefitsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.importantNote {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 7px;
+  padding: 8px;
+  margin-top: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.importantIcon {
+  width: 32px;
+  height: 32px;
+  background: #fbc02d;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #fff;
+  font-size: 1.1rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+.importantText {
+  color: #ad8b00;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.importantNote > div > div:not(.importantText) {
+  color: #ad8b00;
+  font-size: 0.7rem;
+  font-weight: 400;
+  margin-top: 1px;
+}
+
+/* FORM STYLES */
+.formCard {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(162,89,230,0.10);
+  border: 1px solid #f3f4f6;
+  padding: 36px 32px 32px 32px;
+  max-width: 480px;
+  margin: 0 auto 32px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.formHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.formIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #e57399, #a259e6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 2rem;
+}
+.formTitle {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #181c32;
+  margin-bottom: 2px;
+}
+.formSubtitle {
+  color: #888;
+  font-size: 1rem;
+  font-weight: 400;
+}
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.formLabel {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 2px;
+}
+.formInput {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 1.05rem;
+  outline: none;
+  background: #faf7fc;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.formInput:focus {
+  border: 1.5px solid #e57399;
+  box-shadow: 0 0 0 2px #fce4ec;
+}
+.formActions {
+  display: flex;
+  gap: 16px;
+  margin-top: 18px;
+}
+.btnGray {
+  flex: 1;
+  background: #f3f4f6;
+  color: #222;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 0;
+  font-size: 1.08rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btnGray:hover {
+  background: #e0e0e0;
+}
+.btnGradient {
+  flex: 1;
+  background: linear-gradient(90deg, #e57399, #a259e6);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 0;
+  font-size: 1.08rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(162,89,230,0.10);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.btnGradient:hover {
+  background: linear-gradient(90deg, #a259e6, #e57399);
+  box-shadow: 0 6px 18px rgba(162,89,230,0.18);
+}
+
+.calendarCard {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(162,89,230,0.10);
+  border: 1px solid #f3f4f6;
+  padding: 32px 28px 28px 28px;
+  margin-bottom: 32px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.calendarTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #181c32;
+}
+.calendarLegend {
+  display: flex;
+  gap: 32px;
+  margin-top: 8px;
+  margin-bottom: 0;
+  align-items: center;
+}
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  color: #666;
+}
+.legendDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dotBlue { background: #2563eb; }
+.dotRed { background: #ef4444; }
+.dotGreen { background: #22c55e; }
+.dotGray { background: #a3a3a3; }
+
+.monthNavBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #f3f4f6;
+  color: #888;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.monthNavBtn:disabled {
+  background: #f8fafc;
+  color: #d1d5db;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.monthNavBtn:not(:disabled):hover {
+  background: #ede7f6;
+  color: #a259e6;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.calendarDayCell {
+  height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 12px;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.calendarDayCell.clickable {
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.calendarDayCell.clickable:hover {
+  background: #f3f4f6;
+  box-shadow: 0 2px 8px rgba(162,89,230,0.10);
+  transform: scale(1.05);
+}
+.dayNumber {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #222;
+  margin-bottom: 4px;
+}
+.pillDot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  margin: 0 auto;
+}
+.pillBlue { background: #2563eb; color: #fff; }
+.pillRed { background: #ef4444; color: #fff; }
+.pillGreen { background: #22c55e; color: #fff; }
+.pillGray { background: #a3a3a3; color: #fff; }
+
+/* Cài đặt lịch */
+.settingsCard {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(162,89,230,0.10);
+  border: 1px solid #f3f4f6;
+  padding: 32px 28px 28px 28px;
+  max-width: 600px;
+  margin: 32px auto 0 auto;
+  text-align: center;
+}
+.settingsTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #181c32;
+  margin-bottom: 8px;
+}
+.settingsText {
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+.btnEdit {
+  margin-top: 18px;
+  background: linear-gradient(90deg, #ff9800, #ef4444);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 32px;
+  font-size: 1.08rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(239,68,68,0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.btnEdit:hover {
+  background: linear-gradient(90deg, #ef4444, #ff9800);
+  box-shadow: 0 6px 18px rgba(239,68,68,0.18);
+}
+
+.benefitHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 0;
+}
+.benefitHeaderIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #36d1c4 0%, #5b86e5 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+.benefitHeaderTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #181c32;
+  text-align: left;
+}
+.benefitListRow {
+  display: flex;
+  gap: 48px;
+  align-items: flex-start;
+  margin-top: 28px;
+}
+.benefitItemRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 260px;
+  max-width: 320px;
+}
+.benefitIconRow {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  max-width: 48px;
+  max-height: 48px;
+  aspect-ratio: 1/1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  margin-top: 2px;
+  box-shadow: 0 2px 8px rgba(162,89,230,0.10);
+  background: #fff;
+  transition: box-shadow 0.2s;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+.benefitIconRow.pink {
+  background: #ffe2ec;
+  color: #e57399;
+}
+.benefitIconRow.purple {
+  background: #ede7f6;
+  color: #a259e6;
+}
+.benefitIconRow.blue {
+  background: #e3f2fd;
+  color: #3b82f6;
+}
+.benefitTitleRow {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #181c32;
+  margin-bottom: 2px;
+  text-align: left;
+}
+.benefitDescRow {
+  color: #666;
+  font-size: 0.8rem;
+  text-align: left;
+  font-weight: 400;
+}
+
+.effectGrid {
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+  align-items: stretch;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.effectCard {
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 4px 24px rgba(162,89,230,0.10);
+  padding: 24px 16px 16px 16px;
+  min-width: 220px;
+  max-width: 300px;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0;
+}
+.effectPink { background: #ffe2ec; }
+.effectPurple { background: #ede7f6; }
+.effectBlue { background: #e3f2fd; }
+.effectIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  margin-bottom: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(162,89,230,0.10);
+}
+.effectIcon.pink { color: #e57399; }
+.effectIcon.purple { color: #a259e6; }
+.effectIcon.blue { color: #3b82f6; }
+.effectTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #181c32;
+  margin-bottom: 4px;
+  text-align: center;
+}
+.effectDesc {
+  color: #666;
+  font-size: 0.85rem;
+  text-align: center;
+}
