@@ -28,6 +28,7 @@ import TestRegistrationPage from '@/pages/TestRegistrationPage';
 import OvulationPage from './pages/OvulationPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import BlogCreatePage from './pages/BlogCreatePage';
+import PillReminderPage from '@/pages/PillReminderPage';
 
 const AppRoutes = () => {
   // Lấy thông tin user từ localStorage
@@ -74,6 +75,7 @@ const AppRoutes = () => {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/pill-reminder" element={<PillReminderPage />} />
         {/* Trang STI Test (đổi endpoint) */}
         {/* Homepage cho các role đã đăng nhập (trừ admin) */}
         <Route path="home" element={<HomePage />} />{' '}
