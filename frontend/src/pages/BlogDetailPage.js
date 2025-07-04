@@ -13,7 +13,9 @@ import {
   Button,
   Avatar,
   Card,
-  CardContent
+  CardContent,
+  Breadcrumbs,
+  Link
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -22,6 +24,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import ShareIcon from '@mui/icons-material/Share';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import blogService from '@/services/blogService';
+import { getBlogImageUrl } from '../utils/imageUrl';
+import HomeIcon from '@mui/icons-material/Home';
 
 const BlogDetailPage = () => {
   // ===== STATE MANAGEMENT =====
@@ -300,6 +304,16 @@ const BlogDetailPage = () => {
       position: 'relative'
     }}>
       <Container maxWidth="lg" sx={{ py: 6, position: 'relative' }}>
+        {/* Breadcrumbs */}
+        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 3 }}>
+          <Link underline="hover" color="inherit" href="/">
+            <HomeIcon sx={{ mr: 0.5, fontSize: 18, mb: '-2px' }} /> Trang chủ
+          </Link>
+          <Link underline="hover" color="inherit" href="/blog">
+            Blog
+          </Link>
+          <Typography color="text.primary">{blog?.title || '...'}</Typography>
+        </Breadcrumbs>
         {/* Back Button */}
         <Button
           startIcon={<ArrowBackIcon />}
@@ -340,7 +354,7 @@ const BlogDetailPage = () => {
               <Box
                 sx={{
                   height: { xs: '250px', md: '400px' },
-                  backgroundImage: `url(${blog.thumbnailImage})`,
+                  backgroundImage: `url(${getBlogImageUrl(blog.thumbnailImage)})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   position: 'relative'
@@ -459,55 +473,6 @@ const BlogDetailPage = () => {
                 )}
               </Box>
 
-              {/* Action Buttons */}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<ShareIcon />}
-                  onClick={handleShare}
-                  sx={{
-                    backgroundColor: '#1976d2',
-                    color: 'white',
-                    fontWeight: 600,
-                    py: 1,
-                    px: 2.5,
-                    borderRadius: '8px',
-                    textTransform: 'none',
-                    fontSize: '0.9rem',
-                    boxShadow: '0 4px 15px rgba(25, 118, 210, 0.2)',
-                    '&:hover': {
-                      backgroundColor: '#1565c0',
-                      transform: 'translateY(-1px)',
-                      boxShadow: '0 6px 20px rgba(25, 118, 210, 0.3)'
-                    }
-                  }}
-                >
-                  Chia sẻ
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<FavoriteIcon />}
-                  sx={{
-                    borderColor: '#f50057',
-                    color: '#f50057',
-                    fontWeight: 600,
-                    py: 1,
-                    px: 2.5,
-                    borderRadius: '8px',
-                    textTransform: 'none',
-                    fontSize: '0.9rem',
-                    '&:hover': {
-                      backgroundColor: '#f50057',
-                      color: 'white',
-                      borderColor: '#f50057',
-                      transform: 'translateY(-1px)'
-                    }
-                  }}
-                >
-                  Yêu thích
-                </Button>
-              </Box>
-
               {/* Blog Content */}
               <Box
                 sx={{
@@ -608,6 +573,26 @@ const BlogDetailPage = () => {
                   </Box>
                 </Box>
               )}
+
+              {/* Sections */}
+              {blog.sections && blog.sections.length > 0 && (
+                <Box mt={4}>
+                  {blog.sections.map((section, idx) => (
+                    <Box key={section.id || idx} mb={3}>
+                      <Typography variant="h6" fontWeight={700} sx={{ color: '#1976d2', mb: 1 }}>{section.sectionTitle}</Typography>
+                      {section.sectionImage && (
+                        <img
+                          src={getBlogImageUrl(section.sectionImage)}
+                          alt="section"
+                          style={{ maxWidth: '100%', width: 1000, borderRadius: 16, margin: '20px 0', boxShadow: '0 4px 16px rgba(25,118,210,0.10)' }}
+                          onError={e => { e.target.src = getBlogImageUrl('/img/blog/default.jpg'); }}
+                        />
+                      )}
+                      <Typography variant="body1" sx={{ color: '#37474f', fontSize: '1.08rem', lineHeight: 1.7, mt: 1 }}>{section.sectionContent}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </CardContent>
           </Card>
         )}
@@ -680,7 +665,7 @@ const BlogDetailPage = () => {
                         backgroundColor: '#ffffff',
                         border: '1px solid #e0e0e0',
                         display: 'flex',
-                        flexDirection: { xs: 'column', sm: 'row' }, // Thay đổi thành row trên tablet và desktop
+                        flexDirection: { xs: 'column', sm: 'row' },
                         boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                         '&:hover': {
                           transform: 'translateY(-4px)',
@@ -697,130 +682,44 @@ const BlogDetailPage = () => {
                           sx={{
                             width: { xs: '100%', sm: '300px' },
                             height: { xs: '200px', sm: '220px' },
-                            backgroundImage: `url(${relatedBlog.thumbnailImage})`,
+                            backgroundImage: `url(${getBlogImageUrl(relatedBlog.thumbnailImage)})`,
                             backgroundSize: 'cover',
                             backgroundPosition: 'center',
-                            flexShrink: 0,
                             position: 'relative'
                           }}
                         >
-                          {/* Category Badge */}
-                          <Box sx={{
-                            position: 'absolute',
-                            top: 12,
-                            left: 12,
-                            backgroundColor: 'rgba(255,255,255,0.9)',
-                            borderRadius: '30px',
-                            py: 0.5,
-                            px: 1.5
-                          }}>
-                            <Typography sx={{ 
-                              fontSize: '0.8rem', 
-                              fontWeight: 600,
-                              color: '#1976d2'
-                            }}>
-                              {relatedBlog.category?.name || 'Y khoa'}
-                            </Typography>
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+                              p: { xs: 2, md: 4 }
+                            }}
+                          >
+                            {/* Category */}
+                            {relatedBlog.category && (
+                              <Chip
+                                label={relatedBlog.category.isActive === false ? 'Danh mục đã bị xoá' : (relatedBlog.category.name || relatedBlog.category)}
+                                sx={{
+                                  backgroundColor: 'rgba(255,255,255,0.95)',
+                                  color: '#1976d2',
+                                  fontWeight: 600,
+                                  fontSize: '0.85rem',
+                                  mb: 1,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.5px'
+                                }}
+                              />
+                            )}
                           </Box>
                         </Box>
                       )}
-                      
-                      {/* Content - bên phải hình ảnh */}
-                      <CardContent sx={{ 
-                        p: 3, 
-                        flex: 1, 
-                        display: 'flex', 
-                        flexDirection: 'column',
-                        justifyContent: 'space-between'
-                      }}>
-                        <Box>
-                          <Typography 
-                            variant="h6" 
-                            sx={{ 
-                              fontWeight: 700,
-                              fontSize: '1.2rem',
-                              lineHeight: 1.4,
-                              color: '#1a237e',
-                              mb: 2
-                            }}
-                          >
-                            {relatedBlog.title}
-                          </Typography>
-                          
-                          {relatedBlog.description && (
-                            <Typography 
-                              variant="body1" 
-                              sx={{ 
-                                color: '#546e7a',
-                                fontSize: '0.95rem',
-                                mb: 3,
-                                display: '-webkit-box',
-                                WebkitLineClamp: 3,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                                lineHeight: 1.6
-                              }}
-                            >
-                              {relatedBlog.description}
-                            </Typography>
-                          )}
-                        </Box>
-                        
-                        <Box sx={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
-                        }}>
-                          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                            {/* Author */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <PersonIcon sx={{ fontSize: '0.9rem', color: '#90a4ae' }} />
-                              <Typography variant="caption" sx={{ color: '#90a4ae', fontSize: '0.85rem' }}>
-                                {relatedBlog.author?.fullName || relatedBlog.author?.username || 'Admin'}
-                              </Typography>
-                            </Box>
-                            
-                            {/* Date */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <CalendarTodayIcon sx={{ fontSize: '0.9rem', color: '#90a4ae' }} />
-                              <Typography variant="caption" sx={{ color: '#90a4ae', fontSize: '0.85rem' }}>
-                                {formatDate(relatedBlog.createdAt)}
-                              </Typography>
-                            </Box>
-                          </Box>
-                          
-                          {/* Read More */}
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              borderColor: '#1976d2',
-                              color: '#1976d2',
-                              fontWeight: 600,
-                              fontSize: '0.8rem',
-                              borderRadius: '8px',
-                              textTransform: 'none',
-                              '&:hover': {
-                                borderColor: '#1976d2',
-                                backgroundColor: '#e3f2fd',
-                                transform: 'translateY(-2px)'
-                              }
-                            }}
-                          >
-                            Đọc thêm
-                          </Button>
-                        </Box>
-                      </CardContent>
                     </Card>
                   ))}
                 </Box>
-              ) : (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography sx={{ color: '#546e7a', fontSize: '1.1rem' }}>
-                    Hiện chưa có bài viết liên quan. Chúng tôi sẽ cập nhật sớm.
-                  </Typography>
-                </Box>
-              )}
+              ) : null}
             </Box>
           </Box>
         )}

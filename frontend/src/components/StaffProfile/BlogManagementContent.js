@@ -7,7 +7,7 @@
  * - Quản lý nội dung và trạng thái bài viết
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -47,6 +47,8 @@ import {
   FilterList as FilterListIcon,
   LibraryBooks as LibraryBooksIcon,
 } from '@mui/icons-material';
+import blogService from '../../services/blogService';
+import BlogDetailModal from './modals/BlogDetailModal';
 
 // Teal theme colors
 const colors = {
@@ -176,62 +178,37 @@ const searchBarStyle = {
 };
 
 const BlogManagementContent = () => {
-  // Mock data - sẽ được thay thế bằng API calls
-  const [blogs, setBlogs] = useState([
-    {
-      id: 1,
-      title: 'Những điều cần biết về STI',
-      category: 'Sức khỏe',
-      author: 'Dr. Nguyễn Văn A',
-      publishDate: '2025-05-15',
-      status: 'published',
-      content: 'Nội dung bài viết 1',
-      thumbnail:
-        'https://img.freepik.com/free-photo/health-still-life-with-copy-space_23-2148854034.jpg',
-    },
-    {
-      id: 2,
-      title: 'Phòng ngừa bệnh lây qua đường tình dục',
-      category: 'Phòng ngừa',
-      author: 'Dr. Trần Thị B',
-      publishDate: '2025-06-01',
-      status: 'published',
-      content: 'Nội dung bài viết 2',
-      thumbnail:
-        'https://img.freepik.com/free-photo/doctor-with-stethoscope-hands-hospital-background_1423-1.jpg',
-    },
-    {
-      id: 3,
-      title: 'Các xét nghiệm STI phổ biến',
-      category: 'Xét nghiệm',
-      author: 'Dr. Lê Văn C',
-      publishDate: '2025-06-10',
-      status: 'draft',
-      content: 'Nội dung bài viết 3',
-      thumbnail:
-        'https://img.freepik.com/free-photo/close-up-doctor-with-stethoscope_23-2149191355.jpg',
-    },
-    {
-      id: 4,
-      title: 'Tìm hiểu về sức khỏe sinh sản',
-      category: 'Sức khỏe',
-      author: 'Dr. Phạm Thị D',
-      publishDate: '2025-06-15',
-      status: 'published',
-      content: 'Nội dung bài viết 4',
-      thumbnail:
-        'https://img.freepik.com/free-photo/doctor-with-stethoscope-hands-hospital-background_1423-1.jpg',
-    },
-  ]);
-
   // State management
+  const [blogs, setBlogs] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [searchTerm, setSearchTerm] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [currentBlog, setCurrentBlog] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [selectedBlog, setSelectedBlog] = useState(null);
+  const [openDetailModal, setOpenDetailModal] = useState(false);
+
+  // Fetch blogs from API
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await blogService.getAllBlogs();
+        console.log('API getAllBlogs raw:', data);
+        setBlogs(data);
+      } catch (err) {
+        setError(err.message || 'Không thể tải danh sách blog');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBlogs();
+  }, []);
 
   // Form state
   const [form, setForm] = useState({
@@ -328,23 +305,112 @@ const BlogManagementContent = () => {
     }, 800);
   };
 
-  const handleDeleteBlog = (id) => {
+  const handleDeleteBlog = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
       setLoading(true);
-      setTimeout(() => {
-        setBlogs(blogs.filter((blog) => blog.id !== id));
+      try {
+        await blogService.deleteBlog(id);
+        setBlogs((prev) => prev.filter((blog) => blog.id !== id));
+      } catch (err) {
+        setError(err.message || 'Xoá blog thất bại');
+      } finally {
         setLoading(false);
-      }, 600);
+      }
     }
   };
 
-  // Filter blogs dựa trên searchTerm
-  const filteredBlogs = blogs.filter(
-    (blog) =>
-      blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      blog.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      blog.author.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleStatusChange = async (id, newStatus) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Gọi API cập nhật trạng thái (giả sử có blogService.updateBlogStatus)
+      await blogService.updateBlog(id, { status: newStatus });
+      setBlogs((prev) => prev.map((b) => b.id === id ? { ...b, status: newStatus } : b));
+    } catch (err) {
+      setError(err.message || 'Cập nhật trạng thái thất bại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Thống kê
+  const totalBlogs = blogs.length;
+  const confirmedBlogs = blogs.filter(b => b.status === 'CONFIRMED').length;
+  const processingBlogs = blogs.filter(b => b.status === 'PROCESSING').length;
+
+  // Bộ lọc status
+  const statusOptions = [
+    { value: 'ALL', label: 'Tất cả' },
+    { value: 'CONFIRMED', label: 'Đã duyệt' },
+    { value: 'PROCESSING', label: 'Chờ duyệt' },
+    { value: 'CANCELED', label: 'Đã huỷ' },
+  ];
+
+  // Bộ lọc ngày
+  const [dateFilter, setDateFilter] = useState('');
+  const handleDateFilterChange = (e) => {
+    setDateFilter(e.target.value);
+    setPage(0);
+  };
+
+  // Filter blogs theo search, status, ngày
+  const filteredBlogs = blogs.filter((blog) => {
+    const matchSearch =
+      blog.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (blog.categoryName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (blog.authorName || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStatus = statusFilter === 'ALL' || blog.status === statusFilter;
+    let matchDate = true;
+    if (dateFilter) {
+      // createdAt là array [YYYY, MM, DD, ...]
+      const dateStr = blog.createdAt ? `${blog.createdAt[0]}-${String(blog.createdAt[1]).padStart(2, '0')}-${String(blog.createdAt[2]).padStart(2, '0')}` : '';
+      matchDate = dateStr === dateFilter;
+    }
+    return matchSearch && matchStatus && matchDate;
+  });
+
+  // Debug log
+  console.log('blogs:', blogs);
+  console.log('filteredBlogs:', filteredBlogs);
+  console.log('searchTerm:', searchTerm, 'statusFilter:', statusFilter);
+
+  // Hàm format ngày xuất bản
+  function formatDateVN(date) {
+    if (!date) return '';
+    let d = date;
+    if (Array.isArray(d) && d.length >= 3) {
+      d = new Date(d[0], d[1] - 1, d[2], d[3] || 0, d[4] || 0, d[5] || 0, d[6] || 0);
+    } else if (!(d instanceof Date)) {
+      d = new Date(d);
+    }
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  }
+
+  const handleView = (blog) => {
+    setSelectedBlog(blog);
+    setOpenDetailModal(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setOpenDetailModal(false);
+    setSelectedBlog(null);
+  };
+
+  const handleReject = async (blog, reason) => {
+    if (!reason || !reason.trim()) return;
+    setLoading(true);
+    try {
+      await blogService.updateBlogStatus(blog.id, { status: 'CANCELED', rejectionReason: reason });
+      setBlogs((prev) => prev.map((b) => b.id === blog.id ? { ...b, status: 'CANCELED' } : b));
+      setOpenDetailModal(false);
+      setSelectedBlog(null);
+    } catch (err) {
+      setError(err.message || 'Từ chối bài viết thất bại');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box sx={gradientBg}>
@@ -408,101 +474,45 @@ const BlogManagementContent = () => {
           </Box>
         </Box>
 
-        {/* Stats Cards */}
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-            gap: 3,
-            mb: 4,
-          }}
-        >
-          {/* Total Articles */}
-          <Fade in={true} style={{ transitionDelay: '100ms' }}>
-            <Box sx={statCardStyle}>
-              <Typography
-                variant="overline"
-                sx={{ color: colors.darkGray, opacity: 0.7 }}
-              >
-                TỔNG SỐ BÀI VIẾT
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography
-                  variant="h3"
-                  fontWeight={700}
-                  sx={{ color: colors.primary }}
-                >
-                  {blogs.length}
-                </Typography>
-                <LibraryBooksIcon
-                  sx={{
-                    fontSize: 36,
-                    ml: 'auto',
-                    color: colors.primary,
-                    opacity: 0.3,
-                  }}
-                />
-              </Box>
-            </Box>
-          </Fade>
+        {/* Thống kê tổng số bài viết */}
+        <Box sx={{ display: 'flex', gap: 4, mb: 3 }}>
+          <Paper sx={{ p: 2, minWidth: 180, textAlign: 'center' }}>
+            <Typography variant="h6">Tổng số bài viết</Typography>
+            <Typography variant="h4" color="primary">{totalBlogs}</Typography>
+          </Paper>
+          <Paper sx={{ p: 2, minWidth: 180, textAlign: 'center' }}>
+            <Typography variant="h6">Đã duyệt</Typography>
+            <Typography variant="h4" color="success.main">{confirmedBlogs}</Typography>
+          </Paper>
+          <Paper sx={{ p: 2, minWidth: 180, textAlign: 'center' }}>
+            <Typography variant="h6">Chờ duyệt</Typography>
+            <Typography variant="h4" color="warning.main">{processingBlogs}</Typography>
+          </Paper>
+        </Box>
 
-          {/* Published */}
-          <Fade in={true} style={{ transitionDelay: '200ms' }}>
-            <Box sx={statCardStyle}>
-              <Typography
-                variant="overline"
-                sx={{ color: colors.darkGray, opacity: 0.7 }}
-              >
-                ĐÃ XUẤT BẢN
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography
-                  variant="h3"
-                  fontWeight={700}
-                  sx={{ color: colors.success }}
-                >
-                  {blogs.filter((b) => b.status === 'published').length}
-                </Typography>
-                <LibraryBooksIcon
-                  sx={{
-                    fontSize: 36,
-                    ml: 'auto',
-                    color: colors.success,
-                    opacity: 0.3,
-                  }}
-                />
-              </Box>
-            </Box>
-          </Fade>
-
-          {/* Drafts */}
-          <Fade in={true} style={{ transitionDelay: '300ms' }}>
-            <Box sx={statCardStyle}>
-              <Typography
-                variant="overline"
-                sx={{ color: colors.darkGray, opacity: 0.7 }}
-              >
-                BẢN NHÁP
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography
-                  variant="h3"
-                  fontWeight={700}
-                  sx={{ color: colors.secondary }}
-                >
-                  {blogs.filter((b) => b.status === 'draft').length}
-                </Typography>
-                <LibraryBooksIcon
-                  sx={{
-                    fontSize: 36,
-                    ml: 'auto',
-                    color: colors.secondary,
-                    opacity: 0.3,
-                  }}
-                />
-              </Box>
-            </Box>
-          </Fade>
+        {/* Bộ lọc status và ngày */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+          <FormControl sx={{ minWidth: 180 }} size="small">
+            <InputLabel>Trạng thái</InputLabel>
+            <Select
+              value={statusFilter}
+              label="Trạng thái"
+              onChange={e => setStatusFilter(e.target.value)}
+            >
+              {statusOptions.map(opt => (
+                <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            label="Ngày tạo"
+            type="date"
+            size="small"
+            value={dateFilter}
+            onChange={handleDateFilterChange}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 180 }}
+          />
         </Box>
 
         {/* Blog List Table */}
@@ -556,65 +566,16 @@ const BlogManagementContent = () => {
                         }}
                       >
                         <TableCell>{blog.id}</TableCell>
+                        <TableCell>{blog.title}</TableCell>
                         <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Avatar
-                              src={blog.thumbnail}
-                              variant="rounded"
-                              sx={{
-                                width: 40,
-                                height: 40,
-                                mr: 2,
-                                borderRadius: 2,
-                              }}
-                            />
-                            <Typography sx={{ fontWeight: 500 }}>
-                              {blog.title}
-                            </Typography>
-                          </Box>
+                          {blog.categoryIsActive === false ? 'Danh mục đã bị xoá' : (blog.categoryName || 'Chưa phân loại')}
                         </TableCell>
+                        <TableCell>{blog.authorName || ''}</TableCell>
+                        <TableCell>{formatDateVN(blog.createdAt)}</TableCell>
                         <TableCell>
-                          <Chip
-                            label={blog.category}
-                            size="small"
-                            sx={{
-                              fontWeight: 500,
-                              bgcolor: 'rgba(32, 178, 170, 0.1)',
-                              color: colors.primary,
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell>{blog.author}</TableCell>
-                        <TableCell>
-                          {new Date(blog.publishDate).toLocaleDateString(
-                            'vi-VN'
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={
-                              blog.status === 'published'
-                                ? 'Đã xuất bản'
-                                : 'Bản nháp'
-                            }
-                            color={
-                              blog.status === 'published'
-                                ? 'success'
-                                : 'default'
-                            }
-                            size="small"
-                            sx={{
-                              fontWeight: 600,
-                              bgcolor:
-                                blog.status === 'published'
-                                  ? 'rgba(46, 139, 87, 0.1)'
-                                  : 'rgba(95, 158, 160, 0.1)',
-                              color:
-                                blog.status === 'published'
-                                  ? colors.success
-                                  : colors.secondary,
-                            }}
-                          />
+                          {blog.status === 'CONFIRMED' && <Chip label="Đã duyệt" color="success" size="small" />}
+                          {blog.status === 'PROCESSING' && <Chip label="Chờ duyệt" color="warning" size="small" />}
+                          {blog.status === 'CANCELED' && <Chip label="Đã huỷ" color="error" size="small" />}
                         </TableCell>
                         <TableCell align="right">
                           <Tooltip title="Xem trước">
@@ -622,19 +583,9 @@ const BlogManagementContent = () => {
                               size="small"
                               color="info"
                               sx={iconButtonStyle}
-                              onClick={() => alert(blog.content)}
+                              onClick={() => handleView(blog)}
                             >
                               <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Chỉnh sửa">
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              sx={iconButtonStyle}
-                              onClick={() => handleOpenEditDialog(blog)}
-                            >
-                              <EditIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Xóa">
@@ -642,7 +593,7 @@ const BlogManagementContent = () => {
                               size="small"
                               color="error"
                               sx={iconButtonStyle}
-                              onClick={() => handleDeleteBlog(blog.id)}
+                              onClick={() => handleReject(blog, '')}
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
@@ -819,6 +770,13 @@ const BlogManagementContent = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        <BlogDetailModal
+          open={openDetailModal}
+          blog={selectedBlog}
+          onClose={handleCloseDetailModal}
+          onReject={handleReject}
+        />
       </Box>
     </Box>
   );

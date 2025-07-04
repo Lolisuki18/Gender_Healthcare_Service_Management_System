@@ -13,11 +13,11 @@ const blogService = {
    */
   getAllBlogs: async () => {
     try {
-      const response = await apiClient.get("/admin/blogs");
+      const response = await apiClient.get("/blog");
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to fetch blogs");
       }
-      return response.data.data;
+      return response.data.data?.content || [];
     } catch (error) {
       console.error("Error fetching blogs:", error);
       throw new Error(error.response?.data?.message || error.message);
@@ -31,7 +31,7 @@ const blogService = {
    */
   getBlogById: async (id) => {
     try {
-      const response = await apiClient.get(`/admin/blogs/${id}`);
+      const response = await apiClient.get(`/blog/${id}`);
       if (!response.data.success) {
         throw new Error(
           response.data.message || "Failed to fetch blog details"
@@ -51,7 +51,7 @@ const blogService = {
    */
   createBlog: async (blogData) => {
     try {
-      const response = await apiClient.post("/admin/blogs", blogData);
+      const response = await apiClient.post("/blog", blogData);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to create blog");
       }
@@ -70,7 +70,7 @@ const blogService = {
    */
   updateBlog: async (id, blogData) => {
     try {
-      const response = await apiClient.put(`/admin/blogs/${id}`, blogData);
+      const response = await apiClient.put(`/blog/${id}`, blogData);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to update blog");
       }
@@ -88,7 +88,7 @@ const blogService = {
    */
   deleteBlog: async (id) => {
     try {
-      const response = await apiClient.delete(`/admin/blogs/${id}`);
+      const response = await apiClient.delete(`/blog/${id}`);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to delete blog");
       }
@@ -106,7 +106,7 @@ const blogService = {
    */
   publishBlog: async (id) => {
     try {
-      const response = await apiClient.put(`/admin/blogs/${id}/publish`);
+      const response = await apiClient.put(`/blog/${id}/publish`);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to publish blog");
       }
@@ -124,7 +124,7 @@ const blogService = {
    */
   unpublishBlog: async (id) => {
     try {
-      const response = await apiClient.put(`/admin/blogs/${id}/unpublish`);
+      const response = await apiClient.put(`/blog/${id}/unpublish`);
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to unpublish blog");
       }
@@ -141,7 +141,7 @@ const blogService = {
    */
   getCategories: async () => {
     try {
-      const response = await apiClient.get("/admin/blog-categories");
+      const response = await apiClient.get("/blog-categories");
       if (!response.data.success) {
         throw new Error(
           response.data.message || "Failed to fetch blog categories"
@@ -484,8 +484,6 @@ const blogService = {
    */
   formatBlogData: (blogResponse) => {
     if (!blogResponse) return null;
-
-    // Nếu category bị xoá mềm hoặc không có category, trả về label đặc biệt
     let category = null;
     if (blogResponse.categoryId) {
       if (blogResponse.categoryIsActive === false) {
@@ -502,14 +500,20 @@ const blogService = {
         };
       }
     }
-
+    // Đảm bảo thumbnailImage luôn có giá trị
+    const thumbnailImage = blogResponse.thumbnailImage || blogResponse.displayThumbnail || blogResponse.existingThumbnail || '';
+    // Đảm bảo section images luôn có giá trị
+    const sections = (blogResponse.sections || []).map(section => ({
+      ...section,
+      sectionImage: section.sectionImage || section.existingSectionImage || ''
+    }));
     return {
       id: blogResponse.id,
       title: blogResponse.title,
       description: blogResponse.description,
       content: blogResponse.content,
-      thumbnailImage: blogResponse.thumbnailImage || blogResponse.displayThumbnail,
-      category: category, // Sử dụng đối tượng category đã tạo
+      thumbnailImage,
+      category,
       author: {
         id: blogResponse.authorId,
         fullName: blogResponse.authorName,
@@ -518,7 +522,7 @@ const blogService = {
       status: blogResponse.status,
       createdAt: blogResponse.createdAt,
       updatedAt: blogResponse.updatedAt,
-      sections: blogResponse.sections || [],
+      sections,
       tags: blogResponse.tags || [],
       views: blogResponse.views || 0
     };

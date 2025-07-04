@@ -13,9 +13,7 @@ import {
   Alert,
   TextField,
   InputAdornment,
-  Pagination,
-  Tabs,
-  Tab
+  Pagination
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
@@ -30,8 +28,7 @@ const BlogPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [activeTab, setActiveTab] = useState(0);
-  
+
   const navigate = useNavigate();
   const blogsPerPage = 6;
 
@@ -44,7 +41,6 @@ const BlogPage = () => {
         
         console.log('🚀 Fetching blogs with params:', {
           currentPage,
-          activeTab,
           searchTerm: searchTerm.trim(),
           blogsPerPage
         });
@@ -53,8 +49,6 @@ const BlogPage = () => {
         const params = {
           page: currentPage - 1, // API sử dụng 0-based pagination
           size: blogsPerPage,
-          sortBy: getSortByFromTab(activeTab),
-          sortDir: getSortDirFromTab(activeTab)
         };
 
         if (searchTerm.trim()) {
@@ -175,18 +169,7 @@ const BlogPage = () => {
     }, searchTerm ? 500 : 0);
 
     return () => clearTimeout(timeoutId);
-  }, [currentPage, activeTab, searchTerm]);
-
-  // ===== HELPER FUNCTIONS =====
-  const getSortByFromTab = (tabIndex) => {
-    // Luôn sắp xếp theo createdAt thay vì views
-    return 'createdAt';
-  };
-
-  const getSortDirFromTab = (tabIndex) => {
-    // Luôn sắp xếp theo thứ tự giảm dần
-    return 'desc';
-  };
+  }, [currentPage, searchTerm]);
 
   // ===== EVENT HANDLERS =====
   const handleBlogClick = (blogId) => {
@@ -203,11 +186,6 @@ const BlogPage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-    setCurrentPage(1); // Reset về trang đầu khi đổi tab
-  };
-
   // ===== RENDER =====
   
   // Debug logging
@@ -217,7 +195,6 @@ const BlogPage = () => {
     blogsCount: blogs.length,
     totalPages,
     currentPage,
-    activeTab,
     searchTerm
   });
 
@@ -255,66 +232,6 @@ const BlogPage = () => {
           >
             Cập nhật thông tin y khoa mới nhất từ đội ngũ chuyên gia hàng đầu
           </Typography>
-        </Box>
-
-        {/* Tab Navigation */}
-        <Box sx={{ 
-          mb: 6,
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          p: 0.5,
-          border: '1px solid #e3f2fd',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
-        }}>
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            variant="fullWidth"
-            sx={{
-              '& .MuiTabs-indicator': {
-                backgroundColor: '#1976d2',
-                height: '2px',
-                borderRadius: '2px'
-              },
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.85rem' },
-                color: '#78909c',
-                py: 1.5,
-                px: 1.5,
-                minHeight: 'auto',
-                '&.Mui-selected': {
-                  color: '#1976d2',
-                  fontWeight: 700,
-                  backgroundColor: 'rgba(25, 118, 210, 0.04)'
-                },
-                '&:hover': {
-                  color: '#1976d2',
-                  backgroundColor: 'rgba(25, 118, 210, 0.02)'
-                },
-                borderRadius: '8px',
-                mx: 0.25,
-                transition: 'all 0.2s ease'
-              }
-            }}
-          >
-            <Tab 
-              label="Bài viết mới nhất" 
-              icon={<span style={{ fontSize: '1rem' }}>🆕</span>}
-              iconPosition="start"
-            />
-            <Tab 
-              label="Bài viết quan trọng" 
-              icon={<span style={{ fontSize: '1.2rem' }}>⭐</span>}
-              iconPosition="start"
-            />
-            <Tab 
-              label="Bài viết nổi bật" 
-              icon={<span style={{ fontSize: '1rem' }}>🔥</span>}
-              iconPosition="start"
-            />
-          </Tabs>
         </Box>
 
         {/* Search Bar */}
