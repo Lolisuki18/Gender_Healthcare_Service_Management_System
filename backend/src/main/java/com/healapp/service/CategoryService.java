@@ -64,15 +64,13 @@ public class CategoryService {
 
     public ApiResponse<String> deleteCategory(Long categoryId) {
         try {
-            // Kiểm tra category có tồn tại không
-            Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+            Optional<Category> categoryOpt = categoryRepository.findByIdAndIsActiveTrue(categoryId);
             if (categoryOpt.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }
 
             Category category = categoryOpt.get();
-
-            // Cập nhật trạng thái của tất cả các bài viết thuộc category này thành CANCELED
+            // Cập nhật trạng thái các bài viết liên quan nếu cần (giữ nguyên logic cũ)
             List<BlogPost> affectedPosts = category.getPosts();
             LocalDateTime now = LocalDateTime.now();
             String cancellationReason = "Category '" + category.getName() + "' has been deleted";
@@ -83,14 +81,11 @@ public class CategoryService {
                 post.setUpdatedAt(now);
             }
 
-            // Save để cập nhật các bài viết trước khi xóa category
-            // Do có cascade = CascadeType.ALL trong mối quan hệ @OneToMany nên việc cập nhật các bài viếtsẽ được thực hiện khi category được cập nhật
+            // Đánh dấu category là không hoạt động
+            category.setIsActive(false);
             categoryRepository.save(category);
 
-            // Xóa category
-            categoryRepository.deleteById(categoryId);
-
-            return ApiResponse.success("Category deleted successfully and " + affectedPosts.size() +
+            return ApiResponse.success("Category deleted (soft) successfully and " + affectedPosts.size() +
                     " related blog posts have been canceled", null);
         } catch (Exception e) {
             return ApiResponse.error("Failed to delete category: " + e.getMessage());
@@ -99,7 +94,7 @@ public class CategoryService {
 
     public ApiResponse<Category> getCategoryById(Long categoryId) {
         try {
-            Optional<Category> category = categoryRepository.findById(categoryId);
+            Optional<Category> category = categoryRepository.findByIdAndIsActiveTrue(categoryId);
             if (category.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }
@@ -111,7 +106,7 @@ public class CategoryService {
 
     public ApiResponse<List<Category>> getAllCategories() {
         try {
-            List<Category> categories = categoryRepository.findAll();
+            List<Category> categories = categoryRepository.findAllByIsActiveTrue();
             return ApiResponse.success("Categories retrieved successfully", categories);
         } catch (Exception e) {
             return ApiResponse.error("Failed to retrieve categories: " + e.getMessage());
@@ -121,7 +116,7 @@ public class CategoryService {
     // Thêm method mới để trả về categories với số lượng bài viết
     public ApiResponse<List<CategoryResponse>> getAllCategoriesWithPostCount() {
         try {
-            List<Category> categories = categoryRepository.findAll();
+            List<Category> categories = categoryRepository.findAllByIsActiveTrue();
             List<CategoryResponse> categoryResponses = categories.stream()
                     .map(CategoryResponse::new)
                     .collect(Collectors.toList());

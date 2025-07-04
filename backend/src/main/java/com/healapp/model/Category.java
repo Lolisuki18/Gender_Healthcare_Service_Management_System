@@ -33,6 +33,9 @@ public class Category {
     @Column(columnDefinition = "NVARCHAR(255)")
     private String description;
 
+    @Column(nullable = false)
+    private Boolean isActive = true;
+
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
     private List<BlogPost> posts = new ArrayList<>();
 }

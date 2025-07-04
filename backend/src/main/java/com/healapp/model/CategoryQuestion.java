@@ -26,4 +26,7 @@ public class CategoryQuestion {
 
     @Column(columnDefinition = "NVARCHAR(255)")
     private String description;
+
+    @Column(nullable = false)
+    private Boolean isActive = true;
 }

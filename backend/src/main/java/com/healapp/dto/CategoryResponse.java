@@ -15,12 +15,14 @@ public class CategoryResponse {
     private String name;
     private String description;
     private Long postCount;
+    private Boolean isActive;
 
     // Constructor từ Category entity
     public CategoryResponse(Category category) {
         this.categoryId = category.getCategoryId();
         this.name = category.getName();
         this.description = category.getDescription();
+        this.isActive = category.getIsActive();
         
         // Chỉ đếm bài viết có trạng thái CONFIRMED
         if (category.getPosts() != null) {

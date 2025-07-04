@@ -1,5 +1,14 @@
 package com.healapp.service;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.CategoryQuestionRequest;
 import com.healapp.dto.CategoryQuestionResponse;
@@ -11,14 +20,6 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.CategoryQuestionRepository;
 import com.healapp.repository.QuestionRepository;
 import com.healapp.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class CategoryQuestionService {
@@ -108,9 +109,11 @@ public class CategoryQuestionService {
             }
 
             // Check if category exists
-            if (!categoryQuestionRepository.existsById(categoryId)) {
+            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository.findByIdAndIsActiveTrue(categoryId);
+            if (categoryOpt.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }
+            CategoryQuestion category = categoryOpt.get();
 
             // Update all questions in this category to CANCELED status
             QuestionStatusRequest statusRequest = new QuestionStatusRequest();
@@ -131,8 +134,10 @@ public class CategoryQuestionService {
                 }
             }
 
-            categoryQuestionRepository.deleteById(categoryId);
-            return ApiResponse.success("Category deleted successfully");
+            // Đánh dấu category question là không hoạt động
+            category.setIsActive(false);
+            categoryQuestionRepository.save(category);
+            return ApiResponse.success("Category deleted (soft) successfully");
         } catch (Exception e) {
             return ApiResponse.error("Failed to delete category: " + e.getMessage());
         }
@@ -140,7 +145,7 @@ public class CategoryQuestionService {
 
     public ApiResponse<List<CategoryQuestionResponse>> getAllCategories() {
         try {
-            List<CategoryQuestion> categories = categoryQuestionRepository.findAll();
+            List<CategoryQuestion> categories = categoryQuestionRepository.findAllByIsActiveTrue();
             List<CategoryQuestionResponse> response = categories.stream()
                     .map(this::mapToCategoryResponse)
                     .collect(Collectors.toList());
@@ -153,7 +158,7 @@ public class CategoryQuestionService {
 
     public ApiResponse<CategoryQuestionResponse> getCategoryById(Long categoryId) {
         try {
-            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository.findById(categoryId);
+            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository.findByIdAndIsActiveTrue(categoryId);
             if (categoryOpt.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }
@@ -170,6 +175,7 @@ public class CategoryQuestionService {
         response.setCategoryQuestionId(category.getCategoryQuestionId());
         response.setName(category.getName());
         response.setDescription(category.getDescription());
+        response.setIsActive(category.getIsActive());
         return response;
     }
 }

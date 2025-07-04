@@ -1,5 +1,6 @@
 package com.healapp.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,4 +14,10 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     Optional<Category> findByName(String name);
 
     boolean existsByName(String name);
+
+    Optional<Category> findByNameAndIsActiveTrue(String name);
+
+    Optional<Category> findByIdAndIsActiveTrue(Long id);
+
+    List<Category> findAllByIsActiveTrue();
 }
