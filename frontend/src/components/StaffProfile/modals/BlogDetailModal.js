@@ -81,7 +81,10 @@ const BlogDetailModal = ({ open, blog, onClose, onReject }) => {
             src={getBlogImageUrl(blog.thumbnailImage || blog.existingThumbnail)}
             alt="thumbnail"
             style={{ maxWidth: '100%', borderRadius: 12, marginBottom: 16, boxShadow: '0 4px 20px rgba(25,118,210,0.08)' }}
-            onError={e => { e.target.src = getBlogImageUrl('/img/blog/default.jpg'); }}
+            onError={e => { 
+              console.error('❌ Blog thumbnail failed to load:', e.target.src);
+              e.target.src = '/img/thumbs/suckhoesinhsan.png'; 
+            }}
           />
         </Box>
         <Typography variant="body1" mb={2} sx={{ whiteSpace: 'pre-line', color: '#37474f', fontSize: '1.08rem', lineHeight: 1.7 }}>{blog.content}</Typography>
@@ -92,7 +95,10 @@ const BlogDetailModal = ({ open, blog, onClose, onReject }) => {
               <Box key={section.id || idx} mb={2} sx={{ background: '#fff', borderRadius: 8, p: 2, boxShadow: '0 2px 8px rgba(25,118,210,0.06)' }}>
                 <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#1a237e', mb: 1 }}>{section.sectionTitle}</Typography>
                 {section.sectionImage && (
-                  <img src={getBlogImageUrl(section.sectionImage)} alt="section" style={{ maxWidth: 180, borderRadius: 6, margin: '8px 0', boxShadow: '0 2px 8px rgba(25,118,210,0.08)' }} onError={e => { e.target.src = getBlogImageUrl('/img/blog/default.jpg'); }} />
+                  <img src={getBlogImageUrl(section.sectionImage)} alt="section" style={{ maxWidth: 180, borderRadius: 6, margin: '8px 0', boxShadow: '0 2px 8px rgba(25,118,210,0.08)' }} onError={e => { 
+                    console.error('❌ Section image failed to load:', e.target.src);
+                    e.target.src = '/img/thumbs/suckhoesinhsan.png'; 
+                  }} />
                 )}
                 <Typography variant="body2" sx={{ whiteSpace: 'pre-line', color: '#37474f', fontSize: '1rem', mt: 1 }}>{section.sectionContent}</Typography>
               </Box>

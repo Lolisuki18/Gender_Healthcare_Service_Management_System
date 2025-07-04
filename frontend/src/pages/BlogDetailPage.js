@@ -21,10 +21,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import PersonIcon from '@mui/icons-material/Person';
-import ShareIcon from '@mui/icons-material/Share';
-import FavoriteIcon from '@mui/icons-material/Favorite';
 import blogService from '@/services/blogService';
 import { getBlogImageUrl } from '../utils/imageUrl';
+import BlogCard from '@/components/common/BlogCard';
 import HomeIcon from '@mui/icons-material/Home';
 
 const BlogDetailPage = () => {
@@ -68,12 +67,13 @@ const BlogDetailPage = () => {
               console.log("Related blogs response:", relatedResponse);
               
               if (relatedResponse.success && relatedResponse.data && relatedResponse.data.content) {
-                // Lọc bỏ blog hiện tại khỏi danh sách liên quan
+                // Lọc bỏ blog hiện tại khỏi danh sách liên quan và format dữ liệu
                 const filteredRelated = relatedResponse.data.content
                   .filter(relatedBlog => relatedBlog.id !== parseInt(id))
-                  .slice(0, 6);  // Giới hạn tối đa 6 blog
+                  .slice(0, 6)  // Giới hạn tối đa 6 blog
+                  .map(blog => blogService.formatBlogData(blog)); // Format dữ liệu để đồng nhất
                 
-                console.log("Filtered related blogs:", filteredRelated);
+                console.log("Filtered and formatted related blogs:", filteredRelated);
                 console.log("Number of related blogs:", filteredRelated.length);
                 
                 // ĐÂY LÀ DÒNG CODE QUAN TRỌNG CẦN THÊM
@@ -116,7 +116,11 @@ const BlogDetailPage = () => {
 
   // Thêm effect này để theo dõi khi relatedBlogs thay đổi
   useEffect(() => {
-    console.log("Related blogs state updated:", relatedBlogs);
+    console.log("📊 Related blogs state updated:", relatedBlogs);
+    console.log("📊 Number of related blogs:", relatedBlogs?.length || 0);
+    if (relatedBlogs?.length > 0) {
+      console.log("📊 Sample related blog data:", relatedBlogs[0]);
+    }
   }, [relatedBlogs]);
 
   // ===== UTILITY FUNCTIONS =====
@@ -154,32 +158,6 @@ const BlogDetailPage = () => {
 
   const handleBackClick = () => {
     navigate('/blog');
-  };
-
-  const handleShare = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: blog.title,
-          text: blog.description || blog.title,
-          url: window.location.href,
-        });
-      } else {
-        // Fallback: copy to clipboard
-        await navigator.clipboard.writeText(window.location.href);
-        alert('Link đã được sao chép vào clipboard!');
-      }
-    } catch (error) {
-      console.warn('Error sharing:', error);
-      // Fallback manual copy
-      const textArea = document.createElement('textarea');
-      textArea.value = window.location.href;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      alert('Link đã được sao chép vào clipboard!');
-    }
   };
 
   const handleRelatedBlogClick = (blogId) => {
@@ -272,7 +250,7 @@ const BlogDetailPage = () => {
               onClick={handleBackClick}
               variant="contained"
               sx={{
-                backgroundColor: '#1976d2',
+                backgroundColor: '#26c6da',
                 color: 'white',
                 fontWeight: 600,
                 py: 1.5,
@@ -280,11 +258,11 @@ const BlogDetailPage = () => {
                 borderRadius: '8px',
                 textTransform: 'none',
                 fontSize: '1rem',
-                boxShadow: '0 4px 15px rgba(25, 118, 210, 0.2)',
+                boxShadow: '0 4px 15px rgba(38, 198, 218, 0.2)',
                 '&:hover': {
-                  backgroundColor: '#1565c0',
+                  backgroundColor: '#00bcd4',
                   transform: 'translateY(-1px)',
-                  boxShadow: '0 6px 20px rgba(25, 118, 210, 0.3)'
+                  boxShadow: '0 6px 20px rgba(38, 198, 218, 0.3)'
                 }
               }}
             >
@@ -300,39 +278,95 @@ const BlogDetailPage = () => {
   return (
     <Box sx={{ 
       minHeight: '100vh',
-      backgroundColor: '#f5f5f5',
-      position: 'relative'
+      background: 'linear-gradient(135deg, #f8fbff 0%, #e3f2fd 30%, #ffffff 100%)',
+      position: 'relative',
+      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '400px',
+        background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.08) 0%, rgba(66, 165, 245, 0.03) 100%)',
+        zIndex: 0
+      }
     }}>
-      <Container maxWidth="lg" sx={{ py: 6, position: 'relative' }}>
+      <Container maxWidth="lg" sx={{ py: 8, position: 'relative', zIndex: 1 }}>
         {/* Breadcrumbs */}
-        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 3 }}>
-          <Link underline="hover" color="inherit" href="/">
+        <Breadcrumbs 
+          aria-label="breadcrumb" 
+          sx={{ 
+            mb: 4,
+            '& .MuiBreadcrumbs-separator': {
+              color: '#90a4ae',
+              mx: 1
+            },
+            '& .MuiBreadcrumbs-li': {
+              fontSize: '1rem'
+            }
+          }}
+        >
+          <Link 
+            underline="hover" 
+            color="inherit" 
+            href="/"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              color: '#546e7a',
+              fontWeight: 500,
+              '&:hover': {
+                color: '#1976d2'
+              }
+            }}
+          >
             <HomeIcon sx={{ mr: 0.5, fontSize: 18, mb: '-2px' }} /> Trang chủ
           </Link>
-          <Link underline="hover" color="inherit" href="/blog">
+          <Link 
+            underline="hover" 
+            color="inherit" 
+            href="/blog"
+            sx={{
+              color: '#546e7a',
+              fontWeight: 500,
+              '&:hover': {
+                color: '#26c6da'
+              }
+            }}
+          >
             Blog
           </Link>
-          <Typography color="text.primary">{blog?.title || '...'}</Typography>
+          <Typography color="#26c6da" sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+            {blog?.title || '...'}
+          </Typography>
         </Breadcrumbs>
         {/* Back Button */}
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={handleBackClick}
           sx={{ 
-            mb: 4,
-            backgroundColor: '#1976d2',
-            color: '#fff',
+            mb: 6,
+            backgroundColor: '#26c6da',
+            color: '#ffffff',
             fontWeight: 600,
-            fontSize: '0.95rem',
-            py: 1.2,
-            px: 3,
-            borderRadius: '8px',
+            fontSize: '1rem',
+            py: 1.5,
+            px: 4,
+            borderRadius: '16px',
             textTransform: 'none',
-            boxShadow: '0 4px 15px rgba(25, 118, 210, 0.2)',
+            boxShadow: '0 6px 20px rgba(38, 198, 218, 0.3)',
+            border: '2px solid transparent',
+            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             '&:hover': {
-              backgroundColor: '#1565c0',
-              transform: 'translateY(-1px)',
-              boxShadow: '0 6px 20px rgba(25, 118, 210, 0.3)'
+              backgroundColor: '#00bcd4',
+              transform: 'translateY(-3px)',
+              boxShadow: '0 8px 25px rgba(38, 198, 218, 0.4)',
+              borderColor: '#b2ebf2'
+            },
+            '&:active': {
+              transform: 'translateY(-1px)'
             }
           }}
         >
@@ -342,22 +376,44 @@ const BlogDetailPage = () => {
         {/* Blog Content */}
         {blog && (
           <Card sx={{ 
-            borderRadius: '16px', 
+            borderRadius: '24px', 
             overflow: 'hidden', 
-            mb: 6,
+            mb: 10,
             backgroundColor: '#ffffff',
-            border: '1px solid #e3f2fd',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+            border: '2px solid #e3f2fd',
+            boxShadow: '0 12px 50px rgba(25, 118, 210, 0.15)',
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '6px',
+              background: 'linear-gradient(90deg, #1976d2, #42a5f5)',
+              zIndex: 1
+            }
           }}>
             {/* Hero Image */}
             {blog.thumbnailImage && (
               <Box
                 sx={{
-                  height: { xs: '250px', md: '400px' },
+                  height: { xs: '280px', md: '450px' },
                   backgroundImage: `url(${getBlogImageUrl(blog.thumbnailImage)})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
-                  position: 'relative'
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'linear-gradient(45deg, rgba(25,118,210,0.1), rgba(0,0,0,0.1))',
+                    zIndex: 1
+                  }
                 }}
               >
                 <Box
@@ -366,8 +422,9 @@ const BlogDetailPage = () => {
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
-                    p: { xs: 2, md: 4 }
+                    background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
+                    p: { xs: 3, md: 5 },
+                    zIndex: 2
                   }}
                 >
                   {/* Category */}
@@ -377,11 +434,14 @@ const BlogDetailPage = () => {
                       sx={{
                         backgroundColor: 'rgba(255,255,255,0.95)',
                         color: '#1976d2',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         fontSize: '0.85rem',
-                        mb: 1,
+                        mb: 2,
                         textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
+                        letterSpacing: '1px',
+                        fontFamily: 'inherit',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255,255,255,0.2)'
                       }}
                     />
                   )}
@@ -389,17 +449,18 @@ const BlogDetailPage = () => {
               </Box>
             )}
 
-            <CardContent sx={{ p: { xs: 3, md: 5 } }}>
+            <CardContent sx={{ p: { xs: 4, md: 6 } }}>
               {/* Blog Title */}
               <Typography 
                 variant="h1" 
                 sx={{ 
                   fontWeight: 800,
                   color: '#1a237e',
-                  mb: 4,
-                  lineHeight: 1.3,
-                  fontSize: { xs: '1.6rem', md: '2.2rem' },
-                  letterSpacing: '-0.01em'
+                  mb: 3,
+                  lineHeight: 1.2,
+                  fontSize: { xs: '1.8rem', md: '2.5rem' },
+                  letterSpacing: '-0.02em',
+                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
                 }}
               >
                 {blog.title}
@@ -412,10 +473,12 @@ const BlogDetailPage = () => {
                   sx={{
                     color: '#546e7a',
                     fontWeight: 400,
-                    fontSize: { xs: '1rem', md: '1.1rem' },
-                    lineHeight: 1.6,
-                    mb: 4,
-                    fontStyle: 'italic'
+                    fontSize: { xs: '1.1rem', md: '1.2rem' },
+                    lineHeight: 1.7,
+                    mb: 5,
+                    fontStyle: 'italic',
+                    fontFamily: 'inherit',
+                    paddingLeft: 3
                   }}
                 >
                   {blog.description}
@@ -426,50 +489,74 @@ const BlogDetailPage = () => {
               <Box sx={{ 
                 display: 'flex', 
                 flexWrap: 'wrap',
-                gap: { xs: 2, md: 3 },
-                mb: 4,
-                pb: 3,
-                borderBottom: '1px solid #e3f2fd'
+                gap: { xs: 2, md: 4 },
+                mb: 5,
+                pb: 4
               }}>
                 {/* Author */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar sx={{ 
-                    width: 32, 
-                    height: 32, 
-                    backgroundColor: '#1976d2',
-                    fontWeight: 600,
-                    fontSize: '0.9rem'
+                    width: 40, 
+                    height: 40, 
+                    backgroundColor: '#26c6da',
+                    fontWeight: 700,
+                    fontSize: '1rem',
+                    boxShadow: '0 4px 12px rgba(38, 198, 218, 0.3)'
                   }}>
-                    <PersonIcon sx={{ fontSize: '1rem' }} />
+                    <PersonIcon sx={{ fontSize: '1.2rem' }} />
                   </Avatar>
-                  <Typography variant="body1" sx={{ color: '#546e7a', fontWeight: 500, fontSize: '0.95rem' }}>
-                    {blog.author?.fullName || blog.author?.username || 'Admin'}
-                  </Typography>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#90a4ae', fontWeight: 500, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Tác giả
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: '#1a237e', fontWeight: 600, fontSize: '1rem', fontFamily: 'inherit' }}>
+                      {blog.author?.fullName || blog.author?.username || 'Admin'}
+                    </Typography>
+                  </Box>
                 </Box>
 
                 {/* Date */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <CalendarTodayIcon sx={{ 
-                    fontSize: '1rem', 
-                    color: '#1976d2'
-                  }} />
-                  <Typography variant="body1" sx={{ color: '#546e7a', fontWeight: 500, fontSize: '0.95rem' }}>
-                    {formatDate(blog.createdAt)}
-                  </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box sx={{
+                    width: 40,
+                    height: 40,
+                    backgroundColor: '#b2ebf2',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <CalendarTodayIcon sx={{ 
+                      fontSize: '1.2rem', 
+                      color: '#26c6da'
+                    }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#90a4ae', fontWeight: 500, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Ngày đăng
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: '#1a237e', fontWeight: 600, fontSize: '1rem', fontFamily: 'inherit' }}>
+                      {formatDate(blog.createdAt)}
+                    </Typography>
+                  </Box>
                 </Box>
 
                 {/* Status */}
                 {blog.status && (
-                  <Chip
-                    label={blog.status === 'CONFIRMED' ? 'Đã duyệt' : blog.status}
-                    size="small"
-                    sx={{
-                      backgroundColor: blog.status === 'CONFIRMED' ? '#e8f5e8' : '#fff3cd',
-                      color: blog.status === 'CONFIRMED' ? '#2e7d32' : '#856404',
-                      fontWeight: 600,
-                      fontSize: '0.75rem'
-                    }}
-                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Chip
+                      label={blog.status === 'CONFIRMED' ? 'Đã duyệt' : blog.status}
+                      sx={{
+                        backgroundColor: blog.status === 'CONFIRMED' ? '#e8f5e8' : '#fff3cd',
+                        color: blog.status === 'CONFIRMED' ? '#2e7d32' : '#856404',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        fontFamily: 'inherit',
+                        borderRadius: '20px',
+                        height: '32px'
+                      }}
+                    />
+                  </Box>
                 )}
               </Box>
 
@@ -477,66 +564,63 @@ const BlogDetailPage = () => {
               <Box
                 sx={{
                   lineHeight: 1.8,
-                  fontSize: { xs: '1rem', md: '1.1rem' },
+                  fontSize: { xs: '1.1rem', md: '1.2rem' },
                   color: '#37474f',
                   fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                  mb: 5,
                   '& p': {
                     lineHeight: 1.8,
-                    marginBottom: 2.5,
-                    fontSize: { xs: '1rem', md: '1.1rem' },
+                    marginBottom: 3,
+                    fontSize: { xs: '1.1rem', md: '1.2rem' },
                     color: '#37474f',
-                    fontWeight: 400
+                    fontWeight: 400,
+                    fontFamily: 'inherit'
                   },
                   '& h1, & h2, & h3, & h4, & h5, & h6': {
-                    fontWeight: 700,
-                    marginTop: 3,
-                    marginBottom: 2,
+                    fontWeight: 800,
+                    marginTop: 4,
+                    marginBottom: 2.5,
                     color: '#1a237e',
-                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+                    fontFamily: 'inherit'
                   },
                   '& h3': {
-                    fontSize: { xs: '1.3rem', md: '1.5rem' },
-                    color: '#1976d2',
-                    borderLeft: '4px solid #1976d2',
-                    paddingLeft: 2,
-                    marginTop: 4
+                    fontSize: { xs: '1.4rem', md: '1.6rem' },
+                    color: '#26c6da',
+                    marginTop: 5,
+                    paddingLeft: 0
                   },
                   '& h4': {
-                    fontSize: { xs: '1.1rem', md: '1.3rem' },
+                    fontSize: { xs: '1.2rem', md: '1.4rem' },
                     color: '#424242'
                   },
                   '& img': {
                     maxWidth: '100%',
                     height: 'auto',
-                    borderRadius: '12px',
-                    margin: '2rem 0',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    borderRadius: '16px',
+                    margin: '3rem 0',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+                    border: '1px solid #e3f2fd'
                   },
                   '& ul, & ol': {
-                    paddingLeft: 2.5,
-                    marginBottom: 2.5
+                    paddingLeft: 3,
+                    marginBottom: 3
                   },
                   '& li': {
-                    marginBottom: 1,
-                    lineHeight: 1.7,
-                    fontSize: { xs: '1rem', md: '1.1rem' },
+                    marginBottom: 1.5,
+                    lineHeight: 1.8,
+                    fontSize: { xs: '1.1rem', md: '1.2rem' },
                     color: '#37474f'
                   },
                   '& blockquote': {
-                    borderLeft: '4px solid #1976d2',
-                    paddingLeft: 2.5,
-                    margin: '2rem 0',
+                    paddingLeft: 3,
+                    margin: '3rem 0',
                     fontStyle: 'italic',
-                    backgroundColor: '#f8fbff',
-                    padding: 2.5,
-                    borderRadius: '8px',
-                    fontSize: { xs: '1rem', md: '1.1rem' },
+                    fontSize: { xs: '1.1rem', md: '1.2rem' },
                     fontWeight: 500,
-                    color: '#37474f',
-                    boxShadow: '0 2px 10px rgba(25, 118, 210, 0.1)'
+                    color: '#37474f'
                   },
                   '& strong': {
-                    fontWeight: 600,
+                    fontWeight: 700,
                     color: '#1a237e'
                   },
                   '& em': {
@@ -549,23 +633,42 @@ const BlogDetailPage = () => {
 
               {/* Tags */}
               {blog.tags && blog.tags.length > 0 && (
-                <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid #e3f2fd' }}>
-                  <Typography variant="h6" sx={{ mb: 2, color: '#1a237e', fontWeight: 600, fontSize: '1.1rem' }}>
-                    Thẻ:
+                <Box sx={{ 
+                  mt: 5, 
+                  pt: 4
+                }}>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      mb: 3, 
+                      color: '#1a237e', 
+                      fontWeight: 700, 
+                      fontSize: '1.2rem',
+                      fontFamily: 'inherit'
+                    }}
+                  >
+                    Thẻ liên quan:
                   </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                     {blog.tags.map((tag, index) => (
                       <Chip
                         key={index}
                         label={tag}
                         variant="outlined"
-                        size="small"
                         sx={{
                           borderColor: '#1976d2',
                           color: '#1976d2',
-                          fontSize: '0.8rem',
+                          fontSize: '0.9rem',
+                          fontWeight: 600,
+                          fontFamily: 'inherit',
+                          borderRadius: '20px',
+                          height: '36px',
+                          backgroundColor: '#ffffff',
                           '&:hover': {
-                            backgroundColor: '#e3f2fd'
+                            backgroundColor: '#e3f2fd',
+                            borderColor: '#1565c0',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
                           }
                         }}
                       />
@@ -576,19 +679,71 @@ const BlogDetailPage = () => {
 
               {/* Sections */}
               {blog.sections && blog.sections.length > 0 && (
-                <Box mt={4}>
+                <Box mt={6}>
+                  <Typography 
+                    variant="h5" 
+                    sx={{ 
+                      mb: 4, 
+                      color: '#00695c', 
+                      fontWeight: 800,
+                      fontSize: { xs: '1.3rem', md: '1.5rem' },
+                      fontFamily: 'inherit'
+                    }}
+                  >
+                    Nội dung chi tiết
+                  </Typography>
                   {blog.sections.map((section, idx) => (
-                    <Box key={section.id || idx} mb={3}>
-                      <Typography variant="h6" fontWeight={700} sx={{ color: '#1976d2', mb: 1 }}>{section.sectionTitle}</Typography>
+                    <Box 
+                      key={section.id || idx} 
+                      mb={5}
+                      sx={{
+                        padding: 2
+                      }}
+                    >
+                      <Typography 
+                        variant="h6" 
+                        fontWeight={800} 
+                        sx={{ 
+                          color: '#26c6da', 
+                          mb: 3,
+                          fontSize: { xs: '1.1rem', md: '1.3rem' },
+                          fontFamily: 'inherit'
+                        }}
+                      >
+                        {section.sectionTitle}
+                      </Typography>
                       {section.sectionImage && (
-                        <img
-                          src={getBlogImageUrl(section.sectionImage)}
-                          alt="section"
-                          style={{ maxWidth: '100%', width: 1000, borderRadius: 16, margin: '20px 0', boxShadow: '0 4px 16px rgba(25,118,210,0.10)' }}
-                          onError={e => { e.target.src = getBlogImageUrl('/img/blog/default.jpg'); }}
-                        />
+                        <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+                          <img
+                            src={getBlogImageUrl(section.sectionImage)}
+                            alt="section"
+                            style={{ 
+                              maxWidth: '90%', 
+                              width: 'auto',
+                              maxHeight: '450px',
+                              borderRadius: 16,
+                              objectFit: 'contain'
+                            }}
+                            onError={e => { 
+                              console.error('❌ Section image failed to load:', e.target.src);
+                              e.target.src = '/img/thumbs/suckhoesinhsan.png'; 
+                            }}
+                          />
+                        </Box>
                       )}
-                      <Typography variant="body1" sx={{ color: '#37474f', fontSize: '1.08rem', lineHeight: 1.7, mt: 1 }}>{section.sectionContent}</Typography>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: '#37474f', 
+                          fontSize: { xs: '1.1rem', md: '1.2rem' }, 
+                          lineHeight: 1.8, 
+                          mt: 2,
+                          fontFamily: 'inherit',
+                          fontWeight: 400
+                        }}
+                      >
+                        {section.sectionContent}
+                      </Typography>
                     </Box>
                   ))}
                 </Box>
@@ -599,21 +754,39 @@ const BlogDetailPage = () => {
         {/* Related Blogs - Same Category */}
         {blog && (
           <Box sx={{ 
-            mt: 8, 
-            py: 5, 
-            px: { xs: 2, md: 0 },
-            backgroundColor: '#f8fbff',
-            borderRadius: '16px'
+            mt: 12, 
+            py: 8, 
+            px: { xs: 3, md: 0 },
+            background: 'linear-gradient(135deg, #ffffff 0%, #e0f7fa 100%)',
+            borderRadius: '24px',
+            border: '2px solid #b2ebf2',
+            boxShadow: '0 12px 50px rgba(38, 198, 218, 0.15)',
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '6px',
+              background: 'linear-gradient(90deg, #26c6da, #4dd0e1)',
+              borderRadius: '24px 24px 0 0'
+            }
           }}>
             <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
-              <Box sx={{ mb: 5, textAlign: 'center' }}>
+              <Box sx={{ mb: 8, textAlign: 'center' }}>
                 <Typography 
                   variant="h3" 
                   sx={{ 
                     fontWeight: 800,
-                    color: '#1a237e',
-                    mb: 2,
-                    fontSize: { xs: '1.8rem', md: '2.2rem' }
+                    color: '#00695c',
+                    mb: 4,
+                    fontSize: { xs: '2.2rem', md: '2.8rem' },
+                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                    background: 'linear-gradient(135deg, #00695c 0%, #26c6da 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
                   }}
                 >
                   {relatedBlogs && relatedBlogs.length > 0 ? 'Cùng chuyên mục' : 'Bài viết khác'}
@@ -623,29 +796,47 @@ const BlogDetailPage = () => {
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
-                  mb: 1 
+                  mb: 3,
+                  gap: 2
                 }}>
                   <Box 
                     sx={{ 
-                      width: '50px', 
-                      height: '3px', 
-                      backgroundColor: '#1976d2', 
-                      borderRadius: '3px' 
+                      width: '60px', 
+                      height: '4px', 
+                      background: 'linear-gradient(90deg, #26c6da, #4dd0e1)', 
+                      borderRadius: '4px' 
+                    }} 
+                  />
+                  <Box 
+                    sx={{ 
+                      width: '12px', 
+                      height: '12px', 
+                      backgroundColor: '#26c6da', 
+                      borderRadius: '50%' 
+                    }} 
+                  />
+                  <Box 
+                    sx={{ 
+                      width: '60px', 
+                      height: '4px', 
+                      background: 'linear-gradient(90deg, #4dd0e1, #26c6da)', 
+                      borderRadius: '4px' 
                     }} 
                   />
                 </Box>
-                
                 <Typography 
                   variant="h6" 
                   sx={{ 
                     color: '#546e7a',
-                    maxWidth: '700px',
+                    maxWidth: '800px',
                     mx: 'auto',
-                    fontSize: '1.1rem',
-                    fontWeight: 400
+                    fontSize: '1.3rem',
+                    fontWeight: 400,
+                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                    lineHeight: 1.6
                   }}
                 >
-                  {blog?.category?.name ? `Các bài viết khác về ${blog.category.name}` : 'Bài viết liên quan khác'}
+                  {blog?.category?.name ? `Khám phá thêm các bài viết khác về ${blog.category.name}` : 'Những bài viết liên quan khác mà bạn có thể quan tâm'}
                 </Typography>
               </Box>
               
@@ -653,73 +844,76 @@ const BlogDetailPage = () => {
                 <Box sx={{ 
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 3
+                  gap: 4
                 }}>
-                  {relatedBlogs.map((relatedBlog) => (
-                    <Card
-                      key={relatedBlog.id}
-                      sx={{
-                        borderRadius: '16px',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #e0e0e0',
-                        display: 'flex',
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                          boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
-                        },
-                        position: 'relative',
-                        overflow: 'hidden'
-                      }}
-                      onClick={() => handleRelatedBlogClick(relatedBlog.id)}
-                    >
-                      {/* Thumbnail Image - lớn hơn và nằm bên trái */}
-                      {relatedBlog.thumbnailImage && (
-                        <Box
-                          sx={{
-                            width: { xs: '100%', sm: '300px' },
-                            height: { xs: '200px', sm: '220px' },
-                            backgroundImage: `url(${getBlogImageUrl(relatedBlog.thumbnailImage)})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            position: 'relative'
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              position: 'absolute',
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
-                              p: { xs: 2, md: 4 }
-                            }}
-                          >
-                            {/* Category */}
-                            {relatedBlog.category && (
-                              <Chip
-                                label={relatedBlog.category.isActive === false ? 'Danh mục đã bị xoá' : (relatedBlog.category.name || relatedBlog.category)}
-                                sx={{
-                                  backgroundColor: 'rgba(255,255,255,0.95)',
-                                  color: '#1976d2',
-                                  fontWeight: 600,
-                                  fontSize: '0.85rem',
-                                  mb: 1,
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.5px'
-                                }}
-                              />
-                            )}
-                          </Box>
-                        </Box>
-                      )}
-                    </Card>
-                  ))}
+                  {relatedBlogs.map((relatedBlog) => {
+                    console.log('🔗 Related blog data:', relatedBlog);
+                    
+                    // Chuyển đổi dữ liệu đã được format để phù hợp với BlogCard component
+                    const blogCardData = {
+                      id: relatedBlog.id,
+                      title: relatedBlog.title,
+                      content: relatedBlog.content,
+                      thumbnailImage: relatedBlog.thumbnailImage,
+                      existingThumbnail: relatedBlog.thumbnailImage, // Fallback
+                      createdAt: relatedBlog.createdAt,
+                      status: relatedBlog.status,
+                      categoryName: relatedBlog.category?.name || 'Không có danh mục',
+                      categoryIsActive: relatedBlog.category?.isActive !== false,
+                      authorName: relatedBlog.author?.fullName || relatedBlog.author?.username || 'Admin',
+                      authorAvatar: relatedBlog.author?.avatar
+                    };
+
+                    return (
+                      <Box 
+                        key={relatedBlog.id}
+                        onClick={() => handleRelatedBlogClick(relatedBlog.id)}
+                        sx={{ cursor: 'pointer' }}
+                      >
+                        <BlogCard
+                          post={blogCardData}
+                          truncateContent={180}
+                        />
+                      </Box>
+                    );
+                  })}
                 </Box>
-              ) : null}
+              ) : (
+                <Box sx={{ 
+                  textAlign: 'center', 
+                  py: 8,
+                  backgroundColor: 'rgba(255,255,255,0.7)',
+                  borderRadius: '20px',
+                  border: '2px dashed #b2ebf2',
+                  backdropFilter: 'blur(10px)'
+                }}>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      color: '#546e7a',
+                      fontWeight: 600,
+                      fontSize: '1.3rem',
+                      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                      mb: 2
+                    }}
+                  >
+                    Hiện tại chưa có bài viết liên quan
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#90a4ae',
+                      fontSize: '1rem',
+                      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+                    }}
+                  >
+                    {blog?.category?.name 
+                      ? `Chưa có bài viết khác trong chuyên mục "${blog.category.name}"`
+                      : 'Hãy quay lại sau để xem thêm nội dung mới'
+                    }
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Box>
         )}

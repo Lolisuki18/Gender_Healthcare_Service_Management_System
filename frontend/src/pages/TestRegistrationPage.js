@@ -17,8 +17,11 @@ import {
   Radio,            // Nút radio để chọn 1 trong nhiều option
   RadioGroup,       // Nhóm các radio button
   FormControlLabel, // Label cho form control (radio, checkbox, etc.)
+  Breadcrumbs,      // Component breadcrumb navigation
+  Link,             // Component liên kết
 } from '@mui/material';
 import { styled } from '@mui/material/styles'; // Utility để tạo styled component
+import HomeIcon from '@mui/icons-material/Home'; // Icon cho breadcrumb
 
 // ===== IMPORT CÁC SERVICE API =====
 import stiService from '@/services/stiService'; // Service gọi API liên quan đến xét nghiệm STI
@@ -1032,6 +1035,57 @@ function TestRegistrationPage() {
       
       {/* Container chính chứa nội dung */}
       <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1, py: { xs: 6, md: 8 } }}>
+        {/* Breadcrumbs */}
+        <Breadcrumbs 
+          aria-label="breadcrumb" 
+          sx={{ 
+            mb: 6,
+            '& .MuiBreadcrumbs-separator': {
+              color: '#90a4ae',
+              mx: 1
+            },
+            '& .MuiBreadcrumbs-li': {
+              fontSize: '1rem'
+            }
+          }}
+        >
+          <Link 
+            underline="hover" 
+            color="inherit" 
+            onClick={() => navigate('/')}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              color: '#546e7a',
+              fontWeight: 500,
+              cursor: 'pointer',
+              '&:hover': {
+                color: '#1976d2'
+              }
+            }}
+          >
+            <HomeIcon sx={{ mr: 0.5, fontSize: 18, mb: '-2px' }} /> Trang chủ
+          </Link>
+          <Link 
+            underline="hover" 
+            color="inherit" 
+            onClick={() => navigate('/sti-services')}
+            sx={{
+              color: '#546e7a',
+              fontWeight: 500,
+              cursor: 'pointer',
+              '&:hover': {
+                color: '#1976d2'
+              }
+            }}
+          >
+            Dịch vụ STI
+          </Link>
+          <Typography color="#26c6da" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+            Đăng ký xét nghiệm
+          </Typography>
+        </Breadcrumbs>
+
         {/* Tiêu đề trang với gradient text và thanh divider */}
         <Box sx={{ textAlign: 'center', mb: 5 }}>
           <Typography
@@ -1535,7 +1589,7 @@ function TestRegistrationPage() {
             <ModernButton
               variant="outlined"
               color="primary"
-              onClick={handleBack}
+                           onClick={handleBack}
               sx={{
                 minWidth: 200,
                 fontSize: '1.1rem',

@@ -402,34 +402,14 @@ const ServiceDetailDialog = ({
             <Typography variant="h6" fontWeight={700} gutterBottom sx={{ 
               display: 'flex',
               alignItems: 'center',
-              color: 'white',
+              color: '#2d3748',
               mb: 3,
-              p: 3,
-              background: 'linear-gradient(135deg, #2196F3 0%, #00BFA5 50%, #2196F3 100%)',
-              borderRadius: 3,
-              border: '2px solid rgba(255,255,255,0.3)',
-              boxShadow: '0 8px 24px rgba(33,150,243,0.25)',
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '100%',
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%)',
-                pointerEvents: 'none'
-              }
+              py: 1
             }}>
               <CheckCircleOutlineIcon sx={{ 
                 mr: 1.5, 
-                color: 'white',
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                borderRadius: '50%',
-                p: 1,
-                fontSize: '2rem',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                color: '#2196F3',
+                fontSize: '2rem'
               }} />
               Danh sách xét nghiệm trong gói ({detailData.services.length} xét nghiệm)
             </Typography>
