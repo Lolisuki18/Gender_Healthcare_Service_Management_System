@@ -10,6 +10,7 @@ import com.healapp.model.CategoryQuestion;
 public interface CategoryQuestionRepository extends JpaRepository<CategoryQuestion, Long> {
     boolean existsByName(String name);
     boolean existsByNameAndIsActiveTrue(String name);
-    Optional<CategoryQuestion> findByIdAndIsActiveTrue(Long id);
+    Optional<CategoryQuestion> findByCategoryQuestionIdAndIsActiveTrue(Long categoryQuestionId);
+    Optional<CategoryQuestion> findByCategoryQuestionId(Long categoryQuestionId);
     List<CategoryQuestion> findAllByIsActiveTrue();
 }

@@ -41,7 +41,7 @@ public class CategoryService {
 
     public ApiResponse<Category> updateCategory(Long categoryId, CategoryRequest request) {
         try {
-            Optional<Category> existingCategory = categoryRepository.findById(categoryId);
+            Optional<Category> existingCategory = categoryRepository.findByCategoryId(categoryId);
             if (existingCategory.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }
@@ -64,7 +64,7 @@ public class CategoryService {
 
     public ApiResponse<String> deleteCategory(Long categoryId) {
         try {
-            Optional<Category> categoryOpt = categoryRepository.findByIdAndIsActiveTrue(categoryId);
+            Optional<Category> categoryOpt = categoryRepository.findByCategoryIdAndIsActiveTrue(categoryId);
             if (categoryOpt.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }
@@ -94,7 +94,7 @@ public class CategoryService {
 
     public ApiResponse<Category> getCategoryById(Long categoryId) {
         try {
-            Optional<Category> category = categoryRepository.findByIdAndIsActiveTrue(categoryId);
+            Optional<Category> category = categoryRepository.findByCategoryIdAndIsActiveTrue(categoryId);
             if (category.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }

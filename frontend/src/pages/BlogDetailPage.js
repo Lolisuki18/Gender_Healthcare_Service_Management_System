@@ -359,7 +359,7 @@ const BlogDetailPage = () => {
                   {/* Category */}
                   {blog.category && (
                     <Chip
-                      label={blog.category.name || blog.category}
+                      label={blog.category.isActive === false ? 'Danh mục đã bị xoá' : (blog.category.name || blog.category)}
                       sx={{
                         backgroundColor: 'rgba(255,255,255,0.95)',
                         color: '#1976d2',

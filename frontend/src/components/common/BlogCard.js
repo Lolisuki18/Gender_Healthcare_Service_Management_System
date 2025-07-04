@@ -145,7 +145,7 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500, fontSize: '0.8rem' }}>
-                {post.categoryName}
+                {post.categoryIsActive === false ? 'Danh mục đã bị xoá' : post.categoryName}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

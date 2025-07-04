@@ -74,7 +74,7 @@ public class CategoryQuestionService {
             }
 
             // Check if category exists
-            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository.findById(categoryId);
+            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository.findByCategoryQuestionIdAndIsActiveTrue(categoryId);
             if (categoryOpt.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }
@@ -109,7 +109,7 @@ public class CategoryQuestionService {
             }
 
             // Check if category exists
-            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository.findByIdAndIsActiveTrue(categoryId);
+            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository.findByCategoryQuestionIdAndIsActiveTrue(categoryId);
             if (categoryOpt.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }
@@ -158,7 +158,7 @@ public class CategoryQuestionService {
 
     public ApiResponse<CategoryQuestionResponse> getCategoryById(Long categoryId) {
         try {
-            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository.findByIdAndIsActiveTrue(categoryId);
+            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository.findByCategoryQuestionIdAndIsActiveTrue(categoryId);
             if (categoryOpt.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }

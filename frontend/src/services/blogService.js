@@ -485,11 +485,23 @@ const blogService = {
   formatBlogData: (blogResponse) => {
     if (!blogResponse) return null;
 
-    // Tạo cấu trúc category phù hợp nếu chỉ có categoryId và categoryName
-    const category = blogResponse.categoryId ? {
-      id: blogResponse.categoryId,
-      name: blogResponse.categoryName || 'Chưa phân loại'
-    } : null;
+    // Nếu category bị xoá mềm hoặc không có category, trả về label đặc biệt
+    let category = null;
+    if (blogResponse.categoryId) {
+      if (blogResponse.categoryIsActive === false) {
+        category = {
+          id: blogResponse.categoryId,
+          name: 'Danh mục đã bị xoá',
+          isActive: false
+        };
+      } else {
+        category = {
+          id: blogResponse.categoryId,
+          name: blogResponse.categoryName || 'Chưa phân loại',
+          isActive: blogResponse.categoryIsActive !== false
+        };
+      }
+    }
 
     return {
       id: blogResponse.id,
