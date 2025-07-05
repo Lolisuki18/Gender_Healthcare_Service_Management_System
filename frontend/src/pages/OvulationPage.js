@@ -10,6 +10,7 @@ import { CheckCircle } from '@mui/icons-material';
 import 'chart.js/auto';
 import { List, ListItem } from '@mui/material';
 import styles from '../styles/OvulationPage.module.css';
+import NotificationModal from '../components/MenstrualCycle/NotificationModal';
 import {
   Heart,
   Calendar,
@@ -29,6 +30,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import MenstrualCycleForm from '../components/MenstrualCycle/MenstrualCycleForm.js';
+import { notify } from '../utils/notify';
 
 // const defaultStats = {
 //   averageCycleLength: 28,
@@ -137,19 +139,19 @@ const OvulationPage = ({ stats }) => {
   }, [isLoggedIn]);
 
   // Tỉ lệ mang thai
-  const [pregnancyProb, setPregnancyProb] = useState([]);
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data =
-          await ovulationService.getAllMenstrualCyclesWithPregnancyProb();
-        setPregnancyProb(data);
-      } catch (err) {
-        console.error('Lỗi khi lấy dữ liệu tỉ lệ mang thai:', err);
-      }
-    };
-    fetchData();
-  }, []);
+  // const [pregnancyProb, setPregnancyProb] = useState([]);
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const data =
+  //         await ovulationService.getAllMenstrualCyclesWithPregnancyProb();
+  //       setPregnancyProb(data);
+  //     } catch (err) {
+  //       console.error('Lỗi khi lấy dữ liệu tỉ lệ mang thai:', err);
+  //     }
+  //   };
+  //   fetchData();
+  // }, []);
 
   // Độ dài chu kỳ trung bình
   const getAverageCycleLength = (menstrualCycles) => {
@@ -412,6 +414,15 @@ const OvulationPage = ({ stats }) => {
   // Edit cycle states
   const [editingCycle, setEditingCycle] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
+
+  // Notification preferences states
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationPreferences, setNotificationPreferences] = useState({
+    // cycleReminder: true,
+    pregnancyReminder: true,
+    ovulationReminder: true,
+    // periodReminder: true,
+  });
 
   const toggleSection = (section) => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -724,7 +735,7 @@ const OvulationPage = ({ stats }) => {
       }, 100);
     } catch (error) {
       console.error('Lỗi khi xử lý chu kỳ:', error);
-      alert('Tính toán thất bại!');
+      notify.error('Lỗi', 'Tính toán thất bại!');
     }
   };
 
@@ -780,43 +791,13 @@ const OvulationPage = ({ stats }) => {
       setShowEditForm(false);
       setEditingCycle(null);
 
-      // Show success message
-      const successMessage = document.createElement('div');
-      successMessage.innerHTML = '✅ Cập nhật chu kỳ thành công!';
-      successMessage.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: white;
-        padding: 12px 24px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        z-index: 10000;
-        font-weight: 600;
-        animation: slideInRight 0.3s ease-out;
-      `;
-      document.body.appendChild(successMessage);
-
-      // Remove success message after 3 seconds
-      setTimeout(() => {
-        if (document.body.contains(successMessage)) {
-          successMessage.style.animation = 'slideOutRight 0.3s ease-in';
-          setTimeout(() => {
-            if (document.body.contains(successMessage)) {
-              document.body.removeChild(successMessage);
-            }
-          }, 300);
-        }
-      }, 3000);
-
-      alert('Cập nhật chu kỳ thành công!');
+      notify.success('Thành công', 'Cập nhật chu kỳ thành công!');
 
       // Scroll to top để người dùng thấy dữ liệu đã cập nhật
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
       console.error('Lỗi khi cập nhật chu kỳ:', error);
-      alert('Cập nhật chu kỳ thất bại!');
+      notify.error('Lỗi', 'Cập nhật chu kỳ thất bại!');
     }
   };
 
@@ -833,48 +814,18 @@ const OvulationPage = ({ stats }) => {
         // Refetch dữ liệu để cập nhật UI
         await fetchMenstrualCycles(true);
 
-        // Adjust current page if necessary
-        const newTotalPages = Math.ceil(
-          (menstrualCycles.length - 1) / itemsPerPage
-        );
-        if (currentPage > newTotalPages && newTotalPages > 0) {
-          setCurrentPage(newTotalPages);
-        }
-
-        // Show success message
-        const successMessage = document.createElement('div');
-        successMessage.innerHTML = '✅ Xóa chu kỳ thành công!';
-        successMessage.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: linear-gradient(135deg, #ef4444, #dc2626);
-          color: white;
-          padding: 12px 24px;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-          z-index: 10000;
-          font-weight: 600;
-          animation: slideInRight 0.3s ease-out;
-        `;
-        document.body.appendChild(successMessage);
-
-        // Remove success message after 3 seconds
-        setTimeout(() => {
-          if (document.body.contains(successMessage)) {
-            successMessage.style.animation = 'slideOutRight 0.3s ease-in';
-            setTimeout(() => {
-              if (document.body.contains(successMessage)) {
-                document.body.removeChild(successMessage);
-              }
-            }, 300);
+          // Adjust current page if necessary
+          const newTotalPages = Math.ceil(
+            (menstrualCycles.length - 1) / itemsPerPage
+          );
+          if (currentPage > newTotalPages && newTotalPages > 0) {
+            setCurrentPage(newTotalPages);
           }
-        }, 3000);
 
-        alert('Xóa chu kỳ thành công!');
+        notify.success('Thành công', 'Xóa chu kỳ thành công!');
       } catch (error) {
         console.error('Lỗi khi xóa chu kỳ:', error);
-        alert('Xóa chu kỳ thất bại!');
+        notify.error('Lỗi', 'Xóa chu kỳ thất bại!');
       }
     }
   };
@@ -883,6 +834,24 @@ const OvulationPage = ({ stats }) => {
   const handleCancelEdit = () => {
     setShowEditForm(false);
     setEditingCycle(null);
+  };
+
+  // Hàm xử lý khi click nút "Lưu chu kỳ vào hồ sơ"
+  const handleShowNotificationModal = () => {
+    setShowNotificationModal(true);
+  };
+
+  // Hàm xử lý thay đổi notification preferences
+  const handleNotificationPreferenceChange = (key, value) => {
+    setNotificationPreferences(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  // Hàm xử lý đóng notification modal
+  const handleCloseNotificationModal = () => {
+    setShowNotificationModal(false);
   };
 
   // Hàm xử lý lưu chu kỳ đã tính toán vào database
@@ -895,6 +864,9 @@ const OvulationPage = ({ stats }) => {
         startDate: calculationResult.startDate,
         numberOfDays: calculationResult.periodLength,
         cycleLength: calculationResult.cycleLength,
+        // Thêm thông tin về notification preferences
+        ovulationRemind: notificationPreferences.ovulationReminder || false,
+        pregnancyRemind: notificationPreferences.pregnancyReminder || false,
       };
 
       // Gọi API để lưu vào database
@@ -906,44 +878,17 @@ const OvulationPage = ({ stats }) => {
       // Reset về trang đầu để hiển thị chu kỳ mới nhất
       setCurrentPage(1);
 
-      // Thông báo thành công
-      const successMessage = document.createElement('div');
-      successMessage.innerHTML = '✅ Đã lưu chu kỳ thành công!';
-      successMessage.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: white;
-        padding: 12px 24px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        z-index: 10000;
-        font-weight: 600;
-        animation: slideInRight 0.3s ease-out;
-      `;
-      document.body.appendChild(successMessage);
+      // Đóng modal thông báo
+      setShowNotificationModal(false);
 
-      // Remove success message after 3 seconds
-      setTimeout(() => {
-        if (document.body.contains(successMessage)) {
-          successMessage.style.animation = 'slideOutRight 0.3s ease-in';
-          setTimeout(() => {
-            if (document.body.contains(successMessage)) {
-              document.body.removeChild(successMessage);
-            }
-          }, 300);
-        }
-      }, 3000);
-
-      alert('Lưu chu kỳ thành công!');
+      notify.success('Thành công', 'Lưu chu kỳ thành công!');
       setCalculationResult(null); // Clear calculation result
       
       // Scroll to top để người dùng thấy dữ liệu mới
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
       console.error('Lỗi khi lưu chu kỳ:', error);
-      alert('Lưu chu kỳ thất bại!');
+      notify.error('Lỗi', 'Lưu chu kỳ thất bại!');
     }
   };
 
@@ -1266,6 +1211,15 @@ const OvulationPage = ({ stats }) => {
                   </Fade>
                 </Modal>
 
+                {/* Notification Preferences Modal */}
+                <NotificationModal
+                  open={showNotificationModal}
+                  onClose={handleCloseNotificationModal}
+                  preferences={notificationPreferences}
+                  onPreferenceChange={handleNotificationPreferenceChange}
+                  onSave={handleSaveCycleToDatabase}
+                />
+
                 {/* Kết quả tính toán */}
                 {calculationResult && (
                   <Box id="calculation-result" sx={{ marginBottom: 4 }}>
@@ -1434,7 +1388,7 @@ const OvulationPage = ({ stats }) => {
                           {isLoggedIn && (
                             <button
                               className={styles.saveButton}
-                              onClick={handleSaveCycleToDatabase}
+                              onClick={handleShowNotificationModal}
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>

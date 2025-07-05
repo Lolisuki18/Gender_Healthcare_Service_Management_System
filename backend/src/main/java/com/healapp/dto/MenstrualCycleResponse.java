@@ -20,7 +20,8 @@ public class MenstrualCycleResponse {
     private Long numberOfDays;
     private Long cycleLength;
     private LocalDate ovulationDate;
-    private Boolean reminderEnabled;
+    private Boolean ovulationRemind;
+    private Boolean pregnancyRemind;
 
     // Thông tin tỉ lệ mang thai dựa vào chu kỳ kinh nguyệt
     private List<PregnancyProbLog> pregnancyProbLogs;

@@ -85,7 +85,8 @@ class MenstrualCycleServiceTest {
         sampleMenstrualCycle.setStartDate(LocalDate.of(2024, 1, 1));
         sampleMenstrualCycle.setNumberOfDays(5L);
         sampleMenstrualCycle.setCycleLength(28L);
-        sampleMenstrualCycle.setReminderEnabled(true);
+        sampleMenstrualCycle.setOvulationRemind(true);
+        sampleMenstrualCycle.setPregnancyRemind(true);
         sampleMenstrualCycle.setOvulationDate(LocalDate.of(2024, 1, 14));
 
         // Setup sample request
@@ -93,7 +94,8 @@ class MenstrualCycleServiceTest {
         sampleRequest.setStartDate(LocalDate.of(2024, 1, 1));
         sampleRequest.setNumberOfDays(5L);
         sampleRequest.setCycleLength(28L);
-        sampleRequest.setReminderEnabled(true);
+        sampleRequest.setOvulationRemind(true);
+        sampleRequest.setPregnancyRemind(true);
 
         // Setup sample pregnancy prob log
         samplePregnancyProbLog = new PregnancyProbLog();
@@ -456,7 +458,7 @@ class MenstrualCycleServiceTest {
     @Test
     @DisplayName("Gửi email nhắc nhở ngày rụng trứng thất bại - nhắc nhở bị tắt")
     void sendOvulationReminderEmail_ReminderDisabled_ShouldFail() {
-        sampleMenstrualCycle.setReminderEnabled(false);
+        sampleMenstrualCycle.setOvulationRemind(false);
         when(menstrualCycleRepository.findLatestCycleBeforeToday(1L, LocalDate.now()))
             .thenReturn(Optional.of(sampleMenstrualCycle));
 
@@ -524,7 +526,7 @@ class MenstrualCycleServiceTest {
     @DisplayName("Gửi email nhắc nhở tỉ lệ mang thai - nhắc nhở bị tắt")
     void sendReminderPregnency_ReminderDisabled_ShouldSkip() {
         List<UserDtls> users = Arrays.asList(sampleUser);
-        sampleMenstrualCycle.setReminderEnabled(false);
+        sampleMenstrualCycle.setPregnancyRemind(false);
         
         when(userRepository.findAll()).thenReturn(users);
         when(menstrualCycleRepository.findLatestCycleBeforeToday(1L, LocalDate.now()))
@@ -568,7 +570,7 @@ class MenstrualCycleServiceTest {
         assertEquals(LocalDate.of(2024, 1, 1), response.getStartDate());
         assertEquals(5, response.getNumberOfDays());
         assertEquals(28, response.getCycleLength());
-        assertTrue(response.getReminderEnabled());
+        assertTrue(response.getOvulationRemind());
         assertNull(response.getPregnancyProbLogs());
     }
 
@@ -585,7 +587,8 @@ class MenstrualCycleServiceTest {
         assertEquals(LocalDate.of(2024, 1, 1), response.getStartDate());
         assertEquals(5, response.getNumberOfDays());
         assertEquals(28, response.getCycleLength());
-        assertTrue(response.getReminderEnabled());
+        assertTrue(response.getOvulationRemind());
+        assertTrue(response.getPregnancyRemind());
         assertNotNull(response.getPregnancyProbLogs());
         assertEquals(1, response.getPregnancyProbLogs().size());
         assertEquals(1L, response.getPregnancyProbLogs().get(0).getId());
@@ -664,7 +667,8 @@ class MenstrualCycleServiceTest {
         request.setStartDate(LocalDate.of(2024, 1, 1));
         request.setNumberOfDays(5L);
         request.setCycleLength(28L);
-        request.setReminderEnabled(null);
+        request.setOvulationRemind(null);
+        request.setPregnancyRemind(null);
 
         List<PregnancyProbLog> oldLogs = Arrays.asList(samplePregnancyProbLog);
         List<PregnancyProbLog> newLogs = Arrays.asList(samplePregnancyProbLog);
@@ -782,9 +786,9 @@ class MenstrualCycleServiceTest {
     }
 
     @Test
-    @DisplayName("Tạo chu kỳ kinh nguyệt với reminderEnabled null")
-    void createMenstrualCycle_ReminderEnabledNull_Success() {
-        sampleRequest.setReminderEnabled(null);
+    @DisplayName("Tạo chu kỳ kinh nguyệt với ovulationRemind null")
+    void createMenstrualCycle_OvulationRemindNull_Success() {
+        sampleRequest.setOvulationRemind(null);
         
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(menstrualCycleRepository.save(any(MenstrualCycle.class))).thenReturn(sampleMenstrualCycle);
