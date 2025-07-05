@@ -24,6 +24,8 @@ public class MenstrualCycleRequest {
     @NotNull(message = "Chu kỳ kinh nguyệt không được để trống")
     private Long cycleLength;
 
-    private Boolean reminderEnabled = false;
+    private Boolean ovulationRemind;
+
+    private Boolean pregnancyRemind;
 
 }

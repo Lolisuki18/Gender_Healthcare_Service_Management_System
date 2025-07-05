@@ -1,36 +1,46 @@
 package com.healapp.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
+
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.AvailableTimeSlot;
 import com.healapp.dto.ConsultationRequest;
 import com.healapp.dto.ConsultationResponse;
-import com.healapp.model.Consultation;
 import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Consultation;
 import com.healapp.model.ConsultationStatus;
 import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.ConsultationRepository;
 import com.healapp.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ConsultationService Test")
@@ -100,6 +110,7 @@ class ConsultationServiceTest {
         consultant.setFullName("Consultant User");
         consultant.setEmail("consultant@example.com");
         consultant.setRole(consultantRole);
+        consultant.setIsActive(true);
 
         staff = new UserDtls();
         staff.setId(3L);
@@ -223,6 +234,38 @@ class ConsultationServiceTest {
         assertFalse(slot810.get().isAvailable());
     }
 
+    @Test
+    @DisplayName("Lấy time slots có sẵn - Consultant không active")
+    void getAvailableTimeSlots_ConsultantNotActive() {
+        LocalDate testDate = LocalDate.now().plusDays(1);
+        consultant.setIsActive(false);
+        
+        when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
+
+        ApiResponse<List<AvailableTimeSlot>> response = consultationService.getAvailableTimeSlots(2L, testDate);
+
+        assertFalse(response.isSuccess());
+        assertEquals("This consultant is currently unavailable", response.getMessage());
+
+        verify(userRepository).findById(2L);
+        verifyNoInteractions(consultationRepository);
+    }
+
+    @Test
+    @DisplayName("Lấy time slots có sẵn - Ngày trong quá khứ")
+    void getAvailableTimeSlots_PastDate() {
+        LocalDate pastDate = LocalDate.now().minusDays(1);
+
+        ApiResponse<List<AvailableTimeSlot>> response = consultationService.getAvailableTimeSlots(2L, pastDate);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Cannot check availability for past dates", response.getMessage());
+
+        // Không gọi repository vì đã check ngày quá khứ trước
+        verifyNoInteractions(userRepository);
+        verifyNoInteractions(consultationRepository);
+    }
+
     // Test createConsultation method
     @Test
     @DisplayName("Tạo consultation - Thành công")
@@ -237,7 +280,7 @@ class ConsultationServiceTest {
         ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
 
         assertTrue(response.isSuccess());
-        assertEquals("Consultation scheduled successfully", response.getMessage());
+        assertEquals("Đặt lịch tư vấn thành công!", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(1L, response.getData().getConsultationId());
 
@@ -337,7 +380,8 @@ class ConsultationServiceTest {
         ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
 
         assertFalse(response.isSuccess());
-        assertEquals("The selected time slot is not available", response.getMessage());
+        assertTrue(response.getMessage().contains("Khung giờ 8-10 ngày"));
+        assertTrue(response.getMessage().contains("đã được đặt bởi khách hàng khác"));
 
         verify(consultationRepository, never()).save(any(Consultation.class));
     }
@@ -683,5 +727,159 @@ class ConsultationServiceTest {
         assertEquals(customer.getFullName(), data.getCustomerName());
         assertNull(data.getConsultantQualifications());
         assertNull(data.getConsultantExperience());
+    }
+
+    // Test các trường hợp mới cho logic cập nhật
+    @Test
+    @DisplayName("Tạo consultation - Thời gian trong quá khứ")
+    void createConsultation_PastTime() {
+        // Set consultation date to past
+        consultationRequest.setDate(LocalDate.now().minusDays(1));
+        
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
+
+        ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Không thể đặt lịch trong quá khứ. Vui lòng chọn ngày khác.", response.getMessage());
+
+        verify(consultationRepository, never()).save(any(Consultation.class));
+    }
+
+    @Test
+    @DisplayName("Tạo consultation - Consultant không active")
+    void createConsultation_ConsultantNotActive() {
+        consultant.setIsActive(false);
+        
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
+
+        ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
+
+        assertFalse(response.isSuccess());
+        assertEquals("This consultant is currently unavailable", response.getMessage());
+
+        verify(consultationRepository, never()).save(any(Consultation.class));
+    }
+
+    @Test
+    @DisplayName("Tạo consultation - Race condition (DataIntegrityViolationException)")
+    void createConsultation_RaceCondition() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
+        when(consultationRepository.findByConsultantAndTimeRange(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList());
+        when(consultationRepository.save(any(Consultation.class)))
+                .thenThrow(new DataIntegrityViolationException("Duplicate entry for key 'idx_consultant_time_unique'"));
+
+        ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.getMessage().contains("Khung giờ 8-10 ngày"));
+        assertTrue(response.getMessage().contains("đã được đặt bởi khách hàng khác trong khi bạn đang đặt lịch"));
+
+        verify(userRepository).findById(1L);
+        verify(userRepository).findById(2L);
+        verify(consultationRepository).save(any(Consultation.class));
+    }
+
+    @Test
+    @DisplayName("Tạo consultation - DataIntegrityViolationException khác")
+    void createConsultation_OtherDataIntegrityViolation() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
+        when(consultationRepository.findByConsultantAndTimeRange(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList());
+        when(consultationRepository.save(any(Consultation.class)))
+                .thenThrow(new DataIntegrityViolationException("Other constraint violation"));
+
+        ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.", response.getMessage());
+
+        verify(consultationRepository).save(any(Consultation.class));
+    }
+
+    @Test
+    @DisplayName("Test method checkTimeSlotAvailability - Slot available")
+    void checkTimeSlotAvailability_SlotAvailable() {
+        LocalDateTime startTime = LocalDateTime.now().plusDays(1).withHour(8).withMinute(0);
+        LocalDateTime endTime = LocalDateTime.now().plusDays(1).withHour(10).withMinute(0);
+        
+        when(consultationRepository.findByConsultantAndTimeRange(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList());
+
+        // Sử dụng reflection để test private method
+        try {
+            java.lang.reflect.Method method = ConsultationService.class.getDeclaredMethod(
+                "checkTimeSlotAvailability", Long.class, LocalDateTime.class, LocalDateTime.class);
+            method.setAccessible(true);
+            Boolean result = (Boolean) method.invoke(consultationService, 2L, startTime, endTime);
+            
+            assertTrue(result);
+        } catch (Exception e) {
+            assertTrue(false, "Failed to test private method: " + e.getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("Test method checkTimeSlotAvailability - Slot not available")
+    void checkTimeSlotAvailability_SlotNotAvailable() {
+        LocalDateTime startTime = LocalDateTime.now().plusDays(1).withHour(8).withMinute(0);
+        LocalDateTime endTime = LocalDateTime.now().plusDays(1).withHour(10).withMinute(0);
+        
+        Consultation existingConsultation = new Consultation();
+        existingConsultation.setStartTime(startTime);
+        existingConsultation.setEndTime(endTime);
+        existingConsultation.setStatus(ConsultationStatus.CONFIRMED);
+        
+        when(consultationRepository.findByConsultantAndTimeRange(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(existingConsultation));
+
+        // Sử dụng reflection để test private method
+        try {
+            java.lang.reflect.Method method = ConsultationService.class.getDeclaredMethod(
+                "checkTimeSlotAvailability", Long.class, LocalDateTime.class, LocalDateTime.class);
+            method.setAccessible(true);
+            Boolean result = (Boolean) method.invoke(consultationService, 2L, startTime, endTime);
+            
+            assertFalse(result);
+        } catch (Exception e) {
+            assertTrue(false, "Failed to test private method: " + e.getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("Test method checkTimeSlotAvailability - Slot available with canceled consultation")
+    void checkTimeSlotAvailability_SlotAvailableWithCanceledConsultation() {
+        LocalDateTime startTime = LocalDateTime.now().plusDays(1).withHour(8).withMinute(0);
+        LocalDateTime endTime = LocalDateTime.now().plusDays(1).withHour(10).withMinute(0);
+        
+        Consultation canceledConsultation = new Consultation();
+        canceledConsultation.setStartTime(startTime);
+        canceledConsultation.setEndTime(endTime);
+        canceledConsultation.setStatus(ConsultationStatus.CANCELED);
+        
+        when(consultationRepository.findByConsultantAndTimeRange(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(canceledConsultation));
+
+        // Sử dụng reflection để test private method
+        try {
+            java.lang.reflect.Method method = ConsultationService.class.getDeclaredMethod(
+                "checkTimeSlotAvailability", Long.class, LocalDateTime.class, LocalDateTime.class);
+            method.setAccessible(true);
+            Boolean result = (Boolean) method.invoke(consultationService, 2L, startTime, endTime);
+            
+            assertTrue(result); // Should be available because consultation is canceled
+        } catch (Exception e) {
+            assertTrue(false, "Failed to test private method: " + e.getMessage());
+        }
     }
 }

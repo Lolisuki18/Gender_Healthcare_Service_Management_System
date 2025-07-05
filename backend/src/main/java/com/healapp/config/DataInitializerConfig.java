@@ -1,5 +1,8 @@
 package com.healapp.config;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -10,9 +13,6 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.CategoryQuestionRepository;
 import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Component
 public class DataInitializerConfig implements CommandLineRunner {
@@ -91,14 +91,13 @@ public class DataInitializerConfig implements CommandLineRunner {
             cq3.setDescription("Các câu hỏi về dinh dưỡng");
 
             CategoryQuestion cq4 = new CategoryQuestion();
-            cq3.setName("Khác");
-            cq3.setDescription("Khác với các loại trên");
+            cq4.setName("Khác");
+            cq4.setDescription("Khác với các loại trên");
 
             categoryQuestionRepository.save(cq1);
             categoryQuestionRepository.save(cq2);
             categoryQuestionRepository.save(cq3);
             categoryQuestionRepository.save(cq4);
-
         }
     }
 }

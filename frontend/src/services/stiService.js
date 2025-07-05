@@ -755,13 +755,29 @@ export const updateTestResults = async (testId, resultsData) => {
 
 // Category Question management
 const getQuestionCategories = async () => {
-  const res = await apiClient.get("/question-categories");
+  const res = await apiClient.get('/question-categories');
   // Chuẩn hóa lấy mảng từ res.data.data
   return Array.isArray(res.data.data) ? res.data.data : [];
 };
-const createQuestionCategory = (data) => apiClient.post("/question-categories", data);
-const updateQuestionCategory = (id, data) => apiClient.put(`/question-categories/${id}`, data);
-const deleteQuestionCategory = (id) => apiClient.delete(`/question-categories/${id}`);
+const createQuestionCategory = (data) =>
+  apiClient.post('/question-categories', data);
+const updateQuestionCategory = (id, data) =>
+  apiClient.put(`/question-categories/${id}`, data);
+const deleteQuestionCategory = (id) =>
+  apiClient.delete(`/question-categories/${id}`);
+
+// Update consultant notes for a STI test (Consultant only)
+export const updateConsultantNotes = async (testId, consultantNotes) => {
+  try {
+    const response = await apiClient.put(
+      `/sti-services/tests/${testId}/consultant-notes`,
+      { consultantNotes }
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
 
 // Export as a default object with all functions
 const stiService = {
@@ -797,6 +813,7 @@ const stiService = {
   createQuestionCategory,
   updateQuestionCategory,
   deleteQuestionCategory,
+  updateConsultantNotes,
 
   // New function to get services within a package
   // getServicesInPackage: async (packageId) => {

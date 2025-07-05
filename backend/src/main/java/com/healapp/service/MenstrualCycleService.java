@@ -74,7 +74,8 @@ public class MenstrualCycleService {
             menstrualCycle.setStartDate(request.getStartDate());
             menstrualCycle.setNumberOfDays(request.getNumberOfDays());
             menstrualCycle.setCycleLength(request.getCycleLength());
-            menstrualCycle.setReminderEnabled(request.getReminderEnabled());
+            menstrualCycle.setOvulationRemind(request.getOvulationRemind() != null ? request.getOvulationRemind() : false);
+            menstrualCycle.setPregnancyRemind(request.getPregnancyRemind() != null ? request.getPregnancyRemind() : false);
 
             // Tính ngày rụng trứng
             LocalDate ovulationDate = calculateOvulationDate(menstrualCycle);
@@ -157,7 +158,7 @@ public class MenstrualCycleService {
     }
 
 
-    // Lấy thông tin chu kỳ king nguyệt theo ID
+    // Lấy thông tin chu kỳ kinh nguyệt theo ID
     public ApiResponse<MenstrualCycleResponse> getMenstrualCycleById(Long menstrualCycleId) {
         try {
             Optional<MenstrualCycle> optionalCycle = menstrualCycleRepository.findById(menstrualCycleId);
@@ -183,7 +184,7 @@ public class MenstrualCycleService {
     }
 
 
-    // Chinh sửa chu kỳ kinh nguyệt
+    // Chỉnh sửa chu kỳ kinh nguyệt
     @Transactional
     public ApiResponse<MenstrualCycleResponse> updateMenstrualCycle(Long menstrualCycleId, MenstrualCycleRequest request) {
         try {
@@ -213,8 +214,10 @@ public class MenstrualCycleService {
             menstrualCycle.setCycleLength(request.getCycleLength());
 
             // Bảo vệ null cho Boolean
-            Boolean reminderEnabled = request.getReminderEnabled() != null ? request.getReminderEnabled() : false;
-            menstrualCycle.setReminderEnabled(reminderEnabled);
+            Boolean ovulationRemind = request.getOvulationRemind() != null ? request.getOvulationRemind() : menstrualCycle.getOvulationRemind();
+            Boolean pregnancyRemind = request.getPregnancyRemind() != null ? request.getPregnancyRemind() : menstrualCycle.getPregnancyRemind();
+            menstrualCycle.setOvulationRemind(ovulationRemind);
+            menstrualCycle.setPregnancyRemind(pregnancyRemind);
 
             // Tính và set ngày rụng trứng
             LocalDate ovulationDate = calculateOvulationDate(menstrualCycle);
@@ -296,7 +299,7 @@ public class MenstrualCycleService {
                 return ApiResponse.error("Không tìm thấy chu kỳ kinh nguyệt cho user: " + getCurrentUserId());
             }
             MenstrualCycle menstrualCycle = menstrualCycleOpt.get();
-            if (menstrualCycle.getReminderEnabled() == null || !menstrualCycle.getReminderEnabled()) {
+            if (menstrualCycle.getOvulationRemind() == null || !menstrualCycle.getOvulationRemind()) {
                 log.info("Nhắc nhở không được bật cho user: " + menstrualCycle.getUser().getId());
                 return ApiResponse.error("Nhắc nhở không được bật cho user: " + menstrualCycle.getUser().getId());
             }
@@ -334,7 +337,7 @@ public class MenstrualCycleService {
                 if (cycleOpt.isEmpty()) continue;
 
                 MenstrualCycle cycle = cycleOpt.get();
-                if(cycle.getReminderEnabled() == null || !cycle.getReminderEnabled()) {
+                if(cycle.getPregnancyRemind() == null || !cycle.getPregnancyRemind()) {
                     log.info("Nhắc nhở không được bật cho user: " + user.getId());
                     continue;
                 }
@@ -432,7 +435,28 @@ public class MenstrualCycleService {
         }
     }
 
-    
+    // Thay đổi trạng thái của nhắc nhở rụng trứng
+    @Transactional
+    public ApiResponse<MenstrualCycleResponse> toggleOvulationReminder(Long menstrualCycleId) {
+        try {
+            Optional<MenstrualCycle> optionalCycle = menstrualCycleRepository.findById(menstrualCycleId);
+            if (!optionalCycle.isPresent()) {
+                return ApiResponse.error("Chu kỳ kinh nguyệt không tồn tại");
+            }
+
+            MenstrualCycle menstrualCycle = optionalCycle.get();
+            boolean currentStatus = menstrualCycle.getOvulationRemind() != null ? menstrualCycle.getOvulationRemind() : false;
+            menstrualCycle.setOvulationRemind(!currentStatus);
+
+            MenstrualCycle updatedCycle = menstrualCycleRepository.save(menstrualCycle);
+
+            return ApiResponse.success("Thay đổi trạng thái nhắc nhở rụng trứng thành công", convertToResponse(updatedCycle));
+        } catch (Exception e) {
+            log.error("Error toggling ovulation reminder for menstrualCycleId: {}", menstrualCycleId, e);
+            return ApiResponse.error("Lỗi khi thay đổi trạng thái nhắc nhở rụng trứng: " + e.getMessage());
+        }
+    }
+
     /*
      * Chuyển đổi MenstrualCycle thành MenstrualCycleResponse không có tỉ lệ mang thai
      */
@@ -443,7 +467,9 @@ public class MenstrualCycleService {
         response.setStartDate(menstrualCycle.getStartDate());
         response.setNumberOfDays(menstrualCycle.getNumberOfDays());
         response.setCycleLength(menstrualCycle.getCycleLength());
-        response.setReminderEnabled(menstrualCycle.getReminderEnabled());
+        response.setOvulationDate(menstrualCycle.getOvulationDate());
+        response.setOvulationRemind(null != menstrualCycle.getOvulationRemind() ? menstrualCycle.getOvulationRemind() : false);
+        response.setPregnancyRemind(null != menstrualCycle.getPregnancyRemind() ? menstrualCycle.getPregnancyRemind() : false);
         return response;
     }
 
@@ -456,8 +482,10 @@ public class MenstrualCycleService {
         response.setUserId(menstrualCycle.getUser().getId());
         response.setStartDate(menstrualCycle.getStartDate());
         response.setNumberOfDays(menstrualCycle.getNumberOfDays());
+        response.setOvulationDate(menstrualCycle.getOvulationDate());
         response.setCycleLength(menstrualCycle.getCycleLength());
-        response.setReminderEnabled(menstrualCycle.getReminderEnabled());
+        response.setOvulationRemind(null != menstrualCycle.getOvulationRemind() ? menstrualCycle.getOvulationRemind() : false);
+        response.setPregnancyRemind(null != menstrualCycle.getPregnancyRemind() ? menstrualCycle.getPregnancyRemind() : false);
         response.setPregnancyProbLogs(pregnancyProbLogs);
         return response;
 
@@ -470,4 +498,6 @@ public class MenstrualCycleService {
         String username = authentication.getName();
         return userService.getUserIdFromUsername(username);
     }
+
+
 }

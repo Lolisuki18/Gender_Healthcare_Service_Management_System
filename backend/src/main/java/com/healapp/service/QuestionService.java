@@ -1,6 +1,18 @@
 package com.healapp.service;
 
-import com.healapp.dto.*;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.QuestionAnswerRequest;
+import com.healapp.dto.QuestionRequest;
+import com.healapp.dto.QuestionResponse;
+import com.healapp.dto.QuestionStatusRequest;
 import com.healapp.model.CategoryQuestion;
 import com.healapp.model.Question;
 import com.healapp.model.Question.QuestionStatus;
@@ -8,13 +20,6 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.CategoryQuestionRepository;
 import com.healapp.repository.QuestionRepository;
 import com.healapp.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 public class QuestionService {
