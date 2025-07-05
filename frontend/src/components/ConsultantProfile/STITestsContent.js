@@ -48,6 +48,7 @@ import {
   CalendarToday as CalendarTodayIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
+import { updateConsultantNotes } from '../../services/stiService';
 
 // Test Type translation function
 const getTestTypeTranslation = (type) => {
@@ -198,12 +199,23 @@ const STITestsContent = () => {
   };
 
   const handleSubmitRecommendation = async () => {
+    if (!selectedTest) return;
     setSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Gọi API cập nhật consultant notes cho test đã có kết quả
+      await updateConsultantNotes(selectedTest.id, recommendation);
+      // Có thể cập nhật lại UI tại đây nếu cần (ví dụ: set lại notes cho test trong state)
       setSubmitting(false);
       setRecommendationDialogOpen(false);
-    }, 1000);
+      // Nếu muốn load lại danh sách test từ BE, gọi lại API ở đây
+    } catch (error) {
+      setSubmitting(false);
+      // Xử lý lỗi nếu cần
+      alert(
+        'Cập nhật khuyến nghị thất bại: ' +
+          (error?.message || 'Lỗi không xác định')
+      );
+    }
   };
 
   const handleClearFilters = () => {
@@ -468,7 +480,7 @@ const STITestsContent = () => {
                         >
                           Chi tiết
                         </Button>
-                        {test.status === 'completed' && (
+                        {test.status === 'resulted' && (
                           <Button
                             variant="contained"
                             size="small"

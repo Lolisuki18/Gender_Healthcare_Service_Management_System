@@ -313,6 +313,18 @@ public class STIServiceController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/tests/{testId}/consultant-notes")
+    @PreAuthorize("hasRole('ROLE_CONSULTANT')")
+    public ResponseEntity<ApiResponse<STITestResponse>> updateConsultantNotes(
+            @PathVariable Long testId,
+            @RequestBody java.util.Map<String, String> body) {
+        String consultantNotes = body.get("consultantNotes");
+        Long consultantId = getCurrentUserId();
+        ApiResponse<STITestResponse> response = stiTestService.updateConsultantNotes(testId, consultantNotes,
+                consultantId);
+        return getResponseEntity(response);
+    }
+
     // DTO class for conclusion options
     public static class ConclusionOption {
         private String value;

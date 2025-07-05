@@ -91,14 +91,13 @@ public class DataInitializerConfig implements CommandLineRunner {
             cq3.setDescription("Các câu hỏi về dinh dưỡng");
 
             CategoryQuestion cq4 = new CategoryQuestion();
-            cq3.setName("Khác");
-            cq3.setDescription("Khác với các loại trên");
+            cq4.setName("Khác");
+            cq4.setDescription("Khác với các loại trên");
 
             categoryQuestionRepository.save(cq1);
             categoryQuestionRepository.save(cq2);
             categoryQuestionRepository.save(cq3);
             categoryQuestionRepository.save(cq4);
-
         }
     }
 }
