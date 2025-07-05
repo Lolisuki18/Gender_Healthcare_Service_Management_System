@@ -20,10 +20,13 @@ import {
   Paper,
   Avatar,
   Stack,
+  Breadcrumbs,
+  Link,
 } from '@mui/material';
 // Icon từ MUI
 import CheckIcon from '@mui/icons-material/Check';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import HomeIcon from '@mui/icons-material/Home';
 // React Router
 import { useNavigate } from 'react-router-dom';
 // API và utilities
@@ -200,6 +203,57 @@ export default function StiDetailPage() {
         }}
       />
       <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1, py: { xs: 6, md: 10 } }}>
+        {/* Breadcrumbs */}
+        <Breadcrumbs 
+          aria-label="breadcrumb" 
+          sx={{ 
+            mb: 6,
+            '& .MuiBreadcrumbs-separator': {
+              color: '#90a4ae',
+              mx: 1
+            },
+            '& .MuiBreadcrumbs-li': {
+              fontSize: '1rem'
+            }
+          }}
+        >
+          <Link 
+            underline="hover" 
+            color="inherit" 
+            onClick={() => navigate('/')}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              color: '#546e7a',
+              fontWeight: 500,
+              cursor: 'pointer',
+              '&:hover': {
+                color: '#1976d2'
+              }
+            }}
+          >
+            <HomeIcon sx={{ mr: 0.5, fontSize: 18, mb: '-2px' }} /> Trang chủ
+          </Link>
+          <Link 
+            underline="hover" 
+            color="inherit" 
+            onClick={() => navigate('/sti-services')}
+            sx={{
+              color: '#546e7a',
+              fontWeight: 500,
+              cursor: 'pointer',
+              '&:hover': {
+                color: '#1976d2'
+              }
+            }}
+          >
+            Dịch vụ STI
+          </Link>
+          <Typography color="#26c6da" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+            Chi tiết
+          </Typography>
+        </Breadcrumbs>
+
         {/* --- Nút quay lại --- */}
         <Fade in={loaded} timeout={600}>
           <Button

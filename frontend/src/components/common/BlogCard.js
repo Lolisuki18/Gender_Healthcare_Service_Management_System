@@ -32,6 +32,11 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
   const navigate = useNavigate();
   if (!post) return null;
 
+  // Debug logging
+  console.log('🃏 BlogCard rendering post:', post);
+  console.log('🖼️ Post thumbnail:', post.thumbnailImage);
+  console.log('🖼️ Post existingThumbnail:', post.existingThumbnail);
+
   const handleReadMore = () => navigate(`/blog/${post.id}`);
 
   const getCleanContentPreview = (content, maxLength) => {
@@ -54,32 +59,80 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
       sx={{ 
         display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },
-        borderRadius: '16px',
+        borderRadius: '20px',
         backgroundColor: '#ffffff',
         boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
         border: '1px solid #e3f2fd',
         cursor: 'pointer',
-        transition: 'all 0.3s ease',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #26c6da, #4dd0e1)',
+          transform: 'scaleX(0)',
+          transformOrigin: 'left',
+          transition: 'transform 0.3s ease'
+        },
         '&:hover': {
-          boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-          transform: 'translateY(-2px)',
+          boxShadow: '0 12px 40px rgba(38, 198, 218, 0.15)',
+          transform: 'translateY(-6px)',
+          borderColor: '#80deea',
+          '&::before': {
+            transform: 'scaleX(1)'
+          }
         }
       }}
       onClick={handleReadMore}
     >
       {/* Image Section */}
-      <Box sx={{ position: 'relative' }}>
+      <Box sx={{ 
+        position: 'relative',          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'linear-gradient(135deg, rgba(38, 198, 218, 0.1), rgba(77, 208, 225, 0.05))',
+            opacity: 0,
+            transition: 'opacity 0.3s ease',
+            borderRadius: { xs: '20px 20px 0 0', sm: '20px 0 0 20px' },
+            pointerEvents: 'none'
+          },
+        '.MuiCard-root:hover &::after': {
+          opacity: 1
+        }
+      }}>
         <CardMedia
           component="img"
           sx={{ 
             width: { xs: '100%', sm: '300px' },
-            height: { xs: '200px', sm: '180px' },
-            objectFit: 'cover'
+            height: { xs: '220px', sm: '200px' },
+            objectFit: 'cover',
+            borderRadius: { xs: '20px 20px 0 0', sm: '20px 0 0 20px' },
+            transition: 'all 0.3s ease',
+            '.MuiCard-root:hover &': {
+              transform: 'scale(1.02)'
+            }
           }}
           image={getBlogImageUrl(post.thumbnailImage || post.existingThumbnail)}
           alt={post.title || 'Blog thumbnail'}
           onError={(e) => { 
-            e.target.src = getBlogImageUrl('/img/blog/default.jpg'); 
+            console.error('❌ Image failed to load:', e.target.src);
+            // Thử fallback images theo thứ tự
+            if (e.target.src.includes('suckhoesinhsan.png')) {
+              console.log('🔄 Using final fallback...');
+              e.target.src = '/img/thumbs/1.png';
+            } else {
+              console.log('🔄 Trying default thumbnail...');
+              e.target.src = '/img/thumbs/suckhoesinhsan.png'; 
+            }
           }}
         />
         
@@ -91,48 +144,45 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
             size="small"
             sx={{
               position: 'absolute',
-              top: 12,
-              left: 12,
+              top: 16,
+              left: 16,
               fontWeight: 600,
-              fontSize: '0.75rem'
+              fontSize: '0.75rem',
+              backdropFilter: 'blur(10px)',
+              backgroundColor: 'rgba(255,255,255,0.95)',
+              border: '1px solid rgba(255,255,255,0.3)'
             }}
           />
         )}
         
-        {/* Overlay on hover */}
-        <Box
+        {/* Category Badge */}
+        <Chip
+          label={post.categoryIsActive === false ? 'Danh mục đã bị xoá' : post.categoryName}
+          size="small"
           sx={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.6)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: 0,
-            transition: 'opacity 0.3s ease',
-            '.MuiCard-root:hover &': {
-              opacity: 1
-            }
+            bottom: 16,
+            right: 16,
+            backgroundColor: 'rgba(38, 198, 218, 0.9)',
+            color: '#ffffff',
+            fontWeight: 700,
+            fontSize: '0.75rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)'
           }}
-        >
-          <Box sx={{ textAlign: 'center', color: 'white' }}>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              Xem chi tiết
-            </Typography>
-          </Box>
-        </Box>
+        />
       </Box>
 
       {/* Content Section */}
       <CardContent sx={{ 
         flex: 1, 
-        p: 3,
+        p: { xs: 3, md: 4 },
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        background: 'linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)'
       }}>
         <Box>
           {/* Meta Info */}
@@ -140,17 +190,17 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
             display: 'flex', 
             flexWrap: 'wrap',
             gap: 2, 
-            mb: 2,
+            mb: 3,
             alignItems: 'center'
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500, fontSize: '0.8rem' }}>
-                {post.categoryIsActive === false ? 'Danh mục đã bị xoá' : post.categoryName}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <CalendarTodayIcon sx={{ fontSize: '0.8rem', color: '#3b82f6' }} />
-              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500, fontSize: '0.8rem' }}>
+              <CalendarTodayIcon sx={{ fontSize: '1rem', color: '#26c6da' }} />
+              <Typography variant="caption" sx={{ 
+                color: '#546e7a', 
+                fontWeight: 500, 
+                fontSize: '0.85rem',
+                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+              }}>
                 {formatDateVN(post.createdAt)}
               </Typography>
             </Box>
@@ -160,14 +210,19 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
           <Typography 
             variant="h6" 
             sx={{ 
-              fontWeight: 600,
-              color: '#1e293b',
-              mb: 1,
+              fontWeight: 700,
+              color: '#1a237e',
+              mb: 2,
               lineHeight: 1.4,
+              fontSize: { xs: '1.1rem', md: '1.25rem' },
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',            transition: 'color 0.3s ease',
+            '.MuiCard-root:hover &': {
+              color: '#26c6da'
+            }
             }}
           >
             {post.title}
@@ -177,13 +232,15 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
           <Typography 
             variant="body2" 
             sx={{ 
-              color: '#64748b',
-              lineHeight: 1.6,
-              mb: 2,
+              color: '#546e7a',
+              lineHeight: 1.7,
+              mb: 3,
+              fontSize: '1rem',
               display: '-webkit-box',
               WebkitLineClamp: 3,
               WebkitBoxOrient: 'vertical',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
             }}
           >
             {getCleanContentPreview(post.content, truncateContent)}
@@ -195,33 +252,36 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          pt: 2,
-          borderTop: '1px solid #f1f5f9'
+          pt: 3,
+          borderTop: '1px solid #e3f2fd'
         }}>
           {/* Author Info */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Avatar 
               src={getAvatarUrl(post.authorAvatar)}
               sx={{ 
-                width: 32, 
-                height: 32,
-                border: '2px solid #f1f5f9'
+                width: 36, 
+                height: 36,
+                border: '2px solid #e0f7fa',
+                backgroundColor: '#26c6da'
               }}
             >
-              <PersonIcon sx={{ fontSize: '1rem' }} />
+              <PersonIcon sx={{ fontSize: '1.1rem' }} />
             </Avatar>
             <Box>
               <Typography variant="caption" sx={{ 
-                color: '#1e293b', 
-                fontWeight: 500,
-                fontSize: '0.85rem'
+                color: '#1a237e', 
+                fontWeight: 600,
+                fontSize: '0.9rem',
+                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
               }}>
                 {post.authorName || 'Admin'}
               </Typography>
               <Typography variant="caption" sx={{ 
                 display: 'block',
-                color: '#64748b',
-                fontSize: '0.75rem'
+                color: '#90a4ae',
+                fontSize: '0.75rem',
+                fontWeight: 500
               }}>
                 Tác giả
               </Typography>
@@ -237,17 +297,22 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
               e.stopPropagation(); 
               handleReadMore(); 
             }}
-            sx={{
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              fontWeight: 500,
-              fontSize: '0.8rem',
-              textTransform: 'none',
-              borderRadius: '6px',
-              '&:hover': {
-                backgroundColor: '#2563eb',
-                transform: 'translateX(2px)'
-              }
+            sx={{            backgroundColor: '#26c6da',
+            color: 'white',
+            fontWeight: 600,
+            fontSize: '0.85rem',
+            textTransform: 'none',
+            borderRadius: '12px',
+            px: 2.5,
+            py: 1,
+            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+            boxShadow: '0 4px 15px rgba(38, 198, 218, 0.3)',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              backgroundColor: '#00acc1',
+              transform: 'translateX(4px)',
+              boxShadow: '0 6px 20px rgba(38, 198, 218, 0.4)'
+            }
             }}
           >
             Đọc thêm

@@ -36,15 +36,46 @@ export const isImageUrl = (url) => {
 };
 
 export function getBlogImageUrl(path) {
-  if (!path) return '/img/blog/default.jpg';
-  if (path.startsWith('http')) return path;
-  return `http://localhost:8080${path}`;
+  console.log('🖼️ getBlogImageUrl called with path:', path);
+  
+  if (!path) {
+    console.log('⚠️ No path provided, using default image');
+    return '/img/thumbs/suckhoesinhsan.png'; // Sử dụng ảnh có sẵn trong public
+  }
+  
+  if (path.startsWith('http')) {
+    console.log('✅ Using external URL:', path);
+    return path;
+  }
+  
+  // Nếu path bắt đầu bằng /img/ (thumbs hoặc sections), sử dụng local images từ public folder
+  if (path.startsWith('/img/thumbs/') || path.startsWith('/img/sections/')) {
+    console.log('📁 Using local image:', path);
+    return path; // React sẽ tự động tìm trong public folder
+  }
+  
+  // Các đường dẫn khác từ backend API
+  const fullUrl = `${API_BASE_URL}${path}`;
+  console.log('🔗 Generated full URL:', fullUrl);
+  return fullUrl;
 }
 
 export function getAvatarUrl(path) {
-  if (!path) return '/img/avatar/default.jpg';
-  if (path.startsWith('http')) return path;
-  return `http://localhost:8080${path}`;
+  console.log('👤 getAvatarUrl called with path:', path);
+  
+  if (!path) {
+    console.log('⚠️ No avatar path provided, using default');
+    return '/img/thumbs/suckhoesinhsan.png'; // Sử dụng ảnh có sẵn
+  }
+  
+  if (path.startsWith('http')) {
+    console.log('✅ Using external avatar URL:', path);
+    return path;
+  }
+  
+  const fullUrl = `${API_BASE_URL}${path}`;
+  console.log('🔗 Generated avatar URL:', fullUrl);
+  return fullUrl;
 }
 
 // Tạo đối tượng để export

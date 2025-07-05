@@ -13,10 +13,13 @@ import {
   Alert,
   TextField,
   InputAdornment,
-  Pagination
+  Pagination,
+  Breadcrumbs,
+  Link
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
+import HomeIcon from '@mui/icons-material/Home';
 import blogService from '@/services/blogService';
 import BlogCard from '@/components/common/BlogCard';
 
@@ -201,20 +204,71 @@ const BlogPage = () => {
   return (
     <Box sx={{ 
       minHeight: '100vh',
-      backgroundColor: '#fafafa',
-      position: 'relative'
+      background: 'linear-gradient(135deg, #f0fdff 0%, #e0f7fa 50%, #ffffff 100%)',
+      position: 'relative',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '300px',
+        background: 'linear-gradient(135deg, rgba(38, 198, 218, 0.1) 0%, rgba(77, 208, 225, 0.05) 100%)',
+        zIndex: 0
+      }
     }}>
-      <Container maxWidth="lg" sx={{ py: 6, position: 'relative' }}>
+      <Container maxWidth="lg" sx={{ py: 8, position: 'relative', zIndex: 1 }}>
+        {/* Breadcrumbs */}
+        <Breadcrumbs 
+          aria-label="breadcrumb" 
+          sx={{ 
+            mb: 6,
+            '& .MuiBreadcrumbs-separator': {
+              color: '#90a4ae',
+              mx: 1
+            },
+            '& .MuiBreadcrumbs-li': {
+              fontSize: '1rem'
+            }
+          }}
+        >
+          <Link 
+            underline="hover" 
+            color="inherit" 
+            onClick={() => navigate('/')}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              color: '#546e7a',
+              fontWeight: 500,
+              cursor: 'pointer',
+              '&:hover': {
+                color: '#1976d2'
+              }
+            }}
+          >
+            <HomeIcon sx={{ mr: 0.5, fontSize: 18, mb: '-2px' }} /> Trang chủ
+          </Link>
+          <Typography color="#26c6da" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+            Blog
+          </Typography>
+        </Breadcrumbs>
+        
         {/* Page Header */}
-        <Box sx={{ textAlign: 'center', mb: 8 }}>
+        <Box sx={{ textAlign: 'center', mb: 10 }}>
           <Typography 
             variant="h1" 
             sx={{ 
               fontWeight: 800,
               color: '#1a237e',
-              mb: 3,
-              fontSize: { xs: '2.2rem', md: '3rem' },
-              letterSpacing: '-0.01em'
+              mb: 4,
+              fontSize: { xs: '2.5rem', md: '3.5rem' },
+              letterSpacing: '-0.02em',
+              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+              background: 'linear-gradient(135deg, #006064 0%, #26c6da 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
             }}
           >
             Kiến Thức Y Khoa
@@ -223,52 +277,92 @@ const BlogPage = () => {
             variant="h6" 
             sx={{ 
               color: '#546e7a',
-              maxWidth: '600px',
+              maxWidth: '700px',
               mx: 'auto',
               lineHeight: 1.8,
               fontWeight: 400,
-              fontSize: { xs: '1rem', md: '1.1rem' }
+              fontSize: { xs: '1.1rem', md: '1.25rem' },
+              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
             }}
           >
-            Cập nhật thông tin y khoa mới nhất từ đội ngũ chuyên gia hàng đầu
+            Cập nhật thông tin y khoa mới nhất từ đội ngũ chuyên gia hàng đầu trong lĩnh vực sức khỏe sinh sản
           </Typography>
+          
+          {/* Decorative elements */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            mt: 4,
+            gap: 2
+          }}>
+            <Box 
+              sx={{ 
+                width: '60px', 
+                height: '4px', 
+                background: 'linear-gradient(90deg, #26c6da, #4dd0e1)', 
+                borderRadius: '4px' 
+              }} 
+            />
+            <Box 
+              sx={{ 
+                width: '12px', 
+                height: '12px', 
+                backgroundColor: '#26c6da', 
+                borderRadius: '50%' 
+              }} 
+            />
+            <Box 
+              sx={{ 
+                width: '60px', 
+                height: '4px', 
+                background: 'linear-gradient(90deg, #4dd0e1, #26c6da)', 
+                borderRadius: '4px' 
+              }} 
+            />
+          </Box>
         </Box>
 
         {/* Search Bar */}
-        <Box sx={{ mb: 5, display: 'flex', justifyContent: 'center' }}>
+        <Box sx={{ mb: 8, display: 'flex', justifyContent: 'center' }}>
           <TextField
             placeholder="Tìm kiếm bài viết, chuyên đề y khoa..."
             value={searchTerm}
             onChange={handleSearchChange}
             sx={{ 
-              maxWidth: '500px',
+              maxWidth: '600px',
               width: '100%',
               '& .MuiOutlinedInput-root': {
-                borderRadius: '50px',
+                borderRadius: '25px',
                 backgroundColor: '#ffffff',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                border: '1px solid #e3f2fd',
-                fontSize: '1rem',
+                boxShadow: '0 8px 32px rgba(38, 198, 218, 0.15)',
+                border: '2px solid #e0f7fa',
+                fontSize: '1.1rem',
+                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                 '& fieldset': {
                   border: 'none',
                 },
                 '&:hover': {
                   backgroundColor: '#ffffff',
-                  boxShadow: '0 6px 25px rgba(0,0,0,0.12)',
-                  borderColor: '#bbdefb'
+                  boxShadow: '0 12px 40px rgba(38, 198, 218, 0.2)',
+                  borderColor: '#80deea',
+                  transform: 'translateY(-2px)',
+                  transition: 'all 0.3s ease'
                 },
                 '&.Mui-focused': {
                   backgroundColor: '#ffffff',
-                  boxShadow: '0 8px 30px rgba(25, 118, 210, 0.15)',
-                  borderColor: '#1976d2'
+                  boxShadow: '0 16px 50px rgba(38, 198, 218, 0.25)',
+                  borderColor: '#26c6da',
+                  transform: 'translateY(-2px)'
                 },
               },
               '& .MuiOutlinedInput-input': {
-                py: 2,
+                py: 2.5,
                 px: 3,
-                fontSize: '1rem',
+                fontSize: '1.1rem',
                 fontWeight: 400,
                 color: '#37474f',
+                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                 '&::placeholder': {
                   color: '#90a4ae',
                   opacity: 1,
@@ -280,8 +374,8 @@ const BlogPage = () => {
               startAdornment: (
                 <InputAdornment position="start">
                   <SearchIcon sx={{ 
-                    color: '#90a4ae', 
-                    fontSize: '1.3rem',
+                    color: '#1976d2', 
+                    fontSize: '1.5rem',
                     ml: 1
                   }} />
                 </InputAdornment>
@@ -292,17 +386,32 @@ const BlogPage = () => {
 
         {/* Search Results Info */}
         {searchTerm && !loading && (
-          <Box sx={{ mb: 4 }}>
+          <Box sx={{ mb: 6 }}>
             <Typography 
               variant="body1" 
               sx={{ 
-                color: '#6c757d', 
+                color: '#546e7a', 
                 textAlign: 'center',
-                fontSize: '1.1rem',
-                fontWeight: 500
+                fontSize: '1.2rem',
+                fontWeight: 500,
+                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                backgroundColor: '#ffffff',
+                py: 3,
+                px: 4,
+                borderRadius: '16px',
+                border: '1px solid #e3f2fd',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
               }}
             >
-              Tìm thấy <Box component="span" sx={{ fontWeight: 700, color: '#2c3e50' }}>{blogs.length}</Box> kết quả cho "<Box component="span" sx={{ fontWeight: 700, color: '#2c3e50' }}>{searchTerm}</Box>"
+              Tìm thấy <Box component="span" sx={{ 
+                fontWeight: 700, 
+                color: '#1976d2',
+                fontSize: '1.3rem'
+              }}>{blogs.length}</Box> kết quả cho "<Box component="span" sx={{ 
+                fontWeight: 700, 
+                color: '#1a237e',
+                fontStyle: 'italic'
+              }}>{searchTerm}</Box>"
             </Typography>
           </Box>
         )}
@@ -312,15 +421,19 @@ const BlogPage = () => {
           <Alert 
             severity="error" 
             sx={{ 
-              mb: 5, 
-              borderRadius: '16px',
+              mb: 6, 
+              borderRadius: '20px',
               backgroundColor: 'rgba(255,255,255,0.95)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 8px 32px rgba(244, 67, 54, 0.2)',
-              border: '1px solid rgba(244, 67, 54, 0.2)',
+              backdropFilter: 'blur(20px)',
+              boxShadow: '0 12px 40px rgba(244, 67, 54, 0.2)',
+              border: '2px solid rgba(244, 67, 54, 0.2)',
+              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
               '& .MuiAlert-message': {
                 fontSize: '1.1rem',
                 fontWeight: 500
+              },
+              '& .MuiAlert-icon': {
+                fontSize: '1.5rem'
               }
             }}
           >
@@ -332,23 +445,23 @@ const BlogPage = () => {
         <Box sx={{ 
           display: 'flex',
           flexDirection: 'column',
-          gap: 4,
-          mb: 5
+          gap: 5,
+          mb: 8
         }}>
           {loading ? (
             // Loading Skeletons
             Array.from({ length: 6 }).map((_, index) => (
               <Card key={index} sx={{ 
-                borderRadius: '16px',
+                borderRadius: '20px',
                 backgroundColor: '#ffffff',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                 border: '1px solid #e3f2fd',
                 display: 'flex',
                 flexDirection: { xs: 'column', sm: 'row' }
               }}>
                 <Box sx={{ 
                   width: { xs: '100%', sm: '300px' },
-                  height: { xs: '200px', sm: '180px' },
+                  height: { xs: '220px', sm: '200px' },
                   flexShrink: 0
                 }}>
                   <Skeleton 
@@ -356,22 +469,25 @@ const BlogPage = () => {
                     width="100%"
                     height="100%"
                     sx={{ 
-                      backgroundColor: 'rgba(0,0,0,0.06)',
-                      borderRadius: { xs: '16px 16px 0 0', sm: '16px 0 0 16px' }
+                      backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                      borderRadius: { xs: '20px 20px 0 0', sm: '20px 0 0 20px' }
                     }} 
                   />
                 </Box>
-                <CardContent sx={{ p: 3, flex: 1 }}>
-                  <Skeleton variant="text" width="60%" height={24} sx={{ mb: 1 }} />
-                  <Skeleton variant="text" width="100%" height={20} sx={{ mb: 1 }} />
-                  <Skeleton variant="text" width="100%" height={20} sx={{ mb: 1 }} />
-                  <Skeleton variant="text" width="80%" height={20} sx={{ mb: 2 }} />
-                  <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Skeleton variant="rounded" width={80} height={24} />
-                      <Skeleton variant="rounded" width={100} height={24} />
+                <CardContent sx={{ p: 4, flex: 1 }}>
+                  <Skeleton variant="text" width="60%" height={32} sx={{ mb: 2 }} />
+                  <Skeleton variant="text" width="100%" height={24} sx={{ mb: 1 }} />
+                  <Skeleton variant="text" width="100%" height={24} sx={{ mb: 1 }} />
+                  <Skeleton variant="text" width="80%" height={24} sx={{ mb: 3 }} />
+                  <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', gap: 1.5 }}>
+                      <Skeleton variant="circular" width={36} height={36} />
+                      <Box>
+                        <Skeleton variant="text" width={100} height={20} />
+                        <Skeleton variant="text" width={60} height={16} />
+                      </Box>
                     </Box>
-                    <Skeleton variant="rounded" width={90} height={32} />
+                    <Skeleton variant="rounded" width={110} height={36} sx={{ borderRadius: '12px' }} />
                   </Box>
                 </CardContent>
               </Card>
@@ -380,18 +496,21 @@ const BlogPage = () => {
             // Empty State
             <Box sx={{ 
               textAlign: 'center', 
-              py: 10,
+              py: 12,
               backgroundColor: '#ffffff',
-              borderRadius: '16px',
+              borderRadius: '24px',
               border: '1px solid #e3f2fd',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+              boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)'
             }}>
               <Typography 
                 variant="h4" 
                 sx={{ 
                   color: '#1a237e', 
                   mb: 3,
-                  fontWeight: 700
+                  fontWeight: 700,
+                  fontSize: { xs: '1.8rem', md: '2.2rem' },
+                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
                 }}
               >
                 {searchTerm ? 'Không tìm thấy bài viết nào' : 'Chưa có bài viết nào'}
@@ -400,7 +519,9 @@ const BlogPage = () => {
                 variant="h6" 
                 sx={{ 
                   color: '#546e7a',
-                  fontWeight: 400
+                  fontWeight: 400,
+                  fontSize: '1.2rem',
+                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
                 }}
               >
                 {searchTerm 
@@ -426,41 +547,48 @@ const BlogPage = () => {
 
         {/* Pagination */}
         {totalPages > 1 && !loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
             <Box sx={{
               backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              p: 2,
-              border: '1px solid #e3f2fd',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+              borderRadius: '20px',
+              p: 3,
+              border: '2px solid #e3f2fd',
+              boxShadow: '0 8px 32px rgba(25, 118, 210, 0.15)',
+              backdropFilter: 'blur(10px)'
             }}>
               <Pagination
                 count={totalPages}
                 page={currentPage}
                 onChange={handlePageChange}
-                size="medium"
+                size="large"
                 sx={{
+                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                   '& .MuiPaginationItem-root': {
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                     color: '#546e7a',
-                    fontWeight: 500,
-                    fontSize: '0.95rem',
-                    margin: '0 2px',
-                    minWidth: '40px',
-                    height: '40px',
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    margin: '0 4px',
+                    minWidth: '44px',
+                    height: '44px',
                     border: 'none',
                     backgroundColor: 'transparent',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
                       backgroundColor: '#e3f2fd',
-                      color: '#1976d2'
+                      color: '#1976d2',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 15px rgba(25, 118, 210, 0.2)'
                     },
                     '&.Mui-selected': {
                       backgroundColor: '#1976d2',
                       color: '#ffffff',
-                      fontWeight: 600,
+                      fontWeight: 700,
+                      boxShadow: '0 6px 20px rgba(25, 118, 210, 0.3)',
                       '&:hover': {
                         backgroundColor: '#1565c0',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 25px rgba(25, 118, 210, 0.4)'
                       },
                     },
                   },
