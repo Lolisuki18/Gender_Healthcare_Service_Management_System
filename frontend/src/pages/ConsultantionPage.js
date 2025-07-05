@@ -464,11 +464,53 @@ const ConsultationPage = () => {
       if (response.success) {
         toast.success('Đặt lịch hẹn thành công!');
         handleCloseAppointment();
+        // Refresh available slots sau khi đặt thành công
+        if (appointmentForm.date && appointmentForm.consultantId) {
+          const res = await consultantService.getAvailableTimeSlots(
+            appointmentForm.consultantId,
+            formattedDate
+          );
+          if (res.success && Array.isArray(res.data)) {
+            setAvailableSlots(
+              res.data.filter((slot) => slot.available).map((slot) => slot.slot)
+            );
+          }
+        }
       } else {
-        setFormError(response.message || 'Không thể đặt lịch hẹn');
+        // Xử lý thông báo lỗi chi tiết
+        let errorMessage = response.message || 'Không thể đặt lịch hẹn';
+        
+        // Kiểm tra các loại lỗi cụ thể từ backend
+        if (errorMessage.includes('đã được đặt bởi khách hàng khác')) {
+          // Lỗi trùng lịch - hiển thị thông báo đặc biệt
+          setFormError(
+            <Box>
+              <Typography variant="body2" color="error" sx={{ mb: 1, fontWeight: 600 }}>
+                ⚠️ Khung giờ đã được đặt
+              </Typography>
+              <Typography variant="body2" color="error">
+                {errorMessage}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+                💡 Gợi ý: Vui lòng chọn khung giờ khác hoặc liên hệ với tư vấn viên để được hỗ trợ.
+              </Typography>
+            </Box>
+          );
+        } else if (errorMessage.includes('Cannot schedule consultation in the past')) {
+          setFormError('Không thể đặt lịch hẹn trong quá khứ. Vui lòng chọn ngày khác.');
+        } else if (errorMessage.includes('Invalid time slot')) {
+          setFormError('Khung giờ không hợp lệ. Vui lòng chọn lại.');
+        } else if (errorMessage.includes('consultant is currently unavailable')) {
+          setFormError('Tư vấn viên hiện không khả dụng. Vui lòng chọn tư vấn viên khác.');
+        } else if (errorMessage.includes('You cannot select yourself as a consultant')) {
+          setFormError('Bạn không thể đặt lịch với chính mình.');
+        } else {
+          setFormError(errorMessage);
+        }
       }
     } catch (err) {
-      setFormError('Có lỗi xảy ra khi kết nối đến máy chủ');
+      console.error('Booking error:', err);
+      setFormError('Có lỗi xảy ra khi kết nối đến máy chủ. Vui lòng thử lại sau.');
       toast.error('Có lỗi xảy ra khi kết nối đến máy chủ');
     } finally {
       setSubmitting(false);
