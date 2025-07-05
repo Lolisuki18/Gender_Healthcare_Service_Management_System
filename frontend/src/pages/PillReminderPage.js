@@ -25,6 +25,7 @@ function PillReminderPage() {
   const [schedule, setSchedule] = useState(null);
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [formData, setFormData] = useState({
     pillDays: 21,
     breakDays: 7,
@@ -141,6 +142,11 @@ function PillReminderPage() {
   const handleDateClick = (dayInfo) => {
     if (dayInfo.isClickable) {
       setSelectedDate(dayInfo.date);
+      if (dayInfo.status === 'future') {
+        setShowConfirmModal(true);
+      } else {
+        handleCheckIn(dayInfo.date);
+      }
     }
   };
 
@@ -411,11 +417,31 @@ function PillReminderPage() {
               </div>
             </div>
           </div>
-          <div className={styles.calendarLegend}>
-            <div className={styles.legendItem}><span className={`${styles.legendDot} ${styles.dotBlue}`}></span> Đã uống</div>
-            <div className={styles.legendItem}><span className={`${styles.legendDot} ${styles.dotRed}`}></span> Bỏ lỡ</div>
-            <div className={styles.legendItem}><span className={`${styles.legendDot} ${styles.dotGreen}`}></span> Sắp tới</div>
-            <div className={styles.legendItem}><span className={`${styles.legendDot} ${styles.dotGray}`}></span> Ngày nghỉ</div>
+          <div className={styles.calendarLegend} style={{ display: 'flex', gap: 64, justifyContent: 'center', margin: '24px 0' }}>
+            <div className={styles.legendItem} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#2979ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Pill size={16} color="#fff" />
+              </span>
+              Đã uống
+            </div>
+            <div className={styles.legendItem} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#e53935', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Pill size={16} color="#fff" />
+              </span>
+              Bỏ lỡ
+            </div>
+            <div className={styles.legendItem} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#2ecc40', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Pill size={16} color="#fff" />
+              </span>
+              Sắp tới
+            </div>
+            <div className={styles.legendItem} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#a0a4ad', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={16} color="#fff" />
+              </span>
+              Ngày nghỉ
+            </div>
           </div>
         </div>
         <div className={styles.calendarCard}>
@@ -458,17 +484,24 @@ function PillReminderPage() {
                 onClick={() => dayInfo.isClickable && handleDateClick(dayInfo)}
               >
                 <div className={styles.dayNumber}>{dayInfo.date.getDate()}</div>
-                <div
-                  className={
-                    styles.pillDot + ' ' +
-                    (dayInfo.status === 'pill' ? styles.pillBlue :
-                      dayInfo.status === 'missed' ? styles.pillRed :
-                        dayInfo.status === 'future' ? styles.pillGreen :
-                          styles.pillGray)
-                  }
-                >
-                  {dayInfo.isCheckedIn && dayInfo.status === 'pill' && (
-                    <Check size={16} />
+                <div style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto',
+                  background:
+                    dayInfo.status === 'pill' ? '#2979ff' :
+                    dayInfo.status === 'missed' ? '#e53935' :
+                    dayInfo.status === 'future' ? '#2ecc40' :
+                    '#a0a4ad'
+                }}>
+                  {dayInfo.status === 'break' ? (
+                    <X size={16} color="#fff" />
+                  ) : (
+                    <Pill size={16} color="#fff" />
                   )}
                 </div>
               </div>
@@ -494,12 +527,49 @@ function PillReminderPage() {
     );
   };
 
+  const renderConfirmModal = () => {
+    if (!showConfirmModal || !selectedDate) return null;
+    const day = selectedDate.getDate();
+    const month = selectedDate.getMonth() + 1;
+    return (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(60,60,80,0.32)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>
+        <div style={{ background: '#fff', borderRadius: 24, padding: '40px 32px', minWidth: 360, boxShadow: '0 4px 32px rgba(0,0,0,0.10)', textAlign: 'center', position: 'relative' }}>
+          <div style={{ width: 72, height: 72, background: 'linear-gradient(90deg, #e57399, #a259e6)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <Pill style={{ width: 36, height: 36, color: '#fff' }} />
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Ngày {day}/{month}</div>
+          <div style={{ fontSize: 18, color: '#444', marginBottom: 24 }}>Bạn đã uống thuốc chưa?</div>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+            <button
+              onClick={() => { setShowConfirmModal(false); setSelectedDate(null); }}
+              style={{ padding: '12px 32px', borderRadius: 12, background: '#f3f4f6', color: '#222', border: 'none', fontSize: 18, fontWeight: 500, cursor: 'pointer' }}
+            >
+              Hủy
+            </button>
+            <button
+              onClick={() => {
+                handleCheckIn(selectedDate);
+                setShowConfirmModal(false);
+              }}
+              style={{ padding: '12px 32px', borderRadius: 12, background: 'linear-gradient(90deg, #e57399, #a259e6)', color: '#fff', border: 'none', fontSize: 18, fontWeight: 500, cursor: 'pointer', boxShadow: '0 2px 8px rgba(162,89,230,0.10)' }}
+            >
+              <span style={{ marginRight: 6 }}>✓</span> Đã uống
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="font-sans">
       {currentScreen === 'home' && renderHomeScreen()}
       {currentScreen === 'form' && renderFormScreen()}
       {currentScreen === 'edit' && renderEditScreen()}
       {currentScreen === 'calendar' && renderCalendarScreen()}
+      {renderConfirmModal()}
     </div>
   );
 }
