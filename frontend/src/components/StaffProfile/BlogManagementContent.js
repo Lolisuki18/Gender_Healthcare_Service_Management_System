@@ -53,6 +53,7 @@ import {
   LibraryBooks as LibraryBooksIcon,
   CloudUpload as CloudUploadIcon,
   Remove as RemoveIcon,
+  Check as CheckIcon,
 } from '@mui/icons-material';
 import blogService from '../../services/blogService';
 import BlogDetailModal from './modals/BlogDetailModal';
@@ -722,6 +723,28 @@ const BlogManagementContent = () => {
                               <VisibilityIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
+                          {blog.status === 'PROCESSING' && (
+                            <Tooltip title="Duyệt bài viết">
+                              <IconButton
+                                size="small"
+                                color="success"
+                                sx={iconButtonStyle}
+                                onClick={async () => {
+                                  setLoading(true);
+                                  try {
+                                    await blogService.updateBlogStatus(blog.id, { status: 'CONFIRMED' });
+                                    setBlogs((prev) => prev.map((b) => b.id === blog.id ? { ...b, status: 'CONFIRMED' } : b));
+                                  } catch (err) {
+                                    setError(err.message || 'Duyệt bài viết thất bại');
+                                  } finally {
+                                    setLoading(false);
+                                  }
+                                }}
+                              >
+                                <CheckIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
                           <Tooltip title="Xóa">
                             <IconButton
                               size="small"
