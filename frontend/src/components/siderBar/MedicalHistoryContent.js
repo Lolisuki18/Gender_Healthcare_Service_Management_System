@@ -85,6 +85,9 @@ import stiService from '../../services/stiService.js';
 import { toast } from 'react-toastify';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 // Styled Paper Component với hiệu ứng glass morphism hiện đại
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -157,8 +160,7 @@ const MedicalHistoryContent = () => {
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState(null);
 
   // Define fetchSTITests as a named function to allow calling it from retry button
   const fetchSTITests = () => {
@@ -282,39 +284,16 @@ const MedicalHistoryContent = () => {
       record.status === statusFilter ||
       record.displayStatus === statusFilter;
 
-    // Type filter
-    const matchesType = typeFilter === 'all' || record.type === typeFilter;
-
-    // Date filter
+    // Date from filter
     let matchesDate = true;
-    if (dateFilter !== 'all') {
+    if (dateFrom) {
       const recordDate = new Date(record.date);
-      const today = new Date();
-      const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const oneMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-      const threeMonthsAgo = new Date(
-        today.getTime() - 90 * 24 * 60 * 60 * 1000
-      );
-
-      switch (dateFilter) {
-        case 'today':
-          matchesDate = recordDate.toDateString() === today.toDateString();
-          break;
-        case 'week':
-          matchesDate = recordDate >= oneWeekAgo;
-          break;
-        case 'month':
-          matchesDate = recordDate >= oneMonthAgo;
-          break;
-        case '3months':
-          matchesDate = recordDate >= threeMonthsAgo;
-          break;
-        default:
-          matchesDate = true;
-      }
+      const fromDate = new Date(dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      matchesDate = recordDate >= fromDate;
     }
 
-    return matchesSearch && matchesStatus && matchesType && matchesDate;
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   // Pagination
@@ -485,8 +464,7 @@ const MedicalHistoryContent = () => {
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
-    setTypeFilter('all');
-    setDateFilter('all');
+    setDateFrom(null);
     setPage(0);
   };
 
@@ -697,7 +675,7 @@ const MedicalHistoryContent = () => {
         </Box>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               fullWidth
               label="Tìm kiếm"
@@ -713,7 +691,7 @@ const MedicalHistoryContent = () => {
               placeholder="Tìm theo bác sĩ, dịch vụ..."
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={4}>
             <FormControl fullWidth>
               <InputLabel>Trạng thái</InputLabel>
               <Select
@@ -731,37 +709,15 @@ const MedicalHistoryContent = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Loại dịch vụ</InputLabel>
-              <Select
-                value={typeFilter}
-                label="Loại dịch vụ"
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <MenuItem value="all">Tất cả</MenuItem>
-                <MenuItem value="Xét nghiệm STI">Xét nghiệm STI</MenuItem>
-                <MenuItem value="Khám tổng quát">Khám tổng quát</MenuItem>
-                <MenuItem value="Chuyên khoa">Chuyên khoa</MenuItem>
-                <MenuItem value="Tư vấn">Tư vấn</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Thời gian</InputLabel>
-              <Select
-                value={dateFilter}
-                label="Thời gian"
-                onChange={(e) => setDateFilter(e.target.value)}
-              >
-                <MenuItem value="all">Tất cả</MenuItem>
-                <MenuItem value="today">Hôm nay</MenuItem>
-                <MenuItem value="week">Tuần này</MenuItem>
-                <MenuItem value="month">Tháng này</MenuItem>
-                <MenuItem value="3months">3 tháng gần đây</MenuItem>
-              </Select>
-            </FormControl>
+          <Grid item xs={12} sm={6} md={4}>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DatePicker
+                label="Từ ngày"
+                value={dateFrom}
+                onChange={(newValue) => setDateFrom(newValue)}
+                renderInput={(params) => <TextField fullWidth {...params} />}
+              />
+            </LocalizationProvider>
           </Grid>
         </Grid>
 
