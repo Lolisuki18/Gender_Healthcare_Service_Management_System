@@ -46,12 +46,16 @@ const blogService = {
 
   /**
    * Tạo bài viết mới
-   * @param {Object} blogData Dữ liệu bài viết
+   * @param {FormData} formData Dữ liệu bài viết với file uploads
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  createBlog: async (blogData) => {
+  createBlog: async (formData) => {
     try {
-      const response = await apiClient.post("/blog", blogData);
+      const response = await apiClient.post("/blog", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to create blog");
       }
@@ -65,12 +69,16 @@ const blogService = {
   /**
    * Cập nhật thông tin bài viết
    * @param {number} id ID của bài viết
-   * @param {Object} blogData Dữ liệu cập nhật
+   * @param {FormData} formData Dữ liệu cập nhật với file uploads
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  updateBlog: async (id, blogData) => {
+  updateBlog: async (id, formData) => {
     try {
-      const response = await apiClient.put(`/blog/${id}`, blogData);
+      const response = await apiClient.put(`/blog/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to update blog");
       }
@@ -136,12 +144,31 @@ const blogService = {
   },
 
   /**
+   * Cập nhật trạng thái bài viết
+   * @param {number} id ID của bài viết
+   * @param {Object} statusData Dữ liệu trạng thái {status, rejectionReason?}
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  updateBlogStatus: async (id, statusData) => {
+    try {
+      const response = await apiClient.put(`/blog/${id}/status`, statusData);
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to update blog status");
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error(`Error updating blog status ${id}:`, error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  /**
    * Lấy danh sách các danh mục blog
    * @returns {Promise} Promise chứa kết quả từ API
    */
   getCategories: async () => {
     try {
-      const response = await apiClient.get("/blog-categories");
+      const response = await apiClient.get("/categories");
       if (!response.data.success) {
         throw new Error(
           response.data.message || "Failed to fetch blog categories"

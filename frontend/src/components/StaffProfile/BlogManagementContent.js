@@ -37,6 +37,11 @@ import {
   Fade,
   Zoom,
   CircularProgress,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  Divider,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -46,6 +51,8 @@ import {
   Visibility as VisibilityIcon,
   FilterList as FilterListIcon,
   LibraryBooks as LibraryBooksIcon,
+  CloudUpload as CloudUploadIcon,
+  Remove as RemoveIcon,
 } from '@mui/icons-material';
 import blogService from '../../services/blogService';
 import BlogDetailModal from './modals/BlogDetailModal';
@@ -180,6 +187,7 @@ const searchBarStyle = {
 const BlogManagementContent = () => {
   // State management
   const [blogs, setBlogs] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [searchTerm, setSearchTerm] = useState('');
@@ -192,32 +200,43 @@ const BlogManagementContent = () => {
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [openDetailModal, setOpenDetailModal] = useState(false);
 
-  // Fetch blogs from API
+  // File states
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState('');
+  const [sectionFiles, setSectionFiles] = useState({});
+  const [sectionImageIndexes, setSectionImageIndexes] = useState([]);
+
+  // Fetch blogs and categories from API
   useEffect(() => {
-    const fetchBlogs = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const data = await blogService.getAllBlogs();
-        console.log('API getAllBlogs raw:', data);
-        setBlogs(data);
+        const [blogsData, categoriesData] = await Promise.all([
+          blogService.getAllBlogs(),
+          blogService.getCategories()
+        ]);
+        console.log('API getAllBlogs raw:', blogsData);
+        console.log('API getCategories raw:', categoriesData);
+        setBlogs(blogsData);
+        setCategories(categoriesData);
       } catch (err) {
-        setError(err.message || 'Không thể tải danh sách blog');
+        setError(err.message || 'Không thể tải dữ liệu');
       } finally {
         setLoading(false);
       }
     };
-    fetchBlogs();
+    fetchData();
   }, []);
 
   // Form state
   const [form, setForm] = useState({
     title: '',
-    category: '',
-    author: '',
     content: '',
-    status: 'draft',
-    thumbnail: '',
+    categoryId: '',
+    thumbnail: null,
+    existingThumbnail: '',
+    sections: []
   });
 
   // Handlers
@@ -239,25 +258,33 @@ const BlogManagementContent = () => {
     setCurrentBlog(null);
     setForm({
       title: '',
-      category: '',
-      author: '',
       content: '',
-      status: 'draft',
-      thumbnail: '',
+      categoryId: '',
+      thumbnail: null,
+      existingThumbnail: '',
+      sections: []
     });
+    setThumbnailFile(null);
+    setThumbnailPreview('');
+    setSectionFiles({});
+    setSectionImageIndexes([]);
     setOpenDialog(true);
   };
 
   const handleOpenEditDialog = (blog) => {
     setCurrentBlog(blog);
     setForm({
-      title: blog.title,
-      category: blog.category,
-      author: blog.author,
+      title: blog.title || '',
       content: blog.content || '',
-      status: blog.status,
-      thumbnail: blog.thumbnail || '',
+      categoryId: blog.categoryId || '',
+      thumbnail: null,
+      existingThumbnail: blog.thumbnailImage || '',
+      sections: blog.sections || []
     });
+    setThumbnailFile(null);
+    setThumbnailPreview(blog.thumbnailImage || '');
+    setSectionFiles({});
+    setSectionImageIndexes([]);
     setOpenDialog(true);
   };
 
@@ -270,39 +297,146 @@ const BlogManagementContent = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveBlog = () => {
-    if (!form.title || !form.category || !form.author) {
-      alert('Vui lòng nhập đầy đủ thông tin!');
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setThumbnailFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setThumbnailPreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSectionChange = (index, field, value) => {
+    setForm(prev => ({
+      ...prev,
+      sections: prev.sections.map((section, i) => 
+        i === index ? { ...section, [field]: value } : section
+      )
+    }));
+  };
+
+  const addSection = () => {
+    setForm(prev => ({
+      ...prev,
+      sections: [...prev.sections, {
+        sectionTitle: '',
+        sectionContent: '',
+        sectionImage: '',
+        existingSectionImage: '',
+        displayOrder: prev.sections.length
+      }]
+    }));
+  };
+
+  const removeSection = (index) => {
+    setForm(prev => ({
+      ...prev,
+      sections: prev.sections.filter((_, i) => i !== index)
+    }));
+    setSectionFiles(prev => {
+      const newFiles = { ...prev };
+      delete newFiles[index];
+      return newFiles;
+    });
+  };
+
+  const handleSectionImageChange = (index, file) => {
+    if (file) {
+      setSectionFiles(prev => ({ ...prev, [index]: file }));
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setForm(prev => ({
+          ...prev,
+          sections: prev.sections.map((section, i) => 
+            i === index ? { ...section, sectionImage: e.target.result } : section
+          )
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveBlog = async () => {
+    if (!form.title || !form.content || !form.categoryId) {
+      alert('Vui lòng nhập đầy đủ thông tin bắt buộc!');
+      return;
+    }
+
+    // Kiểm tra thumbnail cho bài viết mới
+    if (!currentBlog && !thumbnailFile) {
+      alert('Vui lòng chọn hình ảnh đại diện cho bài viết!');
       return;
     }
 
     setLoading(true);
-
-    // Simulate API delay
-    setTimeout(() => {
-      if (currentBlog) {
-        // Edit
-        setBlogs((prev) =>
-          prev.map((b) =>
-            b.id === currentBlog.id
-              ? { ...b, ...form, publishDate: b.publishDate }
-              : b
-          )
-        );
-      } else {
-        // Add
-        setBlogs((prev) => [
-          ...prev,
-          {
-            ...form,
-            id: prev.length ? Math.max(...prev.map((b) => b.id)) + 1 : 1,
-            publishDate: new Date().toISOString().slice(0, 10),
-          },
-        ]);
+    try {
+      const formData = new FormData();
+      
+      // Add thumbnail
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      } else if (currentBlog && form.existingThumbnail) {
+        // Nếu đang edit và có thumbnail cũ, gửi existingThumbnail
+        requestData.existingThumbnail = form.existingThumbnail;
       }
-      setLoading(false);
+      
+      // Add section images
+      const sectionImages = [];
+      const sectionImageIndexes = [];
+      Object.keys(sectionFiles).forEach(index => {
+        sectionImages.push(sectionFiles[index]);
+        sectionImageIndexes.push(parseInt(index));
+      });
+      
+      if (sectionImages.length > 0) {
+        sectionImages.forEach((file, i) => {
+          formData.append('sectionImages', file);
+        });
+        sectionImageIndexes.forEach(index => {
+          formData.append('sectionImageIndexes', index);
+        });
+      }
+
+      // Add request data
+      const requestData = {
+        title: form.title,
+        content: form.content,
+        categoryId: parseInt(form.categoryId),
+        sections: form.sections
+          .filter(section => section.sectionTitle || section.sectionContent) // Chỉ gửi sections có nội dung
+          .map((section, index) => ({
+            sectionTitle: section.sectionTitle || '',
+            sectionContent: section.sectionContent || '',
+            sectionImage: section.sectionImage || '',
+            existingSectionImage: section.existingSectionImage || '',
+            displayOrder: index
+          }))
+      };
+
+      formData.append('request', new Blob([JSON.stringify(requestData)], {
+        type: 'application/json'
+      }));
+
+      let response;
+      if (currentBlog) {
+        response = await blogService.updateBlog(currentBlog.id, formData);
+      } else {
+        response = await blogService.createBlog(formData);
+      }
+
+      // Refresh blogs list
+      const updatedBlogs = await blogService.getAllBlogs();
+      setBlogs(updatedBlogs);
+      
       setOpenDialog(false);
-    }, 800);
+      alert(currentBlog ? 'Cập nhật bài viết thành công!' : 'Tạo bài viết thành công!');
+    } catch (err) {
+      setError(err.message || 'Lưu bài viết thất bại');
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteBlog = async (id) => {
@@ -624,131 +758,450 @@ const BlogManagementContent = () => {
         <Dialog
           open={openDialog}
           onClose={handleCloseDialog}
-          maxWidth="md"
+          maxWidth="xl"
           fullWidth
           TransitionComponent={Fade}
           PaperProps={{
             sx: {
-              borderRadius: 2,
+              borderRadius: 3,
               overflow: 'hidden',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+              maxHeight: '95vh',
+              width: '90vw',
             },
           }}
         >
           <DialogTitle
             sx={{
-              backgroundColor: colors.primary,
+              background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
               color: colors.white,
-              fontWeight: 600,
+              fontWeight: 700,
+              fontSize: '1.5rem',
+              padding: '20px 30px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
             }}
           >
+            <LibraryBooksIcon sx={{ fontSize: 28 }} />
             {currentBlog ? 'Chỉnh sửa bài viết' : 'Thêm bài viết mới'}
           </DialogTitle>
 
-          <DialogContent sx={{ pt: 3, pb: 1 }}>
+          <DialogContent sx={{ 
+            pt: 4, 
+            pb: 2, 
+            px: 4,
+            overflowY: 'auto',
+            maxHeight: 'calc(95vh - 140px)', // Trừ đi header và footer
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'rgba(32, 178, 170, 0.1)',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: colors.primary,
+              borderRadius: '4px',
+              '&:hover': {
+                background: colors.secondary,
+              },
+            },
+          }}>
             <Box component="form">
               <TextField
                 fullWidth
-                label="Tiêu đề bài viết"
+                label="Tiêu đề bài viết *"
                 margin="normal"
                 name="title"
                 value={form.title}
                 onChange={handleFormChange}
-                sx={{ mb: 2 }}
+                sx={{ 
+                  mb: 3,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&:hover fieldset': {
+                      borderColor: colors.primary,
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: colors.primary,
+                    },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: colors.primary,
+                  },
+                  '& .MuiInputBase-input': {
+                    fontSize: '1.1rem',
+                    fontWeight: 500,
+                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                  },
+                }}
+                required
               />
 
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>Danh mục</InputLabel>
-                  <Select
-                    name="category"
-                    value={form.category}
-                    label="Danh mục"
-                    onChange={handleFormChange}
-                  >
-                    <MenuItem value="Sức khỏe">Sức khỏe</MenuItem>
-                    <MenuItem value="Phòng ngừa">Phòng ngừa</MenuItem>
-                    <MenuItem value="Xét nghiệm">Xét nghiệm</MenuItem>
-                    <MenuItem value="Điều trị">Điều trị</MenuItem>
-                    <MenuItem value="Tư vấn">Tư vấn</MenuItem>
-                  </Select>
-                </FormControl>
+              <FormControl fullWidth margin="normal" sx={{ 
+                mb: 3,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover fieldset': {
+                    borderColor: colors.primary,
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: colors.primary,
+                  },
+                },
+                '& .MuiInputLabel-root.Mui-focused': {
+                  color: colors.primary,
+                },
+              }}>
+                <InputLabel>Danh mục *</InputLabel>
+                <Select
+                  name="categoryId"
+                  value={form.categoryId}
+                  label="Danh mục *"
+                  onChange={handleFormChange}
+                  required
+                >
+                  {categories.map(category => (
+                    <MenuItem key={category.categoryId} value={category.categoryId}>
+                      {category.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>Trạng thái</InputLabel>
-                  <Select
-                    name="status"
-                    value={form.status}
-                    label="Trạng thái"
-                    onChange={handleFormChange}
+              {/* Thumbnail Upload */}
+              <Box sx={{ 
+                mb: 4,
+                p: 3,
+                backgroundColor: 'rgba(32, 178, 170, 0.05)',
+                borderRadius: 3,
+                border: '2px dashed rgba(32, 178, 170, 0.3)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  borderColor: colors.primary,
+                  backgroundColor: 'rgba(32, 178, 170, 0.08)',
+                }
+              }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: colors.primary }}>
+                  🖼️ Hình ảnh đại diện *
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 3, color: colors.darkGray, opacity: 0.8 }}>
+                  Chọn hình ảnh đại diện cho bài viết. Hình ảnh sẽ được hiển thị ở đầu bài viết.
+                </Typography>
+                <input
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  id="thumbnail-upload"
+                  type="file"
+                  onChange={handleThumbnailChange}
+                />
+                <label htmlFor="thumbnail-upload">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ 
+                      mb: 2,
+                      borderRadius: 2,
+                      borderColor: colors.primary,
+                      color: colors.primary,
+                      fontWeight: 600,
+                      padding: '12px 24px',
+                      '&:hover': {
+                        backgroundColor: 'rgba(32, 178, 170, 0.1)',
+                        borderColor: colors.secondary,
+                      }
+                    }}
                   >
-                    <MenuItem value="published">Xuất bản</MenuItem>
-                    <MenuItem value="draft">Bản nháp</MenuItem>
-                  </Select>
-                </FormControl>
+                    Chọn hình ảnh
+                  </Button>
+                </label>
+                {(thumbnailPreview || form.existingThumbnail) && (
+                  <Box sx={{ 
+                    mt: 3, 
+                    textAlign: 'center',
+                    p: 2,
+                    backgroundColor: colors.white,
+                    borderRadius: 2,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}>
+                    <Typography variant="caption" sx={{ mb: 2, display: 'block', color: colors.darkGray }}>
+                      Xem trước hình ảnh
+                    </Typography>
+                    <img
+                      src={thumbnailPreview || form.existingThumbnail}
+                      alt="Thumbnail preview"
+                      style={{
+                        maxWidth: '100%',
+                        height: 'auto',
+                        maxHeight: '200px',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      }}
+                    />
+                  </Box>
+                )}
               </Box>
 
               <TextField
                 fullWidth
-                label="Tác giả"
-                margin="normal"
-                name="author"
-                value={form.author}
-                onChange={handleFormChange}
-                sx={{ mb: 2 }}
-              />
-
-              <TextField
-                fullWidth
-                label="URL hình ảnh (tuỳ chọn)"
-                margin="normal"
-                name="thumbnail"
-                value={form.thumbnail}
-                onChange={handleFormChange}
-                placeholder="https://example.com/image.jpg"
-                sx={{ mb: 2 }}
-              />
-              {form.thumbnail && (
-                <Box sx={{ mt: 2, mb: 3, textAlign: 'center' }}>
-                  <Typography
-                    variant="caption"
-                    sx={{ mb: 1, display: 'block' }}
-                  >
-                    Xem trước hình ảnh
-                  </Typography>
-                  <img
-                    src={form.thumbnail}
-                    alt="Blog thumbnail preview"
-                    style={{
-                      maxWidth: '100%',
-                      height: 'auto',
-                      maxHeight: '200px',
-                      borderRadius: '8px',
-                    }}
-                  />
-                </Box>
-              )}
-
-              <TextField
-                fullWidth
-                label="Nội dung bài viết"
-                multiline
-                rows={6}
+                label="Nội dung chính *"
                 margin="normal"
                 name="content"
                 value={form.content}
                 onChange={handleFormChange}
-                sx={{ mb: 2 }}
+                sx={{ 
+                  mb: 4,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&:hover fieldset': {
+                      borderColor: colors.primary,
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: colors.primary,
+                    },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: colors.primary,
+                  },
+                  '& .MuiInputBase-input': {
+                    fontSize: '1rem',
+                    lineHeight: 1.6,
+                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                  },
+                }}
+                required
               />
+
+              {/* Sections */}
+              <Box sx={{ mb: 4 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  mb: 3,
+                  p: 2,
+                  backgroundColor: 'rgba(32, 178, 170, 0.05)',
+                  borderRadius: 2,
+                }}>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: colors.primary }}>
+                      📝 Các phần bổ sung (tùy chọn)
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: colors.darkGray, opacity: 0.8 }}>
+                      Thêm các phần nội dung bổ sung với hình ảnh
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={addSection}
+                    sx={{
+                      backgroundColor: colors.primary,
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      '&:hover': {
+                        backgroundColor: colors.secondary,
+                      }
+                    }}
+                  >
+                    Thêm phần
+                  </Button>
+                </Box>
+
+                {form.sections.map((section, index) => (
+                  <Card key={index} sx={{ 
+                    mb: 4, 
+                    p: 4, 
+                    border: '2px solid rgba(32, 178, 170, 0.2)',
+                    borderRadius: 3,
+                    backgroundColor: colors.white,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      boxShadow: '0 6px 20px rgba(0,0,0,0.12)',
+                      borderColor: colors.primary,
+                    }
+                  }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      mb: 4,
+                      pb: 2,
+                      borderBottom: '2px solid rgba(32, 178, 170, 0.1)'
+                    }}>
+                      <Typography variant="h6" sx={{ 
+                        fontWeight: 600, 
+                        color: colors.primary,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
+                      }}>
+                        <span style={{ fontSize: '1.2rem' }}>📄</span>
+                        Phần {index + 1}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => removeSection(index)}
+                        sx={{
+                          backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 107, 107, 0.2)',
+                          }
+                        }}
+                      >
+                        <RemoveIcon />
+                      </IconButton>
+                    </Box>
+
+                    <Grid container spacing={4}>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Tiêu đề phần"
+                          value={section.sectionTitle}
+                          onChange={(e) => handleSectionChange(index, 'sectionTitle', e.target.value)}
+                          sx={{ 
+                            mb: 2,
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                              '&:hover fieldset': {
+                                borderColor: colors.primary,
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: colors.primary,
+                              },
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                              color: colors.primary,
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: '1rem',
+                              fontWeight: 500,
+                              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                            },
+                          }}
+                        />
+                      </Grid>
+
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Nội dung phần"
+                          value={section.sectionContent}
+                          onChange={(e) => handleSectionChange(index, 'sectionContent', e.target.value)}
+                          sx={{ 
+                            mb: 2,
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                              '&:hover fieldset': {
+                                borderColor: colors.primary,
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: colors.primary,
+                              },
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                              color: colors.primary,
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: '1rem',
+                              lineHeight: 1.6,
+                              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                            },
+                          }}
+                        />
+                      </Grid>
+
+                      <Grid item xs={12}>
+                        <Box sx={{
+                          p: 2,
+                          backgroundColor: 'rgba(32, 178, 170, 0.03)',
+                          borderRadius: 2,
+                          border: '1px dashed rgba(32, 178, 170, 0.3)',
+                        }}>
+                          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: colors.primary }}>
+                            🖼️ Hình ảnh phần (tùy chọn)
+                          </Typography>
+                          <input
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            id={`section-image-${index}`}
+                            type="file"
+                            onChange={(e) => handleSectionImageChange(index, e.target.files[0])}
+                          />
+                          <label htmlFor={`section-image-${index}`}>
+                            <Button
+                              variant="outlined"
+                              component="span"
+                              startIcon={<CloudUploadIcon />}
+                              size="small"
+                              sx={{ 
+                                mb: 2,
+                                borderRadius: 2,
+                                borderColor: colors.primary,
+                                color: colors.primary,
+                                fontWeight: 600,
+                                '&:hover': {
+                                  backgroundColor: 'rgba(32, 178, 170, 0.1)',
+                                  borderColor: colors.secondary,
+                                }
+                              }}
+                            >
+                              Chọn hình ảnh
+                            </Button>
+                          </label>
+                          {(section.sectionImage || section.existingSectionImage) && (
+                            <Box sx={{ 
+                              mt: 2,
+                              textAlign: 'center',
+                              p: 2,
+                              backgroundColor: colors.white,
+                              borderRadius: 2,
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                            }}>
+                              <Typography variant="caption" sx={{ mb: 2, display: 'block', color: colors.darkGray }}>
+                                Xem trước hình ảnh phần {index + 1}
+                              </Typography>
+                              <img
+                                src={section.sectionImage || section.existingSectionImage}
+                                alt={`Section ${index + 1} preview`}
+                                style={{
+                                  maxWidth: '100%',
+                                  height: 'auto',
+                                  maxHeight: '150px',
+                                  borderRadius: '12px',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                }}
+                              />
+                            </Box>
+                          )}
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Card>
+                ))}
+              </Box>
             </Box>
           </DialogContent>
 
-          <DialogActions sx={{ p: 3 }}>
+          <DialogActions sx={{ 
+            p: 4, 
+            backgroundColor: 'rgba(32, 178, 170, 0.02)',
+            borderTop: '1px solid rgba(32, 178, 170, 0.1)'
+          }}>
             <Button
               onClick={handleCloseDialog}
               variant="outlined"
               sx={{
                 color: colors.darkGray,
                 borderColor: colors.lightGray,
+                borderRadius: 2,
+                fontWeight: 600,
+                padding: '12px 24px',
                 '&:hover': {
                   borderColor: colors.darkGray,
                   backgroundColor: 'rgba(0, 0, 0, 0.04)',
@@ -761,12 +1214,30 @@ const BlogManagementContent = () => {
               onClick={handleSaveBlog}
               variant="contained"
               disabled={loading}
-              sx={primaryButtonStyle}
+              sx={{
+                ...primaryButtonStyle,
+                padding: '12px 32px',
+                fontSize: '1rem',
+                fontWeight: 700,
+                borderRadius: 3,
+                boxShadow: '0 4px 15px rgba(32, 178, 170, 0.4)',
+                '&:hover': {
+                  backgroundColor: colors.secondary,
+                  boxShadow: '0 6px 20px rgba(32, 178, 170, 0.5)',
+                  transform: 'translateY(-2px)',
+                },
+                '&:disabled': {
+                  backgroundColor: colors.lightGray,
+                  color: colors.darkGray,
+                  boxShadow: 'none',
+                  transform: 'none',
+                }
+              }}
               startIcon={
                 loading ? <CircularProgress size={20} color="inherit" /> : null
               }
             >
-              {currentBlog ? 'Cập nhật' : 'Thêm mới'}
+              {currentBlog ? 'Cập nhật bài viết' : 'Tạo bài viết mới'}
             </Button>
           </DialogActions>
         </Dialog>

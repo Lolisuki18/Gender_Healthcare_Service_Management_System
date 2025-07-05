@@ -1,5 +1,8 @@
 package com.healapp.config;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -10,9 +13,6 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.CategoryQuestionRepository;
 import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Component
 public class DataInitializerConfig implements CommandLineRunner {
