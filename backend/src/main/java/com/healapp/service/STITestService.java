@@ -1563,4 +1563,37 @@ public class STITestService {
             return ApiResponse.error("Error retrying payment: " + e.getMessage());
         }
     }
+
+    @Transactional
+    public ApiResponse<STITestResponse> assignConsultant(Long testId, Long consultantId) {
+        Optional<STITest> testOpt = stiTestRepository.findById(testId);
+        if (testOpt.isEmpty())
+            return ApiResponse.error("Test not found");
+        Optional<UserDtls> consultantOpt = userRepository.findById(consultantId);
+        if (consultantOpt.isEmpty())
+            return ApiResponse.error("Consultant not found");
+        STITest test = testOpt.get();
+        test.setConsultant(consultantOpt.get());
+        stiTestRepository.save(test);
+        return ApiResponse.success("Consultant assigned", convertToResponse(test));
+    }
+
+    public ApiResponse<List<STITestResponse>> getTestsForConsultant(Long consultantId) {
+        try {
+            Optional<UserDtls> consultantOpt = userRepository.findById(consultantId);
+            if (consultantOpt.isEmpty()) {
+                return ApiResponse.error("Consultant not found");
+            }
+            UserDtls consultant = consultantOpt.get();
+            String roleName = consultant.getRole() != null ? consultant.getRole().getRoleName() : null;
+            if (!"CONSULTANT".equals(roleName)) {
+                return ApiResponse.error("User is not a consultant");
+            }
+            List<STITest> tests = stiTestRepository.findByConsultantId(consultantId);
+            List<STITestResponse> responses = tests.stream().map(this::convertToResponse).toList();
+            return ApiResponse.success("Consultant tests retrieved successfully", responses);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to retrieve consultant tests: " + e.getMessage());
+        }
+    }
 }

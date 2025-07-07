@@ -2,7 +2,7 @@
  * STITestsContent.js - Simple and Clean UI for STI Tests Management
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -48,7 +48,11 @@ import {
   CalendarToday as CalendarTodayIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
-import { updateConsultantNotes } from '../../services/stiService';
+import {
+  getConsultantSTITests,
+  updateConsultantNotes,
+} from '../../services/stiService';
+import api from '../../services/api';
 
 // Test Type translation function
 const getTestTypeTranslation = (type) => {
@@ -76,64 +80,13 @@ const getTestTypeTranslation = (type) => {
   }
 };
 
-const STITestsContent = () => {
-  // Mock data - simplified
-  const [tests] = useState([
-    {
-      id: 1,
-      patientName: 'Nguyễn Văn Minh',
-      patientEmail: 'nguyenvanminh@gmail.com',
-      patientPhone: '0912345678',
-      patientAge: 28,
-      patientGender: 'Nam',
-      patientAvatar: '/images/avatars/avatar1.jpg',
-      testType: 'comprehensive',
-      testDate: '2025-06-20T09:30:00',
-      status: 'completed',
-      symptoms: ['Đau khi đi tiểu', 'Tiết dịch bất thường'],
-      results: {
-        hiv: 'Âm tính',
-        chlamydia: 'Dương tính',
-      },
-      recommendations:
-        'Điều trị Chlamydia bằng Azithromycin 1g. Tái khám sau 2 tuần.',
-      notes: 'Bệnh nhân có tiền sử quan hệ không an toàn.',
-    },
-    {
-      id: 2,
-      patientName: 'Trần Thị Lan Anh',
-      patientEmail: 'tranthilananh@gmail.com',
-      patientPhone: '0987654321',
-      patientAge: 25,
-      patientGender: 'Nữ',
-      testType: 'hiv',
-      testDate: '2025-06-21T14:00:00',
-      status: 'completed',
-      symptoms: ['Lo lắng về phơi nhiễm'],
-      results: { hiv: 'Âm tính' },
-      recommendations: 'Kết quả HIV âm tính. Tái xét nghiệm sau 3 tháng.',
-    },
-    {
-      id: 3,
-      patientName: 'Lê Hoàng Nam',
-      patientEmail: 'lehoangnam@gmail.com',
-      testType: 'gonorrhea',
-      testDate: '2025-06-22T10:15:00',
-      status: 'processing',
-      symptoms: ['Tiết dịch màu vàng', 'Đau rát khi đi tiểu'],
-    },
-    {
-      id: 4,
-      patientName: 'Phạm Thị Hương',
-      patientEmail: 'phamthihuong@gmail.com',
-      testType: 'hpv',
-      testDate: '2025-06-22T11:30:00',
-      status: 'pending',
-      symptoms: ['Khám sức khỏe định kỳ'],
-    },
-  ]);
+// Helper để lấy ký tự đầu tiên hoặc '?'
+const getInitial = (name) =>
+  (name && typeof name === 'string' && name.charAt(0)) || '?';
 
+const STITestsContent = () => {
   // State
+  const [tests, setTests] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [tabValue, setTabValue] = useState(0);
@@ -146,12 +99,26 @@ const STITestsContent = () => {
   const [recommendation, setRecommendation] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Lấy userId consultant hiện tại (giả sử lưu ở localStorage)
+  const userId = Number(localStorage.getItem('userId'));
+
+  // Lấy danh sách test từ API khi load component
+  useEffect(() => {
+    getConsultantSTITests().then((res) => {
+      setTests(res.data || []);
+    });
+  }, []);
+
   // Filter tests
   const filteredTests = tests.filter((test) => {
     if (statusFilter !== 'all' && test.status !== statusFilter) return false;
     const matchesSearch =
-      test.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      test.patientEmail.toLowerCase().includes(searchQuery.toLowerCase());
+      (test.patientName?.toLowerCase() || '').includes(
+        searchQuery.toLowerCase()
+      ) ||
+      (test.patientEmail?.toLowerCase() || '').includes(
+        searchQuery.toLowerCase()
+      );
     return matchesSearch;
   });
 
@@ -402,6 +369,9 @@ const STITestsContent = () => {
                 <TableCell>
                   <strong>Kết quả</strong>
                 </TableCell>
+                <TableCell>
+                  <strong>Consultant Notes</strong>
+                </TableCell>
                 <TableCell align="center">
                   <strong>Thao tác</strong>
                 </TableCell>
@@ -422,7 +392,7 @@ const STITestsContent = () => {
                             bgcolor: '#4A90E2',
                           }}
                         >
-                          {test.patientName.charAt(0)}
+                          {getInitial(test.patientName)}
                         </Avatar>
                         <Box>
                           <Typography variant="body2" fontWeight="medium">
@@ -462,6 +432,16 @@ const STITestsContent = () => {
                         <Typography variant="caption" color="text.secondary">
                           Chưa có kết quả
                         </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {test.consultantNotes &&
+                      test.consultantNotes.trim() !== '' ? (
+                        <span>{test.consultantNotes}</span>
+                      ) : (
+                        <span style={{ color: 'red', fontStyle: 'italic' }}>
+                          Chưa có kết luận
+                        </span>
                       )}
                     </TableCell>
                     <TableCell align="center">
@@ -543,7 +523,7 @@ const STITestsContent = () => {
                           bgcolor: '#4A90E2',
                         }}
                       >
-                        {selectedTest.patientName.charAt(0)}
+                        {getInitial(selectedTest.patientName)}
                       </Avatar>
                       <Box>
                         <Typography variant="h6">
