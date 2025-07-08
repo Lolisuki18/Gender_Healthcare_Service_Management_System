@@ -10,4 +10,7 @@ public class QuestionStatusRequest {
     private QuestionStatus status;
 
     private String rejectionReason;
+
+    // Cho phép chỉ định người sẽ trả lời khi xác nhận câu hỏi
+    private Long replierId;
 }
