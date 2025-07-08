@@ -76,10 +76,14 @@ const BlogPage = () => {
           console.log('📄 Page data:', pageData);
           console.log('📝 Blogs content:', pageData.content);
           
-          setBlogs(pageData.content || []);
+          // Lọc chỉ hiển thị blog có trạng thái CONFIRMED
+          const confirmedBlogs = (pageData.content || []).filter(blog => blog.status === 'CONFIRMED');
+          console.log('✅ Filtered blogs (CONFIRMED only):', confirmedBlogs.length, 'out of', pageData.content?.length || 0);
+          
+          setBlogs(confirmedBlogs);
           setTotalPages(pageData.totalPages || 1);
           
-          console.log('✅ Successfully set blogs:', pageData.content?.length || 0, 'items');
+          console.log('✅ Successfully set blogs:', confirmedBlogs.length, 'items');
         } else {
           console.error('❌ API response not successful:', response);
           
@@ -94,7 +98,7 @@ const BlogPage = () => {
               createdAt: new Date().toISOString(),
               author: { name: "Test Author" },
               category: { name: "Test Category" },
-              status: "PUBLISHED"
+              status: "CONFIRMED"
             },
             {
               id: 2,
@@ -104,7 +108,7 @@ const BlogPage = () => {
               createdAt: new Date().toISOString(),
               author: { name: "Test Author 2" },
               category: { name: "Test Category 2" },
-              status: "PUBLISHED"
+              status: "CONFIRMED"
             }
           ];
           
@@ -133,7 +137,7 @@ const BlogPage = () => {
             createdAt: new Date().toISOString(),
             author: { name: "Dr. Nguyễn Văn A" },
             category: { name: "Sức khỏe sinh sản" },
-            status: "PUBLISHED",
+            status: "CONFIRMED",
             imageUrl: null
           },
           {
@@ -144,7 +148,7 @@ const BlogPage = () => {
             createdAt: new Date(Date.now() - 86400000).toISOString(),
             author: { name: "Dr. Trần Thị B" },
             category: { name: "Phòng ngừa bệnh tật" },
-            status: "PUBLISHED",
+            status: "CONFIRMED",
             imageUrl: null
           },
           {
@@ -155,7 +159,7 @@ const BlogPage = () => {
             createdAt: new Date(Date.now() - 172800000).toISOString(),
             author: { name: "Dr. Lê Văn C" },
             category: { name: "Xét nghiệm y khoa" },
-            status: "PUBLISHED",
+            status: "CONFIRMED",
             imageUrl: null
           }
         ];
