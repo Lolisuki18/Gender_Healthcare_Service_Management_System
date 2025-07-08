@@ -41,23 +41,15 @@ import {
   Chip,
 } from '@mui/material';
 import {
-  Dashboard as DashboardIcon,
-  Person as PersonIcon,
-  CalendarToday as CalendarIcon,
-  History as HistoryIcon,
-  Payment as PaymentIcon,
-  Notifications as NotificationsIcon,
-  Help as HelpIcon,
-  QuestionAnswer as QuestionIcon,
   ExpandLess,
   ExpandMore,
   Close as CloseIcon,
-  Lock as LockIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import localStorageUtil from '@/utils/localStorage';
 import imageUrl from '@/utils/imageUrl';
 import { listenToAvatarUpdates } from '@/utils/storageEvent';
+import { sidebarMenuConfig } from '../siderBar/sidebarConfig';
 
 // Constants
 const drawerWidth = 280; // Chiều rộng cố định của sidebar
@@ -135,65 +127,16 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       [item]: !prev[item],
     }));
   };
-
-  // Cấu hình menu items với icons và paths
-  // Mỗi item có thể có sub-items cho menu phân cấp
-  const menuItems = [
-    {
-      id: 'dashboard',
-      label: 'Tổng quan',
-      icon: <DashboardIcon />,
-      path: '/customer/dashboard', // Path không được sử dụng (tab-based navigation)
-    },
-    {
-      id: 'profile',
-      label: 'Hồ sơ cá nhân',
-      icon: <PersonIcon />,
-      path: '/customer/profile',
-    },
-    {
-      id: 'security',
-      label: 'Bảo mật',
-      icon: <LockIcon />,
-      path: '/customer/security',
-    },
-    {
-      id: 'appointments',
-      label: 'Lịch hẹn',
-      icon: <CalendarIcon />,
-      path: '/customer/appointments', // Note: Hiện tại dùng tab system
-    },
-    {
-      id: 'medical-history',
-      label: 'Lịch sử khám',
-      icon: <HistoryIcon />,
-      path: '/customer/medical-history',
-    },
-    {
-      id: 'invoices',
-      label: 'Hóa đơn',
-      icon: <PaymentIcon />,
-      path: '/customer/payments/invoices',
-    },
-    {
-      id: 'notifications',
-      label: 'Thông báo',
-      icon: <NotificationsIcon />,
-      path: '/customer/notifications',
-    },
-    {
-      id: 'help',
-      label: 'Trợ giúp',
-      icon: <HelpIcon />,
-      path: '/customer/help',
-    },
-    {
-      id: 'questions',
-      label: 'Câu hỏi đã đặt',
-      icon: <QuestionIcon />,
-      path: '/customer/questions',
-    },
-  ]; // Thêm useState để quản lý key để force re-render component
+  // Cấu hình menu items từ sidebarConfig, lọc theo role CUSTOMER
+  const menuItems = sidebarMenuConfig.filter(item => 
+    item.roles && item.roles.includes('CUSTOMER')
+  );
+  
+  // Debug: Log menu items để kiểm tra
+  console.log('CustomerSidebar - Menu items from config:', menuItems);
+  console.log('CustomerSidebar - Full sidebarMenuConfig:', sidebarMenuConfig);
+  
+  // Thêm useState để quản lý key để force re-render component
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Hàm force refresh component khi cần
@@ -612,7 +555,7 @@ const CustomerSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
                             transition: 'color 0.3s ease',
                           }}
                         >
-                          {item.icon}
+                          {subItem.icon}
                         </ListItemIcon>
                         <ListItemText
                           primary={subItem.label}
