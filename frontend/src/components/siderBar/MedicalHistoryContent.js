@@ -209,6 +209,7 @@ const MedicalHistoryContent = () => {
         id: `sti-${test.testId}`,
         date: dateToUse,
         doctor: test.staffName || test.consultantName || 'Chưa xác định',
+        consultantName: test.consultantName, // thêm dòng này để lưu consultantName vào record
         diagnosis: test.serviceName || 'Xét nghiệm STI',
         status: test.status,
         displayStatus: test.getStatusDisplayText
@@ -789,7 +790,9 @@ const MedicalHistoryContent = () => {
                             <DoctorIcon
                               sx={{ mr: 1, fontSize: 16, color: '#4A90E2' }}
                             />
-                            {record.doctor}
+                            {record.consultantName ||
+                              record.doctor ||
+                              'Chưa xác định'}
                           </Box>
                         </TableCell>
                         <TableCell>
@@ -886,7 +889,8 @@ const MedicalHistoryContent = () => {
                             spacing={1}
                             justifyContent="center"
                           >
-                            {record.hasTestResults ? (
+                            {record.hasTestResults &&
+                            record.status === 'COMPLETED' ? (
                               <Tooltip title="Xem kết quả chi tiết" arrow>
                                 <IconButton
                                   color="primary"
@@ -905,7 +909,10 @@ const MedicalHistoryContent = () => {
                                 </IconButton>
                               </Tooltip>
                             ) : (
-                              <Tooltip title="Chưa có kết quả" arrow>
+                              <Tooltip
+                                title="Chỉ xem được khi đã hoàn thành"
+                                arrow
+                              >
                                 <IconButton
                                   disabled
                                   sx={{

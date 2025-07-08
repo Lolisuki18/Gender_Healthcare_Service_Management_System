@@ -58,6 +58,7 @@ const TestResultInputModal = ({
   const [consultants, setConsultants] = useState([]);
   const [selectedConsultantId, setSelectedConsultantId] = useState('');
   const [assigningConsultant, setAssigningConsultant] = useState(false);
+  const [assignSuccess, setAssignSuccess] = useState('');
 
   // Load conclusion options
   useEffect(() => {
@@ -268,6 +269,8 @@ const TestResultInputModal = ({
       // Cập nhật lại test trong modal để phản ánh consultant mới
       test.consultantId = selectedConsultantId;
       setSelectedConsultantId(selectedConsultantId);
+      setAssignSuccess('Đã chọn consultant thành công!');
+      setTimeout(() => setAssignSuccess(''), 2500);
     } catch (err) {
       alert('Gán consultant thất bại!');
     } finally {
@@ -596,28 +599,68 @@ const TestResultInputModal = ({
         {/* Hiển thị dropdown chọn consultant luôn khi RESULTED */}
         {test?.status === 'RESULTED' && (
           <Box sx={{ my: 2 }}>
-            <FormControl fullWidth>
-              <InputLabel>Chọn consultant</InputLabel>
-              <Select
-                value={selectedConsultantId}
-                onChange={(e) => setSelectedConsultantId(e.target.value)}
-                label="Chọn consultant"
-              >
-                {consultants.map((c) => (
-                  <MenuItem key={c.userId || c.id} value={c.userId || c.id}>
-                    {c.fullName || c.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Button
-              variant="contained"
-              sx={{ mt: 2 }}
-              onClick={handleAssignConsultant}
-              disabled={!selectedConsultantId || assigningConsultant}
-            >
-              {assigningConsultant ? 'Đang gán...' : 'Chọn consultant này'}
-            </Button>
+            {assignSuccess && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                {assignSuccess}
+              </Alert>
+            )}
+            <Grid container spacing={2} alignItems="center">
+              <Grid item size={12} xs={12} md={6}>
+                <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                  <InputLabel id="consultant-select-label">
+                    Chọn consultant
+                  </InputLabel>
+                  <Select
+                    labelId="consultant-select-label"
+                    value={selectedConsultantId}
+                    onChange={(e) => setSelectedConsultantId(e.target.value)}
+                    label="Chọn consultant"
+                    sx={{ background: '#fff', borderRadius: 1 }}
+                  >
+                    {consultants.map((c) => (
+                      <MenuItem key={c.userId || c.id} value={c.userId || c.id}>
+                        {c.fullName || c.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <Button
+                  variant="contained"
+                  sx={{
+                    mt: 1,
+                    background: MEDICAL_GRADIENT,
+                    color: '#fff',
+                    fontWeight: 600,
+                    boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                  }}
+                  onClick={handleAssignConsultant}
+                  disabled={!selectedConsultantId || assigningConsultant}
+                  fullWidth
+                >
+                  {assigningConsultant ? 'Đang gán...' : 'Chọn consultant này'}
+                </Button>
+              </Grid>
+              <Grid item size={12} xs={12} md={6}>
+                <TextField
+                  label="Kết luận từ consultant"
+                  value={test?.consultantNotes || ''}
+                  placeholder="Chưa có kết luận từ consultant"
+                  multiline
+                  minRows={3}
+                  maxRows={6}
+                  fullWidth
+                  InputProps={{ readOnly: true }}
+                  sx={{
+                    background: '#fff',
+                    borderRadius: 1,
+                    '& .MuiInputBase-input': {
+                      fontStyle: test?.consultantNotes ? 'normal' : 'italic',
+                      color: test?.consultantNotes ? '#222' : 'red',
+                    },
+                  }}
+                />
+              </Grid>
+            </Grid>
           </Box>
         )}
       </DialogContent>
@@ -640,6 +683,7 @@ const TestResultInputModal = ({
         >
           {test?.status === 'RESULTED' ? 'Cập nhật kết quả' : 'Lưu kết quả'}
         </Button>
+        {/* Alert cảnh báo và nút hoàn tất */}
         {test?.status === 'RESULTED' && (
           <Button
             onClick={handleComplete}
@@ -659,14 +703,7 @@ const TestResultInputModal = ({
             Lưu & Hoàn tất
           </Button>
         )}
-        {test?.status === 'RESULTED' &&
-          (!test?.consultantNotes || test.consultantNotes.trim() === '') && (
-            <Alert severity="warning" sx={{ mt: 2 }}>
-              <span style={{ color: 'red', fontStyle: 'italic' }}>
-                Chưa có kết luận từ consultant
-              </span>
-            </Alert>
-          )}
+        {/* Đã thay Alert cảnh báo bằng TextField ở trên */}
         {loading && (
           <CircularProgress
             size={24}
