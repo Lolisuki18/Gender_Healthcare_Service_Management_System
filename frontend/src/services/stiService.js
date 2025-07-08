@@ -388,7 +388,7 @@ export const addTestResults = async (testId, resultsData) => {
 
         // Check if values are as expected
         console.log(
-          `Component ${componentId}: resultValue=${result.resultValue}, unit=${result.unit}, normalRange=${result.normalRange}`
+          `Component ${componentId}: resultValue=${result.resultValue}, unit=${result.unit}, normalRange=${result.normalRange}, conclusion=${result.conclusion}`
         );
 
         // Make sure all required fields are present and properly formatted
@@ -397,6 +397,10 @@ export const addTestResults = async (testId, resultsData) => {
           resultValue: result.resultValue || '',
           normalRange: result.normalRange || '',
           unit: result.unit || '',
+          conclusion:
+            result.conclusion && result.conclusion !== ''
+              ? result.conclusion
+              : null,
         };
       }),
     };
@@ -779,6 +783,16 @@ export const updateConsultantNotes = async (testId, consultantNotes) => {
   }
 };
 
+// Get all tests assigned to current consultant
+export const getConsultantSTITests = async () => {
+  try {
+    const response = await apiClient.get('/sti-services/consultant/my-tests');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
 // Export as a default object with all functions
 const stiService = {
   createSTIService,
@@ -814,6 +828,7 @@ const stiService = {
   updateQuestionCategory,
   deleteQuestionCategory,
   updateConsultantNotes,
+  getConsultantSTITests,
 
   // New function to get services within a package
   // getServicesInPackage: async (packageId) => {

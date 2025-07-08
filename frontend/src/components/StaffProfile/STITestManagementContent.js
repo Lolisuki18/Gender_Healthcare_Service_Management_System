@@ -715,6 +715,7 @@ const STITestManagementContent = () => {
             resultValue: result.resultValue,
             normalRange: result.normalRange || '',
             unit: result.unit || '',
+            conclusion: result.conclusion || '', // Thêm dòng này để lưu kết luận
           };
         });
 
@@ -1227,10 +1228,10 @@ const STITestManagementContent = () => {
     if (test.status === 'RESULTED' || test.status === 'COMPLETED') {
       try {
         const results = await getTestResultsByTestId(test.testId);
-        if (results && results.data) {
-          // Gắn kết quả vào đối tượng test để modal có thể sử dụng
-          test.testResults = results.data;
-        }
+        setResultModalTest({
+          ...test,
+          testResults: results.data || results, // đảm bảo luôn có mảng
+        });
       } catch (err) {
         console.error('Không thể tải kết quả xét nghiệm đã có:', err);
         // Có thể set lỗi ở đây nếu cần

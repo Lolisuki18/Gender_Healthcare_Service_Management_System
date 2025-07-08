@@ -29,6 +29,7 @@ import {
   InputLabel,
 } from '@mui/material';
 import { getConclusionOptions } from '../../../services/stiService';
+import api from '../../../services/api';
 
 const MEDICAL_GRADIENT = 'linear-gradient(45deg, #4A90E2, #1ABC9C)';
 const FONT_FAMILY = '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
@@ -54,6 +55,10 @@ const TestResultInputModal = ({
   const [touched, setTouched] = useState({});
   const [conclusionOptions, setConclusionOptions] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
+  const [consultants, setConsultants] = useState([]);
+  const [selectedConsultantId, setSelectedConsultantId] = useState('');
+  const [assigningConsultant, setAssigningConsultant] = useState(false);
+  const [assignSuccess, setAssignSuccess] = useState('');
 
   // Load conclusion options
   useEffect(() => {
@@ -107,7 +112,10 @@ const TestResultInputModal = ({
             resultValue: existingResult?.resultValue || comp.resultValue || '',
             unit: comp.unit || '',
             normalRange: comp.normalRange || comp.referenceRange || '',
-            conclusion: existingResult?.conclusion || '',
+            conclusion:
+              existingResult && typeof existingResult.conclusion === 'string'
+                ? existingResult.conclusion
+                : '',
           };
         });
       }
@@ -128,6 +136,19 @@ const TestResultInputModal = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [components, open, isPackage, selectedService, test?.testResults]);
+
+  // Lấy danh sách consultant khi mở modal nếu cần
+  useEffect(() => {
+    if (open && test?.status === 'RESULTED') {
+      api.get('/consultants').then((res) => {
+        setConsultants(res.data?.data || []);
+        // Nếu đã có consultantId thì set luôn
+        if (test?.consultantId) {
+          setSelectedConsultantId(test.consultantId);
+        }
+      });
+    }
+  }, [open, test]);
 
   const handleChange = (idx, field, value) => {
     if (isPackage && selectedService && selectedService.id) {
@@ -153,8 +174,11 @@ const TestResultInputModal = ({
   const handleSaveAll = () => {
     if (onSaveAll) {
       let finalResults = [];
-      if (isPackage && selectedService && selectedService.id) {
-        finalResults = resultsMap[selectedService.id] || [];
+      if (isPackage) {
+        // Gộp toàn bộ kết quả của mọi service trong package
+        Object.values(resultsMap).forEach((serviceResults) => {
+          finalResults = finalResults.concat(serviceResults);
+        });
       } else {
         finalResults = results;
       }
@@ -166,18 +190,22 @@ const TestResultInputModal = ({
           .values()
       );
 
-      if (isPackage && selectedService && selectedService.id) {
-        onSaveAll({
-          status: 'RESULTED',
-          results: uniqueResults,
-          serviceId: selectedService.id,
-        });
-      } else {
-        onSaveAll({
-          status: 'RESULTED',
-          results: uniqueResults,
-        });
-      }
+      // if (isPackage && selectedService && selectedService.id) {
+      //   onSaveAll({
+      //     status: 'RESULTED',
+      //     results: uniqueResults,
+      //     serviceId: selectedService.id,
+      //   });
+      // } else {
+      //   onSaveAll({
+      //     status: 'RESULTED',
+      //     results: uniqueResults,
+      //   });
+      // }
+      onSaveAll({
+        status: 'RESULTED',
+        results: uniqueResults,
+      });
     }
   };
 
@@ -223,6 +251,31 @@ const TestResultInputModal = ({
       }));
     }
     onSelectService(svc);
+  };
+
+  // Hàm gán consultant cho test
+  const handleAssignConsultant = async () => {
+    if (!selectedConsultantId) return;
+    setAssigningConsultant(true);
+    try {
+      await api.put(`/sti-services/tests/${test.testId}/assign-consultant`, {
+        consultantId: selectedConsultantId,
+      });
+      // Cập nhật lại test.consultantId trong state, không reload trang
+      if (onClose) {
+        // Nếu muốn đóng modal sau khi chọn, gọi onClose()
+        // onClose();
+      }
+      // Cập nhật lại test trong modal để phản ánh consultant mới
+      test.consultantId = selectedConsultantId;
+      setSelectedConsultantId(selectedConsultantId);
+      setAssignSuccess('Đã chọn consultant thành công!');
+      setTimeout(() => setAssignSuccess(''), 2500);
+    } catch (err) {
+      alert('Gán consultant thất bại!');
+    } finally {
+      setAssigningConsultant(false);
+    }
   };
 
   const renderServiceCards = () => {
@@ -365,7 +418,9 @@ const TestResultInputModal = ({
                         value={
                           resultsMap[selectedService.id][idx]?.resultValue || ''
                         }
-                        onChange={(e) => handleChange(idx, 'resultValue', e.target.value)}
+                        onChange={(e) =>
+                          handleChange(idx, 'resultValue', e.target.value)
+                        }
                         error={
                           touchedMap[selectedService.id]?.[idx] &&
                           !resultsMap[selectedService.id][idx]?.resultValue
@@ -387,8 +442,13 @@ const TestResultInputModal = ({
                     <TableCell>
                       <FormControl fullWidth size="small">
                         <Select
-                          value={resultsMap[selectedService.id][idx]?.conclusion || ''}
-                          onChange={(e) => handleChange(idx, 'conclusion', e.target.value)}
+                          value={
+                            resultsMap[selectedService.id][idx]?.conclusion ||
+                            ''
+                          }
+                          onChange={(e) =>
+                            handleChange(idx, 'conclusion', e.target.value)
+                          }
                           disabled={loading}
                           displayEmpty
                         >
@@ -416,7 +476,9 @@ const TestResultInputModal = ({
                         variant="outlined"
                         size="small"
                         value={results[idx]?.resultValue || ''}
-                        onChange={(e) => handleChange(idx, 'resultValue', e.target.value)}
+                        onChange={(e) =>
+                          handleChange(idx, 'resultValue', e.target.value)
+                        }
                         error={touched[idx] && !results[idx]?.resultValue}
                         helperText={
                           touched[idx] && !results[idx]?.resultValue
@@ -435,7 +497,9 @@ const TestResultInputModal = ({
                       <FormControl fullWidth size="small">
                         <Select
                           value={results[idx]?.conclusion || ''}
-                          onChange={(e) => handleChange(idx, 'conclusion', e.target.value)}
+                          onChange={(e) =>
+                            handleChange(idx, 'conclusion', e.target.value)
+                          }
                           disabled={loading}
                           displayEmpty
                         >
@@ -531,6 +595,74 @@ const TestResultInputModal = ({
         )}
 
         {renderContent()}
+
+        {/* Hiển thị dropdown chọn consultant luôn khi RESULTED */}
+        {test?.status === 'RESULTED' && (
+          <Box sx={{ my: 2 }}>
+            {assignSuccess && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                {assignSuccess}
+              </Alert>
+            )}
+            <Grid container spacing={2} alignItems="center">
+              <Grid item size={12} xs={12} md={6}>
+                <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                  <InputLabel id="consultant-select-label">
+                    Chọn consultant
+                  </InputLabel>
+                  <Select
+                    labelId="consultant-select-label"
+                    value={selectedConsultantId}
+                    onChange={(e) => setSelectedConsultantId(e.target.value)}
+                    label="Chọn consultant"
+                    sx={{ background: '#fff', borderRadius: 1 }}
+                  >
+                    {consultants.map((c) => (
+                      <MenuItem key={c.userId || c.id} value={c.userId || c.id}>
+                        {c.fullName || c.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <Button
+                  variant="contained"
+                  sx={{
+                    mt: 1,
+                    background: MEDICAL_GRADIENT,
+                    color: '#fff',
+                    fontWeight: 600,
+                    boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                  }}
+                  onClick={handleAssignConsultant}
+                  disabled={!selectedConsultantId || assigningConsultant}
+                  fullWidth
+                >
+                  {assigningConsultant ? 'Đang gán...' : 'Chọn consultant này'}
+                </Button>
+              </Grid>
+              <Grid item size={12} xs={12} md={6}>
+                <TextField
+                  label="Kết luận từ consultant"
+                  value={test?.consultantNotes || ''}
+                  placeholder="Chưa có kết luận từ consultant"
+                  multiline
+                  minRows={3}
+                  maxRows={6}
+                  fullWidth
+                  InputProps={{ readOnly: true }}
+                  sx={{
+                    background: '#fff',
+                    borderRadius: 1,
+                    '& .MuiInputBase-input': {
+                      fontStyle: test?.consultantNotes ? 'normal' : 'italic',
+                      color: test?.consultantNotes ? '#222' : 'red',
+                    },
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        )}
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
         <Button onClick={onClose} color="secondary">
@@ -551,11 +683,16 @@ const TestResultInputModal = ({
         >
           {test?.status === 'RESULTED' ? 'Cập nhật kết quả' : 'Lưu kết quả'}
         </Button>
+        {/* Alert cảnh báo và nút hoàn tất */}
         {test?.status === 'RESULTED' && (
           <Button
             onClick={handleComplete}
             variant="contained"
-            disabled={loading}
+            disabled={
+              loading ||
+              !test?.consultantNotes ||
+              test.consultantNotes.trim() === ''
+            }
             sx={{
               background: MEDICAL_GRADIENT,
               color: '#fff',
@@ -566,6 +703,7 @@ const TestResultInputModal = ({
             Lưu & Hoàn tất
           </Button>
         )}
+        {/* Đã thay Alert cảnh báo bằng TextField ở trên */}
         {loading && (
           <CircularProgress
             size={24}

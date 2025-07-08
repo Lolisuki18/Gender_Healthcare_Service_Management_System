@@ -209,6 +209,7 @@ const MedicalHistoryContent = () => {
         id: `sti-${test.testId}`,
         date: dateToUse,
         doctor: test.staffName || test.consultantName || 'Chưa xác định',
+        consultantName: test.consultantName, // thêm dòng này để lưu consultantName vào record
         diagnosis: test.serviceName || 'Xét nghiệm STI',
         status: test.status,
         displayStatus: test.getStatusDisplayText
@@ -741,218 +742,393 @@ const MedicalHistoryContent = () => {
           </Typography>
         </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2, borderRadius: '10px' }}>
-            {error}
-            <Button size="small" sx={{ ml: 2 }} onClick={() => fetchSTITests()}>
-              Thử lại
-            </Button>
-          </Alert>
+                    <Tooltip
+                      title={(() => {
+                        // Thêm nội dung tooltip giải thích trạng thái
+                        const status = record.displayStatus || record.status;
+                        switch (status) {
+                          case 'RESULTED':
+                            return 'Đã có kết quả xét nghiệm, bạn có thể xem kết quả';
+                          case 'COMPLETED':
+                            return 'Quá trình xét nghiệm đã hoàn tất';
+                          case 'CONFIRMED':
+                            return 'Đã xác nhận thông tin, chờ lấy mẫu';
+                          case 'SAMPLED':
+                            return 'Đã lấy mẫu, đang xét nghiệm';
+                          case 'CANCELED':
+                            return 'Xét nghiệm đã bị hủy';
+                          case 'PENDING':
+                            return 'Đang chờ xác nhận thông tin';
+                          default:
+                            return status;
+                        }
+                      })()}
+                      arrow
+                      placement="top"
+                    >
+                      <Chip
+                        label={(() => {
+                          // Việt hóa trạng thái
+                          const status = record.displayStatus || record.status;
+                          switch (status) {
+                            case 'Completed':
+                            case 'Hoàn thành':
+                              return 'Hoàn thành';
+                            case 'Results Available':
+                            case 'RESULTED':
+                              return 'Đã có kết quả';
+                            case 'Confirmed':
+                            case 'CONFIRMED':
+                              return 'Đã xác nhận';
+                            case 'Sample Collected':
+                            case 'SAMPLED':
+                              return 'Đã lấy mẫu';
+                            case 'Cancelled':
+                            case 'CANCELED':
+                            case 'Hủy':
+                              return 'Đã hủy';
+                            case 'Pending':
+                            case 'PENDING':
+                            case 'Đang xử lý':
+                              return 'Đang xử lý';
+                            case 'UNKNOWN':
+                              return 'Không xác định';
+                            default:
+                              return status;
+                          }
+                        })()}
+                        size="small"
+                        sx={{
+                          backgroundColor: `${getStatusColor(record.status)}15`,
+                          color: getStatusColor(record.status),
+                          border: `1px solid ${getStatusColor(record.status)}30`,
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          py: 0.5,
+                        }}
+                      />
+                    </Tooltip>
+                  </Box>
+                  {/* Doctor and Date */}{' '}
+                  <Box sx={{ mb: 2, width: '100%' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        mb: 1,
+                        width: '100%',
+                      }}
+                    >
+                      <DoctorIcon
+                        sx={{ color: '#4A90E2', mr: 1, fontSize: 18 }}
+                      />
+                      <Typography variant="body2" sx={{ color: '#4A5568' }}>
+                        {record.doctor}
+                      </Typography>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <TimeIcon
+                        sx={{ color: '#F39C12', mr: 1, fontSize: 18 }}
+                      />
+                      <Typography variant="body2" sx={{ color: '#4A5568' }}>
+                        {formatDateDisplay(record.date)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {/* Type */}{' '}
+                  <Box sx={{ mb: 2, width: '100%' }}>
+                    <Chip
+                      label={getTypeName(record.type)}
+                      size="small"
+                      sx={{
+                        backgroundColor: `${getTypeColor(record.type)}15`,
+                        color: getTypeColor(record.type),
+                        border: `1px solid ${getTypeColor(record.type)}30`,
+                        fontWeight: 500,
+                        borderRadius: '8px',
+                      }}
+                    />
+                    {record.paymentMethod && (
+                      <Chip
+                        label={getPaymentMethodName(record.paymentMethod)}
+                        size="small"
+                        sx={{
+                          ml: 1,
+                          backgroundColor: '#F3F4F630',
+                          color: '#64748b',
+                          border: '1px solid #e2e8f080',
+                          fontWeight: 500,
+                          borderRadius: '8px',
+                        }}
+                      />
+                    )}
+                  </Box>{' '}
+                  <Box
+                    sx={{
+                      p: 2,
+                      borderRadius: '12px',
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      border: '1px solid rgba(74, 144, 226, 0.1)',
+                      mb: 3,
+                      height: '120px', // Chiều cao cố định cho phần ghi chú
+                      minHeight: '120px', // Đảm bảo chiều cao tối thiểu
+                      width: '100%', // Chiều rộng đầy đủ
+                      display: 'flex',
+                      flexDirection: 'column',
+                      flexShrink: 0, // Không cho phép co lại khi không đủ không gian
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        mb: 1,
+                      }}
+                    >
+                      <ReportIcon
+                        sx={{ color: '#4A90E2', mr: 1, fontSize: 16 }}
+                      />
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#4A5568',
+                          fontWeight: 600,
+                        }}
+                      >
+                        Ghi chú
+                      </Typography>
+                    </Box>{' '}
+                    <Tooltip
+                      title={record.notes ? record.notes : 'Không có ghi chú'}
+                      placement="top"
+                    >
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          flex: 1,
+                          overflow: 'hidden',
+                          '&:hover': {
+                            '&::after': {
+                              content:
+                                record.notes && record.notes.length > 100
+                                  ? '"Xem thêm..."'
+                                  : '""',
+                              position: 'absolute',
+                              bottom: 0,
+                              right: 0,
+                              backgroundColor: 'rgba(255,255,255,0.9)',
+                              px: 1,
+                              fontSize: '0.75rem',
+                              color: '#3b82f6',
+                              fontWeight: 'bold',
+                            },
+                          },
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: '#4A5568',
+                            lineHeight: 1.5,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            height: '4.5em', // Đảm bảo chiều cao cho 3 dòng
+                          }}
+                        >
+                          {record.notes || 'Không có ghi chú'}
+                        </Typography>
+                      </Box>
+                    </Tooltip>
+                  </Box>{' '}
+                  <Box
+                    sx={{
+                      mt: 'auto', // Đẩy phần này xuống dưới cùng
+                      flexShrink: 0, // Không co lại khi không gian không đủ
+                      width: '100%', // Chiều rộng đầy đủ
+                    }}
+                  >
+                    <Button
+                      variant="contained"
+                      startIcon={<ScienceIcon />}
+                      fullWidth
+                      onClick={() =>
+                        record.hasTestResults &&
+                        handleViewTestResults(record.testId)
+                      }
+                      disabled={!record.hasTestResults}
+                      sx={{
+                        backgroundColor: record.hasTestResults
+                          ? '#10b981'
+                          : '#cbd5e0',
+                        color: 'white',
+                        fontWeight: 600,
+                        borderRadius: '12px',
+                        py: 1.5,
+                        '&:hover': {
+                          backgroundColor: record.hasTestResults
+                            ? '#059669'
+                            : '#cbd5e0',
+                          transform: record.hasTestResults
+                            ? 'translateY(-2px)'
+                            : 'none',
+                        },
+                        transition: 'all 0.3s ease',
+                        cursor: record.hasTestResults
+                          ? 'pointer'
+                          : 'not-allowed',
+                        opacity: record.hasTestResults ? 1 : 0.7,
+                      }}
+                    >
+                      {record.hasTestResults
+                        ? 'Xem kết quả'
+                        : 'Chưa có kết quả'}
+                    </Button>
+                  </Box>
+                </CardContent>
+              </MedicalCard>
+            </Grid>
+          ))
+        ) : (
+          <Grid item xs={12}>
+            <Alert severity="info" sx={{ p: 2 }}>
+              Không có dữ liệu lịch sử khám bệnh nào.
+            </Alert>
+          </Grid>
         )}
+      </Grid>
+      {/* Hiển thị kết quả xét nghiệm */}
+      {selectedTestId && <TestResults testId={selectedTestId} />}
+      {/* STI Test section with improved UI */}
+      <Box sx={{ mt: 4 }}>
+        <StyledPaper sx={{ p: { xs: 3, md: 4 } }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              mb: 3,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <Box
+                sx={{
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                  width: '48px',
+                  height: '48px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mr: 2,
+                }}
+              >
+                <ScienceIcon sx={{ color: '#9B59B6', fontSize: '28px' }} />
+              </Box>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 600,
+                  color: '#2D3748',
+                }}
+              >
+                Xét nghiệm STI
+              </Typography>
+            </Box>
 
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-            <CircularProgress size={40} color="primary" />
+            <IconButton
+              onClick={fetchSTITests}
+              sx={{
+                backgroundColor: 'rgba(155, 89, 182, 0.05)',
+                borderRadius: '8px',
+                '&:hover': {
+                  backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                },
+              }}
+            >
+              <RefreshIcon sx={{ color: '#9B59B6' }} />
+            </IconButton>
           </Box>
-        )}
 
-        {!loading && (
-          <>
-            <TableContainer>
-              <StyledTable>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Ngày khám</TableCell>
-                    <TableCell>Bác sĩ</TableCell>
-                    <TableCell>Dịch vụ</TableCell>
-                    <TableCell>Loại</TableCell>
-                    <TableCell>Trạng thái</TableCell>
-                    <TableCell>Thanh toán</TableCell>
-                    <TableCell>Ghi chú</TableCell>
-                    <TableCell align="center">Thao tác</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {paginatedRecords.length > 0 ? (
-                    paginatedRecords.map((record) => (
-                      <TableRow key={record.id} hover>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <CalendarIcon
-                              sx={{ mr: 1, fontSize: 16, color: '#4A90E2' }}
-                            />
-                            {formatDateDisplay(record.date)}
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <DoctorIcon
-                              sx={{ mr: 1, fontSize: 16, color: '#4A90E2' }}
-                            />
-                            {record.doctor}
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {record.diagnosis}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={getTypeName(record.type)}
-                            size="small"
-                            sx={{
-                              backgroundColor: `${getTypeColor(record.type)}15`,
-                              color: getTypeColor(record.type),
-                              border: `1px solid ${getTypeColor(record.type)}30`,
-                              fontWeight: 500,
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Tooltip
-                            title={(() => {
-                              const status =
-                                record.displayStatus || record.status;
-                              switch (status) {
-                                case 'RESULTED':
-                                  return 'Đã có kết quả xét nghiệm, bạn có thể xem kết quả';
-                                case 'COMPLETED':
-                                  return 'Quá trình xét nghiệm đã hoàn tất';
-                                case 'CONFIRMED':
-                                  return 'Đã xác nhận thông tin, chờ lấy mẫu';
-                                case 'SAMPLED':
-                                  return 'Đã lấy mẫu, đang xét nghiệm';
-                                case 'CANCELED':
-                                  return 'Xét nghiệm đã bị hủy';
-                                case 'PENDING':
-                                  return 'Đang chờ xác nhận thông tin';
-                                default:
-                                  return status;
-                              }
-                            })()}
-                            arrow
-                            placement="top"
-                          >
-                            <Chip
-                              label={getStatusDisplayName(
-                                record.displayStatus || record.status
-                              )}
-                              size="small"
-                              sx={{
-                                backgroundColor: `${getStatusColor(record.status)}15`,
-                                color: getStatusColor(record.status),
-                                border: `1px solid ${getStatusColor(record.status)}30`,
-                                fontWeight: 600,
-                              }}
-                            />
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell>
-                          {record.paymentMethod && (
-                            <Chip
-                              label={getPaymentMethodName(record.paymentMethod)}
-                              size="small"
-                              sx={{
-                                backgroundColor: '#F3F4F630',
-                                color: '#64748b',
-                                border: '1px solid #e2e8f080',
-                                fontWeight: 500,
-                              }}
-                            />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Tooltip
-                            title={record.notes || 'Không có ghi chú'}
-                            placement="top"
-                          >
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                maxWidth: 150,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {record.notes || 'Không có ghi chú'}
-                            </Typography>
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            justifyContent="center"
-                          >
-                            {record.hasTestResults ? (
-                              <Tooltip title="Xem kết quả chi tiết" arrow>
-                                <IconButton
-                                  color="primary"
-                                  onClick={() =>
-                                    handleViewTestResults(record.testId)
-                                  }
-                                  sx={{
-                                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                                    '&:hover': {
-                                      backgroundColor:
-                                        'rgba(52, 152, 219, 0.2)',
-                                    },
-                                  }}
-                                >
-                                  <ViewIcon />
-                                </IconButton>
-                              </Tooltip>
-                            ) : (
-                              <Tooltip title="Chưa có kết quả" arrow>
-                                <IconButton
-                                  disabled
-                                  sx={{
-                                    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-                                    color: 'rgba(0, 0, 0, 0.3)',
-                                  }}
-                                >
-                                  <ViewIcon />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center">
-                        <Box sx={{ py: 4 }}>
-                          <Typography variant="body1" color="text.secondary">
-                            Không tìm thấy dữ liệu phù hợp với bộ lọc
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </StyledTable>
-            </TableContainer>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: '10px' }}>
+              {error}
+              <Button
+                size="small"
+                sx={{ ml: 2 }}
+                onClick={() => fetchSTITests()}
+              >
+                Thử lại
+              </Button>
+            </Alert>
+          )}
 
-            <TablePagination
-              component="div"
-              count={filteredRecords.length}
-              page={page}
-              onPageChange={handleChangePage}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              rowsPerPageOptions={[5, 10, 25, 50]}
-              labelRowsPerPage="Số dòng mỗi trang:"
-              labelDisplayedRows={({ from, to, count }) =>
-                `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
-              }
-            />
-          </>
-        )}
-      </StyledPaper>
+          {loading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+              <CircularProgress size={30} color="secondary" />
+            </Box>
+          )}
 
+          {!loading && stiTests && stiTests.length > 0 ? (
+            <Box>
+              <Typography variant="body1" sx={{ mb: 3 }}>
+                Bạn có <strong>{stiTests.length} xét nghiệm STI</strong> trong
+                hệ thống. Xét nghiệm mới nhất vào ngày{' '}
+                <strong>
+                  {stiTests[0]
+                    ? formatDateDisplay(
+                        stiTests[0].appointmentDate || stiTests[0].createdAt
+                      )
+                    : 'chưa xác định'}
+                </strong>
+                .
+              </Typography>
+
+              <Box sx={{ textAlign: 'center', py: 2 }}>
+                <ActionButton
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<ScienceIcon />}
+                  onClick={() => {
+                    if (medicalRecords[0]?.hasTestResults) {
+                      handleViewTestResults(medicalRecords[0].testId);
+                    } else {
+                      toast.warning(
+                        'Chưa có kết quả',
+                        'Xét nghiệm gần nhất chưa có kết quả'
+                      );
+                    }
+                  }}
+                  sx={{
+                    backgroundColor: '#9B59B6',
+                    '&:hover': {
+                      backgroundColor: '#8E44AD',
+                    },
+                  }}
+                >
+                  Xem Kết Quả Xét Nghiệm Gần Nhất
+                </ActionButton>
+              </Box>
+            </Box>
+          ) : (
+            <Alert severity="info" sx={{ mb: 2, borderRadius: '10px' }}>
+              Chưa có dữ liệu xét nghiệm STI nào trong hệ thống.
+            </Alert>
+          )}
+        </StyledPaper>
+      </Box>
       {/* Modal for test results */}
       {selectedTestId && (
         <TestResults
