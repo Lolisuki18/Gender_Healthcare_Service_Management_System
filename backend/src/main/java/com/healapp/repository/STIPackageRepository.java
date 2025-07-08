@@ -81,4 +81,5 @@ public interface STIPackageRepository extends JpaRepository<STIPackage, Long> {
                         "ORDER BY p.packageName")
         List<STIPackage> findAllWithServices();
 
+        long countByIsActiveTrue();
 }

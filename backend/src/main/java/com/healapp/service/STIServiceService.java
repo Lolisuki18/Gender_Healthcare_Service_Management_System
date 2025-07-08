@@ -1,9 +1,9 @@
 package com.healapp.service;
 
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,12 +20,11 @@ import com.healapp.repository.STIServiceRepository;
 public class STIServiceService {
     @Autowired
     private STIServiceRepository stiServiceRepository;
-   
 
     // tạo mới dịch vụ STI
     // Thêm các thành phần xét nghiệm liên quan đến dịch vụ
     public ApiResponse<STIServiceResponse> createSTIService(STIServiceRequest request) {
-        try{
+        try {
             // Validate request
             if (request == null || request.getName() == null || request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
                 return ApiResponse.error("Invalid STI Service request");
@@ -73,11 +72,11 @@ public class STIServiceService {
             }
 
             List<STIServiceResponse> responses = services.stream()
-                .filter(STIService::getIsActive) // Chỉ lấy các dịch vụ đang hoạt động
-                .map(service -> convertToResponse(service, service.getTestComponents().stream()
-                        .filter(ServiceTestComponent::getIsActive)// chỉ lấy các thành phần xét nghiệm còn hoạt động
-                        .collect(Collectors.toList())))
-                .collect(Collectors.toList());
+                    .filter(STIService::getIsActive) // Chỉ lấy các dịch vụ đang hoạt động
+                    .map(service -> convertToResponse(service, service.getTestComponents().stream()
+                            .filter(ServiceTestComponent::getIsActive)// chỉ lấy các thành phần xét nghiệm còn hoạt động
+                            .collect(Collectors.toList())))
+                    .collect(Collectors.toList());
 
             return ApiResponse.success("Active STI Services retrieved successfully", responses);
         } catch (Exception e) {
@@ -94,15 +93,14 @@ public class STIServiceService {
             }
 
             List<STIServiceResponse> responses = services.stream()
-                .map(service -> convertToResponse(service, service.getTestComponents()))
-                .collect(Collectors.toList());
+                    .map(service -> convertToResponse(service, service.getTestComponents()))
+                    .collect(Collectors.toList());
 
             return ApiResponse.success("STI Services retrieved successfully", responses);
         } catch (Exception e) {
             return ApiResponse.error("Error retrieving STI Services: " + e.getMessage());
         }
     }
-
 
     // Lấy thông tin dịch vụ STI theo ID
     public ApiResponse<STIServiceResponse> getSTIServiceById(Long id) {
@@ -137,7 +135,7 @@ public class STIServiceService {
             List<ServiceTestComponent> oldComponents = existingService.getTestComponents();
 
             // Lấy danh sách các thành phần mới từ request
-            for(ServiceTestComponentRequest componentRequest : request.getComponents()) {
+            for (ServiceTestComponentRequest componentRequest : request.getComponents()) {
                 // Nếu componentId là null, thì thêm mới thành phần
                 if (componentRequest.getComponentId() == null) {
                     ServiceTestComponent newComponent = new ServiceTestComponent();
@@ -146,7 +144,8 @@ public class STIServiceService {
                     newComponent.setReferenceRange(componentRequest.getReferenceRange());
                     newComponent.setInterpretation(componentRequest.getInterpretation());
                     newComponent.setSampleType(componentRequest.getSampleType());
-                    newComponent.setIsActive(componentRequest.getIsActive() == null ? true : componentRequest.getIsActive());
+                    newComponent.setIsActive(
+                            componentRequest.getIsActive() == null ? true : componentRequest.getIsActive());
                     newComponent.setStiService(existingService);
                     oldComponents.add(newComponent);
                 } else {
@@ -162,30 +161,33 @@ public class STIServiceService {
                         existingComponent.setInterpretation(componentRequest.getInterpretation());
                         existingComponent.setSampleType(componentRequest.getSampleType());
                         // Nếu isActive không được cung cấp thì giữ nguyên giá trị cũ
-                        existingComponent.setIsActive(componentRequest.getIsActive() == null ? existingComponent.getIsActive() : componentRequest.getIsActive());
+                        existingComponent
+                                .setIsActive(componentRequest.getIsActive() == null ? existingComponent.getIsActive()
+                                        : componentRequest.getIsActive());
                     }
                 }
             }
 
             // Xóa các thành phần không còn trong request
             for (ServiceTestComponent component : oldComponents) {
-                if (request.getComponents().stream().noneMatch(c -> c.getComponentId() != null && c.getComponentId().equals(component.getComponentId()))) {
+                if (request.getComponents().stream().noneMatch(
+                        c -> c.getComponentId() != null && c.getComponentId().equals(component.getComponentId()))) {
                     // Nếu không có trong request thì đánh dấu là không hoạt động
                     component.setIsActive(false);
                 }
             }
-            
+
             // Lưu lại các thành phần đã cập nhật
             existingService.setTestComponents(oldComponents);
 
             STIService updatedService = stiServiceRepository.save(existingService);
 
-            return ApiResponse.success("STI Service updated successfully", convertToResponse(updatedService, oldComponents));
+            return ApiResponse.success("STI Service updated successfully",
+                    convertToResponse(updatedService, oldComponents));
         } catch (Exception e) {
             return ApiResponse.error("Error updating STI Service: " + e.getMessage());
         }
     }
-
 
     // Xóa dịch vụ STI
     public ApiResponse<String> deleteSTIService(Long id) {
@@ -207,7 +209,11 @@ public class STIServiceService {
         }
     }
 
-
+    public Map<String, Long> getAdminDashboardServiceStats() {
+        Map<String, Long> stats = new java.util.HashMap<>();
+        stats.put("activeServices", stiServiceRepository.countByIsActiveTrue());
+        return stats;
+    }
 
     /**
      * Chuyển đổi STIService sang STIServiceResponse
@@ -245,7 +251,5 @@ public class STIServiceService {
         response.setComponents(serviceComponents);
         return response;
     }
- 
-    
 
 }

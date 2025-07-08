@@ -434,32 +434,30 @@ export const formatDateForAPI = (dateString) => {
 export const formatDateTime = (dateTimeString) => {
   if (!dateTimeString) return 'Chưa cập nhật';
 
+  // Nếu là mảng [year, month, day, hour, minute, ...]
+  if (Array.isArray(dateTimeString) && dateTimeString.length >= 5) {
+    const [year, month, day, hour, minute, second = 0] = dateTimeString;
+    const date = new Date(year, month - 1, day, hour, minute, second);
+    if (isNaN(date.getTime())) return 'Thời gian không hợp lệ';
+    const d = date.getDate().toString().padStart(2, '0');
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const y = date.getFullYear();
+    const h = date.getHours().toString().padStart(2, '0');
+    const min = date.getMinutes().toString().padStart(2, '0');
+    return `${d}/${m}/${y} ${h}:${min}`;
+  }
+
+  // Trường hợp còn lại giữ nguyên
   try {
     const date = new Date(dateTimeString);
-
-    // Validate date
-    if (isNaN(date.getTime())) {
-      console.warn('⚠️ Invalid datetime after parsing:', dateTimeString);
-      return 'Thời gian không hợp lệ';
-    }
-
-    // Format date part: DD/MM/YYYY
+    if (isNaN(date.getTime())) return 'Thời gian không hợp lệ';
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
-
-    // Format time part: HH:MM
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
-
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   } catch (error) {
-    console.error(
-      '❌ Error formatting datetime:',
-      error,
-      'Input:',
-      dateTimeString
-    );
     return 'Lỗi định dạng thời gian';
   }
 };

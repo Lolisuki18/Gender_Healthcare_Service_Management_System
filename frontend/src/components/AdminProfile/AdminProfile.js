@@ -110,7 +110,7 @@ const AdminProfile = () => {
       case 'settings':
         return <SettingsContent />; // Cài đặt hệ thống
       default:
-        return <DashboardContent />; // Fallback về dashboard
+        return <ReportsContent />; // Fallback về dashboard
     }
   };
 
