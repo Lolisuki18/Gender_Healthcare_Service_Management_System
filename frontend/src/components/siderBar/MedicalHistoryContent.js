@@ -741,269 +741,272 @@ const MedicalHistoryContent = () => {
             Danh sách lịch sử khám bệnh ({filteredRecords.length} kết quả)
           </Typography>
         </Box>
-
-                    <Tooltip
-                      title={(() => {
-                        // Thêm nội dung tooltip giải thích trạng thái
-                        const status = record.displayStatus || record.status;
-                        switch (status) {
-                          case 'RESULTED':
-                            return 'Đã có kết quả xét nghiệm, bạn có thể xem kết quả';
-                          case 'COMPLETED':
-                            return 'Quá trình xét nghiệm đã hoàn tất';
-                          case 'CONFIRMED':
-                            return 'Đã xác nhận thông tin, chờ lấy mẫu';
-                          case 'SAMPLED':
-                            return 'Đã lấy mẫu, đang xét nghiệm';
-                          case 'CANCELED':
-                            return 'Xét nghiệm đã bị hủy';
-                          case 'PENDING':
-                            return 'Đang chờ xác nhận thông tin';
-                          default:
-                            return status;
-                        }
-                      })()}
-                      arrow
-                      placement="top"
+        <Grid container spacing={3}>
+          {paginatedRecords.length > 0 ? (
+            paginatedRecords.map((record, idx) => (
+              <Grid item xs={12} md={6} lg={4} key={record.id || idx}>
+                <Card
+                  sx={{
+                    borderRadius: '18px',
+                    boxShadow: '0 4px 24px rgba(74,144,226,0.08)',
+                  }}
+                >
+                  <CardContent>
+                    {/* Status */}
+                    <Box
+                      sx={{
+                        mb: 2,
+                        width: '100%',
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                      }}
                     >
-                      <Chip
-                        label={(() => {
-                          // Việt hóa trạng thái
+                      <Tooltip
+                        title={(() => {
                           const status = record.displayStatus || record.status;
                           switch (status) {
-                            case 'Completed':
-                            case 'Hoàn thành':
-                              return 'Hoàn thành';
-                            case 'Results Available':
                             case 'RESULTED':
-                              return 'Đã có kết quả';
-                            case 'Confirmed':
+                              return 'Đã có kết quả xét nghiệm, bạn có thể xem kết quả';
+                            case 'COMPLETED':
+                              return 'Quá trình xét nghiệm đã hoàn tất';
                             case 'CONFIRMED':
-                              return 'Đã xác nhận';
-                            case 'Sample Collected':
+                              return 'Đã xác nhận thông tin, chờ lấy mẫu';
                             case 'SAMPLED':
-                              return 'Đã lấy mẫu';
-                            case 'Cancelled':
+                              return 'Đã lấy mẫu, đang xét nghiệm';
                             case 'CANCELED':
-                            case 'Hủy':
-                              return 'Đã hủy';
-                            case 'Pending':
+                              return 'Xét nghiệm đã bị hủy';
                             case 'PENDING':
-                            case 'Đang xử lý':
-                              return 'Đang xử lý';
-                            case 'UNKNOWN':
-                              return 'Không xác định';
+                              return 'Đang chờ xác nhận thông tin';
                             default:
                               return status;
                           }
                         })()}
-                        size="small"
+                        arrow
+                        placement="top"
+                      >
+                        <Chip
+                          label={(() => {
+                            const status =
+                              record.displayStatus || record.status;
+                            switch (status) {
+                              case 'Completed':
+                              case 'Hoàn thành':
+                                return 'Hoàn thành';
+                              case 'Results Available':
+                              case 'RESULTED':
+                                return 'Đã có kết quả';
+                              case 'Confirmed':
+                              case 'CONFIRMED':
+                                return 'Đã xác nhận';
+                              case 'Sample Collected':
+                              case 'SAMPLED':
+                                return 'Đã lấy mẫu';
+                              case 'Cancelled':
+                              case 'CANCELED':
+                              case 'Hủy':
+                                return 'Đã hủy';
+                              case 'Pending':
+                              case 'PENDING':
+                              case 'Đang xử lý':
+                                return 'Đang xử lý';
+                              case 'UNKNOWN':
+                                return 'Không xác định';
+                              default:
+                                return status;
+                            }
+                          })()}
+                          size="small"
+                          sx={{
+                            backgroundColor: `${getStatusColor(record.status)}15`,
+                            color: getStatusColor(record.status),
+                            border: `1px solid ${getStatusColor(record.status)}30`,
+                            fontWeight: 600,
+                            borderRadius: '8px',
+                            py: 0.5,
+                          }}
+                        />
+                      </Tooltip>
+                    </Box>
+                    {/* Doctor and Date */}
+                    <Box sx={{ mb: 2, width: '100%' }}>
+                      <Box
                         sx={{
-                          backgroundColor: `${getStatusColor(record.status)}15`,
-                          color: getStatusColor(record.status),
-                          border: `1px solid ${getStatusColor(record.status)}30`,
-                          fontWeight: 600,
-                          borderRadius: '8px',
-                          py: 0.5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          mb: 1,
+                          width: '100%',
                         }}
-                      />
-                    </Tooltip>
-                  </Box>
-                  {/* Doctor and Date */}{' '}
-                  <Box sx={{ mb: 2, width: '100%' }}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        mb: 1,
-                        width: '100%',
-                      }}
-                    >
-                      <DoctorIcon
-                        sx={{ color: '#4A90E2', mr: 1, fontSize: 18 }}
-                      />
-                      <Typography variant="body2" sx={{ color: '#4A5568' }}>
-                        {record.doctor}
-                      </Typography>
+                      >
+                        <DoctorIcon
+                          sx={{ color: '#4A90E2', mr: 1, fontSize: 18 }}
+                        />
+                        <Typography variant="body2" sx={{ color: '#4A5568' }}>
+                          {record.doctor}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <TimeIcon
+                          sx={{ color: '#F39C12', mr: 1, fontSize: 18 }}
+                        />
+                        <Typography variant="body2" sx={{ color: '#4A5568' }}>
+                          {formatDateDisplay(record.date)}
+                        </Typography>
+                      </Box>
                     </Box>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <TimeIcon
-                        sx={{ color: '#F39C12', mr: 1, fontSize: 18 }}
-                      />
-                      <Typography variant="body2" sx={{ color: '#4A5568' }}>
-                        {formatDateDisplay(record.date)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  {/* Type */}{' '}
-                  <Box sx={{ mb: 2, width: '100%' }}>
-                    <Chip
-                      label={getTypeName(record.type)}
-                      size="small"
-                      sx={{
-                        backgroundColor: `${getTypeColor(record.type)}15`,
-                        color: getTypeColor(record.type),
-                        border: `1px solid ${getTypeColor(record.type)}30`,
-                        fontWeight: 500,
-                        borderRadius: '8px',
-                      }}
-                    />
-                    {record.paymentMethod && (
+                    {/* Type & Payment */}
+                    <Box sx={{ mb: 2, width: '100%' }}>
                       <Chip
-                        label={getPaymentMethodName(record.paymentMethod)}
+                        label={getTypeName(record.type)}
                         size="small"
                         sx={{
-                          ml: 1,
-                          backgroundColor: '#F3F4F630',
-                          color: '#64748b',
-                          border: '1px solid #e2e8f080',
+                          backgroundColor: `${getTypeColor(record.type)}15`,
+                          color: getTypeColor(record.type),
+                          border: `1px solid ${getTypeColor(record.type)}30`,
                           fontWeight: 500,
                           borderRadius: '8px',
                         }}
                       />
-                    )}
-                  </Box>{' '}
-                  <Box
-                    sx={{
-                      p: 2,
-                      borderRadius: '12px',
-                      background: 'rgba(255, 255, 255, 0.9)',
-                      border: '1px solid rgba(74, 144, 226, 0.1)',
-                      mb: 3,
-                      height: '120px', // Chiều cao cố định cho phần ghi chú
-                      minHeight: '120px', // Đảm bảo chiều cao tối thiểu
-                      width: '100%', // Chiều rộng đầy đủ
-                      display: 'flex',
-                      flexDirection: 'column',
-                      flexShrink: 0, // Không cho phép co lại khi không đủ không gian
-                    }}
-                  >
+                      {record.paymentMethod && (
+                        <Chip
+                          label={getPaymentMethodName(record.paymentMethod)}
+                          size="small"
+                          sx={{
+                            ml: 1,
+                            backgroundColor: '#F3F4F630',
+                            color: '#64748b',
+                            border: '1px solid #e2e8f080',
+                            fontWeight: 500,
+                            borderRadius: '8px',
+                          }}
+                        />
+                      )}
+                    </Box>
+                    {/* Notes */}
                     <Box
                       sx={{
+                        p: 2,
+                        borderRadius: '12px',
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        border: '1px solid rgba(74, 144, 226, 0.1)',
+                        mb: 3,
+                        height: '120px',
+                        minHeight: '120px',
+                        width: '100%',
                         display: 'flex',
-                        alignItems: 'center',
-                        mb: 1,
+                        flexDirection: 'column',
+                        flexShrink: 0,
                       }}
-                    >
-                      <ReportIcon
-                        sx={{ color: '#4A90E2', mr: 1, fontSize: 16 }}
-                      />
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: '#4A5568',
-                          fontWeight: 600,
-                        }}
-                      >
-                        Ghi chú
-                      </Typography>
-                    </Box>{' '}
-                    <Tooltip
-                      title={record.notes ? record.notes : 'Không có ghi chú'}
-                      placement="top"
                     >
                       <Box
-                        sx={{
-                          position: 'relative',
-                          flex: 1,
-                          overflow: 'hidden',
-                          '&:hover': {
-                            '&::after': {
-                              content:
-                                record.notes && record.notes.length > 100
-                                  ? '"Xem thêm..."'
-                                  : '""',
-                              position: 'absolute',
-                              bottom: 0,
-                              right: 0,
-                              backgroundColor: 'rgba(255,255,255,0.9)',
-                              px: 1,
-                              fontSize: '0.75rem',
-                              color: '#3b82f6',
-                              fontWeight: 'bold',
-                            },
-                          },
-                        }}
+                        sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
                       >
+                        <ReportIcon
+                          sx={{ color: '#4A90E2', mr: 1, fontSize: 16 }}
+                        />
                         <Typography
                           variant="body2"
-                          sx={{
-                            color: '#4A5568',
-                            lineHeight: 1.5,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 3,
-                            WebkitBoxOrient: 'vertical',
-                            height: '4.5em', // Đảm bảo chiều cao cho 3 dòng
-                          }}
+                          sx={{ color: '#4A5568', fontWeight: 600 }}
                         >
-                          {record.notes || 'Không có ghi chú'}
+                          Ghi chú
                         </Typography>
                       </Box>
-                    </Tooltip>
-                  </Box>{' '}
-                  <Box
-                    sx={{
-                      mt: 'auto', // Đẩy phần này xuống dưới cùng
-                      flexShrink: 0, // Không co lại khi không gian không đủ
-                      width: '100%', // Chiều rộng đầy đủ
-                    }}
-                  >
-                    <Button
-                      variant="contained"
-                      startIcon={<ScienceIcon />}
-                      fullWidth
-                      onClick={() =>
-                        record.hasTestResults &&
-                        handleViewTestResults(record.testId)
-                      }
-                      disabled={!record.hasTestResults}
-                      sx={{
-                        backgroundColor: record.hasTestResults
-                          ? '#10b981'
-                          : '#cbd5e0',
-                        color: 'white',
-                        fontWeight: 600,
-                        borderRadius: '12px',
-                        py: 1.5,
-                        '&:hover': {
+                      <Tooltip
+                        title={record.notes ? record.notes : 'Không có ghi chú'}
+                        placement="top"
+                      >
+                        <Box
+                          sx={{
+                            position: 'relative',
+                            flex: 1,
+                            overflow: 'hidden',
+                            '&:hover': {
+                              '&::after': {
+                                content:
+                                  record.notes && record.notes.length > 100
+                                    ? '"Xem thêm..."'
+                                    : '""',
+                                position: 'absolute',
+                                bottom: 0,
+                                right: 0,
+                                backgroundColor: 'rgba(255,255,255,0.9)',
+                                px: 1,
+                                fontSize: '0.75rem',
+                                color: '#3b82f6',
+                                fontWeight: 'bold',
+                              },
+                            },
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: '#4A5568',
+                              lineHeight: 1.5,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                              height: '4.5em',
+                            }}
+                          >
+                            {record.notes || 'Không có ghi chú'}
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    </Box>
+                    {/* View Results Button */}
+                    <Box sx={{ mt: 'auto', flexShrink: 0, width: '100%' }}>
+                      <Button
+                        variant="contained"
+                        startIcon={<ScienceIcon />}
+                        fullWidth
+                        onClick={() =>
+                          record.hasTestResults &&
+                          handleViewTestResults(record.testId)
+                        }
+                        disabled={!record.hasTestResults}
+                        sx={{
                           backgroundColor: record.hasTestResults
-                            ? '#059669'
+                            ? '#10b981'
                             : '#cbd5e0',
-                          transform: record.hasTestResults
-                            ? 'translateY(-2px)'
-                            : 'none',
-                        },
-                        transition: 'all 0.3s ease',
-                        cursor: record.hasTestResults
-                          ? 'pointer'
-                          : 'not-allowed',
-                        opacity: record.hasTestResults ? 1 : 0.7,
-                      }}
-                    >
-                      {record.hasTestResults
-                        ? 'Xem kết quả'
-                        : 'Chưa có kết quả'}
-                    </Button>
-                  </Box>
-                </CardContent>
-              </MedicalCard>
+                          color: 'white',
+                          fontWeight: 600,
+                          borderRadius: '12px',
+                          py: 1.5,
+                          '&:hover': {
+                            backgroundColor: record.hasTestResults
+                              ? '#059669'
+                              : '#cbd5e0',
+                            transform: record.hasTestResults
+                              ? 'translateY(-2px)'
+                              : 'none',
+                          },
+                          transition: 'all 0.3s ease',
+                          cursor: record.hasTestResults
+                            ? 'pointer'
+                            : 'not-allowed',
+                          opacity: record.hasTestResults ? 1 : 0.7,
+                        }}
+                      >
+                        {record.hasTestResults
+                          ? 'Xem kết quả'
+                          : 'Chưa có kết quả'}
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))
+          ) : (
+            <Grid item xs={12}>
+              <Alert severity="info" sx={{ p: 2 }}>
+                Không có dữ liệu lịch sử khám bệnh nào.
+              </Alert>
             </Grid>
-          ))
-        ) : (
-          <Grid item xs={12}>
-            <Alert severity="info" sx={{ p: 2 }}>
-              Không có dữ liệu lịch sử khám bệnh nào.
-            </Alert>
-          </Grid>
-        )}
-      </Grid>
+          )}
+        </Grid>
+      </StyledPaper>
       {/* Hiển thị kết quả xét nghiệm */}
       {selectedTestId && <TestResults testId={selectedTestId} />}
       {/* STI Test section with improved UI */}
