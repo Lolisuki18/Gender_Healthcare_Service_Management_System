@@ -40,7 +40,7 @@ export function getBlogImageUrl(path) {
   
   if (!path) {
     console.log('⚠️ No path provided, using default image');
-    return '/img/thumbs/suckhoesinhsan.png'; // Sử dụng ảnh có sẵn trong public
+    return '/img/blog/default.svg'; // Sử dụng ảnh SVG có sẵn trong public/img/blog
   }
   
   if (path.startsWith('http')) {
@@ -48,8 +48,8 @@ export function getBlogImageUrl(path) {
     return path;
   }
   
-  // Nếu path bắt đầu bằng /img/ (thumbs hoặc sections), sử dụng local images từ public folder
-  if (path.startsWith('/img/thumbs/') || path.startsWith('/img/sections/')) {
+  // Nếu path bắt đầu bằng /img/ (blog hoặc sections), sử dụng local images từ public folder
+  if (path.startsWith('/img/blog/') || path.startsWith('/img/sections/')) {
     console.log('📁 Using local image:', path);
     return path; // React sẽ tự động tìm trong public folder
   }
@@ -60,12 +60,23 @@ export function getBlogImageUrl(path) {
   return fullUrl;
 }
 
+/**
+ * Lấy danh sách hình ảnh fallback cho blog
+ * @returns {Array} Mảng các URL hình ảnh fallback
+ */
+export function getBlogFallbackImages() {
+  return [
+    '/img/blog/default.svg',
+    'https://via.placeholder.com/300x200/e0f7fa/546e7a?text=Hình+không+khả+dụng'
+  ];
+}
+
 export function getAvatarUrl(path) {
   console.log('👤 getAvatarUrl called with path:', path);
   
   if (!path) {
     console.log('⚠️ No avatar path provided, using default');
-    return '/img/thumbs/suckhoesinhsan.png'; // Sử dụng ảnh có sẵn
+    return '/img/blog/default.svg'; // Sử dụng ảnh SVG có sẵn
   }
   
   if (path.startsWith('http')) {
@@ -78,10 +89,25 @@ export function getAvatarUrl(path) {
   return fullUrl;
 }
 
+/**
+ * Lấy danh sách hình ảnh fallback cho avatar
+ * @returns {Array} Mảng các URL hình ảnh fallback cho avatar
+ */
+export function getAvatarFallbackImages() {
+  return [
+    '/img/blog/default.svg',
+    'https://via.placeholder.com/100x100/e0f7fa/546e7a?text=User'
+  ];
+}
+
 // Tạo đối tượng để export
 const imageUrl = {
   getFullImageUrl,
   isImageUrl,
+  getBlogImageUrl,
+  getBlogFallbackImages,
+  getAvatarUrl,
+  getAvatarFallbackImages,
   API_BASE_URL,
 };
 
