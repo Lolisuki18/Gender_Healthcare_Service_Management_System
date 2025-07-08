@@ -706,4 +706,12 @@ public class UserService {
         }
     }
 
+    public Map<String, Long> getAdminDashboardUserStats() {
+        Map<String, Long> stats = new HashMap<>();
+        stats.put("totalUsers", userRepository.count());
+        stats.put("activeDoctors", userRepository.findByRoleNameAndIsActive("CONSULTANT", true).stream().count());
+        stats.put("activeStaffs", userRepository.findByRoleNameAndIsActive("STAFF", true).stream().count());
+        stats.put("activePatients", userRepository.findByRoleNameAndIsActive("CUSTOMER", true).stream().count());
+        return stats;
+    }
 }
