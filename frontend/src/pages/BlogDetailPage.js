@@ -48,6 +48,13 @@ const BlogDetailPage = () => {
         
         if (blogResponse.success && blogResponse.data) {
           const blogData = blogService.formatBlogData(blogResponse.data);
+          
+          // Kiểm tra trạng thái blog - chỉ hiển thị blog CONFIRMED
+          if (blogData.status !== 'CONFIRMED') {
+            setError('Bài viết này chưa được duyệt hoặc không có quyền truy cập');
+            return;
+          }
+          
           setBlog(blogData);
           
           // Lấy blog liên quan nếu có categoryId
@@ -67,13 +74,14 @@ const BlogDetailPage = () => {
               console.log("Related blogs response:", relatedResponse);
               
               if (relatedResponse.success && relatedResponse.data && relatedResponse.data.content) {
-                // Lọc bỏ blog hiện tại khỏi danh sách liên quan và format dữ liệu
+                // Lọc bỏ blog hiện tại khỏi danh sách liên quan, chỉ lấy blog CONFIRMED và format dữ liệu
                 const filteredRelated = relatedResponse.data.content
                   .filter(relatedBlog => relatedBlog.id !== parseInt(id))
+                  .filter(relatedBlog => relatedBlog.status === 'CONFIRMED') // Chỉ lấy blog đã được duyệt
                   .slice(0, 6)  // Giới hạn tối đa 6 blog
                   .map(blog => blogService.formatBlogData(blog)); // Format dữ liệu để đồng nhất
                 
-                console.log("Filtered and formatted related blogs:", filteredRelated);
+                console.log("Filtered and formatted related blogs (CONFIRMED only):", filteredRelated);
                 console.log("Number of related blogs:", filteredRelated.length);
                 
                 // ĐÂY LÀ DÒNG CODE QUAN TRỌNG CẦN THÊM
@@ -124,6 +132,14 @@ const BlogDetailPage = () => {
   }, [relatedBlogs]);
 
   // ===== UTILITY FUNCTIONS =====
+  const defaultImage = '/img/blog/default.svg';
+
+  const handleImageError = (e, imageType = 'image') => {
+    console.error(`❌ ${imageType} failed to load:`, e.target.src);
+    console.log(`🔄 Using default ${imageType}`);
+    e.target.src = defaultImage;
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Chưa cập nhật';
     
@@ -396,58 +412,68 @@ const BlogDetailPage = () => {
             }
           }}>
             {/* Hero Image */}
-            {blog.thumbnailImage && (
+            <Box
+              sx={{
+                height: { xs: '280px', md: '450px' },
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'linear-gradient(45deg, rgba(25,118,210,0.1), rgba(0,0,0,0.1))',
+                  zIndex: 2
+                }
+              }}
+            >
+              <img
+                src={getBlogImageUrl(blog.thumbnailImage || null)}
+                alt={blog.title || 'Blog image'}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  zIndex: 1
+                }}
+                onError={(e) => handleImageError(e, 'Hero image')}
+              />
               <Box
                 sx={{
-                  height: { xs: '280px', md: '450px' },
-                  backgroundImage: `url(${getBlogImageUrl(blog.thumbnailImage)})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  position: 'relative',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'linear-gradient(45deg, rgba(25,118,210,0.1), rgba(0,0,0,0.1))',
-                    zIndex: 1
-                  }
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
+                  p: { xs: 3, md: 5 },
+                  zIndex: 3
                 }}
               >
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
-                    p: { xs: 3, md: 5 },
-                    zIndex: 2
-                  }}
-                >
-                  {/* Category */}
-                  {blog.category && (
-                    <Chip
-                      label={blog.category.isActive === false ? 'Danh mục đã bị xoá' : (blog.category.name || blog.category)}
-                      sx={{
-                        backgroundColor: 'rgba(255,255,255,0.95)',
-                        color: '#1976d2',
-                        fontWeight: 700,
-                        fontSize: '0.85rem',
-                        mb: 2,
-                        textTransform: 'uppercase',
-                        letterSpacing: '1px',
-                        fontFamily: 'inherit',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255,255,255,0.2)'
-                      }}
-                    />
-                  )}
-                </Box>
+                {/* Category */}
+                {blog.category && (
+                  <Chip
+                    label={blog.category.isActive === false ? 'Danh mục đã bị xoá' : (blog.category.name || blog.category)}
+                    sx={{
+                      backgroundColor: 'rgba(255,255,255,0.95)',
+                      color: '#1976d2',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      mb: 2,
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px',
+                      fontFamily: 'inherit',
+                      backdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(255,255,255,0.2)'
+                    }}
+                  />
+                )}
               </Box>
-            )}
+            </Box>
 
             <CardContent sx={{ p: { xs: 4, md: 6 } }}>
               {/* Blog Title */}
@@ -724,10 +750,7 @@ const BlogDetailPage = () => {
                               borderRadius: 16,
                               objectFit: 'contain'
                             }}
-                            onError={e => { 
-                              console.error('❌ Section image failed to load:', e.target.src);
-                              e.target.src = '/img/thumbs/suckhoesinhsan.png'; 
-                            }}
+                            onError={(e) => handleImageError(e, 'Section image')}
                           />
                         </Box>
                       )}

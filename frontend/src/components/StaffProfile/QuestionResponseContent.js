@@ -58,6 +58,7 @@ import {
   HourglassEmpty as HourglassEmptyIcon,
 } from '@mui/icons-material';
 import questionService from '../../services/questionService';
+import { consultantService } from '../../services/userService';
 import { formatDateTimeFromArray } from '../../utils/dateUtils';
 import { confirmDialog } from '../../utils/confirmDialog';
 
@@ -93,6 +94,11 @@ const QuestionResponseContent = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [rejectError, setRejectError] = useState('');
   const [rejectingId, setRejectingId] = useState(null);
+  const [openApproveDialog, setOpenApproveDialog] = useState(false);
+  const [approvingId, setApprovingId] = useState(null);
+  const [replierId, setReplierId] = useState(''); // luôn là string
+  const [consultants, setConsultants] = useState([]);
+  const [approveError, setApproveError] = useState('');
 
   // Lấy danh sách câu hỏi từ backend (gộp nhiều trạng thái)
   const fetchQuestions = async (
@@ -139,6 +145,19 @@ const QuestionResponseContent = () => {
       setLoading(false);
     }
   };
+
+  // useEffect đầu trang: luôn fetch consultants khi vào trang
+  useEffect(() => {
+    const fetchConsultants = async () => {
+      try {
+        const res = await consultantService.getConsultants();
+        setConsultants(res.data || res || []);
+      } catch (err) {
+        setConsultants([]);
+      }
+    };
+    fetchConsultants();
+  }, []);
 
   useEffect(() => {
     fetchQuestions();
@@ -212,6 +231,46 @@ const QuestionResponseContent = () => {
     }
   };
 
+  // Lấy danh sách consultant khi mở dialog duyệt
+  const handleOpenApproveDialog = async (questionId) => {
+    setApprovingId(questionId);
+    setApproveError('');
+    setReplierId(''); // reset về chuỗi rỗng
+    setOpenApproveDialog(true);
+    try {
+      const res = await consultantService.getConsultants();
+      setConsultants(res.data || res || []);
+    } catch (err) {
+      setConsultants([]);
+    }
+  };
+  const handleCloseApproveDialog = () => {
+    setOpenApproveDialog(false);
+    setApprovingId(null);
+    setReplierId('');
+    setApproveError('');
+  };
+  const handleConfirmApprove = async () => {
+    if (!replierId) {
+      setApproveError('Vui lòng chọn người trả lời');
+      return;
+    }
+    setLoading(true);
+    try {
+      console.log('Gửi replierId:', replierId, typeof replierId);
+      await questionService.updateQuestionStatus(approvingId, {
+        status: 'CONFIRMED',
+        replierId: Number(replierId), // ép về số khi gửi backend
+      });
+      handleCloseApproveDialog();
+      fetchQuestions();
+    } catch (err) {
+      setApproveError('Duyệt câu hỏi thất bại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Filter questions theo searchTerm (áp dụng trên FE)
   const filteredQuestions = questions.filter((question) => {
     const matchStatus =
@@ -234,6 +293,15 @@ const QuestionResponseContent = () => {
     setOpenDetailDialog(false);
     setDetailQuestion(null);
   };
+
+  // Tạo map userId -> fullName
+  const consultantMap = React.useMemo(() => {
+    const map = {};
+    consultants.forEach((c) => {
+      map[c.userId] = c.fullName;
+    });
+    return map;
+  }, [consultants]);
 
   return (
     <Box
@@ -439,6 +507,9 @@ const QuestionResponseContent = () => {
                 <TableCell sx={{ fontWeight: 700, color: theme.text, py: 2 }}>
                   Trạng thái
                 </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: theme.text, py: 2 }}>
+                  Người trả lời
+                </TableCell>
                 <TableCell
                   align="right"
                   sx={{ fontWeight: 700, color: theme.text, py: 2 }}
@@ -619,6 +690,31 @@ const QuestionResponseContent = () => {
                               }}
                             />
                           </TableCell>
+                          <TableCell>
+                            {(question.status === 'CONFIRMED' ||
+                              question.status === 'ANSWERED') &&
+                            question.replierId ? (
+                              <Chip
+                                label={
+                                  consultantMap[question.replierId] ||
+                                  `ID: ${question.replierId}`
+                                }
+                                size="small"
+                                color="info"
+                                sx={{ fontWeight: 600, borderRadius: 2 }}
+                              />
+                            ) : (
+                              <Typography
+                                variant="body2"
+                                sx={{ color: theme.textLight }}
+                              >
+                                {question.status === 'CONFIRMED' ||
+                                question.status === 'ANSWERED'
+                                  ? 'Chưa gán'
+                                  : ''}
+                              </Typography>
+                            )}
+                          </TableCell>
                           <TableCell align="right">
                             <Stack
                               direction="row"
@@ -630,7 +726,9 @@ const QuestionResponseContent = () => {
                                   <Tooltip title="Duyệt câu hỏi">
                                     <IconButton
                                       size="small"
-                                      onClick={() => handleApprove(question.id)}
+                                      onClick={() =>
+                                        handleOpenApproveDialog(question.id)
+                                      }
                                       sx={{
                                         color: '#10b981',
                                         bgcolor: '#e0f2f1',
@@ -968,6 +1066,55 @@ const QuestionResponseContent = () => {
             }}
           >
             TỪ CHỐI
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog chọn người trả lời khi duyệt */}
+      <Dialog
+        open={openApproveDialog}
+        onClose={handleCloseApproveDialog}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 4, p: 0 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, fontSize: 20, pb: 1 }}>
+          Chọn người trả lời
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1, px: 3 }}>
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel id="replier-select-label">Người trả lời</InputLabel>
+            <Select
+              labelId="replier-select-label"
+              value={String(replierId)}
+              label="Người trả lời"
+              onChange={(e) => {
+                console.log('Chọn replierId:', e.target.value);
+                setReplierId(e.target.value);
+              }}
+            >
+              {consultants.map((c) => (
+                <MenuItem key={c.userId} value={String(c.userId)}>
+                  {c.fullName}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {approveError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {approveError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 2 }}>
+          <Button onClick={handleCloseApproveDialog} variant="outlined">
+            HỦY
+          </Button>
+          <Button
+            onClick={handleConfirmApprove}
+            variant="contained"
+            sx={{ fontWeight: 700 }}
+          >
+            DUYỆT
           </Button>
         </DialogActions>
       </Dialog>

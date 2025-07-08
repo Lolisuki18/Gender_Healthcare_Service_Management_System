@@ -107,6 +107,15 @@ public class QuestionService {
                 question.setRejectionReason(request.getRejectionReason());
             }
 
+            // Nếu xác nhận (CONFIRMED) và có replierId thì gán replier
+            if (request.getStatus() == QuestionStatus.CONFIRMED && request.getReplierId() != null) {
+                Optional<UserDtls> replierOpt = userRepository.findById(request.getReplierId());
+                if (replierOpt.isEmpty()) {
+                    return ApiResponse.error("Replier user not found");
+                }
+                question.setReplier(replierOpt.get());
+            }
+
             Question updatedQuestion = questionRepository.save(question);
             QuestionResponse response = mapToQuestionResponse(updatedQuestion);
 
@@ -194,6 +203,16 @@ public class QuestionService {
             return ApiResponse.success("Questions retrieved successfully", response);
         } catch (Exception e) {
             return ApiResponse.error("Failed to retrieve questions: " + e.getMessage());
+        }
+    }
+
+    public ApiResponse<Page<QuestionResponse>> getQuestionsAssignedToReplier(Long replierId, Pageable pageable) {
+        try {
+            Page<Question> questions = questionRepository.findByReplier_Id(replierId, pageable);
+            Page<QuestionResponse> response = questions.map(this::mapToQuestionResponse);
+            return ApiResponse.success("Questions assigned to replier retrieved successfully", response);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to retrieve assigned questions: " + e.getMessage());
         }
     }
 

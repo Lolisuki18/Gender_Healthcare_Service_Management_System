@@ -19,6 +19,7 @@ const ExportTestResultPDF = ({
   testInfo,
   results,
   conclusion,
+  consultantNote, // thêm prop này
   onClose,
 }) => {
   const printRef = useRef();
@@ -65,6 +66,75 @@ const ExportTestResultPDF = ({
         >
           KẾT QUẢ XÉT NGHIỆM STI
         </Typography>
+        {/* Tổng kết luận package (nếu là package) */}
+        {testInfo?.services &&
+          Array.isArray(testInfo.services) &&
+          testInfo.services.length > 0 && (
+            <Box
+              sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 2 }}
+            >
+              {(() => {
+                const allConclusions = testInfo.services.flatMap((svc) =>
+                  svc.components.map((c) => c.conclusion)
+                );
+                const hasInfected = allConclusions.includes('INFECTED');
+                const hasAbnormal = allConclusions.includes('ABNORMAL');
+                const allNotInfected = allConclusions.every(
+                  (c) => c === 'NOT_INFECTED'
+                );
+                const tags = [];
+                if (hasInfected)
+                  tags.push(
+                    <span
+                      key="infected"
+                      style={{
+                        background: '#e53e3e',
+                        color: '#fff',
+                        fontWeight: 600,
+                        borderRadius: 8,
+                        padding: '2px 12px',
+                        marginRight: 8,
+                      }}
+                    >
+                      Bị nhiễm
+                    </span>
+                  );
+                if (hasAbnormal)
+                  tags.push(
+                    <span
+                      key="abnormal"
+                      style={{
+                        background: '#f59e42',
+                        color: '#fff',
+                        fontWeight: 600,
+                        borderRadius: 8,
+                        padding: '2px 12px',
+                        marginRight: 8,
+                      }}
+                    >
+                      Bất thường
+                    </span>
+                  );
+                if (!hasInfected && !hasAbnormal && allNotInfected)
+                  tags.push(
+                    <span
+                      key="notinfected"
+                      style={{
+                        background: '#10b981',
+                        color: '#fff',
+                        fontWeight: 600,
+                        borderRadius: 8,
+                        padding: '2px 12px',
+                        marginRight: 8,
+                      }}
+                    >
+                      Không bị nhiễm
+                    </span>
+                  );
+                return tags;
+              })()}
+            </Box>
+          )}
         <Divider sx={{ mb: 3 }} />
         <Box sx={{ mb: 2 }}>
           <Typography>
@@ -81,6 +151,12 @@ const ExportTestResultPDF = ({
               <b>Gói xét nghiệm:</b> {testInfo.packageName}
             </Typography>
           )}
+          {/* Nếu là test đơn lẻ, hiển thị tên xét nghiệm */}
+          {!testInfo?.packageName && testInfo?.testName && (
+            <Typography>
+              <b>Tên xét nghiệm:</b> {testInfo.testName}
+            </Typography>
+          )}
         </Box>
         <Divider sx={{ mb: 2 }} />
         <Typography
@@ -89,60 +165,132 @@ const ExportTestResultPDF = ({
         >
           Bảng kết quả
         </Typography>
-        <Paper sx={{ mb: 2 }}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <b>Thành phần</b>
-                </TableCell>
-                <TableCell>
-                  <b>Đơn vị</b>
-                </TableCell>
-                <TableCell>
-                  <b>Giới hạn bình thường</b>
-                </TableCell>
-                <TableCell>
-                  <b>Kết quả</b>
-                </TableCell>
-                <TableCell>
-                  <b>Kết luận</b>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {results &&
-                results.map((row, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>{row.componentName}</TableCell>
-                    <TableCell>{row.unit}</TableCell>
-                    <TableCell>{row.normalRange}</TableCell>
-                    <TableCell
-                      style={{
-                        color:
-                          row.resultValue?.toLowerCase() === 'negative'
-                            ? '#10b981'
-                            : '#e53e3e',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {row.resultValue}
+        {/* Nếu là package: render từng service với bảng riêng */}
+        {Array.isArray(results) &&
+        results.length > 0 &&
+        results[0].components ? (
+          results.map((svc, sidx) => (
+            <Box key={sidx} sx={{ mb: 3 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: 700, color: '#1976d2', mb: 1 }}
+              >
+                {svc.serviceName || `Dịch vụ ${sidx + 1}`}
+              </Typography>
+              <Table size="small" sx={{ mb: 1 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>
+                      <b>Thành phần</b>
                     </TableCell>
-                    <TableCell
-                      style={{
-                        fontSize: '0.875rem',
-                        color: row.conclusion ? '#374151' : '#9ca3af',
-                        fontStyle: row.conclusion ? 'normal' : 'italic',
-                        fontWeight: row.conclusion ? 'bold' : 'normal',
-                      }}
-                    >
-                      {row.conclusionDisplayName || row.conclusion || 'Chưa có kết luận'}
+                    <TableCell>
+                      <b>Đơn vị</b>
+                    </TableCell>
+                    <TableCell>
+                      <b>Giới hạn bình thường</b>
+                    </TableCell>
+                    <TableCell>
+                      <b>Kết quả</b>
+                    </TableCell>
+                    <TableCell>
+                      <b>Kết luận</b>
                     </TableCell>
                   </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </Paper>
+                </TableHead>
+                <TableBody>
+                  {svc.components.map((row, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{row.componentName}</TableCell>
+                      <TableCell>{row.unit}</TableCell>
+                      <TableCell>{row.normalRange}</TableCell>
+                      <TableCell
+                        style={{
+                          color:
+                            row.resultValue?.toLowerCase() === 'negative'
+                              ? '#10b981'
+                              : '#e53e3e',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {row.resultValue}
+                      </TableCell>
+                      <TableCell
+                        style={{
+                          fontSize: '0.875rem',
+                          color: row.conclusion ? '#374151' : '#9ca3af',
+                          fontStyle: row.conclusion ? 'normal' : 'italic',
+                          fontWeight: row.conclusion ? 'bold' : 'normal',
+                        }}
+                      >
+                        {row.conclusionDisplayName ||
+                          row.conclusion ||
+                          'Chưa có kết luận'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+          ))
+        ) : (
+          // ... bảng cũ cho test đơn lẻ ...
+          <Paper sx={{ mb: 2 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    <b>Thành phần</b>
+                  </TableCell>
+                  <TableCell>
+                    <b>Đơn vị</b>
+                  </TableCell>
+                  <TableCell>
+                    <b>Giới hạn bình thường</b>
+                  </TableCell>
+                  <TableCell>
+                    <b>Kết quả</b>
+                  </TableCell>
+                  <TableCell>
+                    <b>Kết luận</b>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {results &&
+                  results.map((row, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{row.componentName}</TableCell>
+                      <TableCell>{row.unit}</TableCell>
+                      <TableCell>{row.normalRange}</TableCell>
+                      <TableCell
+                        style={{
+                          color:
+                            row.resultValue?.toLowerCase() === 'negative'
+                              ? '#10b981'
+                              : '#e53e3e',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {row.resultValue}
+                      </TableCell>
+                      <TableCell
+                        style={{
+                          fontSize: '0.875rem',
+                          color: row.conclusion ? '#374151' : '#9ca3af',
+                          fontStyle: row.conclusion ? 'normal' : 'italic',
+                          fontWeight: row.conclusion ? 'bold' : 'normal',
+                        }}
+                      >
+                        {row.conclusionDisplayName ||
+                          row.conclusion ||
+                          'Chưa có kết luận'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </Paper>
+        )}
         <Divider sx={{ mb: 2 }} />
         <Typography
           variant="h6"
@@ -151,7 +299,7 @@ const ExportTestResultPDF = ({
           Kết luận
         </Typography>
         <Typography variant="body1" sx={{ mb: 2 }}>
-          {conclusion}
+          {consultantNote || conclusion}
         </Typography>
       </Box>
       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4 }}>

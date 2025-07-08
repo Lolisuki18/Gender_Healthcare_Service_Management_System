@@ -62,6 +62,7 @@ import { styled } from '@mui/material/styles';
 import questionService from '../../services/questionService';
 import { formatDateTimeFromArray } from '../../utils/dateUtils';
 import { confirmDialog } from '../../utils/confirmDialog';
+import { useUser } from '../../context/UserContext';
 
 // SỬA styled component cho nền tổng thể
 const SimpleContainer = styled(Box)(() => ({
@@ -214,6 +215,8 @@ const ModernButton = styled(SimpleButton)(({ theme }) => ({
 }));
 
 const MyQuestionsContent = () => {
+  const { user } = useUser();
+  const currentUserId = user?.userId;
   const [questions, setQuestions] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -238,28 +241,20 @@ const MyQuestionsContent = () => {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailDialogQuestion, setDetailDialogQuestion] = useState(null);
 
-  // Lấy danh sách câu hỏi CONFIRMED từ backend
+  // Lấy danh sách câu hỏi được phân công cho consultant hiện tại từ backend
   const fetchQuestions = async () => {
     setLoading(true);
     setError('');
     try {
-      let allQuestions = [];
-      let total = 0;
-      const statuses = ['CONFIRMED', 'ANSWERED'];
-      for (const st of statuses) {
-        const res = await questionService.getQuestionsByStatus(st, {
-          page: 0,
-          size: 100,
-          sort: 'createdAt',
-          direction: 'DESC',
-        });
-        if (res.data.data && res.data.data.content) {
-          allQuestions = allQuestions.concat(res.data.data.content);
-          total += res.data.data.totalElements || 0;
-        }
-      }
-      setQuestions(allQuestions);
-      setTotalElements(total);
+      const res = await questionService.getAssignedQuestionsToMe({
+        page: 0,
+        size: 100,
+        sort: 'createdAt',
+        direction: 'DESC',
+      });
+      const content = res.data.data?.content || [];
+      setQuestions(content);
+      setTotalElements(res.data.data?.totalElements || content.length);
     } catch (err) {
       setError('Không thể tải danh sách câu hỏi.');
       setQuestions([]);
@@ -420,7 +415,7 @@ const MyQuestionsContent = () => {
     }
   };
 
-  // Filter functions
+  // Filter chỉ còn search và status:
   const filteredQuestions = questions.filter(
     (question) =>
       question.status === tabStatus &&

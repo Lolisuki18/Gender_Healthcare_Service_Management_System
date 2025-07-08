@@ -43,7 +43,7 @@ import NoLoggedInView from '../common/NoLoggedInView';
 import localStorageUtil from '@/utils/localStorage';
 import { useNavigate } from 'react-router-dom';
 import { notify } from '@/utils/notify';
-import DynamicSideBar from '@/components/siderBar/DynamicSideBar';
+import AdminSideBar from './AdminSideBar';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
@@ -152,7 +152,7 @@ const AdminProfile = () => {
       }}
     >
       {/* Sidebar Navigation Component */}
-      <DynamicSideBar
+      <AdminSideBar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         selectedItem={selectedMenuItem}
