@@ -10,4 +10,5 @@ public interface STIServiceRepository extends JpaRepository<STIService, Long> {
 
     boolean existsByName(String name);
 
+    long countByIsActiveTrue();
 }

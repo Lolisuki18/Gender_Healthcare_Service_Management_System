@@ -1,55 +1,55 @@
 /**
  * reviewService.js
  *
- * Service cho việc quản lý đánh giá (Rating) - Map với backend Spring Boot
+ * Dịch vụ quản lý đánh giá (Rating) - Kết nối với backend Spring Boot
  * 
- * CẤURÚC PHÂN CHIA THEO ROLE:
+ * CẤU TRÚC PHÂN CHIA THEO VAI TRÒ:
  * 
- * 1. CUSTOMER APIS - Dành cho customer đã đăng nhập
- *    - Tạo đánh giá (consultant, STI service, STI package)
+ * 1. API KHÁCH HÀNG - Dành cho khách hàng đã đăng nhập
+ *    - Tạo đánh giá (tư vấn viên, dịch vụ STI, gói STI)
  *    - Xem, sửa, xóa đánh giá của mình
- *    - Kiểm tra eligibility đánh giá
+ *    - Kiểm tra điều kiện đánh giá
  * 
- * 2. PUBLIC APIS - Không cần authentication
+ * 2. API CÔNG KHAI - Không cần xác thực
  *    - Xem đánh giá công khai
- *    - Xem rating summary
- *    - Lấy testimonials
+ *    - Xem tổng kết đánh giá
+ *    - Lấy lời chứng thực
  * 
- * 3. STAFF/ADMIN APIS - Dành cho Staff và Admin
+ * 3. API NHÂN VIÊN/QUẢN TRỊ - Dành cho Nhân viên và Quản trị viên
  *    - Quản lý tất cả đánh giá
- *    - Reply/Update/Delete reply
- *    - Xem statistics
+ *    - Trả lời/Cập nhật/Xóa phản hồi
+ *    - Xem thống kê
  * 
- * 4. LEGACY METHODS - Backward compatibility (deprecated)
+ * 4. PHƯƠNG THỨC CŨ - Tương thích ngược (không được khuyến khích)
  */
 
-import apiClient from "./api";
+import apiClient from './api';
 
 const reviewService = {
   
-  // ===================== CUSTOMER APIS =====================
-  // APIs dành cho customer đã đăng nhập (role CUSTOMER)
-  // Các API này yêu cầu token authentication với role customer
-  // ===================== CUSTOMER APIS =====================
-  // APIs dành cho customer đã đăng nhập
+  // ===================== API KHÁCH HÀNG =====================
+  // API dành cho khách hàng đã đăng nhập (vai trò KHÁCH HÀNG)
+  // Các API này yêu cầu xác thực token với vai trò khách hàng
+  // ===================== API KHÁCH HÀNG =====================
+  // API dành cho khách hàng đã đăng nhập
 
   /**
-   * [CUSTOMER] Tạo đánh giá mới từ customer cho consultant
-   * @param {number} consultantId ID của consultant
+   * [KHÁCH HÀNG] Tạo đánh giá mới từ khách hàng cho tư vấn viên
+   * @param {number} consultantId ID của tư vấn viên
    * @param {Object} reviewData Dữ liệu đánh giá {rating, comment, consultationId}
    * @returns {Promise} Promise chứa kết quả từ API
    */
   createConsultantReview: async (consultantId, reviewData) => {
     try {
-      // Validation đầu vào
+      // Xác thực dữ liệu đầu vào
       if (!consultantId || isNaN(parseInt(consultantId))) {
-        throw new Error("Invalid consultantId provided");
+        throw new Error("ID tư vấn viên không hợp lệ");
       }
       if (!reviewData.rating || reviewData.rating < 1 || reviewData.rating > 5) {
-        throw new Error("Rating must be between 1 and 5");
+        throw new Error("Đánh giá phải từ 1 đến 5 sao");
       }
       if (!reviewData.comment || reviewData.comment.trim().length === 0) {
-        throw new Error("Comment is required and cannot be empty");
+        throw new Error("Bình luận là bắt buộc và không được để trống");
       }
 
       const requestBody = {
@@ -64,7 +64,7 @@ const reviewService = {
       
       const response = await apiClient.post(`/ratings/consultant/${consultantId}`, requestBody);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to create review");
+        throw new Error(response.data.message || "Không thể tạo đánh giá");
       }
       return response.data.data;
     } catch (error) {
@@ -73,22 +73,22 @@ const reviewService = {
   },
 
   /**
-   * [CUSTOMER] Tạo đánh giá mới cho STI Service theo format backend mới
-   * @param {number} serviceId ID của STI service
+   * [KHÁCH HÀNG] Tạo đánh giá mới cho Dịch vụ STI theo định dạng backend mới
+   * @param {number} serviceId ID của dịch vụ STI
    * @param {Object} reviewData Dữ liệu đánh giá {rating, comment, stiTestId}
    * @returns {Promise} Promise chứa kết quả từ API
    */
   createSTIServiceReview: async (serviceId, reviewData) => {
     try {
-      // Validation đầu vào
+      // Xác thực dữ liệu đầu vào
       if (!serviceId || isNaN(parseInt(serviceId))) {
-        throw new Error("Invalid serviceId provided");
+        throw new Error("ID dịch vụ không hợp lệ");
       }
       if (!reviewData.rating || reviewData.rating < 1 || reviewData.rating > 5) {
-        throw new Error("Rating must be between 1 and 5");
+        throw new Error("Đánh giá phải từ 1 đến 5 sao");
       }
       if (!reviewData.comment || reviewData.comment.trim().length === 0) {
-        throw new Error("Comment is required and cannot be empty");
+        throw new Error("Bình luận là bắt buộc và không được để trống");
       }
 
       const requestBody = {
@@ -103,7 +103,7 @@ const reviewService = {
       
       const response = await apiClient.post(`/ratings/sti-service/${serviceId}`, requestBody);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to create review");
+        throw new Error(response.data.message || "Không thể tạo đánh giá");
       }
       return response.data.data;
     } catch (error) {
@@ -112,22 +112,22 @@ const reviewService = {
   },
 
   /**
-   * [CUSTOMER] Tạo đánh giá mới cho STI Package
-   * @param {number} packageId ID của STI package
+   * [KHÁCH HÀNG] Tạo đánh giá mới cho Gói STI
+   * @param {number} packageId ID của gói STI
    * @param {Object} reviewData Dữ liệu đánh giá {rating, comment, stiTestId}
    * @returns {Promise} Promise chứa kết quả từ API
    */
   createSTIPackageReview: async (packageId, reviewData) => {
     try {
-      // Validation đầu vào
+      // Xác thực dữ liệu đầu vào
       if (!packageId || isNaN(parseInt(packageId))) {
-        throw new Error("Invalid packageId provided");
+        throw new Error("ID gói không hợp lệ");
       }
       if (!reviewData.rating || reviewData.rating < 1 || reviewData.rating > 5) {
-        throw new Error("Rating must be between 1 and 5");
+        throw new Error("Đánh giá phải từ 1 đến 5 sao");
       }
       if (!reviewData.comment || reviewData.comment.trim().length === 0) {
-        throw new Error("Comment is required and cannot be empty");
+        throw new Error("Bình luận là bắt buộc và không được để trống");
       }
 
       const requestBody = {
@@ -142,7 +142,7 @@ const reviewService = {
       
       const response = await apiClient.post(`/ratings/sti-package/${packageId}`, requestBody);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to create review");
+        throw new Error(response.data.message || "Không thể tạo đánh giá");
       }
       return response.data.data;
     } catch (error) {
@@ -151,13 +151,13 @@ const reviewService = {
   },
 
   /**
-   * [CUSTOMER] Tạo đánh giá chung (generic method) - Auto-detect endpoint
+   * [KHÁCH HÀNG] Tạo đánh giá chung (phương thức tổng quát) - Tự động phát hiện endpoint
    * @param {Object} reviewData Dữ liệu đánh giá
    * @returns {Promise} Promise chứa kết quả từ API
    */
   createReview: async (reviewData) => {
     try {
-      // Determine which endpoint to use based on serviceType or fallback to serviceId
+      // Xác định endpoint nào sử dụng dựa trên serviceType hoặc fallback về serviceId
       const { serviceType, serviceId, consultantId, packageId, ...data } = reviewData;
       
       let response;
@@ -168,27 +168,27 @@ const reviewService = {
       } else if (serviceId) {
         response = await reviewService.createSTIServiceReview(serviceId, data);
       } else {
-        throw new Error("Missing required ID (consultantId, serviceId, or packageId)");
+        throw new Error("Thiếu ID bắt buộc (consultantId, serviceId, hoặc packageId)");
       }
       
       return response;
     } catch (error) {
-      console.error("Error creating review:", error);
+      console.error("Lỗi tạo đánh giá:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [CUSTOMER] Lấy đánh giá của customer hiện tại
+   * [KHÁCH HÀNG] Lấy đánh giá của khách hàng hiện tại
    * @param {number} page - Trang hiện tại
-   * @param {number} size - Số lượng items per page
+   * @param {number} size - Số lượng mục trên mỗi trang
    * @returns {Promise} Promise chứa kết quả từ API
    */
   getMyReviews: async (page = 0, size = 10) => {
     try {
       const response = await apiClient.get(`/ratings/my-ratings?page=${page}&size=${size}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch my reviews");
+        throw new Error(response.data.message || "Không thể lấy đánh giá của tôi");
       }
       return response.data.data;
     } catch (error) {
@@ -197,7 +197,7 @@ const reviewService = {
   },
 
   /**
-   * [CUSTOMER] Cập nhật đánh giá của customer
+   * [KHÁCH HÀNG] Cập nhật đánh giá của khách hàng
    * @param {number} id ID của đánh giá
    * @param {Object} reviewData Dữ liệu đánh giá cập nhật {rating, comment}
    * @returns {Promise} Promise chứa kết quả từ API
@@ -209,7 +209,7 @@ const reviewService = {
         comment: reviewData.comment
       });
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to update review");
+        throw new Error(response.data.message || "Không thể cập nhật đánh giá");
       }
       return response.data.data;
     } catch (error) {
@@ -218,7 +218,7 @@ const reviewService = {
   },
 
   /**
-   * [CUSTOMER] Xóa đánh giá của customer
+   * [KHÁCH HÀNG] Xóa đánh giá của khách hàng
    * @param {number} id ID của đánh giá
    * @returns {Promise} Promise chứa kết quả từ API
    */
@@ -226,7 +226,7 @@ const reviewService = {
     try {
       const response = await apiClient.delete(`/ratings/${id}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to delete review");
+        throw new Error(response.data.message || "Không thể xóa đánh giá");
       }
       return response.data.data;
     } catch (error) {
@@ -235,33 +235,16 @@ const reviewService = {
   },
 
   /**
-   * [CUSTOMER] Xóa đánh giá của customer
-   * @param {number} id ID của đánh giá
-   * @returns {Promise} Promise chứa kết quả từ API
-   */
-  deleteReview: async (id) => {
-    try {
-      const response = await apiClient.delete(`/ratings/${id}`);
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to delete review");
-      }
-      return response.data.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || error.message);
-    }
-  },
-
-  /**
-   * [CUSTOMER] Kiểm tra có thể đánh giá không
-   * @param {string} targetType - Loại target (CONSULTANT, STI_SERVICE, STI_PACKAGE)
-   * @param {number} targetId - ID của target
+   * [KHÁCH HÀNG] Kiểm tra có thể đánh giá không
+   * @param {string} targetType - Loại đối tượng (CONSULTANT, STI_SERVICE, STI_PACKAGE)
+   * @param {number} targetId - ID của đối tượng
    * @returns {Promise} Promise chứa kết quả từ API
    */
   canRate: async (targetType, targetId) => {
     try {
       const response = await apiClient.get(`/ratings/can-rate/${targetType}/${targetId}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to check rating eligibility");
+        throw new Error(response.data.message || "Không thể kiểm tra điều kiện đánh giá");
       }
       return response.data.data;
     } catch (error) {
@@ -270,8 +253,8 @@ const reviewService = {
   },
 
   /**
-   * [CUSTOMER] Kiểm tra điều kiện đánh giá cho STI Service
-   * @param {number} serviceId ID của STI service
+   * [KHÁCH HÀNG] Kiểm tra điều kiện đánh giá cho Dịch vụ STI
+   * @param {number} serviceId ID của dịch vụ STI
    * @returns {Promise} Promise chứa thông tin điều kiện
    */
   checkSTIServiceEligibility: async (serviceId) => {
@@ -281,15 +264,15 @@ const reviewService = {
     } catch (error) {
       // Nếu API không tồn tại, trả về thông tin mặc định
       if (error.response?.status === 404) {
-        return { eligible: true, message: "Eligibility check not available" };
+        return { eligible: true, message: "Kiểm tra điều kiện không khả dụng" };
       }
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [CUSTOMER] Kiểm tra điều kiện đánh giá cho Consultant
-   * @param {number} consultantId ID của consultant
+   * [KHÁCH HÀNG] Kiểm tra điều kiện đánh giá cho Tư vấn viên
+   * @param {number} consultantId ID của tư vấn viên
    * @returns {Promise} Promise chứa thông tin điều kiện
    */
   checkConsultantEligibility: async (consultantId) => {
@@ -299,18 +282,18 @@ const reviewService = {
     } catch (error) {
       // Nếu API không tồn tại, trả về thông tin mặc định
       if (error.response?.status === 404) {
-        return { eligible: true, message: "Eligibility check not available" };
+        return { eligible: true, message: "Kiểm tra điều kiện không khả dụng" };
       }
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
-  // ===================== PUBLIC APIS =====================
-  // APIs công khai, không cần authentication
+  // ===================== API CÔNG KHAI =====================
+  // API công khai, không cần xác thực
   // Các API này có thể được gọi từ bất kỳ đâu mà không cần token
 
   /**
-   * [PUBLIC] Lấy thông tin chi tiết một đánh giá
+   * [CÔNG KHAI] Lấy thông tin chi tiết một đánh giá
    * @param {number} id ID của đánh giá
    * @returns {Promise} Promise chứa kết quả từ API
    */
@@ -319,23 +302,22 @@ const reviewService = {
       const response = await apiClient.get(`/ratings/${id}`);
       if (!response.data.success) {
         throw new Error(
-          response.data.message || "Failed to fetch review details"
+          response.data.message || 'Không thể lấy chi tiết đánh giá'
         );
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error fetching review ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [PUBLIC] Lấy đánh giá của consultant
-   * @param {number} consultantId - ID của consultant
+   * [CÔNG KHAI] Lấy đánh giá của tư vấn viên
+   * @param {number} consultantId - ID của tư vấn viên
    * @param {number} page - Trang hiện tại
-   * @param {number} size - Số lượng items per page
+   * @param {number} size - Số lượng mục trên mỗi trang
    * @param {string} sort - Sắp xếp
-   * @param {number} filterRating - Lọc theo rating
+   * @param {number} filterRating - Lọc theo đánh giá
    * @param {string} keyword - Từ khóa tìm kiếm
    * @returns {Promise} Promise chứa kết quả từ API
    */
@@ -347,22 +329,22 @@ const reviewService = {
       
       const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch consultant reviews");
+        throw new Error(response.data.message || "Không thể lấy đánh giá tư vấn viên");
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error fetching consultant reviews:`, error);
+      console.error(`Lỗi lấy đánh giá tư vấn viên:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [PUBLIC] Lấy đánh giá của STI service
-   * @param {number} serviceId - ID của STI service
+   * [CÔNG KHAI] Lấy đánh giá của dịch vụ STI
+   * @param {number} serviceId - ID của dịch vụ STI
    * @param {number} page - Trang hiện tại
-   * @param {number} size - Số lượng items per page
+   * @param {number} size - Số lượng mục trên mỗi trang
    * @param {string} sort - Sắp xếp
-   * @param {number} filterRating - Lọc theo rating
+   * @param {number} filterRating - Lọc theo đánh giá
    * @param {string} keyword - Từ khóa tìm kiếm
    * @returns {Promise} Promise chứa kết quả từ API
    */
@@ -374,22 +356,22 @@ const reviewService = {
       
       const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch STI service reviews");
+        throw new Error(response.data.message || "Không thể lấy đánh giá dịch vụ STI");
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error fetching STI service reviews:`, error);
+      console.error(`Lỗi lấy đánh giá dịch vụ STI:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [PUBLIC] Lấy đánh giá của STI package
-   * @param {number} packageId - ID của STI package
+   * [CÔNG KHAI] Lấy đánh giá của gói STI
+   * @param {number} packageId - ID của gói STI
    * @param {number} page - Trang hiện tại
-   * @param {number} size - Số lượng items per page
+   * @param {number} size - Số lượng mục trên mỗi trang
    * @param {string} sort - Sắp xếp
-   * @param {number} filterRating - Lọc theo rating
+   * @param {number} filterRating - Lọc theo đánh giá
    * @param {string} keyword - Từ khóa tìm kiếm
    * @returns {Promise} Promise chứa kết quả từ API
    */
@@ -401,101 +383,101 @@ const reviewService = {
       
       const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch STI package reviews");
+        throw new Error(response.data.message || "Không thể lấy đánh giá gói STI");
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error fetching STI package reviews:`, error);
+      console.error(`Lỗi lấy đánh giá gói STI:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [PUBLIC] Lấy tổng hợp đánh giá của consultant
-   * @param {number} consultantId - ID của consultant
-   * @param {boolean} includeRecentReviews - Có bao gồm reviews gần đây không
+   * [CÔNG KHAI] Lấy tổng hợp đánh giá của tư vấn viên
+   * @param {number} consultantId - ID của tư vấn viên
+   * @param {boolean} includeRecentReviews - Có bao gồm đánh giá gần đây không
    * @returns {Promise} Promise chứa kết quả từ API
    */
   getConsultantRatingSummary: async (consultantId, includeRecentReviews = false) => {
     try {
       const response = await apiClient.get(`/ratings/summary/consultant/${consultantId}?includeRecentReviews=${includeRecentReviews}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch consultant rating summary");
+        throw new Error(response.data.message || "Không thể lấy tổng hợp đánh giá tư vấn viên");
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error fetching consultant rating summary:`, error);
+      console.error(`Lỗi lấy tổng hợp đánh giá tư vấn viên:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [PUBLIC] Lấy tổng hợp đánh giá của STI service
-   * @param {number} serviceId - ID của STI service
-   * @param {boolean} includeRecentReviews - Có bao gồm reviews gần đây không
+   * [CÔNG KHAI] Lấy tổng hợp đánh giá của dịch vụ STI
+   * @param {number} serviceId - ID của dịch vụ STI
+   * @param {boolean} includeRecentReviews - Có bao gồm đánh giá gần đây không
    * @returns {Promise} Promise chứa kết quả từ API
    */
   getSTIServiceRatingSummary: async (serviceId, includeRecentReviews = false) => {
     try {
       const response = await apiClient.get(`/ratings/summary/sti-service/${serviceId}?includeRecentReviews=${includeRecentReviews}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch STI service rating summary");
+        throw new Error(response.data.message || "Không thể lấy tổng hợp đánh giá dịch vụ STI");
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error fetching STI service rating summary:`, error);
+      console.error(`Lỗi lấy tổng hợp đánh giá dịch vụ STI:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [PUBLIC] Lấy tổng hợp đánh giá của STI package
-   * @param {number} packageId - ID của STI package
-   * @param {boolean} includeRecentReviews - Có bao gồm reviews gần đây không
+   * [CÔNG KHAI] Lấy tổng hợp đánh giá của gói STI
+   * @param {number} packageId - ID của gói STI
+   * @param {boolean} includeRecentReviews - Có bao gồm đánh giá gần đây không
    * @returns {Promise} Promise chứa kết quả từ API
    */
   getSTIPackageRatingSummary: async (packageId, includeRecentReviews = false) => {
     try {
       const response = await apiClient.get(`/ratings/summary/sti-package/${packageId}?includeRecentReviews=${includeRecentReviews}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch STI package rating summary");
+        throw new Error(response.data.message || "Không thể lấy tổng hợp đánh giá gói STI");
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error fetching STI package rating summary:`, error);
+      console.error(`Lỗi lấy tổng hợp đánh giá gói STI:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [PUBLIC] Lấy testimonials cho homepage
-   * @param {number} limit - Số lượng testimonials
+   * [CÔNG KHAI] Lấy lời chứng thực cho trang chủ
+   * @param {number} limit - Số lượng lời chứng thực
    * @returns {Promise} Promise chứa kết quả từ API
    */
   getTestimonials: async (limit = 5) => {
     try {
       const response = await apiClient.get(`/ratings/testimonials?limit=${limit}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch testimonials");
+        throw new Error(response.data.message || "Không thể lấy lời chứng thực");
       }
       return response.data.data;
     } catch (error) {
-      console.error("Error fetching testimonials:", error);
+      console.error("Lỗi lấy lời chứng thực:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
-  // ===================== STAFF/ADMIN APIS =====================
-  // APIs dành cho Staff và Admin (cần role STAFF hoặc ADMIN)
-  // Các API này yêu cầu token với quyền staff/admin
+  // ===================== API NHÂN VIÊN/QUẢN TRỊ =====================
+  // API dành cho Nhân viên và Quản trị viên (cần vai trò STAFF hoặc ADMIN)
+  // Các API này yêu cầu token với quyền nhân viên/quản trị viên
 
   /**
-   * [STAFF/ADMIN] Lấy danh sách tất cả đánh giá
+   * [NHÂN VIÊN/QUẢN TRỊ] Lấy danh sách tất cả đánh giá
    * @param {number} page - Trang hiện tại
-   * @param {number} size - Số lượng items per page
+   * @param {number} size - Số lượng mục trên mỗi trang
    * @param {string} sort - Sắp xếp (newest, oldest, highest, lowest)
-   * @param {number} filterRating - Lọc theo rating (1-5)
-   * @param {string} keyword - Tìm kiếm theo keyword
+   * @param {number} filterRating - Lọc theo đánh giá (1-5)
+   * @param {string} keyword - Tìm kiếm theo từ khóa
    * @returns {Promise} Promise chứa kết quả từ API
    */
   getAllReviews: async (page = 0, size = 20, sort = "newest", filterRating = null, keyword = null) => {
@@ -506,38 +488,38 @@ const reviewService = {
       
       const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch all reviews");
+        throw new Error(response.data.message || "Không thể lấy tất cả đánh giá");
       }
       return response.data.data;
     } catch (error) {
-      console.error("Error fetching all reviews:", error);
+      console.error("Lỗi lấy tất cả đánh giá:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [STAFF/ADMIN] Lấy statistics tổng quan
+   * [NHÂN VIÊN/QUẢN TRỊ] Lấy thống kê tổng quan
    * @returns {Promise} Promise chứa kết quả từ API
    */
   getRatingStatistics: async () => {
     try {
       const response = await apiClient.get(`/ratings/staff/statistics`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch rating statistics");
+        throw new Error(response.data.message || "Không thể lấy thống kê đánh giá");
       }
       return response.data.data;
     } catch (error) {
-      console.error("Error fetching rating statistics:", error);
+      console.error("Lỗi lấy thống kê đánh giá:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [STAFF] Lấy tất cả consultation ratings
+   * [NHÂN VIÊN] Lấy tất cả đánh giá tư vấn
    * @param {number} page - Trang hiện tại
-   * @param {number} size - Số lượng items per page
+   * @param {number} size - Số lượng mục trên mỗi trang
    * @param {string} sort - Sắp xếp
-   * @param {number} filterRating - Lọc theo rating
+   * @param {number} filterRating - Lọc theo đánh giá
    * @param {string} keyword - Từ khóa tìm kiếm
    * @returns {Promise} Promise chứa kết quả từ API
    */
@@ -549,19 +531,19 @@ const reviewService = {
       
       const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch consultation reviews");
+        throw new Error(response.data.message || "Không thể lấy đánh giá tư vấn");
       }
       return response.data.data;
     } catch (error) {
-      console.error("Error fetching consultation reviews:", error);
+      console.error("Lỗi lấy đánh giá tư vấn:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [STAFF] Reply to rating
-   * @param {number} ratingId - ID của rating
-   * @param {Object} replyData - Dữ liệu reply {reply}
+   * [NHÂN VIÊN] Trả lời đánh giá
+   * @param {number} ratingId - ID của đánh giá
+   * @param {Object} replyData - Dữ liệu trả lời {reply}
    * @returns {Promise} Promise chứa kết quả từ API
    */
   replyToRating: async (ratingId, replyData) => {
@@ -570,19 +552,19 @@ const reviewService = {
         reply: replyData.reply
       });
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to reply to rating");
+        throw new Error(response.data.message || "Không thể trả lời đánh giá");
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error replying to rating ${ratingId}:`, error);
+      console.error(`Lỗi trả lời đánh giá ${ratingId}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [STAFF] Update reply
-   * @param {number} ratingId - ID của rating
-   * @param {Object} replyData - Dữ liệu reply {reply}
+   * [NHÂN VIÊN] Cập nhật phản hồi
+   * @param {number} ratingId - ID của đánh giá
+   * @param {Object} replyData - Dữ liệu phản hồi {reply}
    * @returns {Promise} Promise chứa kết quả từ API
    */
   updateStaffReply: async (ratingId, replyData) => {
@@ -591,59 +573,59 @@ const reviewService = {
         reply: replyData.reply
       });
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to update staff reply");
+        throw new Error(response.data.message || "Không thể cập nhật phản hồi nhân viên");
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error updating staff reply ${ratingId}:`, error);
+      console.error(`Lỗi cập nhật phản hồi nhân viên ${ratingId}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [STAFF] Delete reply
-   * @param {number} ratingId - ID của rating
+   * [NHÂN VIÊN] Xóa phản hồi
+   * @param {number} ratingId - ID của đánh giá
    * @returns {Promise} Promise chứa kết quả từ API
    */
   deleteStaffReply: async (ratingId) => {
     try {
       const response = await apiClient.delete(`/ratings/staff/reply/${ratingId}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to delete staff reply");
+        throw new Error(response.data.message || "Không thể xóa phản hồi nhân viên");
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error deleting staff reply ${ratingId}:`, error);
+      console.error(`Lỗi xóa phản hồi nhân viên ${ratingId}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
-  // ===================== LEGACY METHODS (for backward compatibility) =====================
+  // ===================== PHƯƠNG THỨC CŨ (để tương thích ngược) =====================
 
   /**
-   * @deprecated Use specific methods instead
+   * @deprecated Sử dụng các phương thức cụ thể thay thế
    */
   getReviewsByService: async (serviceId) => {
     return await reviewService.getSTIServiceReviews(serviceId);
   },
 
   /**
-   * @deprecated Use replyToRating instead
+   * @deprecated Sử dụng replyToRating thay thế
    */
   respondToReview: async (id, responseData) => {
     return await reviewService.replyToRating(id, responseData);
   },
 
   /**
-   * @deprecated Use staff methods instead
+   * @deprecated Sử dụng các phương thức nhân viên thay thế
    */
   approveReview: async (id) => {
-    console.warn("approveReview is deprecated - ratings are auto-approved");
-    return { success: true, message: "Rating approval not needed" };
+    console.warn("approveReview đã lỗi thời - đánh giá được tự động phê duyệt");
+    return { success: true, message: "Không cần phê duyệt đánh giá" };
   },
 
   /**
-   * @deprecated Use deleteReview instead
+   * @deprecated Sử dụng deleteReview thay thế
    */
   rejectReview: async (id, rejectData) => {
     return await reviewService.deleteReview(id);

@@ -45,6 +45,7 @@ import HelpContent from '@/components/CustomerProfile/HelpContent';
 import QuestionsContent from '@/components/CustomerProfile/QuestionsContent';
 import ReviewsContent from '@/components/CustomerProfile/ReviewsContent';
 import SecurityContent from '@/components/siderBar/SecurityContent';
+import MyBlogPage from '../siderBar/MyBlogPage';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
@@ -106,6 +107,8 @@ const CustomerProfile = () => {
         return <ReviewsContent />; // Đánh giá dịch vụ
       case 'security':
         return <SecurityContent />; // Bảo mật
+      case 'myBlogs':
+        return <MyBlogPage />; // Blog của tôi
       default:
         return <ProfileContent />; // Fallback về profile
     }
@@ -183,6 +186,7 @@ const CustomerProfile = () => {
               {selectedMenuItem === 'questions' && 'Câu hỏi đã đặt'}
               {selectedMenuItem === 'reviews' && 'Đánh giá dịch vụ'}
               {selectedMenuItem === 'security' && 'Bảo mật'}
+              {selectedMenuItem === 'myBlogs' && 'Blog của tôi'}
             </Typography>
           </Box>{' '}
           <Chip

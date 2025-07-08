@@ -1,6 +1,7 @@
 package com.healapp.service;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -283,6 +284,13 @@ public class QuestionService {
         } catch (Exception e) {
             return ApiResponse.error("Failed to search questions: " + e.getMessage());
         }
+    }
+
+    public Map<String, Long> getAdminDashboardQuestionStats() {
+        Map<String, Long> stats = new java.util.HashMap<>();
+        stats.put("unansweredQuestions", questionRepository.countByStatus(Question.QuestionStatus.PROCESSING));
+        stats.put("answeredQuestions", questionRepository.countByStatus(Question.QuestionStatus.ANSWERED));
+        return stats;
     }
 
     private boolean isValidStatusTransition(QuestionStatus currentStatus, QuestionStatus newStatus) {

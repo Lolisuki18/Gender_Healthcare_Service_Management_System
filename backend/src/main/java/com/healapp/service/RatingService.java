@@ -849,6 +849,14 @@ public class RatingService {
         }
     }
 
+    public Map<String, Long> getAdminDashboardRatingStats() {
+        Map<String, Long> stats = new java.util.HashMap<>();
+        long positiveRatings = ratingRepository.findByIsActiveTrueOrderByCreatedAtDesc().stream()
+                .filter(r -> r.getRating() != null && r.getRating() >= 4).count();
+        stats.put("positiveRatings", positiveRatings);
+        return stats;
+    }
+
     // ===================== PRIVATE HELPER METHODS =====================
 
     // Overloaded method for backward compatibility
@@ -896,26 +904,27 @@ public class RatingService {
     private boolean hasCompletedConsultation(Long userId, Long consultantId) {
         // Lấy customer và consultant
         Optional<UserDtls> customerOpt = userRepository.findById(userId);
-        if (customerOpt.isEmpty()) return false;
+        if (customerOpt.isEmpty())
+            return false;
         List<Consultation> consultations = consultationRepository.findByCustomerAndStatus(
-            customerOpt.get(), ConsultationStatus.COMPLETED
-        ).stream().filter(c -> c.getConsultant() != null && c.getConsultant().getId().equals(consultantId)).toList();
+                customerOpt.get(), ConsultationStatus.COMPLETED).stream()
+                .filter(c -> c.getConsultant() != null && c.getConsultant().getId().equals(consultantId)).toList();
         return !consultations.isEmpty();
     }
 
     private boolean hasCompletedSTIOrder(Long userId, Long serviceId) {
         // Lấy tất cả test đã hoàn thành của user, lọc theo serviceId
         List<STITest> stiTests = stiTestRepository.findByCustomerIdAndStatus(
-            userId, STITestStatus.COMPLETED
-        ).stream().filter(t -> t.getStiService() != null && t.getStiService().getId().equals(serviceId)).toList();
+                userId, STITestStatus.COMPLETED).stream()
+                .filter(t -> t.getStiService() != null && t.getStiService().getId().equals(serviceId)).toList();
         return !stiTests.isEmpty();
     }
 
     private boolean hasCompletedSTIPackage(Long userId, Long packageId) {
         // Lấy tất cả test đã hoàn thành của user, lọc theo packageId
         List<STITest> stiTests = stiTestRepository.findByCustomerIdAndStatus(
-            userId, STITestStatus.COMPLETED
-        ).stream().filter(t -> t.getStiPackage() != null && t.getStiPackage().getPackageId().equals(packageId)).toList();
+                userId, STITestStatus.COMPLETED).stream()
+                .filter(t -> t.getStiPackage() != null && t.getStiPackage().getPackageId().equals(packageId)).toList();
         return !stiTests.isEmpty();
     }
 
@@ -980,13 +989,12 @@ public class RatingService {
         try {
             // Lấy top testimonials từ tất cả các loại dịch vụ
             List<Rating> testimonials = ratingRepository.findTopTestimonials(
-                PageRequest.of(0, limit)
-            );
-            
+                    PageRequest.of(0, limit));
+
             List<RatingResponse> responses = testimonials.stream()
-                .map(this::mapRatingToResponse)
-                .collect(Collectors.toList());
-            
+                    .map(this::mapRatingToResponse)
+                    .collect(Collectors.toList());
+
             return ApiResponse.success("Testimonials retrieved successfully", responses);
         } catch (Exception e) {
             log.error("Error retrieving testimonials: {}", e.getMessage(), e);

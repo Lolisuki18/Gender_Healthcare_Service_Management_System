@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +113,7 @@ public class ConsultationService {
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<ConsultationResponse> createConsultation(ConsultationRequest request, Long customerId) {
         try {
-            log.info("Creating consultation for customer {} with consultant {} at {} {}", 
+            log.info("Creating consultation for customer {} with consultant {} at {} {}",
                     customerId, request.getConsultantId(), request.getDate(), request.getTimeSlot());
 
             Optional<UserDtls> customerOpt = userRepository.findById(customerId);
@@ -157,17 +159,17 @@ public class ConsultationService {
             }
 
             // Kiểm tra time slot có available không (atomic check)
-            boolean isSlotAvailable = checkTimeSlotAvailability(consultant.getId(), consultationStartTime, consultationEndTime);
+            boolean isSlotAvailable = checkTimeSlotAvailability(consultant.getId(), consultationStartTime,
+                    consultationEndTime);
             if (!isSlotAvailable) {
-                log.warn("Time slot {} {} is not available for consultant {}", 
+                log.warn("Time slot {} {} is not available for consultant {}",
                         request.getDate(), request.getTimeSlot(), consultant.getId());
-                
+
                 String conflictInfo = String.format(
-                    "Khung giờ %s-%s ngày %s đã được đặt bởi khách hàng khác. " +
-                    "Vui lòng chọn khung giờ khác hoặc liên hệ với tư vấn viên để được hỗ trợ.",
-                    hours[0], hours[1], 
-                    request.getDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                );
+                        "Khung giờ %s-%s ngày %s đã được đặt bởi khách hàng khác. " +
+                                "Vui lòng chọn khung giờ khác hoặc liên hệ với tư vấn viên để được hỗ trợ.",
+                        hours[0], hours[1],
+                        request.getDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
                 return ApiResponse.error(conflictInfo);
             }
 
@@ -183,9 +185,9 @@ public class ConsultationService {
 
             try {
                 Consultation savedConsultation = consultationRepository.save(consultation);
-                
-                log.info("Successfully created consultation ID: {} for customer {} with consultant {} at {} {}", 
-                        savedConsultation.getConsultationId(), customerId, consultant.getId(), 
+
+                log.info("Successfully created consultation ID: {} for customer {} with consultant {} at {} {}",
+                        savedConsultation.getConsultationId(), customerId, consultant.getId(),
                         request.getDate(), request.getTimeSlot());
 
                 ConsultationResponse response = convertToResponse(savedConsultation);
@@ -194,20 +196,20 @@ public class ConsultationService {
                 // Xử lý trường hợp unique constraint violation (race condition)
                 String errorMessage = e.getMessage();
                 if (errorMessage != null && errorMessage.contains("idx_consultant_time_unique")) {
-                    log.warn("Race condition detected for consultation booking: consultantId={}, date={}, timeSlot={}", 
-                        consultant.getId(), request.getDate(), request.getTimeSlot());
-                    
+                    log.warn("Race condition detected for consultation booking: consultantId={}, date={}, timeSlot={}",
+                            consultant.getId(), request.getDate(), request.getTimeSlot());
+
                     String conflictInfo = String.format(
-                        "Khung giờ %s-%s ngày %s đã được đặt bởi khách hàng khác trong khi bạn đang đặt lịch. " +
-                        "Vui lòng chọn khung giờ khác hoặc thử lại sau.",
-                        hours[0], hours[1], 
-                        request.getDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                    );
+                            "Khung giờ %s-%s ngày %s đã được đặt bởi khách hàng khác trong khi bạn đang đặt lịch. " +
+                                    "Vui lòng chọn khung giờ khác hoặc thử lại sau.",
+                            hours[0], hours[1],
+                            request.getDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
                     return ApiResponse.error(conflictInfo);
                 } else {
                     // Xử lý các lỗi DataIntegrityViolationException khác
-                    log.error("Data integrity violation for consultation booking: consultantId={}, date={}, timeSlot={}, error={}", 
-                        consultant.getId(), request.getDate(), request.getTimeSlot(), errorMessage);
+                    log.error(
+                            "Data integrity violation for consultation booking: consultantId={}, date={}, timeSlot={}, error={}",
+                            consultant.getId(), request.getDate(), request.getTimeSlot(), errorMessage);
                     return ApiResponse.error("Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.");
                 }
             }
@@ -460,6 +462,14 @@ public class ConsultationService {
         } catch (Exception e) {
             return ApiResponse.error("Failed to update notes: " + e.getMessage());
         }
+    }
+
+    public Map<String, Long> getAdminDashboardConsultationStats() {
+        Map<String, Long> stats = new HashMap<>();
+        stats.put("totalConsultations", consultationRepository.count());
+        stats.put("todayConsultations", consultationRepository.findAll().stream()
+                .filter(c -> c.getStartTime().toLocalDate().equals(java.time.LocalDate.now())).count());
+        return stats;
     }
 
     private ConsultationResponse convertToResponse(Consultation consultation) {

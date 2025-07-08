@@ -28,4 +28,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
   Page<Question> searchAnsweredQuestions(@Param("query") String query, Pageable pageable);
 
   Page<Question> findByReplier_Id(Long id, Pageable pageable);
+
+  long countByStatus(QuestionStatus status);
 }

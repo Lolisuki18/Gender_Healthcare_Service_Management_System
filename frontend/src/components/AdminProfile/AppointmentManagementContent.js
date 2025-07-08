@@ -3,7 +3,7 @@
  *
  * Trang quản lý lịch hẹn cho Admin
  */
-import React, { useState } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -28,64 +28,75 @@ import {
   DialogContent,
   DialogActions,
   Avatar,
-} from "@mui/material";
-import { Search as SearchIcon, Edit as EditIcon } from "@mui/icons-material";
+} from '@mui/material';
+import { Search as SearchIcon, Edit as EditIcon } from '@mui/icons-material';
+import { adminService } from '@/services/adminService';
+import { formatDateDisplay } from '@/utils/dateUtils';
 
 const AppointmentManagementContent = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data
-  const appointments = [
-    {
-      id: 1,
-      patientName: "Nguyễn Văn A",
-      patientAvatar: null,
-      service: "Tư vấn chuyển đổi giới tính",
-      consultant: "Dr. Trần Thị B",
-      date: "2024-06-05",
-      time: "09:00",
-      status: "Đã xác nhận",
-      phone: "0901234567",
-    },
-    {
-      id: 2,
-      patientName: "Lê Thị C",
-      patientAvatar: null,
-      service: "Kiểm tra sức khỏe",
-      consultant: "Dr. Phạm Văn D",
-      date: "2024-06-05",
-      time: "14:30",
-      status: "Chờ xác nhận",
-      phone: "0907654321",
-    },
-    {
-      id: 3,
-      patientName: "Hoàng Văn E",
-      patientAvatar: null,
-      service: "Tư vấn tâm lý",
-      consultant: "Dr. Nguyễn Thị F",
-      date: "2024-06-06",
-      time: "10:15",
-      status: "Hoàn thành",
-      phone: "0909876543",
-    },
-  ];
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await adminService.getAllConsultations();
+        // Map dữ liệu trả về sang format bảng cũ
+        const mapped = (res.data || []).map((item) => ({
+          id: item.consultationId,
+          patientName: item.customerName,
+          patientAvatar: null, // Nếu backend trả về avatar thì lấy ở đây
+          service: item.reason || '-', // hoặc item.serviceName nếu có
+          consultant: item.consultantName,
+          date: formatDateDisplay(item.startTime),
+          status: mapStatus(item.status),
+          raw: item,
+        }));
+        setAppointments(mapped);
+      } catch (err) {
+        setError(err.message || 'Lỗi khi tải lịch hẹn');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAppointments();
+  }, []);
+
+  // Map status backend sang tiếng Việt
+  function mapStatus(status) {
+    switch (status) {
+      case 'CONFIRMED':
+        return 'Đã xác nhận';
+      case 'PENDING':
+        return 'Chờ xác nhận';
+      case 'COMPLETED':
+        return 'Hoàn thành';
+      case 'CANCELED':
+        return 'Đã hủy';
+      default:
+        return status;
+    }
+  }
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Đã xác nhận":
-        return "success";
-      case "Chờ xác nhận":
-        return "warning";
-      case "Hoàn thành":
-        return "info";
-      case "Đã hủy":
-        return "error";
+      case 'Đã xác nhận':
+        return 'success';
+      case 'Chờ xác nhận':
+        return 'warning';
+      case 'Hoàn thành':
+        return 'info';
+      case 'Đã hủy':
+        return 'error';
       default:
-        return "default";
+        return 'default';
     }
   };
 
@@ -106,9 +117,12 @@ const AppointmentManagementContent = () => {
         .includes(searchTerm.toLowerCase()) ||
       appointment.service.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "all" || appointment.status === statusFilter;
+      statusFilter === 'all' || appointment.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  if (loading) return <Typography>Đang tải dữ liệu...</Typography>;
+  if (error) return <Typography color="error">{error}</Typography>;
 
   return (
     <Box>
@@ -116,7 +130,7 @@ const AppointmentManagementContent = () => {
         variant="h5"
         sx={{
           mb: 3,
-          color: "#2D3748", // Dark text for medical
+          color: '#2D3748', // Dark text for medical
           fontWeight: 600,
         }}
       >
@@ -126,9 +140,9 @@ const AppointmentManagementContent = () => {
       {/* Search and Filter */}
       <Card
         sx={{
-          background: "rgba(255, 255, 255, 0.95)",
-          backdropFilter: "blur(20px)",
-          border: "1px solid rgba(74, 144, 226, 0.15)",
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(74, 144, 226, 0.15)',
           borderRadius: 3,
           mb: 3,
         }}
@@ -136,10 +150,10 @@ const AppointmentManagementContent = () => {
         <CardContent sx={{ p: 3 }}>
           <Box
             sx={{
-              display: "flex",
+              display: 'flex',
               gap: 2,
-              alignItems: "center",
-              flexWrap: "wrap",
+              alignItems: 'center',
+              flexWrap: 'wrap',
             }}
           >
             <TextField
@@ -149,16 +163,16 @@ const AppointmentManagementContent = () => {
               size="small"
               sx={{
                 flex: 1,
-                minWidth: "300px",
-                "& .MuiOutlinedInput-root": {
-                  backgroundColor: "rgba(255, 255, 255, 0.9)",
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#4A90E2",
+                minWidth: '300px',
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#4A90E2',
                   },
                 },
               }}
               InputProps={{
-                startAdornment: <SearchIcon sx={{ color: "#718096", mr: 1 }} />,
+                startAdornment: <SearchIcon sx={{ color: '#718096', mr: 1 }} />,
               }}
             />
             <FormControl size="small" sx={{ minWidth: 150 }}>
@@ -182,88 +196,39 @@ const AppointmentManagementContent = () => {
       {/* Appointments Table */}
       <Card
         sx={{
-          background: "rgba(255, 255, 255, 0.95)",
-          backdropFilter: "blur(20px)",
-          border: "1px solid rgba(74, 144, 226, 0.15)",
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(74, 144, 226, 0.15)',
           borderRadius: 3,
         }}
       >
-        <TableContainer component={Paper} sx={{ background: "transparent" }}>
+        <TableContainer component={Paper} sx={{ background: 'transparent' }}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 600, color: "#2D3748" }}>
+                <TableCell sx={{ fontWeight: 600, color: '#2D3748' }}>
                   Bệnh nhân
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#2D3748" }}>
-                  Dịch vụ
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#2D3748" }}>
+                <TableCell sx={{ fontWeight: 600, color: '#2D3748' }}>
                   Tư vấn viên
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#2D3748" }}>
-                  Thời gian
+                <TableCell sx={{ fontWeight: 600, color: '#2D3748' }}>
+                  Ngày
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#2D3748" }}>
+                <TableCell sx={{ fontWeight: 600, color: '#2D3748' }}>
                   Trạng thái
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#2D3748" }}>
-                  Thao tác
+                <TableCell sx={{ fontWeight: 600, color: '#2D3748' }}>
+                  Link tư vấn
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredAppointments.map((appointment) => (
                 <TableRow key={appointment.id} hover>
-                  <TableCell>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <Avatar
-                        src={appointment.patientAvatar}
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          background:
-                            "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                        }}
-                      >
-                        {appointment.patientName.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 500, color: "#2D3748" }}
-                        >
-                          {appointment.patientName}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "#718096" }}>
-                          {appointment.phone}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ color: "#2D3748" }}>
-                      {appointment.service}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ color: "#2D3748" }}>
-                      {appointment.consultant}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "#2D3748", fontWeight: 500 }}
-                      >
-                        {appointment.date}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "#718096" }}>
-                        {appointment.time}
-                      </Typography>
-                    </Box>
-                  </TableCell>
+                  <TableCell>{appointment.patientName}</TableCell>
+                  <TableCell>{appointment.consultant}</TableCell>
+                  <TableCell>{appointment.date}</TableCell>
                   <TableCell>
                     <Chip
                       label={appointment.status}
@@ -272,19 +237,22 @@ const AppointmentManagementContent = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="small"
-                      startIcon={<EditIcon />}
-                      onClick={() => handleEditAppointment(appointment)}
-                      sx={{
-                        color: "#4A90E2",
-                        "&:hover": {
-                          background: "rgba(74, 144, 226, 0.1)",
-                        },
-                      }}
-                    >
-                      Chỉnh sửa
-                    </Button>
+                    {appointment.raw && appointment.raw.meetUrl ? (
+                      <a
+                        href={appointment.raw.meetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          textDecoration: 'none',
+                          color: '#1976d2',
+                          fontWeight: 500,
+                        }}
+                      >
+                        Vào phòng
+                      </a>
+                    ) : (
+                      <span style={{ color: '#aaa' }}>-</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -359,7 +327,7 @@ const AppointmentManagementContent = () => {
           <Button
             variant="contained"
             sx={{
-              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
             }}
             onClick={handleCloseDialog}
           >
