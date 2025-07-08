@@ -2,29 +2,28 @@ import apiClient from '@services/api';
 
 const API_URL = '/menstrual-cycle';
 
-
 const ovulationService = {
   getCurrentUser: async () => {
     try {
-      console.log('🔍 [ovulationService] Calling getCurrentUser with skipAutoRedirect flag');
-      const response = await apiClient.get("/users/profile", { skipAutoRedirect: true });
-      console.log('✅ [ovulationService] getCurrentUser success:', response.data);
+      const response = await apiClient.get('/users/profile', {
+        skipAutoRedirect: true,
+      });
       return response.data;
     } catch (error) {
-      console.log('❌ [ovulationService] getCurrentUser error:', error);
       // Không redirect, chỉ trả về null nếu lỗi 401 hoặc không có user
       return null;
     }
   },
   isLoggedIn: async () => {
     try {
-      const response = await apiClient.get("/users/profile", { skipAutoRedirect: true });
+      const response = await apiClient.get('/users/profile', {
+        skipAutoRedirect: true,
+      });
       return !!response.data;
     } catch (error) {
       return false;
     }
   },
-
 
   //===================================== Xem thông tin =====================================
   // Lấy thông tin menstrual cycle với profile (nếu có)
@@ -40,12 +39,9 @@ const ovulationService = {
   // Lấy tất cả menstrual cycle
   getAllMenstrualCycles: async () => {
     try {
-      console.log('🔍 [ovulationService] Calling getAllMenstrualCycles with skipAutoRedirect flag');
       const response = await apiClient.get(API_URL, { skipAutoRedirect: true });
-      console.log('✅ [ovulationService] getAllMenstrualCycles success:', response.data);
       return response.data;
     } catch (error) {
-      console.log('❌ [ovulationService] getAllMenstrualCycles error:', error);
       throw error.response?.data || error;
     }
   },
@@ -53,18 +49,14 @@ const ovulationService = {
   // Lấy tất cả menstrual cycle với tỉ lệ mang thai
   getAllMenstrualCyclesWithPregnancyProb: async () => {
     try {
-      console.log('🔍 [ovulationService] Calling getAllMenstrualCyclesWithPregnancyProb with skipAutoRedirect flag');
-      const response = await apiClient.get(`${API_URL}/pregnancy-prob`, { skipAutoRedirect: true });
-      console.log('✅ [ovulationService] getAllMenstrualCyclesWithPregnancyProb success:', response.data);
+      const response = await apiClient.get(`${API_URL}/pregnancy-prob`, {
+        skipAutoRedirect: true,
+      });
       return response.data;
     } catch (error) {
-      console.log('❌ [ovulationService] getAllMenstrualCyclesWithPregnancyProb error:', error);
       throw error.response?.data || error;
     }
   },
-
-
-
 
   // ===================================== Xử lí thông tin =====================================
   // Khai báo chu kỳ kinh nguyệt
@@ -97,7 +89,6 @@ const ovulationService = {
     }
   },
 
-
   // ===================================== Tính toán =====================================
   // Dự đoán chu kỳ kinh nguyệt tiếp theo
   // predictNextCycle: async () => {
@@ -109,12 +100,6 @@ const ovulationService = {
   //   }
   // },
   //===================================== Nhắc nhở =====================================
-  
-
 };
 
-
-
-
-
-export default ovulationService; 
+export default ovulationService;

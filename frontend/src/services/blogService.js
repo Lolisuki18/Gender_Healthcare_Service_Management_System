@@ -4,7 +4,7 @@
  * Service cho việc quản lý blog
  */
 
-import apiClient from "./api";
+import apiClient from './api';
 
 const blogService = {
   /**
@@ -13,13 +13,12 @@ const blogService = {
    */
   getAllBlogs: async () => {
     try {
-      const response = await apiClient.get("/blog");
+      const response = await apiClient.get('/blog');
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch blogs");
+        throw new Error(response.data.message || 'Failed to fetch blogs');
       }
       return response.data.data?.content || [];
     } catch (error) {
-      console.error("Error fetching blogs:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -34,12 +33,11 @@ const blogService = {
       const response = await apiClient.get(`/blog/${id}`);
       if (!response.data.success) {
         throw new Error(
-          response.data.message || "Failed to fetch blog details"
+          response.data.message || 'Failed to fetch blog details'
         );
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error fetching blog ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -51,17 +49,16 @@ const blogService = {
    */
   createBlog: async (formData) => {
     try {
-      const response = await apiClient.post("/blog", formData, {
+      const response = await apiClient.post('/blog', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to create blog");
+        throw new Error(response.data.message || 'Failed to create blog');
       }
       return response.data.data;
     } catch (error) {
-      console.error("Error creating blog:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -80,11 +77,10 @@ const blogService = {
         },
       });
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to update blog");
+        throw new Error(response.data.message || 'Failed to update blog');
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error updating blog ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -98,11 +94,10 @@ const blogService = {
     try {
       const response = await apiClient.delete(`/blog/${id}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to delete blog");
+        throw new Error(response.data.message || 'Failed to delete blog');
       }
       return true;
     } catch (error) {
-      console.error(`Error deleting blog ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -116,11 +111,10 @@ const blogService = {
     try {
       const response = await apiClient.put(`/blog/${id}/publish`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to publish blog");
+        throw new Error(response.data.message || 'Failed to publish blog');
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error publishing blog ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -134,11 +128,10 @@ const blogService = {
     try {
       const response = await apiClient.put(`/blog/${id}/unpublish`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to unpublish blog");
+        throw new Error(response.data.message || 'Failed to unpublish blog');
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error unpublishing blog ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -153,11 +146,12 @@ const blogService = {
     try {
       const response = await apiClient.put(`/blog/${id}/status`, statusData);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to update blog status");
+        throw new Error(
+          response.data.message || 'Failed to update blog status'
+        );
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Error updating blog status ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -168,15 +162,14 @@ const blogService = {
    */
   getCategories: async () => {
     try {
-      const response = await apiClient.get("/categories");
+      const response = await apiClient.get('/categories');
       if (!response.data.success) {
         throw new Error(
-          response.data.message || "Failed to fetch blog categories"
+          response.data.message || 'Failed to fetch blog categories'
         );
       }
       return response.data.data;
     } catch (error) {
-      console.error("Error fetching blog categories:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -190,18 +183,24 @@ const blogService = {
    */
   getPublicBlogs: async (params = {}) => {
     try {
-      const { page = 0, size = 10, sortBy = 'createdAt', sortDir = 'desc' } = params;
+      const {
+        page = 0,
+        size = 10,
+        sortBy = 'createdAt',
+        sortDir = 'desc',
+      } = params;
       const response = await apiClient.get('/blog', {
         params: { page, size, sortBy, sortDir },
-        skipAuthInterceptor: true // Bypass authentication cho public API
+        skipAuthInterceptor: true, // Bypass authentication cho public API
       });
-      
+
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch public blogs");
+        throw new Error(
+          response.data.message || 'Failed to fetch public blogs'
+        );
       }
       return response.data;
     } catch (error) {
-      console.error("Error fetching public blogs:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -214,14 +213,15 @@ const blogService = {
   getPublicBlogById: async (id) => {
     try {
       const response = await apiClient.get(`/blog/${id}`, {
-        skipAuthInterceptor: true // Bypass authentication cho public API
+        skipAuthInterceptor: true, // Bypass authentication cho public API
       });
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch blog details");
+        throw new Error(
+          response.data.message || 'Failed to fetch blog details'
+        );
       }
       return response.data;
     } catch (error) {
-      console.error(`Error fetching public blog ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -238,13 +238,12 @@ const blogService = {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
+
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to create blog");
+        throw new Error(response.data.message || 'Failed to create blog');
       }
       return response.data;
     } catch (error) {
-      console.error("Error creating blog with files:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -262,13 +261,12 @@ const blogService = {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
+
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to update blog");
+        throw new Error(response.data.message || 'Failed to update blog');
       }
       return response.data;
     } catch (error) {
-      console.error(`Error updating blog with files ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -282,11 +280,10 @@ const blogService = {
     try {
       const response = await apiClient.delete(`/blog/${id}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to delete blog");
+        throw new Error(response.data.message || 'Failed to delete blog');
       }
       return response.data;
     } catch (error) {
-      console.error(`Error deleting user blog ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -301,11 +298,12 @@ const blogService = {
     try {
       const response = await apiClient.put(`/blog/${id}/status`, statusData);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to update blog status");
+        throw new Error(
+          response.data.message || 'Failed to update blog status'
+        );
       }
       return response.data;
     } catch (error) {
-      console.error(`Error updating blog status ${id}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -318,17 +316,23 @@ const blogService = {
    */
   getBlogsByStatus: async (status, params = {}) => {
     try {
-      const { page = 0, size = 10, sortBy = 'createdAt', sortDir = 'desc' } = params;
+      const {
+        page = 0,
+        size = 10,
+        sortBy = 'createdAt',
+        sortDir = 'desc',
+      } = params;
       const response = await apiClient.get(`/blog/status/${status}`, {
-        params: { page, size, sortBy, sortDir }
+        params: { page, size, sortBy, sortDir },
       });
-      
+
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch blogs by status");
+        throw new Error(
+          response.data.message || 'Failed to fetch blogs by status'
+        );
       }
       return response.data;
     } catch (error) {
-      console.error(`Error fetching blogs with status ${status}:`, error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -340,17 +344,21 @@ const blogService = {
    */
   getMyBlogs: async (params = {}) => {
     try {
-      const { page = 0, size = 10, sortBy = 'createdAt', sortDir = 'desc' } = params;
+      const {
+        page = 0,
+        size = 10,
+        sortBy = 'createdAt',
+        sortDir = 'desc',
+      } = params;
       const response = await apiClient.get('/blog/my-posts', {
-        params: { page, size, sortBy, sortDir }
+        params: { page, size, sortBy, sortDir },
       });
-      
+
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch my blogs");
+        throw new Error(response.data.message || 'Failed to fetch my blogs');
       }
       return response.data;
     } catch (error) {
-      console.error("Error fetching my blogs:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -363,32 +371,40 @@ const blogService = {
    */
   getBlogsByCategory: async (categoryId, params = {}) => {
     try {
-      const { page = 0, size = 10, sortBy = 'createdAt', sortDir = 'desc' } = params;
-      
+      const {
+        page = 0,
+        size = 10,
+        sortBy = 'createdAt',
+        sortDir = 'desc',
+      } = params;
+
       // Đảm bảo categoryId là số hợp lệ
       if (!categoryId || isNaN(parseInt(categoryId))) {
         throw new Error('Category ID không hợp lệ');
       }
-      
+
       // Sửa URL endpoint đúng
       const response = await apiClient.get(`/blog/category/${categoryId}`, {
-        params: { page, size, sortBy, sortDir }
+        params: { page, size, sortBy, sortDir },
       });
-      
+
       // Log response để debug
       console.log(`GET /blog/category/${categoryId} response:`, response.data);
-      
+
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch blogs by category");
+        throw new Error(
+          response.data.message || 'Failed to fetch blogs by category'
+        );
       }
       return response.data;
     } catch (error) {
-      console.error(`Error fetching blogs for category ${categoryId}:`, error);
       // Trả về object tương thích với code xử lý trong BlogDetailPage
       return {
         success: false,
-        message: error.response?.data?.message || 'Không thể lấy danh sách bài viết theo chuyên mục',
-        error
+        message:
+          error.response?.data?.message ||
+          'Không thể lấy danh sách bài viết theo chuyên mục',
+        error,
       };
     }
   },
@@ -401,29 +417,28 @@ const blogService = {
    */
   searchBlogs: async (query, params = {}) => {
     try {
-      const { 
-        page = 0, 
-        size = 10, 
-        sortBy = 'createdAt', 
+      const {
+        page = 0,
+        size = 10,
+        sortBy = 'createdAt',
         sortDir = 'desc',
-        categoryId 
+        categoryId,
       } = params;
-      
+
       const searchParams = { query, page, size, sortBy, sortDir };
       if (categoryId) {
         searchParams.categoryId = categoryId;
       }
-      
+
       const response = await apiClient.get('/blog/search', {
-        params: searchParams
+        params: searchParams,
       });
-      
+
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to search blogs");
+        throw new Error(response.data.message || 'Failed to search blogs');
       }
       return response.data;
     } catch (error) {
-      console.error("Error searching blogs:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -436,15 +451,16 @@ const blogService = {
   getLatestBlogs: async (limit = 3) => {
     try {
       const response = await apiClient.get('/blog/latest', {
-        params: { limit }
+        params: { limit },
       });
-      
+
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to fetch latest blogs");
+        throw new Error(
+          response.data.message || 'Failed to fetch latest blogs'
+        );
       }
       return response.data;
     } catch (error) {
-      console.error("Error fetching latest blogs:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -468,12 +484,15 @@ const blogService = {
       content: blogData.content,
       categoryId: blogData.categoryId,
       tags: blogData.tags || [],
-      sections: blogData.sections || []
+      sections: blogData.sections || [],
     };
 
-    formData.append('request', new Blob([JSON.stringify(requestData)], {
-      type: 'application/json'
-    }));
+    formData.append(
+      'request',
+      new Blob([JSON.stringify(requestData)], {
+        type: 'application/json',
+      })
+    );
 
     // Thêm thumbnail
     if (thumbnailFile) {
@@ -492,11 +511,11 @@ const blogService = {
         }
       });
 
-      validFiles.forEach(file => {
+      validFiles.forEach((file) => {
         formData.append('sectionImages', file);
       });
 
-      validIndexes.forEach(index => {
+      validIndexes.forEach((index) => {
         formData.append('sectionImageIndexes', index);
       });
     }
@@ -517,22 +536,26 @@ const blogService = {
         category = {
           id: blogResponse.categoryId,
           name: 'Danh mục đã bị xoá',
-          isActive: false
+          isActive: false,
         };
       } else {
         category = {
           id: blogResponse.categoryId,
           name: blogResponse.categoryName || 'Chưa phân loại',
-          isActive: blogResponse.categoryIsActive !== false
+          isActive: blogResponse.categoryIsActive !== false,
         };
       }
     }
     // Đảm bảo thumbnailImage luôn có giá trị
-    const thumbnailImage = blogResponse.thumbnailImage || blogResponse.displayThumbnail || blogResponse.existingThumbnail || '';
+    const thumbnailImage =
+      blogResponse.thumbnailImage ||
+      blogResponse.displayThumbnail ||
+      blogResponse.existingThumbnail ||
+      '';
     // Đảm bảo section images luôn có giá trị
-    const sections = (blogResponse.sections || []).map(section => ({
+    const sections = (blogResponse.sections || []).map((section) => ({
       ...section,
-      sectionImage: section.sectionImage || section.existingSectionImage || ''
+      sectionImage: section.sectionImage || section.existingSectionImage || '',
     }));
     return {
       id: blogResponse.id,
@@ -544,16 +567,16 @@ const blogService = {
       author: {
         id: blogResponse.authorId,
         fullName: blogResponse.authorName,
-        avatar: blogResponse.authorAvatar
+        avatar: blogResponse.authorAvatar,
       },
       status: blogResponse.status,
       createdAt: blogResponse.createdAt,
       updatedAt: blogResponse.updatedAt,
       sections,
       tags: blogResponse.tags || [],
-      views: blogResponse.views || 0
+      views: blogResponse.views || 0,
     };
-  }
+  },
 };
 
 export default blogService;

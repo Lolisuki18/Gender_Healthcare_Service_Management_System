@@ -69,6 +69,8 @@ import { formatDateForInput, formatDateDisplay } from '@/utils/dateUtils';
 import { EmailChangeDialog, PasswordChangeDialog } from '../modals';
 import imageUrl from '../../utils/imageUrl'; // Import với đường dẫn tương đối
 
+const TOAST_ID_USER_INFO = 'user-info-loaded';
+
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)',
   backdropFilter: 'blur(20px)',
@@ -427,9 +429,12 @@ const ProfileContent = () => {
         localStorageUtil.set('userProfile', userProfileData);
 
         // ✅ Use custom notification
-        toast.success('Đã tải thông tin người dùng!', {
-          duration: 3000,
-        });
+        if (!toast.isActive(TOAST_ID_USER_INFO)) {
+          toast.success('Đã tải thông tin người dùng!', {
+            toastId: TOAST_ID_USER_INFO,
+            duration: 3000,
+          });
+        }
       } else {
         throw new Error(
           response.message || 'Không thể tải thông tin người dùng'
@@ -537,7 +542,7 @@ const ProfileContent = () => {
         return;
       }
 
-      console.log('🔄 Đang lưu thông tin cá nhân:', formDataUpdate);
+      console.log('�� Đang lưu thông tin cá nhân:', formDataUpdate);
 
       toast.info('Đang xử lý', 'Đang lưu thông tin cá nhân...', {
         duration: 2000,

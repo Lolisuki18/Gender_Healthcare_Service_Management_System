@@ -20,8 +20,6 @@ export const userService = {
   login: async (credentials) => {
     try {
       const response = await apiClient.post('/auth/login', credentials);
-      console.log('Raw API response:', response); // Debug log
-      console.log('Response data:', response.data); // Debug log
       return response.data; // JwtResponse từ backend
     } catch (error) {
       throw error.response?.data || error;
@@ -31,13 +29,9 @@ export const userService = {
   // Đăng ký
   register: async (userData) => {
     try {
-      console.log('Sending registration data:', userData); // ✅ Debug log
-
       const response = await apiClient.post('/users/register', userData);
       return response.data;
     } catch (error) {
-      console.error('Register error:', error);
-      console.error('Error response:', error.response?.data); // ✅ Debug log
       throw error;
     }
   },
@@ -45,14 +39,11 @@ export const userService = {
   // Lấy thông tin người dùng hiện tại
   getCurrentUser: async (skipAutoRedirect = false) => {
     try {
-      console.log("🔍 [userService.getCurrentUser] skipAutoRedirect:", skipAutoRedirect);
       const response = await apiClient.get('/users/profile', {
-        skipAutoRedirect
+        skipAutoRedirect,
       });
-      console.log("✅ [userService.getCurrentUser] Success:", response.data);
       return response.data;
     } catch (error) {
-      console.log("❌ [userService.getCurrentUser] Error:", error);
       throw error.response?.data || error;
     }
   },
@@ -112,7 +103,6 @@ export const userService = {
           email: newEmail,
         }
       );
-      console.log('Email verification code sent:', response.data);
       // Trả về kết quả thành công
       return {
         success: true,
@@ -120,7 +110,6 @@ export const userService = {
         message: 'Đã gửi mã xác nhận thành công',
       };
     } catch (error) {
-      console.error('❌ Error sending email verification code:', error);
       return {
         success: false,
         message: error.response?.data?.message || 'Không thể gửi mã xác nhận',
@@ -137,12 +126,6 @@ export const userService = {
    * @returns {Promise<Object>} API response
    */ verifyEmailChange: async (data) => {
     try {
-      console.log('🔄 Verifying email change:', {
-        newEmail: data.newEmail,
-        hasVerificationCode: !!data.verificationCode,
-        codeLength: data.verificationCode?.length,
-      });
-
       const response = await apiClient.put('/users/profile/email', {
         newEmail: data.newEmail,
         verificationCode: data.verificationCode,
@@ -151,7 +134,6 @@ export const userService = {
       if (response.data.token) {
         localStorageUtil.set('token', response.data.token);
       }
-      console.log('✅ Email change response:', response);
 
       return {
         success: true,
@@ -159,17 +141,6 @@ export const userService = {
         message: 'Email đã được thay đổi thành công',
       };
     } catch (error) {
-      console.error('❌ Error verifying email change:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        errorData: error.response?.data,
-        endpoint: '/users/profile/email',
-        requestData: {
-          newEmail: data.newEmail,
-          hasVerificationCode: !!data.verificationCode,
-        },
-      });
-
       // Xử lý các loại lỗi khác nhau
       let errorMessage = 'Mã xác nhận không đúng';
 
@@ -213,7 +184,6 @@ export const userService = {
         message: response.data.message || 'Đổi mật khẩu thành công',
       };
     } catch (error) {
-      console.error('❌ Error changing password:', error);
       return {
         success: false,
         message:
@@ -224,14 +194,10 @@ export const userService = {
   // Refresh token
   refreshToken: async (refreshTokenValue) => {
     try {
-      console.log('Attempting to refresh token...');
-
       // Sử dụng apiClient chính thay vì tạo instance mới
       const response = await apiClient.post('/auth/refresh-token', {
         refreshToken: refreshTokenValue,
       });
-
-      console.log('Token refresh successful:', response.data);
 
       if (response.data && response.data.accessToken) {
         const tokenData = response.data;
@@ -244,7 +210,6 @@ export const userService = {
 
         // Lưu token mới vào localStorage
         localStorageUtil.set('token', newToken);
-        console.log('✅ Token updated in localStorage', newToken);
 
         // Cập nhật cả trong user data nếu có
         const userData = localStorageUtil.get('user');
@@ -261,8 +226,6 @@ export const userService = {
 
       throw new Error('Invalid refresh token response');
     } catch (error) {
-      console.error('Token refresh failed:', error);
-
       // Xử lý lỗi authentication
       if (error.response?.status === 401) {
         localStorageUtil.remove('token');
@@ -305,15 +268,6 @@ export const userService = {
       const formData = new FormData();
       formData.append('file', file); // Sử dụng key "file" theo yêu cầu của backend
 
-      console.log('Sending avatar upload request with form data...', {
-        fileSize: file.size,
-        fileType: file.type,
-        fileName: file.name,
-        hasToken: !!tokenData.accessToken,
-        tokenFirstChars: tokenData.accessToken.substring(0, 15) + '...', // Hiện token một phần để debug
-      });
-      console.log('Sending avatar upload request to:', '/users/profile/avatar');
-
       const response = await apiClient.post('/users/profile/avatar', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -322,13 +276,8 @@ export const userService = {
         timeout: 30000, // Tăng timeout lên 30 giây cho upload file lớn
       });
 
-      console.log('Avatar upload API response:', response);
-      console.log('Avatar upload response data:', response.data);
-      console.log('Avatar upload response status:', response.status);
-
       // Kiểm tra cấu trúc response từ API
       if (!response.data) {
-        console.error('Không nhận được dữ liệu từ API response');
         return {
           success: false,
           message: 'Không nhận được dữ liệu từ API',
@@ -337,8 +286,6 @@ export const userService = {
       let responseData = response.data;
       let avatarData = responseData;
 
-      console.log('Phân tích cấu trúc responseData:', responseData);
-
       // Nếu response là { success, data, message } format
       if (
         responseData &&
@@ -346,7 +293,6 @@ export const userService = {
         responseData.data
       ) {
         avatarData = responseData.data;
-        console.log('Trích xuất data từ format chuẩn:', avatarData);
       }
 
       // Kiểm tra nếu avatar nằm trực tiếp trong data và là string
@@ -357,24 +303,16 @@ export const userService = {
           responseData.includes('/images/'))
       ) {
         avatarData = responseData;
-        console.log('Avatar là đường dẫn trực tiếp:', avatarData);
       }
 
       // Trường hợp data.avatar hoặc data là object có chứa avatar
       if (typeof avatarData === 'object') {
         if (avatarData.avatar) {
-          console.log('Tìm thấy avatar trong data.avatar', avatarData.avatar);
           avatarData = { avatar: avatarData.avatar };
         } else if (responseData.avatar) {
-          console.log(
-            'Tìm thấy avatar trong responseData.avatar',
-            responseData.avatar
-          );
           avatarData = { avatar: responseData.avatar };
         }
       }
-
-      console.log('Dữ liệu avatar cuối cùng trước khi trả về:', avatarData);
 
       return {
         success: true,
@@ -382,11 +320,8 @@ export const userService = {
         message: 'Cập nhật avatar thành công',
       };
     } catch (error) {
-      console.error('❌ Error uploading avatar:', error);
-
       // Kiểm tra lỗi token hết hạn
       if (error.response?.status === 401) {
-        console.log('Token hết hạn, thử refresh token...');
         try {
           // Thử làm mới token và gửi lại yêu cầu
           const tokenData = localStorageUtil.get('token');
@@ -408,7 +343,6 @@ export const userService = {
             }
           }
         } catch (refreshError) {
-          console.error('Không thể làm mới token:', refreshError);
           return {
             success: false,
             message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
@@ -432,14 +366,12 @@ export const userService = {
     try {
       const tokenData = localStorageUtil.get('token');
       if (!tokenData || !tokenData.accessToken) {
-        console.error('Không tìm thấy token xác thực');
         return false;
       }
 
       // Phân tích JWT token để kiểm tra hết hạn
       const tokenParts = tokenData.accessToken.split('.');
       if (tokenParts.length !== 3) {
-        console.error('Token không hợp lệ');
         return false;
       }
 
@@ -451,7 +383,6 @@ export const userService = {
 
         // Kiểm tra nếu token sắp hết hạn (còn dưới 5 phút)
         if (expiryTime - currentTime < 5 * 60 * 1000) {
-          console.log('Token sắp hết hạn, tiến hành làm mới...'); // Gọi hàm refreshToken
           const refreshResult = await userService.refreshToken(
             tokenData.refreshToken
           );
@@ -467,11 +398,9 @@ export const userService = {
         // Token vẫn còn hiệu lực
         return true;
       } catch (error) {
-        console.error('Lỗi khi phân tích token:', error);
         return false;
       }
     } catch (error) {
-      console.error('Lỗi khi kiểm tra token:', error);
       return false;
     }
   },
@@ -492,7 +421,6 @@ export const consultantService = {
       const response = await apiClient.get('/consultants');
       return response.data;
     } catch (error) {
-      console.error('Error fetching consultants:', error);
       throw error.response?.data || error;
     }
   },
@@ -505,7 +433,6 @@ export const consultantService = {
       );
       return response.data;
     } catch (error) {
-      console.error('Error updating consultant profile:', error);
       throw error.response?.data || error;
     }
   },
@@ -515,7 +442,6 @@ export const consultantService = {
       const response = await apiClient.get(`/consultants/${consultantId}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching consultant profile:', error);
       throw error.response?.data || error;
     }
   },
