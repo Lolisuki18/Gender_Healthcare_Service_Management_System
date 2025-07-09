@@ -35,7 +35,5 @@ build/
 ### SECURITY - QUAN TRỌNG! ###
 **/application.properties
 **/application-*.properties
-.env
-.env.*
 **/*.properties
 !**/application.properties.example
