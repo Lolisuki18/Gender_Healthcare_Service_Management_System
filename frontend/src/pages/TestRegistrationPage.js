@@ -1418,17 +1418,6 @@ function TestRegistrationPage() {
                       }
                       sx={{ mb: 1 }}
                     />
-                    {/* Option chuyển khoản */}
-                    <FormControlLabel 
-                      value="bank" 
-                      control={<Radio sx={{ color: '#2196F3' }} />} 
-                      label={
-                        <Typography sx={{ fontWeight: 500, fontSize: '1rem' }}>
-                          🏦 Chuyển khoản ngân hàng
-                        </Typography>
-                      }
-                      sx={{ mb: 1 }}
-                    />
                     {/* Option thanh toán thẻ Visa */}
                     <FormControlLabel 
                       value="visa" 

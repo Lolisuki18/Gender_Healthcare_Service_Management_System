@@ -13,7 +13,7 @@ import {
 import PersonIcon from '@mui/icons-material/Person';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { getBlogImageUrl, getAvatarUrl } from '../../utils/imageUrl';
+import { getBlogImageUrl, getAvatarUrl as getAvatarUrlUtil } from '../../utils/imageUrl';
 
 function formatDateVN(date) {
   if (!date) return '';
@@ -30,12 +30,46 @@ function formatDateVN(date) {
 
 const BlogCard = ({ post, truncateContent = 120 }) => {
   const navigate = useNavigate();
+  
   if (!post) return null;
 
   // Debug logging
   console.log('🃏 BlogCard rendering post:', post);
   console.log('🖼️ Post thumbnail:', post.thumbnailImage);
   console.log('🖼️ Post existingThumbnail:', post.existingThumbnail);
+
+  // Hình ảnh mặc định duy nhất
+  const defaultImage = '/img/blog/default.svg';
+
+  // Xác định URL hình ảnh để hiển thị
+  const getImageUrl = () => {
+    if (post.thumbnailImage || post.existingThumbnail) {
+      return getBlogImageUrl(post.thumbnailImage || post.existingThumbnail);
+    }
+    return defaultImage;
+  };
+
+  // Xác định URL avatar để hiển thị
+  const getAvatarUrl = () => {
+    if (post.authorAvatar) {
+      return getAvatarUrlUtil(post.authorAvatar);
+    }
+    return defaultImage;
+  };
+
+  // Xử lý lỗi load hình ảnh - chuyển về hình mặc định
+  const handleImageError = (e) => {
+    console.error('❌ Image failed to load:', e.target.src);
+    console.log('🔄 Using default image:', defaultImage);
+    e.target.src = defaultImage;
+  };
+
+  // Xử lý lỗi load avatar - chuyển về hình mặc định
+  const handleAvatarError = (e) => {
+    console.error('❌ Avatar failed to load:', e.target.src);
+    console.log('🔄 Using default avatar:', defaultImage);
+    e.target.src = defaultImage;
+  };
 
   const handleReadMore = () => navigate(`/blog/${post.id}`);
 
@@ -117,23 +151,14 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
             objectFit: 'cover',
             borderRadius: { xs: '20px 20px 0 0', sm: '20px 0 0 20px' },
             transition: 'all 0.3s ease',
+            filter: 'none',
             '.MuiCard-root:hover &': {
               transform: 'scale(1.02)'
             }
           }}
-          image={getBlogImageUrl(post.thumbnailImage || post.existingThumbnail)}
+          image={getImageUrl()}
           alt={post.title || 'Blog thumbnail'}
-          onError={(e) => { 
-            console.error('❌ Image failed to load:', e.target.src);
-            // Thử fallback images theo thứ tự
-            if (e.target.src.includes('suckhoesinhsan.png')) {
-              console.log('🔄 Using final fallback...');
-              e.target.src = '/img/thumbs/1.png';
-            } else {
-              console.log('🔄 Trying default thumbnail...');
-              e.target.src = '/img/thumbs/suckhoesinhsan.png'; 
-            }
-          }}
+          onError={handleImageError}
         />
         
         {/* Status Badge */}
@@ -258,13 +283,15 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
           {/* Author Info */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Avatar 
-              src={getAvatarUrl(post.authorAvatar)}
+              src={getAvatarUrl()}
               sx={{ 
                 width: 36, 
                 height: 36,
                 border: '2px solid #e0f7fa',
-                backgroundColor: '#26c6da'
+                backgroundColor: '#26c6da',
+                filter: 'none'
               }}
+              onError={handleAvatarError}
             >
               <PersonIcon sx={{ fontSize: '1.1rem' }} />
             </Avatar>

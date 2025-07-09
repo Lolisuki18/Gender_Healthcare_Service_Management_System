@@ -39,16 +39,9 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token.accessToken}`;
     }
 
-    console.log('API Request:', {
-      url: config.baseURL + config.url,
-      method: config.method.toUpperCase(),
-      headers: config.headers,
-    });
-
     return config;
   },
   (error) => {
-    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -56,22 +49,9 @@ apiClient.interceptors.request.use(
 // ✅ Response interceptor - xử lý token hết hạn
 apiClient.interceptors.response.use(
   (response) => {
-    console.log('API Response:', {
-      status: response.status,
-      url: response.config.url,
-      data: response.data,
-    });
     return response;
   },
   async (error) => {
-    console.error('API Error:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      url: error.config?.url,
-      data: error.response?.data,
-      message: error.message,
-    });
-
     // Xử lý token hết hạn (401 Unauthorized) hoặc JWT expired
     if (
       error.response?.status === 401 ||
@@ -82,22 +62,12 @@ apiClient.interceptors.response.use(
 
       // ✅ KIỂM TRA FLAG ĐỂ BỎ QUA AUTO-REDIRECT
       if (error.config?.skipAutoRedirect) {
-        console.log('🔄 Skipping auto-redirect due to skipAutoRedirect flag');
         return Promise.reject(error);
       }
-
-      console.log('🔍 401 Error Debug:', {
-        hasToken: !!token,
-        hasAccessToken: !!token?.accessToken,
-        hasRefreshToken: !!token?.refreshToken,
-        endpoint: error.config?.url,
-        errorMessage: error.response?.data?.message,
-      });
 
       // Nếu có refresh token, thử refresh
       if (token && token.refreshToken) {
         try {
-          console.log('🔄 Attempting token refresh...'); // Đảm bảo chỉ có một yêu cầu refresh token được gửi đi cùng một lúc
           if (!window.isRefreshingToken) {
             window.isRefreshingToken = true;
 
@@ -114,9 +84,6 @@ apiClient.interceptors.response.use(
                 refreshToken: token.refreshToken,
               })
               .then((res) => res.data);
-
-            console.log('🔄 Refresh response:', refreshResponse);
-            window.isRefreshingToken = false;
 
             // Kiểm tra cả trường hợp response trực tiếp hoặc nằm trong .data
             if (
@@ -145,10 +112,6 @@ apiClient.interceptors.response.use(
               };
               localStorageUtil.set('token', newTokenObject);
 
-              console.log(
-                '✅ Token refreshed successfully, retrying request with new token'
-              );
-
               // Thêm header authorization mới và thử lại request
               error.config.headers.Authorization = `Bearer ${newAccessToken}`;
 
@@ -158,7 +121,6 @@ apiClient.interceptors.response.use(
               return apiClient.request(error.config);
             }
           } else {
-            console.log('🔄 Token refresh already in progress, waiting...');
             // Chờ một chút và thử lại nếu một quá trình refresh đang diễn ra
             await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -168,23 +130,16 @@ apiClient.interceptors.response.use(
               updatedToken.accessToken !== token.accessToken
             ) {
               // Token đã được làm mới bởi một request khác
-              console.log(
-                '✅ Token has been refreshed by another request, retrying...'
-              );
               error.config.headers.Authorization = `Bearer ${updatedToken.accessToken}`;
               return apiClient.request(error.config);
             }
           }
         } catch (refreshError) {
-          console.error('❌ Refresh token failed:', refreshError);
-          window.isRefreshingToken = false;
-
           // Refresh token cũng hết hạn, đăng xuất user
           localStorageUtil.remove('token');
 
           // Nếu có flag skipAutoRedirect, không redirect và không alert
           if (error.config?.skipAutoRedirect) {
-            console.log('🔄 Skipping auto-redirect for refresh token failure due to skipAutoRedirect flag');
             return Promise.reject(error);
           }
 
@@ -197,15 +152,6 @@ apiClient.interceptors.response.use(
           }
         }
       } else {
-        console.log('❌ No refresh token available');
-        
-        // Nếu có flag skipAutoRedirect, không redirect
-        if (error.config?.skipAutoRedirect) {
-          console.log('🔄 Skipping auto-redirect for no refresh token due to skipAutoRedirect flag');
-          return Promise.reject(error);
-        }
-
-        console.log('🔄 Redirecting to login');
         // Không có refresh token, chuyển về trang login
         localStorageUtil.remove('token');
 

@@ -14,6 +14,14 @@ import com.healapp.model.UserDtls;
 import com.healapp.service.ConsultantService;
 // import com.healapp.service.STIServiceService;
 import com.healapp.service.UserService;
+import com.healapp.service.PaymentService;
+import com.healapp.model.Payment;
+import com.healapp.model.PaymentStatus;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +34,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import com.healapp.service.ConsultationService;
+import com.healapp.service.STIServiceService;
+import com.healapp.service.STIPackageService;
+import com.healapp.service.QuestionService;
+import com.healapp.service.RatingService;
 
 @RestController
 @RequestMapping("/admin")
@@ -37,6 +50,20 @@ public class AdminController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private PaymentService paymentService;
+
+    @Autowired
+    private ConsultationService consultationService;
+    @Autowired
+    private STIServiceService stiServiceService;
+    @Autowired
+    private STIPackageService stiPackageService;
+    @Autowired
+    private QuestionService questionService;
+    @Autowired
+    private RatingService ratingService;
 
     // @Autowired
     // private AppConfigService appConfigService;
@@ -388,6 +415,115 @@ public class AdminController {
     // adminUserId);
     // return getResponseEntity(response);
     // }
+
+    /**
+     * Báo cáo tổng quan doanh thu
+     * GET /admin/revenue/summary
+     * Query: fromDate, toDate (ISO-8601, optional)
+     */
+    @GetMapping("/revenue/summary")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getRevenueSummary(
+            @RequestParam(value = "fromDate", required = false) String fromDateStr,
+            @RequestParam(value = "toDate", required = false) String toDateStr) {
+        LocalDateTime fromDate = parseDateTime(fromDateStr, true);
+        LocalDateTime toDate = parseDateTime(toDateStr, false);
+        // Lấy tất cả payment COMPLETED trong khoảng thời gian
+        List<Payment> payments = paymentService.getPaymentsByStatusAndDate(PaymentStatus.COMPLETED, fromDate, toDate);
+        BigDecimal totalRevenue = payments.stream().map(Payment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        int totalTransactions = payments.size();
+        BigDecimal avgRevenue = totalTransactions > 0
+                ? totalRevenue.divide(BigDecimal.valueOf(totalTransactions), 0, BigDecimal.ROUND_HALF_UP)
+                : BigDecimal.ZERO;
+        HashSet<Long> customerIds = new HashSet<>();
+        for (Payment p : payments)
+            customerIds.add(p.getUserId());
+        int totalCustomers = customerIds.size();
+        Map<String, Object> result = Map.of(
+                "totalRevenue", totalRevenue,
+                "totalTransactions", totalTransactions,
+                "averageRevenue", avgRevenue,
+                "totalCustomers", totalCustomers);
+        return getResponseEntity(ApiResponse.success("Revenue summary", result));
+    }
+
+    /**
+     * Danh sách giao dịch đã thanh toán
+     * GET /admin/revenue/transactions
+     * Query: fromDate, toDate (ISO-8601, optional)
+     */
+    @GetMapping("/revenue/transactions")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getRevenueTransactions(
+            @RequestParam(value = "fromDate", required = false) String fromDateStr,
+            @RequestParam(value = "toDate", required = false) String toDateStr) {
+        LocalDateTime fromDate = parseDateTime(fromDateStr, true);
+        LocalDateTime toDate = parseDateTime(toDateStr, false);
+        List<Payment> payments = paymentService.getPaymentsByStatusAndDate(PaymentStatus.COMPLETED, fromDate, toDate);
+        // Map sang DTO có thêm customerName
+        List<Map<String, Object>> result = payments.stream().map(payment -> {
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("paymentId", payment.getPaymentId());
+            map.put("userId", payment.getUserId());
+            // Lấy tên khách hàng
+            String customerName = null;
+            try {
+                UserDtls user = paymentService.getUserById(payment.getUserId());
+                customerName = user != null ? user.getFullName() : null;
+            } catch (Exception e) {
+                customerName = null;
+            }
+            map.put("customerName", customerName);
+            map.put("serviceType", payment.getServiceType());
+            map.put("serviceId", payment.getServiceId());
+            map.put("paymentMethod", payment.getPaymentMethod());
+            map.put("paymentStatus", payment.getPaymentStatus());
+            map.put("amount", payment.getAmount());
+            map.put("currency", payment.getCurrency());
+            map.put("stripePaymentIntentId", payment.getStripePaymentIntentId());
+            map.put("qrPaymentReference", payment.getQrPaymentReference());
+            map.put("qrCodeUrl", payment.getQrCodeUrl());
+            map.put("transactionId", payment.getTransactionId());
+            map.put("createdAt", payment.getCreatedAt());
+            map.put("paidAt", payment.getPaidAt());
+            map.put("expiresAt", payment.getExpiresAt());
+            map.put("updatedAt", payment.getUpdatedAt());
+            map.put("refundId", payment.getRefundId());
+            map.put("refundedAt", payment.getRefundedAt());
+            map.put("refundAmount", payment.getRefundAmount());
+            map.put("description", payment.getDescription());
+            map.put("notes", payment.getNotes());
+            map.put("expired", payment.isExpired());
+            map.put("paymentDisplayInfo", payment.getPaymentDisplayInfo());
+            map.put("completed", payment.isCompleted());
+            return map;
+        }).toList();
+        return getResponseEntity(ApiResponse.success("Completed transactions", result));
+    }
+
+    @GetMapping("/dashboard/overview")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAdminDashboardOverview() {
+        Map<String, Object> overview = new java.util.HashMap<>();
+        overview.putAll(userService.getAdminDashboardUserStats());
+        overview.putAll(consultationService.getAdminDashboardConsultationStats());
+        overview.putAll(stiServiceService.getAdminDashboardServiceStats());
+        overview.putAll(stiPackageService.getAdminDashboardPackageStats());
+        overview.putAll(questionService.getAdminDashboardQuestionStats());
+        overview.putAll(ratingService.getAdminDashboardRatingStats());
+        return getResponseEntity(ApiResponse.success("Admin dashboard overview", overview));
+    }
+
+    // Helper parse date string linh hoạt
+    private LocalDateTime parseDateTime(String input, boolean isFrom) {
+        if (input == null)
+            return isFrom ? LocalDateTime.of(2000, 1, 1, 0, 0) : LocalDateTime.now();
+        try {
+            if (input.length() == 10) {
+                return LocalDate.parse(input, DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay();
+            }
+            return LocalDateTime.parse(input, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (Exception e) {
+            return isFrom ? LocalDateTime.of(2000, 1, 1, 0, 0) : LocalDateTime.now();
+        }
+    }
 
     private <T> ResponseEntity<ApiResponse<T>> getResponseEntity(ApiResponse<T> response) {
         if (response.isSuccess()) {

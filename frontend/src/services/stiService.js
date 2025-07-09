@@ -116,7 +116,6 @@ export const cancelSTITest = async (testId) => {
 // Get pending tests (Staff only)
 export const getPendingTests = async () => {
   try {
-    console.log('Calling API: GET', `${API_URL}/staff/pending-tests`);
     const response = await apiClient.get(`${API_URL}/staff/pending-tests`);
 
     // Xử lý dữ liệu từ backend tương tự getStaffTests
@@ -129,10 +128,8 @@ export const getPendingTests = async () => {
       };
     }
 
-    console.log('Processed Pending Tests Response:', processedData);
     return processedData;
   } catch (error) {
-    console.error('API Error:', error);
     throw error.response?.data || error.message;
   }
 };
@@ -152,7 +149,6 @@ export const confirmTest = async (testId) => {
 // Get confirmed tests (Staff only)
 export const getConfirmedTests = async () => {
   try {
-    console.log('Calling API: GET', `${API_URL}/staff/confirmed-tests`);
     const response = await apiClient.get(`${API_URL}/staff/confirmed-tests`);
 
     // Xử lý dữ liệu từ backend tương tự getStaffTests
@@ -165,10 +161,8 @@ export const getConfirmedTests = async () => {
       };
     }
 
-    console.log('Processed Confirmed Tests Response:', processedData);
     return processedData;
   } catch (error) {
-    console.error('API Error:', error);
     throw error.response?.data || error.message;
   }
 };
@@ -188,17 +182,13 @@ export const sampleTest = async (testId) => {
 // Get tests assigned to staff member (Staff only)
 export const getStaffTests = async () => {
   try {
-    console.log('Calling API: GET', `${API_URL}/staff/my-tests`);
     const response = await apiClient.get(`${API_URL}/staff/my-tests`);
-    console.log('API Raw Response:', response);
-
     // Xử lý dữ liệu từ backend trả về để phù hợp với frontend
     // Backend có thể trả về cấu trúc khác với cấu trúc mà UI đang sử dụng
     let processedData = response.data;
 
     // Nếu response.data là mảng trực tiếp (không có wrapper), bọc nó lại
     if (Array.isArray(response.data)) {
-      console.log('Response is direct array, wrapping it');
       processedData = {
         status: 'SUCCESS',
         data: response.data,
@@ -206,10 +196,8 @@ export const getStaffTests = async () => {
       };
     }
 
-    console.log('Processed API Response:', processedData);
     return processedData;
   } catch (error) {
-    console.error('API Error:', error);
     throw error.response?.data || error.message;
   }
 };
@@ -388,7 +376,7 @@ export const addTestResults = async (testId, resultsData) => {
 
         // Check if values are as expected
         console.log(
-          `Component ${componentId}: resultValue=${result.resultValue}, unit=${result.unit}, normalRange=${result.normalRange}`
+          `Component ${componentId}: resultValue=${result.resultValue}, unit=${result.unit}, normalRange=${result.normalRange}, conclusion=${result.conclusion}`
         );
 
         // Make sure all required fields are present and properly formatted
@@ -397,6 +385,10 @@ export const addTestResults = async (testId, resultsData) => {
           resultValue: result.resultValue || '',
           normalRange: result.normalRange || '',
           unit: result.unit || '',
+          conclusion:
+            result.conclusion && result.conclusion !== ''
+              ? result.conclusion
+              : null,
         };
       }),
     };
@@ -487,12 +479,9 @@ export const completeTest = async (testId, resultsData) => {
 // Get test results for a specific test
 export const getTestResults = async (testId) => {
   try {
-    console.log('Fetching test results for ID:', testId);
     const response = await apiClient.get(`${API_URL}/tests/${testId}/results`);
-    console.log('Test results response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error fetching test results:', error);
     throw error.response?.data || error.message;
   }
 };
@@ -500,7 +489,6 @@ export const getTestResults = async (testId) => {
 // Get PDF report for a test
 export const getTestPDF = async (testId) => {
   try {
-    console.log('Fetching PDF for test ID:', testId);
     const response = await apiClient.get(`${API_URL}/tests/${testId}/pdf`, {
       responseType: 'blob', // Quan trọng: chỉ định kiểu dữ liệu trả về là blob
     });
@@ -509,7 +497,6 @@ export const getTestPDF = async (testId) => {
       filename: `test-report-${testId}.pdf`,
     };
   } catch (error) {
-    console.error('Error fetching test PDF:', error);
     throw error.response?.data || error.message;
   }
 };
@@ -559,9 +546,7 @@ export const createSTIPackage = async (packageData) => {
             ? packageData.active
             : true,
     };
-    console.log('Sending validated data to backend:', validatedData);
     const response = await apiClient.post('/sti-packages', validatedData);
-    console.log('Create response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error creating STI package:', error);
@@ -599,12 +584,10 @@ export const updateSTIPackage = async (packageId, packageData) => {
             ? packageData.active
             : true,
     };
-    console.log('Sending validated data to backend:', validatedData);
     const response = await apiClient.put(
       `/sti-packages/${packageId}`,
       validatedData
     );
-    console.log('Update response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error updating STI package:', error);
@@ -625,17 +608,13 @@ export const deleteSTIPackage = async (packageId) => {
 // Get package test details with components
 export const getPackageTestDetails = async (packageId) => {
   try {
-    console.log('Fetching package test details for ID:', packageId);
-
     // First try to get detailed test information
     const testResponse = await apiClient.get(`${API_URL}/tests/${packageId}`);
-    console.log('Package details response:', testResponse.data);
 
     // Then get test results which should include component information
     const resultsResponse = await apiClient.get(
       `${API_URL}/tests/${packageId}/results`
     );
-    console.log('Test results/components response:', resultsResponse.data);
 
     // Combine the data
     const packageData = testResponse.data?.data || testResponse.data || {};
@@ -653,12 +632,10 @@ export const getPackageTestDetails = async (packageId) => {
       Array.isArray(packageData.testComponents) &&
       packageData.testComponents.length > 0
     ) {
-      console.log('Using existing test components from package data');
       componentsData = packageData.testComponents;
     }
     // Otherwise transform the results into components
     else if (resultsData.length > 0) {
-      console.log('Transforming results into components');
       componentsData = resultsData.map((result, index) => ({
         id:
           result.componentId || result.testId || result.id || `result-${index}`,
@@ -677,7 +654,6 @@ export const getPackageTestDetails = async (packageId) => {
     }
     // Create dummy components if nothing was found
     else {
-      console.log('Creating dummy components due to no results data');
       // Create at least 2 mock components based on the package test
       componentsData = [
         {
@@ -704,14 +680,11 @@ export const getPackageTestDetails = async (packageId) => {
     // Add components to the package data
     packageData.testComponents = componentsData;
 
-    console.log('Final package data with components:', packageData);
-
     return {
       status: 'SUCCESS',
       data: packageData,
     };
   } catch (error) {
-    console.error('Error fetching package details:', error);
     throw error.response?.data || error.message;
   }
 };
@@ -719,21 +692,13 @@ export const getPackageTestDetails = async (packageId) => {
 // Save partial test results (Staff only) - không đổi trạng thái test
 export const savePartialTestResults = async (testId, resultData) => {
   try {
-    console.log(
-      'Saving partial results for test ID:',
-      testId,
-      'Data:',
-      resultData
-    );
     // The endpoint should not contain the status, as we are not changing it
     const response = await apiClient.put(
       `${API_URL}/staff/tests/${testId}/save-partial-results`,
       resultData.results // Send only the array of results
     );
-    console.log('Partial results save response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error saving partial results:', error);
     throw error.response?.data || error.message;
   }
 };
@@ -748,20 +713,45 @@ export const updateTestResults = async (testId, resultsData) => {
     );
     return response.data;
   } catch (error) {
-    console.error('Error updating test results:', error);
     throw error.response?.data || error.message;
   }
 };
 
 // Category Question management
 const getQuestionCategories = async () => {
-  const res = await apiClient.get("/question-categories");
+  const res = await apiClient.get('/question-categories');
   // Chuẩn hóa lấy mảng từ res.data.data
   return Array.isArray(res.data.data) ? res.data.data : [];
 };
-const createQuestionCategory = (data) => apiClient.post("/question-categories", data);
-const updateQuestionCategory = (id, data) => apiClient.put(`/question-categories/${id}`, data);
-const deleteQuestionCategory = (id) => apiClient.delete(`/question-categories/${id}`);
+const createQuestionCategory = (data) =>
+  apiClient.post('/question-categories', data);
+const updateQuestionCategory = (id, data) =>
+  apiClient.put(`/question-categories/${id}`, data);
+const deleteQuestionCategory = (id) =>
+  apiClient.delete(`/question-categories/${id}`);
+
+// Update consultant notes for a STI test (Consultant only)
+export const updateConsultantNotes = async (testId, consultantNotes) => {
+  try {
+    const response = await apiClient.put(
+      `/sti-services/tests/${testId}/consultant-notes`,
+      { consultantNotes }
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// Get all tests assigned to current consultant
+export const getConsultantSTITests = async () => {
+  try {
+    const response = await apiClient.get('/sti-services/consultant/my-tests');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
 
 // Export as a default object with all functions
 const stiService = {
@@ -797,6 +787,8 @@ const stiService = {
   createQuestionCategory,
   updateQuestionCategory,
   deleteQuestionCategory,
+  updateConsultantNotes,
+  getConsultantSTITests,
 
   // New function to get services within a package
   // getServicesInPackage: async (packageId) => {

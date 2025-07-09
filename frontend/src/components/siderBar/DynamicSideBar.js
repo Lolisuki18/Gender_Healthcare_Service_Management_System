@@ -270,7 +270,13 @@ const DynamicSideBar = ({ open, onClose, selectedItem, onItemSelect }) => {
             <ListItem disablePadding>
               <StyledListItem
                 selected={selectedItem === item.id}
-                onClick={() => onItemSelect(item.id)}
+                onClick={() => {
+                  if (item.subItems) {
+                    handleExpandClick(item.id);
+                  } else {
+                    onItemSelect(item.id);
+                  }
+                }}
               >
                 <ListItemIcon
                   sx={{
@@ -293,7 +299,7 @@ const DynamicSideBar = ({ open, onClose, selectedItem, onItemSelect }) => {
                   }}
                 />
                 {item.subItems && (
-                  <Box sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                  <Box sx={{ color: '#4A5568' }}>
                     {expandedItems[item.id] ? <ExpandLess /> : <ExpandMore />}
                   </Box>
                 )}

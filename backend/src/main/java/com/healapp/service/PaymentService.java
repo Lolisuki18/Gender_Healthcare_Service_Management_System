@@ -498,7 +498,8 @@ public class PaymentService {
     }
 
     public Optional<Payment> getPaymentByService(String serviceType, Long serviceId) {
-        List<Payment> payments = paymentRepository.findByServiceTypeAndServiceIdOrderByCreatedAtDesc(serviceType, serviceId);
+        List<Payment> payments = paymentRepository.findByServiceTypeAndServiceIdOrderByCreatedAtDesc(serviceType,
+                serviceId);
         if (payments.size() > 1) {
             log.warn("Found {} payment records for {} service ID: {}", payments.size(), serviceType, serviceId);
         }
@@ -742,5 +743,14 @@ public class PaymentService {
             log.error(" Failed to get QR payment status: {}", e.getMessage(), e);
             return ApiResponse.error("Failed to get payment status: " + e.getMessage());
         }
+    }
+
+    public List<Payment> getPaymentsByStatusAndDate(PaymentStatus status, LocalDateTime fromDate,
+            LocalDateTime toDate) {
+        return paymentRepository.findByPaymentStatusAndCreatedAtBetween(status, fromDate, toDate);
+    }
+
+    public UserDtls getUserById(Long userId) {
+        return userRepository.findById(userId).orElse(null);
     }
 }

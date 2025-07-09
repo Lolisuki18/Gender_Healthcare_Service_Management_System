@@ -15,11 +15,15 @@ import {
   InputAdornment,
   Pagination,
   Breadcrumbs,
-  Link
+  Link,
+  Button,
+  Fab,
+  Tooltip
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import HomeIcon from '@mui/icons-material/Home';
+import AddIcon from '@mui/icons-material/Add';
 import blogService from '@/services/blogService';
 import BlogCard from '@/components/common/BlogCard';
 
@@ -72,10 +76,14 @@ const BlogPage = () => {
           console.log('📄 Page data:', pageData);
           console.log('📝 Blogs content:', pageData.content);
           
-          setBlogs(pageData.content || []);
+          // Lọc chỉ hiển thị blog có trạng thái CONFIRMED
+          const confirmedBlogs = (pageData.content || []).filter(blog => blog.status === 'CONFIRMED');
+          console.log('✅ Filtered blogs (CONFIRMED only):', confirmedBlogs.length, 'out of', pageData.content?.length || 0);
+          
+          setBlogs(confirmedBlogs);
           setTotalPages(pageData.totalPages || 1);
           
-          console.log('✅ Successfully set blogs:', pageData.content?.length || 0, 'items');
+          console.log('✅ Successfully set blogs:', confirmedBlogs.length, 'items');
         } else {
           console.error('❌ API response not successful:', response);
           
@@ -90,7 +98,7 @@ const BlogPage = () => {
               createdAt: new Date().toISOString(),
               author: { name: "Test Author" },
               category: { name: "Test Category" },
-              status: "PUBLISHED"
+              status: "CONFIRMED"
             },
             {
               id: 2,
@@ -100,7 +108,7 @@ const BlogPage = () => {
               createdAt: new Date().toISOString(),
               author: { name: "Test Author 2" },
               category: { name: "Test Category 2" },
-              status: "PUBLISHED"
+              status: "CONFIRMED"
             }
           ];
           
@@ -129,7 +137,7 @@ const BlogPage = () => {
             createdAt: new Date().toISOString(),
             author: { name: "Dr. Nguyễn Văn A" },
             category: { name: "Sức khỏe sinh sản" },
-            status: "PUBLISHED",
+            status: "CONFIRMED",
             imageUrl: null
           },
           {
@@ -140,7 +148,7 @@ const BlogPage = () => {
             createdAt: new Date(Date.now() - 86400000).toISOString(),
             author: { name: "Dr. Trần Thị B" },
             category: { name: "Phòng ngừa bệnh tật" },
-            status: "PUBLISHED",
+            status: "CONFIRMED",
             imageUrl: null
           },
           {
@@ -151,7 +159,7 @@ const BlogPage = () => {
             createdAt: new Date(Date.now() - 172800000).toISOString(),
             author: { name: "Dr. Lê Văn C" },
             category: { name: "Xét nghiệm y khoa" },
-            status: "PUBLISHED",
+            status: "CONFIRMED",
             imageUrl: null
           }
         ];
@@ -187,6 +195,10 @@ const BlogPage = () => {
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCreateBlog = () => {
+    navigate('/blog/create');
   };
 
   // ===== RENDER =====
@@ -382,6 +394,44 @@ const BlogPage = () => {
               ),
             }}
           />
+        </Box>
+
+        {/* Create Blog Button */}
+        <Box sx={{ 
+          mb: 6, 
+          display: 'flex', 
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 2
+        }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateBlog}
+            sx={{
+              background: 'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
+              color: '#ffffff',
+              borderRadius: '50px',
+              px: 4,
+              py: 1.5,
+              fontSize: '1.1rem',
+              fontWeight: 600,
+              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+              boxShadow: '0 8px 25px rgba(38, 198, 218, 0.3)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              textTransform: 'none',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #00acc1 0%, #00838f 100%)',
+                boxShadow: '0 12px 35px rgba(38, 198, 218, 0.4)',
+                transform: 'translateY(-3px)',
+              },
+              '&:active': {
+                transform: 'translateY(-1px)',
+              }
+            }}
+          >
+            ✍️ Tạo bài viết mới
+          </Button>
         </Box>
 
         {/* Search Results Info */}
@@ -598,6 +648,41 @@ const BlogPage = () => {
           </Box>
         )}
       </Container>
+
+      {/* Floating Action Button for Create Blog */}
+      <Tooltip title="Tạo bài viết mới" placement="left">
+        <Fab
+          color="primary"
+          aria-label="Tạo bài viết mới"
+          onClick={handleCreateBlog}
+          sx={{
+            position: 'fixed',
+            bottom: 32,
+            right: 32,
+            background: 'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
+            boxShadow: '0 8px 25px rgba(38, 198, 218, 0.4)',
+            width: 64,
+            height: 64,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #00acc1 0%, #00838f 100%)',
+              boxShadow: '0 12px 35px rgba(38, 198, 218, 0.6)',
+              transform: 'scale(1.1)',
+            },
+            '&:active': {
+              transform: 'scale(0.95)',
+            },
+            '@media (max-width: 600px)': {
+              bottom: 16,
+              right: 16,
+              width: 56,
+              height: 56,
+            }
+          }}
+        >
+          <AddIcon sx={{ fontSize: 28 }} />
+        </Fab>
+      </Tooltip>
     </Box>
   );
 };

@@ -2,7 +2,7 @@
  * STITestsContent.js - Simple and Clean UI for STI Tests Management
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -47,7 +47,19 @@ import {
   Clear as ClearIcon,
   CalendarToday as CalendarTodayIcon,
   Settings as SettingsIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
+import {
+  getConsultantSTITests,
+  updateConsultantNotes,
+  getSTIPackageById,
+  getSTIServiceById,
+  getTestResultsByTestId,
+} from '../../services/stiService';
+import api from '../../services/api';
+import ConsultantTestResultDetailModal from './ConsultantTestResultDetailModal';
+import { formatDateDisplay } from '../../utils/dateUtils';
+import confirmDialog from '../../utils/confirmDialog';
 
 // Test Type translation function
 const getTestTypeTranslation = (type) => {
@@ -75,67 +87,37 @@ const getTestTypeTranslation = (type) => {
   }
 };
 
-const STITestsContent = () => {
-  // Mock data - simplified
-  const [tests] = useState([
-    {
-      id: 1,
-      patientName: 'Nguyễn Văn Minh',
-      patientEmail: 'nguyenvanminh@gmail.com',
-      patientPhone: '0912345678',
-      patientAge: 28,
-      patientGender: 'Nam',
-      patientAvatar: '/images/avatars/avatar1.jpg',
-      testType: 'comprehensive',
-      testDate: '2025-06-20T09:30:00',
-      status: 'completed',
-      symptoms: ['Đau khi đi tiểu', 'Tiết dịch bất thường'],
-      results: {
-        hiv: 'Âm tính',
-        chlamydia: 'Dương tính',
-      },
-      recommendations:
-        'Điều trị Chlamydia bằng Azithromycin 1g. Tái khám sau 2 tuần.',
-      notes: 'Bệnh nhân có tiền sử quan hệ không an toàn.',
-    },
-    {
-      id: 2,
-      patientName: 'Trần Thị Lan Anh',
-      patientEmail: 'tranthilananh@gmail.com',
-      patientPhone: '0987654321',
-      patientAge: 25,
-      patientGender: 'Nữ',
-      testType: 'hiv',
-      testDate: '2025-06-21T14:00:00',
-      status: 'completed',
-      symptoms: ['Lo lắng về phơi nhiễm'],
-      results: { hiv: 'Âm tính' },
-      recommendations: 'Kết quả HIV âm tính. Tái xét nghiệm sau 3 tháng.',
-    },
-    {
-      id: 3,
-      patientName: 'Lê Hoàng Nam',
-      patientEmail: 'lehoangnam@gmail.com',
-      testType: 'gonorrhea',
-      testDate: '2025-06-22T10:15:00',
-      status: 'processing',
-      symptoms: ['Tiết dịch màu vàng', 'Đau rát khi đi tiểu'],
-    },
-    {
-      id: 4,
-      patientName: 'Phạm Thị Hương',
-      patientEmail: 'phamthihuong@gmail.com',
-      testType: 'hpv',
-      testDate: '2025-06-22T11:30:00',
-      status: 'pending',
-      symptoms: ['Khám sức khỏe định kỳ'],
-    },
-  ]);
+// Helper để lấy ký tự đầu tiên hoặc '?'
+const getInitial = (name) =>
+  (name && typeof name === 'string' && name.charAt(0)) || '?';
 
+function compareYMD(a, b) {
+  if (!a || !b) return 0;
+  if (a.y !== b.y) return a.y - b.y;
+  if (a.m !== b.m) return a.m - b.m;
+  return a.d - b.d;
+}
+
+function getYMD(val) {
+  if (!val) return null;
+  if (Array.isArray(val)) {
+    // [yyyy, mm, dd, ...]
+    return { y: +val[0], m: +val[1], d: +val[2] };
+  }
+  // Nếu là string, parse như cũ
+  const s = typeof val === 'string' ? val : String(val);
+  const match = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return null;
+  return { y: +match[1], m: +match[2], d: +match[3] };
+}
+
+const STITestsContent = () => {
   // State
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [tests, setTests] = useState([]);
+  // Bỏ statusFilter và tabValue
+  // const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [tabValue, setTabValue] = useState(0);
+  // const [tabValue, setTabValue] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -144,25 +126,64 @@ const STITestsContent = () => {
     useState(false);
   const [recommendation, setRecommendation] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailModalTest, setDetailModalTest] = useState(null);
+  const [detailIsPackage, setDetailIsPackage] = useState(false);
+  const [detailPackageServices, setDetailPackageServices] = useState([]);
+  const [detailSelectedService, setDetailSelectedService] = useState(null);
+  const [detailComponents, setDetailComponents] = useState([]);
+  const [detailAllServiceComponents, setDetailAllServiceComponents] = useState(
+    {}
+  );
+  const [conclusionFilter, setConclusionFilter] = useState('all'); // 'all' | 'has' | 'none'
+  const [loading, setLoading] = useState(false);
+  const [dateFilter, setDateFilter] = useState('');
 
-  // Filter tests
+  // Lấy userId consultant hiện tại (giả sử lưu ở localStorage)
+  const userId = Number(localStorage.getItem('userId'));
+
+  // Lấy danh sách test từ API khi load component
+  const fetchTests = async () => {
+    setLoading(true);
+    try {
+      const res = await getConsultantSTITests();
+      setTests(res.data || []);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchTests();
+  }, []);
+
+  // Lọc chỉ theo searchQuery, mã xét nghiệm, trạng thái kết luận, và ngày
   const filteredTests = tests.filter((test) => {
-    if (statusFilter !== 'all' && test.status !== statusFilter) return false;
-    const matchesSearch =
-      test.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      test.patientEmail.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+    const search = searchQuery.toLowerCase();
+    const matchesName = (test.patientName?.toLowerCase() || '').includes(
+      search
+    );
+    const matchesTestId = test.testId?.toString().includes(search);
+    const matchesSearch = matchesName || matchesTestId;
+    let matchesConclusion = true;
+    if (conclusionFilter === 'has') {
+      matchesConclusion = !!(
+        test.consultantNotes && test.consultantNotes.trim()
+      );
+    } else if (conclusionFilter === 'none') {
+      matchesConclusion = !test.consultantNotes || !test.consultantNotes.trim();
+    }
+    let matchesDate = true;
+    const filterYMD = getYMD(dateFilter);
+    const testYMD = getYMD(test.appointmentDate);
+    if (testYMD && filterYMD) {
+      matchesDate = compareYMD(testYMD, filterYMD) >= 0;
+    }
+    return matchesSearch && matchesConclusion && matchesDate;
   });
 
   // Handlers
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-    if (newValue === 0) setStatusFilter('all');
-    else if (newValue === 1) setStatusFilter('pending');
-    else if (newValue === 2) setStatusFilter('processing');
-    else if (newValue === 3) setStatusFilter('completed');
-    setPage(0);
-  };
+  // Bỏ handleTabChange và tabValue
+  // const handleTabChange = (event, newValue) => { ... }
 
   const handleSearchQueryChange = (event) => {
     setSearchQuery(event.target.value);
@@ -178,13 +199,121 @@ const STITestsContent = () => {
     setPage(0);
   };
 
-  const handleOpenDetailsDialog = (test) => {
-    setSelectedTest(test);
-    setDetailsDialogOpen(true);
+  const handleOpenDetailsDialog = async (test) => {
+    setDetailModalTest(test);
+    setDetailIsPackage(!!test.packageId);
+    setDetailPackageServices([]);
+    setDetailSelectedService(null);
+    setDetailComponents([]);
+    setDetailAllServiceComponents({});
+
+    if (test.packageId) {
+      // Nếu là package, lấy danh sách service con và thành phần từng service
+      try {
+        const res = await getSTIPackageById(test.packageId);
+        if (res && res.data && Array.isArray(res.data.services)) {
+          const services = res.data.services;
+          setDetailPackageServices(services);
+          // Lấy thành phần từng service
+          const promises = services.map((svc) => getSTIServiceById(svc.id));
+          const results = await Promise.all(promises);
+          // Lấy kết quả thực tế
+          const resultRes = await getTestResultsByTestId(test.testId);
+          const testResults =
+            (resultRes && (resultRes.data || resultRes)) || [];
+          const allComponents = {};
+          results.forEach((result, idx) => {
+            const svcId = services[idx].id;
+            let comps = [];
+            if (
+              result &&
+              result.data &&
+              Array.isArray(result.data.components)
+            ) {
+              comps = result.data.components;
+            } else if (result && Array.isArray(result.components)) {
+              comps = result.components;
+            }
+            // Map result vào component
+            comps = comps.map((comp) => {
+              const found = testResults.find(
+                (r) =>
+                  r.componentId === comp.componentId ||
+                  r.componentId === comp.id
+              );
+              return found
+                ? {
+                    ...comp,
+                    resultValue: found.resultValue,
+                    conclusion: found.conclusion,
+                    unit: found.unit,
+                    normalRange: found.normalRange,
+                    referenceRange: found.referenceRange,
+                  }
+                : comp;
+            });
+            allComponents[svcId] = comps;
+          });
+          setDetailAllServiceComponents(allComponents);
+          // Mặc định chọn service đầu tiên
+          const firstService = services[0];
+          setDetailSelectedService(firstService);
+          setDetailComponents(allComponents[firstService.id] || []);
+        }
+      } catch (err) {
+        setDetailPackageServices([]);
+        setDetailAllServiceComponents({});
+        setDetailSelectedService(null);
+        setDetailComponents([]);
+      }
+    } else {
+      // Nếu là service đơn, lấy thành phần xét nghiệm và map result
+      try {
+        if (test.serviceId) {
+          const res = await getSTIServiceById(test.serviceId);
+          let comps = [];
+          if (res && res.data && Array.isArray(res.data.components)) {
+            comps = res.data.components;
+          }
+          // Lấy kết quả thực tế
+          const resultRes = await getTestResultsByTestId(test.testId);
+          const testResults =
+            (resultRes && (resultRes.data || resultRes)) || [];
+          comps = comps.map((comp) => {
+            const found = testResults.find(
+              (r) =>
+                r.componentId === comp.componentId || r.componentId === comp.id
+            );
+            return found
+              ? {
+                  ...comp,
+                  resultValue: found.resultValue,
+                  conclusion: found.conclusion,
+                  unit: found.unit,
+                  normalRange: found.normalRange,
+                  referenceRange: found.referenceRange,
+                }
+              : comp;
+          });
+          setDetailComponents(comps);
+        } else {
+          setDetailComponents([]);
+        }
+      } catch (err) {
+        setDetailComponents([]);
+      }
+    }
+    setDetailModalOpen(true);
   };
 
   const handleCloseDetailsDialog = () => {
-    setDetailsDialogOpen(false);
+    setDetailModalOpen(false);
+    setDetailModalTest(null);
+    setDetailIsPackage(false);
+    setDetailPackageServices([]);
+    setDetailSelectedService(null);
+    setDetailComponents([]);
+    setDetailAllServiceComponents({});
   };
 
   const handleOpenRecommendationDialog = (test) => {
@@ -198,19 +327,55 @@ const STITestsContent = () => {
   };
 
   const handleSubmitRecommendation = async () => {
+    if (!selectedTest) return;
     setSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Gọi API cập nhật consultant notes cho test đã có kết quả
+      await updateConsultantNotes(selectedTest.id, recommendation);
+      // Có thể cập nhật lại UI tại đây nếu cần (ví dụ: set lại notes cho test trong state)
       setSubmitting(false);
       setRecommendationDialogOpen(false);
-    }, 1000);
+      // Nếu muốn load lại danh sách test từ BE, gọi lại API ở đây
+    } catch (error) {
+      setSubmitting(false);
+      // Xử lý lỗi nếu cần
+      alert(
+        'Cập nhật khuyến nghị thất bại: ' +
+          (error?.message || 'Lỗi không xác định')
+      );
+    }
+  };
+
+  const handleSaveConsultantNote = async (note) => {
+    if (!detailModalTest) return;
+    await updateConsultantNotes(detailModalTest.testId, note);
+    setTests((prev) =>
+      prev.map((t) =>
+        t.testId === detailModalTest.testId
+          ? { ...t, consultantNotes: note }
+          : t
+      )
+    );
+    setDetailModalTest((prev) =>
+      prev ? { ...prev, consultantNotes: note } : prev
+    );
+  };
+
+  const handleSelectServiceInDetailModal = (svc) => {
+    setDetailSelectedService(svc);
+    if (svc && svc.id && detailAllServiceComponents[svc.id]) {
+      setDetailComponents(detailAllServiceComponents[svc.id]);
+    } else {
+      setDetailComponents([]);
+    }
   };
 
   const handleClearFilters = () => {
-    setStatusFilter('all');
+    // Bỏ setStatusFilter và setTabValue
     setSearchQuery('');
-    setTabValue(0);
     setPage(0);
+    setConclusionFilter('all'); // Reset conclusion filter
+    setDateFilter('');
   };
 
   // Render status chip
@@ -296,77 +461,101 @@ const STITestsContent = () => {
         </Grid>
       </Paper>
 
-      {/* Simple Navigation */}
-      <Paper sx={{ mb: 3 }}>
+      {/* Bỏ hoàn toàn Tabs trạng thái */}
+      {/* <Paper sx={{ mb: 3 }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab
-            label={`Tất cả (${tests.length})`}
-            icon={<ScienceIcon />}
-            iconPosition="start"
-          />
-          <Tab
-            label={`Chờ (${tests.filter((t) => t.status === 'pending').length})`}
-            icon={<CalendarTodayIcon />}
-            iconPosition="start"
-          />
-          <Tab
-            label={`Đang xử lý (${tests.filter((t) => t.status === 'processing').length})`}
-            icon={<SettingsIcon />}
-            iconPosition="start"
-          />
-          <Tab
-            label={`Hoàn thành (${tests.filter((t) => t.status === 'completed').length})`}
-            icon={<CheckCircleOutlineIcon />}
-            iconPosition="start"
-          />
+          ...
         </Tabs>
-      </Paper>
+      </Paper> */}
 
       {/* Simple Search */}
       <Paper sx={{ mb: 3, p: 2 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={6}>
-            <TextField
-              placeholder="Tìm kiếm theo tên bệnh nhân, email..."
-              fullWidth
-              size="small"
-              value={searchQuery}
-              onChange={handleSearchQueryChange}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Trạng thái</InputLabel>
-              <Select
-                value={statusFilter}
-                label="Trạng thái"
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <MenuItem value="all">Tất cả</MenuItem>
-                <MenuItem value="pending">Chờ xét nghiệm</MenuItem>
-                <MenuItem value="processing">Đang xử lý</MenuItem>
-                <MenuItem value="completed">Hoàn thành</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Button
-              variant="outlined"
-              onClick={handleClearFilters}
-              startIcon={<ClearIcon />}
-              fullWidth
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: 'center',
+            gap: 2,
+            flexWrap: 'wrap',
+            justifyContent: 'flex-start',
+          }}
+        >
+          <TextField
+            placeholder="Tìm kiếm theo tên bệnh nhân, mã xét nghiệm..."
+            size="small"
+            value={searchQuery}
+            onChange={handleSearchQueryChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+              sx: { borderRadius: 3, minWidth: 260, background: '#fff' },
+            }}
+            sx={{ minWidth: 260, background: '#fff', borderRadius: 3 }}
+          />
+          <TextField
+            type="date"
+            size="small"
+            label="Từ ngày"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 150, background: '#fff', borderRadius: 3 }}
+          />
+          <FormControl
+            size="small"
+            sx={{ minWidth: 140, borderRadius: 3, background: '#fff' }}
+          >
+            <InputLabel>Kết luận</InputLabel>
+            <Select
+              value={conclusionFilter}
+              label="Kết luận"
+              onChange={(e) => setConclusionFilter(e.target.value)}
+              sx={{ borderRadius: 3 }}
             >
-              Xóa bộ lọc
-            </Button>
-          </Grid>
-        </Grid>
+              <MenuItem value="all">Tất cả</MenuItem>
+              <MenuItem value="has">Có kết luận</MenuItem>
+              <MenuItem value="none">Chưa có kết luận</MenuItem>
+            </Select>
+          </FormControl>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={fetchTests}
+            disabled={loading}
+            startIcon={<RefreshIcon />}
+            sx={{
+              height: 40,
+              borderRadius: 3,
+              fontWeight: 600,
+              minWidth: 110,
+              background: '#f8fafc',
+              boxShadow: '0 1px 4px #4A90E211',
+              '&:hover': { background: '#e3f2fd' },
+            }}
+          >
+            {loading ? <CircularProgress size={20} /> : 'Làm mới'}
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={handleClearFilters}
+            startIcon={<ClearIcon />}
+            sx={{
+              height: 40,
+              borderRadius: 3,
+              fontWeight: 600,
+              minWidth: 140,
+              background: '#fff',
+              boxShadow: '0 1px 4px #4A90E211',
+              '&:hover': { background: '#fce4ec' },
+            }}
+          >
+            Xóa bộ lọc
+          </Button>
+        </Box>
       </Paper>
 
       {/* Simple Table */}
@@ -375,20 +564,20 @@ const STITestsContent = () => {
           <Table>
             <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
               <TableRow>
-                <TableCell>
+                <TableCell align="center">
+                  <strong>Mã XN</strong>
+                </TableCell>
+                <TableCell align="center">
+                  <strong>Tên xét nghiệm</strong>
+                </TableCell>
+                <TableCell align="center">
                   <strong>Bệnh nhân</strong>
                 </TableCell>
-                <TableCell>
-                  <strong>Xét nghiệm</strong>
-                </TableCell>
-                <TableCell>
+                <TableCell align="center">
                   <strong>Ngày</strong>
                 </TableCell>
-                <TableCell>
-                  <strong>Trạng thái</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Kết quả</strong>
+                <TableCell align="center">
+                  <strong>Kết luận</strong>
                 </TableCell>
                 <TableCell align="center">
                   <strong>Thao tác</strong>
@@ -399,86 +588,75 @@ const STITestsContent = () => {
               {filteredTests
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((test) => (
-                  <TableRow key={test.id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar
-                          sx={{
-                            width: 40,
-                            height: 40,
-                            mr: 2,
-                            bgcolor: '#4A90E2',
-                          }}
-                        >
-                          {test.patientName.charAt(0)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight="medium">
-                            {test.patientName}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {test.patientEmail}
-                          </Typography>
-                        </Box>
-                      </Box>
+                  <TableRow
+                    key={test.id || test.testId}
+                    hover
+                    sx={{ '&:hover': { background: '#f0f7fa' } }}
+                  >
+                    <TableCell
+                      align="center"
+                      sx={{ fontWeight: 700, color: '#4A90E2' }}
+                    >
+                      #{test.testId}
                     </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={getTestTypeTranslation(test.testType)}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                      />
+                    <TableCell
+                      align="center"
+                      sx={{ fontWeight: 600, color: '#1976d2' }}
+                    >
+                      {test.serviceName}
                     </TableCell>
-                    <TableCell>{formatDate(test.testDate)}</TableCell>
-                    <TableCell>{renderStatusChip(test.status)}</TableCell>
-                    <TableCell>
-                      {test.status === 'completed' ? (
-                        test.results &&
-                        Object.values(test.results).some((result) =>
-                          result.includes('Dương tính')
-                        ) ? (
-                          <Chip
-                            label="Có dương tính"
-                            color="error"
-                            size="small"
-                          />
-                        ) : (
-                          <Chip label="Âm tính" color="success" size="small" />
-                        )
+                    <TableCell align="center">
+                      <Typography variant="body2" fontWeight="medium">
+                        {test.customerName}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="center">
+                      {formatDateDisplay(test.appointmentDate)}
+                    </TableCell>
+                    <TableCell align="center">
+                      {test.consultantNotes && test.consultantNotes.trim() ? (
+                        <Chip label="Đã có" color="success" size="small" />
                       ) : (
-                        <Typography variant="caption" color="text.secondary">
-                          Chưa có kết quả
-                        </Typography>
+                        <Chip label="Chưa có" color="warning" size="small" />
                       )}
                     </TableCell>
                     <TableCell align="center">
-                      <Box
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={<VisibilityIcon />}
                         sx={{
-                          display: 'flex',
-                          gap: 1,
-                          justifyContent: 'center',
+                          borderRadius: 3,
+                          background:
+                            'linear-gradient(90deg, #4A90E2 60%, #1ABC9C 100%)',
+                          color: '#fff',
+                          fontWeight: 600,
+                          boxShadow: '0 2px 8px #4A90E222',
+                          '&:hover': {
+                            background:
+                              'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
+                          },
+                        }}
+                        onClick={() => handleOpenDetailsDialog(test)}
+                      >
+                        Xem chi tiết
+                      </Button>
+                      {/* Ví dụ dùng confirmDialog cho thao tác xóa/confirm:
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        sx={{ ml: 1, borderRadius: 3 }}
+                        onClick={async () => {
+                          const ok = await confirmDialog.danger('Bạn có chắc chắn muốn xóa xét nghiệm này?');
+                          if (ok) {
+                            // Gọi API xóa
+                          }
                         }}
                       >
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<VisibilityIcon />}
-                          onClick={() => handleOpenDetailsDialog(test)}
-                        >
-                          Chi tiết
-                        </Button>
-                        {test.status === 'completed' && (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<EditIcon />}
-                            onClick={() => handleOpenRecommendationDialog(test)}
-                          >
-                            Khuyến nghị
-                          </Button>
-                        )}
-                      </Box>
+                        Xóa
+                      </Button>
+                      */}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -531,7 +709,7 @@ const STITestsContent = () => {
                           bgcolor: '#4A90E2',
                         }}
                       >
-                        {selectedTest.patientName.charAt(0)}
+                        {getInitial(selectedTest.patientName)}
                       </Avatar>
                       <Box>
                         <Typography variant="h6">
@@ -719,6 +897,19 @@ const STITestsContent = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Thêm modal chi tiết kết quả cho consultant */}
+      <ConsultantTestResultDetailModal
+        open={detailModalOpen}
+        onClose={handleCloseDetailsDialog}
+        test={detailModalTest}
+        onSaveNote={handleSaveConsultantNote}
+        isPackage={detailIsPackage}
+        packageServices={detailPackageServices}
+        selectedService={detailSelectedService}
+        onSelectService={handleSelectServiceInDetailModal}
+        components={detailComponents}
+      />
     </Box>
   );
 };

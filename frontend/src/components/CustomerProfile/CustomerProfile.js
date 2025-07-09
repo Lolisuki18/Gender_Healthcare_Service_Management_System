@@ -43,7 +43,9 @@ import InvoicesContent from '@/components/siderBar/InvoicesContent';
 import NotificationsContent from '@/components/CustomerProfile/NotificationsContent';
 import HelpContent from '@/components/CustomerProfile/HelpContent';
 import QuestionsContent from '@/components/CustomerProfile/QuestionsContent';
+import ReviewsContent from '@/components/CustomerProfile/ReviewsContent';
 import SecurityContent from '@/components/siderBar/SecurityContent';
+import MyBlogPage from '../siderBar/MyBlogPage';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
@@ -83,8 +85,10 @@ const CustomerProfile = () => {
     switch (selectedMenuItem) {
       case 'profile':
         return <ProfileContent />; // Thông tin cá nhân
+      case 'customer-appointments':
       case 'appointments':
         return <AppointmentsContent />; // Quản lý lịch hẹn
+      case 'customer-dashboard':
       case 'dashboard':
         return <DashboardContent />; // Tổng quan, thống kê
       case 'medical-history':
@@ -99,8 +103,12 @@ const CustomerProfile = () => {
         return <HelpContent />; // Hỗ trợ, FAQ
       case 'questions':
         return <QuestionsContent />; // Câu hỏi đã đặt
+      case 'reviews':
+        return <ReviewsContent />; // Đánh giá dịch vụ
       case 'security':
         return <SecurityContent />; // Bảo mật
+      case 'myBlogs':
+        return <MyBlogPage />; // Blog của tôi
       default:
         return <ProfileContent />; // Fallback về profile
     }
@@ -167,8 +175,8 @@ const CustomerProfile = () => {
               }}
             >
               {selectedMenuItem === 'profile' && 'Hồ sơ cá nhân'}
-              {selectedMenuItem === 'dashboard' && 'Tổng quan'}
-              {selectedMenuItem === 'appointments' && 'Lịch hẹn'}
+              {(selectedMenuItem === 'customer-dashboard' || selectedMenuItem === 'dashboard') && 'Tổng quan'}
+              {(selectedMenuItem === 'customer-appointments' || selectedMenuItem === 'appointments') && 'Lịch hẹn'}
               {selectedMenuItem === 'medical-history' && 'Lịch sử khám'}
               {selectedMenuItem === 'payment-history' && 'Lịch sử thanh toán'}
               {selectedMenuItem === 'invoices' && 'Hóa đơn'}{' '}
@@ -176,7 +184,9 @@ const CustomerProfile = () => {
               {selectedMenuItem === 'settings' && 'Cài đặt'}
               {selectedMenuItem === 'help' && 'Trợ giúp'}
               {selectedMenuItem === 'questions' && 'Câu hỏi đã đặt'}
+              {selectedMenuItem === 'reviews' && 'Đánh giá dịch vụ'}
               {selectedMenuItem === 'security' && 'Bảo mật'}
+              {selectedMenuItem === 'myBlogs' && 'Blog của tôi'}
             </Typography>
           </Box>{' '}
           <Chip

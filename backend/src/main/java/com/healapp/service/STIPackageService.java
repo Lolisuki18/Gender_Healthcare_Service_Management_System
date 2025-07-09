@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -192,6 +193,12 @@ public class STIPackageService {
         } catch (Exception e) {
             return ApiResponse.error("Error deleting STI Package.");
         }
+    }
+
+    public Map<String, Long> getAdminDashboardPackageStats() {
+        Map<String, Long> stats = new java.util.HashMap<>();
+        stats.put("activePackages", stiPackageRepository.countByIsActiveTrue());
+        return stats;
     }
 
     // STIPackageResponse cho package

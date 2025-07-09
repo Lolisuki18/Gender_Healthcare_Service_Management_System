@@ -1,6 +1,19 @@
 package com.healapp.service;
 
-import com.healapp.dto.*;
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.QuestionAnswerRequest;
+import com.healapp.dto.QuestionRequest;
+import com.healapp.dto.QuestionResponse;
+import com.healapp.dto.QuestionStatusRequest;
 import com.healapp.model.CategoryQuestion;
 import com.healapp.model.Question;
 import com.healapp.model.Question.QuestionStatus;
@@ -8,13 +21,6 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.CategoryQuestionRepository;
 import com.healapp.repository.QuestionRepository;
 import com.healapp.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 public class QuestionService {
@@ -100,6 +106,15 @@ public class QuestionService {
 
             if (request.getStatus() == QuestionStatus.CANCELED) {
                 question.setRejectionReason(request.getRejectionReason());
+            }
+
+            // Nếu xác nhận (CONFIRMED) và có replierId thì gán replier
+            if (request.getStatus() == QuestionStatus.CONFIRMED && request.getReplierId() != null) {
+                Optional<UserDtls> replierOpt = userRepository.findById(request.getReplierId());
+                if (replierOpt.isEmpty()) {
+                    return ApiResponse.error("Replier user not found");
+                }
+                question.setReplier(replierOpt.get());
             }
 
             Question updatedQuestion = questionRepository.save(question);
@@ -192,6 +207,16 @@ public class QuestionService {
         }
     }
 
+    public ApiResponse<Page<QuestionResponse>> getQuestionsAssignedToReplier(Long replierId, Pageable pageable) {
+        try {
+            Page<Question> questions = questionRepository.findByReplier_Id(replierId, pageable);
+            Page<QuestionResponse> response = questions.map(this::mapToQuestionResponse);
+            return ApiResponse.success("Questions assigned to replier retrieved successfully", response);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to retrieve assigned questions: " + e.getMessage());
+        }
+    }
+
     public ApiResponse<QuestionResponse> getQuestionById(Long questionId, Long userId) {
         Optional<Question> optionalQuestion = questionRepository.findById(questionId);
         if (optionalQuestion.isEmpty()) {
@@ -259,6 +284,13 @@ public class QuestionService {
         } catch (Exception e) {
             return ApiResponse.error("Failed to search questions: " + e.getMessage());
         }
+    }
+
+    public Map<String, Long> getAdminDashboardQuestionStats() {
+        Map<String, Long> stats = new java.util.HashMap<>();
+        stats.put("unansweredQuestions", questionRepository.countByStatus(Question.QuestionStatus.PROCESSING));
+        stats.put("answeredQuestions", questionRepository.countByStatus(Question.QuestionStatus.ANSWERED));
+        return stats;
     }
 
     private boolean isValidStatusTransition(QuestionStatus currentStatus, QuestionStatus newStatus) {

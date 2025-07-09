@@ -15,6 +15,9 @@ import {
   Payment as PaymentIcon,
   HelpOutline as HelpOutlineIcon,
   Article as BlogIcon,
+  RateReview as RateReviewIcon,
+  CheckCircle as CheckCircleIcon,
+  Schedule as ScheduleIcon,
   // Blog icon có thể cần import từ @mui/icons-material nếu có
 } from '@mui/icons-material';
 
@@ -135,6 +138,26 @@ export const sidebarMenuConfig = [
     roles: ['CONSULTANT'],
   },
   {
+    id: 'reviews-management',
+    label: 'Quản lý đánh giá',
+    icon: <StarIcon />,
+    roles: ['CONSULTANT'],
+    subItems: [
+      {
+        id: 'completed-reviews',
+        label: 'Đã đánh giá',
+        icon: <CheckCircleIcon />,
+        roles: ['CONSULTANT'],
+      },
+      {
+        id: 'pending-reviews',
+        label: 'Chưa đánh giá',
+        icon: <ScheduleIcon />,
+        roles: ['CONSULTANT'],
+      },
+    ],
+  },
+  {
     id: 'my-reviews',
     label: 'Đánh giá của tôi',
     icon: <StarIcon />,
@@ -142,20 +165,14 @@ export const sidebarMenuConfig = [
   },
 
   // CUSTOMER
-  //   {
-  //     id: 'profile',
-  //     label: 'Hồ sơ cá nhân',
-  //     icon: <PersonIcon />,
-  //     roles: ['CUSTOMER'],
-  //   },
-  //   {
-  //     id: 'security',
-  //     label: 'Bảo mật',
-  //     icon: <LockIcon />,
-  //     roles: ['CUSTOMER'],
-  //   },
   {
-    id: 'appointments',
+    id: 'customer-dashboard',
+    label: 'Tổng quan',
+    icon: <DashboardIcon />,
+    roles: ['CUSTOMER'],
+  },
+  {
+    id: 'customer-appointments',
     label: 'Lịch hẹn',
     icon: <CalendarIcon />,
     roles: ['CUSTOMER'],
@@ -188,6 +205,12 @@ export const sidebarMenuConfig = [
     id: 'questions',
     label: 'Câu hỏi đã đặt',
     icon: <HelpOutlineIcon />,
+    roles: ['CUSTOMER'],
+  },
+  {
+    id: 'reviews',
+    label: 'Đánh giá',
+    icon: <RateReviewIcon />,
     roles: ['CUSTOMER'],
   },
 

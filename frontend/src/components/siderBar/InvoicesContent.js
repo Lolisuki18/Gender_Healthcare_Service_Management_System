@@ -16,7 +16,7 @@
  * - Historical invoice archive
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -49,6 +49,8 @@ import axios from 'axios';
 import apiClient from '@/services/api';
 import { formatDateDisplay } from '@/utils/dateUtils';
 import ExportInvoicePDF from '@/components/modals/ExportInvoicePDF';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)', // Light glass background for medical
@@ -80,6 +82,87 @@ const InvoicesContent = () => {
   const [error, setError] = useState(null);
   const [openExportPDF, setOpenExportPDF] = useState(false);
   const [exportInvoice, setExportInvoice] = useState(null);
+
+  // Ref cho export PDF
+  const pdfRef = useRef();
+
+  // Hàm xuất PDF giống ExportInvoicePDF
+  const handleExportInvoicePDF = async (invoice) => {
+    // Tạo một div ẩn để render nội dung hóa đơn
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    document.body.appendChild(container);
+    // Render nội dung hóa đơn vào container
+    const name = 'PHÒNG KHÁM ĐA KHOA ABC';
+    const address = '123 Đường Sức Khỏe, Quận 1, TP.HCM';
+    const phone = '0123 456 789';
+    const tax = 'MST: 0123456789';
+    const serviceDetails = invoice.serviceDetails || [
+      {
+        name: invoice.serviceName || 'Dịch vụ',
+        price: invoice.totalPrice || 0,
+      },
+    ];
+    // Tạo nội dung HTML đơn giản (có thể copy từ ExportInvoicePDF)
+    container.innerHTML = `
+      <div style="background:#fff;padding:32px;border-radius:12px;width:600px;font-family:sans-serif;">
+        <div style="display:flex;align-items:center;margin-bottom:8px;">
+          <div style="width:48px;height:48px;background:#e3f2fd;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-right:12px;">
+            <svg width="32" height="32" fill="#4A90E2"><rect width="32" height="32" rx="6" fill="#4A90E2" opacity="0.15"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;color:#1976d2;font-size:20px;">${name}</div>
+            <div style="color:#4A5568;font-size:14px;">${address}</div>
+            <div style="color:#4A5568;font-size:14px;">SĐT: ${phone} &nbsp; ${tax}</div>
+          </div>
+        </div>
+        <div style="border-bottom:1px solid #e3eafc;margin-bottom:16px;"></div>
+        <div style="font-size:24px;font-weight:700;color:#1976d2;text-align:center;margin-bottom:8px;">HÓA ĐƠN DỊCH VỤ Y TẾ</div>
+        <div style="border-bottom:1px solid #e3eafc;margin-bottom:16px;"></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <div>
+            <div><b>Số HĐ:</b> HDYT-${String(invoice.testId || invoice.paymentId).padStart(4, '0')}</div>
+            <div><b>Khách hàng:</b> ${invoice.customerName || ''}</div>
+            <div><b>Dịch vụ:</b> ${invoice.serviceName || ''}</div>
+            <div><b>Nhân viên tiếp nhận:</b> ${invoice.staffName || invoice.consultantName || ''}</div>
+          </div>
+          <div>
+            <div><b>Ngày tạo:</b> ${formatDateDisplay(invoice.createdAt)}</div>
+          </div>
+        </div>
+        <div style="font-weight:600;margin-bottom:8px;">CHI TIẾT DỊCH VỤ:</div>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:12px;">
+          <thead><tr><th style="border:1px solid #e3eafc;padding:4px;">STT</th><th style="border:1px solid #e3eafc;padding:4px;">Tên dịch vụ</th><th style="border:1px solid #e3eafc;padding:4px;text-align:right;">Thành tiền</th></tr></thead>
+          <tbody>
+            ${serviceDetails.map((row, idx) => `<tr><td style='border:1px solid #e3eafc;padding:4px;text-align:center;'>${idx + 1}</td><td style='border:1px solid #e3eafc;padding:4px;'>${row.name}</td><td style='border:1px solid #e3eafc;padding:4px;text-align:right;'>${row.price?.toLocaleString('vi-VN')}₫</td></tr>`).join('')}
+          </tbody>
+        </table>
+        <div style="text-align:right;font-weight:700;color:#27ae60;font-size:18px;margin-bottom:8px;">TỔNG CỘNG: ${invoice.totalPrice?.toLocaleString('vi-VN')}₫</div>
+        <div><b>Thanh toán:</b> ${invoice.paymentMethod || '---'} - ${invoice.paymentDisplayText || invoice.paymentStatus}${invoice.paymentStatus === 'COMPLETED' ? ` (${formatDateDisplay(invoice.paidAt)})` : ''}</div>
+        <div style="margin-bottom:8px;"><b>Ghi chú:</b> ${invoice.customerNotes || 'Không có'}</div>
+        <div style="display:flex;justify-content:space-between;margin-top:24px;">
+          <div style="text-align:center;">
+            <div>Người lập hóa đơn:</div>
+            <div style="font-weight:700;color:#1976d2;margin-top:8px;">${invoice.staffName || invoice.consultantName || '---'}</div>
+          </div>
+          <div style="text-align:center;">
+            <div>Khách hàng:</div>
+            <div style="font-weight:700;color:#1976d2;margin-top:8px;">${invoice.customerName || '---'}</div>
+          </div>
+        </div>
+      </div>
+    `;
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Đợi DOM render
+    const canvas = await html2canvas(container, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`hoa_don_${invoice.testId || invoice.paymentId}.pdf`);
+    document.body.removeChild(container);
+  };
 
   // Fetch invoices from API
   useEffect(() => {
@@ -435,29 +518,38 @@ const InvoicesContent = () => {
             <Box
               sx={{
                 display: 'flex',
-                flexWrap: 'wrap',
-                gap: 3,
-                alignItems: 'flex-start',
-                justifyContent: 'center',
+                flexDirection: 'column',
+                gap: { xs: 2, md: 3 },
+                alignItems: 'center',
                 minHeight: 220,
+                width: '100%',
               }}
             >
-              {/* Icon hóa đơn lớn đầu tiên */}
+              {/* Icon hóa đơn */}
               <Box
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  minWidth: 120,
+                  width: '100%',
+                  mb: { xs: 1, md: 2 },
                 }}
               >
                 <ReceiptIcon
-                  sx={{ fontSize: 60, color: '#4A90E2', mb: 1, opacity: 0.18 }}
+                  sx={{
+                    fontSize: { xs: 48, md: 72 },
+                    background:
+                      'linear-gradient(90deg, #4A90E2 30%, #2ECC71 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    mb: 1,
+                    opacity: 0.7,
+                  }}
                 />
                 <Typography
                   variant="caption"
-                  sx={{ color: '#4A90E2', fontWeight: 600 }}
+                  sx={{ color: '#1976d2', fontWeight: 700, letterSpacing: 2 }}
                 >
                   HÓA ĐƠN
                 </Typography>
@@ -465,130 +557,216 @@ const InvoicesContent = () => {
               {/* Thông tin hóa đơn */}
               <Box
                 sx={{
-                  background: 'rgba(74,144,226,0.06)',
-                  borderRadius: 3,
-                  p: 2,
-                  minWidth: 180,
-                  flex: 1,
+                  background:
+                    'linear-gradient(135deg, #e3f2fd 60%, #f8fafc 100%)',
+                  borderRadius: 4,
+                  p: { xs: 2, md: 3 },
+                  width: '100%',
+                  mb: { xs: 1, md: 2 },
+                  boxShadow: '0 2px 12px 0 rgba(74,144,226,0.08)',
+                  border: '1px solid #e3eafc',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 1,
+                  gap: 1.5,
+                  alignItems: 'stretch',
+                  textAlign: 'left',
                 }}
               >
-                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
-                  Mã hóa đơn
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: '#2D3748', fontWeight: 700 }}
+                {/* Mã hóa đơn */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%',
+                  }}
                 >
-                  {selectedInvoice.testId || selectedInvoice.paymentId}
-                </Typography>
-                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
-                  Ngày tạo
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#2D3748' }}>
-                  {formatDateDisplay(selectedInvoice.createdAt)}
-                </Typography>
-                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
-                  Dịch vụ
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#2D3748' }}>
-                  {selectedInvoice.serviceName}
-                </Typography>
-                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
-                  Nhân viên đảm nhận
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#2D3748' }}>
-                  {selectedInvoice.staffName ||
-                    selectedInvoice.consultantName ||
-                    ''}
-                </Typography>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: '#1565c0', fontWeight: 600 }}
+                  >
+                    Mã hóa đơn
+                  </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{ color: '#2D3748', fontWeight: 700 }}
+                  >
+                    {selectedInvoice.testId || selectedInvoice.paymentId}
+                  </Typography>
+                </Box>
+                {/* Ngày tạo */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%',
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: '#1565c0', fontWeight: 600 }}
+                  >
+                    Ngày tạo
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#2D3748' }}>
+                    {formatDateDisplay(selectedInvoice.createdAt)}
+                  </Typography>
+                </Box>
+                {/* Dịch vụ */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%',
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: '#1565c0', fontWeight: 600 }}
+                  >
+                    Dịch vụ
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#2D3748' }}>
+                    {selectedInvoice.serviceName}
+                  </Typography>
+                </Box>
+                {/* Nhân viên đảm nhận */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%',
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: '#1565c0', fontWeight: 600 }}
+                  >
+                    Nhân viên đảm nhận
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#2D3748' }}>
+                    {selectedInvoice.staffName ||
+                      selectedInvoice.consultantName ||
+                      ''}
+                  </Typography>
+                </Box>
               </Box>
               {/* Số tiền và trạng thái */}
               <Box
                 sx={{
-                  background: 'rgba(76,175,80,0.04)',
-                  borderRadius: 3,
-                  p: 2,
-                  minWidth: 160,
-                  flex: 1,
+                  background:
+                    'linear-gradient(135deg, #e8f5e9 60%, #f8fafc 100%)',
+                  borderRadius: 4,
+                  p: { xs: 2, md: 3 },
+                  width: '100%',
+                  mb: { xs: 1, md: 2 },
+                  boxShadow: '0 2px 12px 0 rgba(76,175,80,0.08)',
+                  border: '1px solid #e0f2f1',
                   display: 'flex',
-                  flexDirection: 'column',
+                  flexDirection: { xs: 'column', sm: 'row' },
                   alignItems: 'center',
-                  gap: 1,
+                  justifyContent: 'space-between',
+                  gap: 2,
                 }}
               >
-                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
-                  Số tiền
-                </Typography>
-                <Typography
-                  variant="h5"
-                  sx={{ color: '#27ae60', fontWeight: 700 }}
-                >
-                  {formatCurrency(selectedInvoice.totalPrice)}
-                </Typography>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: '#4A5568', mt: 1 }}
-                >
-                  Trạng thái
-                </Typography>
-                <Chip
-                  label={getStatusColor(selectedInvoice.status).text}
-                  sx={{
-                    background: getStatusColor(selectedInvoice.status).bg,
-                    color: '#fff',
-                    fontWeight: 600,
-                    px: 2,
-                    fontSize: '1rem',
-                    mb: 1,
-                  }}
-                />
-                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
-                  Thanh toán
-                </Typography>
-                <Chip
-                  label={
-                    getPaymentStatusColor(selectedInvoice.paymentStatus).text
-                  }
-                  sx={{
-                    background: getPaymentStatusColor(
-                      selectedInvoice.paymentStatus
-                    ).bg,
-                    color: '#fff',
-                    fontWeight: 600,
-                    px: 2,
-                    fontSize: '1rem',
-                  }}
-                />
+                <Box sx={{ flex: 1, textAlign: 'center' }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: '#388e3c', fontWeight: 600 }}
+                  >
+                    Số tiền
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    sx={{ color: '#27ae60', fontWeight: 700 }}
+                  >
+                    {formatCurrency(selectedInvoice.totalPrice)}
+                  </Typography>
+                </Box>
+                <Box sx={{ flex: 1, textAlign: 'center' }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: '#388e3c', fontWeight: 600, mt: 1 }}
+                  >
+                    Trạng thái
+                  </Typography>
+                  <Chip
+                    label={getStatusColor(selectedInvoice.status).text}
+                    sx={{
+                      background: getStatusColor(selectedInvoice.status).bg,
+                      color: '#fff',
+                      fontWeight: 600,
+                      px: 2,
+                      fontSize: '1rem',
+                      mb: 1,
+                      boxShadow: '0 1px 4px 0 rgba(44, 62, 80, 0.08)',
+                    }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1, textAlign: 'center' }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: '#388e3c', fontWeight: 600 }}
+                  >
+                    Thanh toán
+                  </Typography>
+                  <Chip
+                    label={
+                      getPaymentStatusColor(selectedInvoice.paymentStatus).text
+                    }
+                    sx={{
+                      background: getPaymentStatusColor(
+                        selectedInvoice.paymentStatus
+                      ).bg,
+                      color: '#fff',
+                      fontWeight: 600,
+                      px: 2,
+                      fontSize: '1rem',
+                      boxShadow: '0 1px 4px 0 rgba(44, 62, 80, 0.08)',
+                    }}
+                  />
+                </Box>
               </Box>
               {/* Ghi chú và thanh toán */}
               <Box
                 sx={{
-                  background: 'rgba(74,144,226,0.03)',
-                  borderRadius: 3,
-                  p: 2,
-                  minWidth: 180,
-                  flex: 1,
+                  background:
+                    'linear-gradient(135deg, #f3e5f5 60%, #f8fafc 100%)',
+                  borderRadius: 4,
+                  p: { xs: 2, md: 3 },
+                  width: '100%',
+                  boxShadow: '0 2px 12px 0 rgba(156,39,176,0.08)',
+                  border: '1px solid #ede7f6',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 1,
                 }}
               >
-                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: '#8e24aa', fontWeight: 600 }}
+                >
                   Ghi chú khách hàng
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#2D3748' }}>
                   {selectedInvoice.customerNotes || 'Không có'}
                 </Typography>
-                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: '#8e24aa', fontWeight: 600 }}
+                >
                   Ghi chú bác sĩ/nhân viên
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#2D3748' }}>
                   {selectedInvoice.consultantNotes || 'Không có'}
                 </Typography>
-                <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: '#8e24aa', fontWeight: 600 }}
+                >
                   Phương thức thanh toán
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#2D3748' }}>
@@ -596,7 +774,10 @@ const InvoicesContent = () => {
                 </Typography>
                 {selectedInvoice.paymentStatus === 'COMPLETED' && (
                   <>
-                    <Typography variant="subtitle2" sx={{ color: '#4A5568' }}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ color: '#8e24aa', fontWeight: 600 }}
+                    >
                       Ngày thanh toán
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#2D3748' }}>
@@ -611,23 +792,6 @@ const InvoicesContent = () => {
         <DialogActions
           sx={{ p: 3, borderTop: '1px solid rgba(74, 144, 226, 0.15)' }}
         >
-          <Button
-            onClick={() =>
-              handleDownloadInvoice(
-                selectedInvoice?.testId || selectedInvoice?.paymentId
-              )
-            }
-            startIcon={<DownloadIcon />}
-            sx={{
-              background: 'linear-gradient(45deg, #4CAF50, #2ECC71)',
-              color: '#fff',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #2ECC71, #27AE60)',
-              },
-            }}
-          >
-            Tải xuống
-          </Button>
           <Button
             onClick={() => setOpenInvoiceDialog(false)}
             sx={{ color: '#4A5568' }}
