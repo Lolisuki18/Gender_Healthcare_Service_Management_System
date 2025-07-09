@@ -78,7 +78,12 @@ const AppRoutes = () => {
         <Route path="/pill-reminder" element={<PillReminderPage />} />
         {/* Trang STI Test (đổi endpoint) */}
         {/* Homepage cho các role đã đăng nhập (trừ admin) */}
-        <Route path="home" element={<HomePage />} />{' '}
+        <Route path="home" element={<HomePage />} />
+        {/* Thêm route mới chỉ tới HomePage */}
+        <Route
+          path="/Gender_Healthcare_Service_Management_System"
+          element={<HomePage />}
+        />{' '}
         {/* Profile Page chung - sẽ render component phù hợp với role */}
         <Route
           path="profile"
