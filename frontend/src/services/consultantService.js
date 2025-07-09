@@ -419,7 +419,6 @@ const consultantService = {
         data: response.data,
       };
     } catch (error) {
-      console.error('Error fetching user appointments:', error);
       return {
         success: false,
         message:

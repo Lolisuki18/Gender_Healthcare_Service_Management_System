@@ -27,6 +27,8 @@ import com.healapp.repository.RatingRepository;
 import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.ServiceTestComponentRepository;
 import com.healapp.repository.PackageServiceRepository;
+import com.healapp.repository.CategoryRepository;
+import com.healapp.model.Category;
 
 @Component
 public class DataInitializerConfig implements CommandLineRunner {
@@ -42,6 +44,7 @@ public class DataInitializerConfig implements CommandLineRunner {
     private final ConsultantProfileRepository consultantProfileRepository;
     private final ServiceTestComponentRepository serviceTestComponentRepository;
     private final PackageServiceRepository packageServiceRepository;
+    private final CategoryRepository categoryRepository;
 
     public DataInitializerConfig(RoleRepository roleRepository, UserRepository userRepository,
             PasswordEncoder passwordEncoder, CategoryQuestionRepository categoryQuestionRepository,
@@ -49,7 +52,8 @@ public class DataInitializerConfig implements CommandLineRunner {
             QuestionRepository questionRepository, RatingRepository ratingRepository,
             ConsultantProfileRepository consultantProfileRepository,
             ServiceTestComponentRepository serviceTestComponentRepository,
-            PackageServiceRepository packageServiceRepository) {
+            PackageServiceRepository packageServiceRepository,
+            CategoryRepository categoryRepository) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -61,6 +65,7 @@ public class DataInitializerConfig implements CommandLineRunner {
         this.consultantProfileRepository = consultantProfileRepository;
         this.serviceTestComponentRepository = serviceTestComponentRepository;
         this.packageServiceRepository = packageServiceRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     @Override
@@ -103,6 +108,7 @@ public class DataInitializerConfig implements CommandLineRunner {
         createRatingsIfNotExists();
         createConsultantProfilesIfNotExists();
         createPackageServicesIfNotExists();
+        createCategoriesIfNotExists();
         System.out.println("Sample data for all main tables created if not exists.");
     }
 
@@ -243,6 +249,29 @@ public class DataInitializerConfig implements CommandLineRunner {
             ps.setStiService(stiServiceRepository.findAll().get(0));
             ps.setCreatedAt(java.time.LocalDateTime.now());
             packageServiceRepository.save(ps);
+        }
+    }
+
+    private void createCategoriesIfNotExists() {
+        if (categoryRepository.count() == 0) {
+            Category c1 = new Category();
+            c1.setName("Sức khỏe phụ nữ");
+            c1.setDescription("Các bài viết về sức khỏe phụ nữ");
+            c1.setIsActive(true);
+
+            Category c2 = new Category();
+            c2.setName("Tư vấn giới tính");
+            c2.setDescription("Các bài viết về tư vấn giới tính");
+            c2.setIsActive(true);
+
+            Category c3 = new Category();
+            c3.setName("Dinh dưỡng & Lối sống");
+            c3.setDescription("Các bài viết về dinh dưỡng và lối sống lành mạnh");
+            c3.setIsActive(true);
+
+            categoryRepository.save(c1);
+            categoryRepository.save(c2);
+            categoryRepository.save(c3);
         }
     }
 }

@@ -47,6 +47,7 @@ import CategoryManagementContent from './CategoryManagementContent';
 import SecurityContent from '../siderBar/SecurityContent';
 import MedicalHistoryContent from '../siderBar/MedicalHistoryContent';
 import InvoicesContent from '../siderBar/InvoicesContent';
+import MyBlogPage from '../siderBar/MyBlogPage';
 
 // Styled component cho nội dung chính
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
@@ -101,6 +102,8 @@ const StaffProfile = ({ user = {} }) => {
         return <MedicalHistoryContent />;
       case 'invoices':
         return <InvoicesContent />;
+      case 'myBlogs':
+        return <MyBlogPage />; // Blog của tôi
       default:
         return <ProfileContent />;
     }
@@ -123,6 +126,8 @@ const StaffProfile = ({ user = {} }) => {
         return 'Hồ sơ cá nhân';
       case 'categoryManagement':
         return 'Quản lý danh mục';
+      case 'myBlogs':
+        return 'Blog của tôi';
       default:
         return 'Hồ sơ cá nhân';
     }

@@ -21,7 +21,8 @@
  * CustomerProfile → CustomerSidebar → Content Components
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -36,14 +37,15 @@ import DynamicSideBar from '@/components/siderBar/DynamicSideBar';
 import localStorageUtil from '@/utils/localStorage';
 import ProfileContent from '@/components/siderBar/ProfileContent';
 import AppointmentsContent from '@/components/CustomerProfile/AppointmentsContent';
-import DashboardContent from '@/components/CustomerProfile/DashboardContent';
 import MedicalHistoryContent from '@/components/siderBar/MedicalHistoryContent';
 import PaymentHistoryContent from '@/components/CustomerProfile/PaymentHistoryContent';
 import InvoicesContent from '@/components/siderBar/InvoicesContent';
 import NotificationsContent from '@/components/CustomerProfile/NotificationsContent';
 import HelpContent from '@/components/CustomerProfile/HelpContent';
 import QuestionsContent from '@/components/CustomerProfile/QuestionsContent';
+import ReviewsContent from '@/components/CustomerProfile/ReviewsContent';
 import SecurityContent from '@/components/siderBar/SecurityContent';
+import MyBlogPage from '../siderBar/MyBlogPage';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
@@ -64,11 +66,19 @@ const CustomerProfile = () => {
   // Hook để detect responsive breakpoints
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const location = useLocation();
 
   // State management
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Mặc định mở trên desktop, đóng trên mobile
   const [selectedMenuItem, setSelectedMenuItem] = useState('profile'); // Tab mặc định
   const user = localStorageUtil.get('userProfile')?.data || {};
+
+  // Effect để xử lý initial tab selection từ navigation state
+  useEffect(() => {
+    if (location.state?.initialTab) {
+      setSelectedMenuItem(location.state.initialTab);
+    }
+  }, [location.state]);
 
   // Handler functions
   const handleSidebarToggle = () => {
@@ -83,10 +93,12 @@ const CustomerProfile = () => {
     switch (selectedMenuItem) {
       case 'profile':
         return <ProfileContent />; // Thông tin cá nhân
+      case 'customer-appointments':
       case 'appointments':
         return <AppointmentsContent />; // Quản lý lịch hẹn
-      case 'dashboard':
-        return <DashboardContent />; // Tổng quan, thống kê
+      // case 'customer-dashboard':
+      // case 'dashboard':
+      //   return <DashboardContent />; // Tổng quan, thống kê
       case 'medical-history':
         return <MedicalHistoryContent />; // Lịch sử khám bệnh
       case 'payment-history':
@@ -99,8 +111,12 @@ const CustomerProfile = () => {
         return <HelpContent />; // Hỗ trợ, FAQ
       case 'questions':
         return <QuestionsContent />; // Câu hỏi đã đặt
+      case 'reviews':
+        return <ReviewsContent />; // Đánh giá dịch vụ
       case 'security':
         return <SecurityContent />; // Bảo mật
+      case 'myBlogs':
+        return <MyBlogPage />; // Blog của tôi
       default:
         return <ProfileContent />; // Fallback về profile
     }
@@ -167,8 +183,9 @@ const CustomerProfile = () => {
               }}
             >
               {selectedMenuItem === 'profile' && 'Hồ sơ cá nhân'}
-              {selectedMenuItem === 'dashboard' && 'Tổng quan'}
-              {selectedMenuItem === 'appointments' && 'Lịch hẹn'}
+              {(selectedMenuItem === 'customer-appointments' ||
+                selectedMenuItem === 'appointments') &&
+                'Lịch hẹn'}
               {selectedMenuItem === 'medical-history' && 'Lịch sử khám'}
               {selectedMenuItem === 'payment-history' && 'Lịch sử thanh toán'}
               {selectedMenuItem === 'invoices' && 'Hóa đơn'}{' '}
@@ -176,7 +193,9 @@ const CustomerProfile = () => {
               {selectedMenuItem === 'settings' && 'Cài đặt'}
               {selectedMenuItem === 'help' && 'Trợ giúp'}
               {selectedMenuItem === 'questions' && 'Câu hỏi đã đặt'}
+              {selectedMenuItem === 'reviews' && 'Đánh giá dịch vụ'}
               {selectedMenuItem === 'security' && 'Bảo mật'}
+              {selectedMenuItem === 'myBlogs' && 'Blog của tôi'}
             </Typography>
           </Box>{' '}
           <Chip

@@ -37,13 +37,6 @@ export const formatDateForInput = (dateString) => {
     let date;
     const str = dateString.toString();
 
-    console.log(
-      '🔍 Debug formatDateForInput input:',
-      dateString,
-      'type:',
-      typeof dateString
-    );
-
     // ✅ Case 1: Chuỗi số thuần như "2025613"
     if (/^\d+$/.test(str)) {
       if (str.length === 7) {
@@ -70,7 +63,7 @@ export const formatDateForInput = (dateString) => {
       }
     } // ✅ Special case: Array format từ API [year, month, day] hoặc [year, month, day, hour, minute]
     else if (typeof dateString === 'object' && dateString instanceof Array) {
-      console.log('📅 Array date format detected for input:', dateString);
+      // console.log('📅 Array date format detected for input:', dateString);
 
       if (dateString.length >= 3) {
         const year = dateString[0];
@@ -109,7 +102,6 @@ export const formatDateForInput = (dateString) => {
 
     // ✅ Validate date
     if (isNaN(date.getTime())) {
-      console.warn('⚠️ Invalid date after parsing:', dateString);
       return '';
     }
 
@@ -119,16 +111,8 @@ export const formatDateForInput = (dateString) => {
     const day = date.getDate().toString().padStart(2, '0');
 
     const result = `${year}-${month}-${day}`;
-    console.log('✅ Formatted date for input:', result);
-
     return result;
   } catch (error) {
-    console.error(
-      '❌ Error formatting date for input:',
-      error,
-      'Input:',
-      dateString
-    );
     return '';
   }
 };
@@ -152,22 +136,17 @@ export const formatDateDisplay = (dateString) => {
     let date;
     const str = dateString.toString();
 
-    console.log(
-      '🔍 Debug formatDateDisplay input:',
-      dateString,
-      'type:',
-      typeof dateString
-    ); // ✅ Case 1: SQL DateTime format with milliseconds (2025-06-18 13:20:24.8233330)
+    // ✅ Case 1: SQL DateTime format with milliseconds (2025-06-18 13:20:24.8233330)
     // hoặc ISO format (2025-06-19T14:00:00Z)
     if (
       (str.includes('-') && str.includes(':')) ||
       (typeof dateString === 'object' && dateString instanceof Array)
     ) {
-      console.log('📅 Parsing DateTime format or Array format:', str);
+      // console.log('📅 Parsing DateTime format or Array format:', str);
 
       // Trường hợp đặc biệt: dateString là array [year, month, day, hour, minute] hoặc [year, month, day]
       if (typeof dateString === 'object' && dateString instanceof Array) {
-        console.log('📅 Array date format detected:', dateString);
+        // console.log('📅 Array date format detected:', dateString);
         let year, month, day;
 
         if (dateString.length >= 3) {
@@ -175,7 +154,7 @@ export const formatDateDisplay = (dateString) => {
           month = dateString[1]; // Tháng trong mảng thường là 0-11
           day = dateString[2];
           date = new Date(year, month - 1, day);
-          console.log('📅 Created date from array:', date);
+          // console.log('📅 Created date from array:', date);
           // // Một số trường hợp mảng [2025, 6, 19] thì month đã đúng với thực tế (1-12)
           // // Một số trường hợp mảng [2025, 5, 19] thì month là zero-based (0-11)
           // // Kiểm tra nếu month > 12, giả sử đã có sự hiệu chỉnh
@@ -211,12 +190,12 @@ export const formatDateDisplay = (dateString) => {
           const [year, month, day] = datePart
             .split('-')
             .map((part) => parseInt(part, 10));
-          console.log('📅 Extracted date parts:', year, month, day);
+          // console.log('📅 Extracted date parts:', year, month, day);
 
           if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
             // Tạo Date object từ các phần đã trích xuất
             date = new Date(year, month - 1, day);
-            console.log('📅 Created date object:', date);
+            // console.log('📅 Created date object:', date);
           } else {
             // Nếu parse không thành công, thử cách tiếp cận khác
             date = new Date(datePart);
@@ -233,7 +212,7 @@ export const formatDateDisplay = (dateString) => {
     }
     // ✅ Case 3: Chuỗi số thuần như "2025613"
     else if (/^\d+$/.test(str)) {
-      console.log('📅 Parsing number string:', str, 'length:', str.length);
+      // console.log('📅 Parsing number string:', str, 'length:', str.length);
 
       if (str.length === 7) {
         // Format: YYYYMDD - 2025613 = 2025-6-13
@@ -241,7 +220,7 @@ export const formatDateDisplay = (dateString) => {
         const month = parseInt(str.substring(4, 5)); // 6
         const day = parseInt(str.substring(5, 7)); // 13
 
-        console.log('📅 Parsed:', { year, month, day });
+        // console.log('📅 Parsed:', { year, month, day });
         date = new Date(year, month - 1, day); // month - 1 vì Date object dùng 0-indexed
       } else if (str.length === 8) {
         // Format: YYYYMMDD - 20250613 = 2025-06-13
@@ -249,7 +228,7 @@ export const formatDateDisplay = (dateString) => {
         const month = parseInt(str.substring(4, 6)); // 06
         const day = parseInt(str.substring(6, 8)); // 13
 
-        console.log('📅 Parsed:', { year, month, day });
+        // console.log('📅 Parsed:', { year, month, day });
         date = new Date(year, month - 1, day);
       } else if (str.length === 6) {
         // Format: YYMMDD - 250613 = 25-06-13
@@ -258,7 +237,7 @@ export const formatDateDisplay = (dateString) => {
         const month = parseInt(str.substring(2, 4)); // 06
         const day = parseInt(str.substring(4, 6)); // 13
 
-        console.log('📅 Parsed:', { year, month, day });
+        // console.log('📅 Parsed:', { year, month, day });
         date = new Date(year, month - 1, day);
       } else {
         // Fallback cho length khác
@@ -287,7 +266,7 @@ export const formatDateDisplay = (dateString) => {
     if (typeof dateString === 'object' && dateString instanceof Array) {
       if (!date || isNaN(date.getTime())) {
         // Thử phương pháp khác nếu vẫn chưa thành công
-        console.log('🔄 Retrying with direct array interpretation');
+        // console.log('🔄 Retrying with direct array interpretation');
         try {
           if (dateString.length >= 3) {
             // Trường hợp 1: Array là [year, month-1, day] (month 0-based)
@@ -299,7 +278,7 @@ export const formatDateDisplay = (dateString) => {
 
             if (!isNaN(testDate1.getTime())) {
               date = testDate1;
-              console.log('✅ Success with zero-based month format', date);
+              // console.log('✅ Success with zero-based month format', date);
             } else {
               // Trường hợp 2: Array là [year, month, day] (month 1-based)
               const testDate2 = new Date(
@@ -309,19 +288,18 @@ export const formatDateDisplay = (dateString) => {
               );
               if (!isNaN(testDate2.getTime())) {
                 date = testDate2;
-                console.log('✅ Success with one-based month format', date);
+                // console.log('✅ Success with one-based month format', date);
               }
             }
           }
         } catch (e) {
-          console.error('❌ Failed direct array interpretation:', e);
+          // console.error('❌ Failed direct array interpretation:', e);
         }
       }
     }
 
     // ✅ Validate date
     if (!date || isNaN(date.getTime())) {
-      console.warn('⚠️ Invalid date after parsing:', dateString);
       // Nếu là mảng, thử hiển thị trực tiếp các phần tử
       if (typeof dateString === 'object' && dateString instanceof Array) {
         try {
@@ -330,7 +308,7 @@ export const formatDateDisplay = (dateString) => {
             return `${dateString[2]}/${dateString[1]}/${dateString[0]}`;
           }
         } catch (e) {
-          console.error('❌ Failed array display fallback:', e);
+          // console.error('❌ Failed array display fallback:', e);
         }
       }
       return 'Ngày không hợp lệ';
@@ -342,11 +320,9 @@ export const formatDateDisplay = (dateString) => {
     const year = date.getFullYear();
 
     const result = `${day}/${month}/${year}`;
-    console.log('✅ Final formatted date:', result);
-
     return result;
   } catch (error) {
-    console.error('❌ Error formatting date:', error, 'Input:', dateString);
+    // console.error('❌ Error formatting date:', error, 'Input:', dateString);
     return 'Lỗi định dạng ngày';
   }
 };
@@ -416,7 +392,7 @@ export const formatDateForAPI = (dateString) => {
     const date = new Date(inputFormat);
     return date.toISOString();
   } catch (error) {
-    console.error('❌ Error formatting date for API:', error);
+    // console.error('❌ Error formatting date for API:', error);
     return '';
   }
 };
