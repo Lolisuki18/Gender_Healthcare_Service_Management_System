@@ -448,6 +448,227 @@ export const confirmDialog = {
     }),
 
   /**
+   * Dialog xác nhận huỷ với ô nhập lý do (bắt buộc)
+   * @param {string|object} message - Thông báo hoặc options
+   * @returns {Promise<string|null>} Lý do huỷ hoặc null nếu huỷ
+   */
+  cancelWithReason: (message, options = {}) =>
+    new Promise((resolve) => {
+      const config = typeof message === 'string' ? { message } : message;
+      const {
+        title = 'Xác nhận huỷ lịch hẹn',
+        message:
+          msg = 'Bạn có chắc chắn muốn huỷ lịch hẹn này? Hành động này không thể hoàn tác.',
+        confirmText = 'Xác nhận huỷ',
+        cancelText = 'Hủy',
+        type = 'danger',
+        showCloseButton = true,
+      } = { ...config, ...options };
+
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      const root = ReactDOM.createRoot(container);
+
+      const cleanup = () => {
+        setTimeout(() => {
+          root.unmount();
+          if (container.parentNode) container.parentNode.removeChild(container);
+        }, 300);
+      };
+
+      const DialogCancelReason = () => {
+        const [open, setOpen] = React.useState(true);
+        const [reason, setReason] = React.useState('');
+        const [error, setError] = React.useState('');
+
+        const handleClose = () => {
+          setOpen(false);
+          cleanup();
+          resolve(null);
+        };
+
+        const handleConfirm = () => {
+          if (!reason.trim()) {
+            setError('Vui lòng nhập lý do huỷ.');
+            return;
+          }
+          setOpen(false);
+          cleanup();
+          resolve(reason.trim());
+        };
+
+        const colors = DIALOG_COLORS[type] || DIALOG_COLORS.info;
+        const icon = DIALOG_ICONS[type] || DIALOG_ICONS.info;
+
+        return (
+          <Dialog
+            open={open}
+            onClose={handleClose}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: '16px !important',
+                background: 'rgba(255, 255, 255, 0.98)',
+                backdropFilter: 'blur(20px)',
+                border: `2px solid ${colors.border}`,
+                boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
+                overflow: 'visible',
+              },
+            }}
+            BackdropProps={{
+              sx: {
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                backdropFilter: 'blur(8px)',
+              },
+            }}
+          >
+            <DialogTitle
+              sx={{
+                textAlign: 'center',
+                pt: 4,
+                pb: 2,
+                position: 'relative',
+                background: colors.background,
+                borderBottom: `1px solid ${colors.border}`,
+                borderTopLeftRadius: '16px !important',
+                borderTopRightRadius: '16px !important',
+                margin: 0,
+              }}
+            >
+              {showCloseButton && (
+                <IconButton
+                  onClick={handleClose}
+                  sx={{
+                    position: 'absolute',
+                    right: 16,
+                    top: 16,
+                    color: '#6B7280',
+                    '&:hover': {
+                      backgroundColor: 'rgba(107, 114, 128, 0.1)',
+                      transform: 'scale(1.1)',
+                    },
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              )}
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  mb: 2,
+                  color: colors.icon,
+                }}
+              >
+                {icon}
+              </Box>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: 700, color: '#1F2937', fontSize: '1.5rem' }}
+              >
+                {title}
+              </Typography>
+            </DialogTitle>
+            <DialogContent
+              sx={{ textAlign: 'center', py: 3, px: 4, margin: 0 }}
+            >
+              <Typography
+                variant="body1"
+                sx={{
+                  color: '#4B5563',
+                  fontSize: '1.1rem',
+                  lineHeight: 1.6,
+                  mb: 2,
+                }}
+              >
+                {msg}
+              </Typography>
+              <TextField
+                label="Lý do huỷ lịch hẹn"
+                value={reason}
+                onChange={(e) => {
+                  setReason(e.target.value);
+                  setError('');
+                }}
+                fullWidth
+                multiline
+                minRows={2}
+                error={!!error}
+                helperText={error}
+                autoFocus
+                sx={{ mt: 2, background: '#fff', borderRadius: 2 }}
+              />
+            </DialogContent>
+            <DialogActions
+              sx={{
+                justifyContent: 'center',
+                gap: 2,
+                p: 3,
+                pt: 1,
+                borderBottomLeftRadius: '16px !important',
+                borderBottomRightRadius: '16px !important',
+                margin: 0,
+              }}
+            >
+              <Button
+                onClick={handleClose}
+                variant="outlined"
+                size="large"
+                sx={{
+                  minWidth: 120,
+                  py: 1.5,
+                  px: 3,
+                  borderRadius: '12px !important',
+                  borderColor: '#D1D5DB',
+                  color: '#6B7280',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  '&:hover': {
+                    borderColor: '#9CA3AF',
+                    backgroundColor: 'rgba(107, 114, 128, 0.05)',
+                    transform: 'translateY(-1px)',
+                    borderRadius: '12px !important',
+                  },
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {cancelText}
+              </Button>
+              <Button
+                onClick={handleConfirm}
+                variant="contained"
+                size="large"
+                sx={{
+                  minWidth: 120,
+                  py: 1.5,
+                  px: 3,
+                  borderRadius: '12px !important',
+                  backgroundColor: colors.confirm,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  boxShadow: `0 4px 12px ${colors.confirm}40`,
+                  '&:hover': {
+                    backgroundColor: colors.confirmHover,
+                    transform: 'translateY(-2px)',
+                    boxShadow: `0 8px 25px ${colors.confirm}50`,
+                    borderRadius: '12px !important',
+                  },
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                {confirmText}
+              </Button>
+            </DialogActions>
+          </Dialog>
+        );
+      };
+
+      root.render(<DialogCancelReason />);
+    }),
+
+  /**
    * Dialog nhập nội dung trả lời câu hỏi
    * @param {Object} options
    *   - question: {content, customerName, createdAt}

@@ -157,7 +157,7 @@ class ConsultationServiceTest {
     @DisplayName("Lấy time slots có sẵn - Thành công")
     void getAvailableTimeSlots_Success() {
         LocalDate testDate = LocalDate.now().plusDays(1);
-        
+
         when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
         when(consultationRepository.findByConsultantAndTimeRange(
                 eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
@@ -171,14 +171,15 @@ class ConsultationServiceTest {
         assertTrue(response.getData().stream().allMatch(AvailableTimeSlot::isAvailable));
 
         verify(userRepository).findById(2L);
-        verify(consultationRepository).findByConsultantAndTimeRange(eq(2L), any(LocalDateTime.class), any(LocalDateTime.class));
+        verify(consultationRepository).findByConsultantAndTimeRange(eq(2L), any(LocalDateTime.class),
+                any(LocalDateTime.class));
     }
 
     @Test
     @DisplayName("Lấy time slots có sẵn - Consultant không tồn tại")
     void getAvailableTimeSlots_ConsultantNotFound() {
         LocalDate testDate = LocalDate.now().plusDays(1);
-        
+
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
         ApiResponse<List<AvailableTimeSlot>> response = consultationService.getAvailableTimeSlots(999L, testDate);
@@ -194,7 +195,7 @@ class ConsultationServiceTest {
     @DisplayName("Lấy time slots có sẵn - User không phải consultant")
     void getAvailableTimeSlots_UserNotConsultant() {
         LocalDate testDate = LocalDate.now().plusDays(1);
-        
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
 
         ApiResponse<List<AvailableTimeSlot>> response = consultationService.getAvailableTimeSlots(1L, testDate);
@@ -210,7 +211,7 @@ class ConsultationServiceTest {
     @DisplayName("Lấy time slots có sẵn - Có lịch đã đặt")
     void getAvailableTimeSlots_WithExistingConsultations() {
         LocalDate testDate = LocalDate.now().plusDays(1);
-        
+
         Consultation existingConsultation = new Consultation();
         existingConsultation.setStartTime(testDate.atTime(8, 0));
         existingConsultation.setEndTime(testDate.atTime(10, 0));
@@ -225,7 +226,7 @@ class ConsultationServiceTest {
 
         assertTrue(response.isSuccess());
         assertEquals(4, response.getData().size());
-        
+
         // Time slot 8-10 should be unavailable
         Optional<AvailableTimeSlot> slot810 = response.getData().stream()
                 .filter(slot -> "8-10".equals(slot.getSlot()))
@@ -239,7 +240,7 @@ class ConsultationServiceTest {
     void getAvailableTimeSlots_ConsultantNotActive() {
         LocalDate testDate = LocalDate.now().plusDays(1);
         consultant.setIsActive(false);
-        
+
         when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
 
         ApiResponse<List<AvailableTimeSlot>> response = consultationService.getAvailableTimeSlots(2L, testDate);
@@ -307,7 +308,7 @@ class ConsultationServiceTest {
     @DisplayName("Tạo consultation - Consultant không tồn tại")
     void createConsultation_ConsultantNotFound() {
         consultationRequest.setConsultantId(999L);
-        
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -323,7 +324,7 @@ class ConsultationServiceTest {
     @DisplayName("Tạo consultation - User không phải consultant")
     void createConsultation_UserNotConsultant() {
         consultationRequest.setConsultantId(1L); // Customer ID instead of consultant
-        
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
 
         ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
@@ -351,7 +352,7 @@ class ConsultationServiceTest {
     @DisplayName("Tạo consultation - Time slot không hợp lệ")
     void createConsultation_InvalidTimeSlot() {
         consultationRequest.setTimeSlot("6-8"); // Invalid time slot
-        
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
 
@@ -391,13 +392,13 @@ class ConsultationServiceTest {
     @DisplayName("Cập nhật trạng thái consultation - Confirm thành công")
     void updateConsultationStatus_Confirm_Success() throws Exception {
         consultation.setMeetUrl(null);
-        
+
         when(consultationRepository.findById(1L)).thenReturn(Optional.of(consultation));
         when(consultationRepository.save(any(Consultation.class))).thenReturn(consultation);
         doNothing().when(emailService).sendConsultationConfirmationAsync(any(Consultation.class));
 
         ApiResponse<ConsultationResponse> response = consultationService.updateConsultationStatus(
-                1L, ConsultationStatus.CONFIRMED, 2L);
+                1L, ConsultationStatus.CONFIRMED, 2L, null);
 
         assertTrue(response.isSuccess());
         assertEquals("Consultation status updated successfully", response.getMessage());
@@ -415,7 +416,7 @@ class ConsultationServiceTest {
         when(consultationRepository.findById(999L)).thenReturn(Optional.empty());
 
         ApiResponse<ConsultationResponse> response = consultationService.updateConsultationStatus(
-                999L, ConsultationStatus.CONFIRMED, 2L);
+                999L, ConsultationStatus.CONFIRMED, 2L, null);
 
         assertFalse(response.isSuccess());
         assertEquals("Consultation not found", response.getMessage());
@@ -430,7 +431,7 @@ class ConsultationServiceTest {
         when(consultationRepository.findById(1L)).thenReturn(Optional.of(consultation));
 
         ApiResponse<ConsultationResponse> response = consultationService.updateConsultationStatus(
-                1L, ConsultationStatus.CONFIRMED, 1L); // Customer trying to confirm
+                1L, ConsultationStatus.CONFIRMED, 1L, null); // Customer trying to confirm
 
         assertFalse(response.isSuccess());
         assertEquals("Only assigned consultant can confirm the consultation", response.getMessage());
@@ -445,7 +446,7 @@ class ConsultationServiceTest {
         when(consultationRepository.save(any(Consultation.class))).thenReturn(consultation);
 
         ApiResponse<ConsultationResponse> response = consultationService.updateConsultationStatus(
-                1L, ConsultationStatus.CANCELED, 1L); // Customer canceling
+                1L, ConsultationStatus.CANCELED, 1L, null); // Customer canceling
 
         assertTrue(response.isSuccess());
         assertEquals("Consultation status updated successfully", response.getMessage());
@@ -461,7 +462,7 @@ class ConsultationServiceTest {
         when(consultationRepository.findById(1L)).thenReturn(Optional.of(consultation));
 
         ApiResponse<ConsultationResponse> response = consultationService.updateConsultationStatus(
-                1L, ConsultationStatus.CANCELED, 3L); // Staff trying to cancel
+                1L, ConsultationStatus.CANCELED, 3L, null); // Staff trying to cancel
 
         assertFalse(response.isSuccess());
         assertEquals("You don't have permission to cancel this consultation", response.getMessage());
@@ -474,12 +475,12 @@ class ConsultationServiceTest {
     void updateConsultationStatus_Complete_Success() {
         // Set consultation end time to past
         consultation.setEndTime(LocalDateTime.now().minusHours(1));
-        
+
         when(consultationRepository.findById(1L)).thenReturn(Optional.of(consultation));
         when(consultationRepository.save(any(Consultation.class))).thenReturn(consultation);
 
         ApiResponse<ConsultationResponse> response = consultationService.updateConsultationStatus(
-                1L, ConsultationStatus.COMPLETED, 2L);
+                1L, ConsultationStatus.COMPLETED, 2L, null);
 
         assertTrue(response.isSuccess());
         assertEquals("Consultation status updated successfully", response.getMessage());
@@ -494,11 +495,11 @@ class ConsultationServiceTest {
     void updateConsultationStatus_CompleteTooEarly() {
         // Set consultation end time to future
         consultation.setEndTime(LocalDateTime.now().plusHours(1));
-        
+
         when(consultationRepository.findById(1L)).thenReturn(Optional.of(consultation));
 
         ApiResponse<ConsultationResponse> response = consultationService.updateConsultationStatus(
-                1L, ConsultationStatus.COMPLETED, 2L);
+                1L, ConsultationStatus.COMPLETED, 2L, null);
 
         assertFalse(response.isSuccess());
         assertEquals("Consultation cannot be marked as completed before its end time", response.getMessage());
@@ -511,7 +512,7 @@ class ConsultationServiceTest {
     @DisplayName("Lấy consultations theo status - Admin thành công")
     void getConsultationsByStatus_Admin_Success() {
         List<Consultation> consultations = Arrays.asList(consultation);
-        
+
         when(userRepository.findById(4L)).thenReturn(Optional.of(admin));
         when(consultationRepository.findByStatus(ConsultationStatus.PENDING)).thenReturn(consultations);
 
@@ -529,7 +530,7 @@ class ConsultationServiceTest {
     @DisplayName("Lấy consultations theo status - Staff thành công")
     void getConsultationsByStatus_Staff_Success() {
         List<Consultation> consultations = Arrays.asList(consultation);
-        
+
         when(userRepository.findById(3L)).thenReturn(Optional.of(staff));
         when(consultationRepository.findByStatus(ConsultationStatus.PENDING)).thenReturn(consultations);
 
@@ -546,7 +547,7 @@ class ConsultationServiceTest {
     @DisplayName("Lấy consultations theo status - Consultant thành công")
     void getConsultationsByStatus_Consultant_Success() {
         List<Consultation> consultations = Arrays.asList(consultation);
-        
+
         when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
         when(consultationRepository.findByConsultantAndStatus(consultant, ConsultationStatus.PENDING))
                 .thenReturn(consultations);
@@ -564,7 +565,7 @@ class ConsultationServiceTest {
     @DisplayName("Lấy consultations theo status - Customer thành công")
     void getConsultationsByStatus_Customer_Success() {
         List<Consultation> consultations = Arrays.asList(consultation);
-        
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(consultationRepository.findByCustomerAndStatus(customer, ConsultationStatus.PENDING))
                 .thenReturn(consultations);
@@ -598,7 +599,7 @@ class ConsultationServiceTest {
     @DisplayName("Lấy consultations cho user - Thành công")
     void getConsultationsForUser_Success() {
         List<Consultation> consultations = Arrays.asList(consultation);
-        
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(consultationRepository.findByUserInvolved(1L)).thenReturn(consultations);
 
@@ -630,7 +631,7 @@ class ConsultationServiceTest {
     @DisplayName("Lấy tất cả consultant members - Thành công")
     void getAllConsultantMembers_Success() {
         List<UserDtls> consultants = Arrays.asList(consultant);
-        
+
         when(userRepository.findByRoleName("CONSULTANT")).thenReturn(consultants);
 
         ApiResponse<List<UserDtls>> response = consultationService.getAllConsultantMembers();
@@ -648,7 +649,7 @@ class ConsultationServiceTest {
     @DisplayName("Lấy consultations cho consultant - Thành công")
     void getConsultationsForConsultant_Success() {
         List<Consultation> consultations = Arrays.asList(consultation);
-        
+
         when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
         when(consultationRepository.findByConsultant(consultant)).thenReturn(consultations);
 
@@ -735,7 +736,7 @@ class ConsultationServiceTest {
     void createConsultation_PastTime() {
         // Set consultation date to past
         consultationRequest.setDate(LocalDate.now().minusDays(1));
-        
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
 
@@ -751,7 +752,7 @@ class ConsultationServiceTest {
     @DisplayName("Tạo consultation - Consultant không active")
     void createConsultation_ConsultantNotActive() {
         consultant.setIsActive(false);
-        
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
 
@@ -809,7 +810,7 @@ class ConsultationServiceTest {
     void checkTimeSlotAvailability_SlotAvailable() {
         LocalDateTime startTime = LocalDateTime.now().plusDays(1).withHour(8).withMinute(0);
         LocalDateTime endTime = LocalDateTime.now().plusDays(1).withHour(10).withMinute(0);
-        
+
         when(consultationRepository.findByConsultantAndTimeRange(
                 eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(Arrays.asList());
@@ -817,10 +818,10 @@ class ConsultationServiceTest {
         // Sử dụng reflection để test private method
         try {
             java.lang.reflect.Method method = ConsultationService.class.getDeclaredMethod(
-                "checkTimeSlotAvailability", Long.class, LocalDateTime.class, LocalDateTime.class);
+                    "checkTimeSlotAvailability", Long.class, LocalDateTime.class, LocalDateTime.class);
             method.setAccessible(true);
             Boolean result = (Boolean) method.invoke(consultationService, 2L, startTime, endTime);
-            
+
             assertTrue(result);
         } catch (Exception e) {
             assertTrue(false, "Failed to test private method: " + e.getMessage());
@@ -832,12 +833,12 @@ class ConsultationServiceTest {
     void checkTimeSlotAvailability_SlotNotAvailable() {
         LocalDateTime startTime = LocalDateTime.now().plusDays(1).withHour(8).withMinute(0);
         LocalDateTime endTime = LocalDateTime.now().plusDays(1).withHour(10).withMinute(0);
-        
+
         Consultation existingConsultation = new Consultation();
         existingConsultation.setStartTime(startTime);
         existingConsultation.setEndTime(endTime);
         existingConsultation.setStatus(ConsultationStatus.CONFIRMED);
-        
+
         when(consultationRepository.findByConsultantAndTimeRange(
                 eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(Arrays.asList(existingConsultation));
@@ -845,10 +846,10 @@ class ConsultationServiceTest {
         // Sử dụng reflection để test private method
         try {
             java.lang.reflect.Method method = ConsultationService.class.getDeclaredMethod(
-                "checkTimeSlotAvailability", Long.class, LocalDateTime.class, LocalDateTime.class);
+                    "checkTimeSlotAvailability", Long.class, LocalDateTime.class, LocalDateTime.class);
             method.setAccessible(true);
             Boolean result = (Boolean) method.invoke(consultationService, 2L, startTime, endTime);
-            
+
             assertFalse(result);
         } catch (Exception e) {
             assertTrue(false, "Failed to test private method: " + e.getMessage());
@@ -860,12 +861,12 @@ class ConsultationServiceTest {
     void checkTimeSlotAvailability_SlotAvailableWithCanceledConsultation() {
         LocalDateTime startTime = LocalDateTime.now().plusDays(1).withHour(8).withMinute(0);
         LocalDateTime endTime = LocalDateTime.now().plusDays(1).withHour(10).withMinute(0);
-        
+
         Consultation canceledConsultation = new Consultation();
         canceledConsultation.setStartTime(startTime);
         canceledConsultation.setEndTime(endTime);
         canceledConsultation.setStatus(ConsultationStatus.CANCELED);
-        
+
         when(consultationRepository.findByConsultantAndTimeRange(
                 eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(Arrays.asList(canceledConsultation));
@@ -873,10 +874,10 @@ class ConsultationServiceTest {
         // Sử dụng reflection để test private method
         try {
             java.lang.reflect.Method method = ConsultationService.class.getDeclaredMethod(
-                "checkTimeSlotAvailability", Long.class, LocalDateTime.class, LocalDateTime.class);
+                    "checkTimeSlotAvailability", Long.class, LocalDateTime.class, LocalDateTime.class);
             method.setAccessible(true);
             Boolean result = (Boolean) method.invoke(consultationService, 2L, startTime, endTime);
-            
+
             assertTrue(result); // Should be available because consultation is canceled
         } catch (Exception e) {
             assertTrue(false, "Failed to test private method: " + e.getMessage());

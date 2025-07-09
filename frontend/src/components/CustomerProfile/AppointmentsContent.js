@@ -45,6 +45,14 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper as MuiPaper,
+  TablePagination,
 } from '@mui/material';
 import {
   CalendarToday as CalendarIcon,
@@ -53,6 +61,7 @@ import {
   Cancel as CancelIcon,
   MoreVert as MoreVertIcon,
   Visibility as VisibilityIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import {
@@ -66,6 +75,7 @@ import {
 } from '../../dataDemo/mockStiData.js';
 import { toast } from 'react-toastify';
 import consultantService from '../../services/consultantService';
+import confirmDialog from '../../utils/confirmDialog';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)',
@@ -98,6 +108,8 @@ const AppointmentsContent = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const fetchAppointments = async () => {
     try {
@@ -122,17 +134,27 @@ const AppointmentsContent = () => {
   const handleCancelAppointment = async () => {
     if (!selectedAppointment) return;
 
+    // Hiện dialog nhập lý do huỷ
+    const reason = await confirmDialog.cancelWithReason(
+      'Bạn có chắc chắn muốn huỷ lịch hẹn này?'
+    );
+    if (!reason) return; // Nếu huỷ dialog thì không làm gì
+
     try {
-      const response = await mockCancelSTITest(selectedAppointment.testId);
-      if (response && response.data) {
+      const response = await consultantService.updateConsultationStatus(
+        selectedAppointment.consultationId,
+        { status: 'CANCELED', reason }
+      );
+      if (response && response.success !== false) {
         toast.success('Hủy lịch hẹn thành công');
         setOpenCancelDialog(false);
         fetchAppointments();
+      } else {
+        toast.error(response.message || 'Không thể hủy lịch hẹn');
       }
     } catch (error) {
       toast.error(error.message || 'Không thể hủy lịch hẹn');
     }
-    handleMenuClose();
   };
 
   const handleMenuClick = (event, appointment) => {
@@ -164,7 +186,7 @@ const AppointmentsContent = () => {
         return 'linear-gradient(45deg, #F39C12, #E67E22)';
       case 'COMPLETED':
         return 'linear-gradient(45deg, #4A90E2, #1ABC9C)';
-      case 'CANCELLED':
+      case 'CANCELED':
         return 'linear-gradient(45deg, #E74C3C, #C0392B)';
       default:
         return 'linear-gradient(45deg, #607D8B, #455A64)';
@@ -179,11 +201,22 @@ const AppointmentsContent = () => {
         return 'Chờ xác nhận';
       case 'COMPLETED':
         return 'Đã hoàn thành';
-      case 'CANCELLED':
-        return 'Đã hủy';
+      case 'CANCELED':
+        return 'Đã huỷ';
       default:
         return 'Không xác định';
     }
+  };
+
+  // Xử lý thay đổi trang
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  // Xử lý thay đổi số dòng/trang (nếu muốn cho phép chọn, hiện tại chỉ để 5)
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
   return (
@@ -223,236 +256,164 @@ const AppointmentsContent = () => {
         </Box>
       )}
 
-      {/* Appointments List */}
-      <Grid container spacing={3}>
-        {appointments.map((appointment) => (
-          <Grid item xs={12} md={6} lg={4} key={appointment.testId}>
-            <AppointmentCard>
-              <CardContent sx={{ p: 3 }}>
-                {/* Tiêu đề: Lịch hẹn tư vấn với tư vấn viên ... */}
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 2,
-                  }}
-                >
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: 600, color: '#2D3748', fontSize: '18px' }}
-                  >
-                    Lịch hẹn tư vấn với tư vấn viên{' '}
-                    {appointment.consultantName || ''}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Chip
-                      label={getStatusText(appointment.status)}
-                      size="small"
-                      sx={{
-                        background: getStatusColor(appointment.status),
-                        color: '#fff',
-                        fontWeight: 500,
-                        fontSize: '11px',
-                        mr: 1,
-                      }}
-                    />
-                    {appointment.meetUrl && (
-                      <Button
-                        href={appointment.meetUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          ml: 1,
-                          fontSize: 12,
-                          textTransform: 'none',
-                          borderRadius: 2,
-                        }}
-                      >
-                        Vào phòng họp
-                      </Button>
-                    )}
-                    <IconButton
-                      aria-label="more"
-                      aria-controls={
-                        openMenuId === appointment.testId
-                          ? `long-menu-${appointment.testId}`
-                          : undefined
-                      }
-                      aria-haspopup="true"
-                      onClick={(event) => handleMenuClick(event, appointment)}
-                      size="small"
-                      sx={{ color: '#718096', p: 0.5 }}
-                    >
-                      <MoreVertIcon />
-                    </IconButton>
-                  </Box>
-                </Box>
-
-                {/* Thời gian bắt đầu */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                  <CalendarIcon
-                    sx={{ color: '#4CAF50', fontSize: 22, mr: 1 }}
-                  />
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 600, minWidth: 110 }}
-                  >
-                    Thời gian bắt đầu:
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: '#2D3748', fontStyle: 'normal', ml: 1 }}
-                  >
-                    {Array.isArray(appointment.startTime)
-                      ? formatDateTimeFromArray(appointment.startTime)
-                      : appointment.startTime &&
-                          ![
-                            'Thời gian không hợp lệ',
-                            'Lỗi định dạng thời gian',
-                          ].includes(formatDateTime(appointment.startTime))
-                        ? formatDateTime(appointment.startTime)
-                        : 'Chưa cập nhật'}
-                  </Typography>
-                </Box>
-                {/* Thời gian kết thúc */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                  <CalendarIcon
-                    sx={{ color: '#F39C12', fontSize: 22, mr: 1 }}
-                  />
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 600, minWidth: 110 }}
-                  >
-                    Thời gian kết thúc:
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: '#2D3748', fontStyle: 'normal', ml: 1 }}
-                  >
-                    {Array.isArray(appointment.endTime)
-                      ? formatDateTimeFromArray(appointment.endTime)
-                      : appointment.endTime &&
-                          ![
-                            'Thời gian không hợp lệ',
-                            'Lỗi định dạng thời gian',
-                          ].includes(formatDateTime(appointment.endTime))
-                        ? formatDateTime(appointment.endTime)
-                        : 'Chưa cập nhật'}
-                  </Typography>
-                </Box>
-
-                {/* Bằng cấp, kinh nghiệm */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 600, minWidth: 110 }}
-                  >
-                    Bằng cấp:
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: appointment.consultantQualifications
-                        ? '#2D3748'
-                        : '#A0AEC0',
-                      fontStyle: appointment.consultantQualifications
-                        ? 'normal'
-                        : 'italic',
-                      ml: 1,
-                    }}
-                  >
-                    {appointment.consultantQualifications || 'Chưa cập nhật'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 600, minWidth: 110 }}
-                  >
-                    Kinh nghiệm:
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: appointment.consultantExperience
-                        ? '#2D3748'
-                        : '#A0AEC0',
-                      fontStyle: appointment.consultantExperience
-                        ? 'normal'
-                        : 'italic',
-                      ml: 1,
-                    }}
-                  >
-                    {appointment.consultantExperience || 'Chưa cập nhật'}
-                  </Typography>
-                </Box>
-
-                {/* Lý do tư vấn */}
-                {appointment.reason && (
-                  <Box
-                    sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.5 }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{ fontWeight: 600, minWidth: 110 }}
-                    >
-                      Lý do tư vấn:
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: '#4A5568', fontStyle: 'italic', ml: 1 }}
-                    >
-                      {appointment.reason}
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Ghi chú tư vấn viên */}
-                {appointment.notes && (
-                  <Box
-                    sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.5 }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{ fontWeight: 600, minWidth: 110 }}
-                    >
-                      Ghi chú tư vấn viên:
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: '#4A5568', fontStyle: 'italic', ml: 1 }}
-                    >
-                      {appointment.notes}
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Ngày tạo lịch hẹn */}
-                {appointment.createdAt && (
-                  <Typography
-                    variant="caption"
-                    sx={{ color: '#A0AEC0', mt: 2, display: 'block' }}
-                  >
-                    Ngày tạo:{' '}
-                    {Array.isArray(appointment.createdAt)
-                      ? formatDateTimeFromArray(appointment.createdAt)
-                      : appointment.createdAt &&
-                          ![
-                            'Thời gian không hợp lệ',
-                            'Lỗi định dạng thời gian',
-                          ].includes(formatDateTime(appointment.createdAt))
-                        ? formatDateTime(appointment.createdAt)
-                        : 'Chưa cập nhật'}
-                  </Typography>
-                )}
-              </CardContent>
-            </AppointmentCard>
-          </Grid>
-        ))}
-      </Grid>
+      {/* Appointments Table */}
+      {!loading && appointments.length > 0 && (
+        <>
+          <TableContainer component={MuiPaper} sx={{ borderRadius: 3, mb: 0 }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    Thời gian bắt đầu
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    Thời gian kết thúc
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">
+                    Trạng thái
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">
+                    Hành động
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {appointments
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((appointment) => (
+                    <TableRow key={appointment.testId} hover>
+                      <TableCell>
+                        {Array.isArray(appointment.startTime)
+                          ? formatDateTimeFromArray(appointment.startTime)
+                          : appointment.startTime &&
+                              ![
+                                'Thời gian không hợp lệ',
+                                'Lỗi định dạng thời gian',
+                              ].includes(formatDateTime(appointment.startTime))
+                            ? formatDateTime(appointment.startTime)
+                            : 'Chưa cập nhật'}
+                      </TableCell>
+                      <TableCell>
+                        {Array.isArray(appointment.endTime)
+                          ? formatDateTimeFromArray(appointment.endTime)
+                          : appointment.endTime &&
+                              ![
+                                'Thời gian không hợp lệ',
+                                'Lỗi định dạng thời gian',
+                              ].includes(formatDateTime(appointment.endTime))
+                            ? formatDateTime(appointment.endTime)
+                            : 'Chưa cập nhật'}
+                      </TableCell>
+                      <TableCell align="center">
+                        <Chip
+                          label={getStatusText(appointment.status)}
+                          size="small"
+                          sx={{
+                            background: getStatusColor(appointment.status),
+                            color: '#fff',
+                            fontWeight: 500,
+                            fontSize: '11px',
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          {appointment.meetUrl && (
+                            <Button
+                              href={appointment.meetUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                fontSize: 13,
+                                textTransform: 'none',
+                                borderRadius: 3,
+                                minWidth: 0,
+                                px: 1.5,
+                                height: 36,
+                                boxShadow: 'none',
+                              }}
+                            >
+                              Vào phòng họp
+                            </Button>
+                          )}
+                          <IconButton
+                            aria-label="Xem chi tiết"
+                            onClick={() => {
+                              setSelectedAppointment(appointment);
+                              setOpenDetailDialog(true);
+                            }}
+                            size="medium"
+                            sx={{
+                              border: '1.5px solid #1976d2',
+                              color: '#1976d2',
+                              background: '#fff',
+                              ml: appointment.meetUrl ? 0 : 0,
+                              transition: 'all 0.2s',
+                              '&:hover': {
+                                background: '#e3f2fd',
+                                borderColor: '#1565c0',
+                                color: '#1565c0',
+                                boxShadow:
+                                  '0 2px 8px 0 rgba(25, 118, 210, 0.10)',
+                              },
+                            }}
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
+                          {appointment.status?.toUpperCase() === 'PENDING' && (
+                            <IconButton
+                              aria-label="Hủy lịch hẹn"
+                              onClick={() => {
+                                setSelectedAppointment(appointment);
+                                setOpenCancelDialog(true);
+                              }}
+                              size="medium"
+                              sx={{
+                                border: '1.5px solid #e53935',
+                                color: '#e53935',
+                                background: '#fff',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                  background: '#ffebee',
+                                  borderColor: '#b71c1c',
+                                  color: '#b71c1c',
+                                  boxShadow:
+                                    '0 2px 8px 0 rgba(229, 57, 53, 0.10)',
+                                },
+                              }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          )}
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            component="div"
+            count={appointments.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5]}
+            labelRowsPerPage="Số dòng mỗi trang:"
+            sx={{ mt: 2, mb: 2, borderRadius: 2, background: '#fff' }}
+          />
+        </>
+      )}
 
       {/* Empty State */}
       {!loading && appointments.length === 0 && (
@@ -518,7 +479,10 @@ const AppointmentsContent = () => {
         <DialogContent dividers>
           {selectedAppointment ? (
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              {/* Trạng thái & Vào phòng họp */}
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}
+              >
                 <Chip
                   label={getStatusText(selectedAppointment.status)}
                   size="small"
@@ -526,10 +490,27 @@ const AppointmentsContent = () => {
                     background: getStatusColor(selectedAppointment.status),
                     color: '#fff',
                     fontWeight: 500,
-                    fontSize: '11px',
-                    mr: 2,
+                    fontSize: '13px',
+                    height: 28,
+                    borderRadius: 2,
                   }}
                 />
+                {selectedAppointment.status?.toUpperCase() === 'CANCELED' &&
+                  (selectedAppointment.notes ? (
+                    <Typography
+                      variant="body2"
+                      sx={{ color: '#e53935', fontWeight: 600, ml: 2 }}
+                    >
+                      Lý do huỷ của chuyên gia: {selectedAppointment.notes}
+                    </Typography>
+                  ) : selectedAppointment.reason ? (
+                    <Typography
+                      variant="body2"
+                      sx={{ color: '#e53935', fontWeight: 600, ml: 2 }}
+                    >
+                      Lý do huỷ của bạn: {selectedAppointment.reason}
+                    </Typography>
+                  ) : null)}
                 {selectedAppointment.meetUrl && (
                   <Button
                     href={selectedAppointment.meetUrl}
@@ -538,87 +519,78 @@ const AppointmentsContent = () => {
                     size="small"
                     variant="outlined"
                     sx={{
-                      fontSize: 12,
+                      fontSize: 13,
                       textTransform: 'none',
-                      borderRadius: 2,
+                      borderRadius: 3,
+                      minWidth: 0,
+                      px: 2,
+                      height: 32,
+                      boxShadow: 'none',
                     }}
                   >
                     Vào phòng họp
                   </Button>
                 )}
               </Box>
-              <Box sx={{ mb: 1.5 }}>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    fontWeight: 600,
-                    minWidth: 110,
-                    display: 'inline-block',
-                  }}
-                >
+              {/* Thông tin chi tiết */}
+              <Box
+                sx={{
+                  display: 'grid',
+                  rowGap: 2,
+                  columnGap: 2,
+                  gridTemplateColumns: { xs: '1fr', sm: '180px 1fr' },
+                  alignItems: 'center',
+                  mb: 1,
+                }}
+              >
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
                   Tư vấn viên:
                 </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ ml: 1, display: 'inline-block' }}
-                >
+                <Typography variant="body1">
                   {selectedAppointment.consultantName || 'Chưa cập nhật'}
                 </Typography>
-              </Box>
-              <Box sx={{ mb: 1.5 }}>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    fontWeight: 600,
-                    minWidth: 110,
-                    display: 'inline-block',
-                  }}
-                >
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
                   Bằng cấp:
                 </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ ml: 1, display: 'inline-block' }}
-                >
+                <Typography variant="body1">
                   {selectedAppointment.consultantQualifications ||
                     'Chưa cập nhật'}
                 </Typography>
-              </Box>
-              <Box sx={{ mb: 1.5 }}>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    fontWeight: 600,
-                    minWidth: 110,
-                    display: 'inline-block',
-                  }}
-                >
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
                   Kinh nghiệm:
                 </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ ml: 1, display: 'inline-block' }}
-                >
+                <Typography variant="body1">
                   {selectedAppointment.consultantExperience || 'Chưa cập nhật'}
                 </Typography>
-              </Box>
-              <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center' }}>
-                <CalendarIcon sx={{ color: '#4CAF50', fontSize: 22, mr: 1 }} />
-                <Typography
-                  variant="body1"
-                  sx={{ fontWeight: 600, minWidth: 110 }}
-                >
-                  Thời gian:
-                </Typography>
-                <Typography variant="body1" sx={{ ml: 1 }}>
-                  {selectedAppointment.startTime &&
-                  !isNaN(new Date(selectedAppointment.startTime).getTime())
-                    ? `${new Date(selectedAppointment.startTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}`
-                    : 'Chưa cập nhật'}
-                  {selectedAppointment.endTime &&
-                  !isNaN(new Date(selectedAppointment.endTime).getTime())
-                    ? ` - ${new Date(selectedAppointment.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
-                    : ''}
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <CalendarIcon
+                    sx={{ color: '#4CAF50', fontSize: 22, mr: 1 }}
+                  />
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    Thời gian:
+                  </Typography>
+                </Box>
+                <Typography variant="body1">
+                  {Array.isArray(selectedAppointment.startTime)
+                    ? formatDateTimeFromArray(selectedAppointment.startTime)
+                    : selectedAppointment.startTime &&
+                        ![
+                          'Thời gian không hợp lệ',
+                          'Lỗi định dạng thời gian',
+                        ].includes(
+                          formatDateTime(selectedAppointment.startTime)
+                        )
+                      ? formatDateTime(selectedAppointment.startTime)
+                      : 'Chưa cập nhật'}
+                  {Array.isArray(selectedAppointment.endTime)
+                    ? ` - ${formatDateTimeFromArray(selectedAppointment.endTime)}`
+                    : selectedAppointment.endTime &&
+                        ![
+                          'Thời gian không hợp lệ',
+                          'Lỗi định dạng thời gian',
+                        ].includes(formatDateTime(selectedAppointment.endTime))
+                      ? ` - ${formatDateTime(selectedAppointment.endTime)}`
+                      : ''}
                 </Typography>
               </Box>
             </Box>

@@ -241,7 +241,7 @@ public class ConsultationService {
     }
 
     public ApiResponse<ConsultationResponse> updateConsultationStatus(Long consultationId,
-            ConsultationStatus newStatus, Long userId) {
+            ConsultationStatus newStatus, Long userId, String reason) {
         try {
             Optional<Consultation> consultationOpt = consultationRepository.findById(consultationId);
             if (consultationOpt.isEmpty()) {
@@ -269,7 +269,11 @@ public class ConsultationService {
                 if (!consultation.getCustomer().getId().equals(userId) &&
                         !consultation.getConsultant().getId().equals(userId)) {
                     return ApiResponse.error("You don't have permission to cancel this consultation");
-                } // No payment processing required for cancellation
+                }
+                // Lưu lý do huỷ nếu có
+                if (reason != null && !reason.trim().isEmpty()) {
+                    consultation.setReason(reason);
+                }
             } else if (newStatus == ConsultationStatus.COMPLETED) {
                 if (!consultation.getConsultant().getId().equals(userId)) {
                     return ApiResponse.error("Only assigned consultant can mark the consultation as completed");

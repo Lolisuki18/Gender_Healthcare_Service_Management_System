@@ -8,5 +8,6 @@ import lombok.Data;
 public class ConsultationStatusRequest {
     @NotNull(message = "Status is required")
     private ConsultationStatus status;
-    
+
+    private String reason; // Thêm trường lý do
 }

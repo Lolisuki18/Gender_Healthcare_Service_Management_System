@@ -91,7 +91,7 @@ public class ConsultationController {
         Long userId = userService.getUserIdFromUsername(username);
 
         ApiResponse<ConsultationResponse> response = consultationService.updateConsultationStatus(
-                consultationId, request.getStatus(), userId);
+                consultationId, request.getStatus(), userId, request.getReason());
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);

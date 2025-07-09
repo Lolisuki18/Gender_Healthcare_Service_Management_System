@@ -66,6 +66,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import WcIcon from '@mui/icons-material/Wc';
 import CakeIcon from '@mui/icons-material/Cake';
 import HomeIcon from '@mui/icons-material/Home';
+import confirmDialog from '@/utils/confirmDialog';
 
 // Thêm mapping ENUM -> text tiếng Việt ở đầu file (sau import)
 const STATUS_TEXT = {
@@ -462,7 +463,13 @@ const TimeSlot = ({
                     mb: 0.5,
                   }}
                 >
-                  Lý do tư vấn:
+                  {slot.status === 'CANCELED'
+                    ? slot.notes
+                      ? 'Lý do chuyên gia huỷ:'
+                      : slot.reason
+                        ? 'Lý do khách hàng huỷ:'
+                        : 'Lý do huỷ:'
+                    : 'Lý do tư vấn:'}
                 </Typography>
                 <Typography
                   variant="body2"
@@ -476,7 +483,13 @@ const TimeSlot = ({
                     overflow: 'hidden',
                   }}
                 >
-                  {slot.reason}
+                  {slot.status === 'CANCELED'
+                    ? slot.notes
+                      ? slot.notes
+                      : slot.reason
+                        ? slot.reason
+                        : 'Không có lý do huỷ'
+                    : slot.reason || 'Không có lý do tư vấn'}
                 </Typography>
               </Box>
 
@@ -890,12 +903,29 @@ const MyConsultationsContent = () => {
     }
     setUpdateStatus({ loading: true, success: false, error: '' });
     try {
+      let noteReason = '';
+      if (statusEnum === 'CANCELED') {
+        noteReason = await confirmDialog.cancelWithReason(
+          'Bạn có chắc chắn muốn huỷ lịch tư vấn này?'
+        );
+        if (!noteReason) {
+          setUpdateStatus({ loading: false, success: false, error: '' });
+          return;
+        }
+      }
       const res = await consultantService.updateConsultationStatus(
         consultationId,
         { status: statusEnum }
       );
       console.log('API response:', res); // Debug log
       if (res.success) {
+        // Nếu huỷ và có lý do, lưu vào notes
+        if (statusEnum === 'CANCELED' && noteReason) {
+          await consultantService.updateConsultationNotes(
+            consultationId,
+            noteReason
+          );
+        }
         setConsultations((prev) =>
           prev.map((c) =>
             c.consultationId === consultationId || c.id === consultationId
@@ -903,6 +933,7 @@ const MyConsultationsContent = () => {
                   ...c,
                   status: statusEnum,
                   meetUrl: res.data?.meetUrl || c.meetUrl,
+                  notes: statusEnum === 'CANCELED' ? noteReason : c.notes,
                 }
               : c
           )
@@ -1638,6 +1669,29 @@ const MyConsultationsContent = () => {
                                     : 'Đang chờ xác nhận'}
                             </Typography>
                           </Box>
+                          {selectedConsultation.status === 'CANCELED' &&
+                            selectedConsultation.notes && (
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  mt: 1,
+                                }}
+                              >
+                                <CloseIcon
+                                  fontSize="small"
+                                  sx={{ color: '#e53935' }}
+                                />
+                                <Typography
+                                  variant="body2"
+                                  sx={{ color: '#e53935', fontWeight: 600 }}
+                                >
+                                  Lý do huỷ của chuyên gia:{' '}
+                                  {selectedConsultation.notes}
+                                </Typography>
+                              </Box>
+                            )}
                           {/* Hiển thị Google Meet link cho tư vấn video */}
                           {selectedConsultation.type === 'video' &&
                             (selectedConsultation.meetUrl ||
@@ -1729,7 +1783,7 @@ const MyConsultationsContent = () => {
                         </Avatar>
                         Nội dung buổi tư vấn
                       </Typography>
-                      {/* Lý do tư vấn */}
+                      {/* Lý do tư vấn hoặc lý do huỷ */}
                       <Box
                         sx={{
                           display: 'flex',
@@ -1749,12 +1803,23 @@ const MyConsultationsContent = () => {
                             fontWeight={600}
                             sx={{ mb: 0.5 }}
                           >
-                            Lý do tư vấn:
+                            {selectedConsultation.status === 'CANCELED'
+                              ? selectedConsultation.notes
+                                ? 'Lý do chuyên gia huỷ:'
+                                : selectedConsultation.reason
+                                  ? 'Lý do bạn huỷ:'
+                                  : 'Lý do huỷ:'
+                              : 'Lý do tư vấn:'}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            {selectedConsultation?.reason
-                              ? selectedConsultation.reason
-                              : 'Không có lý do tư vấn'}
+                            {selectedConsultation.status === 'CANCELED'
+                              ? selectedConsultation.notes
+                                ? selectedConsultation.notes
+                                : selectedConsultation.reason
+                                  ? selectedConsultation.reason
+                                  : 'Không có lý do huỷ'
+                              : selectedConsultation.reason ||
+                                'Không có lý do tư vấn'}
                           </Typography>
                         </Box>
                       </Box>
