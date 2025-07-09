@@ -62,7 +62,7 @@ import {
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { styled } from '@mui/material/styles';
-import questionService from '../../services/questionService';
+import AskQuestionDialog from '../common/AskQuestionDialog';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Link as RouterLink } from 'react-router-dom';
@@ -103,60 +103,8 @@ const HelpContent = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const FAQS_PER_PAGE = 5;
 
-  // State cho đặt câu hỏi mới
+  // State mở dialog dùng chung
   const [showNewQuestionForm, setShowNewQuestionForm] = useState(false);
-  const [newQuestion, setNewQuestion] = useState({
-    question: '',
-    category: '',
-  });
-  const [categories, setCategories] = useState([]);
-  const [categoryLoading, setCategoryLoading] = useState(false);
-  const [submitLoading, setSubmitLoading] = useState(false);
-
-  // Lấy danh mục khi mở dialog
-  const fetchCategories = async () => {
-    setCategoryLoading(true);
-    try {
-      const res = await questionService.getCategories();
-      setCategories(res.data.data || []);
-    } catch (err) {
-      setCategories([]);
-    } finally {
-      setCategoryLoading(false);
-    }
-  };
-
-  // Khi mở dialog đặt câu hỏi mới
-  const handleOpenNewQuestion = () => {
-    setShowNewQuestionForm(true);
-    fetchCategories();
-  };
-
-  // Khi gửi câu hỏi mới
-  const handleSubmitQuestion = async () => {
-    if (!newQuestion.question) {
-      toast.warn('Vui lòng nhập câu hỏi.');
-      return;
-    }
-    if (!newQuestion.category) {
-      toast.warn('Vui lòng chọn danh mục.');
-      return;
-    }
-    setSubmitLoading(true);
-    try {
-      await questionService.createQuestion({
-        content: newQuestion.question,
-        categoryQuestionId: newQuestion.category,
-      });
-      setNewQuestion({ question: '', category: '' });
-      setShowNewQuestionForm(false);
-      toast.success('Câu hỏi đã được gửi thành công!');
-    } catch (err) {
-      toast.error('Gửi câu hỏi thất bại. Vui lòng thử lại.');
-    } finally {
-      setSubmitLoading(false);
-    }
-  };
 
   // FAQ data
   const faqs = [
@@ -381,7 +329,7 @@ const HelpContent = () => {
         <Button
           variant="contained"
           startIcon={<HelpIcon />}
-          onClick={handleOpenNewQuestion}
+          onClick={() => setShowNewQuestionForm(true)}
           sx={{
             background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
             borderRadius: '12px',
@@ -809,182 +757,10 @@ const HelpContent = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      {/* Dialog đặt câu hỏi mới */}
-      <Dialog
+      <AskQuestionDialog
         open={showNewQuestionForm}
         onClose={() => setShowNewQuestionForm(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 5,
-            boxShadow: '0 8px 40px 0 rgba(74, 144, 226, 0.18)',
-            p: 0,
-            overflow: 'visible',
-            background: 'linear-gradient(135deg, #fafdff 80%, #e0f7fa 100%)',
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            fontWeight: 700,
-            fontSize: '1.25rem',
-            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            pb: 0,
-            pt: 3,
-            pl: 3,
-          }}
-        >
-          <HelpIcon sx={{ fontSize: 22, color: '#4A90E2', mr: 1 }} />
-          Đặt câu hỏi mới
-        </DialogTitle>
-        <DialogContent
-          dividers={false}
-          sx={{
-            px: { xs: 3, sm: 5 },
-            pt: 2,
-            pb: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2.5,
-          }}
-        >
-          <TextField
-            fullWidth
-            name="question"
-            label={
-              <span style={{ fontWeight: 600, color: '#357ABD' }}>
-                Câu hỏi của bạn *
-              </span>
-            }
-            multiline
-            rows={4}
-            value={newQuestion.question}
-            onChange={(e) =>
-              setNewQuestion((prev) => ({ ...prev, question: e.target.value }))
-            }
-            variant="outlined"
-            placeholder="Nhập câu hỏi của bạn ở đây..."
-            sx={{
-              background: '#fff',
-              borderRadius: 2,
-              mt: 1,
-              mb: 0.5,
-              '& .MuiInputBase-input': {
-                color: '#2D3748',
-                fontSize: '1rem',
-                lineHeight: '1.6',
-              },
-              '& .MuiInputLabel-root': {
-                color: '#357ABD',
-                fontWeight: 600,
-              },
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                '& fieldset': { borderColor: '#b3d4fc' },
-                '&:hover fieldset': {
-                  borderColor: '#4A90E2',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#1ABC9C',
-                  borderWidth: '2px',
-                },
-              },
-            }}
-          />
-          <FormControl
-            fullWidth
-            variant="outlined"
-            sx={{ background: '#fff', borderRadius: 2, mb: 0.5 }}
-            disabled={categoryLoading}
-          >
-            <InputLabel id="category-label">Danh mục *</InputLabel>
-            <Select
-              labelId="category-label"
-              name="category"
-              value={newQuestion.category}
-              onChange={(e) =>
-                setNewQuestion((prev) => ({
-                  ...prev,
-                  category: e.target.value,
-                }))
-              }
-              label="Danh mục *"
-            >
-              <MenuItem value="" disabled>
-                {categoryLoading ? 'Đang tải...' : 'Chọn danh mục'}
-              </MenuItem>
-              {categories.map((category) => (
-                <MenuItem
-                  key={category.categoryQuestionId}
-                  value={category.categoryQuestionId}
-                >
-                  {category.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </DialogContent>
-        <DialogActions
-          sx={{
-            background: '#fafdff',
-            borderBottomLeftRadius: 40,
-            borderBottomRightRadius: 40,
-            px: { xs: 3, sm: 5 },
-            py: 2.5,
-            mt: 0,
-            justifyContent: 'flex-end',
-            gap: 2,
-          }}
-        >
-          <Button
-            onClick={() => setShowNewQuestionForm(false)}
-            sx={{
-              color: '#F50057',
-              fontWeight: 600,
-              borderRadius: 2,
-              px: 3,
-              fontSize: '1rem',
-            }}
-          >
-            HỦY
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmitQuestion}
-            disabled={
-              !newQuestion.question || !newQuestion.category || submitLoading
-            }
-            sx={{
-              background: 'linear-gradient(90deg, #4A90E2 60%, #1ABC9C 100%)',
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '1rem',
-              px: 4,
-              py: 1.5,
-              boxShadow: '0 4px 16px rgba(74, 144, 226, 0.15)',
-              opacity:
-                !newQuestion.question || !newQuestion.category || submitLoading
-                  ? 0.5
-                  : 1,
-              transition: 'all 0.2s',
-              '&:hover': {
-                background: 'linear-gradient(90deg, #357ABD 60%, #16A085 100%)',
-                boxShadow: '0 8px 24px rgba(74, 144, 226, 0.22)',
-              },
-            }}
-          >
-            {submitLoading ? 'Đang gửi...' : 'Gửi câu hỏi'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
       <ToastContainer position="top-center" autoClose={3000} />
     </Box>
   );

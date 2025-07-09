@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   Container,
   Typography,
@@ -20,6 +20,14 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { keyframes } from '@mui/system';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -41,6 +49,9 @@ import apiClient from '@/services/api';
 import localStorageUtil from '@/utils/localStorage';
 import { toast } from 'react-toastify';
 import { servicesData } from '@/data/servicesData';
+import { loginSuccess } from '@/redux/slices/authSlice';
+import useSTIServicesAndPackages from '@/hooks/useSTIServicesAndPackages';
+import AskQuestionDialog from '@/components/common/AskQuestionDialog';
 
 // Define animations
 const float = keyframes`
@@ -51,6 +62,14 @@ const float = keyframes`
 export const HomePage = () => {
   const navigate = useNavigate();
   const [loaded, setLoaded] = useState(false);
+  const {
+    services,
+    loading: loadingServices,
+    error: errorServices,
+  } = useSTIServicesAndPackages();
+
+  // State mở dialog dùng chung
+  const [faqDialogOpen, setFaqDialogOpen] = useState(false);
 
   // --- LIFECYCLE HOOKS ---
   useEffect(() => {
@@ -1478,6 +1497,27 @@ export const HomePage = () => {
             >
               Giải đáp thắc mắc
             </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setFaqDialogOpen(true)}
+              sx={{
+                mt: 2,
+                borderRadius: 8,
+                fontWeight: 600,
+                px: 4,
+                py: 1.2,
+                textTransform: 'none',
+                fontSize: '1.05rem',
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                },
+              }}
+            >
+              Đặt câu hỏi
+            </Button>
           </Box>{' '}
           <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
             {[
@@ -1544,235 +1584,13 @@ export const HomePage = () => {
               </Accordion>
             ))}
           </Box>
+          {/* Dialog đặt câu hỏi FAQ */}
+          <AskQuestionDialog
+            open={faqDialogOpen}
+            onClose={() => setFaqDialogOpen(false)}
+          />
         </Container>
       </Box>{' '}
-      {/* Call to Action */}
-      <Box
-        sx={{
-          py: { xs: 10, md: 14 },
-          background:
-            'linear-gradient(135deg, #F5F8FD, rgba(74, 144, 226, 0.1))',
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '100%',
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1587621144431-845c71d54650?q=80&w=1887')",
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            opacity: 0.05,
-            zIndex: 0,
-          },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            bottom: -100,
-            right: -100,
-            width: 300,
-            height: 300,
-            borderRadius: '50%',
-            background: (theme) =>
-              `linear-gradient(45deg, ${theme.palette.primary.light}30, ${theme.palette.secondary.light}20)`,
-            zIndex: 0,
-          },
-        }}
-      >
-        {/* Additional decorative elements */}
-        <Box
-          sx={{
-            position: 'absolute',
-            width: 200,
-            height: 200,
-            borderRadius: '50%',
-            background: (theme) =>
-              `radial-gradient(circle, ${theme.palette.secondary.light}20, transparent 70%)`,
-            top: '20%',
-            left: '5%',
-            zIndex: 0,
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            width: 150,
-            height: 150,
-            borderRadius: '50%',
-            background: (theme) =>
-              `radial-gradient(circle, ${theme.palette.primary.light}25, transparent 70%)`,
-            top: '60%',
-            right: '10%',
-            zIndex: 0,
-          }}
-        />
-        <Container maxWidth="md">
-          {' '}
-          <Paper
-            elevation={0}
-            sx={{
-              p: { xs: 4, md: 6 },
-              borderRadius: 6,
-              textAlign: 'center',
-              background:
-                'linear-gradient(135deg, rgba(74, 144, 226, 0.05) 0%, rgba(26, 188, 156, 0.05) 100%)',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.08)',
-              border: '1px solid rgba(0,0,0,0.05)',
-              position: 'relative',
-              overflow: 'hidden',
-              backdropFilter: 'blur(10px)',
-              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-5px)',
-                boxShadow: '0 25px 60px rgba(0,0,0,0.12)',
-              },
-            }}
-          >
-            <Box
-              sx={{
-                position: 'relative',
-                zIndex: 1,
-              }}
-            >
-              <Typography
-                variant="h3"
-                align="center"
-                gutterBottom
-                sx={{
-                  color: (theme) => theme.palette.text.primary,
-                  fontWeight: 800,
-                  mb: 3,
-                  fontSize: { xs: '1.8rem', sm: '2.25rem', md: '2.75rem' },
-                  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                Tham gia cộng đồng của chúng tôi
-              </Typography>
-
-              <Typography
-                variant="h6"
-                align="center"
-                paragraph
-                sx={{
-                  color: (theme) => theme.palette.text.secondary,
-                  fontSize: { xs: '1rem', md: '1.2rem' },
-                  fontWeight: 400,
-                  maxWidth: '800px',
-                  mx: 'auto',
-                  mb: 5,
-                  lineHeight: 1.8,
-                }}
-              >
-                Đăng ký nhận bản tin để cập nhật các thông tin mới nhất về dịch
-                vụ, chương trình ưu đãi và các lời khuyên hữu ích về sức khỏe
-              </Typography>
-
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={2}
-                justifyContent="center"
-                alignItems="center"
-                sx={{ maxWidth: 600, mx: 'auto' }}
-              >
-                <TextField
-                  placeholder="Nhập email của bạn"
-                  fullWidth
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 50,
-                      bgcolor: '#fff',
-                      boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-                      '& fieldset': {
-                        borderColor: 'rgba(0,0,0,0.1)',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: (theme) => theme.palette.primary.main,
-                      },
-                    },
-                  }}
-                />{' '}
-                <Button
-                  variant="contained"
-                  size="large"
-                  sx={{
-                    background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                    color: '#fff',
-                    fontWeight: 600,
-                    px: { xs: 3, sm: 5 },
-                    py: 1.8,
-                    borderRadius: 50,
-                    boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-                    textTransform: 'none',
-                    fontSize: { xs: '1rem', sm: '1.1rem' },
-                    minWidth: { sm: 160 },
-                    position: 'relative',
-                    overflow: 'hidden',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      background: 'rgba(255,255,255,0.15)',
-                      clipPath: 'polygon(0 0, 0% 0, 0% 100%, 0% 100%)',
-                      transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                    },
-                    '&:hover': {
-                      transform: 'translateY(-3px)',
-                      boxShadow: '0 12px 30px rgba(0,0,0,0.2)',
-                      '&::before': {
-                        clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0% 100%)',
-                      },
-                    },
-                    '&:active': {
-                      transform: 'translateY(0)',
-                      boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
-                    },
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  Đăng ký ngay
-                </Button>
-              </Stack>
-            </Box>
-
-            {/* Decorative circles */}
-            <Box
-              sx={{
-                position: 'absolute',
-                width: 200,
-                height: 200,
-                borderRadius: '50%',
-                background: (theme) =>
-                  `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.primary.main}10)`,
-                top: -100,
-                left: -100,
-                zIndex: 0,
-              }}
-            />
-            <Box
-              sx={{
-                position: 'absolute',
-                width: 300,
-                height: 300,
-                borderRadius: '50%',
-                background: (theme) =>
-                  `linear-gradient(135deg, ${theme.palette.secondary.light}15, ${theme.palette.secondary.main}05)`,
-                bottom: -150,
-                right: -150,
-                zIndex: 0,
-              }}
-            />
-          </Paper>
-        </Container>
-      </Box>
     </Box>
   );
 };
