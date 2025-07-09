@@ -210,4 +210,10 @@ export const sidebarMenuConfig = [
     icon: <BlogIcon />,
     roles: ['STAFF', 'CONSULTANT', 'CUSTOMER'],
   },
+  {
+    id: 'blog-customer',
+    label: 'Blog của tôi',
+    icon: <BlogIcon />,
+    roles: ['CUSTOMER'],
+  },
 ];

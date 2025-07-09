@@ -263,7 +263,7 @@ public class BlogPostService {
             if (currentUser == null) {
                 return ApiResponse.error("User not found");
             }
-
+                    
             // Cho phép ADMIN, STAFF hoặc tác giả xóa bài viết
             boolean isAdmin = "ADMIN".equals(currentUser.getRoleName());
             boolean isStaff = "STAFF".equals(currentUser.getRoleName());

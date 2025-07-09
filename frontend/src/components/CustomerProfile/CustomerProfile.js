@@ -1,4 +1,4 @@
-/**
+                                        /**
  * CustomerProfile.js - Component chính quản lý toàn bộ hệ thống hồ sơ khách hàng
  *
  * Mục đích:
@@ -45,6 +45,7 @@ import HelpContent from '@/components/CustomerProfile/HelpContent';
 import QuestionsContent from '@/components/CustomerProfile/QuestionsContent';
 import SecurityContent from '@/components/siderBar/SecurityContent';
 import PaymentMethodsSection from './PaymentMethodsSection';
+import BlogCustomerContent from './BlogCustomerContent';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
@@ -104,6 +105,8 @@ const CustomerProfile = () => {
         return <SecurityContent />; // Bảo mật
       case 'payment-methods':
         return <PaymentMethodsSection />;
+      case 'blog-customer':
+        return <BlogCustomerContent />;
       default:
         return <ProfileContent />; // Fallback về profile
     }

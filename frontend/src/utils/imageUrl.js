@@ -19,7 +19,7 @@ export function getFullImageUrl(url) {
   // Nếu là đường dẫn tương đối /img/... thì nối domain backend
   return `http://localhost:8080${url}`;
 }
-
+                        
 /**
  * Kiểm tra xem một chuỗi có phải là URL hình ảnh hợp lệ không
  * @param {string} url - URL cần kiểm tra
