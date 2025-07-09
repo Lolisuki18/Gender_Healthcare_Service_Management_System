@@ -1,0 +1,19 @@
+{
+  "files": {
+    "main.css": "/Gender_Healthcare_Service_Management_System/static/css/main.15229b69.css",
+    "main.js": "/Gender_Healthcare_Service_Management_System/static/js/main.69dc3ee1.js",
+    "static/js/977.268868f4.chunk.js": "/Gender_Healthcare_Service_Management_System/static/js/977.268868f4.chunk.js",
+    "static/js/455.461ee75c.chunk.js": "/Gender_Healthcare_Service_Management_System/static/js/455.461ee75c.chunk.js",
+    "static/js/453.8319b96a.chunk.js": "/Gender_Healthcare_Service_Management_System/static/js/453.8319b96a.chunk.js",
+    "index.html": "/Gender_Healthcare_Service_Management_System/index.html",
+    "main.15229b69.css.map": "/Gender_Healthcare_Service_Management_System/static/css/main.15229b69.css.map",
+    "main.69dc3ee1.js.map": "/Gender_Healthcare_Service_Management_System/static/js/main.69dc3ee1.js.map",
+    "977.268868f4.chunk.js.map": "/Gender_Healthcare_Service_Management_System/static/js/977.268868f4.chunk.js.map",
+    "455.461ee75c.chunk.js.map": "/Gender_Healthcare_Service_Management_System/static/js/455.461ee75c.chunk.js.map",
+    "453.8319b96a.chunk.js.map": "/Gender_Healthcare_Service_Management_System/static/js/453.8319b96a.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.15229b69.css",
+    "static/js/main.69dc3ee1.js"
+  ]
+}

@@ -1,0 +1,35 @@
+# Java/Maven
+*.iml
+*.log
+.idea/
+.git/
+node_modules/
+target/
+
+# Spring Boot config
+application.properties
+application-*.properties
+.env
+env.yaml
+
+# File upload (local, không dùng cloud)
+uploads/
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Others
+*.class
+*.jar
+*.war
+*.ear
+
+# Ignore test results
+*.testresults
+
+# Only public application-cloud.properties for cloud
+!src/main/resources/application-cloud.properties
