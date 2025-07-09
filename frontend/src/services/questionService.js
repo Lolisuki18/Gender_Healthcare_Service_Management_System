@@ -61,6 +61,11 @@ const questionService = {
   searchQuestions(query, params = {}) {
     return apiClient.get('/questions/search', { params: { query, ...params } });
   },
+
+  // Lấy các câu hỏi được phân công cho user hiện tại (replier)
+  getAssignedQuestionsToMe(params = {}) {
+    return apiClient.get('/questions/assigned-to-me', { params });
+  },
 };
 
 export default questionService;

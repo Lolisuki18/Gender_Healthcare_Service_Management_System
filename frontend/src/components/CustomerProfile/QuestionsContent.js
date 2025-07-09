@@ -53,8 +53,7 @@ import {
   HelpOutline as HelpOutlineIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import Slide from '@mui/material/Slide';
-import questionService from '../../services/questionService';
+import AskQuestionDialog from '../common/AskQuestionDialog';
 import {
   formatDateDisplay,
   formatDateTime,
@@ -63,6 +62,7 @@ import {
 import Pagination from '@mui/material/Pagination';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import questionService from '../../services/questionService';
 
 // Styled Components
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -135,26 +135,12 @@ const QuestionsContent = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [expandedQuestions, setExpandedQuestions] = useState({});
   const [showNewQuestionForm, setShowNewQuestionForm] = useState(false);
-  const [newQuestion, setNewQuestion] = useState({
-    question: '',
-    category: '',
-  });
-  const questionInputRef = React.useRef(null);
-  const [categories, setCategories] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [categoryLoading, setCategoryLoading] = useState(false);
-  const [submitLoading, setSubmitLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 5;
   const tabStatusMap = [null, 'ANSWERED', 'PENDING', 'CANCELED'];
-
-  React.useEffect(() => {
-    if (showNewQuestionForm && questionInputRef.current) {
-      setTimeout(() => questionInputRef.current.focus(), 200);
-    }
-  }, [showNewQuestionForm]);
 
   // Handle tab change
   const handleTabChange = (event, newValue) => {
@@ -166,33 +152,6 @@ const QuestionsContent = () => {
       ...prev,
       [id]: !prev[id],
     }));
-  };
-
-  // Toggle new question form
-  const toggleNewQuestionForm = () => {
-    setShowNewQuestionForm(!showNewQuestionForm);
-  };
-
-  // Handle form input change
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewQuestion((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  // Lấy danh mục khi mở dialog
-  const fetchCategories = async () => {
-    setCategoryLoading(true);
-    try {
-      const res = await questionService.getCategories();
-      setCategories(res.data.data || []);
-    } catch (err) {
-      setCategories([]);
-    } finally {
-      setCategoryLoading(false);
-    }
   };
 
   // Lấy toàn bộ câu hỏi của khách hàng (không phân trang ở API)
@@ -209,40 +168,6 @@ const QuestionsContent = () => {
       setQuestions([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Khi mở dialog đặt câu hỏi mới
-  const handleOpenNewQuestion = () => {
-    setShowNewQuestionForm(true);
-    fetchCategories();
-  };
-
-  // Khi gửi câu hỏi mới
-  const handleSubmitQuestion = async () => {
-    if (!newQuestion.question) {
-      toast.warn('Vui lòng nhập câu hỏi.');
-      return;
-    }
-    if (!newQuestion.category) {
-      toast.warn('Vui lòng chọn danh mục.');
-      return;
-    }
-    setSubmitLoading(true);
-    try {
-      await questionService.createQuestion({
-        content: newQuestion.question,
-        categoryQuestionId: newQuestion.category,
-      });
-      setNewQuestion({ question: '', category: '' });
-      setShowNewQuestionForm(false);
-      toast.success('Câu hỏi đã được gửi thành công!');
-      fetchQuestions();
-      setPage(1);
-    } catch (err) {
-      toast.error('Gửi câu hỏi thất bại. Vui lòng thử lại.');
-    } finally {
-      setSubmitLoading(false);
     }
   };
 
@@ -349,7 +274,7 @@ const QuestionsContent = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={handleOpenNewQuestion}
+            onClick={() => setShowNewQuestionForm(true)}
             sx={{
               background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)', // Medical blue to teal
               borderRadius: '12px',
@@ -368,201 +293,14 @@ const QuestionsContent = () => {
             Đặt câu hỏi mới
           </Button>
         </Box>{' '}
-        <Dialog
+        <AskQuestionDialog
           open={showNewQuestionForm}
-          onClose={toggleNewQuestionForm}
-          maxWidth="sm"
-          fullWidth
-          PaperProps={{
-            sx: {
-              borderRadius: 5,
-              boxShadow: '0 8px 40px 0 rgba(74, 144, 226, 0.18)',
-              p: 0,
-              overflow: 'visible',
-              background: 'linear-gradient(135deg, #fafdff 80%, #e0f7fa 100%)',
-            },
+          onClose={() => setShowNewQuestionForm(false)}
+          onSuccess={() => {
+            fetchQuestions();
+            setPage(1);
           }}
-          TransitionComponent={Slide}
-          transitionDuration={400}
-        >
-          <DialogTitle
-            sx={{
-              fontWeight: 700,
-              fontSize: '1.25rem',
-              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              pb: 0,
-              pt: 3,
-              pl: 3,
-            }}
-          >
-            <HelpOutlineIcon sx={{ fontSize: 22, color: '#4A90E2', mr: 1 }} />
-            Đặt câu hỏi mới
-          </DialogTitle>
-          <DialogContent
-            dividers={false}
-            sx={{
-              px: { xs: 3, sm: 5 },
-              pt: 2,
-              pb: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2.5,
-            }}
-          >
-            <TextField
-              fullWidth
-              name="question"
-              label={
-                <span style={{ fontWeight: 600, color: '#357ABD' }}>
-                  Câu hỏi của bạn *
-                </span>
-              }
-              multiline
-              rows={4}
-              value={newQuestion.question}
-              onChange={(e) => {
-                setNewQuestion((prev) => ({
-                  ...prev,
-                  question: e.target.value,
-                }));
-              }}
-              variant="outlined"
-              placeholder="Nhập câu hỏi của bạn ở đây..."
-              inputRef={questionInputRef}
-              sx={{
-                background: '#fff',
-                borderRadius: 2,
-                mt: 1,
-                mb: 0.5,
-                '& .MuiInputBase-input': {
-                  color: '#2D3748',
-                  fontSize: '1rem',
-                  lineHeight: '1.6',
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#357ABD',
-                  fontWeight: 600,
-                },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  '& fieldset': { borderColor: '#b3d4fc' },
-                  '&:hover fieldset': {
-                    borderColor: '#4A90E2',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#1ABC9C',
-                    borderWidth: '2px',
-                  },
-                },
-              }}
-              onKeyDown={(e) => {
-                if (
-                  e.key === 'Enter' &&
-                  (e.ctrlKey || e.metaKey) &&
-                  newQuestion.question &&
-                  newQuestion.category
-                ) {
-                  handleSubmitQuestion();
-                }
-              }}
-            />
-            <FormControl
-              fullWidth
-              variant="outlined"
-              sx={{
-                background: '#fff',
-                borderRadius: 2,
-                mb: 0.5,
-                '& .MuiInputLabel-root': {
-                  color: '#357ABD',
-                  fontWeight: 600,
-                },
-                '& .MuiSelect-select': { color: '#2D3748' },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  '& fieldset': { borderColor: '#b3d4fc' },
-                  '&:hover fieldset': {
-                    borderColor: '#4A90E2',
-                  },
-                  '&.Mui-focused fieldset': { borderColor: '#1ABC9C' },
-                },
-              }}
-            >
-              <InputLabel>Danh mục *</InputLabel>
-              <Select
-                name="category"
-                value={newQuestion.category}
-                onChange={handleInputChange}
-                label="Danh mục *"
-              >
-                {categories.map((category) => (
-                  <MenuItem
-                    key={category.categoryQuestionId}
-                    value={category.categoryQuestionId}
-                  >
-                    {category.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </DialogContent>
-          <DialogActions
-            sx={{
-              background: '#fafdff',
-              borderBottomLeftRadius: 40,
-              borderBottomRightRadius: 40,
-              px: { xs: 3, sm: 5 },
-              py: 2.5,
-              mt: 0,
-              justifyContent: 'flex-end',
-              gap: 2,
-            }}
-          >
-            <Button
-              onClick={toggleNewQuestionForm}
-              sx={{
-                color: '#F50057',
-                fontWeight: 600,
-                borderRadius: 2,
-                px: 3,
-                fontSize: '1rem',
-              }}
-            >
-              HỦY
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleSubmitQuestion}
-              disabled={!newQuestion.question || !newQuestion.category}
-              sx={{
-                background: 'linear-gradient(90deg, #4A90E2 60%, #1ABC9C 100%)',
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 700,
-                fontSize: '1rem',
-                px: 4,
-                py: 1.5,
-                boxShadow: '0 4px 16px rgba(74, 144, 226, 0.15)',
-                opacity:
-                  !newQuestion.question || !newQuestion.category ? 0.5 : 1,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  background:
-                    'linear-gradient(90deg, #357ABD 60%, #16A085 100%)',
-                  boxShadow: '0 8px 24px rgba(74, 144, 226, 0.22)',
-                },
-              }}
-            >
-              Gửi câu hỏi
-            </Button>
-          </DialogActions>
-        </Dialog>
+        />
         <Box
           sx={{
             display: 'flex',
@@ -1009,7 +747,7 @@ const QuestionsContent = () => {
           <Button
             variant="outlined"
             startIcon={<AddIcon />}
-            onClick={handleOpenNewQuestion}
+            onClick={() => setShowNewQuestionForm(true)}
             sx={{
               color: '#4A90E2', // Medical blue
               borderColor: '#4A90E2',

@@ -110,7 +110,7 @@ const Footer = () => {
               <Tooltip title="Facebook">
                 <IconButton
                   component="a"
-                  href="https://facebook.com"
+                  href="https://www.facebook.com/FPTU.HCM"
                   target="_blank"
                   rel="noopener"
                   sx={{
@@ -127,7 +127,7 @@ const Footer = () => {
               <Tooltip title="Instagram">
                 <IconButton
                   component="a"
-                  href="https://instagram.com"
+                  href="https://www.instagram.com/fptuniversityhcm?fbclid=IwY2xjawLbHNVleHRuA2FlbQIxMABicmlkETFwMXNqZ1BWZnJZZ1gwZWdrAR4xvjCtYeABikRwmJ9q-FjhZc-GJ4zu5v5g1YH0fVW3iA8l31x1vUhQCBiD1A_aem_LY3b5brF0p87V4o73peULw"
                   target="_blank"
                   rel="noopener"
                   sx={{
@@ -144,7 +144,7 @@ const Footer = () => {
               <Tooltip title="LinkedIn">
                 <IconButton
                   component="a"
-                  href="https://linkedin.com"
+                  href="https://daihoc.fpt.edu.vn/?fbclid=IwY2xjawLbHPFleHRuA2FlbQIxMABicmlkETFwMXNqZ1BWZnJZZ1gwZWdrAR6JSHX9gJSYcHIWU8KIF7pwXlrOdcO4kqkaLIWL0HtC9DMtFQAyQCekNcqsAA_aem_2E-tKl-AVUkKSx3oHE9UKg"
                   target="_blank"
                   rel="noopener"
                   sx={{
@@ -237,7 +237,7 @@ const Footer = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <LocationOn sx={{ fontSize: 18, opacity: 0.8 }} />
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  FPT University, Hà Nội
+                  FPT University, Hồ Chí Minh
                 </Typography>
               </Box>
             </Box>

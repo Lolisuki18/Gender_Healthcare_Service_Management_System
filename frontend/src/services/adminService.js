@@ -74,6 +74,27 @@ export const adminService = {
     }
   },
 
+  // Lấy toàn bộ lịch hẹn (consultation) cho admin
+  getAllConsultations: async () => {
+    try {
+      const response = await apiClient.get('/consultations/all');
+      if (response.data && response.data.success) {
+        return {
+          success: true,
+          data: response.data.data || [],
+          message: response.data.message,
+        };
+      } else {
+        throw new Error(
+          response.data?.message || 'Failed to fetch consultations'
+        );
+      }
+    } catch (error) {
+      console.error('AdminService.getAllConsultations error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
   //================================================Xoá thông tin=================================================
 
   // Xóa customer theo ID
@@ -167,6 +188,58 @@ export const adminService = {
     try {
       const response = await apiClient.get('/admin/users/statistics');
       return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Lấy tổng quan doanh thu
+  getRevenueSummary: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/admin/revenue/summary', {
+        params,
+      });
+      if (response.data && response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error(
+          response.data?.message || 'Failed to fetch revenue summary'
+        );
+      }
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Lấy danh sách giao dịch đã thanh toán
+  getRevenueTransactions: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/admin/revenue/transactions', {
+        params,
+      });
+      if (response.data && response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error(
+          response.data?.message || 'Failed to fetch revenue transactions'
+        );
+      }
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Lấy tổng quan dashboard admin
+  getDashboardOverview: async () => {
+    try {
+      const response = await apiClient.get('/admin/dashboard/overview');
+      if (response.data && response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error(
+          response.data?.message || 'Failed to fetch dashboard overview'
+        );
+      }
     } catch (error) {
       throw error.response?.data || error;
     }

@@ -9,7 +9,7 @@ const localStorageUtil = {
       const serializedValue = JSON.stringify(value);
       localStorage.setItem(key, serializedValue);
     } catch (error) {
-      console.error("Error setting localStorage item:", error);
+      // console.error("Error setting localStorage item:", error);
     }
   },
   /**
@@ -26,7 +26,7 @@ const localStorageUtil = {
       }
       return JSON.parse(serializedValue);
     } catch (error) {
-      console.error("Error getting from localStorage:", error);
+      // console.error("Error getting from localStorage:", error);
       return defaultValue;
     }
   },
@@ -38,7 +38,7 @@ const localStorageUtil = {
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      console.error("Error removing from localStorage:", error);
+      // console.error("Error removing from localStorage:", error);
     }
   },
   /**
@@ -50,7 +50,7 @@ const localStorageUtil = {
     try {
       return localStorage.getItem(key) !== null;
     } catch (error) {
-      console.error("Error checking existence in localStorage:", error);
+      // console.error("Error checking existence in localStorage:", error);
       return false;
     }
   },
@@ -64,7 +64,7 @@ const localStorageUtil = {
       if (!userData) return;
 
       // Lấy userProfile hiện tại từ localStorage
-      const existingProfile = localStorageUtil.get("userProfile");
+      const existingProfile = localStorageUtil.get('userProfile');
 
       if (ensureStandardFormat) {
         // Nếu dữ liệu hiện có đã có cấu trúc chuẩn
@@ -76,33 +76,33 @@ const localStorageUtil = {
               ...userData,
             },
           };
-          localStorageUtil.set("userProfile", updatedProfile);
+          localStorageUtil.set('userProfile', updatedProfile);
         }
         // Nếu dữ liệu hiện có không có cấu trúc chuẩn hoặc không tồn tại
         else {
           // Chuyển đổi sang cấu trúc chuẩn
           const newProfile = {
             success: true,
-            message: "User profile updated",
+            message: 'User profile updated',
             data: existingProfile
               ? { ...existingProfile, ...userData }
               : userData,
           };
-          localStorageUtil.set("userProfile", newProfile);
+          localStorageUtil.set('userProfile', newProfile);
         }
       } else {
         // Cập nhật trực tiếp không đảm bảo cấu trúc
         if (existingProfile) {
-          localStorageUtil.set("userProfile", {
+          localStorageUtil.set('userProfile', {
             ...existingProfile,
             ...userData,
           });
         } else {
-          localStorageUtil.set("userProfile", userData);
+          localStorageUtil.set('userProfile', userData);
         }
       }
     } catch (error) {
-      console.error("Error updating userProfile in localStorage:", error);
+      // console.error("Error updating userProfile in localStorage:", error);
     }
   },
 
@@ -112,7 +112,7 @@ const localStorageUtil = {
    */
   getUserData: () => {
     try {
-      const userProfile = localStorageUtil.get("userProfile");
+      const userProfile = localStorageUtil.get('userProfile');
       if (!userProfile) return null;
 
       // Nếu có cấu trúc chuẩn {success, message, data}
@@ -123,7 +123,7 @@ const localStorageUtil = {
       // Nếu là object trực tiếp
       return userProfile;
     } catch (error) {
-      console.error("Error getting user data from localStorage:", error);
+      // console.error("Error getting user data from localStorage:", error);
       return null;
     }
   },

@@ -41,7 +41,7 @@ const STEPS = [
 ];
 
 // Số lượng item hiển thị trên mỗi trang (cho pagination)
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 6;
 
 // Danh sách khung giờ có thể đặt lịch hẹn (từ 8h sáng đến 8h tối)
 const TIME_SLOTS = [
@@ -504,44 +504,42 @@ function TestRegistrationPage() {
     }
   }, [location.state, packages, singleTests]);
 
+  // ===== PHÂN TRANG XÉT NGHIỆM LẺ VÀ GÓI XÉT NGHIỆM =====
+  const [singlePage, setSinglePage] = useState(1);
+  const [packagePage, setPackagePage] = useState(1);
+  const singleTotalPages = Math.ceil(filteredSingleTests.length / ITEMS_PER_PAGE);
+  const packageTotalPages = Math.ceil(filteredPackages.length / ITEMS_PER_PAGE);
+
   // Memoized values with enhanced data using helper functions
   const paginatedSingleTests = useMemo(() => {
-    const slicedTests = filteredSingleTests.slice(0, ITEMS_PER_PAGE);
-    console.log('Processing single tests:', slicedTests.length, 'items'); // Debug log
-    
+    const start = (singlePage - 1) * ITEMS_PER_PAGE;
+    const slicedTests = filteredSingleTests.slice(start, start + ITEMS_PER_PAGE);
     return slicedTests.map(service => {
       const metrics = extractTestMetrics(service);
-      const enhancedService = {
+      return {
         ...service,
         accuracy: metrics?.accuracy || '99.1%',
         method: metrics?.method || 'ELISA/PCR',
         duration: metrics?.resultTime || service.duration || '30 phút',
         sampleType: metrics?.sampleType || 'Máu/Nước tiểu'
       };
-      
-      console.log('Enhanced service:', enhancedService.name, 'with metrics:', metrics);
-      return enhancedService;
     });
-  }, [filteredSingleTests]);
+  }, [filteredSingleTests, singlePage]);
 
   const paginatedPackages = useMemo(() => {
-    const slicedPackages = filteredPackages.slice(0, ITEMS_PER_PAGE);
-    console.log('Processing packages:', slicedPackages.length, 'items'); // Debug log
-    
+    const start = (packagePage - 1) * ITEMS_PER_PAGE;
+    const slicedPackages = filteredPackages.slice(start, start + ITEMS_PER_PAGE);
     return slicedPackages.map(packageData => {
       const stats = getPackageStats(packageData);
-      const enhancedPackage = {
+      return {
         ...packageData,
         accuracy: `${stats.accuracy}`,
         duration: stats.resultTime || packageData.duration || '2-3 giờ',
         savings: `${stats.savings}% tiết kiệm`,
         totalServices: stats.totalServices
       };
-      
-      console.log('Enhanced package:', enhancedPackage.name, 'with stats:', stats);
-      return enhancedPackage;
     });
-  }, [filteredPackages]);
+  }, [filteredPackages, packagePage]);
 
   // ===============================
   // EVENT HANDLERS - Xử lý các sự kiện từ người dùng
@@ -1276,17 +1274,51 @@ function TestRegistrationPage() {
           <Box mt={2}>
             {/* BƯỚC 1: Chọn dịch vụ */}
             {activeStep === 0 && (
-              <ServiceSelection
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                paginatedSingleTests={paginatedSingleTests}
-                paginatedPackages={paginatedPackages}
-                selectedService={selectedService}
-                onSelectService={handleSelectService}
-                onOpenDetail={handleOpenDetail}
-              />
+              <>
+                <ServiceSelection
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  paginatedSingleTests={paginatedSingleTests}
+                  paginatedPackages={paginatedPackages}
+                  selectedService={selectedService}
+                  onSelectService={handleSelectService}
+                  onOpenDetail={handleOpenDetail}
+                />
+                {/* Pagination for single tests */}
+                {activeTab === 'single' && singleTotalPages > 1 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
+                    {Array.from({ length: singleTotalPages }, (_, i) => (
+                      <Button
+                        key={i + 1}
+                        variant={singlePage === i + 1 ? 'contained' : 'outlined'}
+                        color="primary"
+                        sx={{ minWidth: 40, mx: 0.5, fontWeight: 700, borderRadius: 2, boxShadow: singlePage === i + 1 ? 2 : 0 }}
+                        onClick={() => setSinglePage(i + 1)}
+                      >
+                        {i + 1}
+                      </Button>
+                    ))}
+                  </Box>
+                )}
+                {/* Pagination for packages */}
+                {activeTab === 'package' && packageTotalPages > 1 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
+                    {Array.from({ length: packageTotalPages }, (_, i) => (
+                      <Button
+                        key={i + 1}
+                        variant={packagePage === i + 1 ? 'contained' : 'outlined'}
+                        color="primary"
+                        sx={{ minWidth: 40, mx: 0.5, fontWeight: 700, borderRadius: 2, boxShadow: packagePage === i + 1 ? 2 : 0 }}
+                        onClick={() => setPackagePage(i + 1)}
+                      >
+                        {i + 1}
+                      </Button>
+                    ))}
+                  </Box>
+                )}
+              </>
             )}
 
             {/* BƯỚC 2: Chọn ngày và giờ hẹn */}
@@ -1414,17 +1446,6 @@ function TestRegistrationPage() {
                       label={
                         <Typography sx={{ fontWeight: 500, fontSize: '1rem' }}>
                           💵 Thanh toán tiền mặt
-                        </Typography>
-                      }
-                      sx={{ mb: 1 }}
-                    />
-                    {/* Option chuyển khoản */}
-                    <FormControlLabel 
-                      value="bank" 
-                      control={<Radio sx={{ color: '#2196F3' }} />} 
-                      label={
-                        <Typography sx={{ fontWeight: 500, fontSize: '1rem' }}>
-                          🏦 Chuyển khoản ngân hàng
                         </Typography>
                       }
                       sx={{ mb: 1 }}
@@ -1687,6 +1708,7 @@ function TestRegistrationPage() {
           onClose={() => navigate('/')}
           paymentFailed={paymentFailed}
           paymentFailedMessage={paymentFailedMessage}
+          onViewBookings={() => navigate('/profile', { state: { initialTab: 'medical-history' } })}
         />
 
         {/* Dialog nhập thông tin thẻ */}

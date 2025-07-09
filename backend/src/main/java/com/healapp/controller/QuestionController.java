@@ -143,6 +143,22 @@ public class QuestionController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/assigned-to-me")
+    @PreAuthorize("hasAnyRole('ROLE_CONSULTANT', 'ROLE_STAFF')")
+    public ResponseEntity<ApiResponse<Page<QuestionResponse>>> getAssignedQuestionsToMe(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sort,
+            @RequestParam(defaultValue = "DESC") String direction,
+            Authentication authentication) {
+        String username = authentication.getName();
+        Long userId = userService.getUserIdFromUsername(username);
+        Sort.Direction sortDirection = Sort.Direction.fromString(direction.toUpperCase());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
+        ApiResponse<Page<QuestionResponse>> response = questionService.getQuestionsAssignedToReplier(userId, pageable);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{questionId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<QuestionResponse>> getQuestionById(

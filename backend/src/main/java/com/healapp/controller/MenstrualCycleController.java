@@ -17,6 +17,7 @@ import com.healapp.dto.MenstrualCycleRequest;
 import com.healapp.dto.MenstrualCycleResponse;
 import com.healapp.model.MenstrualCycle;
 import com.healapp.service.MenstrualCycleService;
+import com.healapp.service.NotificationService;
 import com.healapp.service.UserService;
 
 import jakarta.validation.Valid;
@@ -38,6 +39,9 @@ public class MenstrualCycleController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     /**
      * description: Khai báo chu kỳ kinh nguyệt
@@ -121,15 +125,15 @@ public class MenstrualCycleController {
      * method: POST
      * path: /menstrual-cycle/reminder
      */
-    @PostMapping("/reminder")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
-    public ResponseEntity<ApiResponse<String>> sendOvulationReminder() {
-        ApiResponse<String> response = menstrualCycleService.sendOvulationReminderEmail();        
-        return ResponseEntity.ok(response);
+    // @PostMapping("/reminder")
+    // @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
+    // public ResponseEntity<ApiResponse<String>> sendOvulationReminder() {
+    //     ApiResponse<String> response = notificationService.sendOvulationNotification();        
+    //     return ResponseEntity.ok(response);
 
-        // menstrualCycleService.sendReminderPregnancy();
-        // return ResponseEntity.ok(new ApiResponse<>(true, "Gửi thông báo thành công"));
-    }
+    //     // menstrualCycleService.sendReminderPregnancy();
+    //     // return ResponseEntity.ok(new ApiResponse<>(true, "Gửi thông báo thành công"));
+    // }
 
 
     /*

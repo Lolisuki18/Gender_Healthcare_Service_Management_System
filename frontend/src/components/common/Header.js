@@ -56,8 +56,6 @@ const Header = () => {
   // Khai báo hàm checkLoginStatus trước khi sử dụng trong useEffect
   const checkLoginStatus = () => {
     try {
-      console.log('Checking login status in Header component');
-
       // Clear any previous avatar data from sessionStorage to avoid persistence between accounts
       sessionStorage.removeItem('last_updated_avatar');
 
@@ -65,7 +63,6 @@ const Header = () => {
       const userData = localStorageUtil.get('userProfile');
 
       if (userData) {
-        console.log('User is logged in, updating user data in Header');
         setIsLoggedIn(true);
         setUser(userData);
 
@@ -75,14 +72,12 @@ const Header = () => {
         // Lấy avatar từ userData (userProfile)
         if (userData.data && userData.data.avatar) {
           const fullAvatarUrl = imageUrl.getFullImageUrl(userData.data.avatar);
-          console.log('Setting avatar from userProfile.data:', fullAvatarUrl);
           setAvatarUrl(fullAvatarUrl);
 
           // Cập nhật vào sessionStorage để đồng bộ giữa các component
           sessionStorage.setItem('last_updated_avatar', userData.data.avatar);
         } else if (userData.avatar) {
           const fullAvatarUrl = imageUrl.getFullImageUrl(userData.avatar);
-          console.log('Setting avatar from userProfile root:', fullAvatarUrl);
           setAvatarUrl(fullAvatarUrl);
 
           // Cập nhật vào sessionStorage để đồng bộ giữa các component
@@ -91,14 +86,12 @@ const Header = () => {
 
         forceRefresh();
       } else {
-        console.log('User is not logged in');
         setIsLoggedIn(false);
         setUser(null);
         setAvatarUrl(null);
         sessionStorage.removeItem('last_updated_avatar');
       }
     } catch (error) {
-      console.error('Error checking login status:', error);
       setIsLoggedIn(false);
       setUser(null);
       setAvatarUrl(null);
@@ -160,7 +153,6 @@ const Header = () => {
   useEffect(() => {
     const intervalId = setInterval(() => {
       // Check login status and update avatar every second
-      console.log('Checking login status and updating avatar in Header');
       const userData = localStorageUtil.get('userProfile');
 
       //nếu không có userData thì không cần làm gì cả
@@ -190,7 +182,6 @@ const Header = () => {
         const fullUrl = imageUrl.getFullImageUrl(avatarToUse);
         // Chỉ cập nhật nếu khác với URL avatar hiện tại
         if (fullUrl && fullUrl !== avatarUrl) {
-          console.log('Polling detected avatar update:', fullUrl);
           setAvatarUrl(fullUrl);
           forceRefresh();
         }
@@ -206,21 +197,16 @@ const Header = () => {
   }, [avatarUrl]);
 
   useEffect(() => {
-    console.log(
-      'Header component mounted - kiểm tra trạng thái đăng nhập và khởi tạo listeners'
-    );
     checkLoginStatus();
 
     // Lắng nghe sự kiện cập nhật avatar từ localStorage và sessionStorage
     const handleStorageChange = (e) => {
-      console.log('Storage event detected in Header:', e.key);
       if (
         e.key === 'userProfile' ||
         e.key === 'avatar_sync_trigger' ||
         e.key === 'last_updated_avatar' ||
         e.key === 'user'
       ) {
-        console.log('Avatar update detected via storage event in Header');
         checkLoginStatus();
       }
     };
@@ -229,13 +215,8 @@ const Header = () => {
 
     // Lắng nghe trực tiếp sự kiện avatar_updated từ cùng tab
     const handleDirectAvatarUpdate = (event) => {
-      console.log(
-        'Direct avatar update event received in Header:',
-        event.detail
-      );
       if (event.detail && event.detail.avatarUrl) {
         const newAvatarUrl = event.detail.avatarUrl;
-        console.log('Setting new avatar URL:', newAvatarUrl);
         setAvatarUrl(imageUrl.getFullImageUrl(newAvatarUrl));
         forceRefresh();
         // Cập nhật lại thông tin người dùng
@@ -248,10 +229,6 @@ const Header = () => {
 
     // Đăng ký lắng nghe sự kiện cập nhật avatar từ hệ thống event tùy chỉnh
     const unsubscribe = listenToAvatarUpdates((newAvatarUrl) => {
-      console.log(
-        'Avatar update event received in Header from listenToAvatarUpdates:',
-        newAvatarUrl
-      );
       if (newAvatarUrl) {
         setAvatarUrl(imageUrl.getFullImageUrl(newAvatarUrl));
         forceRefresh();
@@ -262,13 +239,11 @@ const Header = () => {
     // Kiểm tra và sử dụng avatar từ sessionStorage (từ các lần cập nhật trước)
     const lastUpdatedAvatar = sessionStorage.getItem('last_updated_avatar');
     if (lastUpdatedAvatar) {
-      console.log('Found cached avatar in sessionStorage:', lastUpdatedAvatar);
       setAvatarUrl(imageUrl.getFullImageUrl(lastUpdatedAvatar));
     }
 
     // Chức năng dọn dẹp để hủy đăng ký trình nghe khi ngắt kết nối thành phần
     return () => {
-      console.log('Cleaning up event listeners in Header');
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('avatar_updated', handleDirectAvatarUpdate);
       if (unsubscribe) unsubscribe();
@@ -476,11 +451,22 @@ const Header = () => {
                         return avatarUrl || '/img/avatar/default.jpg';
                       })()}
                       alt="avatar"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        borderRadius: '50%',
+                      }}
                       onError={(e) => {
-                        console.error('[Avatar onError] Không load được ảnh avatar:', e.target.src);
+                        console.error(
+                          '[Avatar onError] Không load được ảnh avatar:',
+                          e.target.src
+                        );
                         if (e && e.nativeEvent && e.nativeEvent.message) {
-                          console.error('[Avatar onError] nativeEvent message:', e.nativeEvent.message);
+                          console.error(
+                            '[Avatar onError] nativeEvent message:',
+                            e.nativeEvent.message
+                          );
                         }
                         if (!e.target.src.endsWith('/img/avatar/default.jpg')) {
                           e.target.onerror = null;
@@ -488,7 +474,10 @@ const Header = () => {
                         }
                       }}
                       onLoad={() => {
-                        console.log('[Avatar onLoad] Ảnh avatar đã load thành công:', document.querySelector('img[alt="avatar"]').src);
+                        console.log(
+                          '[Avatar onLoad] Ảnh avatar đã load thành công:',
+                          document.querySelector('img[alt="avatar"]').src
+                        );
                       }}
                     />
                   </Avatar>
