@@ -127,6 +127,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/sti-services/tests/{testId}/cancel").authenticated()
                         .requestMatchers(HttpMethod.GET, "/sti-services/tests/{testId}/results").authenticated()
 
+                        // API Payment Info (Authenticated user endpoints)
+                        .requestMatchers(HttpMethod.GET, "/payment-info").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/payment-info/default").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/payment-info/{paymentInfoId}/for-payment").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/payment-info").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/payment-info/{paymentInfoId}").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/payment-info/{paymentInfoId}").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/payment-info/{paymentInfoId}/set-default").authenticated()
+
                         // API STI Package (Authenticated user endpoints)
                         .requestMatchers(HttpMethod.GET, "/sti-services/packages").permitAll()
                         .requestMatchers(HttpMethod.GET, "/sti-services/packages/{packageId}").permitAll()

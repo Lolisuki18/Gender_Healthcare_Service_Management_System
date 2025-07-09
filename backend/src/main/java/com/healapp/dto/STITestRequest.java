@@ -1,11 +1,15 @@
 package com.healapp.dto;
 
-import jakarta.validation.constraints.*;
+import java.time.LocalDateTime;
+
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -45,6 +49,9 @@ public class STITestRequest {
     @Size(max = 100, message = "Card holder name cannot exceed 100 characters")
     private String cardHolderName;
 
+    // Sử dụng thẻ đã lưu (optional)
+    private Long savedCardId;
+
     // QR code
     @Size(max = 50, message = "QR payment reference cannot exceed 50 characters")
     private String qrPaymentReference;
@@ -70,8 +77,13 @@ public class STITestRequest {
 
         switch (paymentMethod.toUpperCase()) {
             case "VISA":
-                return cardNumber != null && expiryMonth != null &&
-                        expiryYear != null && cvc != null && cardHolderName != null;
+                // Có thể sử dụng thẻ đã lưu hoặc nhập thông tin thẻ mới
+                if (savedCardId != null) {
+                    return true; // Sử dụng thẻ đã lưu
+                } else {
+                    return cardNumber != null && expiryMonth != null &&
+                            expiryYear != null && cvc != null && cardHolderName != null;
+                }
             case "QR_CODE":
                 return true;
             case "COD":

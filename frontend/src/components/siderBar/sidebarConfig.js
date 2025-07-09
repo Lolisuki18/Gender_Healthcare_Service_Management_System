@@ -190,6 +190,12 @@ export const sidebarMenuConfig = [
     icon: <HelpOutlineIcon />,
     roles: ['CUSTOMER'],
   },
+  {
+    id: 'payment-methods',
+    label: 'Phương thức thanh toán',
+    icon: <PaymentIcon />,
+    roles: ['CUSTOMER', 'STAFF', 'CONSULTANT'],
+  },
 
   //   {
   //     id: 'payment-history',

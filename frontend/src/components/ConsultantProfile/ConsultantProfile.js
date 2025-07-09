@@ -42,6 +42,7 @@ import STITestsContent from './STITestsContent';
 import MyReviewsContent from './MyReviewsContent';
 import MedicalHistoryContent from '../siderBar/MedicalHistoryContent';
 import InvoicesContent from '../siderBar/InvoicesContent';
+import PaymentMethodsSection from '../CustomerProfile/PaymentMethodsSection';
 
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
   flexGrow: 1,
@@ -109,6 +110,8 @@ const ConsultantProfile = ({ user = {} }) => {
         return <MedicalHistoryContent />;
       case 'invoices':
         return <InvoicesContent />;
+      case 'payment-methods':
+        return <PaymentMethodsSection />;
       default:
         return <ConsultantProfileContent />;
     }

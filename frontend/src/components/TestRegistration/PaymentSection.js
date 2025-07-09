@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import {
   Box,
@@ -14,8 +14,25 @@ import {
   DialogActions,
   Grid,
   Alert,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
+  Chip,
+  Divider,
+  CircularProgress,
+  Tooltip,
 } from '@mui/material';
+import {
+  CreditCard as CreditCardIcon,
+  Add as AddIcon,
+  Star as StarIcon,
+} from '@mui/icons-material';
 import { bookSTITest } from '@/services/stiService';
+import { getUserPaymentInfos, getDefaultPaymentInfo } from '@/services/paymentInfoService';
+import SavedCardsDialog from './SavedCardsDialog';
+import AddEditCardDialog from './AddEditCardDialog';
 
 // ===== COMPONENT THANH TOÁN VÀ ĐẶT LỊCH =====
 // Component này xử lý việc chọn phương thức thanh toán và gửi yêu cầu đặt lịch khám
@@ -40,16 +57,56 @@ const PaymentSection = ({
   const [visaErrors, setVisaErrors] = useState({}); // Lỗi validation cho thông tin thẻ
   const [openVisaDialog, setOpenVisaDialog] = useState(false); // Điều khiển dialog nhập thông tin thẻ
   const [openBankDialog, setOpenBankDialog] = useState(false); // Điều khiển dialog thông tin chuyển khoản
+  const [openSavedCardsDialog, setOpenSavedCardsDialog] = useState(false); // Điều khiển dialog thẻ đã lưu
+  const [openAddCardDialog, setOpenAddCardDialog] = useState(false); // Điều khiển dialog thêm thẻ
   const [loading, setLoading] = useState(false); // Trạng thái đang xử lý booking
   const [error, setError] = useState(''); // Thông báo lỗi khi booking thất bại
+  
+  // State cho thẻ đã lưu
+  const [savedCards, setSavedCards] = useState([]);
+  const [defaultCard, setDefaultCard] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [loadingCards, setLoadingCards] = useState(false);
+
+  // ===== LOAD THẺ ĐÃ LƯU KHI COMPONENT MOUNT =====
+  useEffect(() => {
+    loadSavedCards();
+  }, []);
+
+  const loadSavedCards = async () => {
+    try {
+      setLoadingCards(true);
+      const [cardsResponse, defaultResponse] = await Promise.all([
+        getUserPaymentInfos(),
+        getDefaultPaymentInfo()
+      ]);
+
+      if (cardsResponse.success) {
+        setSavedCards(cardsResponse.data || []);
+      }
+
+      if (defaultResponse.success) {
+        setDefaultCard(defaultResponse.data);
+      }
+    } catch (err) {
+      console.error('Error loading saved cards:', err);
+    } finally {
+      setLoadingCards(false);
+    }
+  };
 
   // ===== HÀM XỬ LÝ THAY ĐỔI PHƯƠNG THỨC THANH TOÁN =====
   const handlePaymentMethodChange = (event) => {
     setPaymentMethod(event.target.value);
+    setSelectedCard(null); // Reset selected card
     
     // Mở dialog tương ứng khi chọn phương thức cần nhập thông tin
     if (event.target.value === 'visa') {
-      setOpenVisaDialog(true); // Mở dialog nhập thông tin thẻ
+      if (savedCards.length > 0) {
+        setOpenSavedCardsDialog(true); // Mở dialog chọn thẻ đã lưu
+      } else {
+        setOpenVisaDialog(true); // Mở dialog nhập thông tin thẻ mới
+      }
     } else if (event.target.value === 'bank') {
       setOpenBankDialog(true); // Mở dialog thông tin chuyển khoản
     }
@@ -81,6 +138,29 @@ const PaymentSection = ({
     }
     
     return errors;
+  };
+
+  // ===== HÀM XỬ LÝ CHỌN THẺ ĐÃ LƯU =====
+  const handleCardSelect = (card) => {
+    setSelectedCard(card);
+    setOpenSavedCardsDialog(false);
+  };
+
+  // ===== HÀM XỬ LÝ THÊM THẺ MỚI =====
+  const handleAddNewCard = () => {
+    setOpenSavedCardsDialog(false);
+    setOpenAddCardDialog(true);
+  };
+
+  // ===== HÀM XỬ LÝ THÊM THẺ THÀNH CÔNG =====
+  const handleCardAdded = (newCard) => {
+    setSavedCards(prev => [newCard, ...prev]);
+    if (newCard.isDefault) {
+      setDefaultCard(newCard);
+    }
+    setOpenAddCardDialog(false);
+    // Tự động chọn thẻ vừa thêm
+    setSelectedCard(newCard);
   };
 
   // ===== HÀM XỬ LÝ SUBMIT THÔNG TIN THẺ VISA =====
@@ -117,8 +197,10 @@ const PaymentSection = ({
         time: selectedTime,                      // Giờ khám
         note,                                    // Ghi chú
         paymentMethod: paymentMethodApi,         // Phương thức thanh toán
-        // Chỉ gửi thông tin thẻ khi thanh toán bằng VISA
-        ...(paymentMethodApi === 'VISA' && { visaInfo }),
+        // Gửi thông tin thẻ tùy theo loại thanh toán
+        ...(paymentMethodApi === 'VISA' && {
+          ...(selectedCard ? { savedCardId: selectedCard.paymentInfoId } : { visaInfo }),
+        }),
       };
 
       // ===== GỬI REQUEST LÊN SERVER =====
@@ -224,9 +306,21 @@ const PaymentSection = ({
             value="visa" 
             control={<Radio />} 
             label={
-              <Typography sx={{ fontWeight: 500 }}>
-                💳 Thanh toán bằng thẻ Visa/Master
-              </Typography>
+              <Box>
+                <Typography sx={{ fontWeight: 500 }}>
+                  💳 Thanh toán bằng thẻ Visa/Master
+                </Typography>
+                {selectedCard && (
+                  <Box sx={{ mt: 1, ml: 2 }}>
+                    <Chip
+                      label={`${selectedCard.nickname || selectedCard.cardHolderName} (${selectedCard.maskedCardNumber})`}
+                      color="primary"
+                      size="small"
+                      icon={<StarIcon />}
+                    />
+                  </Box>
+                )}
+              </Box>
             }
           />
           
@@ -337,6 +431,21 @@ const PaymentSection = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ===== DIALOG CHỌN THẺ ĐÃ LƯU ===== */}
+      <SavedCardsDialog
+        open={openSavedCardsDialog}
+        onClose={() => setOpenSavedCardsDialog(false)}
+        onCardSelect={handleCardSelect}
+        onAddNewCard={handleAddNewCard}
+      />
+
+      {/* ===== DIALOG THÊM/SỬA THẺ ===== */}
+      <AddEditCardDialog
+        open={openAddCardDialog}
+        onClose={() => setOpenAddCardDialog(false)}
+        onSuccess={handleCardAdded}
+      />
 
       {/* ===== DIALOG THÔNG TIN CHUYỂN KHOẢN NGÂN HÀNG ===== */}
       {/* Dialog này hiển thị thông tin tài khoản để người dùng chuyển khoản */}

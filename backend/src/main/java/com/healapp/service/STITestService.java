@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.healapp.dto.ApiResponse;
+import com.healapp.dto.PaymentInfoResponse;
 import com.healapp.dto.STITestRequest;
 import com.healapp.dto.STITestResponse;
 import com.healapp.dto.STITestStatusUpdateRequest;
@@ -75,6 +76,9 @@ public class STITestService {
 
     @Autowired
     private PaymentRepository paymentRepository;
+
+    @Autowired
+    private PaymentInfoService paymentInfoService;
 
     @Transactional
     public ApiResponse<STITestResponse> bookTest(STITestRequest request, Long customerId) {
@@ -396,38 +400,67 @@ public class STITestService {
         return savedPayment;
     }
 
-    private ApiResponse<Payment> processVisaPaymentWithValidation(STITest stiTest, STITestRequest request) {
-        // Validate VISA fields
-        if (request.getCardNumber() == null || request.getCardNumber().trim().length() != 16) {
-            return ApiResponse.error("Invalid card number - must be 16 digits");
-        }
+        private ApiResponse<Payment> processVisaPaymentWithValidation(STITest stiTest, STITestRequest request) {
+        String cardNumber, expiryMonth, expiryYear, cvc, cardHolderName;
 
-        if (request.getExpiryMonth() == null || request.getExpiryYear() == null) {
-            return ApiResponse.error("Card expiry date is required");
-        }
-
-        try {
-            int month = Integer.parseInt(request.getExpiryMonth());
-            int year = Integer.parseInt(request.getExpiryYear());
-
-            if (month < 1 || month > 12) {
-                return ApiResponse.error("Invalid expiry month");
+        // Kiểm tra xem có sử dụng thẻ đã lưu không
+        if (request.getSavedCardId() != null) {
+            // Sử dụng thẻ đã lưu
+            ApiResponse<PaymentInfoResponse> savedCardResponse = paymentInfoService.getPaymentInfoForPayment(
+                request.getSavedCardId(), stiTest.getCustomer().getId());
+            
+            if (!savedCardResponse.isSuccess()) {
+                return ApiResponse.error("Saved card not found or invalid: " + savedCardResponse.getMessage());
             }
 
-            if (year < LocalDateTime.now().getYear()) {
-                return ApiResponse.error("Card has expired");
+            PaymentInfoResponse savedCard = savedCardResponse.getData();
+            cardNumber = savedCard.getCardNumber();
+            expiryMonth = savedCard.getExpiryMonth();
+            expiryYear = savedCard.getExpiryYear();
+            cvc = savedCard.getCvv();
+            cardHolderName = savedCard.getCardHolderName();
+        } else {
+            // Sử dụng thông tin thẻ mới nhập
+            // Validate VISA fields
+            if (request.getCardNumber() == null || request.getCardNumber().trim().length() != 16) {
+                return ApiResponse.error("Invalid card number - must be 16 digits");
             }
-        } catch (NumberFormatException e) {
-            return ApiResponse.error("Invalid expiry date format");
+
+            if (request.getExpiryMonth() == null || request.getExpiryYear() == null) {
+                return ApiResponse.error("Card expiry date is required");
+            }
+
+            try {
+                int month = Integer.parseInt(request.getExpiryMonth());
+                int year = Integer.parseInt(request.getExpiryYear());
+
+                if (month < 1 || month > 12) {
+                    return ApiResponse.error("Invalid expiry month");
+                }
+
+                if (year < LocalDateTime.now().getYear()) {
+                    return ApiResponse.error("Card has expired");
+                }
+            } catch (NumberFormatException e) {
+                return ApiResponse.error("Invalid expiry date format");
+            }
+
+            if (request.getCvc() == null || request.getCvc().trim().length() < 3) {
+                return ApiResponse.error("Invalid CVC - must be 3 or 4 digits");
+            }
+
+            if (request.getCardHolderName() == null || request.getCardHolderName().trim().isEmpty()) {
+                return ApiResponse.error("Card holder name is required");
+            }
+
+            cardNumber = request.getCardNumber().trim();
+            expiryMonth = request.getExpiryMonth().trim();
+            expiryYear = request.getExpiryYear().trim();
+            cvc = request.getCvc().trim();
+            cardHolderName = request.getCardHolderName().trim();
         }
 
-        if (request.getCvc() == null || request.getCvc().trim().length() < 3) {
-            return ApiResponse.error("Invalid CVC - must be 3 or 4 digits");
-        }
-
-        if (request.getCardHolderName() == null || request.getCardHolderName().trim().isEmpty()) {
-            return ApiResponse.error("Card holder name is required");
-        } // Process Stripe payment
+        // Process Stripe payment
         String description;
         if (stiTest.getStiService() != null) {
             description = "STI Test: " + stiTest.getStiService().getName();
@@ -443,11 +476,11 @@ public class STITestService {
                 stiTest.getTestId(),
                 stiTest.getTotalPrice(),
                 description,
-                request.getCardNumber().trim(),
-                request.getExpiryMonth().trim(),
-                request.getExpiryYear().trim(),
-                request.getCvc().trim(),
-                request.getCardHolderName().trim());
+                cardNumber,
+                expiryMonth,
+                expiryYear,
+                cvc,
+                cardHolderName);
 
         // Cải thiện thông báo lỗi Stripe
         if (!stripeResult.isSuccess()) {
