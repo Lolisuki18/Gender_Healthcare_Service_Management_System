@@ -12,12 +12,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ControlPillsResponse {
+   
     private Long pillsId;
     private LocalDate startDate;
     private Boolean isActive;
     private LocalTime remindTime;
     private int numberDaysDrinking;
     private int numberDaysOff;
+    private Boolean placebo;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
       

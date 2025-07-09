@@ -3,7 +3,6 @@ package com.healapp.controller;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.CategoryQuestionRequest;
 import com.healapp.dto.CategoryQuestionResponse;
-import com.healapp.model.UserDtls;
 import com.healapp.service.CategoryQuestionService;
 import com.healapp.service.UserService;
 

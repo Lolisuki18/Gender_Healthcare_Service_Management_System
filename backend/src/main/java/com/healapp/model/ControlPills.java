@@ -56,6 +56,9 @@ public class ControlPills {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "placebo")
+    private Boolean placebo = false;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private UserDtls userId;
