@@ -18,7 +18,7 @@
  */
 
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
+import { HashRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { CssBaseline } from '@mui/material';
@@ -38,9 +38,9 @@ function App() {
           <UserProvider>
             <CssBaseline />
             <ToastContainer position="top-right" autoClose={3000} />
-            <BrowserRouter>
+            <HashRouter>
               <AppRoutes />
-            </BrowserRouter>
+            </HashRouter>
           </UserProvider>
         </CustomThemeProvider>
       </PersistGate>
