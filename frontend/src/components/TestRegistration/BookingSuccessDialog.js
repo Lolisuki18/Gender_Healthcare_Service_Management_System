@@ -132,7 +132,7 @@ const GradientButton = styled(Button)(({ theme }) => ({
 
 // ===== COMPONENT CHÍNH =====
 // Component dialog thông báo đặt lịch thành công với giao diện đẹp mắt và nhiều hiệu ứng
-const BookingSuccessDialog = ({ open, message, onClose, paymentFailed, paymentFailedMessage }) => {
+const BookingSuccessDialog = ({ open, message, onClose, paymentFailed, paymentFailedMessage, onViewBookings }) => {
   return (
     <StyledDialog 
       open={open} 
@@ -427,12 +427,39 @@ const BookingSuccessDialog = ({ open, message, onClose, paymentFailed, paymentFa
         </Typography>
       </DialogContent>
 
-      {/* ===== PHẦN FOOTER VỚI NÚT ĐÓNG ===== */}
-      <DialogActions sx={{ px: 4, pb: 4, position: 'relative', zIndex: 1 }}>
+      {/* ===== PHẦN FOOTER VỚI CÁC NÚT HÀNH ĐỘNG ===== */}
+      <DialogActions sx={{ px: 4, pb: 4, position: 'relative', zIndex: 1, gap: 2 }}>
+        {/* Nút xem lịch đã đặt - chỉ hiển thị khi có callback function */}
+        {onViewBookings && (
+          <Button
+            onClick={onViewBookings}
+            variant="outlined"
+            sx={{
+              flex: 1,
+              py: 1.5,
+              borderRadius: 3,
+              borderColor: '#4A90E2',
+              color: '#4A90E2',
+              fontWeight: 600,
+              fontSize: '1rem',
+              textTransform: 'none',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                borderColor: '#1976D2',
+                backgroundColor: 'rgba(74,144,226,0.08)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(74,144,226,0.2)',
+              },
+            }}
+          >
+            📅 Xem lịch đã đặt
+          </Button>
+        )}
+        
         {/* Nút đóng dialog với hiệu ứng gradient đẹp mắt */}
         <GradientButton 
           onClick={onClose} 
-          fullWidth
+          sx={{ flex: onViewBookings ? 1 : 'unset', width: onViewBookings ? 'auto' : '100%' }}
         >
           ✨ Hoàn tất
         </GradientButton>
@@ -449,6 +476,7 @@ BookingSuccessDialog.propTypes = {
   onClose: PropTypes.func.isRequired, // Bắt buộc: hàm callback khi đóng dialog
   paymentFailed: PropTypes.bool, // Tùy chọn: trạng thái thanh toán thất bại
   paymentFailedMessage: PropTypes.string, // Tùy chọn: thông báo lỗi thanh toán
+  onViewBookings: PropTypes.func, // Tùy chọn: hàm callback khi xem lịch đã đặt
 };
 
 // Export component để sử dụng ở nơi khác

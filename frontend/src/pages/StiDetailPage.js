@@ -22,18 +22,21 @@ import {
   Stack,
   Breadcrumbs,
   Link,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 // Icon từ MUI
 import CheckIcon from '@mui/icons-material/Check';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import HomeIcon from '@mui/icons-material/Home';
+import SearchIcon from '@mui/icons-material/Search';
 // React Router
 import { useNavigate } from 'react-router-dom';
 // API và utilities
 import apiClient from '@/services/api';
 import localStorageUtil from '@/utils/localStorage';
 // Hàm gọi API lấy danh sách gói xét nghiệm
-import { getAllSTIPackages } from '@/services/stiService';
+import { getAllSTIPackages, getActiveSTIServices } from '@/services/stiService';
 // Import component dialog chi tiết dịch vụ
 import ServiceDetailDialog from '@/components/TestRegistration/ServiceDetailDialog';
 
@@ -44,6 +47,7 @@ export default function StiDetailPage() {
   
   // ===== CÁC STATE QUẢN LÝ DỮ LIỆU VÀ TRẠNG THÁI =====
   const [packages, setPackages] = useState([]); // Danh sách gói xét nghiệm STI
+  const [singleTests, setSingleTests] = useState([]); // Danh sách xét nghiệm lẻ STI
   const [loaded, setLoaded] = React.useState(false); // State hiệu ứng xuất hiện mượt mà
   const [detailDialogOpen, setDetailDialogOpen] = useState(false); // Điều khiển dialog chi tiết gói
   const [detailData, setDetailData] = useState(null); // Dữ liệu chi tiết gói đang xem
@@ -52,24 +56,38 @@ export default function StiDetailPage() {
   // State cho dialog chi tiết xét nghiệm đơn lẻ
   const [serviceDetailOpen, setServiceDetailOpen] = useState(false); // Điều khiển dialog chi tiết xét nghiệm
   const [currentServiceDetail, setCurrentServiceDetail] = useState(null); // Dữ liệu xét nghiệm đang xem chi tiết
+  
+  // State cho tab navigation
+  const [activeTab, setActiveTab] = useState('package'); // 'single' hoặc 'package'
+  
+  // State cho tìm kiếm
+  const [searchQuery, setSearchQuery] = useState(''); // Từ khóa tìm kiếm
 
   // ===== EFFECT CHẠY KHI COMPONENT ĐƯỢC MOUNT =====
   useEffect(() => {
-    // ===== HÀM LẤY DANH SÁCH GÓI XÉT NGHIỆM TỪ API =====
-    const fetchPackages = async () => {
+    // ===== HÀM LẤY DANH SÁCH GÓI XÉT NGHIỆM VÀ XÉT NGHIỆM LẺ TỪ API =====
+    const fetchData = async () => {
       try {
-        // Gọi API lấy tất cả gói xét nghiệm STI
-        const res = await getAllSTIPackages();
-        // Nếu API trả về thành công, cập nhật state packages
-        if (res.success) setPackages(res.data);
+        // Gọi cả 2 API song song để tối ưu thời gian tải
+        const [packagesRes, servicesRes] = await Promise.all([
+          getAllSTIPackages(),
+          getActiveSTIServices()
+        ]);
+        
+        // Nếu API gói xét nghiệm trả về thành công, cập nhật state packages
+        if (packagesRes.success) setPackages(packagesRes.data);
+        
+        // Nếu API xét nghiệm lẻ trả về thành công, cập nhật state singleTests
+        if (servicesRes.success) setSingleTests(servicesRes.data);
       } catch {
-        // Nếu có lỗi, đặt packages thành mảng rỗng để tránh crash
+        // Nếu có lỗi, đặt về mảng rỗng để tránh crash
         setPackages([]);
+        setSingleTests([]);
       }
     };
     
     // Gọi hàm fetch data
-    fetchPackages();
+    fetchData();
     
     // ===== THIẾT LẬP HIỆU ỨNG XUẤT HIỆN MƯỢT MÀ =====
     // Sau 100ms mới cho phép các animation fade/zoom chạy
@@ -78,6 +96,19 @@ export default function StiDetailPage() {
     // Cleanup function: xóa timer khi component unmount để tránh memory leak
     return () => clearTimeout(timer);
   }, []); // Dependencies rỗng => chỉ chạy 1 lần khi mount
+
+  // ===== HÀM LỌC DỮ LIỆU THEO TÌM KIẾM =====
+  // Lọc xét nghiệm lẻ theo từ khóa tìm kiếm
+  const filteredSingleTests = singleTests.filter(service =>
+    service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    service.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Lọc gói xét nghiệm theo từ khóa tìm kiếm
+  const filteredPackages = packages.filter(pkg =>
+    pkg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    pkg.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // ===== HÀM MỞ DIALOG CHI TIẾT GÓI XÉT NGHIỆM =====
   // Hàm này được gọi khi người dùng click nút "Chi tiết" trên card gói xét nghiệm
@@ -130,7 +161,7 @@ export default function StiDetailPage() {
 
   // ===== HÀM XỬ LÝ ĐĂNG KÝ XÉT NGHIỆM VỚI KIỂM TRA ĐĂNG NHẬP =====
   // Hàm này kiểm tra trạng thái đăng nhập trước khi chuyển đến trang đăng ký
-  const handleTestRegistration = async (selectedPackage = null) => {
+  const handleTestRegistration = async (selectedItem = null) => {
     try {
       // ===== KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP =====
       // Gọi API để check authentication status - sử dụng endpoint có sẵn
@@ -140,18 +171,38 @@ export default function StiDetailPage() {
       
       // ===== NẾU ĐÃ ĐĂNG NHẬP - CHUYỂN ĐẾN TRANG ĐĂNG KÝ =====
       if (response.status === 200) {
-        if (selectedPackage) {
-          // Chuyển với dữ liệu gói đã chọn và bỏ qua bước chọn dịch vụ
-          navigate('/test-registration', { 
-            state: { 
-              selectedPackage,
-              activeStep: 1, // Chuyển thẳng đến bước chọn ngày giờ
-              initialStep: 1,
-              skipServiceSelection: true
-            } 
-          });
+        if (selectedItem) {
+          // Kiểm tra xem selectedItem là gói hay xét nghiệm lẻ
+          // Gói xét nghiệm có thuộc tính 'services', xét nghiệm lẻ có 'components'
+          const isPackage = selectedItem.services && Array.isArray(selectedItem.services);
+          const isTest = selectedItem.components && Array.isArray(selectedItem.components);
+          
+          if (isPackage) {
+            // Chuyển với dữ liệu gói đã chọn và bỏ qua bước chọn dịch vụ
+            navigate('/test-registration', { 
+              state: { 
+                selectedPackage: selectedItem,
+                activeStep: 1, // Chuyển thẳng đến bước chọn ngày giờ
+                initialStep: 1,
+                skipServiceSelection: true
+              } 
+            });
+          } else if (isTest) {
+            // Chuyển với dữ liệu xét nghiệm lẻ đã chọn
+            navigate('/test-registration', { 
+              state: { 
+                selectedTest: selectedItem,
+                activeStep: 1, // Chuyển thẳng đến bước chọn ngày giờ
+                initialStep: 1,
+                skipServiceSelection: true
+              } 
+            });
+          } else {
+            // Fallback: chuyển đến trang đăng ký bình thường
+            navigate('/test-registration');
+          }
         } else {
-          // Chuyển không có gói nào được chọn trước
+          // Chuyển không có dịch vụ nào được chọn trước
           navigate('/test-registration');
         }
       }
@@ -159,15 +210,26 @@ export default function StiDetailPage() {
       // Nếu lỗi 401/403 => chưa đăng nhập
       if (error.response?.status === 401 || error.response?.status === 403) {
         const redirectData = { path: "/test-registration" };
-        if (selectedPackage) {
-          redirectData.state = { selectedPackage };
+        if (selectedItem) {
+          // Kiểm tra loại item để lưu đúng state
+          const isPackage = selectedItem.services && Array.isArray(selectedItem.services);
+          if (isPackage) {
+            redirectData.state = { selectedPackage: selectedItem };
+          } else {
+            redirectData.state = { selectedTest: selectedItem };
+          }
         }
         localStorageUtil.set("redirectAfterLogin", redirectData);
         navigate("/login");
       } else {
         // Lỗi khác => vẫn cho phép truy cập
-        if (selectedPackage) {
-          navigate('/test-registration', { state: { selectedPackage } });
+        if (selectedItem) {
+          const isPackage = selectedItem.services && Array.isArray(selectedItem.services);
+          if (isPackage) {
+            navigate('/test-registration', { state: { selectedPackage: selectedItem } });
+          } else {
+            navigate('/test-registration', { state: { selectedTest: selectedItem } });
+          }
         } else {
           navigate('/test-registration');
         }
@@ -675,7 +737,7 @@ export default function StiDetailPage() {
                 fontSize: { xs: '2.2rem', md: '2.8rem' }
               }}
             >
-              Gói xét nghiệm STI
+              Dịch vụ xét nghiệm STI
             </Typography>
             
             <Box
@@ -700,14 +762,360 @@ export default function StiDetailPage() {
                 mb: 6
               }}
             >
-              Chọn gói xét nghiệm phù hợp với nhu cầu của bạn. Tất cả các gói đều bao gồm tư vấn miễn phí.
+              Chọn dịch vụ xét nghiệm phù hợp với nhu cầu của bạn. Tất cả đều bao gồm tư vấn miễn phí.
             </Typography>
+
+            {/* Thanh tìm kiếm */}
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              mb: 4,
+              maxWidth: 500,
+              mx: 'auto'
+            }}>
+              <TextField
+                fullWidth
+                placeholder="Tìm kiếm xét nghiệm hoặc gói..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'rgba(255,255,255,0.9)',
+                    backdropFilter: 'blur(10px)',
+                    '& fieldset': {
+                      borderColor: 'rgba(33,150,243,0.2)',
+                      borderWidth: 1.5,
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(33,150,243,0.4)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#2196F3',
+                      borderWidth: 2,
+                    },
+                  },
+                  '& .MuiInputBase-input': {
+                    py: 1.5,
+                    fontSize: '1rem',
+                  }
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: '#666' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            {/* Tab Navigation - Thiết kế theo screenshot */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                background: 'rgba(255,255,255,0.9)',
+                borderRadius: 12,
+                p: 0.3,
+                border: '1px solid rgba(224,224,224,0.5)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+              }}>
+                <Button
+                  onClick={() => setActiveTab('single')}
+                  sx={{
+                    borderRadius: 10,
+                    px: 3,
+                    py: 1.2,
+                    fontSize: '0.95rem',
+                    fontWeight: 500,
+                    textTransform: 'none',
+                    transition: 'all 0.2s ease',
+                    background: activeTab === 'single' 
+                      ? 'rgba(224,224,224,0.3)' 
+                      : 'transparent',
+                    color: activeTab === 'single' ? '#333' : '#666',
+                    minWidth: 140,
+                    '&:hover': {
+                      background: activeTab === 'single' 
+                        ? 'rgba(224,224,224,0.4)' 
+                        : 'rgba(224,224,224,0.15)',
+                    }
+                  }}
+                >
+                  🔬 Xét nghiệm lẻ
+                </Button>
+                <Button
+                  onClick={() => setActiveTab('package')}
+                  sx={{
+                    borderRadius: 10,
+                    px: 3,
+                    py: 1.2,
+                    fontSize: '0.95rem',
+                    fontWeight: 500,
+                    textTransform: 'none',
+                    transition: 'all 0.2s ease',
+                    background: activeTab === 'package' 
+                      ? 'linear-gradient(135deg, #4FC3F7, #29B6F6)' 
+                      : 'transparent',
+                    color: activeTab === 'package' ? '#fff' : '#666',
+                    minWidth: 140,
+                    boxShadow: activeTab === 'package' 
+                      ? '0 2px 8px rgba(79,195,247,0.3)' 
+                      : 'none',
+                    '&:hover': {
+                      background: activeTab === 'package' 
+                        ? 'linear-gradient(135deg, #29B6F6, #4FC3F7)' 
+                        : 'rgba(79,195,247,0.08)',
+                    }
+                  }}
+                >
+                  📦 Gói xét nghiệm
+                </Button>
+              </Box>
+            </Box>
           </Box>
         </Fade>
 
-        {/* --- Grid danh sách gói xét nghiệm --- */}
-        <Grid container spacing={4} sx={{ width: '100%', mb: 8 }} justifyContent="center">
-          {packages.map((pkg, idx) => (
+        {/* Hiển thị số lượng kết quả tìm kiếm */}
+        {searchQuery && (
+          <Fade in={loaded} timeout={400}>
+            <Box sx={{ textAlign: 'center', mb: 3 }}>
+              <Chip
+                label={`Tìm thấy ${activeTab === 'single' 
+                  ? filteredSingleTests.length 
+                  : filteredPackages.length} kết quả cho "${searchQuery}"`}
+                sx={{
+                  px: 2,
+                  py: 1,
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  background: 'linear-gradient(45deg, rgba(33,150,243,0.1), rgba(0,191,165,0.1))',
+                  color: '#2196F3',
+                  border: '1px solid rgba(33,150,243,0.2)',
+                }}
+              />
+            </Box>
+          </Fade>
+        )}
+
+        {/* --- Conditional rendering based on active tab --- */}
+        {activeTab === 'single' && (
+          /* --- Grid danh sách xét nghiệm lẻ --- */
+          <Grid container spacing={4} sx={{ width: '100%', mb: 8 }} justifyContent="center">
+            {filteredSingleTests.length > 0 ? (
+              filteredSingleTests.map((service, idx) => (
+              <Grid item xs={12} sm={6} lg={4} key={service.id} display="flex" justifyContent="center">
+                <Zoom in={loaded} style={{ transitionDelay: `${idx * 150 + 600}ms` }}>
+                  {/* --- Card xét nghiệm lẻ - Style giống hình mẫu --- */}
+                  <Card sx={{
+                    borderRadius: 5,
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+                    width: '100%',
+                    maxWidth: 360,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    transition: 'all 0.4s cubic-bezier(.4,0,.2,1)',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    background: 'linear-gradient(180deg, #ffffff 0%, #f8faff 100%)',
+                    border: '1px solid rgba(33,150,243,0.2)',
+                    backdropFilter: 'blur(20px)',
+                    '&:hover': {
+                      transform: 'translateY(-15px) scale(1.02)',
+                      boxShadow: '0 25px 60px rgba(33,150,243,0.2)',
+                      '& .service-header': {
+                        background: 'linear-gradient(135deg, #2196F3, #00BFA5)',
+                      },
+                      '& .service-button': {
+                        background: 'linear-gradient(45deg, #00BFA5, #2196F3)',
+                        transform: 'translateY(-2px)',
+                      }
+                    }
+                  }}>
+                    {/* Header với gradient xanh dương giống gói xét nghiệm */}
+                    <Box 
+                      className="service-header"
+                      sx={{
+                        background: 'linear-gradient(135deg, #2196F3, #00BFA5)',
+                        color: 'white',
+                        py: 3,
+                        px: 3,
+                        position: 'relative',
+                        overflow: 'hidden',
+                        transition: 'all 0.3s ease',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          width: 100,
+                          height: 100,
+                          background: 'radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%)',
+                          borderRadius: '50%',
+                          transform: 'translate(30px, -30px)',
+                        }
+                      }}
+                    >
+                      <Typography
+                        fontWeight={800}
+                        fontSize={22}
+                        sx={{
+                          textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          textAlign: 'center',
+                          position: 'relative',
+                          zIndex: 1
+                        }}
+                      >
+                        {service.name}
+                      </Typography>
+                    </Box>
+                    
+                    <CardContent sx={{ 
+                      flexGrow: 1, 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      justifyContent: 'space-between', 
+                      p: 4 
+                    }}>
+                      <Typography 
+                        color="text.secondary" 
+                        mb={3} 
+                        fontSize={16} 
+                        sx={{ 
+                          fontWeight: 400, 
+                          lineHeight: 1.6,
+                          textAlign: 'center',
+                          minHeight: 72, // Tăng chiều cao để đồng đều với gói xét nghiệm
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3, // Giới hạn 3 dòng
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}
+                      >
+                        {service.description}
+                      </Typography>
+                      
+                      {/* Price Display - Giống hệt gói xét nghiệm */}
+                      <Box sx={{ 
+                        textAlign: 'center',
+                        p: 2,
+                        mb: 3,
+                        borderRadius: 3,
+                        background: 'linear-gradient(135deg, rgba(33,150,243,0.08), rgba(0,191,165,0.08))',
+                        border: '1px solid rgba(33,150,243,0.15)'
+                      }}>
+                        <Typography 
+                          variant="h4"
+                          fontWeight={900} 
+                          sx={{
+                            color: 'transparent',
+                            background: 'linear-gradient(45deg, #2196F3, #00BFA5)',
+                            backgroundClip: 'text',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                          }}
+                        >
+                          {service.price?.toLocaleString('vi-VN')} đ
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                          Bao gồm tư vấn miễn phí
+                        </Typography>
+                      </Box>
+                      
+                      {/* --- Nút đăng ký và xem chi tiết - Giống hệt gói xét nghiệm --- */}
+                      <Box sx={{ 
+                        display: 'flex', 
+                        gap: 2, 
+                        justifyContent: 'center', 
+                        alignItems: 'center',
+                        mt: 2
+                      }}>
+                        <Button
+                          className="service-button"
+                          variant="contained"
+                          sx={{
+                            background: 'linear-gradient(45deg, #2196F3, #00BFA5)',
+                            color: '#fff',
+                            fontWeight: 700,
+                            borderRadius: 50,
+                            px: 4,
+                            py: 1.5,
+                            minWidth: 120,
+                            fontSize: '1rem',
+                            boxShadow: '0 4px 16px rgba(33, 150, 243, 0.25)',
+                            textTransform: 'none',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              background: 'linear-gradient(45deg, #00BFA5, #2196F3)',
+                              boxShadow: '0 8px 24px rgba(33, 150, 243, 0.35)',
+                            },
+                          }}
+                          onClick={() => handleTestRegistration(service)}
+                        >
+                          Đăng ký ngay
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          sx={{
+                            borderRadius: 50,
+                            fontWeight: 700,
+                            px: 3,
+                            py: 1.5,
+                            minWidth: 100,
+                            fontSize: '1rem',
+                            borderColor: '#2196F3',
+                            borderWidth: 2,
+                            color: '#2196F3',
+                            textTransform: 'none',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              borderColor: '#00BFA5',
+                              color: '#00BFA5',
+                              background: 'rgba(33, 150, 243, 0.08)',
+                              borderWidth: 2,
+                            },
+                          }}
+                          onClick={() => handleOpenServiceDetail(service)}
+                        >
+                          Chi tiết
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Zoom>
+              </Grid>
+            ))
+            ) : (
+              // Hiển thị khi không có kết quả tìm kiếm
+              <Grid item xs={12}>
+                <Box sx={{ 
+                  textAlign: 'center', 
+                  py: 8,
+                  background: 'rgba(255,255,255,0.7)',
+                  borderRadius: 3,
+                  border: '1px solid rgba(224,224,224,0.3)'
+                }}>
+                  <SearchIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary" mb={1}>
+                    Không tìm thấy xét nghiệm nào
+                  </Typography>
+                  <Typography color="text.secondary">
+                    Thử tìm kiếm với từ khóa khác
+                  </Typography>
+                </Box>
+              </Grid>
+            )}
+          </Grid>
+        )}
+
+        {activeTab === 'package' && (
+          /* --- Grid danh sách gói xét nghiệm --- */
+          <Grid container spacing={4} sx={{ width: '100%', mb: 8 }} justifyContent="center">
+            {filteredPackages.length > 0 ? (
+              filteredPackages.map((pkg, idx) => (
             <Grid item xs={12} sm={6} lg={4} key={pkg.id} display="flex" justifyContent="center">
               <Zoom in={loaded} style={{ transitionDelay: `${idx * 150 + 600}ms` }}>
                 {/* --- Card gói xét nghiệm --- */}
@@ -781,18 +1189,22 @@ export default function StiDetailPage() {
                     flexDirection: 'column', 
                     justifyContent: 'space-between', 
                     p: 4 
-                  }}>
-                    <Typography 
-                      color="text.secondary" 
-                      mb={3} 
-                      fontSize={16} 
-                      sx={{ 
-                        fontWeight: 400, 
-                        lineHeight: 1.6,
-                        textAlign: 'center',
-                        minHeight: 48 
-                      }}
-                    >
+                  }}>                      <Typography 
+                        color="text.secondary" 
+                        mb={3} 
+                        fontSize={16} 
+                        sx={{ 
+                          fontWeight: 400, 
+                          lineHeight: 1.6,
+                          textAlign: 'center',
+                          minHeight: 72, // Đồng đều với xét nghiệm lẻ
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3, // Giới hạn 3 dòng
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}
+                      >
                       {pkg.description}
                     </Typography>
                     
@@ -885,8 +1297,30 @@ export default function StiDetailPage() {
                 </Card>
               </Zoom>
             </Grid>
-          ))}
-        </Grid>
+          ))
+          ) : (
+            // Hiển thị khi không có kết quả tìm kiếm
+            <Grid item xs={12}>
+              <Box sx={{ 
+                textAlign: 'center', 
+                py: 8,
+                background: 'rgba(255,255,255,0.7)',
+                borderRadius: 3,
+                border: '1px solid rgba(224,224,224,0.3)'
+              }}>
+                <SearchIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" mb={1}>
+                  Không tìm thấy gói xét nghiệm nào
+                </Typography>
+                <Typography color="text.secondary">
+                  Thử tìm kiếm với từ khóa khác
+                </Typography>
+              </Box>
+            </Grid>
+          )}
+          </Grid>
+        )}
+
         {/* Dialog chi tiết gói - sử dụng ServiceDetailDialog component */}
         <ServiceDetailDialog
           open={detailDialogOpen}

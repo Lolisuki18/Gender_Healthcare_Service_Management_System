@@ -21,7 +21,8 @@
  * CustomerProfile → CustomerSidebar → Content Components
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -65,11 +66,19 @@ const CustomerProfile = () => {
   // Hook để detect responsive breakpoints
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const location = useLocation();
 
   // State management
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Mặc định mở trên desktop, đóng trên mobile
   const [selectedMenuItem, setSelectedMenuItem] = useState('profile'); // Tab mặc định
   const user = localStorageUtil.get('userProfile')?.data || {};
+
+  // Effect để xử lý initial tab selection từ navigation state
+  useEffect(() => {
+    if (location.state?.initialTab) {
+      setSelectedMenuItem(location.state.initialTab);
+    }
+  }, [location.state]);
 
   // Handler functions
   const handleSidebarToggle = () => {

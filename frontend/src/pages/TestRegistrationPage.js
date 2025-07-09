@@ -1676,6 +1676,7 @@ function TestRegistrationPage() {
           onClose={() => navigate('/')}
           paymentFailed={paymentFailed}
           paymentFailedMessage={paymentFailedMessage}
+          onViewBookings={() => navigate('/profile', { state: { initialTab: 'medical-history' } })}
         />
 
         {/* Dialog nhập thông tin thẻ */}
