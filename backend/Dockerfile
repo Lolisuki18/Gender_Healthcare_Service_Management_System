@@ -1,6 +1,5 @@
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:24-jre
 WORKDIR /app
 COPY target/*.jar app.jar
-COPY uploads /app/uploads
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=$SPRING_PROFILES_ACTIVE", "app.jar"]
+ENTRYPOINT ["java", "-jar", "-Dspring.config.name=application,application-cloud", "-Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-default}", "app.jar"]
