@@ -4,7 +4,7 @@ import { getWithExpiry } from "@utils/helpers";
 import {
   selectUser,
   selectAvatar,
-  selectIsAuthenticated,
+  selectIsAuthenticated,  
 } from "@/redux/slices/authSlice";
 import { fetchCurrentUser, logoutUser } from "@/redux/thunks/userThunks";
 import { loginUser } from "@/redux/thunks/userThunks";

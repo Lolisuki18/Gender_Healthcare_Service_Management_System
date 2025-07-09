@@ -456,18 +456,6 @@ const Header = () => {
               >
                 {user ? (
                   <Avatar
-                    key={`header-avatar-${refreshKey}-${Date.now()}`}
-                    src={(() => {
-                      // Ưu tiên lấy trực tiếp từ userProfile
-                      const userData = localStorageUtil.get('userProfile');
-                      if (userData?.data?.avatar) {
-                        return imageUrl.getFullImageUrl(userData.data.avatar);
-                      } else if (userData?.avatar) {
-                        return imageUrl.getFullImageUrl(userData.avatar);
-                      }
-                      // Nếu không có trong userProfile thì mới dùng state
-                      return avatarUrl;
-                    })()}
                     sx={{
                       width: 38,
                       height: 38,
@@ -476,18 +464,33 @@ const Header = () => {
                       boxShadow: '0 2px 10px rgba(0, 0, 0, 0.15)',
                       backgroundColor: '#1ABC9C20',
                     }}
-                    imgProps={{
-                      onError: () => {
-                        console.log('Header avatar image failed to load');
-                        forceRefresh();
-                      },
-                      onLoad: () => {
-                        console.log('Header avatar image loaded successfully');
-                      },
-                    }}
                   >
-                    {!avatarUrl &&
-                      (user?.fullName?.[0] || user?.email?.[0] || 'U')}
+                    <img
+                      src={(() => {
+                        const userData = localStorageUtil.get('userProfile');
+                        if (userData?.data?.avatar) {
+                          return imageUrl.getFullImageUrl(userData.data.avatar);
+                        } else if (userData?.avatar) {
+                          return imageUrl.getFullImageUrl(userData.avatar);
+                        }
+                        return avatarUrl || '/img/avatar/default.jpg';
+                      })()}
+                      alt="avatar"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                      onError={(e) => {
+                        console.error('[Avatar onError] Không load được ảnh avatar:', e.target.src);
+                        if (e && e.nativeEvent && e.nativeEvent.message) {
+                          console.error('[Avatar onError] nativeEvent message:', e.nativeEvent.message);
+                        }
+                        if (!e.target.src.endsWith('/img/avatar/default.jpg')) {
+                          e.target.onerror = null;
+                          e.target.src = '/img/avatar/default.jpg';
+                        }
+                      }}
+                      onLoad={() => {
+                        console.log('[Avatar onLoad] Ảnh avatar đã load thành công:', document.querySelector('img[alt="avatar"]').src);
+                      }}
+                    />
                   </Avatar>
                 ) : (
                   <AccountCircleIcon

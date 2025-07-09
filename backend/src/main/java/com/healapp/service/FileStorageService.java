@@ -103,9 +103,13 @@ public class FileStorageService {
 
     public String storeAvatar(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
-            return avatarUrlPattern + "default.jpg";
+            if (isGcs()) {
+                return String.format("https://storage.googleapis.com/%s/avatar/default.jpg", gcsBucketName);
+            } else {    
+                return avatarUrlPattern + "default.jpg";
+            }
         }
-        String originalFileName = file.getOriginalFilename();
+        String originalFileName = file.getOriginalFilename();   
         String fileExtension = getFileExtension(originalFileName);
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         String uniqueFileName = UUID.randomUUID().toString().substring(0, 8) + "_" + timestamp + fileExtension;
@@ -119,7 +123,11 @@ public class FileStorageService {
 
     public String storeBlogImage(MultipartFile file, String prefix) throws IOException {
         if (file == null || file.isEmpty()) {
-            return null;
+            if (isGcs()) {
+                return String.format("https://storage.googleapis.com/%s/blog/default.jpg", gcsBucketName);
+            } else {
+                return blogUrlPattern + "default.jpg";
+            }
         }
         String originalFileName = file.getOriginalFilename();
         String fileExtension = getFileExtension(originalFileName);
@@ -143,7 +151,11 @@ public class FileStorageService {
 
     public String saveAvatarFile(MultipartFile file, Long userId) throws IOException {
         if (file == null || file.isEmpty()) {
-            return avatarUrlPattern + "default.jpg";
+            if (isGcs()) {
+                return String.format("https://storage.googleapis.com/%s/avatar/default.jpg", gcsBucketName);
+            } else {
+                return avatarUrlPattern + "default.jpg";
+            }
         }
         String originalFileName = file.getOriginalFilename();
         String fileExtension = getFileExtension(originalFileName);
@@ -220,5 +232,21 @@ public class FileStorageService {
             return "";
         }
         return fileName.substring(lastIndexOf);
+    }
+
+    public String buildAvatarUrl(String fileName) {
+        // Nếu sử dụng GCS, trả về URL đầy đủ
+        if (isGcs()) {
+            return String.format("https://storage.googleapis.com/%s/avatar/%s", gcsBucketName, fileName);
+        }
+        // Local storage: sử dụng pattern như cũ
+        String base = avatarUrlPattern;
+        if (!base.endsWith("/")) {
+            base += "/";
+        }
+        if (fileName.startsWith("/")) {
+            fileName = fileName.substring(1);
+        }
+        return base + fileName;
     }
 }

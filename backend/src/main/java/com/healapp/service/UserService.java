@@ -629,7 +629,12 @@ public class UserService {
         response.setPhone(user.getPhone());
         response.setEmail(user.getEmail());
         response.setUsername(user.getUsername());
-        response.setAvatar(user.getAvatar());
+        // Sửa avatar trả về đúng URL mặc định nếu cần
+        String avatar = user.getAvatar();
+        if (avatar == null || avatar.isEmpty() || "/img/avatar/default.jpg".equals(avatar)) {
+            avatar = fileStorageService.buildAvatarUrl("default.jpg");
+        }
+        response.setAvatar(avatar);
         response.setIsActive(user.getIsActive());
         response.setRole(user.getRoleName());
         response.setAddress(user.getAddress());

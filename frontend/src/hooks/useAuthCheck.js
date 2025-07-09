@@ -6,25 +6,22 @@ const useAuthCheck = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Lấy thông tin user từ localStorage
-    const userData = localStorageUtil.get("user");
-    if (userData) {
+    // Lấy token từ localStorage
+    const token = localStorageUtil.get("token");
+    if (token && token.accessToken) {
       setIsLoggedIn(true);
-      setUser(userData);
+      setUser(token); // hoặc fetch profile nếu muốn
+    } else {
+      setIsLoggedIn(false);
+      setUser(null);
     }
-
     // Cleanup function khi component unmount
-    return () => {
-      // Xóa tất cả các interval để tránh memory leak
-      const intervalId = setInterval(() => {}, 100);
-      for (let i = 1; i <= intervalId; i++) {
-        clearInterval(i);
-      }
-    };
+    return () => {};
   }, []);
 
   const logout = () => {
-    localStorageUtil.remove("user");
+    localStorageUtil.remove("token");
+    localStorageUtil.remove("userProfile");
     setIsLoggedIn(false);
     setUser(null);
   };

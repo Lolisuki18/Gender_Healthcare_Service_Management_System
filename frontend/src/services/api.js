@@ -13,14 +13,22 @@
  * - Cấu hình baseURL và headers mặc định
  * - Interceptor tự động thêm JWT token vào các request
  * - Xử lý lỗi tập trung, bao gồm việc xử lý token hết hạn
+ *
+ * =============================
+ * 🔑 Để sử dụng backend Cloud (production):
+ *   - Tạo file .env ở thư mục gốc frontend với nội dung:
+ *       REACT_APP_API_URL=https://gender-heath-backend-720346160754.asia-southeast1.run.app
+ *   - Khi chạy local, có thể bỏ dòng này hoặc để http://localhost:8080
+ *
+ * =============================
  */
 
 import localStorageUtil from '@/utils/localStorage';
 import axios from 'axios';
 
-// Tạo config object trước
+// Lấy baseURL từ biến môi trường, ưu tiên cloud nếu có
 const config = {
-  baseURL: 'http://localhost:8080',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
   // headers: {
   //   'Content-Type': 'application/json', // Đã xóa để axios tự động nhận diện
   // },

@@ -56,13 +56,14 @@ const LoginPage = () => {
    * Kiểm tra trạng thái đăng nhập khi component được tải
    */
   useEffect(() => {
-    // Kiểm tra xem có dữ liệu người dùng trong localStorage không
-    const userProfile = localStorageUtil.get("userProfile");
-    if (userProfile) {
-      //nếu có dữ liệu người dùng thì sẽ set trạng thái đăng nhập là true
+    // Kiểm tra xem có token hợp lệ trong localStorage không
+    const token = localStorageUtil.get("token");
+    if (token && token.accessToken) {
       setIsLoggedIn(true);
-      // và lưu trữ thông tin người dùng
-      setUser(userProfile);
+      setUser(token);
+    } else {
+      setIsLoggedIn(false);
+      setUser(null);
     }
   }, []);
 
@@ -251,6 +252,13 @@ const LoginPage = () => {
    */
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);
+  };
+
+  const logout = () => {
+    localStorageUtil.remove("token");
+    localStorageUtil.remove("userProfile");
+    setIsLoggedIn(false);
+    setUser(null);
   };
 
   // --- RENDER METHODS ---

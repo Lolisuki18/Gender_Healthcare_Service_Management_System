@@ -17,7 +17,7 @@ export function getFullImageUrl(url) {
   if (!url) return '';
   if (url.startsWith('http')) return url;
   // Nếu là đường dẫn tương đối /img/... thì nối domain backend
-  return `http://localhost:8080${url}`;
+  return `${API_BASE_URL}${url}`;
 }
                         
 /**

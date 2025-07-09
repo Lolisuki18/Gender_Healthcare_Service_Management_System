@@ -96,23 +96,15 @@ const RegisterPage = () => {
    * Kiểm tra trạng thái đăng nhập khi component được render
    */
   useEffect(() => {
-    // Lấy thông tin user từ localStorage
-    const userData = localStorageUtil.get("user");
-    if (userData) {
-      // Nếu có thông tin người dùng, đặt trạng thái đăng nhập
+    // Kiểm tra xem có token hợp lệ trong localStorage không
+    const token = localStorageUtil.get("token");
+    if (token && token.accessToken) {
       setIsLoggedIn(true);
-      setUser(userData);
+      setUser(token);
+    } else {
+      setIsLoggedIn(false);
+      setUser(null);
     }
-
-    return () => {
-      // Xóa tất cả các interval để tránh memory leak
-      // Sử dụng clearInterval để xóa tất cả các interval đã tạo
-      const intervalId = setInterval(() => {}, 100);
-      // clearInterval sẽ xóa tất cả các interval đã tạo
-      for (let i = 1; i <= intervalId; i++) {
-        clearInterval(i);
-      }
-    };
   }, []);
 
   // --- VALIDATION FUNCTIONS ---
