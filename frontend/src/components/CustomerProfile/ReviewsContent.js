@@ -212,14 +212,6 @@ const ReviewsContent = () => {
           testId: test.id,
           // Thêm thông tin để kiểm tra điều kiện - strict hơn
           isEligible: isCompleted && !existingReview && test.serviceId && hasRequiredInfo,
-          // Thêm debug info
-          debugInfo: {
-            originalStatus: test.status,
-            isCompleted,
-            hasExistingReview: !!existingReview,
-            hasServiceId: !!test.serviceId,
-            hasRequiredInfo,
-          }
         });
       }
     });
@@ -860,20 +852,7 @@ const ReviewsContent = () => {
                       }
                     </Typography>
                   )}
-                  {/* Hiển thị thông tin debug cho developer */}
-                  {process.env.NODE_ENV === 'development' && review.debugInfo && (
-                    <Chip
-                      label={`Debug: ${review.debugInfo.originalStatus} | ID: ${review.serviceId || review.consultantId}`}
-                      size="small"
-                      sx={{
-                        fontSize: '10px',
-                        height: '18px',
-                        backgroundColor: '#F5F5F5',
-                        color: '#666',
-                        border: '1px solid #DDD',
-                      }}
-                    />
-                  )}
+
                 </Box>
               </Box>
             </Box>
@@ -989,13 +968,6 @@ const ReviewsContent = () => {
 
   return (
     <Box sx={{ width: '100%' }}>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#2D3748', mb: 1 }}>
-          Đánh giá dịch vụ
-        </Typography>
-      </Box>
-
       {/* Filter Section */}
       <Box sx={{ mb: 3 }}>
         <Box sx={{ 

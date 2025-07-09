@@ -42,11 +42,13 @@ import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import CheckIcon from '@mui/icons-material/Check';
 import CountUp from 'react-countup';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '@/services/api';
 import localStorageUtil from '@/utils/localStorage';
 import { toast } from 'react-toastify';
+import { servicesData } from '@/data/servicesData';
 import { loginSuccess } from '@/redux/slices/authSlice';
 import useSTIServicesAndPackages from '@/hooks/useSTIServicesAndPackages';
 import AskQuestionDialog from '@/components/common/AskQuestionDialog';
@@ -383,125 +385,236 @@ export const HomePage = () => {
             </Typography>
           </Box>
 
-          <Grid container spacing={4}>
-            {services
-              .filter((s) => s.isActive)
-              .slice(0, 3)
-              .map((service, idx) => (
-                <Grid item key={service.id || idx} xs={12} sm={6} md={4}>
+          <Grid container spacing={3} justifyContent="center">
+            {servicesData.slice(0, 3).map((service, idx) => {
+              const IconComponent = service.icon;
+              return (
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  lg={4}
+                  key={service.id}
+                  display="flex"
+                  justifyContent="center"
+                >
                   <Zoom
                     in={loaded}
-                    style={{
-                      transitionDelay: `${(idx + 1) * 100}ms`,
-                    }}
+                    style={{ transitionDelay: `${idx * 150 + 400}ms` }}
                   >
                     <Card
                       sx={{
-                        height: '100%',
+                        borderRadius: 5,
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                        width: '100%',
+                        maxWidth: 350,
+                        mx: 'auto',
                         display: 'flex',
                         flexDirection: 'column',
-                        transition: 'all 0.4s ease',
-                        borderRadius: 4,
+                        height: '100%',
+                        transition: 'all 0.4s cubic-bezier(.4,0,.2,1)',
                         overflow: 'hidden',
-                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.07)',
+                        position: 'relative',
+                        background: 'linear-gradient(180deg, #ffffff 0%, #f8faff 100%)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        backdropFilter: 'blur(20px)',
                         '&:hover': {
-                          transform: 'translateY(-10px)',
-                          boxShadow: '0 20px 40px rgba(74, 144, 226, 0.25)',
-                          '& .MuiCardMedia-root': {
-                            transform: 'scale(1.1)',
+                          transform: 'translateY(-12px) scale(1.02)',
+                          boxShadow: `0 25px 50px rgba(${service.color.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(',')}, 0.25)`,
+                          border: `1px solid ${service.color}40`,
+                          '& .service-icon': {
+                            transform: 'scale(1.2) rotate(5deg)',
+                            background: `linear-gradient(45deg, ${service.gradientFrom}, ${service.gradientTo})`,
                           },
-                          border: '1px solid rgba(74, 144, 226, 0.2)',
+                          '& .service-button': {
+                            background: `linear-gradient(45deg, ${service.gradientFrom}, ${service.gradientTo})`,
+                            transform: 'translateY(-2px)',
+                          }
                         },
                       }}
                     >
+                      {/* Service Header */}
                       <Box
                         sx={{
+                          p: 3,
+                          pb: 2,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          background: `linear-gradient(135deg, ${service.color}08, ${service.color}15)`,
                           position: 'relative',
                           overflow: 'hidden',
-                          height: '200px',
-                        }}
-                      >
-                        <CardMedia
-                          component="img"
-                          height="200"
-                          image={
-                            service.imageUrl ||
-                            'https://images.unsplash.com/photo-1666214280557-f1b5022eb634?q=80&w=2070'
-                          }
-                          alt={service.name || service.serviceName || 'Dịch vụ'}
-                          sx={{
-                            transition: 'transform 1s ease',
-                          }}
-                        />
-                        <Box
-                          sx={{
+                          '&::before': {
+                            content: '""',
                             position: 'absolute',
                             top: 0,
-                            left: 0,
                             right: 0,
-                            bottom: 0,
-                            background: `linear-gradient(to bottom, transparent 30%, #2C528299 100%)`,
-                          }}
-                        />
-                        <Chip
-                          label={`Dịch vụ #${idx + 1}`}
-                          sx={{
-                            position: 'absolute',
-                            top: 16,
-                            right: 16,
-                            backgroundColor: 'rgba(255,255,255,0.9)',
-                            fontWeight: 600,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                          }}
-                        />
+                            width: 100,
+                            height: 100,
+                            background: `radial-gradient(circle, ${service.color}15, transparent 70%)`,
+                            borderRadius: '50%',
+                            transform: 'translate(30px, -30px)',
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, zIndex: 1 }}>
+                          <Avatar
+                            className="service-icon"
+                            sx={{
+                              width: 56,
+                              height: 56,
+                              background: `linear-gradient(45deg, ${service.color}20, ${service.color}40)`,
+                              color: service.color,
+                              transition: 'all 0.3s ease',
+                              boxShadow: `0 4px 16px ${service.color}30`,
+                            }}
+                          >
+                            <IconComponent sx={{ fontSize: '1.8rem' }} />
+                          </Avatar>
+                          <Box>
+                            <Chip
+                              label={`#${service.id}`}
+                              size="small"
+                              sx={{
+                                backgroundColor: `${service.color}15`,
+                                color: service.color,
+                                fontWeight: 700,
+                                fontSize: '0.75rem',
+                                height: 24,
+                                '& .MuiChip-label': { px: 1.5 }
+                              }}
+                            />
+                          </Box>
+                        </Box>
                       </Box>
-                      <CardContent sx={{ flexGrow: 1, p: 4 }}>
+
+                      {/* Service Content */}
+                      <CardContent
+                        sx={{
+                          flexGrow: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          p: 3,
+                          pt: 1,
+                        }}
+                      >
                         <Typography
                           gutterBottom
-                          variant="h5"
+                          variant="h6"
                           component="h3"
                           sx={{
-                            color: (theme) => theme.palette.text.primary,
+                            color: '#1a1a1a',
                             fontWeight: 700,
                             mb: 2,
-                            fontSize: '1.5rem',
+                            fontSize: '1.2rem',
+                            lineHeight: 1.3,
+                            minHeight: 62,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
                           }}
                         >
-                          {service.name || service.serviceName || 'Tên dịch vụ'}
+                          {service.title}
                         </Typography>
+                        
                         <Typography
                           sx={{
-                            color: (theme) => theme.palette.text.secondary,
-                            lineHeight: 1.8,
+                            color: 'text.secondary',
+                            mb: 3,
+                            fontSize: '1rem',
+                            lineHeight: 1.6,
+                            minHeight: 48,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
                           }}
                         >
-                          {service.description ||
-                            'Mô tả dịch vụ đang cập nhật.'}
-                        </Typography>{' '}
-                        <Button
-                          variant="text"
-                          endIcon={<ArrowForwardIcon />}
-                          sx={{
-                            mt: 3,
-                            color: '#4A90E2',
-                            fontWeight: 600,
-                            '&:hover': {
-                              backgroundColor: 'rgba(74, 144, 226, 0.1)',
-                              transform: 'translateX(5px)',
-                            },
-                            transition: 'all 0.3s ease',
-                            justifyContent: 'flex-start',
-                            pl: 0,
-                          }}
-                          onClick={() => navigate('/sti')}
-                        >
-                          Xem chi tiết
-                        </Button>
+                          {service.shortDesc}
+                        </Typography>
+                        
+                        <Box dense sx={{ flexGrow: 1, mb: 2 }}>
+                          {service.bullets.slice(0, 3).map((bullet, i) => (
+                            <Box key={i} sx={{ py: 0.5, display: 'flex', alignItems: 'center' }}>
+                              <CheckIcon 
+                                sx={{ 
+                                  color: service.color, 
+                                  fontSize: '1.2rem',
+                                  fontWeight: 'bold',
+                                  mr: 1
+                                }} 
+                              />
+                              <Typography
+                                sx={{ 
+                                  fontSize: '0.95rem',
+                                  fontWeight: 500,
+                                  color: '#2a2a2a'
+                                }}
+                              >
+                                {bullet}
+                              </Typography>
+                            </Box>
+                          ))}
+                          {service.bullets.length > 3 && (
+                            <Box sx={{ py: 0.5, display: 'flex', alignItems: 'center' }}>
+                              <Typography 
+                                sx={{ 
+                                  color: service.color, 
+                                  fontSize: '0.85rem',
+                                  fontWeight: 'bold',
+                                  mr: 1
+                                }}
+                              >
+                                +{service.bullets.length - 3}
+                              </Typography>
+                              <Typography
+                                sx={{ 
+                                  fontSize: '0.9rem',
+                                  fontStyle: 'italic',
+                                  color: 'text.secondary'
+                                }}
+                              >
+                                Và nhiều tính năng khác...
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
                       </CardContent>
+
+                      {/* Service Button */}
+                      <Box sx={{ p: 3, pt: 0 }}>
+                        <Button
+                          className="service-button"
+                          variant="contained"
+                          endIcon={<ArrowForwardIcon />}
+                          fullWidth
+                          onClick={() => navigate(service.detailRoute)}
+                          sx={{
+                            background: `linear-gradient(45deg, ${service.color}90, ${service.color})`,
+                            color: '#fff',
+                            fontWeight: 700,
+                            borderRadius: 3,
+                            px: 4,
+                            py: 1.8,
+                            fontSize: '1rem',
+                            textTransform: 'none',
+                            boxShadow: `0 4px 16px ${service.color}40`,
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              background: `linear-gradient(45deg, ${service.gradientTo}, ${service.gradientFrom})`,
+                              boxShadow: `0 8px 24px ${service.color}50`,
+                            },
+                          }}
+                        >
+                          Khám phá ngay
+                        </Button>
+                      </Box>
                     </Card>
                   </Zoom>
                 </Grid>
-              ))}
+              );
+            })}
           </Grid>
 
           <Box sx={{ textAlign: 'center', mt: 6 }}>

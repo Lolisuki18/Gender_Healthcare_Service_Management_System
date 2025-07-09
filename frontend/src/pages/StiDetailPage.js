@@ -97,18 +97,28 @@ export default function StiDetailPage() {
     return () => clearTimeout(timer);
   }, []); // Dependencies rỗng => chỉ chạy 1 lần khi mount
 
-  // ===== HÀM LỌC DỮ LIỆU THEO TÌM KIẾM =====
+
+  // ===== PHÂN TRANG XÉT NGHIỆM LẺ =====
   // Lọc xét nghiệm lẻ theo từ khóa tìm kiếm
   const filteredSingleTests = singleTests.filter(service =>
     service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     service.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  // Phân trang cho xét nghiệm lẻ
+  const [singlePage, setSinglePage] = useState(1);
+  const singlePerPage = 6;
+  const singleTotalPages = Math.ceil(filteredSingleTests.length / singlePerPage);
+  const paginatedSingleTests = filteredSingleTests.slice((singlePage - 1) * singlePerPage, singlePage * singlePerPage);
 
-  // Lọc gói xét nghiệm theo từ khóa tìm kiếm
+  // ===== PHÂN TRANG GÓI XÉT NGHIỆM =====
   const filteredPackages = packages.filter(pkg =>
     pkg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     pkg.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const [packagePage, setPackagePage] = useState(1);
+  const packagePerPage = 6;
+  const packageTotalPages = Math.ceil(filteredPackages.length / packagePerPage);
+  const paginatedPackages = filteredPackages.slice((packagePage - 1) * packagePerPage, packagePage * packagePerPage);
 
   // ===== HÀM MỞ DIALOG CHI TIẾT GÓI XÉT NGHIỆM =====
   // Hàm này được gọi khi người dùng click nút "Chi tiết" trên card gói xét nghiệm
@@ -877,34 +887,13 @@ export default function StiDetailPage() {
           </Box>
         </Fade>
 
-        {/* Hiển thị số lượng kết quả tìm kiếm */}
-        {searchQuery && (
-          <Fade in={loaded} timeout={400}>
-            <Box sx={{ textAlign: 'center', mb: 3 }}>
-              <Chip
-                label={`Tìm thấy ${activeTab === 'single' 
-                  ? filteredSingleTests.length 
-                  : filteredPackages.length} kết quả cho "${searchQuery}"`}
-                sx={{
-                  px: 2,
-                  py: 1,
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  background: 'linear-gradient(45deg, rgba(33,150,243,0.1), rgba(0,191,165,0.1))',
-                  color: '#2196F3',
-                  border: '1px solid rgba(33,150,243,0.2)',
-                }}
-              />
-            </Box>
-          </Fade>
-        )}
-
         {/* --- Conditional rendering based on active tab --- */}
         {activeTab === 'single' && (
           /* --- Grid danh sách xét nghiệm lẻ --- */
-          <Grid container spacing={4} sx={{ width: '100%', mb: 8 }} justifyContent="center">
-            {filteredSingleTests.length > 0 ? (
-              filteredSingleTests.map((service, idx) => (
+          <>
+          <Grid container spacing={4} sx={{ width: '100%', mb: 4 }} justifyContent="center">
+            {paginatedSingleTests.length > 0 ? (
+              paginatedSingleTests.map((service, idx) => (
               <Grid item xs={12} sm={6} lg={4} key={service.id} display="flex" justifyContent="center">
                 <Zoom in={loaded} style={{ transitionDelay: `${idx * 150 + 600}ms` }}>
                   {/* --- Card xét nghiệm lẻ - Style giống hình mẫu --- */}
@@ -1107,15 +1096,34 @@ export default function StiDetailPage() {
                   </Typography>
                 </Box>
               </Grid>
+
             )}
           </Grid>
+          {/* Pagination for single tests */}
+          {singleTotalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 6 }}>
+              {Array.from({ length: singleTotalPages }, (_, i) => (
+                <Button
+                  key={i + 1}
+                  variant={singlePage === i + 1 ? 'contained' : 'outlined'}
+                  color="primary"
+                  sx={{ minWidth: 40, mx: 0.5, fontWeight: 700, borderRadius: 2, boxShadow: singlePage === i + 1 ? 2 : 0 }}
+                  onClick={() => setSinglePage(i + 1)}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+            </Box>
+          )}
+          </>
         )}
 
         {activeTab === 'package' && (
           /* --- Grid danh sách gói xét nghiệm --- */
-          <Grid container spacing={4} sx={{ width: '100%', mb: 8 }} justifyContent="center">
-            {filteredPackages.length > 0 ? (
-              filteredPackages.map((pkg, idx) => (
+          <>
+          <Grid container spacing={4} sx={{ width: '100%', mb: 4 }} justifyContent="center">
+            {paginatedPackages.length > 0 ? (
+              paginatedPackages.map((pkg, idx) => (
             <Grid item xs={12} sm={6} lg={4} key={pkg.id} display="flex" justifyContent="center">
               <Zoom in={loaded} style={{ transitionDelay: `${idx * 150 + 600}ms` }}>
                 {/* --- Card gói xét nghiệm --- */}
@@ -1319,6 +1327,23 @@ export default function StiDetailPage() {
             </Grid>
           )}
           </Grid>
+          {/* Pagination for packages */}
+          {packageTotalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 6 }}>
+              {Array.from({ length: packageTotalPages }, (_, i) => (
+                <Button
+                  key={i + 1}
+                  variant={packagePage === i + 1 ? 'contained' : 'outlined'}
+                  color="primary"
+                  sx={{ minWidth: 40, mx: 0.5, fontWeight: 700, borderRadius: 2, boxShadow: packagePage === i + 1 ? 2 : 0 }}
+                  onClick={() => setPackagePage(i + 1)}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+            </Box>
+          )}
+          </>
         )}
 
         {/* Dialog chi tiết gói - sử dụng ServiceDetailDialog component */}
