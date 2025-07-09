@@ -58,6 +58,20 @@ public class MenstrualCycleService {
     }
 
 
+    // Lấy chu kỳ kinh nguyệt gần nhất
+    public MenstrualCycleResponse getLatestMenstrualCycle() {
+        try {
+            Long userId = getCurrentUserId();
+            Optional<MenstrualCycle> latestCycle = menstrualCycleRepository.findTopByUserIdOrderByStartDateDesc(userId);
+            if (!latestCycle.isPresent()) {
+                return null;
+            }
+            return convertToResponse(latestCycle.get());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // Khai báo chu kỳ kinh nguyệt
     @Transactional
     public ApiResponse<MenstrualCycleResponse> createMenstrualCycle(MenstrualCycleRequest request) {
@@ -183,6 +197,16 @@ public class MenstrualCycleService {
         }
     }
 
+    // Lấy chu kỳ kinh nguyệt gần nhất trước ngày hiện tại
+    public Optional<MenstrualCycle> getLatestCycleBeforeToday(Long userId, LocalDate today) {
+        try {
+            return menstrualCycleRepository.findLatestCycleBeforeToday(userId, today);
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy chu kỳ kinh nguyệt gần nhất trước ngày hiện tại: " + e.getMessage());
+            return Optional.empty();
+        }
+    }
+
 
     // Chỉnh sửa chu kỳ kinh nguyệt
     @Transactional
@@ -290,85 +314,85 @@ public class MenstrualCycleService {
 
 
     // Gửi email nhắc nhở về ngày rụng trứng
-    @Scheduled(cron = "0 0 7 * * ?") // Mỗi ngày lúc 7 giờ sáng
-    public ApiResponse<String> sendOvulationReminderEmail() {
-        try {
-            Optional<MenstrualCycle> menstrualCycleOpt = menstrualCycleRepository.findLatestCycleBeforeToday(getCurrentUserId(), LocalDate.now());
-            if (menstrualCycleOpt.isEmpty()) {
-                log.info("Không tìm thấy chu kỳ kinh nguyệt cho user: " + getCurrentUserId());
-                return ApiResponse.error("Không tìm thấy chu kỳ kinh nguyệt cho user: " + getCurrentUserId());
-            }
-            MenstrualCycle menstrualCycle = menstrualCycleOpt.get();
-            if (menstrualCycle.getOvulationRemind() == null || !menstrualCycle.getOvulationRemind()) {
-                log.info("Nhắc nhở không được bật cho user: " + menstrualCycle.getUser().getId());
-                return ApiResponse.error("Nhắc nhở không được bật cho user: " + menstrualCycle.getUser().getId());
-            }
-            LocalDate today = LocalDate.now();
-            LocalDate ovulationDate = menstrualCycle.getOvulationDate();
+    // @Scheduled(cron = "0 0 7 * * ?") // Mỗi ngày lúc 7 giờ sáng
+    // public ApiResponse<String> sendOvulationReminderEmail() {
+    //     try {
+    //         Optional<MenstrualCycle> menstrualCycleOpt = menstrualCycleRepository.findLatestCycleBeforeToday(getCurrentUserId(), LocalDate.now());
+    //         if (menstrualCycleOpt.isEmpty()) {
+    //             log.info("Không tìm thấy chu kỳ kinh nguyệt cho user: " + getCurrentUserId());
+    //             return ApiResponse.error("Không tìm thấy chu kỳ kinh nguyệt cho user: " + getCurrentUserId());
+    //         }
+    //         MenstrualCycle menstrualCycle = menstrualCycleOpt.get();
+    //         if (menstrualCycle.getOvulationRemind() == null || !menstrualCycle.getOvulationRemind()) {
+    //             log.info("Nhắc nhở không được bật cho user: " + menstrualCycle.getUser().getId());
+    //             return ApiResponse.error("Nhắc nhở không được bật cho user: " + menstrualCycle.getUser().getId());
+    //         }
+    //         LocalDate today = LocalDate.now();
+    //         LocalDate ovulationDate = menstrualCycle.getOvulationDate();
 
-            // Gửi nếu hôm nay là đúng 1 ngày trước rụng trứng
-            if (today.isEqual(ovulationDate.minusDays(1))) {
-                String email = menstrualCycle.getUser().getEmail();
-                String fullName = menstrualCycle.getUser().getFullName();
+    //         // Gửi nếu hôm nay là đúng 1 ngày trước rụng trứng
+    //         if (today.isEqual(ovulationDate.minusDays(1))) {
+    //             String email = menstrualCycle.getUser().getEmail();
+    //             String fullName = menstrualCycle.getUser().getFullName();
 
-                emailService.sendOvulationReminderAsync(email, fullName, ovulationDate);
-                log.info("Đã gửi email nhắc nhở ngày rụng trứng cho user: " + menstrualCycle.getUser().getId());
-            } else {
-                log.info("Hôm nay không phải là 1 ngày trước rụng trứng, không gửi email cho user: " + menstrualCycle.getUser().getId());
-            }
-            return ApiResponse.success("Đã gửi email nhắc nhở ngày rụng trứng cho user: " + getCurrentUserId());
+    //             emailService.sendOvulationReminderAsync(email, fullName, ovulationDate);
+    //             log.info("Đã gửi email nhắc nhở ngày rụng trứng cho user: " + menstrualCycle.getUser().getId());
+    //         } else {
+    //             log.info("Hôm nay không phải là 1 ngày trước rụng trứng, không gửi email cho user: " + menstrualCycle.getUser().getId());
+    //         }
+    //         return ApiResponse.success("Đã gửi email nhắc nhở ngày rụng trứng cho user: " + getCurrentUserId());
 
-        } catch (Exception e) {
-            log.error("Lỗi khi gửi email nhắc nhở ngày rụng trứng cho user: " + getCurrentUserId(), e);
-            return ApiResponse.error("Lỗi khi gửi email nhắc nhở ngày rụng trứng: " + e.getMessage());
-        }
-    }
+    //     } catch (Exception e) {
+    //         log.error("Lỗi khi gửi email nhắc nhở ngày rụng trứng cho user: " + getCurrentUserId(), e);
+    //         return ApiResponse.error("Lỗi khi gửi email nhắc nhở ngày rụng trứng: " + e.getMessage());
+    //     }
+    // }
 
 
     // Gửi email nhắc nhở về tỉ lệ mang thai cao
-    @Scheduled(cron = "0 0 7 * * ?")    // Mỗi ngày lúc 7 giờ sáng
-    public void sendReminderPregnancy() {
-        LocalDate today = LocalDate.now();
-        List<UserDtls> users = userRepository.findAll();
+    // @Scheduled(cron = "0 0 7 * * ?")    // Mỗi ngày lúc 7 giờ sáng
+    // public void sendReminderPregnancy() {
+    //     LocalDate today = LocalDate.now();
+    //     List<UserDtls> users = userRepository.findAll();
 
-        for (UserDtls user : users) {
-            try {
-                Optional<MenstrualCycle> cycleOpt = menstrualCycleRepository.findLatestCycleBeforeToday(user.getId(), today);
-                if (cycleOpt.isEmpty()) continue;
+    //     for (UserDtls user : users) {
+    //         try {
+    //             Optional<MenstrualCycle> cycleOpt = menstrualCycleRepository.findLatestCycleBeforeToday(user.getId(), today);
+    //             if (cycleOpt.isEmpty()) continue;
 
-                MenstrualCycle cycle = cycleOpt.get();
-                if(cycle.getPregnancyRemind() == null || !cycle.getPregnancyRemind()) {
-                    log.info("Nhắc nhở không được bật cho user: " + user.getId());
-                    continue;
-                }
-                LocalDate ovulationDate = cycle.getOvulationDate();
+    //             MenstrualCycle cycle = cycleOpt.get();
+    //             if(cycle.getPregnancyRemind() == null || !cycle.getPregnancyRemind()) {
+    //                 log.info("Nhắc nhở không được bật cho user: " + user.getId());
+    //                 continue;
+    //             }
+    //             LocalDate ovulationDate = cycle.getOvulationDate();
 
-                List<PregnancyProbLog> logs = pregnancyProbLogRepository.findAllByMenstrualCycleId(cycle.getId()).orElse(List.of());
-                if (logs.isEmpty()) continue;
+    //             List<PregnancyProbLog> logs = pregnancyProbLogRepository.findAllByMenstrualCycleId(cycle.getId()).orElse(List.of());
+    //             if (logs.isEmpty()) continue;
 
-                double probToday = 0.0;
-                LocalDate start = today, end = today;
+    //             double probToday = 0.0;
+    //             LocalDate start = today, end = today;
 
-                for (PregnancyProbLog log : logs) {
-                    if (log.getDate().isBefore(start)) start = log.getDate();
-                    if (log.getDate().isAfter(end)) end = log.getDate();
-                    if (log.getDate().isEqual(today)) probToday = log.getProbability().doubleValue();
-                }
+    //             for (PregnancyProbLog log : logs) {
+    //                 if (log.getDate().isBefore(start)) start = log.getDate();
+    //                 if (log.getDate().isAfter(end)) end = log.getDate();
+    //                 if (log.getDate().isEqual(today)) probToday = log.getProbability().doubleValue();
+    //             }
 
-                if (today.isAfter(start) && today.isBefore(end)) {
-                    int daysBeforeOvulation = (int) ChronoUnit.DAYS.between(ovulationDate, today);
-                    emailService.sendOvulationWithPregnancyProbReminderAsync(
-                        user.getEmail(), user.getFullName(),
-                        daysBeforeOvulation, probToday, ovulationDate
-                    );
-                }
+    //             if (today.isAfter(start) && today.isBefore(end)) {
+    //                 int daysBeforeOvulation = (int) ChronoUnit.DAYS.between(ovulationDate, today);
+    //                 emailService.sendOvulationWithPregnancyProbReminderAsync(
+    //                     user.getEmail(), user.getFullName(),
+    //                     daysBeforeOvulation, probToday, ovulationDate
+    //                 );
+    //             }
 
-            } catch (Exception e) {
-                // Chỉ log lỗi của user đó, không làm gián đoạn toàn bộ
-                log.error("Lỗi khi gửi reminder cho user: " + user.getId(), e);
-            }
-        }
-    }
+    //         } catch (Exception e) {
+    //             // Chỉ log lỗi của user đó, không làm gián đoạn toàn bộ
+    //             log.error("Lỗi khi gửi reminder cho user: " + user.getId(), e);
+    //         }
+    //     }
+    // }
 
 
     // Tính chu kỳ trung bình

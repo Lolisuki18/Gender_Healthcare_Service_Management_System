@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -307,7 +308,7 @@ class STITestServiceTest {
         assertNotNull(response.getData());
 
         verify(stiPackageRepository).findByIdWithServicesAndComponents(1L);
-        verify(packageServiceRepository).findByStiPackage_PackageId(1L);
+        verify(packageServiceRepository, times(2)).findByStiPackage_PackageId(1L);
     }
 
     @Test

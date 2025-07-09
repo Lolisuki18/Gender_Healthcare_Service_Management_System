@@ -28,9 +28,12 @@ import com.healapp.dto.UserUpdateRequest;
 import com.healapp.dto.VerificationCodeRequest;
 import com.healapp.model.ConsultantProfile;
 import com.healapp.model.Gender;
+import com.healapp.model.NotificationPreference;
+import com.healapp.model.NotificationType;
 import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
+import com.healapp.repository.NotificationPreferenceRepository;
 import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
 
@@ -66,6 +69,9 @@ public class UserService {
 
     @Autowired
     private RoleService roleService;
+
+    @Autowired
+    private NotificationPreferenceRepository notificationPreferenceRepo;
 
     @Value("${app.avatar.url.pattern}default.jpg")
     private String defaultAvatarPath;
@@ -133,6 +139,25 @@ public class UserService {
             user.setRole(userRole);
 
             UserDtls savedUser = userRepository.save(user);
+
+            // Thêm notification cho người dùng mới
+            NotificationPreference ovulationNoti = new NotificationPreference();
+            ovulationNoti.setUser(savedUser);
+            ovulationNoti.setType(NotificationType.OVULATION);
+            ovulationNoti.setEnabled(true);
+            notificationPreferenceRepo.save(ovulationNoti);
+
+            NotificationPreference pregnancyNoti = new NotificationPreference();
+            pregnancyNoti.setUser(savedUser);
+            pregnancyNoti.setType(NotificationType.PREGNANCY_PROBABILITY);
+            pregnancyNoti.setEnabled(true);
+            notificationPreferenceRepo.save(pregnancyNoti);
+
+            NotificationPreference pillNoti = new NotificationPreference();
+            pillNoti.setUser(savedUser);
+            pillNoti.setType(NotificationType.PILL_REMINDER);
+            pillNoti.setEnabled(true);
+            notificationPreferenceRepo.save(pillNoti);
 
             UserResponse userResponse = mapUserToResponse(savedUser);
 
@@ -691,10 +716,29 @@ public class UserService {
             // Save user
             UserDtls savedAccount = userRepository.save(nAccount);
 
+            // Thêm notification cho người dùng mới
+            NotificationPreference ovulationNoti = new NotificationPreference();
+            ovulationNoti.setUser(nAccount);
+            ovulationNoti.setType(NotificationType.OVULATION);
+            ovulationNoti.setEnabled(true);
+            notificationPreferenceRepo.save(ovulationNoti);
+
+            NotificationPreference pregnancyNoti = new NotificationPreference();
+            pregnancyNoti.setUser(nAccount);
+            pregnancyNoti.setType(NotificationType.PREGNANCY_PROBABILITY);
+            pregnancyNoti.setEnabled(true);
+            notificationPreferenceRepo.save(pregnancyNoti);
+
+            NotificationPreference pillNoti = new NotificationPreference();
+            pillNoti.setUser(nAccount);
+            pillNoti.setType(NotificationType.PILL_REMINDER);
+            pillNoti.setEnabled(true);
+            notificationPreferenceRepo.save(pillNoti);
+
             // Create empty ConsultantProfile
             if (request.getRole().toUpperCase().equals("CONSULTANT")) {
                 ConsultantProfile consultantProfile = new ConsultantProfile();
-                consultantProfile.setUser(savedAccount);
+                consultantProfile.setUser(nAccount);
                 consultantProfile.setQualifications("");
                 consultantProfile.setExperience("");
                 consultantProfile.setBio("");
