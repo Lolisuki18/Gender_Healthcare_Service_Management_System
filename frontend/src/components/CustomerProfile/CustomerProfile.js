@@ -36,7 +36,6 @@ import DynamicSideBar from '@/components/siderBar/DynamicSideBar';
 import localStorageUtil from '@/utils/localStorage';
 import ProfileContent from '@/components/siderBar/ProfileContent';
 import AppointmentsContent from '@/components/CustomerProfile/AppointmentsContent';
-import DashboardContent from '@/components/CustomerProfile/DashboardContent';
 import MedicalHistoryContent from '@/components/siderBar/MedicalHistoryContent';
 import PaymentHistoryContent from '@/components/CustomerProfile/PaymentHistoryContent';
 import InvoicesContent from '@/components/siderBar/InvoicesContent';
@@ -88,9 +87,9 @@ const CustomerProfile = () => {
       case 'customer-appointments':
       case 'appointments':
         return <AppointmentsContent />; // Quản lý lịch hẹn
-      case 'customer-dashboard':
-      case 'dashboard':
-        return <DashboardContent />; // Tổng quan, thống kê
+      // case 'customer-dashboard':
+      // case 'dashboard':
+      //   return <DashboardContent />; // Tổng quan, thống kê
       case 'medical-history':
         return <MedicalHistoryContent />; // Lịch sử khám bệnh
       case 'payment-history':
@@ -175,8 +174,9 @@ const CustomerProfile = () => {
               }}
             >
               {selectedMenuItem === 'profile' && 'Hồ sơ cá nhân'}
-              {(selectedMenuItem === 'customer-dashboard' || selectedMenuItem === 'dashboard') && 'Tổng quan'}
-              {(selectedMenuItem === 'customer-appointments' || selectedMenuItem === 'appointments') && 'Lịch hẹn'}
+              {(selectedMenuItem === 'customer-appointments' ||
+                selectedMenuItem === 'appointments') &&
+                'Lịch hẹn'}
               {selectedMenuItem === 'medical-history' && 'Lịch sử khám'}
               {selectedMenuItem === 'payment-history' && 'Lịch sử thanh toán'}
               {selectedMenuItem === 'invoices' && 'Hóa đơn'}{' '}

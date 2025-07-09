@@ -38,6 +38,10 @@ import {
   Chip,
   Card,
   CardContent,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -55,7 +59,13 @@ import {
   Settings as SettingsIcon,
   Send as SendIcon,
 } from '@mui/icons-material';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { styled } from '@mui/material/styles';
+import questionService from '../../services/questionService';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { Link as RouterLink } from 'react-router-dom';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)',
@@ -88,6 +98,65 @@ const HelpContent = () => {
     message: '',
     category: 'general',
   });
+  // Thêm state cho bộ lọc và phân trang
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const FAQS_PER_PAGE = 5;
+
+  // State cho đặt câu hỏi mới
+  const [showNewQuestionForm, setShowNewQuestionForm] = useState(false);
+  const [newQuestion, setNewQuestion] = useState({
+    question: '',
+    category: '',
+  });
+  const [categories, setCategories] = useState([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+
+  // Lấy danh mục khi mở dialog
+  const fetchCategories = async () => {
+    setCategoryLoading(true);
+    try {
+      const res = await questionService.getCategories();
+      setCategories(res.data.data || []);
+    } catch (err) {
+      setCategories([]);
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
+  // Khi mở dialog đặt câu hỏi mới
+  const handleOpenNewQuestion = () => {
+    setShowNewQuestionForm(true);
+    fetchCategories();
+  };
+
+  // Khi gửi câu hỏi mới
+  const handleSubmitQuestion = async () => {
+    if (!newQuestion.question) {
+      toast.warn('Vui lòng nhập câu hỏi.');
+      return;
+    }
+    if (!newQuestion.category) {
+      toast.warn('Vui lòng chọn danh mục.');
+      return;
+    }
+    setSubmitLoading(true);
+    try {
+      await questionService.createQuestion({
+        content: newQuestion.question,
+        categoryQuestionId: newQuestion.category,
+      });
+      setNewQuestion({ question: '', category: '' });
+      setShowNewQuestionForm(false);
+      toast.success('Câu hỏi đã được gửi thành công!');
+    } catch (err) {
+      toast.error('Gửi câu hỏi thất bại. Vui lòng thử lại.');
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
 
   // FAQ data
   const faqs = [
@@ -147,7 +216,106 @@ const HelpContent = () => {
         'Vào mục "Cài đặt" > "Bảo mật", nhập mật khẩu hiện tại và mật khẩu mới. Mật khẩu cần có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số.',
       icon: <SecurityIcon sx={{ color: '#1ABC9C' }} />,
     },
+    {
+      category: 'account',
+      question: 'Hồ sơ cá nhân có thể chỉnh sửa những thông tin gì?',
+      answer:
+        'Bạn có thể chỉnh sửa tên, ngày sinh, giới tính, số điện thoại, email và ảnh đại diện trong mục "Hồ sơ cá nhân". Một số thông tin như email hoặc số điện thoại có thể yêu cầu xác thực lại.',
+      icon: <SettingsIcon sx={{ color: '#607D8B' }} />,
+    },
+    {
+      category: 'medical',
+      question: 'Làm sao để theo dõi chu kỳ kinh nguyệt trên hệ thống?',
+      answer:
+        'Bạn có thể nhập thông tin chu kỳ kinh nguyệt trong mục "Theo dõi chu kỳ". Hệ thống sẽ tự động nhắc nhở và dự đoán ngày rụng trứng, ngày hành kinh tiếp theo.',
+      icon: <DescriptionIcon sx={{ color: '#F39C12' }} />,
+    },
+    {
+      category: 'medical',
+      question: 'Hệ thống có nhắc uống thuốc tránh thai không?',
+      answer:
+        'Có. Bạn có thể bật tính năng nhắc uống thuốc trong mục "Nhắc uống thuốc". Hệ thống sẽ gửi thông báo nhắc nhở hàng ngày theo giờ bạn đã chọn.',
+      icon: <ScheduleIcon sx={{ color: '#F39C12' }} />,
+    },
+    {
+      category: 'medical',
+      question: 'Làm thế nào để đăng ký xét nghiệm STI?',
+      answer:
+        'Bạn vào mục "Đăng ký xét nghiệm", chọn gói hoặc dịch vụ xét nghiệm STI phù hợp, sau đó chọn thời gian và hoàn tất thanh toán. Kết quả sẽ được trả về tài khoản của bạn.',
+      icon: <DescriptionIcon sx={{ color: '#F39C12' }} />,
+    },
+    {
+      category: 'medical',
+      question: 'Tôi có thể xem lại kết quả xét nghiệm ở đâu?',
+      answer:
+        'Kết quả xét nghiệm sẽ được lưu trong mục "Lịch sử khám" hoặc "Kết quả xét nghiệm". Bạn có thể tải về file PDF hoặc xem chi tiết từng lần xét nghiệm.',
+      icon: <DescriptionIcon sx={{ color: '#F39C12' }} />,
+    },
+    {
+      category: 'account',
+      question: 'Làm sao để gửi đánh giá về dịch vụ hoặc bác sĩ?',
+      answer:
+        'Sau khi hoàn thành buổi khám hoặc nhận kết quả xét nghiệm, bạn có thể vào mục "Đánh giá & Nhận xét" để gửi đánh giá về dịch vụ hoặc bác sĩ đã tư vấn.',
+      icon: <QuestionAnswerIcon sx={{ color: '#F39C12' }} />,
+    },
+    {
+      category: 'account',
+      question: 'Tôi có thể gửi câu hỏi hoặc thắc mắc ở đâu?',
+      answer:
+        'Bạn có thể gửi câu hỏi tại mục "Hỏi đáp" hoặc liên hệ trực tiếp với tổng đài, email, hoặc chat trực tuyến để được hỗ trợ nhanh nhất.',
+      icon: <HelpIcon sx={{ color: '#4A90E2' }} />,
+    },
+    {
+      category: 'payment',
+      question:
+        'Nếu thanh toán thất bại hoặc bị trừ tiền nhưng chưa xác nhận, tôi phải làm gì?',
+      answer:
+        'Bạn vui lòng liên hệ tổng đài hoặc gửi email kèm thông tin giao dịch để được kiểm tra và hoàn tiền (nếu có) trong vòng 1-3 ngày làm việc.',
+      icon: <PaymentIcon sx={{ color: '#4CAF50' }} />,
+    },
+    {
+      category: 'account',
+      question: 'Thông tin cá nhân của tôi có được bảo mật không?',
+      answer:
+        'Chúng tôi cam kết bảo mật tuyệt đối thông tin cá nhân của bạn theo chính sách bảo mật. Dữ liệu được mã hóa và chỉ sử dụng cho mục đích chăm sóc sức khỏe.',
+      icon: <SecurityIcon sx={{ color: '#1ABC9C' }} />,
+    },
+    {
+      category: 'account',
+      question: 'Làm sao để sử dụng các bài viết blog và tài liệu hướng dẫn?',
+      answer:
+        'Bạn có thể truy cập mục "Blog" để đọc các bài viết về sức khỏe, giới tính, phòng tránh bệnh, hoặc xem các hướng dẫn sử dụng hệ thống, dịch vụ.',
+      icon: <DescriptionIcon sx={{ color: '#3b82f6' }} />,
+    },
   ];
+
+  // Danh sách category cho bộ lọc
+  const faqCategories = [
+    { key: 'all', label: 'Tất cả', color: '#64748b' },
+    { key: 'booking', label: 'Đặt lịch hẹn', color: '#4A90E2' },
+    { key: 'payment', label: 'Thanh toán', color: '#4CAF50' },
+    { key: 'medical', label: 'Y tế', color: '#F39C12' },
+    { key: 'account', label: 'Tài khoản', color: '#607D8B' },
+  ];
+
+  // Lọc FAQ theo category
+  const filteredFaqs =
+    categoryFilter === 'all'
+      ? faqs
+      : faqs.filter((faq) => faq.category === categoryFilter);
+
+  // Phân trang
+  const totalPages = Math.ceil(filteredFaqs.length / FAQS_PER_PAGE);
+  const paginatedFaqs = filteredFaqs.slice(
+    (currentPage - 1) * FAQS_PER_PAGE,
+    currentPage * FAQS_PER_PAGE
+  );
+
+  // Khi đổi category thì về trang 1
+  const handleCategoryChange = (cat) => {
+    setCategoryFilter(cat);
+    setCurrentPage(1);
+  };
 
   // Support options
   const supportOptions = [
@@ -208,6 +376,29 @@ const HelpContent = () => {
 
   return (
     <Box>
+      {/* Nút đặt câu hỏi mới */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Button
+          variant="contained"
+          startIcon={<HelpIcon />}
+          onClick={handleOpenNewQuestion}
+          sx={{
+            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+            borderRadius: '12px',
+            textTransform: 'none',
+            fontWeight: 600,
+            boxShadow: '0 8px 15px rgba(74, 144, 226, 0.2)',
+            px: 3,
+            py: 1.2,
+            fontSize: '1rem',
+            '&:hover': {
+              background: 'linear-gradient(45deg, #357ABD, #16A085)',
+            },
+          }}
+        >
+          Đặt câu hỏi mới
+        </Button>
+      </Box>
       {/* Quick Stats */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {' '}
@@ -275,7 +466,25 @@ const HelpContent = () => {
             >
               Câu hỏi thường gặp
             </Typography>
-            {faqs.map((faq, index) => (
+            {/* Bộ lọc category */}
+            <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              {faqCategories.map((cat) => (
+                <Chip
+                  key={cat.key}
+                  label={cat.label}
+                  clickable
+                  onClick={() => handleCategoryChange(cat.key)}
+                  sx={{
+                    backgroundColor:
+                      categoryFilter === cat.key ? cat.color : '#f1f5f9',
+                    color: categoryFilter === cat.key ? '#fff' : '#2D3748',
+                    fontWeight: 500,
+                  }}
+                />
+              ))}
+            </Box>
+            {/* Danh sách FAQ phân trang */}
+            {paginatedFaqs.map((faq, index) => (
               <StyledAccordion key={index}>
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon sx={{ color: '#fff' }} />}
@@ -290,7 +499,6 @@ const HelpContent = () => {
                   >
                     <Box sx={{ mr: 2 }}>{faq.icon}</Box>
                     <Box sx={{ flexGrow: 1 }}>
-                      {' '}
                       <Typography
                         variant="subtitle1"
                         sx={{ color: '#2D3748', fontWeight: 500 }}
@@ -311,7 +519,6 @@ const HelpContent = () => {
                   </Box>
                 </AccordionSummary>
                 <AccordionDetails sx={{ pt: 0 }}>
-                  {' '}
                   <Typography
                     variant="body2"
                     sx={{
@@ -325,6 +532,36 @@ const HelpContent = () => {
                 </AccordionDetails>
               </StyledAccordion>
             ))}
+            {/* Pagination controls */}
+            <Box
+              sx={{ display: 'flex', justifyContent: 'center', mt: 2, gap: 2 }}
+            >
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ArrowBackIosNewIcon />}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                sx={{ minWidth: 40 }}
+              >
+                Trước
+              </Button>
+              <Typography sx={{ alignSelf: 'center', fontWeight: 500 }}>
+                Trang {currentPage} / {totalPages}
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                endIcon={<ArrowForwardIosIcon />}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+                sx={{ minWidth: 40 }}
+              >
+                Sau
+              </Button>
+            </Box>
           </StyledPaper>
         </Grid>
 
@@ -410,7 +647,12 @@ const HelpContent = () => {
                   }}
                 />
               </ListItem>
-              <ListItem button sx={{ borderRadius: '8px', mb: 1 }}>
+              <ListItem
+                button
+                component={RouterLink}
+                to="/privacy"
+                sx={{ borderRadius: '8px', mb: 1 }}
+              >
                 <ListItemIcon>
                   <SecurityIcon sx={{ color: '#10b981' }} />
                 </ListItemIcon>
@@ -422,7 +664,12 @@ const HelpContent = () => {
                   }}
                 />
               </ListItem>
-              <ListItem button sx={{ borderRadius: '8px', mb: 1 }}>
+              <ListItem
+                button
+                component={RouterLink}
+                to="/terms"
+                sx={{ borderRadius: '8px', mb: 1 }}
+              >
                 <ListItemIcon>
                   <DescriptionIcon sx={{ color: '#f59e0b' }} />
                 </ListItemIcon>
@@ -562,6 +809,183 @@ const HelpContent = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      {/* Dialog đặt câu hỏi mới */}
+      <Dialog
+        open={showNewQuestionForm}
+        onClose={() => setShowNewQuestionForm(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 5,
+            boxShadow: '0 8px 40px 0 rgba(74, 144, 226, 0.18)',
+            p: 0,
+            overflow: 'visible',
+            background: 'linear-gradient(135deg, #fafdff 80%, #e0f7fa 100%)',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            fontSize: '1.25rem',
+            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            pb: 0,
+            pt: 3,
+            pl: 3,
+          }}
+        >
+          <HelpIcon sx={{ fontSize: 22, color: '#4A90E2', mr: 1 }} />
+          Đặt câu hỏi mới
+        </DialogTitle>
+        <DialogContent
+          dividers={false}
+          sx={{
+            px: { xs: 3, sm: 5 },
+            pt: 2,
+            pb: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2.5,
+          }}
+        >
+          <TextField
+            fullWidth
+            name="question"
+            label={
+              <span style={{ fontWeight: 600, color: '#357ABD' }}>
+                Câu hỏi của bạn *
+              </span>
+            }
+            multiline
+            rows={4}
+            value={newQuestion.question}
+            onChange={(e) =>
+              setNewQuestion((prev) => ({ ...prev, question: e.target.value }))
+            }
+            variant="outlined"
+            placeholder="Nhập câu hỏi của bạn ở đây..."
+            sx={{
+              background: '#fff',
+              borderRadius: 2,
+              mt: 1,
+              mb: 0.5,
+              '& .MuiInputBase-input': {
+                color: '#2D3748',
+                fontSize: '1rem',
+                lineHeight: '1.6',
+              },
+              '& .MuiInputLabel-root': {
+                color: '#357ABD',
+                fontWeight: 600,
+              },
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': { borderColor: '#b3d4fc' },
+                '&:hover fieldset': {
+                  borderColor: '#4A90E2',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#1ABC9C',
+                  borderWidth: '2px',
+                },
+              },
+            }}
+          />
+          <FormControl
+            fullWidth
+            variant="outlined"
+            sx={{ background: '#fff', borderRadius: 2, mb: 0.5 }}
+            disabled={categoryLoading}
+          >
+            <InputLabel id="category-label">Danh mục *</InputLabel>
+            <Select
+              labelId="category-label"
+              name="category"
+              value={newQuestion.category}
+              onChange={(e) =>
+                setNewQuestion((prev) => ({
+                  ...prev,
+                  category: e.target.value,
+                }))
+              }
+              label="Danh mục *"
+            >
+              <MenuItem value="" disabled>
+                {categoryLoading ? 'Đang tải...' : 'Chọn danh mục'}
+              </MenuItem>
+              {categories.map((category) => (
+                <MenuItem
+                  key={category.categoryQuestionId}
+                  value={category.categoryQuestionId}
+                >
+                  {category.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            background: '#fafdff',
+            borderBottomLeftRadius: 40,
+            borderBottomRightRadius: 40,
+            px: { xs: 3, sm: 5 },
+            py: 2.5,
+            mt: 0,
+            justifyContent: 'flex-end',
+            gap: 2,
+          }}
+        >
+          <Button
+            onClick={() => setShowNewQuestionForm(false)}
+            sx={{
+              color: '#F50057',
+              fontWeight: 600,
+              borderRadius: 2,
+              px: 3,
+              fontSize: '1rem',
+            }}
+          >
+            HỦY
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmitQuestion}
+            disabled={
+              !newQuestion.question || !newQuestion.category || submitLoading
+            }
+            sx={{
+              background: 'linear-gradient(90deg, #4A90E2 60%, #1ABC9C 100%)',
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '1rem',
+              px: 4,
+              py: 1.5,
+              boxShadow: '0 4px 16px rgba(74, 144, 226, 0.15)',
+              opacity:
+                !newQuestion.question || !newQuestion.category || submitLoading
+                  ? 0.5
+                  : 1,
+              transition: 'all 0.2s',
+              '&:hover': {
+                background: 'linear-gradient(90deg, #357ABD 60%, #16A085 100%)',
+                boxShadow: '0 8px 24px rgba(74, 144, 226, 0.22)',
+              },
+            }}
+          >
+            {submitLoading ? 'Đang gửi...' : 'Gửi câu hỏi'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <ToastContainer position="top-center" autoClose={3000} />
     </Box>
   );
 };

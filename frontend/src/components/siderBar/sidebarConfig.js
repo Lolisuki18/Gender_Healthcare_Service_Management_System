@@ -165,12 +165,12 @@ export const sidebarMenuConfig = [
   },
 
   // CUSTOMER
-  {
-    id: 'customer-dashboard',
-    label: 'Tổng quan',
-    icon: <DashboardIcon />,
-    roles: ['CUSTOMER'],
-  },
+  // {
+  //   id: 'customer-dashboard',
+  //   label: 'Tổng quan',
+  //   icon: <DashboardIcon />,
+  //   roles: ['CUSTOMER'],
+  // },
   {
     id: 'customer-appointments',
     label: 'Lịch hẹn',
