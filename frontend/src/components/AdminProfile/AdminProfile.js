@@ -44,6 +44,7 @@ import localStorageUtil from '@/utils/localStorage';
 import { useNavigate } from 'react-router-dom';
 import { notify } from '@/utils/notify';
 import AdminSideBar from './AdminSideBar';
+import AdminBlogManagementContent from './AdminBlogManagementContent';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
@@ -109,6 +110,8 @@ const AdminProfile = () => {
         return <ReportsContent />; // Báo cáo và thống kê
       case 'settings':
         return <SettingsContent />; // Cài đặt hệ thống
+      case 'admin-blog':
+        return <AdminBlogManagementContent />; // Quản lý blog
       default:
         return <ReportsContent />; // Fallback về dashboard
     }
@@ -129,6 +132,8 @@ const AdminProfile = () => {
         return 'Báo cáo & Thống kê';
       case 'settings':
         return 'Cài đặt hệ thống';
+      case 'admin-blog':
+        return 'Quản lý Blog';
       default:
         return 'Tổng quan';
     }

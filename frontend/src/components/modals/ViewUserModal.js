@@ -401,8 +401,8 @@ const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
                   }}
                 />
                 <Chip
-                  label={getStatusDisplayName(user.is_active)}
-                  color={getStatusColor(user.is_active)}
+                  label={getStatusDisplayName(user.isActive ?? user.is_active)}
+                  color={getStatusColor(user.isActive ?? user.is_active)}
                   variant="outlined"
                   sx={{
                     fontWeight: 600,

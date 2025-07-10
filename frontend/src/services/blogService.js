@@ -465,6 +465,31 @@ const blogService = {
     }
   },
 
+  /**
+   * Lấy tất cả blog với phân trang (dành cho Admin/Staff)
+   * @param {Object} params - Tham số query (page, size, sortBy, sortDir)
+   * @returns {Promise} Promise chứa kết quả từ API (dạng Page)
+   */
+  getAllBlogsPaginated: async (params = {}) => {
+    try {
+      const {
+        page = 0,
+        size = 10,
+        sortBy = 'createdAt',
+        sortDir = 'desc',
+      } = params;
+      const response = await apiClient.get('/blog', {
+        params: { page, size, sortBy, sortDir },
+      });
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to fetch blogs');
+      }
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
   // ===== HELPER FUNCTIONS =====
 
   /**

@@ -15,7 +15,8 @@ const API_BASE_URL = 'http://localhost:8080' || process.env.REACT_APP_API_URL;
  * @returns {string} URL đầy đủ cho hình ảnh
  */
 export function getFullImageUrl(url) {
-  if (!url) return '';
+  if (!url || url === 'null' || url === 'undefined')
+    return '/img/avatar/default.jpg';
   if (url.startsWith('http')) return url;
   // Nếu là đường dẫn tương đối /img/... thì nối domain backend
   return `${API_BASE_URL}${url}`;

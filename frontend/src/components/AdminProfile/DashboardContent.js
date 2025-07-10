@@ -258,20 +258,6 @@ const DashboardContent = () => {
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
           <StatCard
-            title="Cuộc hẹn hôm nay"
-            value={dashboard ? dashboard.todayConsultations : '-'}
-            icon={AssignmentIcon}
-            color="#E67E22"
-            progress={
-              dashboard
-                ? Math.min(100, (dashboard.todayConsultations / 100) * 100)
-                : 0
-            }
-            subtitle={dashboard ? '' : ''}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} lg={3}>
-          <StatCard
             title="Câu hỏi chưa trả lời"
             value={dashboard ? dashboard.unansweredQuestions : '-'}
             icon={QuestionAnswerIcon}
@@ -337,7 +323,7 @@ const DashboardContent = () => {
 
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
           <Chip
-            label="Người dùng mới: +15"
+            label={`Tổng người dùng: ${dashboard && dashboard.totalUsers !== undefined ? dashboard.totalUsers : '-'}`}
             size="small"
             sx={{
               background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
@@ -345,7 +331,7 @@ const DashboardContent = () => {
             }}
           />
           <Chip
-            label="Lịch hẹn hoàn thành: 234"
+            label={`Tổng cuộc hẹn: ${dashboard && dashboard.totalConsultations !== undefined ? dashboard.totalConsultations : '-'}`}
             size="small"
             sx={{
               background: 'linear-gradient(45deg, #4CAF50, #2ECC71)',
@@ -353,10 +339,10 @@ const DashboardContent = () => {
             }}
           />
           <Chip
-            label="Phản hồi tích cực: 98%"
+            label={`Rating tích cực: ${dashboard && dashboard.positiveRatings !== undefined ? dashboard.positiveRatings : '-'}`}
             size="small"
             sx={{
-              background: 'linear-gradient(45deg, #1ABC9C, #16A085)',
+              background: 'linear-gradient(45deg, #FFD700, #FFB300)',
               color: '#fff',
             }}
           />

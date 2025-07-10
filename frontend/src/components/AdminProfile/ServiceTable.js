@@ -60,6 +60,8 @@ const ServiceTable = ({ services, loading, error }) => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [detailDialog, setDetailDialog] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
 
   const filteredServices = Array.isArray(services)
     ? services.filter((service) => {
@@ -74,7 +76,11 @@ const ServiceTable = ({ services, loading, error }) => {
         const isActive = getActiveStatus(service);
         if (statusFilter === 'active') matchesStatus = isActive;
         else if (statusFilter === 'inactive') matchesStatus = !isActive;
-        return matchesSearch && matchesStatus;
+        // Lọc theo giá
+        const price = service.price || 0;
+        const matchesMin = minPrice === '' || price >= Number(minPrice);
+        const matchesMax = maxPrice === '' || price <= Number(maxPrice);
+        return matchesSearch && matchesStatus && matchesMin && matchesMax;
       })
     : [];
 
@@ -108,6 +114,22 @@ const ServiceTable = ({ services, loading, error }) => {
             <MenuItem value="inactive">Ngừng hoạt động</MenuItem>
           </Select>
         </FormControl>
+        <TextField
+          label="Giá từ"
+          type="number"
+          value={minPrice}
+          onChange={(e) => setMinPrice(e.target.value)}
+          sx={{ width: 120 }}
+          InputProps={{ inputProps: { min: 0 } }}
+        />
+        <TextField
+          label="Đến"
+          type="number"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+          sx={{ width: 120 }}
+          InputProps={{ inputProps: { min: 0 } }}
+        />
       </Box>
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>

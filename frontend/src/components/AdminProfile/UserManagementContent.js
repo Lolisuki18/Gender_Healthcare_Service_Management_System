@@ -59,6 +59,7 @@ import EditUserModal from '../modals/EditUserModal';
 import { confirmDialog } from '@/utils/confirmDialog';
 import { userService } from '@/services/userService';
 import { adminService } from '@/services/adminService';
+import { getAvatarUrl } from '@/utils/imageUrl';
 
 const UserManagementContent = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -963,7 +964,7 @@ const UserManagementContent = () => {
                         sx={{ display: 'flex', alignItems: 'center', gap: 2 }}
                       >
                         <Avatar
-                          src={user.avatar}
+                          src={getAvatarUrl(user.avatar)}
                           sx={{
                             width: 40,
                             height: 40,

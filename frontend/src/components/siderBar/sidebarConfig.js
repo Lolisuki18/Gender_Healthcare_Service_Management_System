@@ -59,7 +59,14 @@ export const sidebarMenuConfig = [
     icon: <SettingsIcon />,
     roles: ['ADMIN'],
   },
-
+  // ... existing code ...
+  {
+    id: 'admin-blog',
+    label: 'Quản lý Blog',
+    icon: <BlogIcon />, // Blog icon from @mui/icons-material
+    roles: ['ADMIN'],
+  },
+  // ... existing code ...
   // STAFF
   {
     id: 'profile',
@@ -215,16 +222,16 @@ export const sidebarMenuConfig = [
   //     roles: ['CUSTOMER'],
   //   },
   //Dùng chung
-  {
-    id: 'myBlogs',
-    label: 'Blog của tôi ',
-    icon: <BlogIcon />,
-    roles: ['STAFF', 'CONSULTANT', 'CUSTOMER'],
-  },
+  // {
+  //   id: 'myBlogs',
+  //   label: 'Blog của tôi ',
+  //   icon: <BlogIcon />,
+  //   roles: ['STAFF', 'CONSULTANT', 'CUSTOMER'],
+  // },
   {
     id: 'blog-customer',
     label: 'Blog của tôi',
     icon: <BlogIcon />,
-    roles: ['CUSTOMER'],
+    roles: ['STAFF', 'CONSULTANT', 'CUSTOMER'],
   },
 ];

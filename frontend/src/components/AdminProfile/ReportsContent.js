@@ -53,6 +53,38 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { confirmDialog } from '@/utils/confirmDialog';
+
+// Helper: Lấy ngày đầu và cuối quý hiện tại
+function getCurrentQuarterRange() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const quarter = Math.floor(month / 3);
+  const fromDate = new Date(year, quarter * 3, 1);
+  const toDate = new Date(year, quarter * 3 + 3, 0);
+  return {
+    from: fromDate.toISOString().slice(0, 10),
+    to: toDate.toISOString().slice(0, 10),
+  };
+}
+
+// Helper: Lấy ngày đầu và cuối năm hiện tại
+function getCurrentYearRange() {
+  const now = new Date();
+  const year = now.getFullYear();
+  return {
+    from: `${year}-01-01`,
+    to: `${year}-12-31`,
+  };
+}
+
+// Helper: Lấy ngày hôm nay
+function getTodayRange() {
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  return { from: today, to: today };
+}
 
 const MetricCard = ({ title, value, change, icon: Icon, color }) => (
   <Card
@@ -206,6 +238,35 @@ const ReportsContent = () => {
     setUserError(null);
   };
 
+  // Hàm xử lý nút tính doanh thu
+  const handleShowRevenue = async (type) => {
+    let params = {};
+    let label = '';
+    if (type === 'today') {
+      params = getTodayRange();
+      label = 'hôm nay';
+    } else if (type === 'quarter') {
+      params = getCurrentQuarterRange();
+      label = 'quý này';
+    } else if (type === 'year') {
+      params = getCurrentYearRange();
+      label = 'năm nay';
+    }
+    try {
+      const summary = await adminService.getRevenueSummary(params);
+      const revenue = summary?.totalRevenue || 0;
+      await confirmDialog.info(
+        `💰 Doanh thu ${label}:\n\n${Number(revenue).toLocaleString()} VNĐ`,
+        { title: `Doanh thu ${label.charAt(0).toUpperCase() + label.slice(1)}` }
+      );
+    } catch (err) {
+      await confirmDialog.danger(
+        `Không thể lấy doanh thu ${label}.\n${err.message || ''}`,
+        { title: 'Lỗi' }
+      );
+    }
+  };
+
   // Xử lý loading/error
   if (loading) return <Typography>Đang tải báo cáo...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
@@ -234,6 +295,30 @@ const ReportsContent = () => {
         >
           Phân tích hiệu suất và doanh thu hệ thống
         </Typography>
+        {/* Các nút tính doanh thu nhanh */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => handleShowRevenue('today')}
+          >
+            Doanh thu hôm nay
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => handleShowRevenue('quarter')}
+          >
+            Doanh thu quý này
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => handleShowRevenue('year')}
+          >
+            Doanh thu năm nay
+          </Button>
+        </Box>
         {/* Bộ lọc thời gian */}
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
           <TextField

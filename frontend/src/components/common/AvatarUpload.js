@@ -174,6 +174,58 @@ function AvatarUpload({
       )}
     </Box>
   ) : null;
+
+  // Hiển thị avatar hiện tại hoặc chữ cái đầu nếu không có ảnh
+  const currentAvatarDisplay = !selectedFile ? (
+    currentImage ? (
+      <Box sx={{ mb: 3, textAlign: 'center' }}>
+        <Typography variant="body2" gutterBottom>
+          Ảnh đại diện hiện tại:
+        </Typography>
+        <Box
+          component="img"
+          src={imageUrl.getFullImageUrl(currentImage)}
+          alt="Current Avatar"
+          sx={{
+            width: '150px',
+            height: '150px',
+            borderRadius: '50%',
+            objectFit: 'cover',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            mb: 2,
+            border: '4px solid white',
+          }}
+        />
+      </Box>
+    ) : (
+      <Box sx={{ mb: 3, textAlign: 'center' }}>
+        <Typography variant="body2" gutterBottom>
+          Ảnh đại diện hiện tại:
+        </Typography>
+        <Box
+          sx={{
+            width: '150px',
+            height: '150px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '56px',
+            color: '#fff',
+            fontWeight: 700,
+            mb: 2,
+            border: '4px solid white',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            userSelect: 'none',
+          }}
+        >
+          {props.fullName?.charAt(0)?.toUpperCase() || 'U'}
+        </Box>
+      </Box>
+    )
+  ) : null;
+
   return (
     <Box sx={{ py: 2 }} {...props}>
       {error && (
@@ -182,32 +234,7 @@ function AvatarUpload({
         </Alert>
       )}
 
-      {/* Show current image if available */}
-      {currentImage && !selectedFile && (
-        <Box sx={{ mb: 3, textAlign: 'center' }}>
-          <Typography variant="body2" gutterBottom>
-            Ảnh đại diện hiện tại:
-          </Typography>
-          <Box
-            component="img"
-            src={imageUrl.getFullImageUrl(currentImage)}
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = '/img/avatar/default.jpg';
-            }}
-            alt="Current Avatar"
-            sx={{
-              width: '150px',
-              height: '150px',
-              borderRadius: '50%',
-              objectFit: 'cover',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              mb: 2,
-              border: '4px solid white',
-            }}
-          />
-        </Box>
-      )}
+      {currentAvatarDisplay}
 
       <Box
         sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}

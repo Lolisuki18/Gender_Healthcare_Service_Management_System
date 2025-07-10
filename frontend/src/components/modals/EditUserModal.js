@@ -672,7 +672,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
 
                 <Grid container spacing={3} sx={{ mb: 4 }}>
                   {/* ✅ Full Name - REQUIRED */}
-                  <Grid item xs={12} md={6}>
+                  <Grid item size={12} xs={12} md={6}>
                     <TextField
                       required
                       fullWidth
@@ -693,7 +693,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                   </Grid>
 
                   {/* ✅ Email - REQUIRED */}
-                  <Grid item xs={12} md={6}>
+                  <Grid item size={6} xs={12} md={6}>
                     <TextField
                       required
                       fullWidth
@@ -715,7 +715,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                   </Grid>
 
                   {/* ✅ Phone - Optional */}
-                  <Grid item xs={12} md={6}>
+                  <Grid item size={6} xs={12} md={6}>
                     <TextField
                       fullWidth
                       label="Số điện thoại"
@@ -736,7 +736,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                   </Grid>
 
                   {/* ✅ Birth Day - Optional */}
-                  <Grid item xs={12} md={6}>
+                  <Grid item size={6} xs={12} md={6}>
                     <TextField
                       fullWidth
                       label="Ngày sinh"
@@ -759,30 +759,8 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                     />
                   </Grid>
 
-                  {/* ✅ Address - Optional */}
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Địa chỉ"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      error={!!errors.address}
-                      helperText={errors.address}
-                      variant="outlined"
-                      multiline
-                      rows={2}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 3,
-                          backgroundColor: 'rgba(248,252,255,0.8)',
-                        },
-                      }}
-                    />
-                  </Grid>
-
                   {/* ✅ Gender - REQUIRED */}
-                  <Grid item xs={12} md={6}>
+                  <Grid size={6} item xs={12} md={6}>
                     <FormControl
                       fullWidth
                       variant="outlined"
@@ -813,6 +791,27 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                       )}
                     </FormControl>
                   </Grid>
+                  {/* ✅ Address - Optional */}
+                  <Grid size={12} item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Địa chỉ"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      error={!!errors.address}
+                      helperText={errors.address}
+                      variant="outlined"
+                      multiline
+                      rows={2}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 3,
+                          backgroundColor: 'rgba(248,252,255,0.8)',
+                        },
+                      }}
+                    />
+                  </Grid>
                 </Grid>
 
                 <Divider
@@ -838,7 +837,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
 
                 <Grid container spacing={3} sx={{ mb: 4 }}>
                   {/* ✅ Password - Optional */}
-                  <Grid item xs={12}>
+                  <Grid size={12} item xs={12}>
                     <TextField
                       fullWidth
                       label="Mật khẩu mới (để trống nếu không đổi)"
@@ -911,7 +910,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
 
                 <Grid container spacing={3}>
                   {/* ✅ Role - REQUIRED */}
-                  <Grid item xs={12} md={6}>
+                  <Grid size={6} item xs={12} md={6}>
                     <FormControl
                       fullWidth
                       variant="outlined"
@@ -945,7 +944,7 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                   </Grid>
 
                   {/* ✅ Status - REQUIRED */}
-                  <Grid item xs={12} md={6}>
+                  <Grid size={6} item xs={12} md={6}>
                     <FormControl fullWidth variant="outlined">
                       <InputLabel>Trạng thái *</InputLabel>
                       <Select
