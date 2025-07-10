@@ -413,6 +413,70 @@ export const userService = {
       throw error.response?.data || error;
     }
   },
+  /**
+   * Kiểm tra username đã tồn tại (dùng cho realtime validation ở frontend)
+   * @param {string} username
+   * @returns {Promise<{exists: boolean}>}
+   */
+  checkUsername: async (username) => {
+    try {
+      const response = await apiClient.get(
+        `/users/check-username?username=${encodeURIComponent(username)}`
+      );
+      return response.data; // { exists: true/false }
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+  /**
+   * Gửi mã xác nhận đổi số điện thoại qua email
+   * @returns {Promise<Object>} API response
+   */
+  sendPhoneChangeVerificationCode: async () => {
+    try {
+      const response = await apiClient.post(
+        '/users/profile/phone/send-verification'
+      );
+      return {
+        success: response.data.success,
+        message: response.data.message,
+        data: response.data.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể gửi mã xác nhận',
+        error: error,
+      };
+    }
+  },
+
+  /**
+   * Xác thực mã và cập nhật số điện thoại
+   * @param {string} phone - Số điện thoại mới
+   * @param {string} verificationCode - Mã xác nhận từ email
+   * @returns {Promise<Object>} API response
+   */
+  verifyPhoneChange: async (phone, verificationCode) => {
+    try {
+      const response = await apiClient.put(
+        `/users/profile/phone?phone=${encodeURIComponent(phone)}&verificationCode=${encodeURIComponent(verificationCode)}`
+      );
+      return {
+        success: response.data.success,
+        message: response.data.message,
+        data: response.data.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          'Có lỗi xảy ra khi xác thực số điện thoại',
+        error: error,
+      };
+    }
+  },
 };
 export const consultantService = {
   // Lấy danh sách bác sĩ

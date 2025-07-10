@@ -6,7 +6,8 @@
  * cho các hình ảnh như avatar được lưu trữ trên máy chủ.
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+// const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const API_BASE_URL = 'http://localhost:8080' || process.env.REACT_APP_API_URL;
 
 /**
  * Chuyển đổi đường dẫn tương đối thành URL đầy đủ cho hình ảnh
@@ -19,7 +20,7 @@ export function getFullImageUrl(url) {
   // Nếu là đường dẫn tương đối /img/... thì nối domain backend
   return `${API_BASE_URL}${url}`;
 }
-                        
+
 /**
  * Kiểm tra xem một chuỗi có phải là URL hình ảnh hợp lệ không
  * @param {string} url - URL cần kiểm tra

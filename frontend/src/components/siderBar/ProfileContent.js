@@ -542,7 +542,44 @@ const ProfileContent = () => {
         return;
       }
 
-      console.log('�� Đang lưu thông tin cá nhân:', formDataUpdate);
+      // ====== VALIDATE NGÀY SINH ======
+      if (formDataUpdate.birthDay) {
+        const today = new Date();
+        const birthDate = new Date(formDataUpdate.birthDay);
+        // Nếu ngày sinh lớn hơn hiện tại
+        if (birthDate > today) {
+          toast.warning('Ngày sinh của bạn vượt qua thời gian thực', '', {
+            duration: 4000,
+          });
+          return;
+        }
+        // Nếu nhỏ hơn hiện tại 2 năm
+        const minBirthDate = new Date(
+          today.getFullYear() - 2,
+          today.getMonth(),
+          today.getDate()
+        );
+        if (birthDate > minBirthDate) {
+          toast.warning('Tuổi tối thiểu cần đạt là 2 tuổi', '', {
+            duration: 4000,
+          });
+          return;
+        }
+      }
+
+      // ====== VALIDATE GIỚI TÍNH ======
+      if (
+        !formDataUpdate.gender ||
+        formDataUpdate.gender === '' ||
+        formDataUpdate.gender === 'Chọn giới tính'
+      ) {
+        toast.warning('Vui lòng chọn giới tính của bạn', '', {
+          duration: 4000,
+        });
+        return;
+      }
+
+      console.log(' Đang lưu thông tin cá nhân:', formDataUpdate);
 
       toast.info('Đang xử lý', 'Đang lưu thông tin cá nhân...', {
         duration: 2000,
@@ -1047,7 +1084,7 @@ const ProfileContent = () => {
                     >
                       {userData?.role === 'STAFF'
                         ? `Mã nhân viên: ${userData?.id || 'N/A'}`
-                        : `ID: ${userData?.id || 'GUEST'}`}
+                        : `Mã khách hàng: ${userData?.id || 'GUEST'}`}
                     </Typography>
                   </Stack>
 
@@ -1352,7 +1389,7 @@ const ProfileContent = () => {
 
                     {/* Personal Info Stack */}
                     <Grid container spacing={3}>
-                      <Grid item xs={12} md={6}>
+                      <Grid item size={12} xs={12} md={6}>
                         <FieldInfoBox
                           icon={<CakeIcon />}
                           label="Ngày sinh"
@@ -1371,7 +1408,7 @@ const ProfileContent = () => {
                         />
                       </Grid>
 
-                      <Grid item xs={12} md={6}>
+                      <Grid item size={12} xs={12} md={6}>
                         <FieldInfoBox
                           icon={<WcIcon />}
                           label="Giới tính"

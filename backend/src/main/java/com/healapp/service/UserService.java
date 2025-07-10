@@ -763,4 +763,21 @@ public class UserService {
         stats.put("activePatients", userRepository.findByRoleNameAndIsActive("CUSTOMER", true).stream().count());
         return stats;
     }
+
+    // Cập nhật số điện thoại trực tiếp, không cần mã xác thực
+    public ApiResponse<UserResponse> updatePhone(Long userId, String phone) {
+        try {
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+            UserDtls user = userOpt.get();
+            user.setPhone(phone);
+            UserDtls updatedUser = userRepository.save(user);
+            UserResponse response = mapUserToResponse(updatedUser);
+            return ApiResponse.success("Phone updated successfully", response);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to update phone: " + e.getMessage());
+        }
+    }
 }

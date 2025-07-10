@@ -46,6 +46,7 @@ import { PhoneChangeDialog } from '../modals/PhoneChangeModal';
 
 import localStorageUtil from '@/utils/localStorage';
 import apiClient from '../../services/api';
+import { userService } from '../../services/userService';
 
 // Styled components
 const HeaderSection = styled(Box)(({ theme }) => ({
@@ -147,11 +148,23 @@ const ConsultantSecurityContent = () => {
     }));
   };
 
-  const handleCloseModal = (type) => {
+  const handleCloseModal = (type, success) => {
     setModalStates((prev) => ({
       ...prev,
       [type]: false,
     }));
+    // Hiển thị toast thành công nếu đóng do cập nhật thành công
+    if (success) {
+      if (type === 'password') {
+        // toast.success('Đổi mật khẩu thành công!', { duration: 4000 });
+      } else if (type === 'email') {
+        // Đã có toast ở handleVerifyAndSaveEmail, không cần lặp lại ở đây
+      } else if (type === 'phone') {
+        // toast.success('Số điện thoại đã được cập nhật thành công!', {
+        //   duration: 4000,
+        // });
+      }
+    }
   };
 
   // Handler cho đổi mật khẩu
@@ -159,15 +172,15 @@ const ConsultantSecurityContent = () => {
     setIsLoading((prev) => ({ ...prev, password: true }));
     try {
       const response = await apiClient.put(
-        '/users/change-password',
+        '/users/profile/password',
         passwordData
       );
 
       if (response.data.success) {
-        toast.success('Thành công!', 'Đổi mật khẩu thành công!', {
+        toast.success('Đổi mật khẩu thành công!', {
           duration: 4000,
         });
-        handleCloseModal('password');
+        handleCloseModal('password', true);
         return { success: true };
       } else {
         return {
@@ -191,25 +204,19 @@ const ConsultantSecurityContent = () => {
   const handleSendEmailCode = async (email) => {
     setIsLoading((prev) => ({ ...prev, email: true }));
     try {
-      const response = await apiClient.post('/users/send-verification-code', {
-        email,
-      });
-
-      if (response.data.success) {
-        return { success: true };
+      const response = await userService.sendEmailVerificationCode(email);
+      if (response.success) {
+        toast.success(
+          'Đã gửi mã xác nhận đến email mới. Vui lòng kiểm tra hộp thư.',
+          { duration: 4000 }
+        );
       } else {
-        return {
-          success: false,
-          message: response.data.message || 'Có lỗi xảy ra khi gửi mã xác thực',
-        };
+        toast.error(
+          response.message || 'Không thể gửi mã xác nhận. Vui lòng thử lại.',
+          { duration: 4000 }
+        );
       }
-    } catch (error) {
-      console.error('Error sending email verification code:', error);
-      return {
-        success: false,
-        message:
-          error.response?.data?.message || 'Có lỗi xảy ra khi gửi mã xác thực',
-      };
+      return response;
     } finally {
       setIsLoading((prev) => ({ ...prev, email: false }));
     }
@@ -220,19 +227,20 @@ const ConsultantSecurityContent = () => {
     setIsLoading((prev) => ({ ...prev, email: true }));
     try {
       const response = await apiClient.put('/users/profile/email', {
-        email,
+        newEmail: email, // Đúng tên trường backend yêu cầu
         verificationCode,
       });
 
       if (response.data.success) {
-        toast.success('Thành công!', 'Email đã được cập nhật thành công!', {
+        toast.success('Email đã được cập nhật thành công!', {
           duration: 4000,
         });
-        handleCloseModal('email');
+        handleCloseModal('email', true);
 
         // Cập nhật userData trong localStorage
         const updatedUser = { ...userData, email };
         localStorageUtil.set('user', updatedUser);
+        setUserData(updatedUser); // cập nhật ngay UI
 
         return { success: true };
       } else {
@@ -253,71 +261,43 @@ const ConsultantSecurityContent = () => {
     }
   };
 
-  // Handler cho gửi mã xác thực số điện thoại
-  const handleSendPhoneCode = async (phone) => {
+  // Handler cho cập nhật số điện thoại mới trực tiếp (không xác thực)
+  const handleSavePhone = async (phone) => {
     setIsLoading((prev) => ({ ...prev, phone: true }));
     try {
-      const response = await apiClient.post(
-        '/users/send-phone-verification-code',
-        { phone }
-      );
-
-      if (response.data.success) {
-        return { success: true };
-      } else {
-        return {
-          success: false,
-          message: response.data.message || 'Có lỗi xảy ra khi gửi mã xác thực',
-        };
+      if (!phone) {
+        toast.error('Vui lòng nhập số điện thoại mới.', { duration: 4000 });
+        return { success: false, message: 'Vui lòng nhập số điện thoại mới.' };
       }
-    } catch (error) {
-      console.error('Error sending phone verification code:', error);
-      return {
-        success: false,
-        message:
-          error.response?.data?.message || 'Có lỗi xảy ra khi gửi mã xác thực',
-      };
-    } finally {
-      setIsLoading((prev) => ({ ...prev, phone: false }));
-    }
-  };
-
-  // Handler cho xác thực và lưu số điện thoại mới
-  const handleVerifyAndSavePhone = async (phone, verificationCode) => {
-    setIsLoading((prev) => ({ ...prev, phone: true }));
-    try {
-      const response = await apiClient.put('/users/profile/phone', {
-        phone,
-        verificationCode,
+      // Gọi API cập nhật trực tiếp
+      const response = await apiClient.put('/users/profile/phone', null, {
+        params: { phone },
       });
-
       if (response.data.success) {
-        toast.success(
-          'Thành công!',
-          'Số điện thoại đã được cập nhật thành công!',
-          { duration: 4000 }
-        );
-        handleCloseModal('phone');
-
+        toast.success('Số điện thoại đã được cập nhật thành công!', {
+          duration: 4000,
+        });
+        handleCloseModal('phone', true);
         // Cập nhật userData trong localStorage
         const updatedUser = { ...userData, phoneNumber: phone };
         localStorageUtil.set('user', updatedUser);
-
+        setUserData(updatedUser);
         return { success: true };
       } else {
-        return {
-          success: false,
-          message: response.data.message || 'Mã xác thực không đúng',
-        };
+        toast.error(
+          response.data.message || 'Không thể cập nhật số điện thoại.',
+          { duration: 4000 }
+        );
+        return { success: false, message: response.data.message };
       }
     } catch (error) {
-      console.error('Error verifying phone:', error);
-      return {
-        success: false,
-        message:
-          error.response?.data?.message ||
-          'Có lỗi xảy ra khi xác thực số điện thoại',
-      };
+      console.error('Error updating phone:', error);
+      toast.error(
+        error.response?.data?.message ||
+          'Có lỗi xảy ra khi cập nhật số điện thoại.',
+        { duration: 4000 }
+      );
+      return { success: false, message: error.response?.data?.message };
     } finally {
       setIsLoading((prev) => ({ ...prev, phone: false }));
     }
@@ -539,13 +519,13 @@ const ConsultantSecurityContent = () => {
       {/* Modals */}
       <PasswordChangeDialog
         open={modalStates.password}
-        onClose={() => handleCloseModal('password')}
+        onClose={(success) => handleCloseModal('password', success)}
         onChangePassword={handlePasswordChange}
         isChanging={isLoading.password}
       />
       <EmailChangeDialog
         open={modalStates.email}
-        onClose={() => handleCloseModal('email')}
+        onClose={(success) => handleCloseModal('email', success)}
         onSendCode={handleSendEmailCode}
         onVerifyAndSave={handleVerifyAndSaveEmail}
         isSendingCode={isLoading.email}
@@ -554,11 +534,9 @@ const ConsultantSecurityContent = () => {
       />
       <PhoneChangeDialog
         open={modalStates.phone}
-        onClose={() => handleCloseModal('phone')}
-        onSendCode={handleSendPhoneCode}
-        onVerifyAndSave={handleVerifyAndSavePhone}
-        isSendingCode={isLoading.phone}
-        isVerifying={isLoading.phone}
+        onClose={(success) => handleCloseModal('phone', success)}
+        onSave={handleSavePhone}
+        isSubmitting={isLoading.phone}
         currentPhone={userData.phoneNumber || userData.phone || ''}
       />
     </Box>

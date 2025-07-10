@@ -105,6 +105,22 @@ const DynamicSideBar = ({ open, onClose, selectedItem, onItemSelect }) => {
   // Force refresh avatar nếu cần
   const forceRefresh = () => setRefreshKey((old) => old + 1);
 
+  // Đổi role sang tiếng Việt nếu là CUSTOMER
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case 'CUSTOMER':
+        return 'Khách hàng';
+      case 'ADMIN':
+        return 'Quản trị viên';
+      case 'STAFF':
+        return 'Nhân viên';
+      case 'CONSULTANT':
+        return 'Tư vấn viên';
+      default:
+        return role;
+    }
+  };
+
   return (
     <StyledDrawer
       variant="persistent"
@@ -178,6 +194,10 @@ const DynamicSideBar = ({ open, onClose, selectedItem, onItemSelect }) => {
             src={
               user?.avatar ? imageUrl.getFullImageUrl(user.avatar) : undefined
             }
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = '/img/avatar/default.jpg';
+            }}
             alt={user?.fullName || 'User'}
             imgProps={{
               loading: 'eager',
@@ -250,7 +270,7 @@ const DynamicSideBar = ({ open, onClose, selectedItem, onItemSelect }) => {
           {user?.email || 'email@example.com'}
         </Typography>
         <Chip
-          label={userRole}
+          label={getRoleLabel(userRole)}
           size="small"
           sx={{
             background: 'linear-gradient(45deg, #4CAF50, #2ECC71)',

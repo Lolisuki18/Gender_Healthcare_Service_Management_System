@@ -15,7 +15,7 @@
  * - Step-by-step workflow
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -32,15 +32,15 @@ import {
   Stepper,
   Step,
   StepLabel,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Email as EmailIcon,
   Verified as VerifiedIcon,
   Send as SendIcon,
   Timer as TimerIcon,
   Save as SaveIcon,
-} from "@mui/icons-material";
-import { notify } from "@/utils/notify";
+} from '@mui/icons-material';
+import { notify } from '@/utils/notify';
 
 // ✅ Email Change Dialog Component with Steps
 export const EmailChangeDialog = ({
@@ -56,15 +56,15 @@ export const EmailChangeDialog = ({
   //Quản lý state cho các bước, email mới
   const [activeStep, setActiveStep] = useState(0);
   // State quản lý email mới, mã xác nhận
-  const [newEmail, setNewEmail] = useState("");
+  const [newEmail, setNewEmail] = useState('');
   // State quản lý mã xác nhận
-  const [verificationCode, setVerificationCode] = useState("");
+  const [verificationCode, setVerificationCode] = useState('');
   // State quản lý lỗi cho các trường
   const [errors, setErrors] = useState({});
   // State quản lý countdown timer cho việc gửi lại mã
   const [countdown, setCountdown] = useState(0);
   // Các bước trong quá trình thay đổi email
-  const steps = ["Nhập email mới", "Xác nhận mã", "Hoàn tất"];
+  const steps = ['Nhập email mới', 'Xác nhận mã', 'Hoàn tất'];
 
   // Bộ đếm ngược để gửi lại mã
   useEffect(() => {
@@ -86,7 +86,7 @@ export const EmailChangeDialog = ({
     if (errors.newEmail) {
       setErrors({
         ...errors,
-        newEmail: "",
+        newEmail: '',
       });
     }
   };
@@ -98,18 +98,18 @@ export const EmailChangeDialog = ({
     // kiêm tra nếu email mới
     if (!newEmail.trim()) {
       // có rỗng không ?
-      newErrors.newEmail = "Vui lòng nhập email mới";
+      newErrors.newEmail = 'Vui lòng nhập email mới';
     } else {
       // nếu không rỗng thì kiểm tra định dạng email
       // Regex kiểm tra định dạng email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(newEmail.trim())) {
         // nếu không đúng định dạng thì báo lỗi
-        newErrors.newEmail = "Email không đúng định dạng";
+        newErrors.newEmail = 'Email không đúng định dạng';
       } else if (newEmail.trim() === currentEmail) {
         // nếu email mới trùng với email hiện tại
         // Thông báo lỗi nếu email mới trùng với email hiện tại
-        newErrors.newEmail = "Email mới phải khác email hiện tại";
+        newErrors.newEmail = 'Email mới phải khác email hiện tại';
       }
     }
     // Cập nhật state errors với các lỗi mới
@@ -131,10 +131,10 @@ export const EmailChangeDialog = ({
         setActiveStep(1);
         setCountdown(60);
         // Thông báo thành công
-        notify.success("Thành công", "Mã xác nhận đã được gửi đến email mới!");
+        // notify.success('Thành công', 'Mã xác nhận đã được gửi đến email mới!');
       } catch (error) {
         // Nếu có lỗi trong quá trình gửi mã, hiển thị thông báo lỗi
-        notify.error("Lỗi", "Không thể gửi mã xác nhận. Vui lòng thử lại!");
+        notify.error('Lỗi', 'Không thể gửi mã xác nhận. Vui lòng thử lại!');
       }
     }
   };
@@ -148,10 +148,10 @@ export const EmailChangeDialog = ({
       // Reset countdown về 60 giây
       setCountdown(60);
       // Thông báo thành công
-      notify.success("Thành công", "Mã xác nhận mới đã được gửi!");
+      // notify.success('Thành công', 'Mã xác nhận mới đã được gửi!');
     } catch (error) {
       // Nếu có lỗi trong quá trình gửi lại mã, hiển thị thông báo lỗi
-      notify.error("Lỗi", "Không thể gửi lại mã. Vui lòng thử lại!");
+      notify.error('Lỗi', 'Không thể gửi lại mã. Vui lòng thử lại!');
     }
   };
 
@@ -163,18 +163,30 @@ export const EmailChangeDialog = ({
     if (verificationCode.trim().length === 6) {
       try {
         // Gọi hàm xác nhận mã và lưu email mới
-        await onVerifyAndSave(newEmail.trim(), verificationCode.trim());
+        const result = await onVerifyAndSave(
+          newEmail.trim(),
+          verificationCode.trim()
+        );
         // Nếu xác nhận thành công thì chuyển sang bước 2
-        setActiveStep(2);
-        // Thông báo thành công
-        notify.success("Thành công", "Email đã được thay đổi thành công!");
+        if (result && result.success) {
+          setActiveStep(2);
+          // Thông báo thành công
+          notify.success('Thành công', 'Email đã được thay đổi thành công!');
+          // Đóng modal sau một chút delay để user thấy step thành công
+          setTimeout(() => handleSuccessClose(), 1000);
+        } else {
+          notify.error(
+            'Lỗi',
+            result?.message || 'Mã xác nhận không đúng. Vui lòng thử lại!'
+          );
+        }
       } catch (error) {
         // Nếu có lỗi trong quá trình xác nhận mã, hiển thị thông báo lỗi
-        notify.error("Lỗi", "Mã xác nhận không đúng. Vui lòng thử lại!");
+        notify.error('Lỗi', 'Mã xác nhận không đúng. Vui lòng thử lại!');
       }
     } else {
       //
-      notify.warning("Mã không hợp lệ", "Vui lòng nhập mã xác nhận 6 chữ số!");
+      notify.warning('Mã không hợp lệ', 'Vui lòng nhập mã xác nhận 6 chữ số!');
     }
   };
 
@@ -182,24 +194,24 @@ export const EmailChangeDialog = ({
   const handleSuccessClose = () => {
     // Reset form và đóng modal
     setActiveStep(0);
-    setNewEmail("");
-    setVerificationCode("");
+    setNewEmail('');
+    setVerificationCode('');
     setErrors({});
     setCountdown(0);
 
     // Gọi callback để parent component biết việc cập nhật đã hoàn tất
-    onClose(true); // Pass true để báo hiệu cập nhật thành công
+    if (typeof onClose === 'function') onClose(true); // Pass true để báo hiệu cập nhật thành công
   };
 
   // Hàm đóng modal chung
   // Reset form và đóng modal mà không báo hiệu cập nhật thành công
-  const handleClose = () => {
+  const handleClose = (success) => {
     setActiveStep(0);
-    setNewEmail("");
-    setVerificationCode("");
+    setNewEmail('');
+    setVerificationCode('');
     setErrors({});
     setCountdown(0);
-    onClose(false); // Pass false cho việc đóng thông thường
+    if (typeof onClose === 'function') onClose(success === true);
   };
 
   // Render nội dung của từng bước
@@ -216,17 +228,17 @@ export const EmailChangeDialog = ({
               elevation={0}
               sx={{
                 p: 3,
-                borderRadius: "12px",
-                background: "rgba(74, 144, 226, 0.05)",
-                border: "1px solid rgba(74, 144, 226, 0.1)",
+                borderRadius: '12px',
+                background: 'rgba(74, 144, 226, 0.05)',
+                border: '1px solid rgba(74, 144, 226, 0.1)',
               }}
             >
-              <Typography variant="body2" sx={{ mb: 1, color: "#6b7280" }}>
+              <Typography variant="body2" sx={{ mb: 1, color: '#6b7280' }}>
                 Email hiện tại:
               </Typography>
               <Typography
                 variant="body1"
-                sx={{ color: "#4A90E2", fontWeight: 600 }}
+                sx={{ color: '#4A90E2', fontWeight: 600 }}
               >
                 {currentEmail}
               </Typography>
@@ -240,17 +252,17 @@ export const EmailChangeDialog = ({
               value={newEmail}
               onChange={handleEmailChange}
               error={!!errors.newEmail}
-              helperText={errors.newEmail || "Nhập địa chỉ email mới của bạn"}
+              helperText={errors.newEmail || 'Nhập địa chỉ email mới của bạn'}
               placeholder="user@example.com"
               sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '12px',
                 },
               }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <EmailIcon sx={{ color: "#4A90E2" }} />
+                    <EmailIcon sx={{ color: '#4A90E2' }} />
                   </InputAdornment>
                 ),
               }}
@@ -267,9 +279,9 @@ export const EmailChangeDialog = ({
               elevation={0}
               sx={{
                 p: 3,
-                borderRadius: "12px",
-                background: "rgba(74, 144, 226, 0.05)",
-                border: "1px solid rgba(74, 144, 226, 0.1)",
+                borderRadius: '12px',
+                background: 'rgba(74, 144, 226, 0.05)',
+                border: '1px solid rgba(74, 144, 226, 0.1)',
               }}
             >
               <Typography variant="body1" sx={{ mb: 2 }}>
@@ -277,7 +289,7 @@ export const EmailChangeDialog = ({
               </Typography>
               <Typography
                 variant="h6"
-                sx={{ color: "#4A90E2", fontWeight: 600 }}
+                sx={{ color: '#4A90E2', fontWeight: 600 }}
               >
                 {newEmail}
               </Typography>
@@ -288,21 +300,21 @@ export const EmailChangeDialog = ({
               label="Mã xác nhận (6 chữ số)"
               value={verificationCode}
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+                const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
                 setVerificationCode(value);
               }}
               placeholder="Nhập mã xác nhận"
               inputProps={{
                 maxLength: 6,
                 style: {
-                  textAlign: "center",
-                  fontSize: "1.2rem",
-                  letterSpacing: "0.5em",
+                  textAlign: 'center',
+                  fontSize: '1.2rem',
+                  letterSpacing: '0.15em',
                 },
               }}
               sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '12px',
                 },
               }}
               InputProps={{
@@ -311,7 +323,7 @@ export const EmailChangeDialog = ({
                     <VerifiedIcon
                       sx={{
                         color:
-                          verificationCode.length === 6 ? "#1ABC9C" : "#ccc",
+                          verificationCode.length === 6 ? '#1ABC9C' : '#ccc',
                       }}
                     />
                   </InputAdornment>
@@ -331,7 +343,7 @@ export const EmailChangeDialog = ({
                 startIcon={
                   isSendingCode ? <CircularProgress size={16} /> : <SendIcon />
                 }
-                sx={{ color: "#4A90E2" }}
+                sx={{ color: '#4A90E2' }}
               >
                 {countdown > 0 ? (
                   <>
@@ -339,17 +351,17 @@ export const EmailChangeDialog = ({
                     Gửi lại sau {countdown}s
                   </>
                 ) : (
-                  "Gửi lại mã"
+                  'Gửi lại mã'
                 )}
               </Button>
 
               <Chip
                 label={`${verificationCode.length}/6`}
                 size="small"
-                color={verificationCode.length === 6 ? "success" : "default"}
+                color={verificationCode.length === 6 ? 'success' : 'default'}
                 sx={{
                   bgcolor:
-                    verificationCode.length === 6 ? "#1ABC9C" : "default",
+                    verificationCode.length === 6 ? '#1ABC9C' : 'default',
                 }}
               />
             </Stack>
@@ -364,21 +376,21 @@ export const EmailChangeDialog = ({
               elevation={0}
               sx={{
                 p: 4,
-                borderRadius: "16px",
-                background: "rgba(26, 188, 156, 0.05)",
-                border: "1px solid rgba(26, 188, 156, 0.1)",
-                textAlign: "center",
+                borderRadius: '16px',
+                background: 'rgba(26, 188, 156, 0.05)',
+                border: '1px solid rgba(26, 188, 156, 0.1)',
+                textAlign: 'center',
               }}
             >
-              <VerifiedIcon sx={{ fontSize: 48, color: "#1ABC9C", mb: 2 }} />
+              <VerifiedIcon sx={{ fontSize: 48, color: '#1ABC9C', mb: 2 }} />
               <Typography
                 variant="h6"
-                sx={{ color: "#1ABC9C", fontWeight: 600, mb: 1 }}
+                sx={{ color: '#1ABC9C', fontWeight: 600, mb: 1 }}
               >
                 Thay đổi email thành công!
               </Typography>
-              <Typography variant="body2" sx={{ color: "#6b7280" }}>
-                Email của bạn đã được cập nhật thành:{" "}
+              <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                Email của bạn đã được cập nhật thành:{' '}
                 <strong>{newEmail}</strong>
               </Typography>
             </Paper>
@@ -403,7 +415,7 @@ export const EmailChangeDialog = ({
             <Button
               onClick={handleClose}
               disabled={isSendingCode}
-              sx={{ color: "#6b7280" }}
+              sx={{ color: '#6b7280' }}
             >
               Hủy
             </Button>
@@ -419,14 +431,14 @@ export const EmailChangeDialog = ({
                 )
               }
               sx={{
-                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                color: "#fff",
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                color: '#fff',
                 fontWeight: 600,
-                boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-                "&:disabled": { background: "#ccc" },
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                '&:disabled': { background: '#ccc' },
               }}
             >
-              {isSendingCode ? "Đang gửi..." : "Gửi mã xác nhận"}
+              {isSendingCode ? 'Đang gửi...' : 'Gửi mã xác nhận'}
             </Button>
           </>
         );
@@ -441,7 +453,7 @@ export const EmailChangeDialog = ({
             <Button
               onClick={() => setActiveStep(0)}
               disabled={isVerifying}
-              sx={{ color: "#6b7280" }}
+              sx={{ color: '#6b7280' }}
             >
               Quay lại
             </Button>
@@ -457,14 +469,14 @@ export const EmailChangeDialog = ({
                 )
               }
               sx={{
-                background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-                color: "#fff",
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                color: '#fff',
                 fontWeight: 600,
-                boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-                "&:disabled": { background: "#ccc" },
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                '&:disabled': { background: '#ccc' },
               }}
             >
-              {isVerifying ? "Đang lưu..." : "Lưu thay đổi"}
+              {isVerifying ? 'Đang lưu...' : 'Lưu thay đổi'}
             </Button>
           </>
         );
@@ -477,10 +489,10 @@ export const EmailChangeDialog = ({
             variant="contained"
             onClick={handleSuccessClose}
             sx={{
-              background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-              color: "#fff",
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+              color: '#fff',
               fontWeight: 600,
-              boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
+              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
             }}
           >
             Hoàn tất
@@ -494,10 +506,15 @@ export const EmailChangeDialog = ({
   // Render toàn bộ dialog
   // Bao gồm tiêu đề, nội dung và các hành động
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={() => handleClose(false)}
+      maxWidth="sm"
+      fullWidth
+    >
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={2}>
-          <EmailIcon sx={{ color: "#4A90E2" }} />
+          <EmailIcon sx={{ color: '#4A90E2' }} />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Thay đổi Email
           </Typography>
@@ -524,20 +541,20 @@ export const EmailChangeDialog = ({
               elevation={0}
               sx={{
                 p: 3,
-                borderRadius: "12px",
-                background: "rgba(245, 158, 11, 0.05)",
-                border: "1px solid rgba(245, 158, 11, 0.1)",
+                borderRadius: '12px',
+                background: 'rgba(245, 158, 11, 0.05)',
+                border: '1px solid rgba(245, 158, 11, 0.1)',
               }}
             >
               <Typography
                 variant="body2"
-                sx={{ fontWeight: 600, mb: 1, color: "#d97706" }}
+                sx={{ fontWeight: 600, mb: 1, color: '#d97706' }}
               >
                 ⚠️ Lưu ý quan trọng:
               </Typography>
               <Typography
                 variant="body2"
-                sx={{ color: "#92400e", fontSize: "0.9rem" }}
+                sx={{ color: '#92400e', fontSize: '0.9rem' }}
               >
                 • Chúng tôi sẽ gửi mã xác nhận đến email mới
                 <br />

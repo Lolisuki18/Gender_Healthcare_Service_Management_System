@@ -304,4 +304,39 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
+
+    // Kiểm tra username đã tồn tại (API cho frontend realtime validation)
+    @GetMapping("/check-username")
+    public ResponseEntity<?> checkUsernameExists(@RequestParam("username") String username) {
+        boolean exists = userService.isUsernameExists(username);
+        return ResponseEntity.ok().body(java.util.Collections.singletonMap("exists", exists));
+    }
+
+    // cập nhật số điện thoại trực tiếp, không cần mã xác thực
+    @PutMapping("/profile/phone")
+    public ResponseEntity<ApiResponse<UserResponse>> updatePhone(@RequestParam String phone) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.error("User not authenticated"));
+            }
+            String username = authentication.getName();
+            Long userId = userService.getUserIdFromUsername(username);
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("User not found"));
+            }
+            // Cập nhật trực tiếp không cần mã xác thực
+            ApiResponse<UserResponse> response = userService.updatePhone(userId, phone);
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error updating phone: " + e.getMessage()));
+        }
+    }
 }

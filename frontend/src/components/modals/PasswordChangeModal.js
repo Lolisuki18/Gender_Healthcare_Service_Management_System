@@ -9,7 +9,7 @@
  * - Xử lý lỗi và phản hồi của người dùng
  */
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -22,13 +22,14 @@ import {
   Paper,
   InputAdornment,
   CircularProgress,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Lock as LockIcon,
   Visibility,
   VisibilityOff,
   Shield as ShieldIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
+import { notify } from '@/utils/notify';
 
 //Password Change Dialog Component
 export const PasswordChangeDialog = ({
@@ -39,9 +40,9 @@ export const PasswordChangeDialog = ({
 }) => {
   //State quản lý mật khẩu
   const [passwords, setPasswords] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
   //State quản lý hiển thị mật khẩu
   //Mặc định là ẩn mật khẩu
@@ -63,7 +64,7 @@ export const PasswordChangeDialog = ({
     if (errors[field]) {
       setErrors({
         ...errors,
-        [field]: "",
+        [field]: '',
       });
     }
   };
@@ -84,25 +85,25 @@ export const PasswordChangeDialog = ({
     const newErrors = {};
     //Kiểm tra xem password hiện tại có được nhập hay không ?
     if (!passwords.currentPassword) {
-      newErrors.currentPassword = "Vui lòng nhập mật khẩu hiện tại";
+      newErrors.currentPassword = 'Vui lòng nhập mật khẩu hiện tại';
     }
     //Kiểm tra xem mật khẩu mới có được nhập hay không ?
     //Nếu có thì kiểm tra độ dài của mật khẩu mới
     if (!passwords.newPassword) {
-      newErrors.newPassword = "Vui lòng nhập mật khẩu mới";
+      newErrors.newPassword = 'Vui lòng nhập mật khẩu mới';
     } else if (passwords.newPassword.length < 6) {
-      newErrors.newPassword = "Mật khẩu mới phải có ít nhất 6 ký tự";
+      newErrors.newPassword = 'Mật khẩu mới phải có ít nhất 6 ký tự';
     }
 
     if (!passwords.confirmPassword) {
-      newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu mới";
+      newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu mới';
     } else if (passwords.newPassword !== passwords.confirmPassword) {
-      newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
+      newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
     }
     // Kiểm tra xem mật khẩu mới có khác mật khẩu hiện tại không
     // Nếu giống nhau thì báo lỗi
     if (passwords.currentPassword === passwords.newPassword) {
-      newErrors.newPassword = "Mật khẩu mới phải khác mật khẩu hiện tại";
+      newErrors.newPassword = 'Mật khẩu mới phải khác mật khẩu hiện tại';
     }
     // Cập nhật state lỗi với các lỗi mới
     // Nếu không có lỗi thì trả về true
@@ -112,27 +113,55 @@ export const PasswordChangeDialog = ({
 
   // Hàm xử lý gửi biểu mẫu
   // Gọi validateForm để kiểm tra tính hợp lệ của biểu mẫu
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
       // Nếu biểu mẫu hợp lệ, gọi hàm onChangePassword với các giá trị mật khẩu
       // Truyền vào mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu
-      onChangePassword({
+      const result = await onChangePassword({
         currentPassword: passwords.currentPassword,
         newPassword: passwords.newPassword,
         confirmPassword: passwords.confirmPassword,
       });
+      // Nếu thành công, đóng modal và reset form
+      if (result && result.success) {
+        handleClose(true);
+      } else if (result && result.message) {
+        // Xử lý lỗi trả về từ API
+        if (result.message === 'Current password is incorrect') {
+          notify.error('Lỗi', 'Mật khẩu hiện tại không đúng!');
+        } else if (
+          result.message === 'Invalid information' &&
+          result.data &&
+          result.data.newPassword &&
+          result.data.newPassword.includes(
+            'New password must contain at least 1 uppercase letter'
+          )
+        ) {
+          notify.error(
+            'Lỗi',
+            'Mật khẩu mới phải có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt'
+          );
+        } else if (result.message === 'Invalid information') {
+          notify.error(
+            'Lỗi',
+            'Thông tin không hợp lệ. Vui lòng kiểm tra lại mật khẩu mới.'
+          );
+        } else {
+          notify.error('Lỗi', result.message);
+        }
+      }
     }
   };
 
   // Hàm xử lý đóng dialog
   // Reset lại các giá trị mật khẩu, hiển thị mật khẩu và lỗi
-  const handleClose = () => {
+  const handleClose = (success) => {
     // Reset lại các giá trị mật khẩu
     // Đặt lại mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu về
     setPasswords({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
     });
     // Đặt lại hiển thị mật khẩu về false
     // Đặt lại hiển thị mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu về false
@@ -147,7 +176,7 @@ export const PasswordChangeDialog = ({
     setErrors({});
     // Gọi hàm onClose để đóng dialog
     // Hàm này sẽ được truyền vào từ component cha để xử lý việc đóng dialog
-    onClose();
+    if (typeof onClose === 'function') onClose(success);
   };
 
   // Trả về giao diện của dialog
@@ -160,10 +189,15 @@ export const PasswordChangeDialog = ({
     // maxWidth là kích thước tối đa của dialog
     // fullWidth sẽ làm cho dialog chiếm toàn bộ chiều rộng
     // Sử dụng Stack để căn chỉnh các thành phần bên trong dialog
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={() => handleClose(false)}
+      maxWidth="sm"
+      fullWidth
+    >
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={2}>
-          <LockIcon sx={{ color: "#4A90E2" }} />
+          <LockIcon sx={{ color: '#4A90E2' }} />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Đổi mật khẩu
           </Typography>
@@ -176,18 +210,18 @@ export const PasswordChangeDialog = ({
           <TextField
             fullWidth
             label="Mật khẩu hiện tại"
-            type={showPasswords.current ? "text" : "password"}
+            type={showPasswords.current ? 'text' : 'password'}
             value={passwords.currentPassword}
-            onChange={handleChange("currentPassword")}
+            onChange={handleChange('currentPassword')}
             error={!!errors.currentPassword}
             helperText={errors.currentPassword}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
                   <Button
-                    onClick={() => toggleShowPassword("current")}
+                    onClick={() => toggleShowPassword('current')}
                     edge="end"
-                    sx={{ minWidth: "auto", p: 1, color: "#4A90E2" }}
+                    sx={{ minWidth: 'auto', p: 1, color: '#4A90E2' }}
                   >
                     {showPasswords.current ? <VisibilityOff /> : <Visibility />}
                   </Button>
@@ -195,8 +229,8 @@ export const PasswordChangeDialog = ({
               ),
             }}
             sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
               },
             }}
           />
@@ -205,20 +239,20 @@ export const PasswordChangeDialog = ({
           <TextField
             fullWidth
             label="Mật khẩu mới"
-            type={showPasswords.new ? "text" : "password"}
+            type={showPasswords.new ? 'text' : 'password'}
             value={passwords.newPassword}
-            onChange={handleChange("newPassword")}
+            onChange={handleChange('newPassword')}
             error={!!errors.newPassword}
             helperText={
-              errors.newPassword || "Mật khẩu phải có ít nhất 6 ký tự"
+              errors.newPassword || 'Mật khẩu phải có ít nhất 6 ký tự'
             }
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
                   <Button
-                    onClick={() => toggleShowPassword("new")}
+                    onClick={() => toggleShowPassword('new')}
                     edge="end"
-                    sx={{ minWidth: "auto", p: 1, color: "#4A90E2" }}
+                    sx={{ minWidth: 'auto', p: 1, color: '#4A90E2' }}
                   >
                     {showPasswords.new ? <VisibilityOff /> : <Visibility />}
                   </Button>
@@ -226,8 +260,8 @@ export const PasswordChangeDialog = ({
               ),
             }}
             sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
               },
             }}
           />
@@ -236,18 +270,18 @@ export const PasswordChangeDialog = ({
           <TextField
             fullWidth
             label="Xác nhận mật khẩu mới"
-            type={showPasswords.confirm ? "text" : "password"}
+            type={showPasswords.confirm ? 'text' : 'password'}
             value={passwords.confirmPassword}
-            onChange={handleChange("confirmPassword")}
+            onChange={handleChange('confirmPassword')}
             error={!!errors.confirmPassword}
             helperText={errors.confirmPassword}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
                   <Button
-                    onClick={() => toggleShowPassword("confirm")}
+                    onClick={() => toggleShowPassword('confirm')}
                     edge="end"
-                    sx={{ minWidth: "auto", p: 1, color: "#4A90E2" }}
+                    sx={{ minWidth: 'auto', p: 1, color: '#4A90E2' }}
                   >
                     {showPasswords.confirm ? <VisibilityOff /> : <Visibility />}
                   </Button>
@@ -255,8 +289,8 @@ export const PasswordChangeDialog = ({
               ),
             }}
             sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
               },
             }}
           />
@@ -266,23 +300,23 @@ export const PasswordChangeDialog = ({
             elevation={0}
             sx={{
               p: 3,
-              borderRadius: "12px",
-              background: "rgba(74, 144, 226, 0.05)",
-              border: "1px solid rgba(74, 144, 226, 0.1)",
+              borderRadius: '12px',
+              background: 'rgba(74, 144, 226, 0.05)',
+              border: '1px solid rgba(74, 144, 226, 0.1)',
             }}
           >
             <Typography
               variant="body2"
-              sx={{ fontWeight: 600, mb: 1, color: "#4A90E2" }}
+              sx={{ fontWeight: 600, mb: 1, color: '#4A90E2' }}
             >
               <ShieldIcon
-                sx={{ fontSize: 16, mr: 0.5, verticalAlign: "text-bottom" }}
+                sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'text-bottom' }}
               />
               Lời khuyên bảo mật:
             </Typography>
             <Typography
               variant="body2"
-              sx={{ color: "#6b7280", fontSize: "0.9rem" }}
+              sx={{ color: '#6b7280', fontSize: '0.9rem' }}
             >
               • Sử dụng ít nhất 8 ký tự
               <br />
@@ -295,9 +329,9 @@ export const PasswordChangeDialog = ({
       {/* Nút huỷ */}
       <DialogActions sx={{ p: 3, pt: 0 }}>
         <Button
-          onClick={handleClose}
+          onClick={() => handleClose(false)}
           disabled={isChanging}
-          sx={{ color: "#6b7280" }}
+          sx={{ color: '#6b7280' }}
         >
           Hủy
         </Button>
@@ -313,14 +347,14 @@ export const PasswordChangeDialog = ({
             )
           }
           sx={{
-            background: "linear-gradient(45deg, #4A90E2, #1ABC9C)",
-            color: "#fff",
+            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+            color: '#fff',
             fontWeight: 600,
-            boxShadow: "0 2px 8px rgba(74, 144, 226, 0.25)",
-            "&:disabled": { background: "#ccc" },
+            boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+            '&:disabled': { background: '#ccc' },
           }}
         >
-          {isChanging ? "Đang đổi..." : "Đổi mật khẩu"}
+          {isChanging ? 'Đang đổi...' : 'Đổi mật khẩu'}
         </Button>
       </DialogActions>
     </Dialog>

@@ -59,7 +59,8 @@ public class SecurityConfig {
 
                         // API Authentication & User Management
                         .requestMatchers("/users/register", "/users/login", "/users/logout",
-                                "/users/forgot-password", "/users/reset-password", "/users/send-verification")
+                                "/users/forgot-password", "/users/reset-password", "/users/send-verification",
+                                "/users/check-username")
                         .permitAll()
 
                         // JWT Authentication endpoints
