@@ -14,7 +14,7 @@ public class ReminderScheduler {
 
     // Lịch trình gửi thông báo nhắc nhở ngày rụng trứng
     // @Scheduled(cron = "0 0 7 * * ?") // Chạy lúc 7:00 AM mỗi ngày
-    // @Scheduled(cron = "0 */5 * * * *") // For testing: every 5 minute
+    // @Scheduled(cron = "0 */1 * * * *") // For testing: every 5 minute
     public void sendOvulationReminder() {
         notificationService.sendOvulationNotification();
     }
