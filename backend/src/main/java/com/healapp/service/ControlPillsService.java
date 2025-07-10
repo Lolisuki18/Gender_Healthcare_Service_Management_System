@@ -298,6 +298,31 @@ public class ControlPillsService {
         }
     }
     
+    //Xóa lịch uống thuốc 
+    public ApiResponse<String> deletePill(Long controlPillId){
+        try {
+            Long userId = getCurrentUserId();
+            Optional<ControlPills> optionalControlPills = controlPillsRepository.findById(controlPillId);
+
+            if (optionalControlPills.isEmpty()) {
+                return ApiResponse.error("Lịch uống thuốc không tồn tại.");
+            }
+
+            ControlPills controlPills = optionalControlPills.get();
+
+            if (!controlPills.getUserId().getId().equals(userId)) {
+                return ApiResponse.error("Bạn không có quyền xóa lịch uống thuốc này.");
+            }
+            
+            pillLogsRepository.deleteByControlPills(controlPills);
+            controlPillsRepository.delete(controlPills);
+
+            return ApiResponse.success("Xóa lịch uống thuốc thành công.", null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.error("Đã xảy ra lỗi khi xóa lịch uống thuốc: " + e.getMessage());
+        }
+    }
 
 
 

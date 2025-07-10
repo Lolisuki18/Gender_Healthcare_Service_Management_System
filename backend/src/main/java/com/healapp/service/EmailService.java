@@ -2,6 +2,7 @@ package com.healapp.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 import org.slf4j.Logger;
@@ -549,7 +550,7 @@ public class EmailService {
         helper.setText(htmlContent, true);
         return message;
     }
-
+    
 
     @Async("asyncExecutor")
     public void sendOvulationWithPregnancyProbReminderAsync(String email, String fullName, int daysBeforeOvulation, double pregnancyProb, LocalDate ovulationDate) {
@@ -560,6 +561,57 @@ public class EmailService {
         } catch (MessagingException e) {
             logger.error("Không thể gửi email nhắc nhở ngày rụng trứng với tỉ lệ mang thai đến {}: {}", email, e.getMessage());
         }
+    }
+    //Tạo thông báo nhắc nhở lịch uống thuốc
+    private MimeMessage creatMessagePillRemindMessage(String mail, String fullName) throws MessagingException{
+         MimeMessage message = mailSender.createMimeMessage();
+         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+         helper.setTo(mail);
+         helper.setFrom(from);
+         helper.setSubject("⏰ Nhắc nhở uống thuốc tránh thai - HealApp");
+
+         String content = "<div style='font-family:Arial,sans-serif; font-size:14px;'>"
+                       + "<p>Chào <strong>" + fullName + "</strong>,</p>"
+                       + "<p>Đây là lời nhắc nhở từ HealApp để bạn không quên uống thuốc hôm nay.</p>"
+                       + "<p>🕒 Đừng quên kiểm tra và <strong>check-in</strong> trong ứng dụng nhé!</p>"
+                       + "<br>"
+                       + "<p>Chúc bạn luôn khỏe mạnh,<br><strong>Đội ngũ HealApp</strong></p>"
+                       + "</div>";
+         helper.setText(content, true); // true để gửi html
+         return message;
+    }
+
+    @Async("asyncExecutor")
+    public void sendPillReminder(String mail, String fullName){
+        try {
+            MimeMessage message = creatMessagePillRemindMessage(mail, fullName);
+            mailSender.send(message);
+            logger.info("Email nhắc nhở uống thuốc tránh thai đã được gửi thành công đến: {}", mail);
+        } catch (Exception e) {
+            logger.error("Không thể gửi email nhắc nhở uống thuốc tránh thai đến {}: {}", mail, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendPillReminderAsync(String to, String name, LocalTime remindTime) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        String subject = "Nhắc nhở uống thuốc của bạn";
+        String content = String.format("Xin chào %s,<br/><br/>" +
+                "Đây là lời nhắc nhở uống thuốc của bạn vào lúc <b>%s</b>.<br/><br/>" +
+                "Vui lòng đừng quên uống thuốc của bạn.<br/><br/>" +
+                "Trân trọng,<br/>" +
+                "Đội ngũ HealApp",
+                name, remindTime.format(DateTimeFormatter.ofPattern("HH:mm")));
+
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(content, true);
+
+        mailSender.send(message);
+        logger.info("Sent pill reminder email to {}", to);
     }
 
     @Async

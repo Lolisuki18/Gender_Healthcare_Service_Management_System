@@ -24,4 +24,11 @@ public class ReminderScheduler {
     public void sendPregnancyReminder() {
         notificationService.sendPregnancyProbNotification();
     }
+
+    // Lịch trình gửi thông báo nhắc nhở uống thuốc
+    // @Scheduled(cron = "0 0 8 * * ?") // Chạy lúc 8:00 AM mỗi ngày
+    @Scheduled(cron = "0 */1 * * * *") // For testing: every 1 minute
+    public void sendPillReminder() {
+        notificationService.sendPillReminder();
+    }
 }

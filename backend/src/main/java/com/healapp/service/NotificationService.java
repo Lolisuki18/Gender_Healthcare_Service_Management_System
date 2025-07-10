@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,10 +21,14 @@ import com.healapp.model.NotificationStatus;
 import com.healapp.model.NotificationType;
 import com.healapp.model.PregnancyProbLog;
 import com.healapp.model.UserDtls;
+import com.healapp.model.ControlPills;
+import com.healapp.model.PillLogs;
 import com.healapp.repository.NotificationPreferenceRepository;
 import com.healapp.repository.NotificationRepository;
 import com.healapp.repository.PregnancyProbLogRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.repository.ControlPillsRepository;
+import com.healapp.repository.PillLogsRepository;
 
 @Service
 public class NotificationService {
@@ -50,6 +55,12 @@ public class NotificationService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ControlPillsRepository controlPillsRepository;
+
+    @Autowired
+    private PillLogsRepository pillLogsRepository;
 
     public void sendOvulationNotification() {
         logger.info("Starting scheduled ovulation notification task");
@@ -266,6 +277,101 @@ public class NotificationService {
         notificationRepository.save(noti);
         logger.info("Pregnancy probability notification record saved for user ID: {} with status: {}", 
                    userId, noti.getStatus());
+    }
+    //Gửi mail cho cái nhắc uống thuốc
+    public void sendPillReminder() {
+        logger.info("Starting scheduled pill reminder task");
+        List<NotificationPreference> pillReminderPreferences = notificationPreferenceRepository.findAll()
+            .stream()
+            .filter(pref -> pref.getType() == NotificationType.PILL_REMINDER && pref.getEnabled())
+            .toList();
+        logger.info("Found {} users with enabled pill reminder notifications", pillReminderPreferences.size());
+        for (NotificationPreference preference : pillReminderPreferences) {
+            try {
+                sendPillReminderToUser(preference.getUser().getId());
+            } catch (Exception e) {
+                logger.error("Error sending pill reminder notification to user ID {}: {}", 
+                           preference.getUser().getId(), e.getMessage(), e);
+            }
+        }
+        logger.info("Completed scheduled pill reminder task");
+    }
+
+    //Nhắc nhở uống thuốc
+    public void sendPillReminderToUser(Long userId){
+         if (userId == null) {
+            logger.warn("Cannot send pill reminder notification: User ID is null");
+            throw new IllegalArgumentException("User ID cannot be null");
+         }
+
+        logger.info("Attempting to send pill reminder notification to user ID: {}", userId);
+
+        UserDtls user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            logger.warn("Cannot send pill reminder notification: User not found for ID: {}", userId);
+            return;
+        }
+
+        // Kiểm tra người dùng có cài đặt nhận thông báo này không
+        Optional<NotificationPreference> preference = notificationPreferenceRepository.findByUserIdAndType(userId, NotificationType.PILL_REMINDER);
+        if (preference.isEmpty() || !preference.get().getEnabled()) {
+            logger.info("Skipping pill reminder notification for user ID {}: No preference found or notification disabled", userId);
+            return; 
+        }
+
+        // Lấy lịch uống thuốc đang hoạt động của người dùng
+        List<ControlPills> activePillSchedules = controlPillsRepository.findByUserIdAndIsActive(user, true)
+            .orElse(Collections.emptyList());
+
+        if (activePillSchedules.isEmpty()) {
+            logger.info("Skipping pill reminder notification for user ID {}: No active pill schedules found", userId);
+            return;
+        }
+
+        LocalDate today = LocalDate.now();
+        boolean pillReminderSent = false;
+
+        for (ControlPills schedule : activePillSchedules) {
+            Optional<PillLogs> todayPillLog = pillLogsRepository.findByControlPillsAndLogDate(schedule, today);
+            
+            if (todayPillLog.isPresent()) {
+                PillLogs log = todayPillLog.get();
+                // Kiểm tra nếu thời gian nhắc nhở đã đến hoặc đã qua
+                if (!java.time.LocalTime.now().isBefore(schedule.getRemindTime())) {
+                    Notification notification = new Notification();
+                    notification.setUser(user);
+                    notification.setTitle("Nhắc nhở uống thuốc");
+                    notification.setContent("Đã đến giờ uống thuốc của bạn.");
+                    notification.setType(NotificationType.PILL_REMINDER);
+                    notification.setScheduledAt(LocalDateTime.now());
+
+                    try {
+                        emailService.sendPillReminderAsync(user.getEmail(), user.getFullName(), schedule.getRemindTime());
+                        notification.setStatus(NotificationStatus.SENT);
+                        notification.setSentAt(LocalDateTime.now());
+                        logger.info("Successfully sent pill reminder email to user {} ({}) for schedule ID {}", 
+                                   user.getFullName(), user.getEmail(), schedule.getPillsId());
+                        pillReminderSent = true;
+                    } catch (Exception ex) {
+                        notification.setStatus(NotificationStatus.FAILED);
+                        notification.setErrorMessage(ex.getMessage());
+                        logger.error("Failed to send pill reminder email to user {} ({}) for schedule ID {}. Reason: {}", 
+                                    user.getFullName(), user.getEmail(), schedule.getPillsId(), ex.getMessage(), ex);
+                    }
+                    notificationRepository.save(notification);
+                    logger.info("Pill reminder notification record saved for user ID: {} with status: {}", 
+                               userId, notification.getStatus());
+                } else {
+                    logger.info("Skipping pill reminder for schedule ID {} (user ID {}): Reminder time not yet reached.", 
+                               schedule.getPillsId(), userId);
+                }
+            } else {
+                logger.info("No pill log found for today for schedule ID {} (user ID {})", schedule.getPillsId(), userId);
+            }
+        }
+        if (!pillReminderSent) {
+            logger.info("No pill reminders sent for user ID {} today.", userId);
+        }
     }
 
     // Phương thức bỏ qua thông báo

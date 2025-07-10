@@ -21,6 +21,7 @@ public class ControlPillsResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean placebo;
+    
       
 
 }

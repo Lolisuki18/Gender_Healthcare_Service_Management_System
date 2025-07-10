@@ -24,4 +24,8 @@ public interface PillLogsRepository extends JpaRepository<PillLogs, Long>{
     Optional<PillLogs> findByControlPillsAndLogDate(ControlPills controlPills, LocalDate logDate);
 
     List<PillLogs> findByControlPills(ControlPills controlPills);
+
+    @Modifying
+    @Transactional
+    void deleteByControlPills(ControlPills controlPills);
 }
