@@ -88,8 +88,6 @@ public class MenstrualCycleService {
             menstrualCycle.setStartDate(request.getStartDate());
             menstrualCycle.setNumberOfDays(request.getNumberOfDays());
             menstrualCycle.setCycleLength(request.getCycleLength());
-            menstrualCycle.setOvulationRemind(request.getOvulationRemind() != null ? request.getOvulationRemind() : false);
-            menstrualCycle.setPregnancyRemind(request.getPregnancyRemind() != null ? request.getPregnancyRemind() : false);
 
             // Tính ngày rụng trứng
             LocalDate ovulationDate = calculateOvulationDate(menstrualCycle);
@@ -198,9 +196,9 @@ public class MenstrualCycleService {
     }
 
     // Lấy chu kỳ kinh nguyệt gần nhất trước ngày hiện tại
-    public Optional<MenstrualCycle> getLatestCycleBeforeToday(Long userId, LocalDate today) {
+    public Optional<MenstrualCycle> getLatestCycleBeforeToday(Long userId) {
         try {
-            return menstrualCycleRepository.findLatestCycleBeforeToday(userId, today);
+            return menstrualCycleRepository.findLatestCycleByUserId(userId);
         } catch (Exception e) {
             log.error("Lỗi khi lấy chu kỳ kinh nguyệt gần nhất trước ngày hiện tại: " + e.getMessage());
             return Optional.empty();
@@ -236,12 +234,6 @@ public class MenstrualCycleService {
             menstrualCycle.setStartDate(request.getStartDate());
             menstrualCycle.setNumberOfDays(request.getNumberOfDays());
             menstrualCycle.setCycleLength(request.getCycleLength());
-
-            // Bảo vệ null cho Boolean
-            Boolean ovulationRemind = request.getOvulationRemind() != null ? request.getOvulationRemind() : menstrualCycle.getOvulationRemind();
-            Boolean pregnancyRemind = request.getPregnancyRemind() != null ? request.getPregnancyRemind() : menstrualCycle.getPregnancyRemind();
-            menstrualCycle.setOvulationRemind(ovulationRemind);
-            menstrualCycle.setPregnancyRemind(pregnancyRemind);
 
             // Tính và set ngày rụng trứng
             LocalDate ovulationDate = calculateOvulationDate(menstrualCycle);
@@ -439,7 +431,7 @@ public class MenstrualCycleService {
             log.info("Predicting next cycle for userId: {}", userId);
             
             // Thử tìm chu kỳ gần nhất trước hôm nay
-            Optional<MenstrualCycle> latestCycleOpt = menstrualCycleRepository.findLatestCycleBeforeToday(userId, LocalDate.now());
+            Optional<MenstrualCycle> latestCycleOpt = menstrualCycleRepository.findLatestCycleByUserId(userId);
             
             if (!latestCycleOpt.isPresent()) {
                 log.error("No menstrual cycle found for userId: {}", userId);
@@ -460,26 +452,24 @@ public class MenstrualCycleService {
     }
 
     // Thay đổi trạng thái của nhắc nhở rụng trứng
-    @Transactional
-    public ApiResponse<MenstrualCycleResponse> toggleOvulationReminder(Long menstrualCycleId) {
-        try {
-            Optional<MenstrualCycle> optionalCycle = menstrualCycleRepository.findById(menstrualCycleId);
-            if (!optionalCycle.isPresent()) {
-                return ApiResponse.error("Chu kỳ kinh nguyệt không tồn tại");
-            }
+    // @Transactional
+    // public ApiResponse<MenstrualCycleResponse> toggleOvulationReminder(Long menstrualCycleId) {
+    //     try {
+    //         Optional<MenstrualCycle> optionalCycle = menstrualCycleRepository.findById(menstrualCycleId);
+    //         if (!optionalCycle.isPresent()) {
+    //             return ApiResponse.error("Chu kỳ kinh nguyệt không tồn tại");
+    //         }
 
-            MenstrualCycle menstrualCycle = optionalCycle.get();
-            boolean currentStatus = menstrualCycle.getOvulationRemind() != null ? menstrualCycle.getOvulationRemind() : false;
-            menstrualCycle.setOvulationRemind(!currentStatus);
+    //         MenstrualCycle menstrualCycle = optionalCycle.get();
 
-            MenstrualCycle updatedCycle = menstrualCycleRepository.save(menstrualCycle);
+    //         MenstrualCycle updatedCycle = menstrualCycleRepository.save(menstrualCycle);
 
-            return ApiResponse.success("Thay đổi trạng thái nhắc nhở rụng trứng thành công", convertToResponse(updatedCycle));
-        } catch (Exception e) {
-            log.error("Error toggling ovulation reminder for menstrualCycleId: {}", menstrualCycleId, e);
-            return ApiResponse.error("Lỗi khi thay đổi trạng thái nhắc nhở rụng trứng: " + e.getMessage());
-        }
-    }
+    //         return ApiResponse.success("Thay đổi trạng thái nhắc nhở rụng trứng thành công", convertToResponse(updatedCycle));
+    //     } catch (Exception e) {
+    //         log.error("Error toggling ovulation reminder for menstrualCycleId: {}", menstrualCycleId, e);
+    //         return ApiResponse.error("Lỗi khi thay đổi trạng thái nhắc nhở rụng trứng: " + e.getMessage());
+    //     }
+    // }
 
     /*
      * Chuyển đổi MenstrualCycle thành MenstrualCycleResponse không có tỉ lệ mang thai
@@ -492,8 +482,6 @@ public class MenstrualCycleService {
         response.setNumberOfDays(menstrualCycle.getNumberOfDays());
         response.setCycleLength(menstrualCycle.getCycleLength());
         response.setOvulationDate(menstrualCycle.getOvulationDate());
-        response.setOvulationRemind(null != menstrualCycle.getOvulationRemind() ? menstrualCycle.getOvulationRemind() : false);
-        response.setPregnancyRemind(null != menstrualCycle.getPregnancyRemind() ? menstrualCycle.getPregnancyRemind() : false);
         return response;
     }
 
@@ -508,12 +496,8 @@ public class MenstrualCycleService {
         response.setNumberOfDays(menstrualCycle.getNumberOfDays());
         response.setOvulationDate(menstrualCycle.getOvulationDate());
         response.setCycleLength(menstrualCycle.getCycleLength());
-        response.setOvulationRemind(null != menstrualCycle.getOvulationRemind() ? menstrualCycle.getOvulationRemind() : false);
-        response.setPregnancyRemind(null != menstrualCycle.getPregnancyRemind() ? menstrualCycle.getPregnancyRemind() : false);
         response.setPregnancyProbLogs(pregnancyProbLogs);
         return response;
-
-
     }
 
 

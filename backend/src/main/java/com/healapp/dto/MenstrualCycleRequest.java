@@ -2,9 +2,6 @@ package com.healapp.dto;
 
 import java.time.LocalDate;
 
-import com.healapp.model.UserDtls;
-
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,9 +20,5 @@ public class MenstrualCycleRequest {
 
     @NotNull(message = "Chu kỳ kinh nguyệt không được để trống")
     private Long cycleLength;
-
-    private Boolean ovulationRemind;
-
-    private Boolean pregnancyRemind;
 
 }

@@ -17,11 +17,13 @@ public interface MenstrualCycleRepository extends JpaRepository<MenstrualCycle, 
     @Query("SELECT m FROM MenstrualCycle m WHERE m.user.id = :userId")
     Optional<List<MenstrualCycle>> findAllByUserId(Long userId);
 
-    @Query("SELECT c FROM MenstrualCycle c WHERE c.user.id = :userId AND c.startDate <= :today ORDER BY c.startDate DESC")
-    Optional<MenstrualCycle> findLatestCycleBeforeToday(@Param("userId") Long userId, @Param("today") LocalDate today);
-
     @Query("SELECT mc FROM MenstrualCycle mc WHERE mc.user.id = :userId ORDER BY mc.startDate DESC")
-    Optional<MenstrualCycle> findLatestCycleByUserId(@Param("userId") Long userId);
+    List<MenstrualCycle> findLatestCycleByUserIdList(@Param("userId") Long userId);
+
+    default Optional<MenstrualCycle> findLatestCycleByUserId(Long userId) {
+        List<MenstrualCycle> results = findLatestCycleByUserIdList(userId);
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+    }
 
     Optional<MenstrualCycle> findTopByUserIdOrderByStartDateDesc(Long userId);
 }

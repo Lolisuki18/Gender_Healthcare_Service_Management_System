@@ -10,7 +10,6 @@ import { CheckCircle } from '@mui/icons-material';
 import 'chart.js/auto';
 import { List, ListItem } from '@mui/material';
 import styles from '../styles/OvulationPage.module.css';
-import NotificationModal from '../components/MenstrualCycle/NotificationModal';
 import {
   Heart,
   Calendar,
@@ -414,15 +413,6 @@ const OvulationPage = ({ stats }) => {
   // Edit cycle states
   const [editingCycle, setEditingCycle] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
-
-  // Notification preferences states
-  const [showNotificationModal, setShowNotificationModal] = useState(false);
-  const [notificationPreferences, setNotificationPreferences] = useState({
-    // cycleReminder: true,
-    pregnancyReminder: true,
-    ovulationReminder: true,
-    // periodReminder: true,
-  });
 
   const toggleSection = (section) => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -836,23 +826,7 @@ const OvulationPage = ({ stats }) => {
     setEditingCycle(null);
   };
 
-  // Hàm xử lý khi click nút "Lưu chu kỳ vào hồ sơ"
-  const handleShowNotificationModal = () => {
-    setShowNotificationModal(true);
-  };
 
-  // Hàm xử lý thay đổi notification preferences
-  const handleNotificationPreferenceChange = (key, value) => {
-    setNotificationPreferences(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  // Hàm xử lý đóng notification modal
-  const handleCloseNotificationModal = () => {
-    setShowNotificationModal(false);
-  };
 
   // Hàm xử lý lưu chu kỳ đã tính toán vào database
   const handleSaveCycleToDatabase = async () => {
@@ -864,9 +838,6 @@ const OvulationPage = ({ stats }) => {
         startDate: calculationResult.startDate,
         numberOfDays: calculationResult.periodLength,
         cycleLength: calculationResult.cycleLength,
-        // Thêm thông tin về notification preferences
-        ovulationRemind: notificationPreferences.ovulationReminder || false,
-        pregnancyRemind: notificationPreferences.pregnancyReminder || false,
       };
 
       // Gọi API để lưu vào database
@@ -877,9 +848,6 @@ const OvulationPage = ({ stats }) => {
 
       // Reset về trang đầu để hiển thị chu kỳ mới nhất
       setCurrentPage(1);
-
-      // Đóng modal thông báo
-      setShowNotificationModal(false);
 
       notify.success('Thành công', 'Lưu chu kỳ thành công!');
       setCalculationResult(null); // Clear calculation result
@@ -1211,15 +1179,6 @@ const OvulationPage = ({ stats }) => {
                   </Fade>
                 </Modal>
 
-                {/* Notification Preferences Modal */}
-                <NotificationModal
-                  open={showNotificationModal}
-                  onClose={handleCloseNotificationModal}
-                  preferences={notificationPreferences}
-                  onPreferenceChange={handleNotificationPreferenceChange}
-                  onSave={handleSaveCycleToDatabase}
-                />
-
                 {/* Kết quả tính toán */}
                 {calculationResult && (
                   <Box id="calculation-result" sx={{ marginBottom: 4 }}>
@@ -1388,7 +1347,7 @@ const OvulationPage = ({ stats }) => {
                           {isLoggedIn && (
                             <button
                               className={styles.saveButton}
-                              onClick={handleShowNotificationModal}
+                              onClick={handleSaveCycleToDatabase}
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -1422,78 +1381,6 @@ const OvulationPage = ({ stats }) => {
                   </Box>
                 )}
 
-                {/* Chart Section */}
-                {/* <Grid container spacing={3}>
-                <Card className={styles.chartCard}>
-                  <Box className={styles.chartHeader}>
-                    <Typography variant="h6" className={styles.chartTitle}>
-                      Biểu đồ chu kỳ
-                    </Typography>
-                    <Typography className={styles.chartSubtitle}>
-                      Thống kê 5 chu kỳ gần nhất
-                    </Typography>
-                  </Box>
-
-                  <Box className={styles.legendContainer}>
-                    <Box className={styles.legendItem}>
-                      <Box
-                        className={styles.legendDot}
-                        style={{ backgroundColor: '#E91E63' }}
-                      />
-                      <Typography className={styles.legendText}>
-                        Chu kỳ thực tế
-                      </Typography>
-                    </Box>
-                    <Box className={styles.legendItem}>
-                      <Box
-                        className={styles.legendDot}
-                        style={{ backgroundColor: '#9C27B0' }}
-                      />
-                      <Typography className={styles.legendText}>
-                        Trung bình
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Box className={styles.chartContainer}>
-                    <Line
-                      data={chartData}
-                      options={chartOptions}
-                      className={styles.chartCanvas}
-                    />
-                  </Box>
-
-                  <Box className={styles.statsFooterWrapper}>
-                    <Box className={styles.statsFooter}>
-                      <Box className={styles.statsFooterCard}>
-                        <Typography className={styles.statSubtext}>
-                          Chu kỳ ngắn nhất
-                        </Typography>
-                        <Typography variant="h6" className={styles.statValue}>
-                          28 ngày
-                        </Typography>
-                      </Box>
-                      <Box className={styles.statsFooterCard}>
-                        <Typography className={styles.statSubtext}>
-                          Chu kỳ dài nhất
-                        </Typography>
-                        <Typography variant="h6" className={styles.statValue}>
-                          28 ngày
-                        </Typography>
-                      </Box>
-                      <Box className={styles.statsFooterCard}>
-                        <Typography className={styles.statSubtext}>
-                          Chênh lệch
-                        </Typography>
-                        <Typography variant="h6" className={styles.statValue}>
-                          0 ngày
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-                </Card>
-              </Grid> */}
-
                 {/* Health Advice Section */}
                 <Box className={styles.healthAdviceSection}>
                   <Card className={styles.healthAdviceCard}>
@@ -1515,72 +1402,6 @@ const OvulationPage = ({ stats }) => {
                         </Typography>
                       </Box>
                     </Box>
-
-                    {/* Card: Chu kỳ đều đặn */}
-                    {/* <Card className={styles.adviceCardRegular}>
-                    <Box className={styles.adviceCardHeader}>
-                      <Box className={styles.adviceCardIconRegular}>
-                        <FavoriteBorderIcon
-                          className={styles.adviceCardIconRegularIcon}
-                        />
-                      </Box>
-                      <Typography
-                        variant="subtitle1"
-                        className={styles.adviceCardTitleRegular}
-                      >
-                        Chu kỳ đều đặn
-                      </Typography>
-                    </Box>
-                    <Typography className={styles.adviceCardTextRegular}>
-                      Chu kỳ của bạn rất đều đặn! Hãy duy trì lối sống lành mạnh
-                      hiện tại.
-                    </Typography>
-                    <List className={styles.adviceCardList}>
-                      <ListItem className={styles.adviceCardListItem}>
-                        Tiếp tục duy trì chế độ ăn uống cân bằng
-                      </ListItem>
-                      <ListItem className={styles.adviceCardListItem}>
-                        Tập thể dục đều đặn
-                      </ListItem>
-                      <ListItem className={styles.adviceCardListItem}>
-                        Ngủ đủ 7-8 tiếng mỗi ngày
-                      </ListItem>
-                    </List>
-                  </Card> */}
-
-                    {/* Card: Lời khuyên chung */}
-                    {/* <Card className={styles.adviceCardGeneral}>
-                    <Box className={styles.adviceCardHeader}>
-                      <Box className={styles.adviceCardIconGeneral}>
-                        <FavoriteBorderIcon
-                          className={styles.adviceCardIconGeneralIcon}
-                        />
-                      </Box>
-                      <Typography
-                        variant="subtitle1"
-                        className={styles.adviceCardTitleGeneral}
-                      >
-                        Lời khuyên chung
-                      </Typography>
-                    </Box>
-                    <Typography className={styles.adviceCardTextGeneral}>
-                      Những thói quen tốt để duy trì sức khỏe sinh sản.
-                    </Typography>
-                    <List className={styles.adviceCardList}>
-                      <ListItem className={styles.adviceCardListItem}>
-                        Uống đủ 2-3 lít nước mỗi ngày
-                      </ListItem>
-                      <ListItem className={styles.adviceCardListItem}>
-                        Ăn nhiều rau xanh và trái cây
-                      </ListItem>
-                      <ListItem className={styles.adviceCardListItem}>
-                        Tập thể dục nhẹ nhàng trong kỳ kinh
-                      </ListItem>
-                      <ListItem className={styles.adviceCardListItem}>
-                        Theo dõi và ghi chép đều đặn
-                      </ListItem>
-                    </List>
-                  </Card> */}
 
                     {advice.map((item, index) => (
                       <Card

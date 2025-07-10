@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,13 +82,6 @@ public class NotificationService {
 
         logger.info("Attempting to send ovulation notification to user ID: {}", userId);
 
-        // Kiểm tra người dùng có cài đặt nhận thông báo này không
-        Optional<NotificationPreference> preference = notificationPreferenceRepository.findByUserIdAndType(userId, NotificationType.OVULATION);
-        if (preference.isEmpty() || !preference.get().getEnabled()) {
-            logger.info("Skipping ovulation notification for user ID {}: No preference found or notification disabled", userId);
-            return; // Người dùng không có cài đặt hoặc đã tắt thông báo này
-        }
-
         UserDtls user = userRepository.findById(userId).orElse(null);
         if (user == null) {
             logger.warn("Cannot send ovulation notification: User not found for ID: {}", userId);
@@ -97,7 +89,7 @@ public class NotificationService {
         }
 
         // Lấy chu kỳ kinh nguyệt gần nhất của người dùng
-        MenstrualCycle latestCycle = menstrualCycleService.getLatestCycleBeforeToday(userId, LocalDate.now())
+        MenstrualCycle latestCycle = menstrualCycleService.getLatestCycleBeforeToday(userId)
             .orElse(null);
         if (latestCycle == null) {
             // Không có chu kỳ kinh nguyệt nào, bỏ qua thông báo
@@ -178,29 +170,27 @@ public class NotificationService {
             return;
         }
 
-        // Kiểm tra người dùng có cài đặt nhận thông báo này không
-        Optional<NotificationPreference> preference = notificationPreferenceRepository.findByUserIdAndType(user.getId(), NotificationType.PREGNANCY_PROBABILITY);
-        if (preference.isEmpty() || !preference.get().getEnabled()) {
-            logger.info("Skipping pregnancy probability notification for user ID {}: No preference found or notification disabled", userId);
-            return;
-        }
-
-        // Lấy chu kỳ kinh nguyệt gần nhất của người dùng
-        MenstrualCycle latestCycle = menstrualCycleService.getLatestCycleBeforeToday(userId, LocalDate.now())
-            .orElse(null);
-        if (latestCycle == null) {
-            // Không có chu kỳ kinh nguyệt nào, bỏ qua thông báo
-            logger.info("Skipping pregnancy probability notification for user ID {}: No menstrual cycle data found", userId);
-            return;
-        }
-
         logger.info("Preparing to send pregnancy probability notification to user {} ({})", 
                    user.getFullName(), user.getEmail());
 
         Notification noti = new Notification();
         noti.setUser(user);
-        noti.setType(preference.get().getType());
+        noti.setTitle("Xác suất mang thai");
+        noti.setContent("Thông báo xác suất mang thai");
+        noti.setType(NotificationType.PREGNANCY_PROBABILITY);
         noti.setScheduledAt(LocalDateTime.now());
+
+        // Lấy chu kỳ kinh nguyệt gần nhất của người dùng
+        MenstrualCycle latestCycle = menstrualCycleService.getLatestCycleBeforeToday(userId)
+            .orElse(null);
+        if (latestCycle == null) {
+            // Không có chu kỳ kinh nguyệt nào, bỏ qua thông báo
+            noti.setStatus(NotificationStatus.SKIPPED);
+            noti.setErrorMessage("No menstrual cycle data found");
+            notificationRepository.save(noti);
+            logger.info("Skipping pregnancy probability notification for user ID {}: No menstrual cycle data found", userId);
+            return;
+        }
 
         try {
             List<PregnancyProbLog> logs = pregnancyProbLogRepository.findAllByMenstrualCycleId(latestCycle.getId())
@@ -218,7 +208,7 @@ public class NotificationService {
             if (today == null) {
                 throw new IllegalStateException("Current date is not available");
             }
-            double probToday = 0.0;
+            double probToday = 1;
             LocalDate ovulationDate = latestCycle.getOvulationDate();
             LocalDate start = today, end = today;
 
@@ -228,7 +218,7 @@ public class NotificationService {
                 if (log.getDate().isEqual(today)) probToday = log.getProbability().doubleValue();
             }
 
-            if (today.isAfter(start) && today.isBefore(end)) {
+            if (!today.isBefore(start) && !today.isAfter(end)) {
                 int daysBeforeOvulation = (int) ChronoUnit.DAYS.between(ovulationDate, today);
 
                 logger.info("Sending pregnancy probability email to user {} ({}): probability={}%, daysBeforeOvulation={}, ovulationDate={}", 

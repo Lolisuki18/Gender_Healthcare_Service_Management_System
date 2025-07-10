@@ -51,12 +51,6 @@ public class MenstrualCycle {
     @Column(nullable = false)
     private LocalDate ovulationDate; // ngay rung trung
 
-    @Column(name = "ovulation_remind", nullable = false)
-    private Boolean ovulationRemind = false;
-
-    @Column(name = "pregnancy_remind", nullable = false)
-    private Boolean pregnancyRemind = false;
-
     @Column(nullable = false) // Ngày tạo chu kỳ kinh nguyệt
     private LocalDateTime createdAt = LocalDateTime.now();
 
