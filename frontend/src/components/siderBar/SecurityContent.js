@@ -109,6 +109,8 @@ const ConsultantSecurityContent = () => {
     phone: false,
   });
 
+  const [phoneModalMode, setPhoneModalMode] = useState('change'); // 'verify' or 'change'
+
   const [isLoading, setIsLoading] = useState({
     password: false,
     email: false,
@@ -261,46 +263,115 @@ const ConsultantSecurityContent = () => {
     }
   };
 
-  // Handler cho cập nhật số điện thoại mới trực tiếp (không xác thực)
-  const handleSavePhone = async (phone) => {
+  // Handler cho gửi mã xác thực số điện thoại
+  const handleSendPhoneCode = async (phone) => {
     setIsLoading((prev) => ({ ...prev, phone: true }));
     try {
-      if (!phone) {
-        toast.error('Vui lòng nhập số điện thoại mới.', { duration: 4000 });
-        return { success: false, message: 'Vui lòng nhập số điện thoại mới.' };
-      }
-      // Gọi API cập nhật trực tiếp
-      const response = await apiClient.put('/users/profile/phone', null, {
-        params: { phone },
+      const response = await apiClient.post('/users/send-phone-verification-code', {
+        phone: phone
       });
+
       if (response.data.success) {
-        toast.success('Số điện thoại đã được cập nhật thành công!', {
+        toast.success('Mã xác thực đã được gửi đến số điện thoại của bạn!', {
           duration: 4000,
         });
-        handleCloseModal('phone', true);
-        // Cập nhật userData trong localStorage
-        const updatedUser = { ...userData, phoneNumber: phone };
-        localStorageUtil.set('user', updatedUser);
-        setUserData(updatedUser);
         return { success: true };
       } else {
         toast.error(
-          response.data.message || 'Không thể cập nhật số điện thoại.',
+          response.data.message || 'Không thể gửi mã xác thực. Vui lòng thử lại.',
           { duration: 4000 }
         );
         return { success: false, message: response.data.message };
       }
     } catch (error) {
-      console.error('Error updating phone:', error);
+      console.error('Error sending phone verification code:', error);
       toast.error(
-        error.response?.data?.message ||
-          'Có lỗi xảy ra khi cập nhật số điện thoại.',
+        error.response?.data?.message || 'Có lỗi xảy ra khi gửi mã xác thực.',
         { duration: 4000 }
       );
       return { success: false, message: error.response?.data?.message };
     } finally {
       setIsLoading((prev) => ({ ...prev, phone: false }));
     }
+  };
+
+  // Handler cho xác thực và lưu số điện thoại mới
+  const handleVerifyAndSavePhone = async (phone, verificationCode) => {
+    setIsLoading((prev) => ({ ...prev, phone: true }));
+    try {
+      const response = await apiClient.put('/users/profile/phone', {
+        phone: phone,
+        verificationCode: verificationCode,
+      });
+
+      if (response.data.success) {
+        toast.success('Số điện thoại đã được cập nhật thành công!', {
+          duration: 4000,
+        });
+        handleCloseModal('phone', true);
+
+        // Refresh user data từ API để cập nhật trạng thái verified
+        try {
+          const userResponse = await apiClient.get('/users/profile');
+          if (userResponse.data.success) {
+            const updatedUser = userResponse.data.data;
+            setUserData({
+              ...updatedUser,
+              phoneNumber: updatedUser.phoneNumber || updatedUser.phone,
+            });
+            // Cập nhật localStorage
+            localStorageUtil.set('user', updatedUser);
+          }
+        } catch (error) {
+          console.error('Error refreshing user data:', error);
+          // Fallback update nếu API call fails
+          const updatedUser = { ...userData, phone: phone + '_V', phoneNumber: phone + '_V' };
+          localStorageUtil.set('user', updatedUser);
+          setUserData(updatedUser);
+        }
+
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          message: response.data.message || 'Mã xác thực không đúng',
+        };
+      }
+    } catch (error) {
+      console.error('Error verifying phone:', error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || 'Có lỗi xảy ra khi xác thực số điện thoại',
+      };
+    } finally {
+      setIsLoading((prev) => ({ ...prev, phone: false }));
+    }
+  };
+
+  // Helper function để kiểm tra phone đã được verified chưa (từ backend)
+  const isPhoneVerified = (phone) => {
+    // Kiểm tra nếu phone kết thúc bằng _V (verified từ backend)
+    return phone && phone.toString().endsWith('_V');
+  };
+
+  // Helper function để lấy phone number clean (bỏ suffix _V)
+  const getCleanPhoneNumber = (phone) => {
+    if (!phone) return '';
+    const phoneStr = phone.toString();
+    return phoneStr.endsWith('_V') ? phoneStr.substring(0, phoneStr.length - 2) : phoneStr;
+  };
+
+  // Handler cho xác thực phone number hiện tại
+  const handleVerifyExistingPhone = async () => {
+    const currentPhone = userData.phoneNumber || userData.phone;
+    if (!currentPhone) {
+      toast.error('Không có số điện thoại để xác thực');
+      return;
+    }
+
+    setPhoneModalMode('verify');
+    handleOpenModal('phone');
   };
 
   const securityItems = [
@@ -331,13 +402,27 @@ const ConsultantSecurityContent = () => {
       title: 'Số điện thoại',
       description: 'Cập nhật số điện thoại liên hệ',
       icon: <PhoneIcon />,
-      currentValue:
-        userData.phoneNumber || userData.phone || 'chưa có số điện thoại',
-      status:
-        userData.phoneNumber || userData.phone ? 'Đã xác thực' : 'Chưa có',
+      currentValue: (() => {
+        const currentPhone = userData.phoneNumber || userData.phone;
+        if (!currentPhone) return 'chưa có số điện thoại';
+        return getCleanPhoneNumber(currentPhone);
+      })(),
+      status: (() => {
+        const currentPhone = userData.phoneNumber || userData.phone;
+        if (!currentPhone) return 'Chưa có';
+        return isPhoneVerified(currentPhone) ? 'Đã xác thực' : 'Chưa xác thực';
+      })(),
       lastUpdate: 'Cập nhật 7 ngày trước',
-      actionText: 'Đổi số điện thoại',
+      actionText: (() => {
+        const currentPhone = userData.phoneNumber || userData.phone;
+        if (!currentPhone) return 'Thêm số điện thoại';
+        return isPhoneVerified(currentPhone) ? 'Đổi số điện thoại' : 'Xác thực';
+      })(),
       color: '#9B59B6',
+      showVerifyButton: (() => {
+        const currentPhone = userData.phoneNumber || userData.phone;
+        return currentPhone && !isPhoneVerified(currentPhone);
+      })(),
     },
   ];
 
@@ -473,13 +558,59 @@ const ConsultantSecurityContent = () => {
 
                 <Divider sx={{ my: 2 }} />
 
-                <ActionButton
-                  fullWidth
-                  onClick={() => handleOpenModal(item.id)}
-                  startIcon={<EditIcon />}
-                >
-                  {item.actionText}
-                </ActionButton>
+                {/* Action buttons - special handling for phone verification */}
+                {item.id === 'phone' && item.showVerifyButton ? (
+                  <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+                    <ActionButton
+                      fullWidth
+                      onClick={handleVerifyExistingPhone}
+                      startIcon={<VerifiedIcon />}
+                      sx={{
+                        background: 'linear-gradient(45deg, #FF9800, #FF5722)',
+                        '&:hover': {
+                          background: 'linear-gradient(45deg, #F57C00, #D84315)',
+                        },
+                      }}
+                    >
+                      Xác thực số điện thoại
+                    </ActionButton>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      onClick={() => {
+                        setPhoneModalMode('change');
+                        handleOpenModal(item.id);
+                      }}
+                      startIcon={<EditIcon />}
+                      sx={{
+                        borderRadius: '12px',
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        borderColor: item.color,
+                        color: item.color,
+                        '&:hover': {
+                          borderColor: item.color,
+                          backgroundColor: `${item.color}15`,
+                        },
+                      }}
+                    >
+                      Đổi số điện thoại
+                    </Button>
+                  </Box>
+                ) : (
+                  <ActionButton
+                    fullWidth
+                    onClick={() => {
+                      if (item.id === 'phone') {
+                        setPhoneModalMode('change');
+                      }
+                      handleOpenModal(item.id);
+                    }}
+                    startIcon={<EditIcon />}
+                  >
+                    {item.actionText}
+                  </ActionButton>
+                )}
               </CardContent>
             </SecurityCard>
           </Grid>
@@ -535,9 +666,13 @@ const ConsultantSecurityContent = () => {
       <PhoneChangeDialog
         open={modalStates.phone}
         onClose={(success) => handleCloseModal('phone', success)}
-        onSave={handleSavePhone}
-        isSubmitting={isLoading.phone}
-        currentPhone={userData.phoneNumber || userData.phone || ''}
+        onSendCode={handleSendPhoneCode}
+        onVerifyAndSave={handleVerifyAndSavePhone}
+        isSendingCode={isLoading.phone}
+        isVerifying={isLoading.phone}
+        currentPhone={getCleanPhoneNumber(userData.phoneNumber || userData.phone || '')}
+        isPhoneVerified={isPhoneVerified(userData.phoneNumber || userData.phone)}
+        mode={phoneModalMode}
       />
     </Box>
   );

@@ -105,32 +105,44 @@ public class NotificationService {
             return;
         }
 
-        logger.info("Preparing to send ovulation notification to user {} ({}) for ovulation date: {}", 
+        if(ovulationDate.minusDays(1).isEqual(LocalDate.now())) {
+            // Nếu ngày rụng trứng là ngày mai, gửi thông báo
+            logger.info("Sending ovulation notification to user ID {}: Ovulation date is tomorrow ({})", 
+                       userId, ovulationDate);
+
+            logger.info("Preparing to send ovulation notification to user {} ({}) for ovulation date: {}", 
                    user.getFullName(), user.getEmail(), ovulationDate);
 
-        Notification notification = new Notification();
-        notification.setUser(user);
-        notification.setTitle("Nhắc nhở ngày rụng trứng sắp tới");
-        notification.setContent("Đây là thời điểm có khả năng thụ thai cao nhất.");
-        notification.setType(NotificationType.OVULATION);
-        notification.setScheduledAt(LocalDateTime.now());
+            Notification notification = new Notification();
+            notification.setUser(user);
+            notification.setTitle("Nhắc nhở ngày rụng trứng sắp tới");
+            notification.setContent("Đây là thời điểm có khả năng thụ thai cao nhất.");
+            notification.setType(NotificationType.OVULATION);
+            notification.setScheduledAt(LocalDateTime.now());
 
-        try {
-            emailService.sendOvulationReminderAsync(user.getEmail(), user.getFullName(), ovulationDate);
-            notification.setStatus(NotificationStatus.SENT);
-            notification.setSentAt(LocalDateTime.now());
-            logger.info("Successfully sent ovulation notification email to user {} ({})", 
-                       user.getFullName(), user.getEmail());
-        } catch (Exception ex) {
-            notification.setStatus(NotificationStatus.FAILED);
-            notification.setErrorMessage(ex.getMessage());
-            logger.error("Failed to send ovulation notification email to user {} ({}). Reason: {}", 
-                        user.getFullName(), user.getEmail(), ex.getMessage(), ex);
+            try {
+                emailService.sendOvulationReminderAsync(user.getEmail(), user.getFullName(), ovulationDate);
+                notification.setStatus(NotificationStatus.SENT);
+                notification.setSentAt(LocalDateTime.now());
+                logger.info("Successfully sent ovulation notification email to user {} ({})", 
+                        user.getFullName(), user.getEmail());
+            } catch (Exception ex) {
+                notification.setStatus(NotificationStatus.FAILED);
+                notification.setErrorMessage(ex.getMessage());
+                logger.error("Failed to send ovulation notification email to user {} ({}). Reason: {}", 
+                            user.getFullName(), user.getEmail(), ex.getMessage(), ex);
+            }
+
+            notificationRepository.save(notification);
+            logger.info("Ovulation notification record saved for user ID: {} with status: {}", 
+                    userId, notification.getStatus());
+        } else {
+            // Nếu không phải ngày rụng trứng, bỏ qua thông báo
+            logger.info("Skipping ovulation notification for user ID {}: Ovulation date is not tomorrow ({})", 
+                       userId, ovulationDate);
+            return;
         }
-
-        notificationRepository.save(notification);
-        logger.info("Ovulation notification record saved for user ID: {} with status: {}", 
-                   userId, notification.getStatus());
+        
     }
 
     public void sendPregnancyProbNotification() {
@@ -198,6 +210,7 @@ public class NotificationService {
 
             if (logs.isEmpty()) {
                 noti.setStatus(NotificationStatus.SKIPPED);
+                noti.setErrorMessage("No pregnancy probability logs found");
                 notificationRepository.save(noti);
                 logger.info("Skipping pregnancy probability notification for user ID {}: No pregnancy probability logs found", userId);
                 return;
@@ -239,6 +252,7 @@ public class NotificationService {
                            user.getFullName(), user.getEmail());
             } else {
                 noti.setStatus(NotificationStatus.SKIPPED);
+                noti.setErrorMessage("Today is not within the pregnancy probability range");
                 logger.info("Skipping pregnancy probability notification for user ID {}: Today ({}) is not within probability range ({} to {})", 
                            userId, today, start, end);
             }

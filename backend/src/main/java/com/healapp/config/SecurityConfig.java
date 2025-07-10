@@ -112,6 +112,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/users/profile/email").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/users/profile/password").authenticated()
                         .requestMatchers(HttpMethod.POST, "/users/profile/avatar").authenticated()
+                        
+                        // PHONE VERIFICATION ENDPOINTS
+                        .requestMatchers(HttpMethod.POST, "/users/send-phone-verification-code").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/users/profile/phone").authenticated()
 
                         // API Consultations (Authenticated user endpoints)
                         .requestMatchers(HttpMethod.POST, "/consultations").authenticated()
