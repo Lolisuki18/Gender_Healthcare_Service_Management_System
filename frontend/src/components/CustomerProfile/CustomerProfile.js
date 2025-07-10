@@ -119,7 +119,7 @@ const CustomerProfile = () => {
         return <SecurityContent />; // Bảo mật
       case 'payment-methods':
         return <PaymentMethodsSection />;
-      case 'myBlogs':
+      case 'my-reviews':
         return <ReviewsContent />;
       case 'blog-customer':
         return <BlogCustomerContent />;

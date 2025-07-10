@@ -144,33 +144,6 @@ export const sidebarMenuConfig = [
     icon: <BadgeIcon />,
     roles: ['CONSULTANT'],
   },
-  {
-    id: 'reviews-management',
-    label: 'Quản lý đánh giá',
-    icon: <StarIcon />,
-    roles: ['CONSULTANT'],
-    subItems: [
-      {
-        id: 'completed-reviews',
-        label: 'Đã đánh giá',
-        icon: <CheckCircleIcon />,
-        roles: ['CONSULTANT'],
-      },
-      {
-        id: 'pending-reviews',
-        label: 'Chưa đánh giá',
-        icon: <ScheduleIcon />,
-        roles: ['CONSULTANT'],
-      },
-    ],
-  },
-  {
-    id: 'my-reviews',
-    label: 'Đánh giá của tôi',
-    icon: <StarIcon />,
-    roles: ['CONSULTANT'],
-  },
-
   // CUSTOMER
   // {
   //   id: 'customer-dashboard',
@@ -223,7 +196,7 @@ export const sidebarMenuConfig = [
   //   },
   //Dùng chung
   {
-    id: 'myBlogs',
+    id: 'my-reviews',
     label: 'Đánh giá của tôi',
     icon: <RateReviewIcon />,
     roles: ['STAFF', 'CONSULTANT', 'CUSTOMER'],
