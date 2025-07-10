@@ -1,28 +1,38 @@
 package com.healapp.controller;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.dto.ChangePasswordRequest;
-import com.healapp.dto.RegisterRequest;
-import com.healapp.service.EmailService;
-import com.healapp.service.EmailVerificationService;
-import com.healapp.service.UserService;
-import com.healapp.dto.ForgotPasswordRequest;
-import com.healapp.dto.ResetPasswordRequest;
-import com.healapp.dto.UpdateEmailRequest;
-import com.healapp.dto.UpdateProfileRequest;
-import com.healapp.dto.UserResponse;
-import com.healapp.dto.VerificationCodeRequest;
-
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.ChangePasswordRequest;
+import com.healapp.dto.ForgotPasswordRequest;
+import com.healapp.dto.PhoneVerificationRequest;
+import com.healapp.dto.RegisterRequest;
+import com.healapp.dto.ResetPasswordRequest;
+import com.healapp.dto.UpdateEmailRequest;
+import com.healapp.dto.UpdatePhoneRequest;
+import com.healapp.dto.UpdateProfileRequest;
+import com.healapp.dto.UserResponse;
+import com.healapp.dto.VerificationCodeRequest;
+import com.healapp.service.EmailService;
+import com.healapp.service.EmailVerificationService;
+import com.healapp.service.UserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/users")
@@ -312,31 +322,55 @@ public class UserController {
         return ResponseEntity.ok().body(java.util.Collections.singletonMap("exists", exists));
     }
 
-    // cập nhật số điện thoại trực tiếp, không cần mã xác thực
+    // Gửi mã xác thực SMS tới số điện thoại mới
+    @PostMapping("/send-phone-verification-code")
+    public ResponseEntity<ApiResponse<String>> sendPhoneVerificationCode(
+            @Valid @RequestBody PhoneVerificationRequest request) {
+        try {
+            ApiResponse<String> response = userService.sendPhoneVerificationCode(request);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error sending phone verification code: " + e.getMessage()));
+        }
+    }
+
+    // Xác thực mã OTP và cập nhật số điện thoại mới
     @PutMapping("/profile/phone")
-    public ResponseEntity<ApiResponse<UserResponse>> updatePhone(@RequestParam String phone) {
+    public ResponseEntity<ApiResponse<UserResponse>> updatePhoneNumber(
+            @Valid @RequestBody UpdatePhoneRequest request) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ApiResponse.error("User not authenticated"));
             }
+
             String username = authentication.getName();
             Long userId = userService.getUserIdFromUsername(username);
+
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ApiResponse.error("User not found"));
             }
-            // Cập nhật trực tiếp không cần mã xác thực
-            ApiResponse<UserResponse> response = userService.updatePhone(userId, phone);
+
+            ApiResponse<UserResponse> response = userService.updatePhoneNumber(userId, request);
+
             if (response.isSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.badRequest().body(response);
             }
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("Error updating phone: " + e.getMessage()));
+                    .body(ApiResponse.error("Error updating phone number: " + e.getMessage()));
         }
     }
 }

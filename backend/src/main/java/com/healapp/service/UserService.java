@@ -19,9 +19,11 @@ import com.healapp.dto.CreateAccountRequest;
 import com.healapp.dto.ForgotPasswordRequest;
 import com.healapp.dto.LoginRequest;
 import com.healapp.dto.LoginResponse;
+import com.healapp.dto.PhoneVerificationRequest;
 import com.healapp.dto.RegisterRequest;
 import com.healapp.dto.ResetPasswordRequest;
 import com.healapp.dto.UpdateEmailRequest;
+import com.healapp.dto.UpdatePhoneRequest;
 import com.healapp.dto.UpdateProfileRequest;
 import com.healapp.dto.UserResponse;
 import com.healapp.dto.UserUpdateRequest;
@@ -72,6 +74,9 @@ public class UserService {
 
     @Autowired
     private NotificationPreferenceRepository notificationPreferenceRepo;
+
+    @Autowired
+    private PhoneVerificationService phoneVerificationService;
 
     @Value("${app.avatar.url.pattern}default.jpg")
     private String defaultAvatarPath;
@@ -651,7 +656,8 @@ public class UserService {
         response.setFullName(user.getFullName());
         response.setBirthDay(user.getBirthDay());
         response.setGender(user.getGenderDisplayName());
-        response.setPhone(user.getPhone());
+        // Hiển thị phone number gốc (bỏ suffix _V)
+        response.setPhone(getCleanPhoneNumber(user.getPhone()));
         response.setEmail(user.getEmail());
         response.setUsername(user.getUsername());
         // Sửa avatar trả về đúng URL mặc định nếu cần
@@ -764,20 +770,112 @@ public class UserService {
         return stats;
     }
 
-    // Cập nhật số điện thoại trực tiếp, không cần mã xác thực
-    public ApiResponse<UserResponse> updatePhone(Long userId, String phone) {
+    // ===================== PHONE VERIFICATION METHODS =====================
+
+    /**
+     * Gửi mã xác thực SMS tới số điện thoại mới
+     */
+    public ApiResponse<String> sendPhoneVerificationCode(PhoneVerificationRequest request) {
+        try {
+            boolean sent = phoneVerificationService.sendPhoneVerificationCode(request.getPhone());
+            
+            if (sent) {
+                return ApiResponse.success("Verification code has been sent to your phone", request.getPhone());
+            } else {
+                return ApiResponse.error("Failed to send verification code. Please try again.");
+            }
+            
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error("Invalid phone number format");
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to send verification code: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Xác thực mã OTP và cập nhật số điện thoại mới
+     */
+    public ApiResponse<UserResponse> updatePhoneNumber(Long userId, UpdatePhoneRequest request) {
         try {
             Optional<UserDtls> userOpt = userRepository.findById(userId);
             if (userOpt.isEmpty()) {
                 return ApiResponse.error("User not found");
             }
+
             UserDtls user = userOpt.get();
-            user.setPhone(phone);
+
+            // Kiểm tra phone mới có trùng với phone hiện tại không
+            String currentPhone = user.getPhone();
+            String newPhone = request.getPhone();
+            
+            if (currentPhone != null && currentPhone.equals(newPhone)) {
+                return ApiResponse.error("New phone number cannot be the same as current phone number");
+            }
+
+            // Kiểm tra phone mới có được sử dụng bởi user khác không
+            if (isPhoneExists(newPhone)) {
+                return ApiResponse.error("Phone number already exists");
+            }
+
+            // Xác thực mã OTP
+            boolean isVerified = phoneVerificationService.verifyPhoneCode(newPhone, request.getVerificationCode());
+            if (!isVerified) {
+                return ApiResponse.error("Invalid or expired verification code");
+            }
+
+            // Cập nhật phone number với suffix _V để đánh dấu đã verified
+            user.setPhone(newPhone + "_V");
+
             UserDtls updatedUser = userRepository.save(user);
+
+            // Clear phone verification data
+            phoneVerificationService.clearPhoneVerification(newPhone);
+
             UserResponse response = mapUserToResponse(updatedUser);
-            return ApiResponse.success("Phone updated successfully", response);
+            return ApiResponse.success("Phone number updated successfully", response);
+
         } catch (Exception e) {
-            return ApiResponse.error("Failed to update phone: " + e.getMessage());
+            return ApiResponse.error("Failed to update phone number: " + e.getMessage());
         }
+    }
+
+    /**
+     * Kiểm tra phone number đã tồn tại chưa (không tính suffix _V)
+     */
+    public boolean isPhoneExists(String phone) {
+        if (phone == null || phone.trim().isEmpty()) {
+            return false;
+        }
+        
+        // Tìm phone bằng cách so sánh phone gốc (bỏ suffix _V)
+        return userRepository.findAll().stream()
+            .anyMatch(user -> {
+                String userPhone = user.getPhone();
+                if (userPhone == null) return false;
+                
+                // Loại bỏ suffix _V nếu có
+                String cleanUserPhone = userPhone.endsWith("_V") ? 
+                    userPhone.substring(0, userPhone.length() - 2) : userPhone;
+                
+                return cleanUserPhone.equals(phone);
+            });
+    }
+
+    /**
+     * Lấy phone number gốc (bỏ suffix _V)
+     */
+    public String getCleanPhoneNumber(String phone) {
+        if (phone == null || phone.trim().isEmpty()) {
+            return phone;
+        }
+        
+        return phone.endsWith("_V") ? phone.substring(0, phone.length() - 2) : phone;
+    }
+
+    /**
+     * Kiểm tra phone number đã được verified chưa
+     */
+    public boolean isPhoneVerified(String phone) {
+        return phone != null && phone.endsWith("_V");
     }
 }
