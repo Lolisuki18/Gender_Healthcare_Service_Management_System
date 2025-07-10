@@ -1,5 +1,6 @@
 package com.healapp.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -39,11 +40,15 @@ public class PillLogs {
 
     @Column(name ="status", nullable = false)
     private Boolean status;
+    
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    @Column(name = "log_date", nullable = false)
+    private LocalDate logDate;
 }
 
 

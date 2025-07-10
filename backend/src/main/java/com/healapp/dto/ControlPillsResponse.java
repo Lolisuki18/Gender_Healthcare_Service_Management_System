@@ -20,6 +20,7 @@ public class ControlPillsResponse {
     private int numberDaysOff;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Boolean placebo;
       
 
 }

@@ -25,10 +25,14 @@ public class ControlPillsRequest {
     private LocalDate startDate;
 
     @NotNull(message = "Thời gian nhắc nhở không được để trống")
-    @JsonFormat(pattern = "HH:mm:ss")
+    @JsonFormat(pattern = "HH:mm")
     private LocalTime remindTime;
 
     private Boolean isActive;
+    
+    private Boolean placebo;
+    
+
 
 }
 
