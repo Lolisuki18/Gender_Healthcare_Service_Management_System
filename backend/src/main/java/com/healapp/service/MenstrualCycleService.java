@@ -198,9 +198,9 @@ public class MenstrualCycleService {
     }
 
     // Lấy chu kỳ kinh nguyệt gần nhất trước ngày hiện tại
-    public Optional<MenstrualCycle> getLatestCycleBeforeToday(Long userId, LocalDate today) {
+    public Optional<MenstrualCycle> getLatestCycleBeforeToday(Long userId) {
         try {
-            return menstrualCycleRepository.findLatestCycleBeforeToday(userId, today);
+            return menstrualCycleRepository.findLatestCycleByUserId(userId);
         } catch (Exception e) {
             log.error("Lỗi khi lấy chu kỳ kinh nguyệt gần nhất trước ngày hiện tại: " + e.getMessage());
             return Optional.empty();
@@ -439,7 +439,7 @@ public class MenstrualCycleService {
             log.info("Predicting next cycle for userId: {}", userId);
             
             // Thử tìm chu kỳ gần nhất trước hôm nay
-            Optional<MenstrualCycle> latestCycleOpt = menstrualCycleRepository.findLatestCycleBeforeToday(userId, LocalDate.now());
+            Optional<MenstrualCycle> latestCycleOpt = menstrualCycleRepository.findLatestCycleByUserId(userId);
             
             if (!latestCycleOpt.isPresent()) {
                 log.error("No menstrual cycle found for userId: {}", userId);
