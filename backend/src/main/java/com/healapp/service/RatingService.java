@@ -78,14 +78,22 @@ public class RatingService {
             if (userOpt.isEmpty()) {
                 return ApiResponse.error("User not found");
             }
-            UserDtls user = userOpt.get(); // Check if user has already rated this specific consultation/sti_test (only
-                                           // active ratings)
-            boolean hasRated = false;
+            UserDtls user = userOpt.get(); 
+            
+            // Check if user has already rated this target (consistent with eligibility check)
+            boolean hasRated;
             if (targetType == Rating.RatingTargetType.CONSULTANT && request.getConsultationId() != null) {
-                hasRated = ratingRepository.existsByUserIdAndConsultationIdAndIsActiveTrue(userId,
-                        request.getConsultationId());
-            } else if (targetType == Rating.RatingTargetType.STI_SERVICE && request.getStiTestId() != null) {
-                hasRated = ratingRepository.existsByUserIdAndStiTestIdAndIsActiveTrue(userId, request.getStiTestId());
+                // For consultants, check if user has rated this specific consultation OR the consultant in general
+                hasRated = ratingRepository.existsByUserIdAndConsultationIdAndIsActiveTrue(userId, request.getConsultationId()) ||
+                          ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId, targetType, targetId);
+            } else if ((targetType == Rating.RatingTargetType.STI_SERVICE || targetType == Rating.RatingTargetType.STI_PACKAGE) 
+                      && request.getStiTestId() != null) {
+                // For STI services/packages, check if user has rated this specific test OR the service/package in general
+                hasRated = ratingRepository.existsByUserIdAndStiTestIdAndIsActiveTrue(userId, request.getStiTestId()) ||
+                          ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId, targetType, targetId);
+            } else {
+                // Fall back to general check
+                hasRated = ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId, targetType, targetId);
             }
 
             if (hasRated) {
@@ -93,7 +101,20 @@ public class RatingService {
             }
 
             // Check if user is eligible to rate
-            if (!isEligibleToRate(userId, targetType, targetId, request.getConsultationId(), request.getStiTestId())) {
+            boolean isEligible;
+            if (targetType == Rating.RatingTargetType.CONSULTANT && request.getConsultationId() != null) {
+                // Check if specific consultation is completed
+                isEligible = hasCompletedSpecificConsultation(userId, request.getConsultationId());
+            } else if ((targetType == Rating.RatingTargetType.STI_SERVICE
+                    || targetType == Rating.RatingTargetType.STI_PACKAGE) && request.getStiTestId() != null) {
+                // Check if specific STI test is completed
+                isEligible = hasCompletedSTITest(userId, request.getStiTestId());
+            } else {
+                // Fall back to general eligibility check (any completed service with this target)
+                isEligible = isEligibleToRate(userId, targetType, targetId);
+            }
+            
+            if (!isEligible) {
                 return ApiResponse.error("You are not eligible to rate this " + targetType.name().toLowerCase());
             }
 
@@ -317,6 +338,8 @@ public class RatingService {
             Long targetId) {
         try {
             Map<String, Object> result = new HashMap<>();
+            
+            // Use the general eligibility check (any completed service with this target)
             boolean canRate = isEligibleToRate(userId, targetType, targetId);
             boolean hasRated = ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId,
                     targetType, targetId);
@@ -861,27 +884,11 @@ public class RatingService {
 
     // Overloaded method for backward compatibility
     private boolean isEligibleToRate(Long userId, Rating.RatingTargetType targetType, Long targetId) {
-        if (targetType == Rating.RatingTargetType.CONSULTANT) {
-            return hasCompletedConsultation(userId, targetId);
-        } else if (targetType == Rating.RatingTargetType.STI_SERVICE) {
-            return hasCompletedSTIOrder(userId, targetId);
-        } else if (targetType == Rating.RatingTargetType.STI_PACKAGE) {
-            return hasCompletedSTIPackage(userId, targetId);
-        }
-        return false;
-    }
-
-    private boolean isEligibleToRate(Long userId, Rating.RatingTargetType targetType, Long targetId,
-            Long consultationId, Long stiTestId) {
-        if (targetType == Rating.RatingTargetType.CONSULTANT && consultationId != null) {
-            // Check if specific consultation is completed
-            return hasCompletedSpecificConsultation(userId, consultationId);
-        } else if ((targetType == Rating.RatingTargetType.STI_SERVICE
-                || targetType == Rating.RatingTargetType.STI_PACKAGE) && stiTestId != null) {
-            // Check if specific STI test is completed (works for both service and package)
-            return hasCompletedSTITest(userId, stiTestId);
-        }
-        return false;
+        return switch (targetType) {
+            case CONSULTANT -> hasCompletedConsultation(userId, targetId);
+            case STI_SERVICE -> hasCompletedSTIOrder(userId, targetId);
+            case STI_PACKAGE -> hasCompletedSTIPackage(userId, targetId);
+        };
     }
 
     private boolean hasCompletedSpecificConsultation(Long userId, Long consultationId) {
@@ -1056,25 +1063,23 @@ public class RatingService {
      */
     private String getTargetName(Rating.RatingTargetType targetType, Long targetId) {
         try {
-            switch (targetType) {
-                case CONSULTANT:
+            return switch (targetType) {
+                case CONSULTANT -> {
                     // Lấy tên tư vấn viên
                     Optional<UserDtls> consultant = userRepository.findById(targetId);
-                    return consultant.map(UserDtls::getFullName).orElse("Tư vấn viên #" + targetId);
-
-                case STI_SERVICE:
+                    yield consultant.map(UserDtls::getFullName).orElse("Tư vấn viên #" + targetId);
+                }
+                case STI_SERVICE -> {
                     // Lấy tên dịch vụ STI
                     Optional<STIService> stiService = stiServiceRepository.findById(targetId);
-                    return stiService.map(STIService::getName).orElse("Dịch vụ STI #" + targetId);
-
-                case STI_PACKAGE:
+                    yield stiService.map(STIService::getName).orElse("Dịch vụ STI #" + targetId);
+                }
+                case STI_PACKAGE -> {
                     // Lấy tên gói STI
                     Optional<STIPackage> stiPackage = stiPackageRepository.findById(targetId);
-                    return stiPackage.map(STIPackage::getPackageName).orElse("Gói STI #" + targetId);
-
-                default:
-                    return targetType.name() + " #" + targetId;
-            }
+                    yield stiPackage.map(STIPackage::getPackageName).orElse("Gói STI #" + targetId);
+                }
+            };
         } catch (Exception e) {
             log.warn("Error getting target name for {} #{}: {}", targetType, targetId, e.getMessage());
             return targetType.name() + " #" + targetId;
