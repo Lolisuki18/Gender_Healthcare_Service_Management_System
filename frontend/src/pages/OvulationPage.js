@@ -218,19 +218,6 @@ const OvulationPage = ({ stats }) => {
 
   const nextCycle = getNextCycle(menstrualCycles);
 
-  // Tính độ đồng đều
-  // const getConsistency = (menstrualCycles) => {
-  //   if (!menstrualCycles.length) return null;
-
-  //   let consistency = 'unknown';
-  //   if (menstrualCycles.length >= 3) {
-  //     const variance = menstrualCycles.reduce((sum, length) => sum + Math.pow(length - averagePeriodLength, 2), 0) / menstrualCycles.length;
-  //     consistency = variance <= 4 ? 'regular' : 'irregular';
-  //   }
-
-  //   return consistency;
-  // };
-
   const getAverageCycleLengthOfCurrentCycles = (menstrualCycles) => {
     if (!Array.isArray(menstrualCycles) || menstrualCycles.length === 0)
       return null;
@@ -256,12 +243,12 @@ const OvulationPage = ({ stats }) => {
   const getConsistency = (menstrualCycles) => {
     console.log('🔍 [getConsistency] Input data:', menstrualCycles);
 
-    if (!Array.isArray(menstrualCycles) || menstrualCycles.length < 3) {
+    if (!Array.isArray(menstrualCycles)) {
       console.log(
-        '❌ [getConsistency] Không đủ dữ liệu, cần ít nhất 3 chu kỳ. Hiện có:',
+        '❌ [getConsistency] Không đủ dữ liệu. Hiện có:',
         menstrualCycles?.length || 0
       );
-      return 'unknown';
+      return 'regular';
     }
 
     try {
@@ -288,15 +275,26 @@ const OvulationPage = ({ stats }) => {
             cycle.numberOfDays
           );
           return 'irregular';
+        } else if (
+          // Kiểm tra độ dài chu kỳ (21-35 ngày là bình thường)
+          !cycle.cycleLength ||
+          cycle.cycleLength < 21 ||
+          cycle.cycleLength > 35
+        ) {
+          console.log(
+            '❌ [getConsistency] Chu kỳ không bình thường - độ dài chu kỳ không hợp lệ:',
+            cycle.cycleLength
+          );
+          return 'irregular';
         }
 
         // Kiểm tra độ dài chu kỳ có tồn tại
-        if (!cycle.cycleLength || typeof cycle.cycleLength !== 'number') {
+        if (!cycle.cycleLength) {
           console.log(
             '❌ [getConsistency] Dữ liệu không đầy đủ - thiếu cycleLength:',
             cycle.cycleLength
           );
-          return 'unknown';
+          return 'regular';
         }
       }
 
@@ -322,14 +320,16 @@ const OvulationPage = ({ stats }) => {
         'ngày'
       );
 
-      // Nếu chênh lệch tối đa > 7 ngày thì được coi là không đều
+      // Nếu chênh lệch tối đa > 7 ngày thì được coi là không bình thường
       const result = maxDifference <= 7 ? 'regular' : 'irregular';
       console.log('✅ [getConsistency] Kết quả cuối cùng:', result);
+
+
 
       return result;
     } catch (error) {
       console.error('💥 [getConsistency] Lỗi khi tính consistency:', error);
-      return 'unknown';
+      return 'regular';
     }
   };
 
@@ -505,9 +505,9 @@ const OvulationPage = ({ stats }) => {
   const getConsistencyText = (consistency) => {
     switch (consistency) {
       case 'regular':
-        return 'Đều đặn';
+        return 'Bình thường';
       case 'irregular':
-        return 'Không đều';
+        return 'Không bình thường';
       default:
         return 'Bình thường';
     }
@@ -607,7 +607,7 @@ const OvulationPage = ({ stats }) => {
     if (consistency === 'regular') {
       advice.push({
         icon: <Heart className="h-6 w-6 text-green-600" />,
-        title: 'Chu kỳ đều đặn',
+        title: 'Chu kỳ bình thường',
         description:
           'Chu kỳ của bạn rất đều đặn! Hãy duy trì lối sống lành mạnh hiện tại.',
         tips: [
@@ -620,7 +620,7 @@ const OvulationPage = ({ stats }) => {
     } else if (consistency === 'irregular') {
       advice.push({
         icon: <Activity className="h-6 w-6 text-yellow-600" />,
-        title: 'Chu kỳ không đều',
+        title: 'Chu kỳ không bình thường',
         description:
           'Chu kỳ có thể bị ảnh hưởng bởi stress, thay đổi cân nặng hoặc lối sống.',
         tips: [
@@ -1588,7 +1588,7 @@ const OvulationPage = ({ stats }) => {
               {/* Button chuyển đến trang đăng nhập */}
               <button
                 className={styles.loginButton}
-                onClick={() => (window.location.href = '/login')}
+                onClick={() => (window.location.href = '/#/login')}
               >
                 Đăng nhập để sử dụng đầy đủ tính năng
               </button>
