@@ -85,8 +85,6 @@ class MenstrualCycleServiceTest {
         sampleMenstrualCycle.setStartDate(LocalDate.of(2024, 1, 1));
         sampleMenstrualCycle.setNumberOfDays(5L);
         sampleMenstrualCycle.setCycleLength(28L);
-        sampleMenstrualCycle.setOvulationRemind(true);
-        sampleMenstrualCycle.setPregnancyRemind(true);
         sampleMenstrualCycle.setOvulationDate(LocalDate.of(2024, 1, 14));
 
         // Setup sample request
@@ -94,8 +92,6 @@ class MenstrualCycleServiceTest {
         sampleRequest.setStartDate(LocalDate.of(2024, 1, 1));
         sampleRequest.setNumberOfDays(5L);
         sampleRequest.setCycleLength(28L);
-        sampleRequest.setOvulationRemind(true);
-        sampleRequest.setPregnancyRemind(true);
 
         // Setup sample pregnancy prob log
         samplePregnancyProbLog = new PregnancyProbLog();
@@ -432,7 +428,6 @@ class MenstrualCycleServiceTest {
         assertEquals(LocalDate.of(2024, 1, 1), response.getStartDate());
         assertEquals(5, response.getNumberOfDays());
         assertEquals(28, response.getCycleLength());
-        assertTrue(response.getOvulationRemind());
         assertNull(response.getPregnancyProbLogs());
     }
 
@@ -449,8 +444,6 @@ class MenstrualCycleServiceTest {
         assertEquals(LocalDate.of(2024, 1, 1), response.getStartDate());
         assertEquals(5, response.getNumberOfDays());
         assertEquals(28, response.getCycleLength());
-        assertTrue(response.getOvulationRemind());
-        assertTrue(response.getPregnancyRemind());
         assertNotNull(response.getPregnancyProbLogs());
         assertEquals(1, response.getPregnancyProbLogs().size());
         assertEquals(1L, response.getPregnancyProbLogs().get(0).getId());
@@ -529,8 +522,6 @@ class MenstrualCycleServiceTest {
         request.setStartDate(LocalDate.of(2024, 1, 1));
         request.setNumberOfDays(5L);
         request.setCycleLength(28L);
-        request.setOvulationRemind(null);
-        request.setPregnancyRemind(null);
 
         List<PregnancyProbLog> oldLogs = Arrays.asList(samplePregnancyProbLog);
         List<PregnancyProbLog> newLogs = Arrays.asList(samplePregnancyProbLog);
@@ -650,7 +641,6 @@ class MenstrualCycleServiceTest {
     @Test
     @DisplayName("Tạo chu kỳ kinh nguyệt với ovulationRemind null")
     void createMenstrualCycle_OvulationRemindNull_Success() {
-        sampleRequest.setOvulationRemind(null);
         
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(menstrualCycleRepository.save(any(MenstrualCycle.class))).thenReturn(sampleMenstrualCycle);
