@@ -1,560 +1,486 @@
 /**
- * NotificationsContent.js - Component quản lý thông báo
+ * NotificationsContent.js - Component quản lý cài đặt thông báo
  *
  * Chức năng:
- * - Hiển thị danh sách thông báo
- * - Mark as read/unread functionality
- * - Notification categories (appointments, payments, system)
- * - Real-time notification updates
- * - Notification preferences settings
+ * - Cài đặt preferences cho các loại thông báo email
+ * - Bật/tắt thông báo rụng trứng, tỉ lệ mang thai, nhắc nhở uống thuốc
+ * - Hiển thị thông tin về cách thức hoạt động của hệ thống thông báo
  *
  * Features:
- * - Unread notification indicators
- * - Category filtering
- * - Timestamp display
- * - Interactive notification actions
- * - Notification history archive
+ * - Toggle switches cho từng loại thông báo
+ * - Thông tin hướng dẫn cho người dùng
+ * - UI responsive và thân thiện
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
   Paper,
   Grid,
-  Chip,
-  Button,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  IconButton,
-  Badge,
   Switch,
   FormControlLabel,
-  Divider,
-  Tabs,
-  Tab,
-  Avatar,
+  CircularProgress,
 } from "@mui/material";
 import {
-  Notifications as NotificationsIcon,
-  MarkEmailRead as MarkEmailReadIcon,
-  Delete as DeleteIcon,
   Settings as SettingsIcon,
-  Event as EventIcon,
-  LocalHospital as HospitalIcon,
-  Payment as PaymentIcon,
-  Campaign as CampaignIcon,
-  Circle as CircleIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
+import notificationService from "@/services/notificationService";
+import { notify } from "../../utils/notify";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.95)", // Light glass background for medical
+  background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%)",
   backdropFilter: "blur(20px)",
-  borderRadius: "20px",
-  border: "1px solid rgba(74, 144, 226, 0.15)", // Medical blue border
-  color: "#2D3748", // Dark text for readability
-  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.1)", // Lighter shadow
-}));
-
-const StyledListItem = styled(ListItem)(({ theme, unread }) => ({
-  background: unread ? "rgba(74, 144, 226, 0.08)" : "rgba(255, 255, 255, 0.9)",
-  borderRadius: "12px",
-  marginBottom: "8px",
-  border: unread
-    ? "1px solid rgba(74, 144, 226, 0.2)"
-    : "1px solid rgba(74, 144, 226, 0.05)",
-  "&:hover": {
-    background: "rgba(74, 144, 226, 0.05)",
+  borderRadius: "24px",
+  border: "1px solid rgba(74, 144, 226, 0.12)",
+  color: "#1A202C",
+  boxShadow: "0 20px 60px rgba(74, 144, 226, 0.08), 0 8px 25px rgba(0, 0, 0, 0.04)",
+  position: "relative",
+  overflow: "hidden",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "4px",
+    background: "linear-gradient(90deg, #4A90E2 0%, #1ABC9C 50%, #9B59B6 100%)",
   },
 }));
 
+const StyledFormControlLabel = styled(FormControlLabel)(({ theme }) => ({
+  margin: 0,
+  padding: "20px",
+  borderRadius: "16px",
+  border: "1px solid rgba(74, 144, 226, 0.08)",
+  background: "rgba(255, 255, 255, 0.6)",
+  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+  "&:hover": {
+    background: "rgba(74, 144, 226, 0.04)",
+    border: "1px solid rgba(74, 144, 226, 0.15)",
+    transform: "translateY(-2px)",
+    boxShadow: "0 8px 25px rgba(74, 144, 226, 0.1)",
+  },
+  "& .MuiFormControlLabel-label": {
+    marginTop: "0px",
+    width: "100%",
+  },
+}));
+
+const IconWrapper = styled(Box)(({ theme }) => ({
+  background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+  borderRadius: "16px",
+  padding: "12px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxShadow: "0 4px 20px rgba(74, 144, 226, 0.3)",
+}));
+
 const NotificationsContent = () => {
-  const [tabValue, setTabValue] = useState(0);
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: "appointment",
-      title: "Lịch hẹn sắp tới",
-      message:
-        "Bạn có lịch hẹn khám với BS. Nguyễn Thị Hoa vào ngày 15/02/2024 lúc 09:00",
-      timestamp: new Date("2024-02-14T10:30:00"),
-      unread: true,
-      priority: "high",
-    },
-    {
-      id: 2,
-      type: "payment",
-      title: "Thanh toán thành công",
-      message: "Thanh toán hóa đơn INV-2024-001 đã được xử lý thành công",
-      timestamp: new Date("2024-02-13T14:15:00"),
-      unread: true,
-      priority: "normal",
-    },
-    {
-      id: 3,
-      type: "medical",
-      title: "Kết quả xét nghiệm",
-      message:
-        "Kết quả xét nghiệm máu của bạn đã có. Vui lòng kiểm tra trong mục lịch sử khám",
-      timestamp: new Date("2024-02-12T16:45:00"),
-      unread: false,
-      priority: "high",
-    },
-    {
-      id: 4,
-      type: "promotion",
-      title: "Chương trình khuyến mãi",
-      message: "Giảm 20% cho các dịch vụ khám sức khỏe định kỳ trong tháng 2",
-      timestamp: new Date("2024-02-10T09:00:00"),
-      unread: false,
-      priority: "low",
-    },
-    {
-      id: 5,
-      type: "appointment",
-      title: "Nhắc nhở khám định kỳ",
-      message:
-        "Đã đến thời gian khám sức khỏe định kỳ. Hãy đặt lịch hẹn để duy trì sức khỏe tốt",
-      timestamp: new Date("2024-02-08T08:00:00"),
-      unread: false,
-      priority: "normal",
-    },
-  ]);
-
   const [notificationSettings, setNotificationSettings] = useState({
-    appointments: true,
-    payments: true,
-    medicalResults: true,
-    promotions: false,
-    reminders: true,
-    emailNotifications: true,
-    smsNotifications: false,
+    ovulationReminder: true,
+    pregnancyProbability: true,
+    medicationReminder: true,
   });
-  const getNotificationIcon = (type) => {
-    switch (type) {
-      case "appointment":
-        return <EventIcon sx={{ color: "#4A90E2" }} />;
-      case "payment":
-        return <PaymentIcon sx={{ color: "#4CAF50" }} />;
-      case "medical":
-        return <HospitalIcon sx={{ color: "#F39C12" }} />;
-      case "promotion":
-        return <CampaignIcon sx={{ color: "#1ABC9C" }} />;
-      default:
-        return <NotificationsIcon sx={{ color: "#607D8B" }} />;
-    }
-  };
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case "high":
-        return "#f44336";
-      case "normal":
-        return "#4A90E2";
-      case "low":
-        return "#607D8B";
-      default:
-        return "#607D8B";
-    }
-  };
+  
+  const [loading, setLoading] = useState(true);
 
-  const handleMarkAsRead = (notificationId) => {
-    setNotifications((prev) =>
-      prev.map((notif) =>
-        notif.id === notificationId ? { ...notif, unread: false } : notif
-      )
-    );
-  };
+  // Tải cài đặt thông báo từ API khi component mount
+  useEffect(() => {
+    fetchNotificationPreferences();
+  }, []);
 
-  const handleMarkAllAsRead = () => {
-    setNotifications((prev) =>
-      prev.map((notif) => ({ ...notif, unread: false }))
-    );
-  };
-
-  const handleDeleteNotification = (notificationId) => {
-    setNotifications((prev) =>
-      prev.filter((notif) => notif.id !== notificationId)
-    );
-  };
-
-  const handleSettingChange = (setting) => (event) => {
-    setNotificationSettings((prev) => ({
-      ...prev,
-      [setting]: event.target.checked,
-    }));
-  };
-
-  const formatTimeAgo = (timestamp) => {
-    const now = new Date();
-    const diff = now - timestamp;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) {
-      return `${days} ngày trước`;
-    } else if (hours > 0) {
-      return `${hours} giờ trước`;
-    } else {
-      return "Vừa xong";
+  const fetchNotificationPreferences = async () => {
+    try {
+      setLoading(true);
+      
+      const response = await notificationService.getNotificationPreferences();
+      
+      if (response.success && response.data) {
+        // Convert API data to UI state
+        const preferences = {};
+        response.data.forEach(pref => {
+          const settingKey = notificationService.mapApiTypeToSetting(pref.type);
+          if (settingKey) {
+            preferences[settingKey] = pref.enabled;
+          }
+        });
+        
+        setNotificationSettings(prev => ({
+          ...prev,
+          ...preferences
+        }));
+      } else {
+        notify.error("Lỗi", response.message || "Không thể tải cài đặt thông báo");
+      }
+    } catch (error) {
+      console.error("Error fetching notification preferences:", error);
+      const errorMessage = "Không thể tải cài đặt thông báo. Vui lòng thử lại.";
+      notify.error("Lỗi", errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const unreadCount = notifications.filter((n) => n.unread).length;
-  const filteredNotifications =
-    tabValue === 0 ? notifications : notifications.filter((n) => n.unread);
+  const handleSettingChange = async (setting) => {
+    const newValue = !notificationSettings[setting];
+    
+    try {
+      // Optimistic update - cập nhật UI trước
+      setNotificationSettings(prev => ({
+        ...prev,
+        [setting]: newValue
+      }));
+
+      // Gọi API để cập nhật
+      const apiType = notificationService.mapSettingToApiType(setting);
+      const response = await notificationService.updateNotificationPreference(apiType, newValue);
+      
+      if (response.success) {
+        notify.success("Thành công", `Đã ${newValue ? 'bật' : 'tắt'} thông báo thành công`);
+      } else {
+        // Revert on error
+        setNotificationSettings(prev => ({
+          ...prev,
+          [setting]: !newValue
+        }));
+        
+        notify.error("Lỗi", response.message || "Có lỗi xảy ra khi cập nhật cài đặt");
+      }
+    } catch (error) {
+      console.error("Error updating notification preference:", error);
+      
+      // Revert on error
+      setNotificationSettings(prev => ({
+        ...prev,
+        [setting]: !newValue
+      }));
+      
+      notify.error("Lỗi", "Không thể cập nhật cài đặt. Vui lòng thử lại.");
+    }
+  };
 
   return (
     <Box>
-      {/* Header Stats */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          {" "}
-          <StyledPaper sx={{ p: 3, textAlign: "center" }}>
-            <Badge badgeContent={unreadCount} color="error">
-              <NotificationsIcon
-                sx={{ fontSize: 40, color: "#4A90E2", mb: 1 }}
-              />
-            </Badge>
-            <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
-              {notifications.length}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#4A5568" }}>
-              Tổng thông báo
-            </Typography>
-          </StyledPaper>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          {" "}
-          <StyledPaper sx={{ p: 3, textAlign: "center" }}>
-            <MarkEmailReadIcon sx={{ fontSize: 40, color: "#4CAF50", mb: 1 }} />
-            <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
-              {unreadCount}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#4A5568" }}>
-              Chưa đọc
-            </Typography>
-          </StyledPaper>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          {" "}
-          <StyledPaper sx={{ p: 3, textAlign: "center" }}>
-            <EventIcon sx={{ fontSize: 40, color: "#F39C12", mb: 1 }} />
-            <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
-              {notifications.filter((n) => n.type === "appointment").length}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#4A5568" }}>
-              Lịch hẹn
-            </Typography>
-          </StyledPaper>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          {" "}
-          <StyledPaper sx={{ p: 3, textAlign: "center" }}>
-            <HospitalIcon sx={{ fontSize: 40, color: "#1ABC9C", mb: 1 }} />
-            <Typography variant="h6" sx={{ color: "#2D3748", fontWeight: 600 }}>
-              {notifications.filter((n) => n.type === "medical").length}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#4A5568" }}>
-              Y tế
-            </Typography>
-          </StyledPaper>
-        </Grid>
-      </Grid>
-
-      <Grid container spacing={3}>
-        {/* Notifications List */}
-        <Grid item xs={12} md={8}>
-          <StyledPaper>
-            {" "}
-            <Box sx={{ borderBottom: "1px solid rgba(74, 144, 226, 0.15)" }}>
-              <Tabs
-                value={tabValue}
-                onChange={(e, newValue) => setTabValue(newValue)}
-                sx={{
-                  "& .MuiTab-root": {
-                    color: "#4A5568",
-                    "&.Mui-selected": {
-                      color: "#2D3748",
-                    },
-                  },
-                  "& .MuiTabs-indicator": {
-                    backgroundColor: "#4A90E2",
-                  },
-                }}
-              >
-                <Tab label="Tất cả" />
-                <Tab label={`Chưa đọc (${unreadCount})`} />
-              </Tabs>
-            </Box>
-            <Box sx={{ p: 3 }}>
-              {" "}
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mb: 3,
-                }}
-              >
+      {/* Notification Settings */}
+      <Grid justifyContent="center">
+        <Grid item xs={12} sm={11} md={10} lg={8} xl={7}>
+          <StyledPaper sx={{ 
+            p: { xs: 3, sm: 4, md: 5, lg: 6 },
+          }}>
+            {/* Header */}
+            <Box sx={{ 
+              display: "flex", 
+              alignItems: "center", 
+              mb: { xs: 4, sm: 5 },
+              flexDirection: { xs: "column", sm: "row" },
+              textAlign: { xs: "center", sm: "left" }
+            }}>
+              <IconWrapper sx={{ 
+                mr: { xs: 0, sm: 3 }, 
+                mb: { xs: 2, sm: 0 },
+              }}>
+                <SettingsIcon sx={{ 
+                  color: "white", 
+                  fontSize: { xs: 28, sm: 32, md: 36 } 
+                }} />
+              </IconWrapper>
+              <Box>
                 <Typography
-                  variant="h6"
-                  sx={{ color: "#2D3748", fontWeight: 600 }}
+                  variant="h4"
+                  sx={{ 
+                    color: "#1A202C", 
+                    fontWeight: 700, 
+                    mb: 1,
+                    fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
+                    background: "linear-gradient(135deg, #4A90E2 0%, #9B59B6 100%)",
+                    backgroundClip: "text",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
                 >
-                  Thông báo
+                  Cài đặt thông báo
                 </Typography>
-                {unreadCount > 0 && (
-                  <Button
-                    onClick={handleMarkAllAsRead}
-                    size="small"
-                    sx={{
-                      color: "#4A90E2",
-                      "&:hover": {
-                        backgroundColor: "rgba(74, 144, 226, 0.1)",
-                      },
+                <Typography variant="body1" sx={{ 
+                  color: "#4A5568",
+                  fontSize: { xs: "0.9rem", sm: "1rem" },
+                  fontWeight: 400
+                }}>
+                  Quản lý các loại thông báo bạn muốn nhận qua email
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Loading State */}
+            {loading ? (
+              <Box sx={{ 
+                display: "flex", 
+                justifyContent: "center", 
+                alignItems: "center", 
+                py: 8 
+              }}>
+                <CircularProgress size={60} sx={{ color: "#4A90E2" }} />
+                <Typography variant="h6" sx={{ ml: 2, color: "#4A5568" }}>
+                  Đang tải cài đặt thông báo...
+                </Typography>
+              </Box>
+            ) : (
+              <>
+                {/* Notification Settings */}
+                <Box sx={{ mb: { xs: 4, sm: 5 } }}>
+                  <Typography
+                    variant="h5"
+                    sx={{ 
+                      color: "#2D3748", 
+                      mb: { xs: 3, sm: 4 }, 
+                      fontWeight: 600,
+                      fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                      display: "flex",
+                      alignItems: "center",
+                      "&::before": {
+                        content: '""',
+                        width: "4px",
+                        height: "24px",
+                        background: "linear-gradient(135deg, #4A90E2 0%, #1ABC9C 100%)",
+                        borderRadius: "2px",
+                        marginRight: "12px"
+                      }
                     }}
                   >
-                    Đánh dấu đã đọc tất cả
-                  </Button>
-                )}
-              </Box>
-              <List sx={{ p: 0 }}>
-                {filteredNotifications.map((notification) => (
-                  <StyledListItem
-                    key={notification.id}
-                    unread={notification.unread}
-                    sx={{ p: 2 }}
-                  >
-                    <ListItemIcon>
-                      <Box sx={{ position: "relative" }}>
-                        {getNotificationIcon(notification.type)}
-                        {notification.unread && (
-                          <CircleIcon
-                            sx={{
-                              position: "absolute",
-                              top: -2,
-                              right: -2,
-                              fontSize: 12,
-                              color: getPriorityColor(notification.priority),
-                            }}
-                          />
-                        )}
-                      </Box>
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <Typography
-                          variant="subtitle1"
+                    Thông báo qua email
+                  </Typography>
+                  <Box sx={{ 
+                    display: "flex", 
+                    flexDirection: "column", 
+                    gap: { xs: 2, sm: 3 } 
+                  }}>
+                    <StyledFormControlLabel
+                      control={
+                        <Switch
+                          checked={notificationSettings.ovulationReminder}
+                          onChange={() => handleSettingChange("ovulationReminder")}
+                          color="primary"
+                          size="medium"
                           sx={{
-                            color: "#2D3748",
-                            fontWeight: notification.unread ? 600 : 400,
-                            mb: 0.5,
+                            "& .MuiSwitch-switchBase.Mui-checked": {
+                              color: "#4A90E2",
+                            },
+                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                              backgroundColor: "#4A90E2",
+                            },
                           }}
-                        >
-                          {notification.title}
-                        </Typography>
+                        />
                       }
-                      secondary={
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: "#4A5568",
-                              mb: 1,
-                              lineHeight: 1.4,
-                            }}
-                          >
-                            {notification.message}
+                      label={
+                        <Box sx={{ ml: 2 }}>
+                          <Typography sx={{ 
+                            color: "#1A202C", 
+                            fontWeight: 600,
+                            fontSize: { xs: "1rem", sm: "1.1rem" },
+                            mb: 0.5
+                          }}>
+                            🥚 Nhắc nhở ngày rụng trứng
                           </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: "#607D8B",
-                              fontSize: "0.75rem",
-                            }}
-                          >
-                            {formatTimeAgo(notification.timestamp)}
+                          <Typography variant="body2" sx={{ 
+                            color: "#4A5568",
+                            fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                            lineHeight: 1.5
+                          }}>
+                            Nhận thông báo 1 ngày trước ngày rụng trứng dự kiến
                           </Typography>
                         </Box>
                       }
                     />
-                    <Box
-                      sx={{ display: "flex", flexDirection: "column", gap: 1 }}
-                    >
-                      {" "}
-                      {notification.unread && (
-                        <IconButton
-                          size="small"
-                          onClick={() => handleMarkAsRead(notification.id)}
+                    <StyledFormControlLabel
+                      control={
+                        <Switch
+                          checked={notificationSettings.pregnancyProbability}
+                          onChange={() => handleSettingChange("pregnancyProbability")}
+                          color="primary"
+                          size="medium"
                           sx={{
-                            color: "#4CAF50",
-                            "&:hover": {
-                              backgroundColor: "rgba(76, 175, 80, 0.1)",
+                            "& .MuiSwitch-switchBase.Mui-checked": {
+                              color: "#1ABC9C",
+                            },
+                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                              backgroundColor: "#1ABC9C",
                             },
                           }}
-                        >
-                          <MarkEmailReadIcon fontSize="small" />
-                        </IconButton>
-                      )}
-                      <IconButton
-                        size="small"
-                        onClick={() =>
-                          handleDeleteNotification(notification.id)
-                        }
-                        sx={{
-                          color: "#f44336",
-                          "&:hover": {
-                            backgroundColor: "rgba(244, 67, 54, 0.1)",
-                          },
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  </StyledListItem>
-                ))}
-              </List>
-              {filteredNotifications.length === 0 && (
-                <Box sx={{ textAlign: "center", py: 4 }}>
-                  {" "}
-                  <NotificationsIcon
-                    sx={{
-                      fontSize: 64,
-                      color: "rgba(74, 144, 226, 0.3)",
-                      mb: 2,
-                    }}
-                  />
-                  <Typography variant="h6" sx={{ color: "#2D3748" }}>
-                    Không có thông báo
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "#4A5568" }}>
-                    {tabValue === 0
-                      ? "Bạn chưa có thông báo nào"
-                      : "Không có thông báo chưa đọc"}
-                  </Typography>
+                        />
+                      }
+                      label={
+                        <Box sx={{ ml: 2 }}>
+                          <Typography sx={{ 
+                            color: "#1A202C", 
+                            fontWeight: 600,
+                            fontSize: { xs: "1rem", sm: "1.1rem" },
+                            mb: 0.5
+                          }}>
+                            🤱 Thông báo tỉ lệ mang thai
+                          </Typography>
+                          <Typography variant="body2" sx={{ 
+                            color: "#4A5568",
+                            fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                            lineHeight: 1.5
+                          }}>
+                            Nhận thông báo về tỉ lệ mang thai trong khoảng thời gian thụ thai
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                    <StyledFormControlLabel
+                      control={
+                        <Switch
+                          checked={notificationSettings.medicationReminder}
+                          onChange={() => handleSettingChange("medicationReminder")}
+                          color="primary"
+                          size="medium"
+                          sx={{
+                            "& .MuiSwitch-switchBase.Mui-checked": {
+                              color: "#9B59B6",
+                            },
+                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                              backgroundColor: "#9B59B6",
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Box sx={{ ml: 2 }}>
+                          <Typography sx={{ 
+                            color: "#1A202C", 
+                            fontWeight: 600,
+                            fontSize: { xs: "1rem", sm: "1.1rem" },
+                            mb: 0.5
+                          }}>
+                            💊 Nhắc nhở uống thuốc
+                          </Typography>
+                          <Typography variant="body2" sx={{ 
+                            color: "#4A5568",
+                            fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                            lineHeight: 1.5
+                          }}>
+                            Nhận nhắc nhở về thời gian uống thuốc theo lịch đã đặt
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </Box>
                 </Box>
-              )}
-            </Box>
-          </StyledPaper>
-        </Grid>
 
-        {/* Notification Settings */}
-        <Grid item xs={12} md={4}>
-          {" "}
-          <StyledPaper sx={{ p: 3 }}>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-              <SettingsIcon sx={{ color: "#4A90E2", mr: 1 }} />
-              <Typography
-                variant="h6"
-                sx={{ color: "#2D3748", fontWeight: 600 }}
-              >
-                Cài đặt thông báo
-              </Typography>
-            </Box>{" "}
-            <Box sx={{ mb: 3 }}>
-              <Typography
-                variant="subtitle1"
-                sx={{ color: "#2D3748", mb: 2, fontWeight: 500 }}
-              >
-                Loại thông báo
-              </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={notificationSettings.appointments}
-                      onChange={handleSettingChange("appointments")}
-                      color="primary"
-                    />
-                  }
-                  label="Lịch hẹn"
-                  sx={{ color: "#2D3748" }}
-                />{" "}
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={notificationSettings.payments}
-                      onChange={handleSettingChange("payments")}
-                      color="primary"
-                    />
-                  }
-                  label="Thanh toán"
-                  sx={{ color: "#2D3748" }}
-                />{" "}
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={notificationSettings.medicalResults}
-                      onChange={handleSettingChange("medicalResults")}
-                      color="primary"
-                    />
-                  }
-                  label="Kết quả y tế"
-                  sx={{ color: "#2D3748" }}
-                />{" "}
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={notificationSettings.promotions}
-                      onChange={handleSettingChange("promotions")}
-                      color="primary"
-                    />
-                  }
-                  label="Khuyến mãi"
-                  sx={{ color: "#2D3748" }}
-                />{" "}
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={notificationSettings.reminders}
-                      onChange={handleSettingChange("reminders")}
-                      color="primary"
-                    />
-                  }
-                  label="Nhắc nhở"
-                  sx={{ color: "#2D3748" }}
-                />
-              </Box>
-            </Box>{" "}
-            <Divider
-              sx={{ backgroundColor: "rgba(74, 144, 226, 0.15)", my: 3 }}
-            />
-            <Box>
-              {" "}
-              <Typography
-                variant="subtitle1"
-                sx={{ color: "#2D3748", mb: 2, fontWeight: 500 }}
-              >
-                Phương thức nhận
-              </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {" "}
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={notificationSettings.emailNotifications}
-                      onChange={handleSettingChange("emailNotifications")}
-                      color="primary"
-                    />
-                  }
-                  label="Email"
-                  sx={{ color: "#2D3748" }}
-                />{" "}
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={notificationSettings.smsNotifications}
-                      onChange={handleSettingChange("smsNotifications")}
-                      color="primary"
-                    />
-                  }
-                  label="SMS"
-                  sx={{ color: "#2D3748" }}
-                />
-              </Box>
-            </Box>
+                {/* Thông tin quan trọng */}
+                <Box 
+                  sx={{ 
+                    p: { xs: 3, sm: 4 }, 
+                    background: "linear-gradient(135deg, rgba(74, 144, 226, 0.06) 0%, rgba(155, 89, 182, 0.06) 100%)",
+                    borderRadius: "20px",
+                    border: "1px solid rgba(74, 144, 226, 0.12)",
+                    position: "relative",
+                    overflow: "hidden",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "6px",
+                      height: "100%",
+                      background: "linear-gradient(180deg, #4A90E2 0%, #1ABC9C 50%, #9B59B6 100%)",
+                    }
+                  }}
+                >
+                  <Typography variant="h6" sx={{ 
+                    color: "#1A202C", 
+                    fontWeight: 700, 
+                    mb: { xs: 2, sm: 3 },
+                    fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                    display: "flex",
+                    alignItems: "center"
+                  }}>
+                    📧 Thông tin quan trọng
+                  </Typography>
+                  <Box sx={{ 
+                    display: "grid",
+                    gap: { xs: 2, sm: 2.5 },
+                    "& > div": {
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 2
+                    }
+                  }}>
+                    <Box>
+                      <Box sx={{ 
+                        width: "8px", 
+                        height: "8px", 
+                        borderRadius: "50%", 
+                        background: "linear-gradient(135deg, #4A90E2, #1ABC9C)",
+                        mt: 0.8,
+                        flexShrink: 0
+                      }} />
+                      <Typography variant="body2" sx={{ 
+                        color: "#2D3748", 
+                        lineHeight: 1.6,
+                        fontSize: { xs: "0.9rem", sm: "1rem" }
+                      }}>
+                        <strong>Email thông báo:</strong> Sẽ được gửi đến địa chỉ email đã đăng ký trong tài khoản
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Box sx={{ 
+                        width: "8px", 
+                        height: "8px", 
+                        borderRadius: "50%", 
+                        background: "linear-gradient(135deg, #1ABC9C, #9B59B6)",
+                        mt: 0.8,
+                        flexShrink: 0
+                      }} />
+                      <Typography variant="body2" sx={{ 
+                        color: "#2D3748", 
+                        lineHeight: 1.6,
+                        fontSize: { xs: "0.9rem", sm: "1rem" }
+                      }}>
+                        <strong>Tùy chỉnh:</strong> Bạn có thể bật/tắt từng loại thông báo theo nhu cầu cá nhân
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Box sx={{ 
+                        width: "8px", 
+                        height: "8px", 
+                        borderRadius: "50%", 
+                        background: "linear-gradient(135deg, #9B59B6, #4A90E2)",
+                        mt: 0.8,
+                        flexShrink: 0
+                      }} />
+                      <Typography variant="body2" sx={{ 
+                        color: "#2D3748", 
+                        lineHeight: 1.6,
+                        fontSize: { xs: "0.9rem", sm: "1rem" }
+                      }}>
+                        <strong>Thời gian gửi:</strong> Thông báo được gửi tự động theo lịch trình đã thiết lập
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Box sx={{ 
+                        width: "8px", 
+                        height: "8px", 
+                        borderRadius: "50%", 
+                        background: "linear-gradient(135deg, #E74C3C, #F39C12)",
+                        mt: 0.8,
+                        flexShrink: 0
+                      }} />
+                      <Typography variant="body2" sx={{ 
+                        color: "#2D3748", 
+                        lineHeight: 1.6,
+                        fontSize: { xs: "0.9rem", sm: "1rem" }
+                      }}>
+                        <strong>Bảo mật:</strong> Thông tin cá nhân được bảo vệ và không chia sẻ với bên thứ ba
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              </>
+            )}
           </StyledPaper>
         </Grid>
       </Grid>

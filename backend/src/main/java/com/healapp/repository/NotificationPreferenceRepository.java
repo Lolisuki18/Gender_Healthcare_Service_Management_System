@@ -23,5 +23,5 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
     @Modifying
     @Transactional
     @Query("UPDATE NotificationPreference np SET np.enabled = :enabled WHERE np.user.id = :userId AND np.type = :type")
-    void updateNotificationPreference(@Param("userId") Long userId, @Param("type") NotificationType type, @Param("enabled") boolean enabled);
+    int updateNotificationPreference(@Param("userId") Long userId, @Param("type") NotificationType type, @Param("enabled") boolean enabled);
 }
