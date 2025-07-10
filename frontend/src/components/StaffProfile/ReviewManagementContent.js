@@ -8,7 +8,7 @@
  * - Xóa đánh giá
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -49,13 +49,13 @@ import {
   Search as SearchIcon,
   Reply as ReplyIcon,
   Visibility as VisibilityIcon,
-  Block as BlockIcon,
-  Check as CheckIcon,
-  StarBorder as StarBorderIcon,
-  FilterList as FilterListIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
+  FilterList as FilterListIcon,
+  StarBorder as StarBorderIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
+import reviewService from '../../services/reviewService';
 
 const ReviewManagementContent = () => {
   const theme = useTheme();
@@ -99,133 +99,20 @@ const ReviewManagementContent = () => {
       px: 3,
     },
   };
-  // Mock data - sẽ được thay thế bằng API calls
-  const initialReviews = [
-    {
-      id: 1,
-      customerId: 101,
-      customerName: 'Nguyễn Văn A',
-      serviceId: 1,
-      serviceName: 'Xét nghiệm STI cơ bản',
-      rating: 5,
-      comment:
-        'Dịch vụ rất chuyên nghiệp, nhân viên tư vấn tận tình. Tôi cảm thấy an tâm khi sử dụng dịch vụ tại đây.',
-      date: '2025-05-20',
-      status: 'published',
-      avatarUrl: null,
-      response: 'Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của chúng tôi!',
-    },
-    {
-      id: 2,
-      customerId: 102,
-      customerName: 'Trần Thị B',
-      serviceId: 2,
-      serviceName: 'Xét nghiệm STI toàn diện',
-      rating: 4,
-      comment:
-        'Dịch vụ tốt, giá cả hợp lý. Tuy nhiên thời gian đợi kết quả hơi lâu so với kỳ vọng.',
-      date: '2025-06-01',
-      status: 'published',
-      avatarUrl: null,
-      response: '',
-    },
-    {
-      id: 3,
-      customerId: 103,
-      customerName: 'Lê Văn C',
-      serviceId: 1,
-      serviceName: 'Xét nghiệm STI cơ bản',
-      rating: 3,
-      comment:
-        'Dịch vụ ổn nhưng thời gian chờ hơi lâu. Phòng khám khá đông người.',
-      date: '2025-06-05',
-      status: 'pending',
-      avatarUrl: null,
-      response: '',
-    },
-    {
-      id: 4,
-      customerId: 104,
-      customerName: 'Phạm Thị D',
-      serviceId: 3,
-      serviceName: 'Tư vấn sức khỏe giới tính',
-      rating: 5,
-      comment:
-        'Bác sĩ tư vấn rất tận tình và chuyên nghiệp. Không gian tư vấn riêng tư, thoải mái.',
-      date: '2025-06-10',
-      status: 'published',
-      avatarUrl: null,
-      response:
-        'Cảm ơn bạn đã đánh giá tích cực. Chúng tôi luôn đặt sự riêng tư và thoải mái của khách hàng lên hàng đầu.',
-    },
-    {
-      id: 5,
-      customerId: 105,
-      customerName: 'Hoàng Văn E',
-      serviceId: 4,
-      serviceName: 'Theo dõi thai kỳ',
-      rating: 5,
-      comment:
-        'Dịch vụ theo dõi thai kỳ rất tốt, bác sĩ chu đáo và nhiệt tình tư vấn. Tôi sẽ tiếp tục sử dụng dịch vụ này.',
-      date: '2025-06-15',
-      status: 'published',
-      avatarUrl: null,
-      response: 'Cảm ơn bạn đã tin tưởng. Chúc bạn có thai kỳ khỏe mạnh!',
-    },
-    {
-      id: 6,
-      customerId: 106,
-      customerName: 'Ngô Thị F',
-      serviceId: 5,
-      serviceName: 'Khám sàng lọc ung thư cổ tử cung',
-      rating: 4,
-      comment:
-        'Dịch vụ tốt, nhân viên y tế nhiệt tình. Tuy nhiên cơ sở vật chất có thể được cải thiện thêm.',
-      date: '2025-06-18',
-      status: 'pending',
-      avatarUrl: null,
-      response: '',
-    },
-    {
-      id: 7,
-      customerId: 107,
-      customerName: 'Vũ Văn G',
-      serviceId: 6,
-      serviceName: 'Tư vấn kế hoạch hóa gia đình',
-      rating: 2,
-      comment:
-        'Thời gian chờ đợi quá lâu, thông tin tư vấn chưa thật sự chi tiết như mong đợi.',
-      date: '2025-06-20',
-      status: 'pending',
-      avatarUrl: null,
-      response: '',
-    },
-    {
-      id: 8,
-      customerId: 108,
-      customerName: 'Đặng Thị H',
-      serviceId: 1,
-      serviceName: 'Xét nghiệm STI cơ bản',
-      rating: 5,
-      comment:
-        'Rất hài lòng với dịch vụ, nhân viên chuyên nghiệp và kết quả được trả nhanh chóng.',
-      date: '2025-06-21',
-      status: 'published',
-      avatarUrl: null,
-      response: 'Cảm ơn bạn đã đánh giá tích cực về dịch vụ của chúng tôi!',
-    },
-  ];
-  const [reviews, setReviews] = useState(initialReviews);
   // State management
+  const [reviews, setReviews] = useState([]);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [serviceFilter, setServiceFilter] = useState('all'); // all, consultation, sti-service, sti-package
+  const [ratingFilter, setRatingFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
   const [openDialog, setOpenDialog] = useState(false);
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [currentReview, setCurrentReview] = useState(null);
   const [response, setResponse] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -233,14 +120,77 @@ const ReviewManagementContent = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // Mock API delay
-  const mockApiCall = (callback, delay = 800) => {
+  // Fetch reviews data
+  const fetchReviews = useCallback(async () => {
     setLoading(true);
-    setTimeout(() => {
-      callback();
+    try {
+      let response;
+      const params = {
+        page,
+        size: rowsPerPage,
+        sort: sortBy,
+        filterRating: ratingFilter === 'all' ? null : ratingFilter,
+        keyword: searchTerm || null,
+      };
+
+      switch (serviceFilter) {
+        case 'consultation':
+          response = await reviewService.getConsultationReviews(
+            params.page,
+            params.size,
+            params.sort,
+            params.filterRating,
+            params.keyword
+          );
+          break;
+        case 'sti-service':
+          response = await reviewService.getSTIServiceReviewsForStaff(
+            params.page,
+            params.size,
+            params.sort,
+            params.filterRating,
+            params.keyword
+          );
+          break;
+        case 'sti-package':
+          response = await reviewService.getSTIPackageReviewsForStaff(
+            params.page,
+            params.size,
+            params.sort,
+            params.filterRating,
+            params.keyword
+          );
+          break;
+        default:
+          response = await reviewService.getAllReviews(
+            params.page,
+            params.size,
+            params.sort,
+            params.filterRating,
+            params.keyword
+          );
+      }
+
+      if (response && response.content) {
+        setReviews(response.content);
+        setTotalElements(response.totalElements);
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      setSnackbar({
+        open: true,
+        message: 'Lỗi khi tải danh sách đánh giá: ' + error.message,
+        severity: 'error',
+      });
+    } finally {
       setLoading(false);
-    }, delay);
-  };
+    }
+  }, [page, rowsPerPage, sortBy, ratingFilter, searchTerm, serviceFilter]);
+
+  // Load data on component mount and when dependencies change
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   // Handlers
   const handleChangePage = (event, newPage) => {
@@ -259,7 +209,7 @@ const ReviewManagementContent = () => {
 
   const handleOpenReplyDialog = (review) => {
     setCurrentReview(review);
-    setResponse('');
+    setResponse(review.staffReply || '');
     setOpenDialog(true);
   };
 
@@ -270,48 +220,61 @@ const ReviewManagementContent = () => {
   const handleResponseChange = (event) => {
     setResponse(event.target.value);
   };
-  const handleSubmitResponse = () => {
-    mockApiCall(() => {
-      const updatedReviews = reviews.map((review) =>
-        review.id === currentReview.id
-          ? { ...review, response: response }
-          : review
-      );
-      setReviews(updatedReviews);
-      setOpenDialog(false);
+  const handleSubmitResponse = async () => {
+    if (!response.trim()) {
       setSnackbar({
         open: true,
-        message: 'Phản hồi đã được gửi thành công!',
-        severity: 'success',
-      });
-    });
-  };
-  const handleApproveReview = (id) => {
-    mockApiCall(() => {
-      const updatedReviews = reviews.map((review) =>
-        review.id === id ? { ...review, status: 'published' } : review
-      );
-      setReviews(updatedReviews);
-      setSnackbar({
-        open: true,
-        message: 'Đã duyệt đánh giá thành công!',
-        severity: 'success',
-      });
-    });
-  };
-
-  const handleRejectReview = (id) => {
-    mockApiCall(() => {
-      const updatedReviews = reviews.map((review) =>
-        review.id === id ? { ...review, status: 'rejected' } : review
-      );
-      setReviews(updatedReviews);
-      setSnackbar({
-        open: true,
-        message: 'Đã từ chối đánh giá!',
+        message: 'Vui lòng nhập nội dung phản hồi',
         severity: 'warning',
       });
-    });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let result;
+      const replyData = { staffReply: response };
+      
+      if (currentReview.staffReply) {
+        // Update existing reply - sử dụng API riêng cho cập nhật
+        result = await reviewService.updateReply(currentReview.ratingId, replyData);
+        setSnackbar({
+          open: true,
+          message: 'Cập nhật phản hồi thành công!',
+          severity: 'success',
+        });
+      } else {
+        // Create new reply - sử dụng API riêng cho tạo mới
+        result = await reviewService.createReply(currentReview.ratingId, replyData);
+        setSnackbar({
+          open: true,
+          message: 'Phản hồi đã được gửi thành công!',
+          severity: 'success',
+        });
+      }
+      
+      // Update current review with new data from API response
+      if (result && result.data) {
+        setCurrentReview(prev => ({
+          ...prev,
+          staffReply: result.data.staffReply || result.data.reply, // Handle both possible field names
+          repliedAt: result.data.repliedAt,
+          repliedByName: result.data.repliedByName
+        }));
+      }
+      
+      setOpenDialog(false);
+      fetchReviews(); // Refresh data
+    } catch (error) {
+      console.error('Error submitting response:', error);
+      setSnackbar({
+        open: true,
+        message: 'Lỗi khi gửi phản hồi: ' + error.message,
+        severity: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOpenViewDialog = (review) => {
@@ -332,19 +295,36 @@ const ReviewManagementContent = () => {
     setOpenDeleteDialog(false);
   };
 
-  const handleDeleteReview = () => {
-    mockApiCall(() => {
-      const updatedReviews = reviews.filter(
-        (review) => review.id !== currentReview.id
-      );
-      setReviews(updatedReviews);
-      setOpenDeleteDialog(false);
+  const handleDeleteReview = async () => {
+    if (!currentReview?.staffReply) {
       setSnackbar({
         open: true,
-        message: 'Đã xóa đánh giá thành công!',
+        message: 'Không có phản hồi để xóa',
+        severity: 'warning',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await reviewService.deleteStaffReply(currentReview.ratingId);
+      setSnackbar({
+        open: true,
+        message: 'Đã xóa phản hồi thành công!',
         severity: 'success',
       });
-    });
+      setOpenDeleteDialog(false);
+      fetchReviews(); // Refresh data
+    } catch (error) {
+      console.error('Error deleting staff reply:', error);
+      setSnackbar({
+        open: true,
+        message: 'Lỗi khi xóa phản hồi: ' + error.message,
+        severity: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCloseSnackbar = (event, reason) => {
@@ -354,48 +334,19 @@ const ReviewManagementContent = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const handleFilterChange = (event) => {
-    setFilterStatus(event.target.value);
+  const handleServiceFilterChange = (event) => {
+    setServiceFilter(event.target.value);
     setPage(0);
   };
 
-  // Filter reviews dựa trên searchTerm và filterStatus
-  const filteredReviews = reviews.filter((review) => {
-    const matchesSearch =
-      review.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      review.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      review.comment.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesFilter =
-      filterStatus === 'all' || review.status === filterStatus;
-
-    return matchesSearch && matchesFilter;
-  });
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'published':
-        return 'success';
-      case 'pending':
-        return 'warning';
-      case 'rejected':
-        return 'error';
-      default:
-        return 'default';
-    }
+  const handleRatingFilterChange = (event) => {
+    setRatingFilter(event.target.value);
+    setPage(0);
   };
 
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case 'published':
-        return 'Đã xuất bản';
-      case 'pending':
-        return 'Chờ duyệt';
-      case 'rejected':
-        return 'Đã từ chối';
-      default:
-        return status;
-    }
+  const handleSortChange = (event) => {
+    setSortBy(event.target.value);
+    setPage(0);
   };
   return (
     <Box sx={{ p: 3 }}>
@@ -405,7 +356,7 @@ const ReviewManagementContent = () => {
           Quản lý đánh giá
         </Typography>
         <Typography variant="body1" sx={pageStyles.pageSubtitle}>
-          Xem, duyệt và phản hồi đánh giá từ khách hàng
+          Xem và phản hồi đánh giá từ khách hàng
         </Typography>
       </Box>
 
@@ -413,7 +364,7 @@ const ReviewManagementContent = () => {
       <Card sx={{ ...pageStyles.card, mb: 3 }}>
         <CardContent>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={4}>
               <TextField
                 size="small"
                 placeholder="Tìm kiếm đánh giá..."
@@ -428,14 +379,14 @@ const ReviewManagementContent = () => {
                   ),
                 }}
               />
-            </Grid>{' '}
+            </Grid>
             <Grid item xs={12} md={2}>
               <FormControl size="small" fullWidth>
-                <InputLabel>Lọc theo trạng thái</InputLabel>
+                <InputLabel>Loại dịch vụ</InputLabel>
                 <Select
-                  value={filterStatus}
-                  onChange={handleFilterChange}
-                  label="Lọc theo trạng thái"
+                  value={serviceFilter}
+                  onChange={handleServiceFilterChange}
+                  label="Loại dịch vụ"
                   startAdornment={
                     <InputAdornment position="start">
                       <FilterListIcon color="primary" fontSize="small" />
@@ -443,13 +394,45 @@ const ReviewManagementContent = () => {
                   }
                 >
                   <MenuItem value="all">Tất cả</MenuItem>
-                  <MenuItem value="published">Đã xuất bản</MenuItem>
-                  <MenuItem value="pending">Chờ duyệt</MenuItem>
-                  <MenuItem value="rejected">Đã từ chối</MenuItem>
+                  <MenuItem value="consultation">Tư vấn</MenuItem>
+                  <MenuItem value="sti-service">Dịch vụ STI</MenuItem>
+                  <MenuItem value="sti-package">Gói STI</MenuItem>
                 </Select>
               </FormControl>
-            </Grid>{' '}
-            <Grid item xs={12} md={4}>
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <FormControl size="small" fullWidth>
+                <InputLabel>Đánh giá</InputLabel>
+                <Select
+                  value={ratingFilter}
+                  onChange={handleRatingFilterChange}
+                  label="Đánh giá"
+                >
+                  <MenuItem value="all">Tất cả</MenuItem>
+                  <MenuItem value="5">5 sao</MenuItem>
+                  <MenuItem value="4">4 sao</MenuItem>
+                  <MenuItem value="3">3 sao</MenuItem>
+                  <MenuItem value="2">2 sao</MenuItem>
+                  <MenuItem value="1">1 sao</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <FormControl size="small" fullWidth>
+                <InputLabel>Sắp xếp</InputLabel>
+                <Select
+                  value={sortBy}
+                  onChange={handleSortChange}
+                  label="Sắp xếp"
+                >
+                  <MenuItem value="newest">Mới nhất</MenuItem>
+                  <MenuItem value="oldest">Cũ nhất</MenuItem>
+                  <MenuItem value="highest">Điểm cao nhất</MenuItem>
+                  <MenuItem value="lowest">Điểm thấp nhất</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={2}>
               <Box
                 display="flex"
                 justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
@@ -459,7 +442,7 @@ const ReviewManagementContent = () => {
                   color="text.secondary"
                   sx={{ display: 'flex', alignItems: 'center' }}
                 >
-                  {filteredReviews.length} đánh giá
+                  {totalElements} đánh giá
                 </Typography>
               </Box>
             </Grid>
@@ -472,15 +455,13 @@ const ReviewManagementContent = () => {
         <TableContainer>
           <Table sx={{ minWidth: 650 }}>
             <TableHead sx={pageStyles.tableHead}>
-              {' '}
               <TableRow>
                 <TableCell sx={pageStyles.tableHeadCell}>ID</TableCell>
                 <TableCell sx={pageStyles.tableHeadCell}>Khách hàng</TableCell>
-                <TableCell sx={pageStyles.tableHeadCell}>Dịch vụ</TableCell>
+                <TableCell sx={pageStyles.tableHeadCell}>Dịch vụ/Tư vấn viên</TableCell>
                 <TableCell sx={pageStyles.tableHeadCell}>Đánh giá</TableCell>
                 <TableCell sx={pageStyles.tableHeadCell}>Nhận xét</TableCell>
                 <TableCell sx={pageStyles.tableHeadCell}>Ngày</TableCell>
-                <TableCell sx={pageStyles.tableHeadCell}>Trạng thái</TableCell>
                 <TableCell sx={pageStyles.tableHeadCell}>Phản hồi</TableCell>
                 <TableCell sx={pageStyles.tableHeadCell} align="right">
                   Thao tác
@@ -488,190 +469,159 @@ const ReviewManagementContent = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {' '}
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={9} align="center" sx={{ py: 5 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
                     <CircularProgress size={40} />
                     <Typography variant="body1" sx={{ mt: 2 }}>
                       Đang tải dữ liệu...
                     </Typography>
                   </TableCell>
                 </TableRow>
-              ) : filteredReviews.length === 0 ? (
+              ) : reviews.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} align="center" sx={{ py: 3 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
                     <Typography variant="body1" color="text.secondary">
                       Không tìm thấy đánh giá nào
                     </Typography>
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredReviews
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((review) => (
-                    <TableRow key={review.id} hover>
-                      <TableCell>{review.id}</TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Avatar
-                            src={review.avatarUrl}
-                            alt={review.customerName}
-                            sx={{
-                              width: 32,
-                              height: 32,
-                              mr: 1,
-                              bgcolor: `${theme.palette.primary.main}`,
-                            }}
-                          >
-                            {review.customerName[0]}
-                          </Avatar>
-                          {review.customerName}
-                        </Box>
-                      </TableCell>
-                      <TableCell>{review.serviceName}</TableCell>
-                      <TableCell>
-                        <Rating
-                          value={review.rating}
-                          readOnly
-                          size="small"
-                          emptyIcon={<StarBorderIcon fontSize="inherit" />}
-                          sx={{ color: theme.palette.warning.main }}
-                        />
-                      </TableCell>{' '}
-                      <TableCell>
-                        <Tooltip
-                          title={
-                            review.comment.length > 30 ? review.comment : ''
-                          }
+                reviews.map((review) => (
+                  <TableRow key={review.ratingId} hover>
+                    <TableCell>{review.ratingId}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Avatar
+                          src={review.userAvatar}
+                          alt={review.userFullName}
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            mr: 1,
+                            bgcolor: `${theme.palette.primary.main}`,
+                          }}
                         >
-                          <Typography variant="body2">
-                            {review.comment.length > 30
-                              ? `${review.comment.substring(0, 30)}...`
-                              : review.comment}
-                          </Typography>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell>
-                        {review.response ? (
-                          <Chip
-                            size="small"
-                            label="Đã phản hồi"
-                            color="info"
-                            variant="outlined"
-                          />
-                        ) : (
-                          <Chip
-                            size="small"
-                            label="Chưa phản hồi"
-                            color="default"
-                            variant="outlined"
-                          />
-                        )}
-                      </TableCell>
-                      <TableCell>{review.date}</TableCell>
-                      <TableCell>
+                          {review.userFullName?.[0] || 'U'}
+                        </Avatar>
+                        {review.userFullName || 'Khách hàng'}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      {review.targetName || 'Dịch vụ không xác định'}
+                    </TableCell>
+                    <TableCell>
+                      <Rating
+                        value={review.rating}
+                        readOnly
+                        size="small"
+                        emptyIcon={<StarBorderIcon fontSize="inherit" />}
+                        sx={{ color: theme.palette.warning.main }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip
+                        title={
+                          review.comment.length > 30 ? review.comment : ''
+                        }
+                      >
+                        <Typography variant="body2">
+                          {review.comment.length > 30
+                            ? `${review.comment.substring(0, 30)}...`
+                            : review.comment}
+                        </Typography>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell>
+                      {Array.isArray(review.createdAt) 
+                        ? new Date(review.createdAt[0], review.createdAt[1] - 1, review.createdAt[2]).toLocaleDateString('vi-VN')
+                        : new Date(review.createdAt).toLocaleDateString('vi-VN')}
+                    </TableCell>
+                    <TableCell>
+                      {review.staffReply ? (
                         <Chip
-                          label={getStatusLabel(review.status)}
-                          color={getStatusColor(review.status)}
                           size="small"
-                          sx={{ fontWeight: 500 }}
+                          label="Đã phản hồi"
+                          color="info"
+                          variant="outlined"
                         />
-                      </TableCell>
-                      <TableCell align="right">
-                        {' '}
-                        <Tooltip title="Xem chi tiết">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleOpenViewDialog(review)}
-                            sx={{
-                              color: theme.palette.info.main,
-                              '&:hover': {
-                                bgcolor: alpha(theme.palette.info.main, 0.1),
-                              },
-                            }}
-                          >
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Xóa">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleOpenDeleteDialog(review)}
-                            sx={{
-                              color: theme.palette.error.main,
-                              '&:hover': {
-                                bgcolor: alpha(theme.palette.error.main, 0.1),
-                              },
-                            }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                      ) : (
+                        <Chip
+                          size="small"
+                          label="Chưa phản hồi"
+                          color="default"
+                          variant="outlined"
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Tooltip title="Xem chi tiết">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenViewDialog(review)}
+                          sx={{
+                            color: theme.palette.info.main,
+                            '&:hover': {
+                              bgcolor: alpha(theme.palette.info.main, 0.1),
+                            },
+                          }}
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      {!review.staffReply ? (
                         <Tooltip title="Phản hồi">
-                          <span>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpenReplyDialog(review)}
+                            sx={{
+                              color: theme.palette.primary.main,
+                              '&:hover': {
+                                bgcolor: alpha(
+                                  theme.palette.primary.main,
+                                  0.1
+                                ),
+                              },
+                            }}
+                          >
+                            <ReplyIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        <>
+                          <Tooltip title="Sửa phản hồi">
                             <IconButton
                               size="small"
-                              disabled={review.status === 'rejected'}
                               onClick={() => handleOpenReplyDialog(review)}
                               sx={{
-                                color: theme.palette.primary.main,
+                                color: theme.palette.warning.main,
                                 '&:hover': {
-                                  bgcolor: alpha(
-                                    theme.palette.primary.main,
-                                    0.1
-                                  ),
-                                },
-                                '&.Mui-disabled': {
-                                  color: theme.palette.text.disabled,
+                                  bgcolor: alpha(theme.palette.warning.main, 0.1),
                                 },
                               }}
                             >
-                              <ReplyIcon fontSize="small" />
+                              <EditIcon fontSize="small" />
                             </IconButton>
-                          </span>
-                        </Tooltip>
-                        {review.status === 'pending' && (
-                          <>
-                            <Tooltip title="Duyệt">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleApproveReview(review.id)}
-                                sx={{
-                                  color: theme.palette.success.main,
-                                  '&:hover': {
-                                    bgcolor: alpha(
-                                      theme.palette.success.main,
-                                      0.1
-                                    ),
-                                  },
-                                }}
-                              >
-                                <CheckIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Từ chối">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleRejectReview(review.id)}
-                                sx={{
-                                  color: theme.palette.error.main,
-                                  '&:hover': {
-                                    bgcolor: alpha(
-                                      theme.palette.error.main,
-                                      0.1
-                                    ),
-                                  },
-                                }}
-                              >
-                                <BlockIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                          </Tooltip>
+                          <Tooltip title="Xóa phản hồi">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenDeleteDialog(review)}
+                              sx={{
+                                color: theme.palette.error.main,
+                                '&:hover': {
+                                  bgcolor: alpha(theme.palette.error.main, 0.1),
+                                },
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
@@ -679,7 +629,7 @@ const ReviewManagementContent = () => {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
-            count={filteredReviews.length}
+            count={totalElements}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -713,7 +663,7 @@ const ReviewManagementContent = () => {
             boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
           }}
         >
-          Phản hồi đánh giá
+          {currentReview?.staffReply ? 'Cập nhật phản hồi' : 'Phản hồi đánh giá'}
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           <Box
@@ -728,8 +678,8 @@ const ReviewManagementContent = () => {
               <Grid item xs={12} sm={8}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <Avatar
-                    src={currentReview?.avatarUrl}
-                    alt={currentReview?.customerName}
+                    src={currentReview?.userAvatar}
+                    alt={currentReview?.userFullName}
                     sx={{
                       width: 40,
                       height: 40,
@@ -737,17 +687,21 @@ const ReviewManagementContent = () => {
                       bgcolor: theme.palette.primary.main,
                     }}
                   >
-                    {currentReview?.customerName?.[0]}
+                    {currentReview?.userFullName?.[0] || 'U'}
                   </Avatar>
                   <Typography variant="h6">
-                    {currentReview?.customerName}
+                    {currentReview?.userFullName || 'Khách hàng'}
                   </Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  <strong>Dịch vụ:</strong> {currentReview?.serviceName}
+                  <strong>Dịch vụ:</strong> {currentReview?.targetName || 'Dịch vụ không xác định'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  <strong>Ngày:</strong> {currentReview?.date}
+                  <strong>Ngày:</strong> {currentReview?.createdAt 
+                    ? (Array.isArray(currentReview.createdAt) 
+                        ? new Date(currentReview.createdAt[0], currentReview.createdAt[1] - 1, currentReview.createdAt[2]).toLocaleDateString('vi-VN')
+                        : new Date(currentReview.createdAt).toLocaleDateString('vi-VN'))
+                    : 'N/A'}
                 </Typography>
               </Grid>
               <Grid
@@ -864,12 +818,13 @@ const ReviewManagementContent = () => {
         </DialogTitle>{' '}
         <DialogContent sx={{ pt: 3 }}>
           <Grid container spacing={3}>
+            {/* Thông tin cơ bản */}
             <Grid item xs={12} md={6}>
               <Typography variant="subtitle2" color="text.secondary">
                 Mã đánh giá
               </Typography>
               <Typography variant="body1" gutterBottom>
-                #{currentReview?.id}
+                #{currentReview?.ratingId || 'N/A'}
               </Typography>
 
               <Typography
@@ -879,23 +834,27 @@ const ReviewManagementContent = () => {
               >
                 Khách hàng
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <Avatar
-                  src={currentReview?.avatarUrl}
-                  alt={currentReview?.customerName}
+                  src={currentReview?.userAvatar}
+                  alt={currentReview?.userFullName}
                   sx={{
-                    width: 32,
-                    height: 32,
-                    mr: 1,
+                    width: 40,
+                    height: 40,
+                    mr: 2,
                     bgcolor: theme.palette.primary.main,
                   }}
                 >
-                  {currentReview?.customerName?.[0]}
+                  {currentReview?.userFullName?.[0] || 'U'}
                 </Avatar>
-                <Typography variant="body1" gutterBottom>
-                  {currentReview?.customerName} (ID: {currentReview?.customerId}
-                  )
-                </Typography>
+                <Box>
+                  <Typography variant="body1" fontWeight={500}>
+                    {currentReview?.userFullName || 'Khách hàng'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    ID: {currentReview?.userId || 'N/A'}
+                  </Typography>
+                </Box>
               </Box>
 
               <Typography
@@ -903,18 +862,13 @@ const ReviewManagementContent = () => {
                 color="text.secondary"
                 sx={{ mt: 2 }}
               >
-                Dịch vụ
+                Loại dịch vụ
               </Typography>
               <Typography variant="body1" gutterBottom>
-                {currentReview?.serviceName} (ID: {currentReview?.serviceId})
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Ngày đánh giá
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {currentReview?.date}
+                {currentReview?.targetType === 'CONSULTANT' && 'Tư vấn'}
+                {currentReview?.targetType === 'STI_SERVICE' && 'Dịch vụ STI'}
+                {currentReview?.targetType === 'STI_PACKAGE' && 'Gói STI'}
+                {!currentReview?.targetType && 'Không xác định'}
               </Typography>
 
               <Typography
@@ -922,14 +876,57 @@ const ReviewManagementContent = () => {
                 color="text.secondary"
                 sx={{ mt: 2 }}
               >
-                Trạng thái
+                Tên dịch vụ/Tư vấn viên
               </Typography>
-              <Chip
-                label={getStatusLabel(currentReview?.status)}
-                color={getStatusColor(currentReview?.status)}
-                size="small"
-                sx={{ fontWeight: 500 }}
-              />
+              <Typography variant="body1" gutterBottom>
+                {currentReview?.targetName || 'Không xác định'}
+              </Typography>
+
+              {currentReview?.targetId && (
+                <>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mt: 2 }}
+                  >
+                    ID Dịch vụ/Tư vấn viên
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    {currentReview.targetId}
+                  </Typography>
+                </>
+              )}
+            </Grid>
+
+            {/* Thông tin đánh giá */}
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Ngày đánh giá
+              </Typography>
+              <Typography variant="body1" gutterBottom>
+                {currentReview?.createdAt 
+                  ? (Array.isArray(currentReview.createdAt) 
+                      ? new Date(currentReview.createdAt[0], currentReview.createdAt[1] - 1, currentReview.createdAt[2], currentReview.createdAt[3] || 0, currentReview.createdAt[4] || 0, currentReview.createdAt[5] || 0).toLocaleString('vi-VN')
+                      : new Date(currentReview.createdAt).toLocaleString('vi-VN'))
+                  : 'N/A'}
+              </Typography>
+
+              {currentReview?.updatedAt && (
+                <>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mt: 2 }}
+                  >
+                    Cập nhật lần cuối
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    {Array.isArray(currentReview.updatedAt) 
+                      ? new Date(currentReview.updatedAt[0], currentReview.updatedAt[1] - 1, currentReview.updatedAt[2], currentReview.updatedAt[3] || 0, currentReview.updatedAt[4] || 0, currentReview.updatedAt[5] || 0).toLocaleString('vi-VN')
+                      : new Date(currentReview.updatedAt).toLocaleString('vi-VN')}
+                  </Typography>
+                </>
+              )}
 
               <Typography
                 variant="subtitle2"
@@ -938,13 +935,70 @@ const ReviewManagementContent = () => {
               >
                 Đánh giá
               </Typography>
-              <Rating
-                value={currentReview?.rating || 0}
-                readOnly
-                emptyIcon={<StarBorderIcon fontSize="inherit" />}
-                sx={{ color: theme.palette.warning.main }}
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Rating
+                  value={currentReview?.rating || 0}
+                  readOnly
+                  emptyIcon={<StarBorderIcon fontSize="inherit" />}
+                  sx={{ color: theme.palette.warning.main, mr: 1 }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  ({currentReview?.rating || 0}/5 sao)
+                </Typography>
+              </Box>
+
+              {/* Thông tin liên kết */}
+              {currentReview?.consultationId && (
+                <>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mt: 2 }}
+                  >
+                    ID Cuộc tư vấn
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    {currentReview.consultationId}
+                  </Typography>
+                </>
+              )}
+
+              {currentReview?.stiTestId && (
+                <>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mt: 2 }}
+                  >
+                    ID Bài test STI
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    {currentReview.stiTestId}
+                  </Typography>
+                </>
+              )}
+
+              {/* Quyền chỉnh sửa */}
+              {typeof currentReview?.canEdit !== 'undefined' && (
+                <>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mt: 2 }}
+                  >
+                    Quyền chỉnh sửa
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={currentReview.canEdit ? 'Có thể chỉnh sửa' : 'Không thể chỉnh sửa'}
+                    color={currentReview.canEdit ? 'success' : 'default'}
+                    variant="outlined"
+                  />
+                </>
+              )}
             </Grid>
+
+            {/* Nội dung đánh giá */}
             <Grid item xs={12}>
               <Divider sx={{ my: 2 }} />
               <Typography variant="subtitle2" color="text.secondary">
@@ -960,11 +1014,13 @@ const ReviewManagementContent = () => {
                 }}
               >
                 <Typography variant="body1">
-                  {currentReview?.comment}
+                  {currentReview?.comment || 'Không có nội dung đánh giá'}
                 </Typography>
               </Box>
             </Grid>
-            {currentReview?.response && (
+
+            {/* Phản hồi từ nhân viên */}
+            {currentReview?.staffReply && (
               <Grid item xs={12}>
                 <Typography variant="subtitle2" color="text.secondary">
                   Phản hồi từ nhân viên y tế
@@ -978,16 +1034,45 @@ const ReviewManagementContent = () => {
                     border: `1px solid ${alpha(theme.palette.primary.light, 0.2)}`,
                   }}
                 >
-                  <Typography variant="body1">
-                    {currentReview?.response}
+                  <Typography variant="body1" sx={{ mb: 1 }}>
+                    {currentReview.staffReply}
                   </Typography>
+                  
+                  {/* Thông tin người phản hồi */}
+                  <Box sx={{ mt: 2, pt: 1, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+                    {currentReview?.repliedByName && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        <strong>Người phản hồi:</strong> {currentReview.repliedByName}
+                        {currentReview?.repliedById && ` (ID: ${currentReview.repliedById})`}
+                      </Typography>
+                    )}
+                    
+                    {currentReview?.repliedAt && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        <strong>Thời gian phản hồi:</strong> {
+                          Array.isArray(currentReview.repliedAt) 
+                            ? new Date(currentReview.repliedAt[0], currentReview.repliedAt[1] - 1, currentReview.repliedAt[2], currentReview.repliedAt[3] || 0, currentReview.repliedAt[4] || 0, currentReview.repliedAt[5] || 0).toLocaleString('vi-VN')
+                            : new Date(currentReview.repliedAt).toLocaleString('vi-VN')
+                        }
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
+              </Grid>
+            )}
+
+            {/* Thông tin bổ sung */}
+            {currentReview?.maskedUserName && currentReview.maskedUserName !== currentReview.userFullName && (
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary">
+                  <strong>Tên hiển thị công khai:</strong> {currentReview.maskedUserName}
+                </Typography>
               </Grid>
             )}
           </Grid>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          {!currentReview?.response && (
+          {!currentReview?.staffReply ? (
             <Button
               onClick={() => {
                 handleCloseViewDialog();
@@ -1006,6 +1091,26 @@ const ReviewManagementContent = () => {
               }}
             >
               Phản hồi
+            </Button>
+          ) : (
+            <Button
+              onClick={() => {
+                handleCloseViewDialog();
+                handleOpenReplyDialog(currentReview);
+              }}
+              variant="contained"
+              startIcon={<EditIcon />}
+              sx={{
+                background: 'linear-gradient(45deg, #FF9800, #F57C00)',
+                borderRadius: '20px',
+                px: 3,
+                boxShadow: '0 2px 8px rgba(255, 152, 0, 0.25)',
+                '&:hover': {
+                  boxShadow: '0 4px 12px rgba(255, 152, 0, 0.35)',
+                },
+              }}
+            >
+              Sửa phản hồi
             </Button>
           )}{' '}
           <Button
@@ -1036,12 +1141,12 @@ const ReviewManagementContent = () => {
             color: theme.palette.error.contrastText,
           }}
         >
-          Xác nhận xóa
+          Xác nhận xóa phản hồi
         </DialogTitle>
         <DialogContent sx={{ pt: 3, pb: 2 }}>
           <Typography>
-            Bạn có chắc chắn muốn xóa đánh giá từ khách hàng{' '}
-            <strong>{currentReview?.customerName}</strong> không?
+            Bạn có chắc chắn muốn xóa phản hồi cho đánh giá từ khách hàng{' '}
+            <strong>{currentReview?.userFullName || 'Khách hàng'}</strong> không?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             Hành động này không thể hoàn tác.
@@ -1065,7 +1170,7 @@ const ReviewManagementContent = () => {
             }
             sx={{ borderRadius: '20px' }}
           >
-            Xóa
+            Xóa phản hồi
           </Button>
         </DialogActions>
       </Dialog>

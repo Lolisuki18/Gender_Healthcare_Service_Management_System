@@ -541,49 +541,127 @@ const reviewService = {
   },
 
   /**
-   * [NHÂN VIÊN] Trả lời đánh giá
-   * @param {number} ratingId - ID của đánh giá
-   * @param {Object} replyData - Dữ liệu trả lời {reply}
+   * [NHÂN VIÊN] Lấy tất cả đánh giá STI Service
+   * @param {number} page - Trang hiện tại
+   * @param {number} size - Số lượng mục trên mỗi trang
+   * @param {string} sort - Sắp xếp
+   * @param {number} filterRating - Lọc theo đánh giá
+   * @param {string} keyword - Từ khóa tìm kiếm
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  replyToRating: async (ratingId, replyData) => {
+  getSTIServiceReviewsForStaff: async (page = 0, size = 20, sort = "newest", filterRating = null, keyword = null) => {
     try {
-      const response = await apiClient.post(`/ratings/staff/reply/${ratingId}`, {
-        reply: replyData.reply
-      });
+      let url = `/ratings/staff/sti-service?page=${page}&size=${size}&sort=${sort}`;
+      if (filterRating) url += `&filterRating=${filterRating}`;
+      if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+      
+      const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể trả lời đánh giá");
+        throw new Error(response.data.message || "Không thể lấy đánh giá dịch vụ STI");
       }
       return response.data.data;
     } catch (error) {
-      console.error(`Lỗi trả lời đánh giá ${ratingId}:`, error);
+      console.error("Lỗi lấy đánh giá dịch vụ STI:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
 
   /**
-   * [NHÂN VIÊN] Cập nhật phản hồi
+   * [NHÂN VIÊN] Lấy tất cả đánh giá STI Package
+   * @param {number} page - Trang hiện tại
+   * @param {number} size - Số lượng mục trên mỗi trang
+   * @param {string} sort - Sắp xếp
+   * @param {number} filterRating - Lọc theo đánh giá
+   * @param {string} keyword - Từ khóa tìm kiếm
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  getSTIPackageReviewsForStaff: async (page = 0, size = 20, sort = "newest", filterRating = null, keyword = null) => {
+    try {
+      let url = `/ratings/staff/sti-package?page=${page}&size=${size}&sort=${sort}`;
+      if (filterRating) url += `&filterRating=${filterRating}`;
+      if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+      
+      const response = await apiClient.get(url);
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Không thể lấy đánh giá gói STI");
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error("Lỗi lấy đánh giá gói STI:", error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  /**
+   * [NHÂN VIÊN] Tạo phản hồi mới cho đánh giá
    * @param {number} ratingId - ID của đánh giá
-   * @param {Object} replyData - Dữ liệu phản hồi {reply}
+   * @param {Object} replyData - Dữ liệu phản hồi {staffReply}
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  createReply: async (ratingId, replyData) => {
+    try {
+      const response = await apiClient.post(`/ratings/staff/reply/${ratingId}`, replyData);
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Không thể tạo phản hồi");
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Lỗi tạo phản hồi đánh giá:", error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  /**
+   * [NHÂN VIÊN] Cập nhật phản hồi đánh giá hiện có
+   * @param {number} ratingId - ID của đánh giá
+   * @param {Object} replyData - Dữ liệu phản hồi cập nhật {staffReply}
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  updateReply: async (ratingId, replyData) => {
+    try {
+      const response = await apiClient.put(`/ratings/staff/reply/${ratingId}`, replyData);
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Không thể cập nhật phản hồi");
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Lỗi cập nhật phản hồi đánh giá:", error);
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
+  /**
+   * [NHÂN VIÊN] Trả lời đánh giá (phương thức tổng quát - tự động phát hiện tạo mới hoặc cập nhật)
+   * @param {number} ratingId - ID của đánh giá
+   * @param {Object} replyData - Dữ liệu phản hồi {staffReply}
+   * @param {boolean} isUpdate - True nếu là cập nhật, false nếu là tạo mới
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  replyToRating: async (ratingId, replyData, isUpdate = false) => {
+    try {
+      if (isUpdate) {
+        return await reviewService.updateReply(ratingId, replyData);
+      } else {
+        return await reviewService.createReply(ratingId, replyData);
+      }
+    } catch (error) {
+      console.error("Lỗi phản hồi đánh giá:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * [NHÂN VIÊN] Cập nhật phản hồi đánh giá (alias cho tương thích ngược)
+   * @param {number} ratingId - ID của đánh giá
+   * @param {Object} replyData - Dữ liệu phản hồi cập nhật {staffReply}
    * @returns {Promise} Promise chứa kết quả từ API
    */
   updateStaffReply: async (ratingId, replyData) => {
-    try {
-      const response = await apiClient.put(`/ratings/staff/reply/${ratingId}`, {
-        reply: replyData.reply
-      });
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể cập nhật phản hồi nhân viên");
-      }
-      return response.data.data;
-    } catch (error) {
-      console.error(`Lỗi cập nhật phản hồi nhân viên ${ratingId}:`, error);
-      throw new Error(error.response?.data?.message || error.message);
-    }
+    return await reviewService.updateReply(ratingId, replyData);
   },
 
   /**
-   * [NHÂN VIÊN] Xóa phản hồi
+   * [NHÂN VIÊN] Xóa phản hồi đánh giá
    * @param {number} ratingId - ID của đánh giá
    * @returns {Promise} Promise chứa kết quả từ API
    */
@@ -591,11 +669,11 @@ const reviewService = {
     try {
       const response = await apiClient.delete(`/ratings/staff/reply/${ratingId}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể xóa phản hồi nhân viên");
+        throw new Error(response.data.message || "Không thể xóa phản hồi");
       }
-      return response.data.data;
+      return response.data;
     } catch (error) {
-      console.error(`Lỗi xóa phản hồi nhân viên ${ratingId}:`, error);
+      console.error("Lỗi xóa phản hồi đánh giá:", error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
