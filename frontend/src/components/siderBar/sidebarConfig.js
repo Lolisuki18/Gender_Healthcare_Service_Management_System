@@ -222,12 +222,12 @@ export const sidebarMenuConfig = [
   //     roles: ['CUSTOMER'],
   //   },
   //Dùng chung
-  // {
-  //   id: 'myBlogs',
-  //   label: 'Blog của tôi ',
-  //   icon: <BlogIcon />,
-  //   roles: ['STAFF', 'CONSULTANT', 'CUSTOMER'],
-  // },
+  {
+    id: 'myBlogs',
+    label: 'Đánh giá của tôi',
+    icon: <RateReviewIcon />,
+    roles: ['STAFF', 'CONSULTANT', 'CUSTOMER'],
+  },
   {
     id: 'blog-customer',
     label: 'Blog của tôi',

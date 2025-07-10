@@ -119,6 +119,8 @@ const CustomerProfile = () => {
         return <SecurityContent />; // Bảo mật
       case 'payment-methods':
         return <PaymentMethodsSection />;
+      case 'myBlogs':
+        return <ReviewsContent />;
       case 'blog-customer':
         return <BlogCustomerContent />;
       default:
@@ -199,7 +201,7 @@ const CustomerProfile = () => {
               {selectedMenuItem === 'questions' && 'Câu hỏi đã đặt'}
               {selectedMenuItem === 'reviews' && 'Đánh giá dịch vụ'}
               {selectedMenuItem === 'security' && 'Bảo mật'}
-              {selectedMenuItem === 'myBlogs' && 'Blog của tôi'}
+              {selectedMenuItem === 'myBlogs' && 'Đánh giá của tôi'}
             </Typography>
           </Box>{' '}
           <Chip

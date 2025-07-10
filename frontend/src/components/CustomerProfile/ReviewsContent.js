@@ -12,7 +12,7 @@
  * - Medical theme với màu sắc phù hợp
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Box,
   Tabs,
@@ -36,6 +36,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Menu,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Tooltip,
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
@@ -48,6 +53,9 @@ import {
   FilterList as FilterListIcon,
   Science as ScienceIcon,
   Psychology as PsychologyIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 
 // Import services
@@ -85,6 +93,27 @@ function a11yProps(index) {
   };
 }
 
+// Utility function to convert API date array to Date object
+const convertApiDateToDate = (apiDate) => {
+  if (!apiDate) return new Date();
+  
+  // If it's already a string or Date object, use it directly
+  if (typeof apiDate === 'string' || apiDate instanceof Date) {
+    return new Date(apiDate);
+  }
+  
+  // If it's an array format like [2025, 7, 10, 23, 3, 5, 586396200]
+  if (Array.isArray(apiDate) && apiDate.length >= 6) {
+    const [year, month, day, hour, minute, second, nanosecond] = apiDate;
+    // Note: JavaScript months are 0-indexed, so subtract 1 from month
+    const millisecond = nanosecond ? Math.floor(nanosecond / 1000000) : 0;
+    return new Date(year, month - 1, day, hour, minute, second, millisecond);
+  }
+  
+  // Fallback to current date
+  return new Date();
+};
+
 const ReviewsContent = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -93,10 +122,17 @@ const ReviewsContent = () => {
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const [reviews, setReviews] = useState([]);
+  const [myRatings, setMyRatings] = useState([]); // Đánh giá đã hoàn thành từ API
   const [stiTests, setStiTests] = useState([]);
   const [consultations, setConsultations] = useState([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(true);
   const [serviceFilter, setServiceFilter] = useState('all'); // 'all', 'sti', 'consultation'
+  
+  // States for edit/delete functionality
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [actionMenuAnchor, setActionMenuAnchor] = useState(null);
+  const [selectedCompletedReview, setSelectedCompletedReview] = useState(null);
 
   // Load reviews and services on component mount
   useEffect(() => {
@@ -108,6 +144,7 @@ const ReviewsContent = () => {
       setIsLoadingReviews(true);
       await Promise.all([
         loadReviews(),
+        loadMyRatings(),
         loadSTITests(),
         loadConsultations(),
       ]);
@@ -127,50 +164,83 @@ const ReviewsContent = () => {
     }
   };
 
+  const loadMyRatings = async () => {
+    try {
+      console.log('🔄 Đang tải danh sách đánh giá từ API...');
+      const data = await reviewService.getMyReviews(0, 100); // Load more items to get all ratings
+      console.log('⭐ My Ratings API response:', data);
+      const ratings = data?.content || data?.data || data || [];
+      console.log('✅ Processed ratings:', ratings);
+      setMyRatings(ratings);
+    } catch (error) {
+      console.error('❌ Lỗi khi tải ratings:', error);
+      setMyRatings([]);
+    }
+  };
+
   const loadSTITests = async () => {
     try {
+      console.log('🔄 Đang tải danh sách STI tests từ API...');
       const data = await stiService.getMySTITests();
+      console.log('📊 STI Tests API response:', data);
       
       // Lọc chỉ những test đã hoàn thành với nhiều trạng thái khác nhau
       const completedStatuses = ['COMPLETED', 'RESULTED', 'FINISHED', 'DONE', 'SUCCESS', 'ANALYZED'];
       const allTests = data?.data || data || [];
+      console.log('🧪 All STI tests:', allTests);
       
       const completedTests = allTests.filter(test => {
         const hasValidId = test.id || test.serviceId;
         const hasValidStatus = test.status && completedStatuses.includes(test.status.toUpperCase());
         
+        console.log(`🔍 STI Test ${test.id || 'Unknown'}: hasValidId=${hasValidId}, status=${test.status}, hasValidStatus=${hasValidStatus}`);
+        
         return hasValidId && hasValidStatus;
       });
       
+      console.log('✅ Completed STI tests:', completedTests);
       setStiTests(completedTests);
     } catch (error) {
+      console.error('❌ Lỗi khi tải STI tests:', error);
       setStiTests([]);
     }
   };
 
   const loadConsultations = async () => {
     try {
+      console.log('🔄 Đang tải danh sách consultations từ API...');
       const data = await consultantService.getMyConsultations();
+      console.log('💬 Consultations API response:', data);
       
       // Lọc chỉ những consultation đã hoàn thành với nhiều trạng thái khác nhau
       const completedStatuses = ['COMPLETED', 'RESULTED', 'FINISHED', 'DONE', 'SUCCESS', 'CLOSED'];
       const allConsultations = data?.data || data || [];
+      console.log('💼 All consultations:', allConsultations);
       
       const completedConsultations = allConsultations.filter(consultation => {
         const hasValidId = consultation.id || consultation.consultantId;
         const hasValidStatus = consultation.status && completedStatuses.includes(consultation.status.toUpperCase());
         
+        console.log(`🔍 Consultation ${consultation.id || 'Unknown'}: hasValidId=${hasValidId}, status=${consultation.status}, hasValidStatus=${hasValidStatus}`);
+        
         return hasValidId && hasValidStatus;
       });
       
+      console.log('✅ Completed consultations:', completedConsultations);
       setConsultations(completedConsultations);
     } catch (error) {
+      console.error('❌ Lỗi khi tải consultations:', error);
       setConsultations([]);
     }
   };
 
   // Tạo danh sách tất cả các dịch vụ có thể đánh giá
-  const createReviewableServices = () => {
+  const createReviewableServices = useCallback(() => {
+    console.log('🔄 Creating reviewable services list...');
+    console.log('📊 Current stiTests:', stiTests);
+    console.log('📊 Current consultations:', consultations);
+    console.log('📊 Current reviews:', reviews);
+    
     const reviewableServices = [];
     
     // Thêm STI Tests đã hoàn thành và chưa được đánh giá
@@ -267,10 +337,16 @@ const ReviewsContent = () => {
       }
     });
 
+    console.log('✅ Created reviewable services:', reviewableServices);
     return reviewableServices;
-  };
+  }, [stiTests, consultations, reviews]);
 
-  const allReviewableServices = createReviewableServices();
+  const allReviewableServices = useMemo(() => {
+    return createReviewableServices();
+  }, [createReviewableServices]);
+  
+  console.log('📈 All reviewable services created:', allReviewableServices);
+  console.log('📊 Service filter:', serviceFilter);
 
   
   // Apply service filter with memoized services
@@ -281,9 +357,22 @@ const ReviewsContent = () => {
     return true;
   });
 
-  const completedReviews = filteredServices.filter(service => service.status === 'completed');
+  // Sử dụng myRatings từ API cho completed reviews
+  const filteredMyRatings = myRatings.filter(rating => {
+    if (serviceFilter === 'all') return true;
+    if (serviceFilter === 'sti') return rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI';
+    if (serviceFilter === 'consultation') return rating.targetType === 'CONSULTANT' || rating.serviceType === 'CONSULTATION';
+    return true;
+  });
+
+  const completedReviews = filteredMyRatings; // Sử dụng API data
   const pendingReviews = filteredServices.filter(service => service.status === 'pending');
-  const allReviews = filteredServices;
+  const allReviews = [...completedReviews, ...pendingReviews];
+  
+  console.log('📊 Final data summary:');
+  console.log('  - Completed reviews:', completedReviews.length);
+  console.log('  - Pending reviews:', pendingReviews.length);
+  console.log('  - All reviews:', allReviews.length);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -344,9 +433,111 @@ const ReviewsContent = () => {
     setSelectedReview(null);
     setRating(0);
     setFeedback('');
+    setIsEditMode(false);
+    setEditingReviewId(null);
+  };
+
+  // Handle edit review action
+  const handleEditReview = async (review) => {
+    console.log('✏️ Starting edit review:', review);
+    
+    try {
+      setSelectedReview(review);
+      setRating(review.rating || 0);
+      setFeedback(review.comment || '');
+      setIsEditMode(true);
+      setEditingReviewId(review.id || review.ratingId);
+      setReviewDialogOpen(true);
+      setActionMenuAnchor(null);
+    } catch (error) {
+      notify.error('Lỗi', 'Không thể mở form chỉnh sửa đánh giá');
+    }
+  };
+
+  // Handle delete review action
+  const handleDeleteReview = async (review) => {
+    console.log('🗑️ Starting delete review:', review);
+    
+    try {
+      // Sử dụng confirm dialog từ utils
+      const { confirmDialog } = await import('../../utils/confirmDialog');
+      const confirmed = await confirmDialog.danger(
+        `Bạn có chắc chắn muốn xóa đánh giá này không?\n\nDịch vụ: ${review.serviceName || review.targetName || 'N/A'}\nĐánh giá: ${review.rating} sao\nBình luận: "${(review.comment || '').substring(0, 50)}${review.comment?.length > 50 ? '...' : ''}"\n\nHành động này không thể hoàn tác!`,
+        {
+          title: 'Xác nhận xóa đánh giá',
+          confirmText: 'Xóa đánh giá',
+          cancelText: 'Hủy bỏ'
+        }
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      setLoading(true);
+      const reviewId = review.id || review.ratingId;
+      
+      if (!reviewId) {
+        throw new Error('Không tìm thấy ID đánh giá. Vui lòng làm mới trang và thử lại.');
+      }
+
+      console.log('🗑️ Deleting review with ID:', reviewId);
+      await reviewService.deleteReview(reviewId);
+      
+      notify.success('Thành công', 'Đánh giá đã được xóa thành công!');
+      
+      // Reload data to update the list
+      await loadAllData();
+      setActionMenuAnchor(null);
+      
+    } catch (error) {
+      console.error('❌ Error deleting review:', error);
+      
+      let errorMessage = 'Có lỗi xảy ra khi xóa đánh giá. Vui lòng thử lại!';
+      let errorTitle = 'Không thể xóa đánh giá';
+      
+      if (error.message) {
+        if (error.message.includes('not found') || error.message.includes('không tìm thấy')) {
+          errorMessage = 'Đánh giá không tồn tại hoặc đã được xóa trước đó.';
+          errorTitle = 'Đánh giá không tồn tại';
+        } else if (error.message.includes('unauthorized') || error.message.includes('không có quyền')) {
+          errorMessage = 'Bạn không có quyền xóa đánh giá này.';
+          errorTitle = 'Không có quyền truy cập';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      notify.error(errorTitle, errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle action menu open/close
+  const handleActionMenuOpen = (event, review) => {
+    setActionMenuAnchor(event.currentTarget);
+    setSelectedCompletedReview(review);
+  };
+
+  const handleActionMenuClose = () => {
+    setActionMenuAnchor(null);
+    setSelectedCompletedReview(null);
   };
 
   const handleSubmitReview = async () => {
+    console.log('🚀 Starting review submission process...');
+    console.log('📋 Review data check:', {
+      rating,
+      feedbackLength: feedback.trim().length,
+      selectedReview,
+      isEligible: selectedReview?.isEligible
+    });
+    
     if (rating === 0) {
       notify.warning('Thông báo', 'Vui lòng chọn số sao đánh giá!');
       return;
@@ -363,24 +554,42 @@ const ReviewsContent = () => {
         rating: rating,
         comment: feedback.trim(),
       };
-
-      // Kiểm tra chi tiết điều kiện trước khi gửi
-      if (!selectedReview.isEligible) {
-        let reason = 'Bạn không đủ điều kiện để đánh giá dịch vụ này.';
-        
-        if (selectedReview.debugInfo) {
-          const debug = selectedReview.debugInfo;
-          if (!debug.isCompleted) {
-            reason = `Dịch vụ chưa hoàn thành (trạng thái hiện tại: "${debug.originalStatus}"). Chỉ có thể đánh giá sau khi dịch vụ đã hoàn thành.`;
-          } else if (debug.hasExistingReview) {
-            reason = 'Bạn đã đánh giá dịch vụ này rồi. Mỗi dịch vụ chỉ được đánh giá một lần.';
-          } else if (!debug.hasRequiredInfo) {
-            reason = 'Thiếu thông tin cần thiết để đánh giá dịch vụ này.';
-          }
-        }
-        
-        throw new Error(reason);
+      
+      // Thêm thông tin bổ sung cho reviewData dựa trên loại dịch vụ
+      if (selectedReview.type === 'STI_SERVICE' && selectedReview.testId) {
+        reviewData.stiTestId = selectedReview.testId;
+      } else if (selectedReview.type === 'CONSULTANT' && selectedReview.consultationId) {
+        reviewData.consultationId = selectedReview.consultationId;
       }
+
+      console.log('📋 Final review data:', reviewData);
+
+      // Kiểm tra xem đây là edit mode hay create mode
+      if (isEditMode && editingReviewId) {
+        console.log('✏️ Updating existing review with ID:', editingReviewId);
+        await reviewService.updateReview(editingReviewId, reviewData);
+        console.log('✅ Review updated successfully');
+        notify.success('Thành công', 'Đánh giá đã được cập nhật thành công!');
+      } else {
+        console.log('🆕 Creating new review');
+        
+        // Kiểm tra chi tiết điều kiện trước khi gửi (chỉ cho create mode)
+        if (!selectedReview.isEligible) {
+          let reason = 'Bạn không đủ điều kiện để đánh giá dịch vụ này.';
+          
+          if (selectedReview.debugInfo) {
+            const debug = selectedReview.debugInfo;
+            if (!debug.isCompleted) {
+              reason = `Dịch vụ chưa hoàn thành (trạng thái hiện tại: "${debug.originalStatus}"). Chỉ có thể đánh giá sau khi dịch vụ đã hoàn thành.`;
+            } else if (debug.hasExistingReview) {
+              reason = 'Bạn đã đánh giá dịch vụ này rồi. Mỗi dịch vụ chỉ được đánh giá một lần.';
+            } else if (!debug.hasRequiredInfo) {
+              reason = 'Thiếu thông tin cần thiết để đánh giá dịch vụ này.';
+            }
+          }
+          
+          throw new Error(reason);
+        }
 
       // Kiểm tra thêm điều kiện cụ thể cho từng loại đánh giá
       if (selectedReview.type === 'STI_SERVICE') {
@@ -403,7 +612,19 @@ const ReviewsContent = () => {
         // Kiểm tra điều kiện với backend trước khi gửi (nếu API hỗ trợ)
         try {
           const eligibilityCheck = await reviewService.checkSTIServiceEligibility(selectedReview.serviceId);
-          if (eligibilityCheck && !eligibilityCheck.eligible) {
+          console.log('🔍 STI Service Eligibility Check Response:', eligibilityCheck);
+          
+          // Kiểm tra response format từ backend
+          if (eligibilityCheck && eligibilityCheck.success) {
+            const eligibilityData = eligibilityCheck.data;
+            if (eligibilityData && !eligibilityData.canRate) {
+              throw new Error(`Backend từ chối: ${eligibilityData.reason || eligibilityCheck.message || 'Không đủ điều kiện đánh giá dịch vụ này'}`);
+            }
+            if (eligibilityData && eligibilityData.hasRated) {
+              throw new Error('Bạn đã đánh giá dịch vụ này rồi. Mỗi dịch vụ chỉ được đánh giá một lần.');
+            }
+          } else if (eligibilityCheck && !eligibilityCheck.eligible) {
+            // Fallback cho format cũ
             throw new Error(`Backend từ chối: ${eligibilityCheck.message || 'Không đủ điều kiện đánh giá dịch vụ này'}`);
           }
         } catch (eligibilityError) {
@@ -421,11 +642,13 @@ const ReviewsContent = () => {
         }
         
         // Đánh giá cho dịch vụ STI
-        const stiReviewData = {
-          ...reviewData,
-          stiTestId: selectedReview.testId // Thêm stiTestId theo yêu cầu backend
-        };
-        await reviewService.createSTIServiceReview(selectedReview.serviceId, stiReviewData);
+        console.log('📤 Sending STI Service Review:', {
+          serviceId: selectedReview.serviceId,
+          reviewData,
+          selectedReview
+        });
+        const result = await reviewService.createSTIServiceReview(selectedReview.serviceId, reviewData);
+        console.log('✅ STI Service Review Result:', result);
         
       } else if (selectedReview.type === 'STI_PACKAGE') {
         // Kiểm tra packageId
@@ -434,11 +657,13 @@ const ReviewsContent = () => {
         }
         
         // Đánh giá cho gói STI
-        const stiPackageReviewData = {
-          ...reviewData,
-          stiTestId: selectedReview.testId // Thêm stiTestId theo yêu cầu backend
-        };
-        await reviewService.createSTIPackageReview(selectedReview.packageId, stiPackageReviewData);
+        console.log('📤 Sending STI Package Review:', {
+          packageId: selectedReview.packageId,
+          reviewData,
+          selectedReview
+        });
+        const result = await reviewService.createSTIPackageReview(selectedReview.packageId, reviewData);
+        console.log('✅ STI Package Review Result:', result);
         
       } else if (selectedReview.type === 'CONSULTANT') {
         // Kiểm tra consultantId và consultationId
@@ -460,7 +685,19 @@ const ReviewsContent = () => {
         // Kiểm tra điều kiện với backend trước khi gửi (nếu API hỗ trợ)
         try {
           const eligibilityCheck = await reviewService.checkConsultantEligibility(selectedReview.consultantId);
-          if (eligibilityCheck && !eligibilityCheck.eligible) {
+          console.log('🔍 Consultant Eligibility Check Response:', eligibilityCheck);
+          
+          // Kiểm tra response format từ backend
+          if (eligibilityCheck && eligibilityCheck.success) {
+            const eligibilityData = eligibilityCheck.data;
+            if (eligibilityData && !eligibilityData.canRate) {
+              throw new Error(`Backend từ chối: ${eligibilityData.reason || eligibilityCheck.message || 'Không đủ điều kiện đánh giá tư vấn viên này'}`);
+            }
+            if (eligibilityData && eligibilityData.hasRated) {
+              throw new Error('Bạn đã đánh giá tư vấn viên này rồi. Mỗi tư vấn viên chỉ được đánh giá một lần cho mỗi buổi tư vấn.');
+            }
+          } else if (eligibilityCheck && !eligibilityCheck.eligible) {
+            // Fallback cho format cũ
             throw new Error(`Backend từ chối: ${eligibilityCheck.message || 'Không đủ điều kiện đánh giá tư vấn viên này'}`);
           }
         } catch (eligibilityError) {
@@ -478,17 +715,27 @@ const ReviewsContent = () => {
         }
         
         // Đánh giá cho tư vấn viên
-        const consultantReviewData = {
-          ...reviewData,
-          consultationId: selectedReview.consultationId // Thêm consultationId theo yêu cầu backend
-        };
-        await reviewService.createConsultantReview(selectedReview.consultantId, consultantReviewData);
+        console.log('📤 Sending Consultant Review:', {
+          consultantId: selectedReview.consultantId,
+          reviewData,
+          selectedReview
+        });
+        const result = await reviewService.createConsultantReview(selectedReview.consultantId, reviewData);
+        console.log('✅ Consultant Review Result:', result);
         
       } else {
         throw new Error(`Loại đánh giá không được hỗ trợ: ${selectedReview.type}`);
       }
+      } // Kết thúc else block for create mode
 
-      notify.success('Thành công', 'Đánh giá của bạn đã được gửi thành công!');
+      console.log('🎉 Review submission completed successfully');
+      
+      // Thông báo thành công khác nhau cho edit vs create
+      if (isEditMode) {
+        notify.success('Thành công', 'Đánh giá đã được cập nhật thành công!');
+      } else {
+        notify.success('Thành công', 'Đánh giá của bạn đã được gửi thành công! Cảm ơn bạn đã chia sẻ trải nghiệm.');
+      }
       
       // Reload data to update the list
       await loadAllData();
@@ -570,9 +817,9 @@ const ReviewsContent = () => {
     }
   };
 
-  const renderCompletedReview = (review) => (
+  const renderCompletedReview = (review, uniqueKey) => (
     <Card 
-      key={review.id} 
+      key={uniqueKey} 
       sx={{ 
         mb: 3,
         borderRadius: '16px',
@@ -582,49 +829,31 @@ const ReviewsContent = () => {
         backdropFilter: 'blur(10px)',
         transition: 'all 0.3s ease',
         position: 'relative',
+        minHeight: '200px',
+        maxHeight: '250px', // Giới hạn chiều cao tối đa
+        maxWidth: '100%', // Giới hạn chiều rộng tối đa
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         '&:hover': {
           transform: 'translateY(-2px)',
           boxShadow: '0 8px 30px rgba(74, 144, 226, 0.15)',
         }
       }}
     >
-      {/* Service type indicator */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 12,
-          right: 12,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.5,
-          background: review.type === 'STI_SERVICE' 
-            ? 'rgba(255, 152, 0, 0.1)' 
-            : 'rgba(76, 175, 80, 0.1)',
-          color: review.type === 'STI_SERVICE' ? '#FF9800' : '#4CAF50',
-          px: 1.5,
-          py: 0.5,
-          borderRadius: '12px',
-          border: `1px solid ${review.type === 'STI_SERVICE' ? 'rgba(255, 152, 0, 0.2)' : 'rgba(76, 175, 80, 0.2)'}`,
-          fontSize: '12px',
-          fontWeight: 600,
-        }}
-      >
-        {review.type === 'STI_SERVICE' ? (
-          <>
-            <ScienceIcon sx={{ fontSize: '14px' }} />
-            STI
-          </>
-        ) : (
-          <>
-            <PsychologyIcon sx={{ fontSize: '14px' }} />
-            Tư vấn
-          </>
-        )}
-      </Box>
-
-      <CardContent sx={{ p: 3 }}>
-        <Grid container spacing={3} alignItems="flex-start">
-          <Grid size={{ xs: 12, md: 8 }}>
+      <CardContent sx={{ 
+        p: { xs: 2, md: 3 }, 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column',
+        pr: { xs: 2, md: 2 }, // Giảm padding right để các element sát lề hơn
+      }}>
+        <Grid container spacing={{ xs: 2, md: 3 }} sx={{ 
+          height: '100%',
+          mr: 0, // Loại bỏ margin right
+          width: '100%',
+        }}>
+          <Grid xs={12} md={8} sx={{ display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <Avatar 
                 sx={{ 
@@ -637,20 +866,57 @@ const ReviewsContent = () => {
                   boxShadow: '0 4px 12px rgba(74, 144, 226, 0.3)',
                 }}
               >
-                {review.consultantName.split(' ').pop()[0]}
+                {(review.consultantName || review.providerName || 'N/A').split(' ').pop()[0]}
               </Avatar>
               <Box>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    fontWeight: 600, 
-                    color: '#2D3748', 
-                    mb: 0.5,
-                    fontSize: '18px'
-                  }}
-                >
-                  {review.serviceName}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      fontWeight: 600, 
+                      color: '#2D3748', 
+                      fontSize: '18px'
+                    }}
+                  >
+                    {review.serviceName || review.targetName || 'Dịch vụ'}
+                  </Typography>
+                  {(review.targetType === 'STI_SERVICE' || review.serviceType === 'STI') && (
+                    <Chip
+                      icon={<ScienceIcon sx={{ fontSize: '12px !important' }} />}
+                      label="STI"
+                      size="small"
+                      sx={{
+                        background: 'rgba(255, 152, 0, 0.1)',
+                        color: '#FF9800',
+                        border: '1px solid rgba(255, 152, 0, 0.3)',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        height: '20px',
+                        '& .MuiChip-icon': {
+                          color: '#FF9800'
+                        }
+                      }}
+                    />
+                  )}
+                  {(review.targetType === 'CONSULTANT' || review.serviceType === 'CONSULTATION') && (
+                    <Chip
+                      icon={<PsychologyIcon sx={{ fontSize: '12px !important' }} />}
+                      label="Tư vấn"
+                      size="small"
+                      sx={{
+                        background: 'rgba(76, 175, 80, 0.1)',
+                        color: '#4CAF50',
+                        border: '1px solid rgba(76, 175, 80, 0.3)',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        height: '20px',
+                        '& .MuiChip-icon': {
+                          color: '#4CAF50'
+                        }
+                      }}
+                    />
+                  )}
+                </Box>
                 <Typography 
                   variant="body2" 
                   sx={{ 
@@ -659,14 +925,14 @@ const ReviewsContent = () => {
                     fontWeight: 500
                   }}
                 >
-                  {review.consultantName}
+                  {review.consultantName || review.providerName || 'Chuyên viên'}
                 </Typography>
               </Box>
             </Box>
             
-            <Box sx={{ mb: 2 }}>
+            <Box sx={{ mb: 2, flex: 1 }}>
               <Rating 
-                value={review.rating} 
+                value={review.rating || 0} 
                 readOnly 
                 sx={{ 
                   mb: 1.5,
@@ -690,45 +956,118 @@ const ReviewsContent = () => {
                   background: 'rgba(74, 144, 226, 0.05)',
                   p: 2,
                   borderRadius: '8px',
+                  minHeight: '80px', // Chiều cao cố định cho comment box
+                  height: '80px', // Chiều cao cố định
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  overflow: 'auto', // Cho phép scroll nếu nội dung dài
                 }}
               >
-                "{review.comment}"
+                "{review.comment || 'Không có bình luận'}"
               </Typography>
             </Box>
           </Grid>
           
-          <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', md: 'flex-end' } }}>
-              <Chip
-                icon={<CheckCircleIcon sx={{ fontSize: '16px !important' }} />}
-                label="Đã đánh giá"
-                sx={{
-                  mb: 2,
-                  background: 'linear-gradient(45deg, #4CAF50, #2ECC71)',
-                  color: '#fff',
-                  fontWeight: 600,
-                  fontSize: '12px',
-                  height: '32px',
-                  boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)',
-                  '& .MuiChip-icon': {
-                    color: '#fff'
-                  }
-                }}
-              />
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: '#4A5568',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  background: 'rgba(74, 144, 226, 0.1)',
-                  px: 2,
-                  py: 0.5,
-                  borderRadius: '12px',
-                }}
-              >
-                {new Date(review.date).toLocaleDateString('vi-VN')}
-              </Typography>
+          <Grid xs={12} md={4} sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'space-between',
+            alignItems: { xs: 'flex-start', md: 'flex-end' },
+            textAlign: { xs: 'left', md: 'right' },
+            minHeight: '120px', // Đảm bảo chiều cao tối thiểu cho cột action
+            pl: 0, // Loại bỏ padding left
+            pr: '0 !important',  // Loại bỏ hoàn toàn padding right để sát lề
+            marginRight: 0, // Loại bỏ margin right
+          }}>
+            {/* Status và Date Section */}
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: { xs: 'flex-start', md: 'flex-end' }, 
+              mb: 2,
+              width: '100%',
+              pr: { md: 0 } // Đảm bảo không có padding right trên desktop
+            }}>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1, 
+                mb: 1,
+                justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                width: '100%',
+                pr: 0 // Loại bỏ padding right
+              }}>
+                <Chip
+                  icon={<CheckCircleIcon sx={{ fontSize: '16px !important' }} />}
+                  label="Đã đánh giá"
+                  sx={{
+                    background: 'linear-gradient(45deg, #4CAF50, #2ECC71)',
+                    color: '#fff',
+                    fontWeight: 600,
+                    fontSize: '12px',
+                    height: '32px',
+                    boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)',
+                    marginRight: 0, // Loại bỏ margin right
+                    '& .MuiChip-icon': {
+                      color: '#fff'
+                    }
+                  }}
+                />
+              </Box>
+              {review.createdAt && (
+                <Box sx={{ 
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                  pr: 0 // Loại bỏ padding right
+                }}>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      color: '#6B7280',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      marginRight: 0 // Loại bỏ margin right
+                    }}
+                  >
+                    {convertApiDateToDate(review.createdAt).toLocaleDateString('vi-VN')}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            
+            {/* Action Button Section - Luôn ở cuối */}
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: { xs: 'flex-start', md: 'flex-end' },
+              alignItems: 'center',
+              mt: 'auto', // Đẩy xuống cuối
+              width: '100%',
+              pr: 0 // Loại bỏ padding right để sát lề
+            }}>
+              <Tooltip title="Thao tác" arrow placement="top">
+                <IconButton
+                  size="small"
+                  onClick={(e) => handleActionMenuOpen(e, review)}
+                  sx={{
+                    color: '#4A90E2',
+                    background: 'rgba(74, 144, 226, 0.1)',
+                    border: '1px solid rgba(74, 144, 226, 0.2)',
+                    borderRadius: '8px',
+                    width: 36,
+                    height: 36,
+                    marginRight: 0, // Loại bỏ margin right để sát lề
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      background: 'rgba(74, 144, 226, 0.2)',
+                      border: '1px solid rgba(74, 144, 226, 0.3)',
+                      transform: 'scale(1.05)',
+                    }
+                  }}
+                >
+                  <MoreVertIcon sx={{ fontSize: '18px' }} />
+                </IconButton>
+              </Tooltip>
             </Box>
           </Grid>
         </Grid>
@@ -736,9 +1075,9 @@ const ReviewsContent = () => {
     </Card>
   );
 
-  const renderPendingReview = (review) => (
+  const renderPendingReview = (review, uniqueKey) => (
     <Card 
-      key={review.id} 
+      key={uniqueKey} 
       sx={{ 
         mb: 3,
         borderRadius: '16px',
@@ -748,49 +1087,21 @@ const ReviewsContent = () => {
         backdropFilter: 'blur(10px)',
         transition: 'all 0.3s ease',
         position: 'relative',
+        minHeight: '200px',
+        maxHeight: '250px', // Giới hạn chiều cao tối đa
+        maxWidth: '100%', // Giới hạn chiều rộng tối đa
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         '&:hover': {
           transform: 'translateY(-2px)',
           boxShadow: '0 8px 30px rgba(255, 152, 0, 0.15)',
         }
       }}
     >
-      {/* Service type indicator */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 12,
-          right: 12,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.5,
-          background: review.type === 'STI_SERVICE' 
-            ? 'rgba(255, 152, 0, 0.1)' 
-            : 'rgba(76, 175, 80, 0.1)',
-          color: review.type === 'STI_SERVICE' ? '#FF9800' : '#4CAF50',
-          px: 1.5,
-          py: 0.5,
-          borderRadius: '12px',
-          border: `1px solid ${review.type === 'STI_SERVICE' ? 'rgba(255, 152, 0, 0.2)' : 'rgba(76, 175, 80, 0.2)'}`,
-          fontSize: '12px',
-          fontWeight: 600,
-        }}
-      >
-        {review.type === 'STI_SERVICE' ? (
-          <>
-            <ScienceIcon sx={{ fontSize: '14px' }} />
-            STI
-          </>
-        ) : (
-          <>
-            <PsychologyIcon sx={{ fontSize: '14px' }} />
-            Tư vấn
-          </>
-        )}
-      </Box>
-
-      <CardContent sx={{ p: 3 }}>
-        <Grid container spacing={3} alignItems="flex-start">
-          <Grid size={{ xs: 12, md: 8 }}>
+      <CardContent sx={{ p: { xs: 2, md: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Grid container spacing={{ xs: 2, md: 3 }} sx={{ height: '100%' }}>
+          <Grid xs={12} md={8} sx={{ display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <Avatar 
                 sx={{ 
@@ -803,20 +1114,57 @@ const ReviewsContent = () => {
                   boxShadow: '0 4px 12px rgba(255, 152, 0, 0.3)',
                 }}
               >
-                {review.consultantName.split(' ').pop()[0]}
+                {(review.consultantName || 'N/A').split(' ').pop()[0]}
               </Avatar>
               <Box>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    fontWeight: 600, 
-                    color: '#2D3748', 
-                    mb: 0.5,
-                    fontSize: '18px'
-                  }}
-                >
-                  {review.serviceName}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      fontWeight: 600, 
+                      color: '#2D3748', 
+                      fontSize: '18px'
+                    }}
+                  >
+                    {review.serviceName}
+                  </Typography>
+                  {review.type === 'STI_SERVICE' && (
+                    <Chip
+                      icon={<ScienceIcon sx={{ fontSize: '12px !important' }} />}
+                      label="STI"
+                      size="small"
+                      sx={{
+                        background: 'rgba(255, 152, 0, 0.1)',
+                        color: '#FF9800',
+                        border: '1px solid rgba(255, 152, 0, 0.3)',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        height: '20px',
+                        '& .MuiChip-icon': {
+                          color: '#FF9800'
+                        }
+                      }}
+                    />
+                  )}
+                  {review.type === 'CONSULTANT' && (
+                    <Chip
+                      icon={<PsychologyIcon sx={{ fontSize: '12px !important' }} />}
+                      label="Tư vấn"
+                      size="small"
+                      sx={{
+                        background: 'rgba(76, 175, 80, 0.1)',
+                        color: '#4CAF50',
+                        border: '1px solid rgba(76, 175, 80, 0.3)',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        height: '20px',
+                        '& .MuiChip-icon': {
+                          color: '#4CAF50'
+                        }
+                      }}
+                    />
+                  )}
+                </Box>
                 <Typography 
                   variant="body2" 
                   sx={{ 
@@ -867,7 +1215,11 @@ const ReviewsContent = () => {
                 border: review.isEligible 
                   ? '1px solid rgba(255, 152, 0, 0.2)'
                   : '1px solid rgba(158, 158, 158, 0.2)',
-                mb: 2
+                mb: 2,
+                flex: 1, // Chiếm phần còn lại của không gian
+                minHeight: '60px', // Đảm bảo chiều cao tối thiểu
+                display: 'flex',
+                alignItems: 'center'
               }}
             >
               <Typography 
@@ -880,7 +1232,8 @@ const ReviewsContent = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 1
+                  gap: 1,
+                  width: '100%'
                 }}
               >
                 <StarBorderIcon sx={{ fontSize: '20px' }} />
@@ -892,39 +1245,56 @@ const ReviewsContent = () => {
             </Box>
           </Grid>
           
-          <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', md: 'flex-end' }, gap: 2 }}>
-              <Chip
-                icon={<ScheduleIcon sx={{ fontSize: '16px !important' }} />}
-                label="Chưa đánh giá"
-                sx={{
-                  background: 'linear-gradient(45deg, #FF9800, #FFB74D)',
-                  color: '#fff',
-                  fontWeight: 600,
-                  fontSize: '12px',
-                  height: '32px',
-                  boxShadow: '0 4px 12px rgba(255, 152, 0, 0.3)',
-                  '& .MuiChip-icon': {
-                    color: '#fff'
-                  }
-                }}
-              />
-              
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: '#4A5568',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  background: 'rgba(255, 152, 0, 0.1)',
-                  px: 2,
-                  py: 0.5,
-                  borderRadius: '12px',
-                }}
-              >
-                {new Date(review.date).toLocaleDateString('vi-VN')}
-              </Typography>
-              
+          <Grid xs={12} md={4} sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'space-between',
+            alignItems: { xs: 'flex-start', md: 'flex-end' },
+            textAlign: { xs: 'left', md: 'right' },
+            minHeight: '120px', // Đảm bảo chiều cao tối thiểu cho cột action
+            pl: 0, // Loại bỏ padding left
+            pr: 0  // Loại bỏ padding right để sát lề
+          }}>
+            {/* Status Section */}
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: { xs: 'flex-start', md: 'flex-end' }, 
+              gap: 1.5,
+              mb: 2,
+              width: '100%'
+            }}>
+              <Box sx={{
+                display: 'flex',
+                justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                width: '100%'
+              }}>
+                <Chip
+                  icon={<ScheduleIcon sx={{ fontSize: '16px !important' }} />}
+                  label="Chưa đánh giá"
+                  sx={{
+                    background: 'linear-gradient(45deg, #FF9800, #FFB74D)',
+                    color: '#fff',
+                    fontWeight: 600,
+                    fontSize: '12px',
+                    height: '32px',
+                    boxShadow: '0 4px 12px rgba(255, 152, 0, 0.3)',
+                    '& .MuiChip-icon': {
+                      color: '#fff'
+                    }
+                  }}
+                />
+              </Box>
+            </Box>
+
+            {/* Action Button Section - Luôn ở cuối */}
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: { xs: 'flex-start', md: 'flex-end' },
+              alignItems: 'center',
+              mt: 'auto',
+              width: '100%'
+            }}>
               <Button
                 variant="contained"
                 size="medium"
@@ -941,6 +1311,8 @@ const ReviewsContent = () => {
                   fontSize: '14px',
                   py: 1.5,
                   px: 3,
+                  minWidth: '140px',
+                  height: '36px', // Đồng nhất với IconButton action menu
                   boxShadow: review.isEligible 
                     ? '0 4px 16px rgba(74, 144, 226, 0.3)'
                     : 'none',
@@ -957,7 +1329,7 @@ const ReviewsContent = () => {
                   }
                 }}
               >
-                {review.isEligible ? 'Đánh giá ngay' : 'Chưa đủ điều kiện'}
+                Đánh giá ngay
               </Button>
             </Box>
           </Grid>
@@ -967,7 +1339,12 @@ const ReviewsContent = () => {
   );
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ 
+      width: '100%', 
+      maxWidth: '1200px', // Giới hạn chiều rộng tối đa toàn bộ component
+      margin: '0 auto', // Căn giữa
+      px: { xs: 1, sm: 2, md: 3 } // Padding responsive
+    }}>
       {/* Filter Section */}
       <Box sx={{ mb: 3 }}>
         <Box sx={{ 
@@ -1038,7 +1415,7 @@ const ReviewsContent = () => {
           <Box sx={{ display: 'flex', gap: 2, ml: 'auto' }}>
             <Chip
               icon={<ScienceIcon sx={{ fontSize: '16px !important' }} />}
-              label={`STI: ${allReviewableServices.filter(s => s.type === 'STI_SERVICE').length}`}
+              label={`STI: ${[...filteredMyRatings.filter(r => r.targetType === 'STI_SERVICE' || r.serviceType === 'STI'), ...allReviewableServices.filter(s => s.type === 'STI_SERVICE')].length}`}
               size="small"
               sx={{
                 background: 'rgba(255, 152, 0, 0.1)',
@@ -1050,7 +1427,7 @@ const ReviewsContent = () => {
             />
             <Chip
               icon={<PsychologyIcon sx={{ fontSize: '16px !important' }} />}
-              label={`Tư vấn: ${allReviewableServices.filter(s => s.type === 'CONSULTANT').length}`}
+              label={`Tư vấn: ${[...filteredMyRatings.filter(r => r.targetType === 'CONSULTANT' || r.serviceType === 'CONSULTATION'), ...allReviewableServices.filter(s => s.type === 'CONSULTANT')].length}`}
               size="small"
               sx={{
                 background: 'rgba(76, 175, 80, 0.1)',
@@ -1156,11 +1533,14 @@ const ReviewsContent = () => {
       {/* Tab Panels */}
       <TabPanel value={activeTab} index={0}>
         {allReviews.length > 0 ? (
-          allReviews.map((review) =>
-            review.status === 'completed'
-              ? renderCompletedReview(review)
-              : renderPendingReview(review)
-          )
+          allReviews.map((review, index) => {
+            // Kiểm tra xem review có phải từ API myRatings không (có createdAt và rating)
+            const isCompletedReview = review.rating !== undefined && review.createdAt;
+            const uniqueKey = review.id || review.ratingId || `review_${index}_${review.type || 'unknown'}`;
+            return isCompletedReview 
+              ? renderCompletedReview(review, uniqueKey) 
+              : renderPendingReview(review, uniqueKey);
+          })
         ) : (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             {serviceFilter === 'sti' && <ScienceIcon sx={{ fontSize: 64, color: '#E0E0E0', mb: 2 }} />}
@@ -1182,7 +1562,10 @@ const ReviewsContent = () => {
 
       <TabPanel value={activeTab} index={1}>
         {completedReviews.length > 0 ? (
-          completedReviews.map(renderCompletedReview)
+          completedReviews.map((review, index) => {
+            const uniqueKey = review.id || review.ratingId || `completed_${index}_${Date.now()}`;
+            return renderCompletedReview(review, uniqueKey);
+          })
         ) : (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <CheckCircleIcon sx={{ fontSize: 64, color: '#E0E0E0', mb: 2 }} />
@@ -1200,7 +1583,10 @@ const ReviewsContent = () => {
 
       <TabPanel value={activeTab} index={2}>
         {pendingReviews.length > 0 ? (
-          pendingReviews.map(renderPendingReview)
+          pendingReviews.map((review, index) => {
+            const uniqueKey = review.id || `pending_${index}_${Date.now()}`;
+            return renderPendingReview(review, uniqueKey);
+          })
         ) : (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <ScheduleIcon sx={{ fontSize: 64, color: '#E0E0E0', mb: 2 }} />
@@ -1253,7 +1639,7 @@ const ReviewsContent = () => {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <RateReviewIcon sx={{ fontSize: '28px' }} />
-            Đánh giá dịch vụ
+            {isEditMode ? 'Chỉnh sửa đánh giá' : 'Đánh giá dịch vụ'}
           </Box>
           <IconButton
             onClick={handleCloseReviewDialog}
@@ -1293,17 +1679,17 @@ const ReviewsContent = () => {
                       fontWeight: 600,
                     }}
                   >
-                    {selectedReview.consultantName.split(' ').pop()[0]}
+                    {(selectedReview.consultantName || 'N/A').split(' ').pop()[0]}
                   </Avatar>
                   <Box>
                     <Typography variant="h6" sx={{ fontWeight: 600, color: '#2D3748', mb: 0.5 }}>
                       {selectedReview.serviceName}
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#4A5568', fontWeight: 500 }}>
-                      Bác sĩ: {selectedReview.consultantName}
+                      Bác sĩ: {selectedReview.consultantName || 'Chuyên viên'}
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#6B7280' }}>
-                      Ngày sử dụng: {new Date(selectedReview.date).toLocaleDateString('vi-VN')}
+                      Ngày sử dụng: {convertApiDateToDate(selectedReview.date).toLocaleDateString('vi-VN')}
                     </Typography>
                   </Box>
                 </Box>
@@ -1504,10 +1890,105 @@ const ReviewsContent = () => {
               }
             }}
           >
-            {loading ? 'Đang gửi...' : 'Gửi đánh giá'}
+            {loading ? (isEditMode ? 'Đang cập nhật...' : 'Đang gửi...') : (isEditMode ? 'Cập nhật đánh giá' : 'Gửi đánh giá')}
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Action Menu for completed reviews */}
+      <Menu
+        anchorEl={actionMenuAnchor}
+        open={Boolean(actionMenuAnchor)}
+        onClose={handleActionMenuClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        sx={{
+          '& .MuiPaper-root': {
+            borderRadius: '12px',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.12)',
+            border: '1px solid rgba(74, 144, 226, 0.1)',
+            minWidth: 160,
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+            mt: 1,
+          }
+        }}
+      >
+        <MenuItem 
+          onClick={() => {
+            if (selectedCompletedReview) {
+              handleEditReview(selectedCompletedReview);
+            }
+          }}
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1.5,
+            color: '#4A90E2',
+            px: 2,
+            py: 1.5,
+            fontSize: '14px',
+            fontWeight: 500,
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              background: 'rgba(74, 144, 226, 0.08)',
+              transform: 'translateX(4px)',
+            }
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 'auto', mr: 0 }}>
+            <EditIcon sx={{ fontSize: '18px', color: '#4A90E2' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Chỉnh sửa đánh giá" 
+            sx={{ 
+              '& .MuiTypography-root': { 
+                fontSize: '14px', 
+                fontWeight: 500 
+              } 
+            }} 
+          />
+        </MenuItem>
+        
+        <Divider sx={{ mx: 1, borderColor: 'rgba(74, 144, 226, 0.1)' }} />
+        
+        <MenuItem 
+          onClick={() => {
+            if (selectedCompletedReview) {
+              handleDeleteReview(selectedCompletedReview);
+            }
+          }}
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1.5,
+            color: '#f44336',
+            px: 2,
+            py: 1.5,
+            fontSize: '14px',
+            fontWeight: 500,
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              background: 'rgba(244, 67, 54, 0.08)',
+              transform: 'translateX(4px)',
+            }
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 'auto', mr: 0 }}>
+            <DeleteIcon sx={{ fontSize: '18px', color: '#f44336' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Xóa đánh giá" 
+            sx={{ 
+              '& .MuiTypography-root': { 
+                fontSize: '14px', 
+                fontWeight: 500 
+              } 
+            }} 
+          />
+        </MenuItem>
+      </Menu>
+
         </>
       )}
     </Box>
