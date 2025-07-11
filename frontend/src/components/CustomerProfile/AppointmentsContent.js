@@ -1,5 +1,5 @@
 /**
- * AppointmentsContent.js - Component quản lý lịch hẹn xét nghiệm
+ * AppointmentsContent.js - Component quản lý lịch hẹn phỏng vấn
  *
  * Chức năng chính:
  * - Hiển thị danh sách lịch hẹn xét nghiệm của người dùng
@@ -53,6 +53,12 @@ import {
   TableRow,
   Paper as MuiPaper,
   TablePagination,
+  Stack,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem as SelectMenuItem,
 } from '@mui/material';
 import {
   CalendarToday as CalendarIcon,
@@ -62,6 +68,9 @@ import {
   MoreVert as MoreVertIcon,
   Visibility as VisibilityIcon,
   Delete as DeleteIcon,
+  Clear as ClearIcon,
+  ReportProblemRounded as WarningIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import {
@@ -110,6 +119,12 @@ const AppointmentsContent = () => {
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [dateFilter, setDateFilter] = useState('ALL');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelError, setCancelError] = useState('');
 
   const fetchAppointments = async () => {
     try {
@@ -133,21 +148,20 @@ const AppointmentsContent = () => {
 
   const handleCancelAppointment = async () => {
     if (!selectedAppointment) return;
-
-    // Hiện dialog nhập lý do huỷ
-    const reason = await confirmDialog.cancelWithReason(
-      'Bạn có chắc chắn muốn huỷ lịch hẹn này?'
-    );
-    if (!reason) return; // Nếu huỷ dialog thì không làm gì
-
+    if (!cancelReason.trim()) {
+      setCancelError('Vui lòng nhập lý do hủy lịch hẹn!');
+      return;
+    }
+    setCancelError('');
     try {
       const response = await consultantService.updateConsultationStatus(
         selectedAppointment.consultationId,
-        { status: 'CANCELED', reason }
+        { status: 'CANCELED', reason: cancelReason }
       );
       if (response && response.success !== false) {
         toast.success('Hủy lịch hẹn thành công');
         setOpenCancelDialog(false);
+        setCancelReason('');
         fetchAppointments();
       } else {
         toast.error(response.message || 'Không thể hủy lịch hẹn');
@@ -208,6 +222,166 @@ const AppointmentsContent = () => {
     }
   };
 
+  // Helper function to convert array date to Date object
+  const convertArrayToDate = (dateArray) => {
+    if (!Array.isArray(dateArray) || dateArray.length < 5) return null;
+    return new Date(
+      dateArray[0],
+      dateArray[1] - 1,
+      dateArray[2],
+      dateArray[3],
+      dateArray[4]
+    );
+  };
+
+  // Helper function to check if date is within range
+  const isDateInRange = (appointmentDate, start, end) => {
+    if (!appointmentDate) return false;
+
+    const appointmentDateObj = convertArrayToDate(appointmentDate);
+    if (!appointmentDateObj) return false;
+
+    const startDateObj = start ? new Date(start) : null;
+    const endDateObj = end ? new Date(end) : null;
+
+    if (startDateObj && endDateObj) {
+      return (
+        appointmentDateObj >= startDateObj && appointmentDateObj <= endDateObj
+      );
+    } else if (startDateObj) {
+      return appointmentDateObj >= startDateObj;
+    } else if (endDateObj) {
+      return appointmentDateObj <= endDateObj;
+    }
+    return true;
+  };
+
+  // Filter appointments based on selected status and date range
+  const filteredAppointments = appointments.filter((appointment) => {
+    // Status filter
+    const statusMatch =
+      statusFilter === 'ALL' ||
+      appointment.status?.toUpperCase() === statusFilter;
+
+    // Date filter
+    let dateMatch = true;
+    if (dateFilter === 'CUSTOM' && (startDate || endDate)) {
+      dateMatch = isDateInRange(appointment.createdAt, startDate, endDate);
+    } else if (dateFilter === 'TODAY') {
+      const today = new Date();
+      const startOfDay = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      );
+      const endOfDay = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        23,
+        59,
+        59
+      );
+      dateMatch = isDateInRange(
+        appointment.createdAt,
+        startOfDay.toISOString().split('T')[0],
+        endOfDay.toISOString().split('T')[0]
+      );
+    } else if (dateFilter === 'THIS_WEEK') {
+      const today = new Date();
+      const startOfWeek = new Date(
+        today.setDate(today.getDate() - today.getDay())
+      );
+      const endOfWeek = new Date(
+        today.setDate(today.getDate() - today.getDay() + 6)
+      );
+      dateMatch = isDateInRange(
+        appointment.createdAt,
+        startOfWeek.toISOString().split('T')[0],
+        endOfWeek.toISOString().split('T')[0]
+      );
+    } else if (dateFilter === 'THIS_MONTH') {
+      const today = new Date();
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      dateMatch = isDateInRange(
+        appointment.createdAt,
+        startOfMonth.toISOString().split('T')[0],
+        endOfMonth.toISOString().split('T')[0]
+      );
+    }
+
+    return statusMatch && dateMatch;
+  });
+
+  // Get unique statuses for filter options
+  const getUniqueStatuses = () => {
+    const statuses = appointments
+      .map((app) => app.status?.toUpperCase())
+      .filter(Boolean);
+    return [...new Set(statuses)];
+  };
+
+  const statusOptions = [
+    { value: 'ALL', label: 'Tất cả', count: appointments.length },
+    {
+      value: 'PENDING',
+      label: 'Chờ xác nhận',
+      count: appointments.filter(
+        (app) => app.status?.toUpperCase() === 'PENDING'
+      ).length,
+    },
+    {
+      value: 'CONFIRMED',
+      label: 'Đã xác nhận',
+      count: appointments.filter(
+        (app) => app.status?.toUpperCase() === 'CONFIRMED'
+      ).length,
+    },
+    {
+      value: 'COMPLETED',
+      label: 'Đã hoàn thành',
+      count: appointments.filter(
+        (app) => app.status?.toUpperCase() === 'COMPLETED'
+      ).length,
+    },
+    {
+      value: 'CANCELED',
+      label: 'Đã huỷ',
+      count: appointments.filter(
+        (app) => app.status?.toUpperCase() === 'CANCELED'
+      ).length,
+    },
+  ];
+
+  const handleStatusFilterChange = (newStatus) => {
+    setStatusFilter(newStatus);
+    setPage(0); // Reset to first page when filter changes
+  };
+
+  const handleDateFilterChange = (newDateFilter) => {
+    setDateFilter(newDateFilter);
+    setPage(0); // Reset to first page when filter changes
+  };
+
+  const handleStartDateChange = (event) => {
+    setStartDate(event.target.value);
+    setPage(0);
+  };
+
+  const handleEndDateChange = (event) => {
+    setEndDate(event.target.value);
+    setPage(0);
+  };
+
+  const handleClearFilters = () => {
+    setStatusFilter('ALL');
+    setDateFilter('ALL');
+    setStartDate('');
+    setEndDate('');
+    setPage(0);
+  };
+
   // Xử lý thay đổi trang
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -249,6 +423,150 @@ const AppointmentsContent = () => {
         </Typography>
       </StyledPaper>
 
+      {/* Filters */}
+      {!loading && appointments.length > 0 && (
+        <StyledPaper sx={{ p: 3, mb: 3 }}>
+          {/* Status Filter */}
+          <Typography
+            variant="h6"
+            sx={{
+              mb: 2,
+              fontWeight: 600,
+              color: '#2D3748',
+              fontSize: '1.1rem',
+            }}
+          >
+            Lọc theo trạng thái
+          </Typography>
+          <Stack
+            direction="row"
+            spacing={1}
+            flexWrap="wrap"
+            useFlexGap
+            sx={{ gap: 1, mb: 3 }}
+          >
+            {statusOptions.map((option) => (
+              <Chip
+                key={option.value}
+                label={`${option.label} (${option.count})`}
+                onClick={() => handleStatusFilterChange(option.value)}
+                variant={statusFilter === option.value ? 'filled' : 'outlined'}
+                sx={{
+                  background:
+                    statusFilter === option.value
+                      ? getStatusColor(option.value)
+                      : 'transparent',
+                  color: statusFilter === option.value ? '#fff' : '#4A5568',
+                  border:
+                    statusFilter === option.value
+                      ? 'none'
+                      : '1px solid rgba(74, 144, 226, 0.3)',
+                  fontWeight: statusFilter === option.value ? 600 : 500,
+                  fontSize: '13px',
+                  height: 32,
+                  '&:hover': {
+                    background:
+                      statusFilter === option.value
+                        ? getStatusColor(option.value)
+                        : 'rgba(74, 144, 226, 0.1)',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 8px 0 rgba(74, 144, 226, 0.2)',
+                  },
+                  transition: 'all 0.2s ease',
+                }}
+              />
+            ))}
+          </Stack>
+
+          {/* Date Filter */}
+          <Typography
+            variant="h6"
+            sx={{
+              mb: 2,
+              fontWeight: 600,
+              color: '#2D3748',
+              fontSize: '1.1rem',
+            }}
+          >
+            Lọc theo ngày đăng ký
+          </Typography>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+            sx={{ gap: 2 }}
+          >
+            <FormControl sx={{ minWidth: 200 }}>
+              <InputLabel>Khoảng thời gian</InputLabel>
+              <Select
+                value={dateFilter}
+                label="Khoảng thời gian"
+                onChange={(e) => handleDateFilterChange(e.target.value)}
+                size="small"
+              >
+                <SelectMenuItem value="ALL">Tất cả</SelectMenuItem>
+                <SelectMenuItem value="TODAY">Hôm nay</SelectMenuItem>
+                <SelectMenuItem value="THIS_WEEK">Tuần này</SelectMenuItem>
+                <SelectMenuItem value="THIS_MONTH">Tháng này</SelectMenuItem>
+                <SelectMenuItem value="CUSTOM">Tùy chọn</SelectMenuItem>
+              </Select>
+            </FormControl>
+
+            {dateFilter === 'CUSTOM' && (
+              <>
+                <TextField
+                  label="Từ ngày"
+                  type="date"
+                  value={startDate}
+                  onChange={handleStartDateChange}
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ minWidth: 150 }}
+                />
+                <TextField
+                  label="Đến ngày"
+                  type="date"
+                  value={endDate}
+                  onChange={handleEndDateChange}
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ minWidth: 150 }}
+                />
+              </>
+            )}
+          </Stack>
+
+          {/* Clear Filters Button */}
+          {(statusFilter !== 'ALL' ||
+            dateFilter !== 'ALL' ||
+            startDate ||
+            endDate) && (
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+              <Button
+                variant="outlined"
+                startIcon={<ClearIcon />}
+                onClick={handleClearFilters}
+                sx={{
+                  color: '#e53935',
+                  borderColor: '#e53935',
+                  '&:hover': {
+                    backgroundColor: '#ffebee',
+                    borderColor: '#b71c1c',
+                    color: '#b71c1c',
+                  },
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                }}
+              >
+                Xóa bộ lọc
+              </Button>
+            </Box>
+          )}
+        </StyledPaper>
+      )}
+
       {/* Loading indicator - Hiển thị khi đang tải dữ liệu */}
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
@@ -257,12 +575,13 @@ const AppointmentsContent = () => {
       )}
 
       {/* Appointments Table */}
-      {!loading && appointments.length > 0 && (
+      {!loading && filteredAppointments.length > 0 && (
         <>
           <TableContainer component={MuiPaper} sx={{ borderRadius: 3, mb: 0 }}>
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>Ngày đăng ký</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>
                     Thời gian bắt đầu
                   </TableCell>
@@ -278,10 +597,21 @@ const AppointmentsContent = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {appointments
+                {filteredAppointments
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((appointment) => (
                     <TableRow key={appointment.testId} hover>
+                      <TableCell>
+                        {Array.isArray(appointment.createdAt)
+                          ? formatDateTimeFromArray(appointment.createdAt)
+                          : appointment.createdAt &&
+                              ![
+                                'Thời gian không hợp lệ',
+                                'Lỗi định dạng thời gian',
+                              ].includes(formatDateTime(appointment.createdAt))
+                            ? formatDateTime(appointment.createdAt)
+                            : 'Chưa cập nhật'}
+                      </TableCell>
                       <TableCell>
                         {Array.isArray(appointment.startTime)
                           ? formatDateTimeFromArray(appointment.startTime)
@@ -403,7 +733,7 @@ const AppointmentsContent = () => {
           </TableContainer>
           <TablePagination
             component="div"
-            count={appointments.length}
+            count={filteredAppointments.length}
             page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
@@ -416,7 +746,7 @@ const AppointmentsContent = () => {
       )}
 
       {/* Empty State */}
-      {!loading && appointments.length === 0 && (
+      {!loading && filteredAppointments.length === 0 && (
         <StyledPaper sx={{ p: 6, textAlign: 'center' }}>
           <CalendarIcon
             sx={{ fontSize: 64, color: 'rgba(74, 144, 226, 0.3)', mb: 2 }} // Light medical blue
@@ -429,7 +759,9 @@ const AppointmentsContent = () => {
               mb: 1,
             }}
           >
-            Chưa có lịch hẹn nào
+            {appointments.length === 0
+              ? 'Chưa có lịch hẹn nào'
+              : 'Không có lịch hẹn nào phù hợp'}
           </Typography>
           <Typography
             variant="body1"
@@ -437,33 +769,160 @@ const AppointmentsContent = () => {
               color: '#4A5568', // Dark blue-gray for text
             }}
           >
-            Hãy đặt lịch hẹn đầu tiên của bạn
+            {appointments.length === 0
+              ? 'Hãy đặt lịch hẹn đầu tiên của bạn'
+              : `Không có lịch hẹn nào với trạng thái "${getStatusText(statusFilter)}"`}
           </Typography>
         </StyledPaper>
       )}
 
-      {/* Cancel Confirmation Dialog */}
+      {/* Cancel Confirmation Dialog (with reason) */}
       <Dialog
         open={openCancelDialog}
-        onClose={() => setOpenCancelDialog(false)}
+        onClose={() => {
+          setOpenCancelDialog(false);
+          setCancelReason('');
+          setCancelError('');
+        }}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            p: 0,
+            boxShadow: '0 8px 32px 0 rgba(229, 57, 53, 0.15)',
+            background: '#fff',
+          },
+        }}
       >
-        <DialogTitle>Xác nhận hủy lịch hẹn</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Bạn có chắc chắn muốn hủy lịch hẹn này không? Hành động này không
-            thể hoàn tác.
+        <Box
+          sx={{
+            background: '#ffebee',
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            p: 0,
+            position: 'relative',
+          }}
+        >
+          <IconButton
+            aria-label="close"
+            onClick={() => {
+              setOpenCancelDialog(false);
+              setCancelReason('');
+              setCancelError('');
+            }}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: '#e57373',
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <DialogTitle
+            sx={{
+              textAlign: 'center',
+              fontWeight: 700,
+              fontSize: '1.35rem',
+              pb: 0,
+              pt: 4,
+              color: '#e53935',
+              letterSpacing: 0.5,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              background: 'transparent',
+            }}
+          >
+            <WarningIcon sx={{ color: '#e53935', fontSize: 48, mb: 1 }} />
+            Xác nhận hủy lịch hẹn
+          </DialogTitle>
+        </Box>
+        <DialogContent
+          sx={{
+            textAlign: 'center',
+            color: '#4A5568',
+            fontSize: '1.08rem',
+            px: 5,
+            pt: 2,
+            pb: 0,
+            background: '#fff',
+          }}
+        >
+          <Typography sx={{ mb: 2 }}>
+            Bạn có chắc chắn muốn hủy lịch hẹn này?
           </Typography>
+          <TextField
+            label="Lý do hủy lịch hẹn"
+            value={cancelReason}
+            onChange={(e) => {
+              setCancelReason(e.target.value);
+              setCancelError('');
+            }}
+            error={!!cancelError}
+            helperText={cancelError}
+            fullWidth
+            multiline
+            minRows={2}
+            sx={{ mb: 2, mt: 1, background: '#fff', borderRadius: 2 }}
+            InputLabelProps={{ shrink: true }}
+          />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenCancelDialog(false)}>Hủy</Button>
+        <DialogActions
+          sx={{
+            justifyContent: 'center',
+            gap: 2,
+            pb: 3,
+            pt: 2,
+            background: '#fff',
+          }}
+        >
+          <Button
+            onClick={() => {
+              setOpenCancelDialog(false);
+              setCancelReason('');
+              setCancelError('');
+            }}
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+              px: 3,
+              py: 1,
+              color: '#616161',
+              borderColor: '#bdbdbd',
+              background: '#f5f5f5',
+              fontWeight: 500,
+              fontSize: '1rem',
+              '&:hover': {
+                background: '#eeeeee',
+                borderColor: '#9e9e9e',
+                color: '#424242',
+              },
+            }}
+          >
+            HỦY
+          </Button>
           <Button
             onClick={handleCancelAppointment}
             color="error"
             variant="contained"
+            sx={{
+              borderRadius: 3,
+              px: 3,
+              py: 1.2,
+              fontWeight: 700,
+              fontSize: '1rem',
+              boxShadow: '0 2px 8px 0 rgba(229, 57, 53, 0.10)',
+              background: 'linear-gradient(90deg, #e53935 60%, #ff7043 100%)',
+              letterSpacing: 1,
+              '&:hover': {
+                background: 'linear-gradient(90deg, #b71c1c 60%, #ff7043 100%)',
+              },
+            }}
+            disabled={!cancelReason.trim()}
           >
-            Xác nhận hủy
+            XÁC NHẬN HỦY
           </Button>
         </DialogActions>
       </Dialog>
@@ -561,6 +1020,22 @@ const AppointmentsContent = () => {
                 </Typography>
                 <Typography variant="body1">
                   {selectedAppointment.consultantExperience || 'Chưa cập nhật'}
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                  Ngày đăng ký:
+                </Typography>
+                <Typography variant="body1">
+                  {Array.isArray(selectedAppointment.createdAt)
+                    ? formatDateTimeFromArray(selectedAppointment.createdAt)
+                    : selectedAppointment.createdAt &&
+                        ![
+                          'Thời gian không hợp lệ',
+                          'Lỗi định dạng thời gian',
+                        ].includes(
+                          formatDateTime(selectedAppointment.createdAt)
+                        )
+                      ? formatDateTime(selectedAppointment.createdAt)
+                      : 'Chưa cập nhật'}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <CalendarIcon

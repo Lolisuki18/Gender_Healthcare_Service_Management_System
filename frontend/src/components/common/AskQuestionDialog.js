@@ -64,12 +64,12 @@ const AskQuestionDialog = ({
     }
     setSubmitLoading(true);
     try {
-      await questionService.createQuestion({
+      const response = await questionService.createQuestion({
         content: question,
         categoryQuestionId: category,
       });
-      toast.success('Câu hỏi đã được gửi thành công!');
-      if (onSuccess) onSuccess();
+      // toast.success('Câu hỏi đã được gửi thành công!'); // Đã chuyển sang QuestionsContent.js
+      if (onSuccess) onSuccess(response);
       onClose();
     } catch (err) {
       toast.error('Gửi câu hỏi thất bại. Vui lòng thử lại.');

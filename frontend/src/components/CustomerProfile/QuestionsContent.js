@@ -141,6 +141,8 @@ const QuestionsContent = () => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 5;
   const tabStatusMap = [null, 'ANSWERED', 'PENDING', 'CANCELED'];
+  const [categories, setCategories] = useState([]);
+  const [questionIdFilter, setQuestionIdFilter] = useState('');
 
   // Handle tab change
   const handleTabChange = (event, newValue) => {
@@ -173,8 +175,17 @@ const QuestionsContent = () => {
 
   useEffect(() => {
     fetchQuestions();
+    questionService.getCategories().then((res) => {
+      setCategories(res.data.data || []);
+    });
     // eslint-disable-next-line
   }, []);
+
+  useEffect(() => {
+    if (questions.length > 0) {
+      console.log('Questions:', questions);
+    }
+  }, [questions]);
 
   // Khi đổi tab/filter thì reset về trang 1
   useEffect(() => {
@@ -189,6 +200,10 @@ const QuestionsContent = () => {
       return false;
     if (tabValue === 3 && q.status !== 'CANCELED') return false;
 
+    // Filter by question ID
+    if (questionIdFilter && String(q.id) !== questionIdFilter.trim())
+      return false;
+
     // Filter by search term
     const matchesSearch =
       (q.content &&
@@ -196,10 +211,15 @@ const QuestionsContent = () => {
       (q.categoryName &&
         q.categoryName.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    // Filter by category
-    const matchesCategory =
-      categoryFilter === 'all' ||
-      (q.categoryName && q.categoryName === categoryFilter);
+    // Filter by category (chuẩn hóa theo BE)
+    let matchesCategory = true;
+    if (String(categoryFilter) !== 'all') {
+      if (q.categoryId === undefined || q.categoryId === null) {
+        matchesCategory = false;
+      } else {
+        matchesCategory = String(q.categoryId) === String(categoryFilter);
+      }
+    }
 
     return matchesSearch && matchesCategory;
   });
@@ -296,7 +316,13 @@ const QuestionsContent = () => {
         <AskQuestionDialog
           open={showNewQuestionForm}
           onClose={() => setShowNewQuestionForm(false)}
-          onSuccess={() => {
+          onSuccess={(response) => {
+            const id = response?.data?.data?.id;
+            toast.success(
+              id
+                ? `Câu hỏi đã được gửi thành công! ID: ${id}`
+                : 'Câu hỏi đã được gửi thành công!'
+            );
             fetchQuestions();
             setPage(1);
           }}
@@ -339,13 +365,28 @@ const QuestionsContent = () => {
               ),
             }}
           />
+          <TextField
+            placeholder="Lọc theo ID câu hỏi"
+            variant="outlined"
+            value={questionIdFilter}
+            onChange={(e) => setQuestionIdFilter(e.target.value)}
+            sx={{ minWidth: 180, ml: { xs: 0, md: 2 } }}
+            size="small"
+          />
           {/* Category filter */}{' '}
           <FormControl sx={{ minWidth: 200 }} variant="outlined">
             <InputLabel sx={{ color: '#4A5568' }}>Danh mục</InputLabel>
             <Select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              value={String(categoryFilter)}
+              onChange={(e) => setCategoryFilter(String(e.target.value))}
               label="Danh mục"
+              renderValue={(selected) => {
+                if (selected === 'all') return 'Tất cả danh mục';
+                const found = categories.find(
+                  (cat) => String(cat.categoryQuestionId) === String(selected)
+                );
+                return found ? found.name : '';
+              }}
               sx={{
                 color: '#2D3748', // Màu text đậm hơn
                 borderRadius: '12px',
@@ -367,13 +408,14 @@ const QuestionsContent = () => {
               }
             >
               <MenuItem value="all">Tất cả danh mục</MenuItem>
-              {uniqueCategories
-                .filter((c) => c !== 'all')
-                .map((category) => (
-                  <MenuItem key={category} value={category}>
-                    {category}
-                  </MenuItem>
-                ))}
+              {categories.map((cat) => (
+                <MenuItem
+                  key={cat.categoryQuestionId}
+                  value={String(cat.categoryQuestionId)}
+                >
+                  {cat.name}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </Box>
@@ -577,6 +619,13 @@ const QuestionsContent = () => {
                       border: '1px solid rgba(74, 144, 226, 0.2)',
                     }}
                   />
+                  <Typography
+                    variant="body2"
+                    color="#4A5568"
+                    sx={{ fontWeight: 500, mb: 1 }}
+                  >
+                    ID: {question.id}
+                  </Typography>
                   {/* Người huỷ hoặc Người trả lời */}
                   {question.status === 'CANCELED' && question.updaterName ? (
                     <Typography

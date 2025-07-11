@@ -39,10 +39,10 @@ public class Consultation {
 
     private LocalDateTime updatedAt;
 
-    @Column(name = "notes", length = 1000)
+    @Column(name = "notes", length = 1000, columnDefinition = "NVARCHAR(1000)")
     private String notes;
 
-    @Column(name = "reason", length = 1000)
+    @Column(name = "reason", length = 1000, columnDefinition = "NVARCHAR(1000)")
     private String reason;
 
     @PrePersist
