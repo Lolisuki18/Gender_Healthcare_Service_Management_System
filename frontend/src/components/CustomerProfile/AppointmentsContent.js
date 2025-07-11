@@ -59,6 +59,7 @@ import {
   InputLabel,
   Select,
   MenuItem as SelectMenuItem,
+  Rating,
 } from '@mui/material';
 import {
   CalendarToday as CalendarIcon,
@@ -85,6 +86,9 @@ import {
 import { toast } from 'react-toastify';
 import consultantService from '../../services/consultantService';
 import confirmDialog from '../../utils/confirmDialog';
+import reviewService from '../../services/reviewService';
+import ReviewForm from '../modals/ReviewForm';
+import { notify } from '../../utils/notify';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)',
@@ -125,6 +129,16 @@ const AppointmentsContent = () => {
   const [endDate, setEndDate] = useState('');
   const [cancelReason, setCancelReason] = useState('');
   const [cancelError, setCancelError] = useState('');
+  const [reviewedConsultationIds, setReviewedConsultationIds] = useState([]);
+  
+  // Cập nhật các state cho ReviewForm
+  const [openReviewDialog, setOpenReviewDialog] = useState(false);
+  const [reviewingAppointment, setReviewingAppointment] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [feedback, setFeedback] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   const fetchAppointments = async () => {
     try {
@@ -135,6 +149,13 @@ const AppointmentsContent = () => {
       } else {
         toast.error(response.message || 'Không thể tải danh sách lịch hẹn');
       }
+      // Lấy danh sách consultationId đã đánh giá
+      const reviewRes = await reviewService.getMyReviews(0, 100);
+      const reviews = reviewRes?.content || reviewRes?.data || reviewRes || [];
+      const reviewedIds = reviews
+        .filter(r => (r.targetType === 'CONSULTANT' || r.serviceType === 'CONSULTATION') && r.consultationId)
+        .map(r => r.consultationId);
+      setReviewedConsultationIds(reviewedIds);
     } catch (error) {
       toast.error('Không thể tải danh sách lịch hẹn');
     } finally {
@@ -393,6 +414,69 @@ const AppointmentsContent = () => {
     setPage(0);
   };
 
+  const handleCloseReviewDialog = () => {
+    setOpenReviewDialog(false);
+    setReviewingAppointment(null);
+    setRating(0);
+    setFeedback('');
+    setIsEditMode(false);
+    setEditingReviewId(null);
+  };
+
+  /**
+   * Xử lý submit đánh giá tư vấn viên
+   * Hỗ trợ cả tạo mới và cập nhật đánh giá
+   */
+  const handleSubmitReview = async () => {
+    if (!reviewingAppointment) return;
+    
+    if (rating === 0) {
+      notify.warning('Thông báo', 'Vui lòng chọn số sao đánh giá!');
+      return;
+    }
+
+    if (feedback.trim().length < 10) {
+      notify.warning('Thông báo', 'Vui lòng nhập ít nhất 10 ký tự cho phần đánh giá!');
+      return;
+    }
+
+    try {
+      setReviewLoading(true);
+      
+      const reviewData = {
+        rating: rating,
+        comment: feedback.trim(),
+        consultationId: reviewingAppointment.consultationId
+      };
+      
+      // Kiểm tra nếu là chỉnh sửa hoặc tạo mới
+      if (isEditMode && editingReviewId) {
+        // Gọi API cập nhật đánh giá
+        await reviewService.updateReview(editingReviewId, reviewData);
+        notify.success('Thành công', 'Đánh giá đã được cập nhật thành công!');
+      } else {
+        // Gọi API tạo mới đánh giá
+        await reviewService.createConsultantReview(
+          reviewingAppointment.consultantId,
+          reviewData
+        );
+        notify.success('Thành công', 'Đánh giá đã được gửi thành công!');
+        
+        // Cập nhật ngay lập tức mảng reviewedConsultationIds để hiển thị đúng trạng thái
+        if (reviewingAppointment.consultationId && !reviewedConsultationIds.includes(reviewingAppointment.consultationId)) {
+          setReviewedConsultationIds([...reviewedConsultationIds, reviewingAppointment.consultationId]);
+        }
+      }
+      
+      handleCloseReviewDialog();
+      await fetchAppointments(); // reload lại danh sách để cập nhật trạng thái
+    } catch (err) {
+      notify.error('Lỗi', 'Lỗi khi ' + (isEditMode ? 'cập nhật' : 'tạo') + ' đánh giá: ' + err.message);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
   return (
     <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
       {/* Header */}
@@ -592,6 +676,9 @@ const AppointmentsContent = () => {
                     Trạng thái
                   </TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="center">
+                    Đánh giá
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">
                     Hành động
                   </TableCell>
                 </TableRow>
@@ -643,8 +730,93 @@ const AppointmentsContent = () => {
                             color: '#fff',
                             fontWeight: 500,
                             fontSize: '11px',
+                            mr: 1
                           }}
                         />
+                        {appointment.status?.toUpperCase() === 'COMPLETED' && (
+                          reviewedConsultationIds.includes(appointment.consultationId) ? (
+                            <Chip
+                              label="Đã đánh giá"
+                              size="small"
+                              color="success"
+                              sx={{ fontWeight: 500, fontSize: '11px', ml: 1 }}
+                            />
+                          ) : (
+                            <Chip
+                              label="Chưa đánh giá"
+                              size="small"
+                              color="warning"
+                              sx={{ fontWeight: 500, fontSize: '11px', ml: 1 }}
+                            />
+                          )
+                        )}
+                      </TableCell>
+                      {/* Cột Đánh giá */}
+                      <TableCell align="center">
+                        {appointment.status?.toUpperCase() === 'COMPLETED' && (
+                          reviewedConsultationIds.includes(appointment.consultationId) ? (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="info"
+                              sx={{ fontSize: 13, textTransform: 'none', borderRadius: 3, px: 1.5, height: 32 }}
+                              onClick={async () => {
+                                try {
+                                  setReviewLoading(true);
+                                  // Gọi API lấy chi tiết đánh giá
+                                  const reviewRes = await reviewService.getMyReviews(0, 100);
+                                  const reviews = reviewRes?.content || reviewRes?.data || reviewRes || [];
+                                  const found = reviews.find(r => r.consultationId === appointment.consultationId);
+                                  
+                                  if (found) {
+                                    const detail = await reviewService.getReviewById(found.id);
+                                    // Mở form chỉnh sửa với dữ liệu hiện tại
+                                    setReviewingAppointment({
+                                      ...appointment,
+                                      type: 'CONSULTANT',
+                                      isEligible: true
+                                    });
+                                    setRating(detail.rating || 0);
+                                    setFeedback(detail.comment || '');
+                                    setIsEditMode(true);
+                                    setEditingReviewId(found.id);
+                                    setOpenReviewDialog(true);
+                                  } else {
+                                    notify.warning('Thông báo', 'Không tìm thấy đánh giá!');
+                                  }
+                                } catch (err) {
+                                  notify.error('Lỗi', 'Không thể lấy thông tin đánh giá: ' + err.message);
+                                } finally {
+                                  setReviewLoading(false);
+                                }
+                              }}
+                            >
+                              Chỉnh sửa
+                            </Button>
+                          ) : (
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color="primary"
+                              sx={{ fontSize: 13, textTransform: 'none', borderRadius: 3, px: 1.5, height: 32 }}
+                              onClick={() => {
+                                // Đặt lại trạng thái cho form tạo mới
+                                setReviewingAppointment({
+                                  ...appointment,
+                                  type: 'CONSULTANT',
+                                  isEligible: true
+                                });
+                                setRating(0);
+                                setFeedback('');
+                                setIsEditMode(false);
+                                setEditingReviewId(null);
+                                setOpenReviewDialog(true);
+                              }}
+                            >
+                              Đánh giá
+                            </Button>
+                          )
+                        )}
                       </TableCell>
                       <TableCell align="center">
                         <Box
@@ -1077,6 +1249,20 @@ const AppointmentsContent = () => {
           <Button onClick={handleCloseDetailDialog}>Đóng</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Dialog đánh giá */}
+      <ReviewForm 
+        open={openReviewDialog}
+        onClose={handleCloseReviewDialog}
+        review={reviewingAppointment}
+        rating={rating}
+        setRating={setRating}
+        feedback={feedback}
+        setFeedback={setFeedback}
+        onSubmit={handleSubmitReview}
+        isEditMode={isEditMode}
+        loading={reviewLoading}
+      />
     </Box>
   );
 };

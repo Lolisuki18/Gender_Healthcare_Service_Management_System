@@ -109,6 +109,7 @@ const AppRoutes = () => {
         <Route path="/test-registration" element={<TestRegistrationPage />} />
         {/* 404 Page -> sẽ được hiện ra khi truy cập những path không hợp lệ */}
         <Route path="*" element={<NotFoundPage />} />
+        <Route path="/services/sti-testing" element={<StiDetailPage />} />
       </Route>
 
       {/* Admin Routes riêng với AdminLayout */}
@@ -129,8 +130,6 @@ const AppRoutes = () => {
         {/* Auto redirect /admin to /admin/profile */}
         <Route index element={<Navigate to="/admin/profile" replace />} />
       </Route>
-
-      <Route path="/services/sti-testing" element={<StiDetailPage />} />
     </Routes>
   );
 };

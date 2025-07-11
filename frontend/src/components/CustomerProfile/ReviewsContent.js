@@ -24,35 +24,30 @@ import {
   Chip,
   Avatar,
   Grid,
-  Button,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  CircularProgress,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
+  IconButton,
+  CircularProgress,
   Tooltip,
+  Button,
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
   Schedule as ScheduleIcon,
   StarBorder as StarBorderIcon,
-  RateReview as RateReviewIcon,
-  Close as CloseIcon,
-  Star as StarIcon,
-  Send as SendIcon,
   FilterList as FilterListIcon,
   Science as ScienceIcon,
   Psychology as PsychologyIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   MedicalServices as MedicalServicesIcon,
+  Star as StarIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
+import ReviewForm from '../modals/ReviewForm';
+import Pagination from '@mui/material/Pagination';
 
 // Import services
 import reviewService from '../../services/reviewService';
@@ -127,11 +122,18 @@ const ReviewsContent = () => {
   // States for edit/delete functionality
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingReviewId, setEditingReviewId] = useState(null);
+  const [page, setPage] = useState(1);
+  const REVIEWS_PER_PAGE = 6;
 
   // Load reviews and services on component mount
   useEffect(() => {
     loadAllData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset page khi đổi tab hoặc filter
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, serviceFilter]);
 
   const loadAllData = async () => {
     try {
@@ -420,61 +422,23 @@ const ReviewsContent = () => {
   console.log('  - Pending reviews:', pendingReviews.length);
   console.log('  - All reviews:', allReviews.length);
 
+  // Tính toán dữ liệu phân trang cho từng tab
+  const paginatedAllReviews = allReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
+  const paginatedCompletedReviews = completedReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
+  const paginatedPendingReviews = pendingReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  const handleOpenReviewDialog = async (review) => {
-    // Kiểm tra điều kiện đánh giá cơ bản
-    if (!review.isEligible && review.status === 'pending') {
-      let message = 'Bạn chỉ có thể đánh giá sau khi dịch vụ được hoàn thành và có kết quả.';
-      
-      // Thông báo cụ thể cho từng loại dịch vụ
-      if (review.type === 'STI_SERVICE') {
-        message = 'Để đánh giá xét nghiệm STI, bạn cần:\n• Hoàn thành xét nghiệm và có kết quả\n• Trạng thái test phải là "COMPLETED", "RESULTED" hoặc "ANALYZED"';
-      } else if (review.type === 'CONSULTANT') {
-        message = 'Để đánh giá tư vấn viên, bạn cần:\n• Hoàn thành buổi tư vấn\n• Trạng thái tư vấn phải là "COMPLETED", "FINISHED" hoặc "CLOSED"';
-      }
-      
-      notify.warning('Không thể đánh giá', message);
-      return;
-    }
-    
-    if (review.status === 'completed') {
-      notify.info(
-        'Đã đánh giá', 
-        'Bạn đã đánh giá dịch vụ này rồi. Mỗi dịch vụ chỉ được đánh giá một lần.'
-      );
-      return;
-    }
+  /**
+   * Kiểm tra điều kiện đánh giá và mở form - Chức năng này được chuyển vào handleEditReview 
+   * sau khi tách component ReviewForm để tránh code trùng lặp
+   */
 
-    // Kiểm tra thêm các điều kiện cần thiết
-    if (review.type === 'STI_SERVICE' && !review.serviceId) {
-      notify.error('Lỗi dữ liệu', 'Thiếu thông tin dịch vụ. Vui lòng làm mới trang và thử lại.');
-      return;
-    }
-
-    if (review.type === 'CONSULTANT' && !review.consultantId) {
-      notify.error('Lỗi dữ liệu', 'Thiếu thông tin tư vấn viên. Vui lòng làm mới trang và thử lại.');
-      return;
-    }
-    
-    // Hiển thị thông báo loading khi kiểm tra điều kiện với backend
-    setLoading(true);
-    
-    try {
-      setSelectedReview(review);
-      setRating(0);
-      setFeedback('');
-      setReviewDialogOpen(true);
-    } catch (error) {
-      notify.error('Lỗi kiểm tra', 'Không thể kiểm tra điều kiện đánh giá. Vui lòng thử lại sau.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Close review dialog and reset related state
   const handleCloseReviewDialog = () => {
+    console.log('🔒 Closing review dialog and resetting state');
     setReviewDialogOpen(false);
     setSelectedReview(null);
     setRating(0);
@@ -483,19 +447,56 @@ const ReviewsContent = () => {
     setEditingReviewId(null);
   };
 
-  // Handle edit review action
+  // Handle edit or add review action
   const handleEditReview = async (review) => {
-    console.log('✏️ Starting edit review:', review);
+    console.log('✏️ Starting edit/add review:', review);
     
     try {
+      // Determine if this is a pending review with a temporary ID
+      const isPendingTempReview = review.id && typeof review.id === 'string' && 
+                                 (review.id.includes('temp') || review.id.includes('consultation_') || 
+                                  review.id.includes('sti_'));
+      
+      // Check if the review has a valid ID for editing
+      const hasValidRatingId = review.ratingId && !isNaN(parseInt(review.ratingId));
+      const hasValidId = review.id && typeof review.id === 'number' && !isNaN(review.id);
+      
+      // For pending reviews without valid IDs, this is an "add" operation
+      const isAddOperation = isPendingTempReview && !hasValidRatingId && !hasValidId;
+      
+      // Prepare form data
       setSelectedReview(review);
       setRating(review.rating || 0);
       setFeedback(review.comment || '');
-      setIsEditMode(true);
-      setEditingReviewId(review.id || review.ratingId);
+      
+      // Set edit mode based on whether this is an add or edit operation
+      setIsEditMode(!isAddOperation);
+      
+      // For edit operations, ensure we have a valid numeric ID
+      if (!isAddOperation) {
+        const numericId = hasValidRatingId ? review.ratingId : (hasValidId ? review.id : null);
+        
+        if (!numericId) {
+          throw new Error("Không tìm thấy ID đánh giá hợp lệ. Bạn cần gửi đánh giá trước khi có thể chỉnh sửa.");
+        }
+        
+        setEditingReviewId(numericId);
+        console.log('✅ Edit review dialog opened with valid ID:', numericId);
+      } else {
+        // For add operations, check eligibility
+        if (!review.isEligible) {
+          throw new Error("Dịch vụ này chưa hoàn thành hoặc không đủ điều kiện để đánh giá.");
+        }
+        
+        setEditingReviewId(null);
+        console.log('✅ Add review dialog opened for new review');
+      }
+      
+      // Open the review dialog
       setReviewDialogOpen(true);
     } catch (error) {
-      notify.error('Lỗi', 'Không thể mở form chỉnh sửa đánh giá');
+      console.error('❌ Error opening review dialog:', error);
+      notify.error('Lỗi', error.message || 'Không thể mở form đánh giá');
     }
   };
 
@@ -504,7 +505,25 @@ const ReviewsContent = () => {
     console.log('🗑️ Starting delete review:', review);
     
     try {
-      // Sử dụng confirm dialog từ utils
+      // Check if this is a pending review (no actual review ID in the database)
+      const isPendingTempReview = review.id && typeof review.id === 'string' && 
+                                 (review.id.includes('temp') || review.id.includes('consultation_') || 
+                                  review.id.includes('sti_'));
+      
+      // Check if the review has a valid ID for deleting
+      const hasValidRatingId = review.ratingId && !isNaN(parseInt(review.ratingId));
+      const hasValidId = review.id && typeof review.id === 'number' && !isNaN(review.id);
+      
+      // For pending reviews without valid IDs, this is not a deletable review
+      if (isPendingTempReview && !hasValidRatingId && !hasValidId) {
+        notify.warning(
+          'Không thể xóa', 
+          'Đánh giá này chưa được gửi nên không cần xóa. Hãy bỏ qua hoặc thực hiện đánh giá.'
+        );
+        return;
+      }
+      
+      // Get confirmation from the user
       const { confirmDialog } = await import('../../utils/confirmDialog');
       const confirmed = await confirmDialog.danger(
         `Bạn có chắc chắn muốn xóa đánh giá này không?\n\nDịch vụ: ${review.serviceName || review.targetName || 'N/A'}\nĐánh giá: ${review.rating} sao\nBình luận: "${(review.comment || '').substring(0, 50)}${review.comment?.length > 50 ? '...' : ''}"\n\nHành động này không thể hoàn tác!`,
@@ -520,7 +539,7 @@ const ReviewsContent = () => {
       }
 
       setLoading(true);
-      const reviewId = review.id || review.ratingId;
+      const reviewId = hasValidRatingId ? review.ratingId : (hasValidId ? review.id : null);
       
       if (!reviewId) {
         throw new Error('Không tìm thấy ID đánh giá. Vui lòng làm mới trang và thử lại.');
@@ -562,6 +581,10 @@ const ReviewsContent = () => {
     }
   };
 
+  /**
+   * Xử lý submit đánh giá (tạo mới hoặc cập nhật)
+   * Form được quản lý bởi component ReviewForm đã tách
+   */
   const handleSubmitReview = async () => {
     console.log('🚀 Starting review submission process...');
     console.log('📋 Review data check:', {
@@ -600,6 +623,12 @@ const ReviewsContent = () => {
       // Kiểm tra xem đây là edit mode hay create mode
       if (isEditMode && editingReviewId) {
         console.log('✏️ Updating existing review with ID:', editingReviewId);
+        
+        // Kiểm tra ID phải là số hợp lệ
+        if (isNaN(parseInt(editingReviewId))) {
+          throw new Error("ID đánh giá không hợp lệ. Vui lòng thử lại với một đánh giá khác.");
+        }
+        
         await reviewService.updateReview(editingReviewId, reviewData);
         console.log('✅ Review updated successfully');
         notify.success('Thành công', 'Đánh giá đã được cập nhật thành công!');
@@ -680,7 +709,15 @@ const ReviewsContent = () => {
           reviewData,
           selectedReview
         });
-        const result = await reviewService.createSTIServiceReview(selectedReview.serviceId, reviewData);
+        
+        // Chuẩn bị dữ liệu đánh giá theo format mẫu JSON
+        const stiServiceReviewData = {
+          rating: reviewData.rating,
+          comment: reviewData.comment
+        };
+        
+        // URL endpoint: /ratings/sti-service/{serviceId}
+        const result = await reviewService.createSTIServiceReview(selectedReview.serviceId, stiServiceReviewData);
         console.log('✅ STI Service Review Result:', result);
         
       } else if (selectedReview.type === 'STI_PACKAGE') {
@@ -695,7 +732,15 @@ const ReviewsContent = () => {
           reviewData,
           selectedReview
         });
-        const result = await reviewService.createSTIPackageReview(selectedReview.packageId, reviewData);
+        
+        // Chuẩn bị dữ liệu đánh giá theo format mẫu JSON
+        const stiPackageReviewData = {
+          rating: reviewData.rating,
+          comment: reviewData.comment
+        };
+        
+        // URL endpoint: /ratings/sti-package/{packageId}
+        const result = await reviewService.createSTIPackageReview(selectedReview.packageId, stiPackageReviewData);
         console.log('✅ STI Package Review Result:', result);
         
       } else if (selectedReview.type === 'CONSULTANT') {
@@ -753,7 +798,15 @@ const ReviewsContent = () => {
           reviewData,
           selectedReview
         });
-        const result = await reviewService.createConsultantReview(selectedReview.consultantId, reviewData);
+        
+        // Chuẩn bị dữ liệu đánh giá theo format mẫu JSON
+        const consultantReviewData = {
+          rating: reviewData.rating,
+          comment: reviewData.comment
+        };
+        
+        // URL endpoint: /ratings/consultant/{consultantId}
+        const result = await reviewService.createConsultantReview(selectedReview.consultantId, consultantReviewData);
         console.log('✅ Consultant Review Result:', result);
         
       } else {
@@ -863,8 +916,8 @@ const ReviewsContent = () => {
         transition: 'all 0.3s ease',
         position: 'relative',
         minHeight: '200px',
-        maxHeight: review.staffReply ? '350px' : '250px', // Tăng chiều cao nếu có phản hồi staff
-        maxWidth: '100%', // Giới hạn chiều rộng tối đa
+        // Bỏ maxHeight để cho phép card mở rộng theo nội dung
+        maxWidth: '100%',
         width: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -874,19 +927,9 @@ const ReviewsContent = () => {
         }
       }}
     >
-      <CardContent sx={{ 
-        p: { xs: 2, md: 3 }, 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column',
-        pr: { xs: 1, md: 1 }
-      }}>
-        <Grid container spacing={{ xs: 2, md: 5 }} sx={{ 
-          height: '100%',
-          width: '100%',
-          m: 0
-        }}>
-          <Grid xs={12} md={6.5} sx={{ display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ p: { xs: 2, md: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Grid container spacing={{ xs: 2, md: 5 }} sx={{ width: '100%', m: 0, justifyContent: 'space-between' }}>
+          <Grid xs={12} md={6.5} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <Avatar 
                 sx={{ 
@@ -963,7 +1006,7 @@ const ReviewsContent = () => {
               </Box>
             </Box>
             
-            <Box sx={{ mb: 2, flex: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
               <Rating 
                 value={review.rating || 0} 
                 readOnly 
@@ -989,11 +1032,13 @@ const ReviewsContent = () => {
                   background: 'rgba(74, 144, 226, 0.05)',
                   p: 2,
                   borderRadius: '8px',
-                  minHeight: review.staffReply ? 'auto' : '80px', // Chiều cao linh hoạt nếu có phản hồi
-                  height: review.staffReply ? 'auto' : '80px', // Chiều cao linh hoạt nếu có phản hồi
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  overflow: 'auto', // Cho phép scroll nếu nội dung dài
+                  mb: 1, // Thêm margin bottom
+                  display: 'block', // Đảm bảo hiển thị toàn bộ nội dung
+                  wordWrap: 'break-word', // Xuống dòng khi cần
+                  whiteSpace: 'pre-wrap', // Giữ nguyên định dạng và xuống dòng
+                  maxWidth: { xs: '100%', md: '600px' }, // Giới hạn chiều rộng tối đa
+                  overflow: 'auto', // Thêm thanh cuộn nếu nội dung quá dài
+                  maxHeight: '300px', // Giới hạn chiều cao tối đa
                 }}
               >
                 "{review.comment || 'Không có bình luận'}"
@@ -1064,13 +1109,14 @@ const ReviewsContent = () => {
           <Grid xs={12} md={5.5} sx={{ 
             display: 'flex', 
             flexDirection: 'column', 
-            justifyContent: 'space-between',
+            justifyContent: 'flex-start',
             alignItems: { xs: 'flex-start', md: 'flex-end' },
             textAlign: { xs: 'left', md: 'right' },
-            minHeight: '120px',
             pl: { xs: 0, md: 2 },
             pr: 0,
-            mt: { xs: 2, md: 0 }
+            mt: { xs: 2, md: 0 },
+            pt: { xs: 0, md: 0 }, // Thêm padding top để thẳng hàng
+            minHeight: 'fit-content'
           }}>
             {/* Status và Date Section */}
             <Box sx={{ 
@@ -1134,55 +1180,51 @@ const ReviewsContent = () => {
               justifyContent: { xs: 'flex-start', md: 'flex-end' },
               alignItems: 'center',
               gap: 0.5,
-              mt: 'auto',
+              mt: 0.5, // Giảm margin top để gần hơn với status
               width: '100%',
               mr: { xs: 0, md: -1 }
             }}>
-              <Tooltip title="Chỉnh sửa đánh giá" arrow placement="top">
-                <IconButton
-                  size="small"
-                  onClick={() => handleEditReview(review)}
-                  sx={{
-                    color: '#4A90E2',
-                    background: 'rgba(74, 144, 226, 0.1)',
-                    border: '1px solid rgba(74, 144, 226, 0.2)',
-                    borderRadius: '8px',
-                    width: 30,
-                    height: 30,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      background: 'rgba(74, 144, 226, 0.2)',
-                      border: '1px solid rgba(74, 144, 226, 0.3)',
-                      transform: 'scale(1.05)',
-                    }
-                  }}
-                >
-                  <EditIcon sx={{ fontSize: '14px' }} />
-                </IconButton>
-              </Tooltip>
+              <IconButton
+                size="small"
+                onClick={() => handleEditReview(review)}
+                sx={{
+                  color: '#4A90E2',
+                  background: 'rgba(74, 144, 226, 0.1)',
+                  border: '1px solid rgba(74, 144, 226, 0.2)',
+                  borderRadius: '8px',
+                  width: 40,
+                  height: 40,
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    background: 'rgba(74, 144, 226, 0.2)',
+                    border: '1px solid rgba(74, 144, 226, 0.3)',
+                    transform: 'scale(1.05)',
+                  }
+                }}
+              >
+                <EditIcon sx={{ fontSize: '20px' }} />
+              </IconButton>
               
-              <Tooltip title="Xóa đánh giá" arrow placement="top">
-                <IconButton
-                  size="small"
-                  onClick={() => handleDeleteReview(review)}
-                  sx={{
-                    color: '#F56565',
-                    background: 'rgba(245, 101, 101, 0.1)',
-                    border: '1px solid rgba(245, 101, 101, 0.2)',
-                    borderRadius: '8px',
-                    width: 30,
-                    height: 30,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      background: 'rgba(245, 101, 101, 0.2)',
-                      border: '1px solid rgba(245, 101, 101, 0.3)',
-                      transform: 'scale(1.05)',
-                    }
-                  }}
-                >
-                  <DeleteIcon sx={{ fontSize: '14px' }} />
-                </IconButton>
-              </Tooltip>
+              <IconButton
+                size="small"
+                onClick={() => handleDeleteReview(review)}
+                sx={{
+                  color: '#F56565',
+                  background: 'rgba(245, 101, 101, 0.1)',
+                  border: '1px solid rgba(245, 101, 101, 0.2)',
+                  borderRadius: '8px',
+                  width: 40,
+                  height: 40,
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    background: 'rgba(245, 101, 101, 0.2)',
+                    border: '1px solid rgba(245, 101, 101, 0.3)',
+                    transform: 'scale(1.05)',
+                  }
+                }}
+              >
+                <DeleteIcon sx={{ fontSize: '20px' }} />
+              </IconButton>
             </Box>
           </Grid>
         </Grid>
@@ -1203,8 +1245,8 @@ const ReviewsContent = () => {
         transition: 'all 0.3s ease',
         position: 'relative',
         minHeight: '200px',
-        maxHeight: '250px', // Giới hạn chiều cao tối đa
-        maxWidth: '100%', // Giới hạn chiều rộng tối đa
+        // Bỏ maxHeight để cho phép card mở rộng theo nội dung
+        maxWidth: '100%',
         width: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -1215,8 +1257,8 @@ const ReviewsContent = () => {
       }}
     >
       <CardContent sx={{ p: { xs: 2, md: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Grid container spacing={{ xs: 2, md: 5 }} sx={{ height: '100%' }}>
-          <Grid xs={12} md={6.5} sx={{ display: 'flex', flexDirection: 'column' }}>
+        <Grid container spacing={{ xs: 2, md: 5 }} sx={{ width: '100%', m: 0, justifyContent: 'space-between' }}>
+          <Grid xs={12} md={6.5} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <Avatar 
                 sx={{ 
@@ -1360,16 +1402,17 @@ const ReviewsContent = () => {
             </Box>
           </Grid>
           
-          <Grid xs={12} md={5.5} sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'space-between',
+          <Grid xs={12} md={5.5} sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
             alignItems: { xs: 'flex-start', md: 'flex-end' },
             textAlign: { xs: 'left', md: 'right' },
-            minHeight: '120px',
             pl: { xs: 0, md: 2 },
-            pr: 0,
-            mt: { xs: 2, md: 0 }
+            pr: { xs: 2, md: 3 },
+            mt: { xs: 2, md: 0 },
+            pt: { xs: 0, md: 0 }, // Thêm padding top để thẳng hàng
+            minHeight: 'fit-content'
           }}>
             {/* Status Section */}
             <Box sx={{ 
@@ -1406,50 +1449,53 @@ const ReviewsContent = () => {
             </Box>
 
             {/* Action Button Section - Luôn ở cuối */}
-            <Box sx={{ 
-              display: 'flex', 
+            <Box sx={{
+              display: 'flex',
               justifyContent: { xs: 'flex-start', md: 'flex-end' },
               alignItems: 'center',
-              mt: 'auto',
+              gap: 1.5,
+              mt: 0.5, // Giảm margin top để gần hơn với status
               width: '100%',
-              mr: { xs: 0, md: -1 }
+              mr: 0,
+              pr: 0
             }}>
-              <Button
-                variant="contained"
-                size="medium"
-                startIcon={<RateReviewIcon />}
-                onClick={() => handleOpenReviewDialog(review)}
-                disabled={!review.isEligible}
-                sx={{
-                  background: review.isEligible 
-                    ? 'linear-gradient(45deg, #4A90E2, #1ABC9C)'
-                    : 'rgba(158, 158, 158, 0.5)',
-                  borderRadius: '12px',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  py: 1.5,
-                  px: 3,
-                  minWidth: '140px',
-                  height: '36px', // Đồng nhất với IconButton action menu
-                  boxShadow: review.isEligible 
-                    ? '0 4px 16px rgba(74, 144, 226, 0.3)'
-                    : 'none',
-                  color: review.isEligible ? '#fff' : 'rgba(0, 0, 0, 0.38)',
-                  '&:hover': review.isEligible ? {
-                    background: 'linear-gradient(45deg, #357ABD, #16A085)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 20px rgba(74, 144, 226, 0.4)',
-                  } : {},
-                  transition: 'all 0.3s ease',
-                  '&:disabled': {
-                    background: 'rgba(158, 158, 158, 0.3)',
-                    color: 'rgba(0, 0, 0, 0.38)',
-                  }
-                }}
-              >
-                Đánh giá ngay
-              </Button>
+              <Box sx={{
+                display: 'flex',
+                justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                alignItems: 'center',
+                gap: 1.5,
+                mt: 0.5,
+                width: '100%',
+                mr: 0,
+                pr: 0
+              }}>
+                <IconButton
+                  size="large"
+                  onClick={() => handleEditReview(review)}
+                  disabled={!review.isEligible}
+                  sx={{
+                    color: '#FF9800',
+                    background: 'rgba(255, 152, 0, 0.1)',
+                    border: '1px solid rgba(255, 152, 0, 0.2)',
+                    borderRadius: '10px',
+                    width: 46,
+                    height: 46,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      background: 'rgba(255, 152, 0, 0.2)',
+                      border: '1px solid rgba(255, 152, 0, 0.3)',
+                      transform: 'scale(1.05)',
+                    },
+                    '&:disabled': {
+                      color: '#BDBDBD',
+                      background: 'rgba(189, 189, 189, 0.1)',
+                      border: '1px solid rgba(189, 189, 189, 0.2)',
+                    }
+                  }}
+                >
+                  <AddIcon sx={{ fontSize: '24px' }} />
+                </IconButton>
+              </Box>
             </Box>
           </Grid>
         </Grid>
@@ -1651,8 +1697,8 @@ const ReviewsContent = () => {
 
       {/* Tab Panels */}
       <TabPanel value={activeTab} index={0}>
-        {allReviews.length > 0 ? (
-          allReviews.map((review, index) => {
+        {paginatedAllReviews.length > 0 ? (
+          paginatedAllReviews.map((review, index) => {
             // Kiểm tra xem review có phải từ API myRatings không (có createdAt và rating)
             const isCompletedReview = review.rating !== undefined && review.createdAt;
             const uniqueKey = review.id || review.ratingId || `review_${index}_${review.type || 'unknown'}`;
@@ -1677,11 +1723,22 @@ const ReviewsContent = () => {
             </Typography>
           </Box>
         )}
+        {allReviews.length > REVIEWS_PER_PAGE && (
+          <Box display="flex" justifyContent="center" mt={2}>
+            <Pagination
+              count={Math.ceil(allReviews.length / REVIEWS_PER_PAGE)}
+              page={page}
+              onChange={(e, value) => setPage(value)}
+              color="primary"
+              shape="rounded"
+            />
+          </Box>
+        )}
       </TabPanel>
 
       <TabPanel value={activeTab} index={1}>
-        {completedReviews.length > 0 ? (
-          completedReviews.map((review, index) => {
+        {paginatedCompletedReviews.length > 0 ? (
+          paginatedCompletedReviews.map((review, index) => {
             const uniqueKey = review.id || review.ratingId || `completed_${index}_${Date.now()}`;
             return renderCompletedReview(review, uniqueKey);
           })
@@ -1698,11 +1755,22 @@ const ReviewsContent = () => {
             </Typography>
           </Box>
         )}
+        {completedReviews.length > REVIEWS_PER_PAGE && (
+          <Box display="flex" justifyContent="center" mt={2}>
+            <Pagination
+              count={Math.ceil(completedReviews.length / REVIEWS_PER_PAGE)}
+              page={page}
+              onChange={(e, value) => setPage(value)}
+              color="primary"
+              shape="rounded"
+            />
+          </Box>
+        )}
       </TabPanel>
 
       <TabPanel value={activeTab} index={2}>
-        {pendingReviews.length > 0 ? (
-          pendingReviews.map((review, index) => {
+        {paginatedPendingReviews.length > 0 ? (
+          paginatedPendingReviews.map((review, index) => {
             const uniqueKey = review.id || `pending_${index}_${Date.now()}`;
             return renderPendingReview(review, uniqueKey);
           })
@@ -1719,300 +1787,32 @@ const ReviewsContent = () => {
             </Typography>
           </Box>
         )}
+        {pendingReviews.length > REVIEWS_PER_PAGE && (
+          <Box display="flex" justifyContent="center" mt={2}>
+            <Pagination
+              count={Math.ceil(pendingReviews.length / REVIEWS_PER_PAGE)}
+              page={page}
+              onChange={(e, value) => setPage(value)}
+              color="primary"
+              shape="rounded"
+            />
+          </Box>
+        )}
       </TabPanel>
 
-      {/* Review Dialog */}
-      <Dialog
+      {/* Review Dialog - Đã tách thành component riêng */}
+      <ReviewForm 
         open={reviewDialogOpen}
         onClose={handleCloseReviewDialog}
-        maxWidth="md"
-        fullWidth
-        sx={{
-          '& .MuiDialog-paper': {
-            borderRadius: '20px',
-            background: 'linear-gradient(135deg, #F5F7FA 0%, #E3F2FD 50%, #F5F7FA 100%)',
-            boxShadow: '0 20px 60px rgba(74, 144, 226, 0.2)',
-            maxHeight: '90vh',
-            overflow: 'hidden',
-          },
-          '& .MuiBackdrop-root': {
-            backgroundColor: 'rgba(45, 55, 72, 0.4)',
-            backdropFilter: 'blur(5px)',
-          }
-        }}
-        TransitionProps={{
-          timeout: 500,
-        }}
-      >
-        <DialogTitle
-          sx={{
-            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-            color: '#fff',
-            fontWeight: 700,
-            fontSize: '20px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderRadius: '20px 20px 0 0',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <RateReviewIcon sx={{ fontSize: '28px' }} />
-            {isEditMode ? 'Chỉnh sửa đánh giá' : 'Đánh giá dịch vụ'}
-          </Box>
-          <IconButton
-            onClick={handleCloseReviewDialog}
-            sx={{ 
-              color: '#fff',
-              '&:hover': {
-                background: 'rgba(255, 255, 255, 0.1)'
-              }
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        
-        <DialogContent sx={{ p: { xs: 2, md: 4 }, overflow: 'auto' }}>
-          {selectedReview && (
-            <Box>
-              {/* Service Info */}
-              <Box 
-                sx={{ 
-                  background: 'rgba(255, 255, 255, 0.8)',
-                  borderRadius: '16px',
-                  p: 3,
-                  mb: 4,
-                  border: '1px solid rgba(74, 144, 226, 0.1)',
-                  boxShadow: '0 4px 20px rgba(74, 144, 226, 0.05)',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar 
-                    sx={{ 
-                      width: 56, 
-                      height: 56, 
-                      mr: 3,
-                      background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
-                      fontSize: '24px',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {(selectedReview.consultantName || 'N/A').split(' ').pop()[0]}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#2D3748', mb: 0.5 }}>
-                      {selectedReview.serviceName}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#4A5568', fontWeight: 500 }}>
-                      Bác sĩ: {selectedReview.consultantName || 'Chuyên viên'}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: '#6B7280' }}>
-                      Ngày sử dụng: {convertApiDateToDate(selectedReview.date).toLocaleDateString('vi-VN')}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-
-              {/* Rating Section */}
-              <Box sx={{ mb: 4 }}>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    fontWeight: 600, 
-                    color: '#2D3748', 
-                    mb: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }}
-                >
-                  <StarIcon sx={{ color: '#FFB400' }} />
-                  Đánh giá của bạn
-                </Typography>
-                <Box 
-                  sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 2,
-                    background: 'rgba(255, 255, 255, 0.8)',
-                    borderRadius: '12px',
-                    p: 3,
-                    border: '1px solid rgba(74, 144, 226, 0.1)',
-                  }}
-                >
-                  <Rating
-                    value={rating}
-                    onChange={(event, newValue) => setRating(newValue)}
-                    size="large"
-                    sx={{
-                      '& .MuiRating-iconFilled': {
-                        color: '#FFB400',
-                      },
-                      '& .MuiRating-iconEmpty': {
-                        color: '#E0E7FF',
-                      },
-                      '& .MuiRating-iconHover': {
-                        color: '#FFCA28',
-                      }
-                    }}
-                  />
-                  <Typography variant="body1" sx={{ color: '#4A5568', fontWeight: 500 }}>
-                    {rating === 0 && 'Chọn số sao'}
-                    {rating === 1 && 'Rất không hài lòng'}
-                    {rating === 2 && 'Không hài lòng'}
-                    {rating === 3 && 'Bình thường'}
-                    {rating === 4 && 'Hài lòng'}
-                    {rating === 5 && 'Rất hài lòng'}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Feedback Section */}
-              <Box sx={{ mb: 3 }}>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    fontWeight: 600, 
-                    color: '#2D3748', 
-                    mb: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }}
-                >
-                  <RateReviewIcon sx={{ color: '#4A90E2' }} />
-                  Chia sẻ chi tiết
-                </Typography>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  placeholder="Hãy chia sẻ trải nghiệm chi tiết về dịch vụ này... (ít nhất 10 ký tự)"
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  helperText={`${feedback.length}/500 ký tự`}
-                  inputProps={{ maxLength: 500 }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '12px',
-                      background: 'rgba(255, 255, 255, 0.8)',
-                      '&:hover fieldset': {
-                        borderColor: '#4A90E2',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#4A90E2',
-                        borderWidth: '2px',
-                      },
-                    },
-                    '& .MuiFormHelperText-root': {
-                      textAlign: 'right',
-                      color: feedback.length > 450 ? '#FF5722' : '#6B7280',
-                      fontWeight: 500,
-                    }
-                  }}
-                />
-                
-                {/* Quick feedback suggestions */}
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="caption" sx={{ color: '#6B7280', mb: 1, display: 'block' }}>
-                    Gợi ý nội dung đánh giá:
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {[
-                      'Dịch vụ chuyên nghiệp',
-                      'Bác sĩ tận tâm',
-                      'Quy trình nhanh chóng',
-                      'Kết quả chính xác',
-                      'Môi trường sạch sẽ',
-                      'Nhân viên thân thiện'
-                    ].map((suggestion, index) => (
-                      <Chip
-                        key={index}
-                        label={suggestion}
-                        size="small"
-                        onClick={() => {
-                          if (feedback.length + suggestion.length + 2 <= 500) {
-                            setFeedback(prev => 
-                              prev ? `${prev}, ${suggestion}` : suggestion
-                            );
-                          }
-                        }}
-                        sx={{
-                          cursor: 'pointer',
-                          fontSize: '11px',
-                          height: '24px',
-                          '&:hover': {
-                            backgroundColor: '#E3F2FD',
-                          },
-                          border: '1px solid #E0E7FF',
-                          color: '#4A90E2',
-                        }}
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              </Box>
-            </Box>
-          )}
-        </DialogContent>
-        
-        <DialogActions 
-          sx={{ 
-            p: { xs: 2, md: 3 }, 
-            background: 'rgba(255, 255, 255, 0.5)',
-            borderRadius: '0 0 20px 20px',
-            gap: 2,
-            flexDirection: { xs: 'column', sm: 'row' }
-          }}
-        >
-          <Button
-            onClick={handleCloseReviewDialog}
-            variant="outlined"
-            sx={{
-              borderRadius: '12px',
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 3,
-              py: 1.5,
-              borderColor: '#4A90E2',
-              color: '#4A90E2',
-              '&:hover': {
-                borderColor: '#357ABD',
-                background: 'rgba(74, 144, 226, 0.05)',
-              }
-            }}
-          >
-            Hủy bỏ
-          </Button>
-          <Button
-            onClick={handleSubmitReview}
-            variant="contained"
-            disabled={rating === 0 || feedback.trim().length < 10 || loading}
-            startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
-            sx={{
-              borderRadius: '12px',
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 4,
-              py: 1.5,
-              background: rating > 0 && feedback.trim().length >= 10 && !loading
-                ? 'linear-gradient(45deg, #4A90E2, #1ABC9C)'
-                : '#E0E7FF',
-              '&:hover': {
-                background: rating > 0 && feedback.trim().length >= 10 && !loading
-                  ? 'linear-gradient(45deg, #357ABD, #16A085)'
-                  : '#E0E7FF',
-              },
-              '&:disabled': {
-                color: '#9CA3AF'
-              }
-            }}
-          >
-            {loading ? (isEditMode ? 'Đang cập nhật...' : 'Đang gửi...') : (isEditMode ? 'Cập nhật đánh giá' : 'Gửi đánh giá')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        review={selectedReview}
+        rating={rating}
+        setRating={setRating}
+        feedback={feedback}
+        setFeedback={setFeedback}
+        onSubmit={handleSubmitReview}
+        isEditMode={isEditMode}
+        loading={loading}
+      />
 
         </>
       )}

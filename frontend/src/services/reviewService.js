@@ -52,16 +52,13 @@ const reviewService = {
         throw new Error("Bình luận là bắt buộc và không được để trống");
       }
 
+      // Chuẩn bị dữ liệu đánh giá theo format yêu cầu (đơn giản)
       const requestBody = {
         rating: parseInt(reviewData.rating),
         comment: reviewData.comment.trim()
       };
       
-      // Thêm consultationId nếu có
-      if (reviewData.consultationId) {
-        requestBody.consultationId = parseInt(reviewData.consultationId);
-      }
-      
+      // URL mới theo yêu cầu: http://localhost:8080/ratings/consultant/24
       const response = await apiClient.post(`/ratings/consultant/${consultantId}`, requestBody);
       if (!response.data.success) {
         throw new Error(response.data.message || "Không thể tạo đánh giá");
@@ -96,11 +93,6 @@ const reviewService = {
         comment: reviewData.comment.trim()
       };
       
-      // Thêm stiTestId nếu có
-      if (reviewData.stiTestId) {
-        requestBody.stiTestId = parseInt(reviewData.stiTestId);
-      }
-      
       const response = await apiClient.post(`/ratings/sti-service/${serviceId}`, requestBody);
       if (!response.data.success) {
         throw new Error(response.data.message || "Không thể tạo đánh giá");
@@ -134,11 +126,6 @@ const reviewService = {
         rating: parseInt(reviewData.rating),
         comment: reviewData.comment.trim()
       };
-      
-      // Thêm stiTestId nếu có
-      if (reviewData.stiTestId) {
-        requestBody.stiTestId = parseInt(reviewData.stiTestId);
-      }
       
       const response = await apiClient.post(`/ratings/sti-package/${packageId}`, requestBody);
       if (!response.data.success) {
@@ -204,6 +191,11 @@ const reviewService = {
    */
   updateReview: async (id, reviewData) => {
     try {
+      // Kiểm tra id hợp lệ, phải là số
+      if (isNaN(parseInt(id))) {
+        throw new Error("ID đánh giá không hợp lệ. ID phải là một số.");
+      }
+      
       const response = await apiClient.put(`/ratings/${id}`, {
         rating: reviewData.rating,
         comment: reviewData.comment
