@@ -86,7 +86,7 @@ const LoggedInView = ({ user, onLogout }) => {
             color: theme.palette.primary.main,
           }}
         >
-          Xin chào, {user.username}!
+          Xin chào, {user.fullName || user.username || user.email}!
         </Typography>
         <Typography
           variant="body1"

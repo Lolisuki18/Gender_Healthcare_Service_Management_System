@@ -127,6 +127,51 @@ const localStorageUtil = {
       return null;
     }
   },
+
+  /**
+   * Lưu token vào localStorage
+   * @param {Object} tokenData - Object chứa accessToken và refreshToken
+   */
+  setTokens: (tokenData) => {
+    try {
+      if (tokenData.accessToken) {
+        localStorageUtil.set('accessToken', tokenData.accessToken);
+      }
+      if (tokenData.refreshToken) {
+        localStorageUtil.set('refreshToken', tokenData.refreshToken);
+      }
+      // Lưu cả object token để dễ quản lý
+      localStorageUtil.set('token', tokenData);
+    } catch (error) {
+      // console.error("Error setting tokens in localStorage:", error);
+    }
+  },
+
+  /**
+   * Lấy tokens từ localStorage
+   * @returns {Object|null} Object chứa accessToken và refreshToken hoặc null
+   */
+  getTokens: () => {
+    try {
+      return localStorageUtil.get('token');
+    } catch (error) {
+      // console.error("Error getting tokens from localStorage:", error);
+      return null;
+    }
+  },
+
+  /**
+   * Xóa tất cả tokens khỏi localStorage
+   */
+  clearTokens: () => {
+    try {
+      localStorageUtil.remove('accessToken');
+      localStorageUtil.remove('refreshToken');
+      localStorageUtil.remove('token');
+    } catch (error) {
+      // console.error("Error clearing tokens from localStorage:", error);
+    }
+  },
 };
 
 export default localStorageUtil;

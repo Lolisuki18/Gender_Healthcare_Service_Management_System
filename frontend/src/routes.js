@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { HomePage } from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import MainLayout from '@layouts/MainLayout';
@@ -31,23 +32,25 @@ import BlogCreatePage from './pages/BlogCreatePage';
 import PillReminderPage from '@/pages/PillReminderPage';
 
 const AppRoutes = () => {
-  // Lấy thông tin user từ localStorage
-  const userData = localStorageUtil.get('userProfile');
-  const tokenData = localStorageUtil.get('token'); // Component để redirect đến trang phù hợp khi truy cập "/"
+  // Sử dụng Redux state thay vì localStorage để reactive
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const tokenData = localStorageUtil.get('token');
+  
+  // Component để redirect đến trang phù hợp khi truy cập "/"
   const AutoRedirectToProfile = () => {
-    // Kiểm tra cả token và userProfile
-    if (!userData || !userData.data || !userData.data.role || !tokenData) {
+    // Kiểm tra auth state từ Redux
+    if (!isAuthenticated || !user || !user.role || !tokenData) {
       return <Navigate to="/login" replace />;
     }
 
-    switch (userData.data.role) {
+    switch (user.role) {
       case 'ADMIN':
-        return <Navigate to="/admin/profile" replace />; // Admin vào admin profile
+        return <Navigate to="/admin/profile" replace />;
       case 'CUSTOMER':
       case 'CONSULTANT':
       case 'STAFF':
-        return <HomePage />; // Các role khác vào homepage
-      default: //nếu là role không hợp lệ thì sẽ vào trang login
+        return <HomePage />;
+      default:
         return <Navigate to="/login" replace />;
     }
   };
@@ -61,9 +64,7 @@ const AppRoutes = () => {
         <Route
           index
           element={
-            userData && tokenData ? <AutoRedirectToProfile /> : <HomePage />
-            //nếu có token và userData thì sẽ redirect đến trang phù hợp , còn hok thì sẽ
-            //đến trang HomePage
+            isAuthenticated && user ? <AutoRedirectToProfile /> : <HomePage />
           }
         />
         <Route path="/consultation" element={<ConsultationPage />}></Route>
@@ -88,13 +89,13 @@ const AppRoutes = () => {
         <Route
           path="profile"
           element={
-            userData &&
-            userData.data &&
-            userData.data.role !== 'ADMIN' &&
+            isAuthenticated &&
+            user &&
+            user.role !== 'ADMIN' &&
             tokenData ? (
-              <ProfilePage /> // Chỉ cho phép truy cập nếu có userData và token
+              <ProfilePage />
             ) : (
-              <Navigate to="/login" replace /> // còn hoặc không có thì sẽ redirect đến trang login
+              <Navigate to="/login" replace />
             )
           }
         />
@@ -119,7 +120,7 @@ const AppRoutes = () => {
           path="profile"
           element={
             // Chỉ cho phép truy cập nếu user là admin và có token
-            userData?.data?.role === 'ADMIN' && tokenData ? (
+            isAuthenticated && user?.role === 'ADMIN' && tokenData ? (
               <AdminProfile />
             ) : (
               // Nếu không phải admin hoặc không có token, redirect đến trang đăng nhập

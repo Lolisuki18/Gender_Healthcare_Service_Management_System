@@ -57,16 +57,24 @@ const authSlice = createSlice({
     loginSuccess: (state, action) => {
       state.loading = false;
       state.isAuthenticated = true;
-      state.user = action.payload;
-      state.avatarUrl = action.payload.avatar || null;
+      
+      // Hỗ trợ cả 2 format: direct user object (login thường) và {user, accessToken} (OAuth)
+      const userData = action.payload.user || action.payload;
+      state.user = userData;
+      state.avatarUrl = userData?.avatar || null;
       state.error = null;
 
-      // Lưu thông tin vào localStorage
+      // Lưu thông tin user vào localStorage
       localStorageUtil.set("userProfile", {
         success: true,
         message: "User profile loaded",
-        data: action.payload,
+        data: userData,
       });
+      
+      // Lưu tokens nếu có
+      if (action.payload.accessToken) {
+        localStorageUtil.set("token", action.payload.accessToken);
+      }
     },
     loginFailed: (state, action) => {
       state.loading = false;

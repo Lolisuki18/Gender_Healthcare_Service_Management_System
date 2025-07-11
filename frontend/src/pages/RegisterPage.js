@@ -43,6 +43,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { userService } from '@/services/userService';
 import LoggedInView from '@common/LoggedInView';
 import { logout } from '@/redux/slices/authSlice';
+import GoogleLoginButton from '@/components/common/GoogleLoginButton';
 
 /**
  * Component chính Form Đăng Ký
@@ -81,6 +82,8 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   // showConfirmPassword để quản lý hiển thị/ẩn xác nhận mật khẩu
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  // loading state để quản lý trạng thái loading của form
+  const [loading, setLoading] = useState(false);
 
   // Validation states
   //các state để quản lý lỗi validation cho từng trường
@@ -297,6 +300,9 @@ const RegisterPage = () => {
     // *Debug: Log dữ liệu trước khi gửi
     console.log('Registration data being sent:', registrationData);
 
+    // Set loading state
+    setLoading(true);
+
     // Gửi form đăng ký đến server
     userService
       .register(registrationData) // Gửi registrationData thay vì formData
@@ -340,6 +346,10 @@ const RegisterPage = () => {
         } else {
           notify.error('Đăng ký thất bại', errorMessage);
         }
+      })
+      .finally(() => {
+        // Reset loading state regardless of success or error
+        setLoading(false);
       });
   };
 
@@ -1041,6 +1051,7 @@ const RegisterPage = () => {
                 variant="contained"
                 fullWidth
                 size="large"
+                disabled={loading}
                 sx={{
                   py: 2,
                   fontWeight: 'bold',
@@ -1061,6 +1072,22 @@ const RegisterPage = () => {
                 <LockOutlinedIcon sx={{ mr: 1 }} />
                 Đăng Ký
               </Button>
+
+              {/* Divider "hoặc" */}
+              <Box sx={{ display: 'flex', alignItems: 'center', my: 3 }}>
+                <Divider sx={{ flex: 1, opacity: 0.3, borderColor: '#4A90E2' }} />
+                <Typography variant="body2" sx={{ mx: 2, color: 'text.secondary', fontWeight: 500 }}>
+                  hoặc
+                </Typography>
+                <Divider sx={{ flex: 1, opacity: 0.3, borderColor: '#4A90E2' }} />
+              </Box>
+
+              {/* Nút đăng nhập Google */}
+              <GoogleLoginButton 
+                fullWidth 
+                variant="outlined"
+                disabled={loading}
+              />
 
               <Divider sx={{ my: 3, opacity: 0.3, borderColor: '#4A90E2' }} />
 

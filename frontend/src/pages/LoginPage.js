@@ -28,6 +28,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { notify } from '@/utils/notify';
 
 import LoggedInView from '@/components/common/LoggedInView';
+import GoogleLoginButton from '@/components/common/GoogleLoginButton';
 import { logout } from '@/redux/slices/authSlice';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '@/redux/slices/authSlice';
@@ -541,6 +542,22 @@ const LoginPage = () => {
                 <LoginIcon sx={{ mr: 1 }} />
                 {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
               </Button>
+
+              {/* Divider "hoặc" */}
+              <Box sx={{ display: 'flex', alignItems: 'center', my: 3 }}>
+                <Divider sx={{ flex: 1, opacity: 0.3, borderColor: '#4A90E2' }} />
+                <Typography variant="body2" sx={{ mx: 2, color: 'text.secondary', fontWeight: 500 }}>
+                  hoặc
+                </Typography>
+                <Divider sx={{ flex: 1, opacity: 0.3, borderColor: '#4A90E2' }} />
+              </Box>
+
+              {/* Nút đăng nhập Google */}
+              <GoogleLoginButton 
+                fullWidth 
+                variant="outlined"
+                disabled={loading}
+              />
 
               <Divider sx={{ my: 3, opacity: 0.3, borderColor: '#4A90E2' }} />
 
