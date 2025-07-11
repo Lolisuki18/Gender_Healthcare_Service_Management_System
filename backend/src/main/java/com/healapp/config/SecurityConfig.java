@@ -66,6 +66,9 @@ public class SecurityConfig {
                         // JWT Authentication endpoints
                         .requestMatchers("/auth/login", "/auth/refresh-token", "/auth/logout")
                         .permitAll()
+                        // OAuth Authentication
+                        .requestMatchers("/auth/oauth/google/login", "/auth/oauth/facebook/login")
+                        .permitAll()
 
                         // Consultant public endpoints
                         .requestMatchers(HttpMethod.GET, "/consultants").permitAll()
@@ -112,7 +115,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/users/profile/email").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/users/profile/password").authenticated()
                         .requestMatchers(HttpMethod.POST, "/users/profile/avatar").authenticated()
-                        
+
                         // PHONE VERIFICATION ENDPOINTS
                         .requestMatchers(HttpMethod.POST, "/users/send-phone-verification-code").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/users/profile/phone").authenticated()

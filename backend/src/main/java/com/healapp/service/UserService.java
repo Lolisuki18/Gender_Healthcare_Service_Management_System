@@ -770,21 +770,19 @@ public class UserService {
         return stats;
     }
 
-    // ===================== PHONE VERIFICATION METHODS =====================
-
     /**
      * Gửi mã xác thực SMS tới số điện thoại mới
      */
     public ApiResponse<String> sendPhoneVerificationCode(PhoneVerificationRequest request) {
         try {
             boolean sent = phoneVerificationService.sendPhoneVerificationCode(request.getPhone());
-            
+
             if (sent) {
                 return ApiResponse.success("Verification code has been sent to your phone", request.getPhone());
             } else {
                 return ApiResponse.error("Failed to send verification code. Please try again.");
             }
-            
+
         } catch (IllegalArgumentException e) {
             return ApiResponse.error("Invalid phone number format");
         } catch (Exception e) {
@@ -807,7 +805,7 @@ public class UserService {
             // Kiểm tra phone mới có trùng với phone hiện tại không
             String currentPhone = user.getPhone();
             String newPhone = request.getPhone();
-            
+
             if (currentPhone != null && currentPhone.equals(newPhone)) {
                 return ApiResponse.error("New phone number cannot be the same as current phone number");
             }
@@ -846,19 +844,20 @@ public class UserService {
         if (phone == null || phone.trim().isEmpty()) {
             return false;
         }
-        
+
         // Tìm phone bằng cách so sánh phone gốc (bỏ suffix _V)
         return userRepository.findAll().stream()
-            .anyMatch(user -> {
-                String userPhone = user.getPhone();
-                if (userPhone == null) return false;
-                
-                // Loại bỏ suffix _V nếu có
-                String cleanUserPhone = userPhone.endsWith("_V") ? 
-                    userPhone.substring(0, userPhone.length() - 2) : userPhone;
-                
-                return cleanUserPhone.equals(phone);
-            });
+                .anyMatch(user -> {
+                    String userPhone = user.getPhone();
+                    if (userPhone == null)
+                        return false;
+
+                    // Loại bỏ suffix _V nếu có
+                    String cleanUserPhone = userPhone.endsWith("_V") ? userPhone.substring(0, userPhone.length() - 2)
+                            : userPhone;
+
+                    return cleanUserPhone.equals(phone);
+                });
     }
 
     /**
@@ -868,7 +867,7 @@ public class UserService {
         if (phone == null || phone.trim().isEmpty()) {
             return phone;
         }
-        
+
         return phone.endsWith("_V") ? phone.substring(0, phone.length() - 2) : phone;
     }
 
@@ -877,5 +876,14 @@ public class UserService {
      */
     public boolean isPhoneVerified(String phone) {
         return phone != null && phone.endsWith("_V");
+    }
+
+    // OAuth-related methods
+    public UserDtls findByEmailAndProvider(String email, com.healapp.model.AuthProvider provider) {
+        return userRepository.findByEmailAndProvider(email, provider).orElse(null);
+    }
+
+    public UserDtls saveUser(UserDtls user) {
+        return userRepository.save(user);
     }
 }
