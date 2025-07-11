@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
-import { Plus, Calendar, Clock, Pill, Check, X, ChevronLeft, ChevronRight, Edit, Shield, Heart, Star } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Calendar, Clock, Check, X, ChevronLeft, ChevronRight, Edit, Shield, Heart, Star } from 'lucide-react';
 import styles from '../styles/PillReminderPage.module.css';
+import pillReminderService from '../services/pillReminderService';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { PillReminderHomeScreen, PillReminderFormScreen, PillReminderCalendarScreen, PillReminderConfirmModal, PillReminderDeleteConfirmModal } from '../components/PillReminder/PillReminderScreens';
+import { useUser } from '../context/UserContext';
 
 /**
  * @typedef {Object} PillSchedule
@@ -24,16 +29,104 @@ function PillReminderPage() {
   const [currentScreen, setCurrentScreen] = useState('home');
   const [schedule, setSchedule] = useState(null);
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDayInfo, setSelectedDayInfo] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false); // New state for delete modal
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { isAuthenticated } = useUser();
   const [formData, setFormData] = useState({
     pillDays: 21,
     breakDays: 7,
     startDate: '',
-    reminderTime: '09:00'
+    reminderTime: '09:00',
+    placebo: false // Add placebo to form data
   });
 
+  useEffect(() => {
+    const savedScheduleId = localStorage.getItem('pillScheduleId');
+    if (savedScheduleId && savedScheduleId !== 'undefined' && savedScheduleId !== 'null') {
+      // Optimistically set to calendar. If fetch fails, fetchScheduleAndLogs will revert to 'home'.
+      setCurrentScreen('calendar');
+      fetchScheduleAndLogs(savedScheduleId);
+    } else {
+      // If no valid ID, ensure we are on the home screen to allow creation
+      setCurrentScreen('home');
+    }
+  }, []);
+
+  const fetchScheduleAndLogs = async (id) => {
+    console.log("Debug: fetchScheduleAndLogs called with ID:", id);
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await pillReminderService.getPillLogs(id);
+      console.log("Debug: Full API response for getPillLogs:", response);
+
+      if (response.success && response.data) {
+        const fetchedSchedule = response.data.controlPills;
+        const fetchedPillLogs = response.data.pillLogs;
+
+        console.log("Debug: fetchedSchedule from API response:", fetchedSchedule);
+        console.log("Debug: fetchedPillLogs from API response:", fetchedPillLogs);
+
+        if (!fetchedSchedule) {
+            console.error("Fetched schedule is null or undefined.");
+            setCurrentScreen('home');
+            toast.error('Lỗi: Không tìm thấy thông tin lịch uống thuốc.');
+            return;
+        }
+
+        const pillLogDataMap = new Map();
+        if (fetchedPillLogs && Array.isArray(fetchedPillLogs)) {
+            fetchedPillLogs.forEach(log => {
+                const logDate = new Date(log.logDate);
+                logDate.setHours(0, 0, 0, 0);
+                const dateString = logDate.toISOString().split('T')[0];
+                pillLogDataMap.set(dateString, log);
+            });
+            console.log("Debug: pillLogDataMap after processing logs:", pillLogDataMap);
+        } else {
+            console.warn("Fetched pill logs are empty or not an array.");
+            console.log("Debug: fetchedPillLogs that caused warning:", fetchedPillLogs);
+        }
+        
+        setSchedule({
+          id: fetchedSchedule.pillsId, // Sửa từ .id thành .pillsId
+          startDate: new Date(fetchedSchedule.startDate),
+          pillDays: fetchedSchedule.pillDays,
+          breakDays: fetchedSchedule.breakDays,
+          reminderTime: `${String(fetchedSchedule.remindTime[0]).padStart(2, '0')}:${String(fetchedSchedule.remindTime[1]).padStart(2, '0')}`,
+          placebo: fetchedSchedule.placebo || false,
+          checkedInDates: new Set(), 
+          pillLogDataMap: pillLogDataMap
+        });
+        setCurrentScreen('calendar');
+        toast.success('Lịch uống thuốc đã được tải thành công!');
+      } else {
+        setCurrentScreen('home');
+        setError(response.message || 'Failed to fetch schedule and logs.');
+        toast.error(response.message || 'Lỗi khi tải lịch uống thuốc.');
+      }
+    } catch (err) {
+      console.error('Error fetching schedule and logs:', err);
+      setError('Error fetching schedule and logs.');
+      toast.error('Lỗi khi tải lịch uống thuốc: ' + (err.response?.data?.message || err.message));
+      setCurrentScreen('home');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const generateCalendarData = (schedule, monthOffset) => {
+    // Add a defensive check for schedule and pillLogDataMap
+    if (!schedule || !schedule.pillLogDataMap) {
+      console.warn("Schedule or pillLogDataMap is undefined, returning empty calendar data.");
+      console.log("Debug: schedule at generateCalendarData", schedule);
+      return [];
+    }
+
+    console.log("Debug: schedule.pillLogDataMap at generateCalendarData", schedule.pillLogDataMap);
     const data = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -41,538 +134,272 @@ function PillReminderPage() {
     startDate.setHours(0, 0, 0, 0);
     const currentMonth = new Date(startDate.getFullYear(), startDate.getMonth() + monthOffset, 1);
     const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
       date.setHours(0, 0, 0, 0);
-      const daysSinceStart = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      if (daysSinceStart >= 0) {
-        const cycleLength = schedule.pillDays + schedule.breakDays;
-        const dayInCycle = daysSinceStart % cycleLength;
-        const dateString = date.toISOString().split('T')[0];
-        const isCheckedIn = schedule.checkedInDates.has(dateString);
-        let status;
-        let isClickable = false;
-        if (dayInCycle < schedule.pillDays) {
-          isClickable = true;
-          if (date > today) {
-            status = 'future';
-          } else if (isCheckedIn) {
-            status = 'pill';
+      const dateString = date.toISOString().split('T')[0];
+      const log = schedule.pillLogDataMap.get(dateString); // Get the full log for this date
+
+      let status;
+      let isClickable = false;
+      let logId = log ? log.logId : null; // Get logId if log exists
+
+      if (log) { // This day has a corresponding log entry
+        isClickable = true; // All days with logs are clickable for check-in/un-check-in
+
+        if (date.getTime() < today.getTime()) { // Past days
+          status = log.status ? 'pill' : 'missed';
+        } else if (date.getTime() === today.getTime()) { // Today
+          status = log.status ? 'pill' : 'missed';
+        } else { // Future days
+          status = 'future';
+        }
+      } else { // This day does not have a corresponding log entry (likely a break day or before start date)
+        // Determine if it's a break day based on the cycle logic relative to startDate
+        const daysSinceStart = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSinceStart >= 0) {
+          const cycleLength = schedule.pillDays + schedule.breakDays;
+          const dayInCycle = daysSinceStart % cycleLength;
+          if (dayInCycle >= schedule.pillDays) { // This is a calculated break day
+            status = 'break';
           } else {
-            status = 'missed';
+            // This implies a pill day without a log entry. This shouldn't happen if generatePillLogs works correctly.
+            // For safety, mark as future or missed if before/after today
+            if (date.getTime() < today.getTime()) {
+              status = 'missed'; // A pill day that should have had a log but didn't and is in the past
+            } else {
+              status = 'future'; // A pill day that should have had a log but didn't and is in the future
+            }
           }
         } else {
-          status = 'break';
-          isClickable = false;
+          status = 'break'; // Days before the start date are treated as break days
         }
-        data.push({
-          date,
-          status,
-          isCheckedIn,
-          isClickable
-        });
-      } else {
-        data.push({
-          date,
-          status: 'break',
-          isCheckedIn: false,
-          isClickable: false
-        });
+        isClickable = false; // Days without explicit log entries are not clickable for check-in
       }
+
+      data.push({
+        date,
+        status,
+        isCheckedIn: log ? log.status : false, // Reflect actual check-in status from log
+        isClickable,
+        logId // Include logId for check-in actions
+      });
     }
     return data;
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-    const newSchedule = {
-      id: Date.now().toString(),
-      startDate: new Date(formData.startDate),
-      pillDays: formData.pillDays,
-      breakDays: formData.breakDays,
-      reminderTime: formData.reminderTime,
-      checkedInDates: new Set()
-    };
-    setSchedule(newSchedule);
-    setCurrentScreen('calendar');
+    setIsLoading(true);
+    setError(null);
+    try {
+      const requestData = {
+        numberDaysDrinking: formData.pillDays,
+        numberDaysOff: formData.breakDays,
+        startDate: formData.startDate, // YYYY-MM-DD
+        remindTime: formData.reminderTime, // HH:MM
+        isActive: true, // Always true as per requirement
+        placebo: formData.placebo // Send placebo value from form
+      };
+      const response = await pillReminderService.createPillSchedule(requestData);
+      if (response.success) {
+        const newSchedule = response.data;
+        localStorage.setItem('pillScheduleId', newSchedule.pillsId);
+        setSchedule({
+          id: newSchedule.pillsId,
+          startDate: new Date(newSchedule.startDate),
+          pillDays: newSchedule.pillDays,
+          breakDays: newSchedule.breakDays,
+          reminderTime: `${String(newSchedule.remindTime[0]).padStart(2, '0')}:${String(newSchedule.remindTime[1]).padStart(2, '0')}`,
+          checkedInDates: new Set(), // New schedule, no check-ins yet for old checkedInDates
+          pillLogDataMap: new Map() // Initialize pillLogDataMap as an empty Map for a new schedule
+        });
+        setCurrentScreen('calendar');
+        toast.success('Lịch uống thuốc đã được tạo thành công!');
+      } else {
+        setError(response.message || 'Failed to create schedule.');
+        toast.error(response.message || 'Lỗi khi tạo lịch uống thuốc.');
+      }
+    } catch (err) {
+      console.error('Error creating schedule:', err);
+      console.error('Full error response from backend:', err.response?.data);
+      setError('Error creating schedule.');
+      toast.error('Lỗi khi tạo lịch uống thuốc: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
-    if (!schedule) return;
-    const updatedSchedule = {
-      ...schedule,
-      startDate: new Date(formData.startDate),
-      pillDays: formData.pillDays,
-      breakDays: formData.breakDays,
-      reminderTime: formData.reminderTime,
-      checkedInDates: schedule.checkedInDates
-    };
-    setSchedule(updatedSchedule);
-    setCurrentScreen('calendar');
+    if (!schedule || !schedule.id) return; // Đảm bảo schedule và schedule.id tồn tại
+    setIsLoading(true);
+    setError(null);
+    try {
+      const requestData = {
+        numberDaysDrinking: formData.pillDays,
+        numberDaysOff: formData.breakDays,
+        startDate: formData.startDate,
+        remindTime: formData.reminderTime,
+        placebo: formData.placebo // Đảm bảo placebo cũng được gửi
+      };
+      console.log("Debug: Sending update schedule request for ID:", schedule.id, "with data:", requestData);
+      const response = await pillReminderService.updatePillSchedule(schedule.id, requestData);
+      if (response.success) {
+        const updatedBackendSchedule = response.data;
+        setSchedule({
+          ...schedule,
+          startDate: new Date(updatedBackendSchedule.startDate),
+          pillDays: updatedBackendSchedule.pillDays,
+          breakDays: updatedBackendSchedule.breakDays,
+          reminderTime: `${String(updatedBackendSchedule.remindTime[0]).padStart(2, '0')}:${String(updatedBackendSchedule.remindTime[1]).padStart(2, '0')}`,
+          // checkedInDates should remain as is, as backend update doesn't change it directly
+        });
+        setCurrentScreen('calendar');
+        toast.success('Lịch uống thuốc đã được cập nhật thành công!');
+      } else {
+        setError(response.message || 'Failed to update schedule.');
+        toast.error(response.message || 'Lỗi khi cập nhật lịch uống thuốc.');
+      }
+    } catch (err) {
+      console.error('Error updating schedule:', err);
+      setError('Error updating schedule.');
+      toast.error('Lỗi khi cập nhật lịch uống thuốc: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEditClick = () => {
     if (!schedule) return;
     setFormData({
-      pillDays: schedule.pillDays,
-      breakDays: schedule.breakDays,
-      startDate: schedule.startDate.toISOString().split('T')[0],
-      reminderTime: schedule.reminderTime
+      pillDays: schedule.pillDays || 21, // Cung cấp giá trị mặc định
+      breakDays: schedule.breakDays || 7, // Cung cấp giá trị mặc định
+      startDate: schedule.startDate ? schedule.startDate.toISOString().split('T')[0] : '',
+      reminderTime: schedule.reminderTime || '09:00',
+      placebo: schedule.placebo || false
     });
     setCurrentScreen('edit');
   };
 
-  const handleCheckIn = (date) => {
-    if (!schedule) return;
-    const dateString = date.toISOString().split('T')[0];
-    const newCheckedInDates = new Set(schedule.checkedInDates);
-    if (newCheckedInDates.has(dateString)) {
-      newCheckedInDates.delete(dateString);
-    } else {
-      newCheckedInDates.add(dateString);
+  const handleCheckIn = async (dayInfo) => {
+    if (!schedule || !dayInfo.logId) return; // Ensure logId exists
+    setIsLoading(true);
+    setError(null);
+    const dateString = dayInfo.date.toISOString().split('T')[0];
+    const newPillLogDataMap = new Map(schedule.pillLogDataMap);
+
+    try {
+      // Pass the specific logId to the backend
+      const response = await pillReminderService.updateCheckIn(dayInfo.logId);
+      if (response.success) {
+        const updatedLog = response.data; // Backend should return the updated log
+        console.log("Debug: Received updatedLog from backend:", updatedLog);
+        newPillLogDataMap.set(dateString, updatedLog);
+
+        setSchedule(prevSchedule => ({
+          ...prevSchedule,
+          pillLogDataMap: newPillLogDataMap,
+        }));
+        console.log("Debug: schedule state updated with new pillLogDataMap.");
+        toast.success(updatedLog.status ? 'Đã check-in thành công!' : 'Đã hủy check-in cho ngày này.');
+      } else {
+        toast.error(response.message || 'Lỗi khi check-in.');
+      }
+    } catch (err) {
+      console.error('Error during check-in:', err);
+      setError('Error during check-in.');
+      toast.error('Lỗi khi check-in: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setShowConfirmModal(false);
+      setIsLoading(false);
     }
-    setSchedule({
-      ...schedule,
-      checkedInDates: newCheckedInDates
-    });
-    setSelectedDate(null);
   };
 
   const handleDateClick = (dayInfo) => {
     if (dayInfo.isClickable) {
-      setSelectedDate(dayInfo.date);
-      if (dayInfo.status === 'future') {
-        setShowConfirmModal(true);
+      setSelectedDayInfo(dayInfo);
+      setShowConfirmModal(true); // Always show confirm modal for clickable dates
+    }
+  };
+
+  const handleDeleteSchedule = () => {
+    setShowDeleteConfirmModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!schedule || !schedule.id) return; // Đảm bảo schedule và schedule.id tồn tại
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await pillReminderService.deletePillSchedule(schedule.id);
+      if (response.success) {
+        localStorage.removeItem('pillScheduleId');
+        setSchedule(null);
+        setCurrentScreen('home'); // Navigate back to home screen after deletion
+        toast.success('Lịch uống thuốc đã được xóa thành công!');
       } else {
-        handleCheckIn(dayInfo.date);
+        setError(response.message || 'Failed to delete schedule.');
+        toast.error(response.message || 'Lỗi khi xóa lịch uống thuốc.');
       }
+    } catch (err) {
+      console.error('Error deleting schedule:', err);
+      setError('Error deleting schedule.');
+      toast.error('Lỗi khi xóa lịch uống thuốc: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setIsLoading(false);
+      setShowDeleteConfirmModal(false);
     }
-  };
-
-  const getPillColor = (status) => {
-    switch (status) {
-      case 'pill': return 'bg-blue-500';
-      case 'missed': return 'bg-red-500';
-      case 'future': return 'bg-green-500';
-      case 'break': return 'bg-gray-400';
-      default: return 'bg-gray-300';
-    }
-  };
-
-  const renderHomeScreen = () => (
-    <div className={styles.pageBg}>
-      <div className={styles.container}>
-        {/* Header Section */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 96, height: 96, background: 'linear-gradient(90deg, #e57399, #a259e6)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <Pill style={{ width: 48, height: 48, color: '#fff' }} />
-          </div>
-          <h1 style={{ fontSize: 32, fontWeight: 700, color: '#181c32', marginBottom: 8 }}>Lịch Nhắc Nhở</h1>
-          <p style={{ color: '#666' }}>Uống thuốc tránh thai đúng giờ</p>
-        </div>
-        {/* Main Action Button */}
-        <div className={styles.card}>
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <h2 className={styles.cardTitle}>Bắt đầu theo dõi</h2>
-            <p className={styles.cardDescription}>Tạo lịch uống thuốc cá nhân của bạn</p>
-          </div>
-          <button
-            onClick={() => setCurrentScreen('form')}
-            style={{ width: '100%', background: 'linear-gradient(90deg, #e57399, #a259e6)', color: '#fff', padding: '16px 24px', borderRadius: 16, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', fontSize: 18, cursor: 'pointer', boxShadow: '0 2px 8px rgba(162,89,230,0.10)' }}
-          >
-            <Plus style={{ width: 20, height: 20 }} />
-            Thêm lịch uống thuốc
-          </button>
-        </div>
-        {/* Benefits Section */}
-        <div className={styles.card}>
-          <div className={styles.benefitHeaderRow}>
-            <div className={styles.benefitHeaderIcon}><Shield size={40} /></div>
-            <div className={styles.benefitHeaderTitle}>Lợi ích của thuốc tránh thai</div>
-          </div>
-          <div className={styles.benefitListRow}>
-            <div className={styles.benefitItemRow}>
-              <div className={`${styles.benefitIconRow} ${styles.pink}`}><Check size={24} /></div>
-              <div>
-                <div className={styles.benefitTitleRow}>Ngăn ngừa thai ngoài ý muốn</div>
-                <div className={styles.benefitDescRow}>Hiệu quả lên đến 99% khi sử dụng đúng cách</div>
-              </div>
-            </div>
-            <div className={styles.benefitItemRow}>
-              <div className={`${styles.benefitIconRow} ${styles.purple}`}><Heart size={24} /></div>
-              <div>
-                <div className={styles.benefitTitleRow}>Điều hòa chu kỳ kinh nguyệt</div>
-                <div className={styles.benefitDescRow}>Giúp chu kỳ đều đặn và giảm đau bụng kinh</div>
-              </div>
-            </div>
-            <div className={styles.benefitItemRow}>
-              <div className={`${styles.benefitIconRow} ${styles.blue}`}><Star size={24} /></div>
-              <div>
-                <div className={styles.benefitTitleRow}>Cải thiện làn da</div>
-                <div className={styles.benefitDescRow}>Giảm mụn trứng cá và cân bằng hormone</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* Additional Benefits Section */}
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle} style={{ textAlign: 'center', marginBottom: 24 }}>Tác dụng khác của thuốc tránh thai</h2>
-          <div className={styles.effectGrid}>
-            <div className={`${styles.effectCard} ${styles.effectPink}`}>
-              <div className={`${styles.effectIcon} ${styles.pink}`}><Shield size={36} /></div>
-              <div className={styles.effectTitle}>Giảm nguy cơ ung thư</div>
-              <div className={styles.effectDesc}>Giảm nguy cơ ung thư buồng trứng và nội mạc tử cung</div>
-            </div>
-            <div className={`${styles.effectCard} ${styles.effectPurple}`}>
-              <div className={`${styles.effectIcon} ${styles.purple}`}><Heart size={36} /></div>
-              <div className={styles.effectTitle}>Giảm thiếu máu</div>
-              <div className={styles.effectDesc}>Giảm lượng máu mất trong chu kỳ kinh nguyệt</div>
-            </div>
-            <div className={`${styles.effectCard} ${styles.effectBlue}`}>
-              <div className={`${styles.effectIcon} ${styles.blue}`}><Star size={36} /></div>
-              <div className={styles.effectTitle}>Giảm u nang buồng trứng</div>
-              <div className={styles.effectDesc}>Ngăn ngừa hình thành u nang buồng trứng mới</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderFormScreen = () => (
-    <div className={styles.pageBg}>
-      <div className={styles.formCard}>
-        <div className={styles.formHeader}>
-          <div className={styles.formIcon}><Calendar size={28} /></div>
-          <div>
-            <h2 className={styles.formTitle}>Tạo lịch uống thuốc</h2>
-            <p className={styles.formSubtitle}>Điền thông tin chu kỳ của bạn</p>
-          </div>
-        </div>
-        <form onSubmit={handleFormSubmit}>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Số ngày uống thuốc</label>
-            <input
-              type="number"
-              value={formData.pillDays}
-              onChange={e => setFormData({ ...formData, pillDays: parseInt(e.target.value) })}
-              className={styles.formInput}
-              min="1"
-              max="30"
-              required
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Số ngày nghỉ</label>
-            <input
-              type="number"
-              value={formData.breakDays}
-              onChange={e => setFormData({ ...formData, breakDays: parseInt(e.target.value) })}
-              className={styles.formInput}
-              min="1"
-              max="14"
-              required
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Ngày bắt đầu uống thuốc</label>
-            <input
-              type="date"
-              value={formData.startDate}
-              onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-              className={styles.formInput}
-              required
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}><Clock size={18} style={{ marginRight: 4, verticalAlign: 'middle' }} /> Thời gian nhắc nhở</label>
-            <input
-              type="time"
-              value={formData.reminderTime}
-              onChange={e => setFormData({ ...formData, reminderTime: e.target.value })}
-              className={styles.formInput}
-              required
-            />
-          </div>
-          <div className={styles.formActions}>
-            <button
-              type="button"
-              onClick={() => setCurrentScreen(schedule ? 'calendar' : 'home')}
-              className={styles.btnGray}
-            >
-              Quay lại
-            </button>
-            <button
-              type="submit"
-              className={styles.btnGradient}
-            >
-              Tạo lịch
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-
-  const renderEditScreen = () => (
-    <div className={styles.pageBg}>
-      <div className={styles.formCard}>
-        <div className={styles.formHeader}>
-          <div className={styles.formIcon}><Edit size={28} /></div>
-          <div>
-            <h2 className={styles.formTitle}>Chỉnh sửa lịch uống thuốc</h2>
-            <p className={styles.formSubtitle}>Cập nhật thông tin chu kỳ của bạn</p>
-          </div>
-        </div>
-        <form onSubmit={handleEditSubmit}>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Số ngày uống thuốc</label>
-            <input
-              type="number"
-              value={formData.pillDays}
-              onChange={e => setFormData({ ...formData, pillDays: parseInt(e.target.value) })}
-              className={styles.formInput}
-              min="1"
-              max="30"
-              required
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Số ngày nghỉ</label>
-            <input
-              type="number"
-              value={formData.breakDays}
-              onChange={e => setFormData({ ...formData, breakDays: parseInt(e.target.value) })}
-              className={styles.formInput}
-              min="1"
-              max="14"
-              required
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Ngày bắt đầu uống thuốc</label>
-            <input
-              type="date"
-              value={formData.startDate}
-              onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-              className={styles.formInput}
-              required
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}><Clock size={18} style={{ marginRight: 4, verticalAlign: 'middle' }} /> Thời gian nhắc nhở</label>
-            <input
-              type="time"
-              value={formData.reminderTime}
-              onChange={e => setFormData({ ...formData, reminderTime: e.target.value })}
-              className={styles.formInput}
-              required
-            />
-          </div>
-          <div className={styles.importantNote} style={{ marginBottom: 16 }}>
-            <div className={styles.importantIcon}>!</div>
-            <div>
-              <p className={styles.importantText} style={{ marginBottom: 4 }}>Lưu ý quan trọng</p>
-              <div>
-                Việc thay đổi lịch sẽ không ảnh hưởng đến các ngày đã check-in trước đó. Tuy nhiên, chu kỳ mới sẽ được áp dụng từ ngày bắt đầu mới.
-              </div>
-            </div>
-          </div>
-          <div className={styles.formActions}>
-            <button
-              type="button"
-              onClick={() => setCurrentScreen('calendar')}
-              className={styles.btnGray}
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className={styles.btnGradient}
-            >
-              Cập nhật lịch
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-
-  const renderCalendarScreen = () => {
-    if (!schedule) return null;
-    const currentMonth = new Date(schedule.startDate.getFullYear(), schedule.startDate.getMonth() + currentMonthIndex, 1);
-    const calendarData = generateCalendarData(schedule, currentMonthIndex);
-    const canGoPrevious = currentMonthIndex > 0;
-    const canGoNext = currentMonthIndex < 11;
-    return (
-      <div className={styles.pageBg}>
-        <div className={styles.calendarCard}>
-          <div className={styles.calendarHeader}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div className={styles.formIcon}><Calendar size={24} /></div>
-              <div>
-                <div className={styles.calendarTitle}>Lịch uống thuốc</div>
-                <div style={{ color: '#888', fontSize: 15 }}>Theo dõi tiến trình hàng ngày</div>
-              </div>
-            </div>
-          </div>
-          <div className={styles.calendarLegend} style={{ display: 'flex', gap: 64, justifyContent: 'center', margin: '24px 0' }}>
-            <div className={styles.legendItem} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#2979ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Pill size={16} color="#fff" />
-              </span>
-              Đã uống
-            </div>
-            <div className={styles.legendItem} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#e53935', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Pill size={16} color="#fff" />
-              </span>
-              Bỏ lỡ
-            </div>
-            <div className={styles.legendItem} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#2ecc40', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Pill size={16} color="#fff" />
-              </span>
-              Sắp tới
-            </div>
-            <div className={styles.legendItem} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#a0a4ad', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={16} color="#fff" />
-              </span>
-              Ngày nghỉ
-            </div>
-          </div>
-        </div>
-        <div className={styles.calendarCard}>
-          <div className={styles.calendarHeader}>
-            <button
-              onClick={() => setCurrentMonthIndex(prev => Math.max(0, prev - 1))}
-              disabled={!canGoPrevious}
-              className={styles.monthNavBtn}
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <div className={styles.calendarTitle} style={{ textAlign: 'center' }}>
-              tháng {currentMonth.getMonth() + 1} năm {currentMonth.getFullYear()}
-            </div>
-            <button
-              onClick={() => setCurrentMonthIndex(prev => Math.min(11, prev + 1))}
-              disabled={!canGoNext}
-              className={styles.monthNavBtn}
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-          <div className={styles.calendarGrid} style={{ marginBottom: 16 }}>
-            {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map(day => (
-              <div key={day} style={{ textAlign: 'center', fontWeight: 500, color: '#888', fontSize: 15 }}>{day}</div>
-            ))}
-          </div>
-          <div className={styles.calendarGrid}>
-            {/* Empty cells for days before month start */}
-            {Array.from({ length: currentMonth.getDay() }).map((_, i) => (
-              <div key={i}></div>
-            ))}
-            {calendarData.map((dayInfo, dayIndex) => (
-              <div
-                key={dayIndex}
-                className={
-                  styles.calendarDayCell +
-                  (dayInfo.isClickable ? ' ' + styles.clickable : '')
-                }
-                onClick={() => dayInfo.isClickable && handleDateClick(dayInfo)}
-              >
-                <div className={styles.dayNumber}>{dayInfo.date.getDate()}</div>
-                <div style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto',
-                  background:
-                    dayInfo.status === 'pill' ? '#2979ff' :
-                    dayInfo.status === 'missed' ? '#e53935' :
-                    dayInfo.status === 'future' ? '#2ecc40' :
-                    '#a0a4ad'
-                }}>
-                  {dayInfo.status === 'break' ? (
-                    <X size={16} color="#fff" />
-                  ) : (
-                    <Pill size={16} color="#fff" />
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className={styles.settingsCard}>
-          <div className={styles.settingsTitle}>Cài đặt lịch</div>
-          <div className={styles.settingsText}>Chu kỳ hiện tại: {schedule.pillDays} ngày uống, {schedule.breakDays} ngày nghỉ</div>
-          <div className={styles.settingsText}>Thời gian nhắc nhở: {schedule.reminderTime}</div>
-          <div className={styles.settingsText}>Ngày bắt đầu: {schedule.startDate ? new Date(schedule.startDate).toLocaleDateString('vi-VN') : ''}</div>
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
-            <button
-              onClick={handleEditClick}
-              className={styles.btnEdit}
-            >
-              <Edit size={20} style={{ marginRight: 6 }} />
-              Chỉnh sửa lịch
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderConfirmModal = () => {
-    if (!showConfirmModal || !selectedDate) return null;
-    const day = selectedDate.getDate();
-    const month = selectedDate.getMonth() + 1;
-    return (
-      <div style={{
-        position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(60,60,80,0.32)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center'
-      }}>
-        <div style={{ background: '#fff', borderRadius: 24, padding: '40px 32px', minWidth: 360, boxShadow: '0 4px 32px rgba(0,0,0,0.10)', textAlign: 'center', position: 'relative' }}>
-          <div style={{ width: 72, height: 72, background: 'linear-gradient(90deg, #e57399, #a259e6)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <Pill style={{ width: 36, height: 36, color: '#fff' }} />
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Ngày {day}/{month}</div>
-          <div style={{ fontSize: 18, color: '#444', marginBottom: 24 }}>Bạn đã uống thuốc chưa?</div>
-          <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
-            <button
-              onClick={() => { setShowConfirmModal(false); setSelectedDate(null); }}
-              style={{ padding: '12px 32px', borderRadius: 12, background: '#f3f4f6', color: '#222', border: 'none', fontSize: 18, fontWeight: 500, cursor: 'pointer' }}
-            >
-              Hủy
-            </button>
-            <button
-              onClick={() => {
-                handleCheckIn(selectedDate);
-                setShowConfirmModal(false);
-              }}
-              style={{ padding: '12px 32px', borderRadius: 12, background: 'linear-gradient(90deg, #e57399, #a259e6)', color: '#fff', border: 'none', fontSize: 18, fontWeight: 500, cursor: 'pointer', boxShadow: '0 2px 8px rgba(162,89,230,0.10)' }}
-            >
-              <span style={{ marginRight: 6 }}>✓</span> Đã uống
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
     <div className="font-sans">
-      {currentScreen === 'home' && renderHomeScreen()}
-      {currentScreen === 'form' && renderFormScreen()}
-      {currentScreen === 'edit' && renderEditScreen()}
-      {currentScreen === 'calendar' && renderCalendarScreen()}
-      {renderConfirmModal()}
+      {isLoading && <div className={styles.loadingOverlay}>Đang tải...</div>}
+      {error && <div className={styles.errorOverlay}>Lỗi: {error}</div>}
+      {currentScreen === 'home' && <PillReminderHomeScreen onAddSchedule={() => setCurrentScreen('form')} isAuthenticated={isAuthenticated} />}
+      {currentScreen === 'form' && (
+        <PillReminderFormScreen
+          formData={formData}
+          onFormChange={(field, value) => setFormData({ ...formData, [field]: value })}
+          onFormSubmit={handleFormSubmit}
+          onBackClick={() => setCurrentScreen(schedule ? 'calendar' : 'home')}
+          isEditing={false}
+        />
+      )}
+      {currentScreen === 'edit' && (
+        <PillReminderFormScreen
+          formData={formData}
+          onFormChange={(field, value) => setFormData({ ...formData, [field]: value })}
+          onFormSubmit={handleEditSubmit}
+          onBackClick={() => setCurrentScreen('calendar')}
+          isEditing={true}
+        />
+      )}
+      {currentScreen === 'calendar' && (
+        <PillReminderCalendarScreen
+          schedule={schedule}
+          currentMonthIndex={currentMonthIndex}
+          setCurrentMonthIndex={setCurrentMonthIndex}
+          generateCalendarData={generateCalendarData}
+          handleDateClick={handleDateClick}
+          handleEditClick={handleEditClick}
+          onDeleteSchedule={handleDeleteSchedule} // Pass delete handler
+        />
+      )}
+      <PillReminderConfirmModal
+        showConfirmModal={showConfirmModal}
+        selectedDayInfo={selectedDayInfo}
+        onCancel={() => { setShowConfirmModal(false); setSelectedDayInfo(null); }}
+        onConfirm={() => { handleCheckIn(selectedDayInfo); setShowConfirmModal(false); }}
+      />
+      <PillReminderDeleteConfirmModal
+        showDeleteConfirmModal={showDeleteConfirmModal}
+        onCancelDelete={() => setShowDeleteConfirmModal(false)}
+        onConfirmDelete={handleConfirmDelete}
+      />
     </div>
   );
 }
 
-export default PillReminderPage;
-// --- END COMPONENT CODE --- 
+export default PillReminderPage; 

@@ -349,25 +349,29 @@
   margin-bottom: 6px;
 }
 .btnEdit {
-  margin-top: 18px;
-  background: linear-gradient(90deg, #ff9800, #ef4444);
+  height: 48px; /* Đặt chiều cao cố định */
+  background: linear-gradient(90deg, #ff9b44, #ff5e62);
   color: #fff;
   border: none;
   border-radius: 12px;
-  padding: 14px 32px;
   font-size: 1.08rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(239,68,68,0.10);
+  box-shadow: 0 2px 8px rgba(255,94,98,0.10);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   transition: background 0.2s, box-shadow 0.2s;
+  flex: 1;
+  height: 48px;
+  line-height: 1;
+  box-sizing: border-box;
 }
+
 .btnEdit:hover {
-  background: linear-gradient(90deg, #ef4444, #ff9800);
-  box-shadow: 0 6px 18px rgba(239,68,68,0.18);
+  background: linear-gradient(90deg, #ff5e62, #ff9b44);
+  box-shadow: 0 6px 18px rgba(255,94,98,0.18);
 }
 
 .benefitHeaderRow {
@@ -504,3 +508,122 @@
   font-size: 0.85rem;
   text-align: center;
 }
+
+.btnDeleteDanger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.08rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(239,68,68,0.10);
+  transition: background 0.2s, box-shadow 0.2s;
+  flex: 1;
+  height: 48px;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.btnDeleteDanger:hover {
+  background: #dc2626;
+  box-shadow: 0 6px 18px rgba(239,68,68,0.18);
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(60, 60, 80, 0.32);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalContent {
+  background: #fff;
+  border-radius: 24px;
+  padding: 40px 32px;
+  min-width: 360px;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  position: relative;
+}
+
+.modalIcon {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(90deg, #e57399, #a259e6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: #fff;
+}
+
+.modalTitle {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #181c32;
+}
+
+.modalMessage {
+  font-size: 18px;
+  color: #444;
+  margin-bottom: 24px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.btnModalCancel {
+  padding: 12px 32px;
+  border-radius: 12px;
+  background: #f3f4f6;
+  color: #222;
+  border: none;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btnModalCancel:hover {
+  background: #e0e0e0;
+}
+
+.btnModalConfirm {
+  padding: 12px 32px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #e57399, #a259e6);
+  color: #fff;
+  border: none;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(162, 89, 230, 0.1);
+  transition: background 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btnModalConfirm:hover {
+  background: linear-gradient(90deg, #a259e6, #e57399);
+  box-shadow: 0 4px 12px rgba(162, 89, 230, 0.2);
+}
+
+/* Pill Reminder Screens specific styles */

@@ -1,72 +1,76 @@
-import apiClient from '@services./api';
+import apiClient from './api';
+
+const PILL_REMINDER_API_BASE_URL = '/contraceptive';
 
 const pillReminderService = {
   /**
-   * Tạo một lịch uống thuốc mới.
-   * @param {Object} scheduleData - Dữ liệu lịch uống thuốc (pillDays, breakDays, startDate, reminderTime)
-   * @returns {Promise<Object>} Dữ liệu lịch đã tạo từ API
+   * Creates a new pill reminder schedule.
+   * @param {Object} scheduleData - The schedule data.
+   * @returns {Promise<Object>} The API response.
    */
   createPillSchedule: async (scheduleData) => {
     try {
-      const response = await apiClient.post('/contraceptive', scheduleData);
+      const response = await apiClient.post(PILL_REMINDER_API_BASE_URL, scheduleData);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      throw error;
     }
   },
 
   /**
-   * Lấy lịch uống thuốc hiện tại của người dùng.
-   * @returns {Promise<Object>} Dữ liệu lịch uống thuốc từ API
+   * Updates an existing pill reminder schedule.
+   * @param {string} id - The ID of the schedule to update.
+   * @param {Object} scheduleData - The updated schedule data.
+   * @returns {Promise<Object>} The API response.
    */
-  getPillSchedule: async () => {
-    // TODO: Cần có một endpoint ở backend để lấy lịch hiện tại của người dùng. 
-    // Backend hiện chỉ có GET /contraceptive/{id} để lấy logs, không phải lịch tổng thể.
-    // Tạm thời trả về null hoặc throw error nếu không có endpoint.
-    // Nếu có endpoint, hãy cập nhật đường dẫn tại đây.
-    console.warn("Endpoint for fetching current pill schedule is not defined in backend controller. Please ensure it exists or create one.");
+  updatePillSchedule: async (id, scheduleData) => {
     try {
-      // Giả định có một endpoint để lấy lịch hiện tại cho người dùng đã đăng nhập.
-      // Bạn cần thay đổi đường dẫn này nếu endpoint thực tế khác.
-      const response = await apiClient.get('/contraceptive'); 
+      const response = await apiClient.put(`${PILL_REMINDER_API_BASE_URL}/${id}`, scheduleData);
       return response.data;
     } catch (error) {
-      // Nếu không tìm thấy lịch, có thể trả về một đối tượng rỗng hoặc null thay vì throw error nếu backend trả về 404.
-      if (error.response && error.response.status === 404) {
-        return { success: false, data: null, message: "Lịch uống thuốc chưa được tạo." };
-      }
-      throw error.response?.data || error.message;
+      throw error;
     }
   },
 
   /**
-   * Cập nhật lịch uống thuốc hiện có.
-   * @param {string} scheduleId - ID của lịch cần cập nhật
-   * @param {Object} updatedData - Dữ liệu cập nhật (pillDays, breakDays, startDate, reminderTime)
-   * @returns {Promise<Object>} Dữ liệu lịch đã cập nhật từ API
+   * Updates the check-in status for a pill log.
+   * @param {string} logId - The ID of the pill log to check in.
+   * @returns {Promise<Object>} The API response.
    */
-  updatePillSchedule: async (scheduleId, updatedData) => {
+  updateCheckIn: async (logId) => {
     try {
-      const response = await apiClient.put(`/contraceptive/${scheduleId}`, updatedData);
+      const response = await apiClient.put(`${PILL_REMINDER_API_BASE_URL}/${logId}/checkIn`);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      throw error;
     }
   },
 
   /**
-   * Check-in/check-out cho một ngày cụ thể.
-   * @param {string} scheduleId - ID của lịch
-   * @param {string} dateString - Ngày cần check-in/check-out (YYYY-MM-DD)
-   * @returns {Promise<Object>} Dữ liệu lịch đã cập nhật từ API
+   * Fetches pill logs for a given pill reminder schedule ID.
+   * @param {string} id - The ID of the pill reminder schedule.
+   * @returns {Promise<Object>} The API response containing pill logs.
    */
-  togglePillCheckIn: async (scheduleId, dateString) => {
+  getPillLogs: async (id) => {
     try {
-      // Controller chỉ nhận ID trong path, không nhận body cho togglePillCheckIn
-      const response = await apiClient.put(`/contraceptive/${scheduleId}/checkIn`, { date: dateString }); // Gửi ngày trong body dù controller không xử lý
+      const response = await apiClient.get(`${PILL_REMINDER_API_BASE_URL}/${id}`);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      throw error;
+    }
+  },
+
+  /**
+   * Deletes a pill reminder schedule.
+   * @param {string} id - The ID of the schedule to delete.
+   * @returns {Promise<Object>} The API response.
+   */
+  deletePillSchedule: async (id) => {
+    try {
+      const response = await apiClient.delete(`${PILL_REMINDER_API_BASE_URL}/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error;
     }
   },
 };
