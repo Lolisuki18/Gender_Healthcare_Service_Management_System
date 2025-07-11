@@ -29,6 +29,8 @@ import { notify } from '@/utils/notify';
 
 import LoggedInView from '@/components/common/LoggedInView';
 import { logout } from '@/redux/slices/authSlice';
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '@/redux/slices/authSlice';
 
 const LoginPage = () => {
   // --- STATE MANAGEMENT ---
@@ -50,6 +52,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   // Sử dụng useNavigate để chuyển hướng
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   // --- LIFECYCLE HOOKS ---
   /**
@@ -147,6 +150,9 @@ const LoginPage = () => {
 
               // Lưu thông tin profile vào localStorage
               localStorageUtil.set('userProfile', profileData);
+
+              // 🟢 Thêm dòng này để cập nhật Redux (Header, Sidebar, v.v. sẽ update ngay)
+              dispatch(loginSuccess(profileData.data));
 
               // Kiểm tra role và chuyển hướng
               if (role === 'ADMIN') {

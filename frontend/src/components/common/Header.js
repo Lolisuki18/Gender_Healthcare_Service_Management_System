@@ -35,101 +35,43 @@ import { userService } from '@/services/userService';
 import localStorageUtil from '@/utils/localStorage';
 import { toast } from 'react-toastify';
 import imageUrl from '@/utils/imageUrl';
-import { listenToAvatarUpdates } from '@/utils/storageEvent';
 import '@styles/Header.css';
 import { Notifications as NotificationsIcon } from '@mui/icons-material';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout as logoutAction } from '@/redux/slices/authSlice';
 
 const Header = () => {
-  // Avatar state
-  const [avatarUrl, setAvatarUrl] = useState(null);
-  //check xem đã đăng nhập hay chưa
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  //state cho người dùng
-  const [user, setUser] = useState(null);
-  //State cho menu dropdown khi người dùng đăng nhập -> dùng khi ấn vào avt
+  // ✅ Sử dụng Redux store thay vì local state phức tạp
+  const user = useSelector((state) => state.auth.user);
+  const avatarUrl = useSelector((state) => state.auth.avatarUrl);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const dispatch = useDispatch();
+
+  // State cho menu dropdown khi người dùng đăng nhập -> dùng khi ấn vào avt
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  // State để force re-render khi cần
-  const [refreshKey, setRefreshKey] = useState(0);
   const open = Boolean(dropdownOpen);
-  // Hàm force refresh component khi cần
-  const forceRefresh = () => setRefreshKey((prevKey) => prevKey + 1);
-  // Khai báo hàm checkLoginStatus trước khi sử dụng trong useEffect
-  const checkLoginStatus = () => {
-    try {
-      // Clear any previous avatar data from sessionStorage to avoid persistence between accounts
-      sessionStorage.removeItem('last_updated_avatar');
 
-      // Đảm bảo đọc đúng khóa từ localStorage
-      const userData = localStorageUtil.get('userProfile');
-
-      if (userData) {
-        setIsLoggedIn(true);
-        setUser(userData);
-
-        // Reset avatar first to clear any previous avatar
-        setAvatarUrl(null);
-
-        // Lấy avatar từ userData (userProfile)
-        if (userData.data && userData.data.avatar) {
-          const fullAvatarUrl = imageUrl.getFullImageUrl(userData.data.avatar);
-          setAvatarUrl(fullAvatarUrl);
-
-          // Cập nhật vào sessionStorage để đồng bộ giữa các component
-          sessionStorage.setItem('last_updated_avatar', userData.data.avatar);
-        } else if (userData.avatar) {
-          const fullAvatarUrl = imageUrl.getFullImageUrl(userData.avatar);
-          setAvatarUrl(fullAvatarUrl);
-
-          // Cập nhật vào sessionStorage để đồng bộ giữa các component
-          sessionStorage.setItem('last_updated_avatar', userData.avatar);
-        }
-
-        forceRefresh();
-      } else {
-        setIsLoggedIn(false);
-        setUser(null);
-        setAvatarUrl(null);
-        sessionStorage.removeItem('last_updated_avatar');
-      }
-    } catch (error) {
-      setIsLoggedIn(false);
-      setUser(null);
-      setAvatarUrl(null);
-      sessionStorage.removeItem('last_updated_avatar');
-    }
-  };
-
-  //Hàm kiểm soát khi ấn vào avt người dùng
+  // ✅ Hàm kiểm soát khi ấn vào avt người dùng
   const handleAvatarClick = (event) => {
     setDropdownOpen(event.currentTarget);
   };
 
-  //hàm xử lý khi đóng menu
+  // ✅ Hàm xử lý khi đóng menu
   const handleCloseMenu = () => {
     setDropdownOpen(null);
   };
-  //xử lý khi sử dụng đăng xuất
+
+  // ✅ Xử lý khi sử dụng đăng xuất
   const handleLogout = async () => {
-    // Đảm bảo xóa đúng khóa từ localStorage
-    localStorageUtil.remove('userProfile');
-    localStorageUtil.remove('loginSuccessMessage');
-    localStorageUtil.remove('token');
-
-    // Xóa dữ liệu từ sessionStorage
-    sessionStorage.removeItem('last_updated_avatar');
-    sessionStorage.clear();
-
-    // Cập nhật state
-    setIsLoggedIn(false);
-    setUser(null);
-    setAvatarUrl(null);
-    handleCloseMenu();
-
     try {
       await userService.logout();
+      localStorageUtil.remove('userProfile');
+      localStorageUtil.remove('loginSuccessMessage');
+      localStorageUtil.remove('token');
+      sessionStorage.clear();
+      dispatch(logoutAction());
+      handleCloseMenu();
       toast.success('Bạn đã đăng xuất thành công!');
-
-      // Thêm small delay để đảm bảo mọi thứ được xóa hoàn toàn trước khi chuyển hướng
       setTimeout(() => {
         navigate('/');
       }, 100);
@@ -144,111 +86,24 @@ const Header = () => {
 
   const navigate = useNavigate();
 
-  //xử lý chuyển hướng trang hồ sơ
+  // ✅ Xử lý chuyển hướng trang hồ sơ
   const handleProfile = () => {
     handleCloseMenu();
     navigate('/profile');
   };
-  // Kiểm tra trạng thái đăng nhập và cập nhật avatar mỗi giây
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      // Check login status and update avatar every second
-      const userData = localStorageUtil.get('userProfile');
 
-      //nếu không có userData thì không cần làm gì cả
-      if (!userData) {
-        if (avatarUrl) {
-          setAvatarUrl(null);
-          forceRefresh();
-        }
-        return;
-      }
-
-      //lấy avatar đã cập nhật từ sessionStorage
-      const lastUpdatedAvatar = sessionStorage.getItem('last_updated_avatar');
-
-      // Nếu có avatar đã cập nhật trong sessionStorage, ưu tiên sử dụng nó
-      let currentAvatarPath = null;
-      if (userData.data && userData.data.avatar) {
-        currentAvatarPath = userData.data.avatar;
-      } else if (userData.avatar) {
-        currentAvatarPath = userData.avatar;
-      }
-
-      //Sử dụng ảnh đại diện được lưu trữ trong phiên hoặc ảnh đại diện từ dữ liệu người dùng
-      const avatarToUse = lastUpdatedAvatar || currentAvatarPath;
-
-      if (avatarToUse) {
-        const fullUrl = imageUrl.getFullImageUrl(avatarToUse);
-        // Chỉ cập nhật nếu khác với URL avatar hiện tại
-        if (fullUrl && fullUrl !== avatarUrl) {
-          setAvatarUrl(fullUrl);
-          forceRefresh();
-        }
-      } else if (avatarUrl) {
-        //Nếu không có avatar trong kho lưu trữ nhưng chúng ta
-        //có một avatar trong trạng thái, hãy xóa nó
-        setAvatarUrl(null);
-        forceRefresh();
-      }
-    }, 1000); // check mỗi giây
-
-    return () => clearInterval(intervalId);
-  }, [avatarUrl]);
-
-  useEffect(() => {
-    checkLoginStatus();
-
-    // Lắng nghe sự kiện cập nhật avatar từ localStorage và sessionStorage
-    const handleStorageChange = (e) => {
-      if (
-        e.key === 'userProfile' ||
-        e.key === 'avatar_sync_trigger' ||
-        e.key === 'last_updated_avatar' ||
-        e.key === 'user'
-      ) {
-        checkLoginStatus();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    // Lắng nghe trực tiếp sự kiện avatar_updated từ cùng tab
-    const handleDirectAvatarUpdate = (event) => {
-      if (event.detail && event.detail.avatarUrl) {
-        const newAvatarUrl = event.detail.avatarUrl;
-        setAvatarUrl(imageUrl.getFullImageUrl(newAvatarUrl));
-        forceRefresh();
-        // Cập nhật lại thông tin người dùng
-        checkLoginStatus();
-      }
-    };
-
-    // Đăng ký lắng nghe sự kiện trực tiếp
-    window.addEventListener('avatar_updated', handleDirectAvatarUpdate);
-
-    // Đăng ký lắng nghe sự kiện cập nhật avatar từ hệ thống event tùy chỉnh
-    const unsubscribe = listenToAvatarUpdates((newAvatarUrl) => {
-      if (newAvatarUrl) {
-        setAvatarUrl(imageUrl.getFullImageUrl(newAvatarUrl));
-        forceRefresh();
-      }
-      checkLoginStatus();
-    });
-
-    // Kiểm tra và sử dụng avatar từ sessionStorage (từ các lần cập nhật trước)
-    const lastUpdatedAvatar = sessionStorage.getItem('last_updated_avatar');
-    if (lastUpdatedAvatar) {
-      setAvatarUrl(imageUrl.getFullImageUrl(lastUpdatedAvatar));
+  // ✅ Lấy avatar URL từ Redux store hoặc fallback
+  const getAvatarUrl = () => {
+    if (avatarUrl) {
+      return imageUrl.getFullImageUrl(avatarUrl);
     }
 
-    // Chức năng dọn dẹp để hủy đăng ký trình nghe khi ngắt kết nối thành phần
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('avatar_updated', handleDirectAvatarUpdate);
-      if (unsubscribe) unsubscribe();
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (user?.avatar) {
+      return imageUrl.getFullImageUrl(user.avatar);
+    }
+
+    return '/img/avatar/default.jpg';
+  };
 
   return (
     <AppBar
@@ -271,7 +126,7 @@ const Header = () => {
             justifyContent: 'space-between',
           }}
         >
-          {/* Logo */}{' '}
+          {/* Logo */}
           <Typography
             variant="h6"
             noWrap
@@ -341,7 +196,8 @@ const Header = () => {
               </Box>
             </Box>
             Gender Healthcare Service
-          </Typography>{' '}
+          </Typography>
+
           {/* Navigation Links */}
           <Box
             sx={{
@@ -403,9 +259,10 @@ const Header = () => {
                 {item.label}
               </Button>
             ))}
-          </Box>{' '}
+          </Box>
+
           {/* User Section */}
-          {isLoggedIn ? (
+          {isAuthenticated ? (
             <Box sx={{ flexShrink: 0 }}>
               <IconButton
                 aria-label="account of current user"
@@ -431,6 +288,8 @@ const Header = () => {
               >
                 {user ? (
                   <Avatar
+                    src={getAvatarUrl()}
+                    alt={user.fullName || 'User'}
                     sx={{
                       width: 38,
                       height: 38,
@@ -440,46 +299,7 @@ const Header = () => {
                       backgroundColor: '#1ABC9C20',
                     }}
                   >
-                    <img
-                      src={(() => {
-                        const userData = localStorageUtil.get('userProfile');
-                        if (userData?.data?.avatar) {
-                          return imageUrl.getFullImageUrl(userData.data.avatar);
-                        } else if (userData?.avatar) {
-                          return imageUrl.getFullImageUrl(userData.avatar);
-                        }
-                        return avatarUrl || '/img/avatar/default.jpg';
-                      })()}
-                      alt="avatar"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        borderRadius: '50%',
-                      }}
-                      onError={(e) => {
-                        console.error(
-                          '[Avatar onError] Không load được ảnh avatar:',
-                          e.target.src
-                        );
-                        if (e && e.nativeEvent && e.nativeEvent.message) {
-                          console.error(
-                            '[Avatar onError] nativeEvent message:',
-                            e.nativeEvent.message
-                          );
-                        }
-                        if (!e.target.src.endsWith('/img/avatar/default.jpg')) {
-                          e.target.onerror = null;
-                          e.target.src = '/img/avatar/default.jpg';
-                        }
-                      }}
-                      onLoad={() => {
-                        console.log(
-                          '[Avatar onLoad] Ảnh avatar đã load thành công:',
-                          document.querySelector('img[alt="avatar"]').src
-                        );
-                      }}
-                    />
+                    {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
                   </Avatar>
                 ) : (
                   <AccountCircleIcon
@@ -491,7 +311,8 @@ const Header = () => {
                     }}
                   />
                 )}
-              </IconButton>{' '}
+              </IconButton>
+
               <Menu
                 id="account-menu"
                 anchorEl={dropdownOpen}

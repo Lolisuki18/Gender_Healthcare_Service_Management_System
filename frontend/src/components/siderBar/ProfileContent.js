@@ -47,27 +47,28 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import AvatarUpload from '../common/AvatarUpload'; // Import AvatarUpload component
-import EditIcon from '@mui/icons-material/Edit'; // For edit button
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'; // For avatar icon
+import AvatarUpload from '../common/AvatarUpload';
+import EditIcon from '@mui/icons-material/Edit';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import PersonIcon from '@mui/icons-material/Person';
 import CakeIcon from '@mui/icons-material/Cake';
-import WcIcon from '@mui/icons-material/Wc'; // Gender icon
+import WcIcon from '@mui/icons-material/Wc';
 import PhoneIcon from '@mui/icons-material/Phone';
 import EmailIcon from '@mui/icons-material/Email';
-import LocationOnIcon from '@mui/icons-material/LocationOn'; // Location icon
-import LockIcon from '@mui/icons-material/Lock'; // Lock icon
-import CancelIcon from '@mui/icons-material/Cancel'; // Cancel icon
-import RefreshIcon from '@mui/icons-material/Refresh'; // Refresh icon
-import SaveIcon from '@mui/icons-material/Save'; // Save icon
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import LockIcon from '@mui/icons-material/Lock';
+import CancelIcon from '@mui/icons-material/Cancel';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import SaveIcon from '@mui/icons-material/Save';
 import { styled } from '@mui/material/styles';
 import { userService } from '@/services/userService';
-import localStorageUtil from '@/utils/localStorage';
 import { toast } from 'react-toastify';
 import { formatDateForInput, formatDateDisplay } from '@/utils/dateUtils';
 import { EmailChangeDialog, PasswordChangeDialog } from '../modals';
-import imageUrl from '../../utils/imageUrl'; // Import với đường dẫn tương đối
+import imageUrl from '../../utils/imageUrl';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateUserProfile } from '@/redux/slices/authSlice';
 
 const TOAST_ID_USER_INFO = 'user-info-loaded';
 
@@ -315,6 +316,12 @@ const FieldInfoBox = ({
 };
 
 const ProfileContent = () => {
+  // ✅ Sử dụng Redux store thay vì local state phức tạp
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
+  const avatarUrl = useSelector((state) => state.auth.avatarUrl);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+
   // ====================================================================
   // STATE MANAGEMENT
   // ====================================================================
@@ -327,22 +334,14 @@ const ProfileContent = () => {
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [avatarError, setAvatarError] = useState('');
 
-  // ✅ Thêm các state còn thiếu
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // ✅ User data từ API
-  const [userData, setUserData] = useState(null);
-
-  // ✅ Form data để edit
+  // ✅ Form data để edit - sử dụng từ Redux store
   const [formDataUpdate, setFormDataUpdate] = useState({
-    data: {
-      fullName: '',
-      phone: '',
-      birthDay: '',
-      email: '',
-      gender: '',
-      address: '',
-    },
+    fullName: '',
+    phone: '',
+    birthDay: '',
+    email: '',
+    gender: '',
+    address: '',
   });
 
   // ✅ Original data để reset khi cancel
@@ -352,7 +351,7 @@ const ProfileContent = () => {
   const [emailVerificationDialog, setEmailVerificationDialog] = useState({
     open: false,
     email: '',
-    tempEmail: '', // Store the email being verified
+    tempEmail: '',
   });
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
@@ -374,11 +373,22 @@ const ProfileContent = () => {
   // ====================================================================
 
   /**
-   * ✅ Fetch user data từ API khi component mount
+   * ✅ Sync form data với Redux store khi user thay đổi
    */
   useEffect(() => {
-    fetchUserData();
-  }, []);
+    if (user) {
+      const formData = {
+        fullName: user.fullName || '',
+        phone: user.phone || '',
+        birthDay: user.birthDay || '',
+        email: user.email || '',
+        gender: user.gender || '',
+        address: user.address || '',
+      };
+      setFormDataUpdate(formData);
+      setOriginalData(formData);
+    }
+  }, [user]);
 
   // ✅ Countdown timer for resend code
   useEffect(() => {
@@ -389,116 +399,6 @@ const ProfileContent = () => {
       return () => clearTimeout(timer);
     }
   }, [resendCountdown]);
-
-  // ====================================================================
-  // API FUNCTIONS
-  // ====================================================================
-
-  /**
-   * ✅ Fetch user data từ API
-   */ const fetchUserData = async () => {
-    try {
-      console.log('🔄 Đang tải thông tin người dùng từ API...');
-
-      const response = await userService.getCurrentUser();
-
-      if (response.success && response.data) {
-        const user = response.data;
-        console.log('✅ Đã tải thông tin user:', user);
-
-        setUserData(user);
-
-        // ✅ Set form data từ API response
-        const formData = {
-          fullName: user.fullName || '',
-          phone: user.phone || '',
-          birthDay: user.birthDay || '',
-          email: user.email || '',
-          gender: user.gender || '',
-          address: user.address || '',
-        };
-
-        setFormDataUpdate(formData);
-        setOriginalData(formData); // ✅ Sync với localStorage để backup
-        // Duy trì cấu trúc nhất quán {success, message, data} khi lưu vào localStorage
-        const userProfileData = {
-          success: true,
-          message: 'Get user information successfully',
-          data: user.data || user, // Giữ cấu trúc dữ liệu hiện tại nếu đã có data, nếu không thì lấy toàn bộ user
-        };
-        localStorageUtil.set('userProfile', userProfileData);
-
-        // ✅ Use custom notification
-        if (!toast.isActive(TOAST_ID_USER_INFO)) {
-          toast.success('Đã tải thông tin người dùng!', {
-            toastId: TOAST_ID_USER_INFO,
-            duration: 3000,
-          });
-        }
-      } else {
-        throw new Error(
-          response.message || 'Không thể tải thông tin người dùng'
-        );
-      }
-    } catch (error) {
-      console.error('❌ Lỗi khi tải thông tin user:', error);
-
-      if (error.response?.status === 401) {
-        // ✅ Use custom notification for error
-        toast.error(
-          'Lỗi xác thực',
-          'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!',
-          { duration: 6000 }
-        );
-      } else {
-        // ✅ Fallback to localStorage nếu API fail
-        const localUser = localStorageUtil.get('userProfile');
-        if (localUser) {
-          console.log('📦 Sử dụng dữ liệu từ localStorage làm fallback');
-          setUserData(localUser);
-          const formData = {
-            fullName: localUser.fullName || '',
-            phone: localUser.phone || '',
-            birthDay: localUser.birthDay || '',
-            email: localUser.email || '',
-            gender: localUser.gender || '',
-            address: localUser.address || '',
-          };
-          setFormDataUpdate(formData);
-          setOriginalData(formData);
-
-          // ✅ Use custom notification for warning
-          toast.warning(
-            'Chế độ offline',
-            'Sử dụng dữ liệu đã lưu. Vui lòng kiểm tra kết nối mạng.',
-            { duration: 5000 }
-          );
-        } else {
-          // ✅ Use custom notification for error
-          toast.error(
-            'Lỗi tải dữ liệu',
-            'Không thể tải thông tin người dùng!',
-            { duration: 4000 }
-          );
-        }
-      }
-    } finally {
-      // Removed setIsLoading(false) since isLoading is not used
-    }
-  };
-
-  /**
-   * ✅ Refresh data - reload từ API
-   */
-  const handleRefreshData = async () => {
-    setIsRefreshing(true);
-
-    // ✅ Show loading notification
-    toast.info('Đang tải', 'Đang làm mới dữ liệu...', { duration: 2000 });
-
-    await fetchUserData();
-    setIsRefreshing(false);
-  };
 
   // ====================================================================
   // UTILITY FUNCTIONS
@@ -516,11 +416,10 @@ const ProfileContent = () => {
   };
 
   /**
-   * ✅ Handle form input change - Remove email change tracking
+   * ✅ Handle form input change
    */
   const handleChangeUpdate = (e) => {
     const { name, value } = e.target;
-
     setFormDataUpdate({
       ...formDataUpdate,
       [name]: value,
@@ -528,7 +427,7 @@ const ProfileContent = () => {
   };
 
   /**
-   * ✅ Handle save - Simplified without email handling
+   * ✅ Handle save - Simplified
    */
   const handleSave = async () => {
     try {
@@ -546,14 +445,12 @@ const ProfileContent = () => {
       if (formDataUpdate.birthDay) {
         const today = new Date();
         const birthDate = new Date(formDataUpdate.birthDay);
-        // Nếu ngày sinh lớn hơn hiện tại
         if (birthDate > today) {
           toast.warning('Ngày sinh của bạn vượt qua thời gian thực', '', {
             duration: 4000,
           });
           return;
         }
-        // Nếu nhỏ hơn hiện tại 2 năm
         const minBirthDate = new Date(
           today.getFullYear() - 2,
           today.getMonth(),
@@ -579,7 +476,7 @@ const ProfileContent = () => {
         return;
       }
 
-      console.log(' Đang lưu thông tin cá nhân:', formDataUpdate);
+      console.log('Đang lưu thông tin cá nhân:', formDataUpdate);
 
       toast.info('Đang xử lý', 'Đang lưu thông tin cá nhân...', {
         duration: 2000,
@@ -591,16 +488,14 @@ const ProfileContent = () => {
         birthDay: formDataUpdate.birthDay || '',
         address: formDataUpdate.address?.trim() || '',
         gender: formDataUpdate.gender || '',
-        // ✅ Remove email from update (handled separately)
       };
 
-      // Fix: Wait for the API call to complete and properly handle response
-      const response = await userService.updateProfile(updateData, userData);
+      const response = await userService.updateProfile(updateData, user);
 
       if (response && response.success) {
-        // ✅ Update userData với response từ API
-        const updatedUser = response.data || { ...userData, ...updateData };
-        setUserData(updatedUser);
+        // ✅ Update Redux store
+        const updatedUser = response.data || { ...user, ...updateData };
+        dispatch(updateUserProfile(updatedUser));
 
         // ✅ Update form data
         const newFormData = {
@@ -608,14 +503,7 @@ const ProfileContent = () => {
           ...updateData,
         };
         setFormDataUpdate(newFormData);
-        setOriginalData(newFormData); // ✅ Sync với localStorage
-        // Duy trì cấu trúc nhất quán {success, message, data} khi lưu vào localStorage
-        const userProfileData = {
-          success: true,
-          message: 'Update user information successfully',
-          data: updatedUser.data || updatedUser,
-        };
-        localStorageUtil.set('userProfile', userProfileData);
+        setOriginalData(newFormData);
 
         // ✅ Exit edit mode
         setIsEditing(false);
@@ -639,12 +527,6 @@ const ProfileContent = () => {
           'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!',
           { duration: 6000 }
         );
-
-        localStorageUtil.remove('token');
-        localStorageUtil.remove('user');
-        // setTimeout(() => {
-        //   window.location.href = "/login";
-        // }, 2000);
       } else {
         const errorMessage =
           error.response?.data?.message ||
@@ -659,7 +541,7 @@ const ProfileContent = () => {
   };
 
   /**
-   * ✅ Handle toggle edit mode - Simplified
+   * ✅ Handle toggle edit mode
    */
   const handleToggleEdit = () => {
     if (isEditing) {
@@ -670,210 +552,12 @@ const ProfileContent = () => {
   };
 
   /**
-   * ✅ Handle cancel - Simplified
+   * ✅ Handle cancel
    */
   const handleCancel = () => {
-    // Reset về dữ liệu gốc từ originalData
     setFormDataUpdate({ ...originalData });
     setIsEditing(false);
-
     toast.info('Đã hủy', 'Các thay đổi đã được hủy bỏ.', { duration: 2000 });
-  };
-
-  // ====================================================================
-  // EMAIL CHANGE FUNCTIONS
-  // ====================================================================
-
-  /**
-   * ✅ Handle email change button click
-   */
-  const handleEmailChangeClick = () => {
-    setIsEmailModalOpen(true);
-  };
-
-  /**
-   * ✅ Handle email modal close - Thêm hàm này
-   */
-  const handleEmailModalClose = (isSuccess = false) => {
-    setIsEmailModalOpen(false);
-
-    // ✅ Nếu cập nhật thành công, không cần refresh trang
-    if (isSuccess) {
-      console.log('✅ Email updated successfully, modal closed');
-      // Chỉ hiển thị thông báo, không refresh
-      toast.success('Hoàn tất', 'Thông tin email đã được cập nhật!', {
-        duration: 3000,
-      });
-    }
-  };
-
-  /**
-   * ✅ Handle send verification code - New function for EmailChangeDialog
-   */
-  const handleSendCode = async (email) => {
-    try {
-      setIsSendingCode(true); // ✅ Set loading state
-
-      toast.info('Đang xử lý', 'Đang gửi mã xác nhận đến email mới...', {
-        duration: 2000,
-      });
-
-      // Call API to send verification code
-      const response = await userService.sendEmailVerificationCode(email);
-
-      if (response.success) {
-        return Promise.resolve(); // Success for modal to handle
-      } else {
-        throw new Error(response.message || 'Không thể gửi mã xác nhận');
-      }
-    } catch (error) {
-      console.error('❌ Error sending verification code:', error);
-      throw error; // Let modal handle the error
-    } finally {
-      setIsSendingCode(false); // ✅ Reset loading state
-    }
-  };
-
-  /**
-   * ✅ Handle verify and save email - Updated function
-   */
-  const handleVerifyAndSave = async (email, verificationCode) => {
-    try {
-      setIsVerifying(true); // ✅ Set loading state
-
-      toast.info('Đang xác nhận', 'Đang xác nhận mã và cập nhật email...', {
-        duration: 2000,
-      });
-
-      // Call API to verify code and update email
-      const response = await userService.verifyEmailChange({
-        newEmail: email,
-        verificationCode: verificationCode,
-      });
-
-      if (response.success) {
-        // Update email in form data
-        const updatedFormData = {
-          ...formDataUpdate,
-          email: email,
-        };
-
-        setFormDataUpdate(updatedFormData);
-        setOriginalData(updatedFormData);
-
-        // Update user data
-        const updatedUser = {
-          ...userData,
-          email: email,
-        };
-        setUserData(updatedUser); // ✅ Cập nhật localStorage để tránh lỗi khi refresh
-        localStorageUtil.set('user', updatedUser);
-
-        // Duy trì cấu trúc nhất quán {success, message, data} khi lưu vào localStorage
-        const userProfileData = {
-          success: true,
-          message: 'Email updated successfully',
-          data: updatedUser.data || updatedUser,
-        };
-        localStorageUtil.set('userProfile', userProfileData);
-
-        console.log('✅ Email updated successfully:', updatedUser);
-
-        toast.success('Thành công!', 'Email đã được cập nhật thành công!', {
-          duration: 4000,
-        });
-
-        return Promise.resolve(); // Success for modal to handle
-      } else {
-        throw new Error(response.message || 'Mã xác nhận không đúng');
-      }
-    } catch (error) {
-      console.error('❌ Error verifying email:', error);
-      throw error; // Let modal handle the error
-    } finally {
-      setIsVerifying(false); // ✅ Reset loading state
-    }
-  };
-
-  /**
-   * ✅ Close email change dialog
-   */
-  const handleCloseEmailChangeDialog = () => {
-    setEmailChangeDialog({ open: false });
-  };
-
-  /**
-   * ✅ Remove old email change submit function - No longer needed
-   */
-  // const handleEmailChangeSubmit = async (email) => { ... } // REMOVED
-
-  /**
-   * ✅ Remove old email verification function - No longer needed
-   */
-  // const handleEmailVerification = async (verificationCode) => { ... } // REMOVED
-
-  /**
-   * ✅ Remove old resend code function - No longer needed
-   */
-  // const handleResendCode = async () => { ... } // REMOVED
-
-  /**
-   * ✅ Remove old close email dialog function - No longer needed
-   */
-  // const handleCloseEmailDialog = () => { ... } // REMOVED
-
-  // ====================================================================
-  // PASSWORD CHANGE FUNCTIONS
-  // ====================================================================
-
-  /**
-   * ✅ Handle password change button click
-   */
-  const handlePasswordChangeClick = () => {
-    setPasswordChangeDialog({ open: true });
-  };
-
-  /**
-   * ✅ Handle password change
-   */
-  const handlePasswordChange = async (passwordData) => {
-    try {
-      setIsChangingPassword(true);
-
-      toast.info('Đang xử lý', 'Đang đổi mật khẩu...', { duration: 2000 });
-
-      const response = await userService.changePassword(passwordData);
-
-      if (response.success) {
-        setPasswordChangeDialog({ open: false });
-
-        toast.success(
-          'Đổi mật khẩu thành công!',
-          'Mật khẩu của bạn đã được thay đổi thành công.',
-          { duration: 4000 }
-        );
-      } else {
-        throw new Error(response.message || 'Không thể đổi mật khẩu');
-      }
-    } catch (error) {
-      console.error('❌ Error changing password:', error);
-
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        'Có lỗi xảy ra khi đổi mật khẩu!';
-
-      toast.error('Lỗi đổi mật khẩu', errorMessage, { duration: 5000 });
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
-
-  /**
-   * ✅ Close password change dialog
-   */
-  const handleClosePasswordDialog = () => {
-    setPasswordChangeDialog({ open: false });
   };
 
   // ====================================================================
@@ -897,36 +581,36 @@ const ProfileContent = () => {
 
   /**
    * Xử lý khi upload avatar thành công
-   * @param {string} avatarPath - Đường dẫn avatar mới
    */
   const handleAvatarUploadSuccess = (avatarPath) => {
-    console.log('Avatar uploaded successfully:', avatarPath);
-    // Cập nhật UI ngay lập tức với avatar mới
-    if (userData && avatarPath) {
-      setUserData((prev) => ({
-        ...prev,
-        avatar: avatarPath,
-      }));
-    }
-
-    // Đóng modal sau một lúc
-    setTimeout(() => {
-      handleCloseAvatarModal();
-    }, 1500);
+    // Đã upload thành công, cập nhật Redux
+    dispatch(updateUserProfile({ avatar: avatarPath }));
+    handleCloseAvatarModal();
   };
 
   /**
    * Xử lý khi có lỗi upload avatar
-   * @param {string} errorMessage - Thông báo lỗi
    */
   const handleAvatarUploadError = (errorMessage) => {
     setAvatarError(errorMessage);
   };
 
+  // ✅ Lấy avatar URL từ Redux store
+  const getAvatarUrl = () => {
+    if (avatarUrl) {
+      return imageUrl.getFullImageUrl(avatarUrl);
+    }
+
+    if (user?.avatar) {
+      return imageUrl.getFullImageUrl(user.avatar);
+    }
+
+    return undefined;
+  };
+
   // Render component
   return (
     <>
-      {' '}
       {/* Dialog thay đổi avatar */}
       <Dialog
         open={isAvatarModalOpen}
@@ -956,13 +640,14 @@ const ProfileContent = () => {
           )}
 
           <AvatarUpload
-            currentImage={userData?.avatar}
+            currentImage={user?.avatar}
             onUploadSuccess={handleAvatarUploadSuccess}
             onUploadError={handleAvatarUploadError}
             onClose={handleCloseAvatarModal}
           />
         </DialogContent>
       </Dialog>
+
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Stack spacing={4}>
           {/* ============================================================== */}
@@ -975,16 +660,11 @@ const ProfileContent = () => {
                 spacing={4}
                 alignItems="center"
               >
-                {' '}
                 {/* Avatar Section */}
                 <Stack alignItems="center" spacing={2}>
                   <Box sx={{ position: 'relative' }}>
                     <Avatar
-                      src={
-                        userData?.avatar
-                          ? imageUrl.getFullImageUrl(userData.avatar)
-                          : undefined
-                      }
+                      src={getAvatarUrl()}
                       alt={formDataUpdate.fullName || 'User'}
                       sx={{
                         width: { xs: 120, md: 140 },
@@ -1047,6 +727,7 @@ const ProfileContent = () => {
                     Đổi ảnh đại diện
                   </Button>
                 </Stack>
+
                 {/* User Info */}
                 <Stack
                   spacing={2}
@@ -1072,7 +753,7 @@ const ProfileContent = () => {
                         fontWeight: 500,
                       }}
                     >
-                      {userData?.role === 'STAFF' ? 'Nhân viên' : 'Khách hàng'}
+                      {user?.role === 'STAFF' ? 'Nhân viên' : 'Khách hàng'}
                     </Typography>
 
                     <Typography
@@ -1082,9 +763,9 @@ const ProfileContent = () => {
                         fontSize: '14px',
                       }}
                     >
-                      {userData?.role === 'STAFF'
-                        ? `Mã nhân viên: ${userData?.id || 'N/A'}`
-                        : `Mã khách hàng: ${userData?.id || 'GUEST'}`}
+                      {user?.role === 'STAFF'
+                        ? `Mã nhân viên: ${user?.id || 'N/A'}`
+                        : `Mã khách hàng: ${user?.id || 'GUEST'}`}
                     </Typography>
                   </Stack>
 
@@ -1143,6 +824,7 @@ const ProfileContent = () => {
                     </Paper>
                   </Stack>
                 </Stack>
+
                 {/* Action Buttons */}
                 <Stack spacing={2} sx={{ minWidth: { md: 200 } }}>
                   <Button
@@ -1197,35 +879,6 @@ const ProfileContent = () => {
                       : isEditing
                         ? 'Hủy chỉnh sửa'
                         : 'Chỉnh sửa hồ sơ'}
-                  </Button>
-
-                  <Button
-                    variant="outlined"
-                    startIcon={
-                      isRefreshing ? (
-                        <CircularProgress size={16} color="inherit" />
-                      ) : (
-                        <RefreshIcon />
-                      )
-                    }
-                    onClick={handleRefreshData}
-                    disabled={isRefreshing || isEditing}
-                    fullWidth
-                    sx={{
-                      py: 1.5,
-                      borderRadius: '12px',
-                      fontWeight: 500,
-                      fontSize: '14px',
-                      textTransform: 'none',
-                      color: '#1ABC9C',
-                      borderColor: '#1ABC9C',
-                      '&:hover': {
-                        backgroundColor: 'rgba(26, 188, 156, 0.1)',
-                        borderColor: '#1ABC9C',
-                      },
-                    }}
-                  >
-                    {isRefreshing ? 'Đang tải...' : 'Làm mới'}
                   </Button>
                 </Stack>
               </Stack>

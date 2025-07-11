@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Drawer,
   List,
@@ -21,7 +21,7 @@ import {
   Close as CloseIcon,
 } from '@mui/icons-material';
 import { sidebarMenuConfig } from './sidebarConfig';
-import { useUser } from '@/context/UserContext';
+import { useSelector } from 'react-redux';
 import imageUrl from '../../utils/imageUrl';
 
 // Constants
@@ -84,9 +84,12 @@ const LogoSection = styled(Box)(({ theme }) => ({
 }));
 
 const DynamicSideBar = ({ open, onClose, selectedItem, onItemSelect }) => {
-  const { user } = useUser();
+  // ✅ Sử dụng Redux store thay vì UserContext
+  const user = useSelector((state) => state.auth.user);
+  const avatarUrl = useSelector((state) => state.auth.avatarUrl);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+
   const [expandedItems, setExpandedItems] = useState({});
-  const [refreshKey, setRefreshKey] = useState(0);
   const userRole = user?.role || 'CUSTOMER';
 
   // Lọc menu theo role
@@ -102,8 +105,18 @@ const DynamicSideBar = ({ open, onClose, selectedItem, onItemSelect }) => {
     }));
   };
 
-  // Force refresh avatar nếu cần
-  const forceRefresh = () => setRefreshKey((old) => old + 1);
+  // ✅ Lấy avatar URL từ Redux store hoặc fallback
+  const getAvatarUrl = () => {
+    if (avatarUrl) {
+      return imageUrl.getFullImageUrl(avatarUrl);
+    }
+
+    if (user?.avatar) {
+      return imageUrl.getFullImageUrl(user.avatar);
+    }
+
+    return undefined; // Let Avatar component show fallback
+  };
 
   // Đổi role sang tiếng Việt nếu là CUSTOMER
   const getRoleLabel = (role) => {
@@ -188,100 +201,90 @@ const DynamicSideBar = ({ open, onClose, selectedItem, onItemSelect }) => {
       </LogoSection>
 
       {/* User Profile Section */}
-      <UserProfile>
-        <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
-          <Avatar
-            src={
-              user?.avatar ? imageUrl.getFullImageUrl(user.avatar) : undefined
-            }
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = '/img/avatar/default.jpg';
-            }}
-            alt={user?.fullName || 'User'}
-            imgProps={{
-              loading: 'eager',
-              key: `sidebar-avatar-${Date.now()}-${refreshKey}`,
-              onError: () => forceRefresh(),
-              onLoad: () => {},
-            }}
-            sx={{
-              width: { xs: 60, md: 80 },
-              height: { xs: 60, md: 80 },
-              margin: '0 auto',
-              background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
-              fontSize: { xs: '24px', md: '32px' },
-              fontWeight: 700,
-              boxShadow: '0 8px 32px rgba(74, 144, 226, 0.3)',
-              border: '3px solid rgba(255, 255, 255, 0.6)',
-            }}
-          >
-            {!user?.avatar
-              ? user?.fullName?.[0] || user?.email?.[0] || 'U'
-              : null}
-          </Avatar>
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: -2,
-              right: '50%',
-              transform: 'translateX(50%)',
-              width: 20,
-              height: 20,
-              borderRadius: '50%',
-              background: 'linear-gradient(45deg, #4CAF50, #2ECC71)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px solid rgba(255, 255, 255, 0.2)',
-              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
-            }}
-          >
+      {isAuthenticated && user && (
+        <UserProfile>
+          <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
+            <Avatar
+              src={getAvatarUrl()}
+              alt={user.fullName || 'User'}
+              sx={{
+                width: { xs: 60, md: 80 },
+                height: { xs: 60, md: 80 },
+                margin: '0 auto',
+                background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
+                fontSize: { xs: '24px', md: '32px' },
+                fontWeight: 700,
+                boxShadow: '0 8px 32px rgba(74, 144, 226, 0.3)',
+                border: '3px solid rgba(255, 255, 255, 0.6)',
+              }}
+            >
+              {!user.avatar
+                ? user.fullName?.[0] || user.email?.[0] || 'U'
+                : null}
+            </Avatar>
             <Box
               sx={{
-                width: 6,
-                height: 6,
+                position: 'absolute',
+                bottom: -2,
+                right: '50%',
+                transform: 'translateX(50%)',
+                width: 20,
+                height: 20,
                 borderRadius: '50%',
-                background: '#fff',
+                background: 'linear-gradient(45deg, #4CAF50, #2ECC71)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
               }}
-            />
+            >
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#fff',
+                }}
+              />
+            </Box>
           </Box>
-        </Box>
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 600,
-            mb: 0.5,
-            fontSize: { xs: '16px', md: '18px' },
-            color: '#2D3748',
-          }}
-        >
-          {user?.fullName || 'Người dùng'}
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            color: '#4A5568',
-            fontSize: '13px',
-            mb: 1,
-            wordBreak: 'break-all',
-          }}
-        >
-          {user?.email || 'email@example.com'}
-        </Typography>
-        <Chip
-          label={getRoleLabel(userRole)}
-          size="small"
-          sx={{
-            background: 'linear-gradient(45deg, #4CAF50, #2ECC71)',
-            color: '#fff',
-            fontWeight: 500,
-            fontSize: '11px',
-            height: '24px',
-            boxShadow: '0 2px 8px rgba(76, 175, 80, 0.25)',
-          }}
-        />
-      </UserProfile>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 600,
+              mb: 0.5,
+              fontSize: { xs: '16px', md: '18px' },
+              color: '#2D3748',
+            }}
+          >
+            {user.fullName || 'Người dùng'}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: '#4A5568',
+              fontSize: '13px',
+              mb: 1,
+              wordBreak: 'break-all',
+            }}
+          >
+            {user.email || 'email@example.com'}
+          </Typography>
+          <Chip
+            label={getRoleLabel(userRole)}
+            size="small"
+            sx={{
+              background: 'linear-gradient(45deg, #4CAF50, #2ECC71)',
+              color: '#fff',
+              fontWeight: 500,
+              fontSize: '11px',
+              height: '24px',
+              boxShadow: '0 2px 8px rgba(76, 175, 80, 0.25)',
+            }}
+          />
+        </UserProfile>
+      )}
 
       {/* Navigation Menu */}
       <List sx={{ px: 1, py: 2, flexGrow: 1 }}>

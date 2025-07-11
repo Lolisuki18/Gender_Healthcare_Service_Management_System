@@ -26,6 +26,7 @@
 
 import localStorageUtil from '@/utils/localStorage';
 import axios from 'axios';
+import { confirmDialog } from '@/utils/confirmDialog';
 
 // Lấy baseURL từ biến môi trường, ưu tiên cloud nếu có
 const config = {
@@ -145,6 +146,7 @@ apiClient.interceptors.request.use(
         } catch (error) {
           processQueue(error, null);
           // Redirect to login nếu không phải đang ở trang login
+
           if (!window.location.pathname.includes('/login')) {
             window.location.href = '/login';
           }
@@ -207,20 +209,21 @@ apiClient.interceptors.response.use(
         return apiClient.request(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-
         // Nếu có flag skipAutoRedirect, không redirect và không alert
         if (originalRequest?.skipAutoRedirect) {
           return Promise.reject(error);
         }
-
-        // Thông báo cho người dùng
-        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-
+        // Thông báo cho người dùng bằng dialog đẹp
+        await confirmDialog.info(
+          'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!'
+        );
+        // XÓA TOÀN BỘ DỮ LIỆU TRÊN LOCALSTORAGE VÀ SESSIONSTORAGE
+        localStorage.clear();
+        sessionStorage.clear();
         // Chỉ redirect nếu không phải đang ở trang login
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';
         }
-
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
