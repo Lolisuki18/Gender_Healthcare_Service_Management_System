@@ -208,8 +208,12 @@ export const userService = {
           refreshToken: tokenData.refreshToken || refreshTokenValue,
         };
 
-        // Lưu token mới vào localStorage
+        // Lưu token mới vào localStorage và khởi tạo token service
         localStorageUtil.set('token', newToken);
+
+        // Import và sử dụng tokenService
+        const tokenService = (await import('@/services/tokenService')).default;
+        tokenService.setToken(newToken);
 
         // Cập nhật cả trong user data nếu có
         const userData = localStorageUtil.get('user');
@@ -477,7 +481,6 @@ export const userService = {
       };
     }
   },
-
 };
 export const consultantService = {
   // Lấy danh sách bác sĩ

@@ -17,7 +17,7 @@
  * - BrowserRouter: Cấu hình điều hướng không cần tải lại trang
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { HashRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
@@ -29,8 +29,19 @@ import { UserProvider } from '@context/UserContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
+import tokenService from '@/services/tokenService';
 
 function App() {
+  useEffect(() => {
+    // Khởi tạo token service khi app start
+    tokenService.init();
+
+    // Cleanup khi component unmount
+    return () => {
+      tokenService.cleanup();
+    };
+  }, []);
+
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>

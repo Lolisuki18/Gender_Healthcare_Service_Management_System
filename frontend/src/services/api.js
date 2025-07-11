@@ -13,6 +13,7 @@
  * - Cấu hình baseURL và headers mặc định
  * - Interceptor tự động thêm JWT token vào các request
  * - Xử lý lỗi tập trung, bao gồm việc xử lý token hết hạn
+ * - Proactive token refresh để tránh lỗi 401
  *
  * =============================
  * 🔑 Để sử dụng backend Cloud (production):
@@ -37,15 +38,123 @@ const config = {
 
 const apiClient = axios.create(config);
 
-// ✅ Request interceptor - sử dụng JWT token
-apiClient.interceptors.request.use(
-  (config) => {
-    // Chỉ sử dụng token từ biến token trong localStorage
-    var token = localStorageUtil.get('token');
+// Biến để theo dõi trạng thái refresh token
+let isRefreshing = false;
+let failedQueue = [];
 
-    // Thêm token vào header Authorization nếu có
-    if (token && token.accessToken) {
-      config.headers.Authorization = `Bearer ${token.accessToken}`;
+// Hàm xử lý queue các request bị fail
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
+// Hàm kiểm tra token có sắp hết hạn không
+const isTokenExpiringSoon = (token) => {
+  if (!token) return true;
+
+  try {
+    const tokenParts = token.split('.');
+    if (tokenParts.length !== 3) return true;
+
+    const payload = JSON.parse(atob(tokenParts[1]));
+    const expiryTime = payload.exp * 1000;
+    const currentTime = Date.now();
+
+    // Token sắp hết hạn trong 5 phút (phù hợp với access token 1 giờ)
+    return expiryTime - currentTime < 5 * 60 * 1000;
+  } catch (error) {
+    return true;
+  }
+};
+
+// Hàm refresh token
+const refreshToken = async () => {
+  const token = localStorageUtil.get('token');
+  if (!token?.refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  try {
+    // Sử dụng axios trực tiếp để tránh vòng lặp
+    const noInterceptorClient = axios.create({
+      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const response = await noInterceptorClient.post('/auth/refresh-token', {
+      refreshToken: token.refreshToken,
+    });
+
+    const responseData = response.data;
+    const tokenData = responseData.data || responseData;
+
+    const newAccessToken =
+      tokenData.accessToken || (tokenData.data && tokenData.data.accessToken);
+
+    const newRefreshToken =
+      tokenData.refreshToken ||
+      (tokenData.data && tokenData.data.refreshToken) ||
+      token.refreshToken;
+
+    const newTokenObject = {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    };
+
+    localStorageUtil.set('token', newTokenObject);
+    return newTokenObject;
+  } catch (error) {
+    // Xóa token cũ nếu refresh thất bại
+    localStorageUtil.remove('token');
+    throw error;
+  }
+};
+
+// ✅ Request interceptor - sử dụng JWT token với proactive refresh
+apiClient.interceptors.request.use(
+  async (config) => {
+    // Bỏ qua refresh cho các endpoint không cần auth
+    if (
+      config.url?.includes('/auth/login') ||
+      config.url?.includes('/auth/register') ||
+      config.url?.includes('/auth/refresh-token')
+    ) {
+      return config;
+    }
+
+    const token = localStorageUtil.get('token');
+
+    if (token?.accessToken) {
+      // Kiểm tra nếu token sắp hết hạn và chưa đang refresh
+      if (isTokenExpiringSoon(token.accessToken) && !isRefreshing) {
+        isRefreshing = true;
+
+        try {
+          const newToken = await refreshToken();
+          config.headers.Authorization = `Bearer ${newToken.accessToken}`;
+          processQueue(null, newToken.accessToken);
+        } catch (error) {
+          processQueue(error, null);
+          // Redirect to login nếu không phải đang ở trang login
+          if (!window.location.pathname.includes('/login')) {
+            window.location.href = '/login';
+          }
+          return Promise.reject(error);
+        } finally {
+          isRefreshing = false;
+        }
+      } else {
+        config.headers.Authorization = `Bearer ${token.accessToken}`;
+      }
     }
 
     return config;
@@ -61,113 +170,60 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    const originalRequest = error.config;
+
     // Xử lý token hết hạn (401 Unauthorized) hoặc JWT expired
     if (
-      error.response?.status === 401 ||
-      (error.response?.data?.message &&
-        error.response?.data?.message.includes('JWT expired'))
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/refresh-token')
     ) {
-      const token = localStorageUtil.get('token');
-
       // ✅ KIỂM TRA FLAG ĐỂ BỎ QUA AUTO-REDIRECT
-      if (error.config?.skipAutoRedirect) {
+      if (originalRequest?.skipAutoRedirect) {
         return Promise.reject(error);
       }
 
-      // Nếu có refresh token, thử refresh
-      if (token && token.refreshToken) {
-        try {
-          if (!window.isRefreshingToken) {
-            window.isRefreshingToken = true;
+      if (isRefreshing) {
+        // Nếu đang refresh, thêm request vào queue
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return apiClient.request(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
 
-            // Sử dụng axios trực tiếp thay vì import userService để tránh vòng lặp tham chiếu
-            const noInterceptorClient = axios.create({
-              baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
+      originalRequest._retry = true;
+      isRefreshing = true;
 
-            const refreshResponse = await noInterceptorClient
-              .post('/auth/refresh-token', {
-                refreshToken: token.refreshToken,
-              })
-              .then((res) => res.data);
+      try {
+        const newToken = await refreshToken();
+        originalRequest.headers.Authorization = `Bearer ${newToken.accessToken}`;
+        processQueue(null, newToken.accessToken);
+        return apiClient.request(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
 
-            // Kiểm tra cả trường hợp response trực tiếp hoặc nằm trong .data
-            if (
-              refreshResponse.success ||
-              refreshResponse.accessToken ||
-              (refreshResponse.data &&
-                (refreshResponse.data.accessToken ||
-                  refreshResponse.data.success))
-            ) {
-              // Lấy token từ response
-              const tokenData = refreshResponse.data || refreshResponse;
-              const newAccessToken =
-                tokenData.accessToken ||
-                (tokenData.data && tokenData.data.accessToken);
-
-              // Chỉ cập nhật refreshToken nếu có trong response
-              const newRefreshToken =
-                tokenData.refreshToken ||
-                (tokenData.data && tokenData.data.refreshToken) ||
-                token.refreshToken;
-
-              // Cập nhật token mới vào localStorage
-              const newTokenObject = {
-                accessToken: newAccessToken,
-                refreshToken: newRefreshToken,
-              };
-              localStorageUtil.set('token', newTokenObject);
-
-              // Thêm header authorization mới và thử lại request
-              error.config.headers.Authorization = `Bearer ${newAccessToken}`;
-
-              // Tránh vòng lặp vô hạn nếu token mới cũng không hợp lệ
-              error.config._retry = true;
-
-              return apiClient.request(error.config);
-            }
-          } else {
-            // Chờ một chút và thử lại nếu một quá trình refresh đang diễn ra
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            const updatedToken = localStorageUtil.get('token');
-            if (
-              updatedToken &&
-              updatedToken.accessToken !== token.accessToken
-            ) {
-              // Token đã được làm mới bởi một request khác
-              error.config.headers.Authorization = `Bearer ${updatedToken.accessToken}`;
-              return apiClient.request(error.config);
-            }
-          }
-        } catch (refreshError) {
-          // Refresh token cũng hết hạn, đăng xuất user
-          localStorageUtil.remove('token');
-
-          // Nếu có flag skipAutoRedirect, không redirect và không alert
-          if (error.config?.skipAutoRedirect) {
-            return Promise.reject(error);
-          }
-
-          // Thông báo cho người dùng
-          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-
-          // Chỉ redirect nếu không phải đang ở trang login
-          if (!window.location.pathname.includes('/login')) {
-            window.location.href = '/login';
-          }
+        // Nếu có flag skipAutoRedirect, không redirect và không alert
+        if (originalRequest?.skipAutoRedirect) {
+          return Promise.reject(error);
         }
-      } else {
-        // Không có refresh token, chuyển về trang login
-        localStorageUtil.remove('token');
+
+        // Thông báo cho người dùng
+        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
 
         // Chỉ redirect nếu không phải đang ở trang login
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';
         }
+
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 

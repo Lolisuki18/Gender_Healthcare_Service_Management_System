@@ -126,6 +126,13 @@ const LoginPage = () => {
           //lưu token vào localStorage
           localStorageUtil.set('token', token);
 
+          // Khởi tạo token service để tự động quản lý refresh
+          import('@/services/tokenService').then(
+            ({ default: tokenService }) => {
+              tokenService.setToken(token);
+            }
+          );
+
           //*DEBUG: log ra thử để Debug xem thử token đã được lưu chưa
           const savedUser = localStorageUtil.get('token');
           console.log('Saved user data:', savedUser);
