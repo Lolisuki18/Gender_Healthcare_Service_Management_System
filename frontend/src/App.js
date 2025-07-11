@@ -30,6 +30,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import tokenService from '@/services/tokenService';
+import ScrollToTop from './components/common/ScrollToTop';
 
 function App() {
   useEffect(() => {
@@ -50,6 +51,7 @@ function App() {
             <CssBaseline />
             <ToastContainer position="top-right" autoClose={3000} />
             <HashRouter>
+              <ScrollToTop />
               <AppRoutes />
             </HashRouter>
           </UserProvider>

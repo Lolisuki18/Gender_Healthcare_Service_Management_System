@@ -31,6 +31,7 @@ import LoggedInView from '@/components/common/LoggedInView';
 import { logout } from '@/redux/slices/authSlice';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '@/redux/slices/authSlice';
+import tokenService from '@/services/tokenService';
 
 const LoginPage = () => {
   // --- STATE MANAGEMENT ---
@@ -130,11 +131,7 @@ const LoginPage = () => {
           localStorageUtil.set('token', token);
 
           // Khởi tạo token service để tự động quản lý refresh
-          import('@/services/tokenService').then(
-            ({ default: tokenService }) => {
-              tokenService.setToken(token);
-            }
-          );
+          tokenService.setToken(token);
 
           //*DEBUG: log ra thử để Debug xem thử token đã được lưu chưa
           const savedUser = localStorageUtil.get('token');
@@ -208,11 +205,11 @@ const LoginPage = () => {
               } else {
                 const redirectInfo = localStorageUtil.get('redirectAfterLogin');
 
-                localStorageUtil.set('loginSuccessMessage', {
-                  title: 'Đăng nhập thành công',
-                  message: `Chào mừng ${token.username} trở lại!`,
-                  timestamp: Date.now(),
-                });
+                // localStorageUtil.set('loginSuccessMessage', {
+                //   title: 'Đăng nhập thành công',
+                //   message: `Chào mừng ${token.username} trở lại!`,
+                //   timestamp: Date.now(),
+                // });
 
                 if (redirectInfo) {
                   // Xóa thông tin redirect sau khi sử dụng

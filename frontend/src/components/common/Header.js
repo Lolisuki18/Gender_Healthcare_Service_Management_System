@@ -51,6 +51,11 @@ const Header = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const open = Boolean(dropdownOpen);
 
+  // Thêm kiểm tra token và userProfile trong localStorage
+  const hasToken = Boolean(localStorageUtil.get('token'));
+  const hasUserProfile = Boolean(localStorageUtil.get('userProfile'));
+  const canShowUser = isAuthenticated && hasToken && hasUserProfile;
+
   // ✅ Hàm kiểm soát khi ấn vào avt người dùng
   const handleAvatarClick = (event) => {
     setDropdownOpen(event.currentTarget);
@@ -262,7 +267,7 @@ const Header = () => {
           </Box>
 
           {/* User Section */}
-          {isAuthenticated ? (
+          {canShowUser ? (
             <Box sx={{ flexShrink: 0 }}>
               <IconButton
                 aria-label="account of current user"

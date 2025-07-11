@@ -76,25 +76,9 @@ export const HomePage = () => {
     // Set loaded after a small delay for animations
     const timer = setTimeout(() => {
       setLoaded(true);
-    }, 100);
+    }, 1000);
 
-    // Kiểm tra và hiển thị thông báo đăng nhập thành công
-    const loginMessage = localStorageUtil.get('loginSuccessMessage');
-
-    if (loginMessage) {
-      // Hiển thị thông báo
-      toast.success(
-        loginMessage.title || 'Đăng nhập thành công!',
-        loginMessage.message || 'Chào mừng bạn trở lại!',
-        {
-          autoClose: 3000,
-        }
-      );
-
-      // xoá ngay lập tức để tránh hiện thị lại
-      localStorageUtil.remove('loginSuccessMessage');
-    }
-
+    toast.success('Chào mừng bạn đến với trang chủ');
     console.log('HomePage component mounted');
 
     return () => clearTimeout(timer);
@@ -415,12 +399,17 @@ export const HomePage = () => {
                         transition: 'all 0.4s cubic-bezier(.4,0,.2,1)',
                         overflow: 'hidden',
                         position: 'relative',
-                        background: 'linear-gradient(180deg, #ffffff 0%, #f8faff 100%)',
+                        background:
+                          'linear-gradient(180deg, #ffffff 0%, #f8faff 100%)',
                         border: '1px solid rgba(255,255,255,0.2)',
                         backdropFilter: 'blur(20px)',
                         '&:hover': {
                           transform: 'translateY(-12px) scale(1.02)',
-                          boxShadow: `0 25px 50px rgba(${service.color.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(',')}, 0.25)`,
+                          boxShadow: `0 25px 50px rgba(${service.color
+                            .slice(1)
+                            .match(/.{2}/g)
+                            .map((hex) => parseInt(hex, 16))
+                            .join(',')}, 0.25)`,
                           border: `1px solid ${service.color}40`,
                           '& .service-icon': {
                             transform: 'scale(1.2) rotate(5deg)',
@@ -429,7 +418,7 @@ export const HomePage = () => {
                           '& .service-button': {
                             background: `linear-gradient(45deg, ${service.gradientFrom}, ${service.gradientTo})`,
                             transform: 'translateY(-2px)',
-                          }
+                          },
                         },
                       }}
                     >
@@ -454,10 +443,17 @@ export const HomePage = () => {
                             background: `radial-gradient(circle, ${service.color}15, transparent 70%)`,
                             borderRadius: '50%',
                             transform: 'translate(30px, -30px)',
-                          }
+                          },
                         }}
                       >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, zIndex: 1 }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            zIndex: 1,
+                          }}
+                        >
                           <Avatar
                             className="service-icon"
                             sx={{
@@ -481,7 +477,7 @@ export const HomePage = () => {
                                 fontWeight: 700,
                                 fontSize: '0.75rem',
                                 height: 24,
-                                '& .MuiChip-label': { px: 1.5 }
+                                '& .MuiChip-label': { px: 1.5 },
                               }}
                             />
                           </Box>
@@ -517,7 +513,7 @@ export const HomePage = () => {
                         >
                           {service.title}
                         </Typography>
-                        
+
                         <Typography
                           sx={{
                             color: 'text.secondary',
@@ -533,23 +529,30 @@ export const HomePage = () => {
                         >
                           {service.shortDesc}
                         </Typography>
-                        
+
                         <Box dense sx={{ flexGrow: 1, mb: 2 }}>
                           {service.bullets.slice(0, 3).map((bullet, i) => (
-                            <Box key={i} sx={{ py: 0.5, display: 'flex', alignItems: 'center' }}>
-                              <CheckIcon 
-                                sx={{ 
-                                  color: service.color, 
+                            <Box
+                              key={i}
+                              sx={{
+                                py: 0.5,
+                                display: 'flex',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <CheckIcon
+                                sx={{
+                                  color: service.color,
                                   fontSize: '1.2rem',
                                   fontWeight: 'bold',
-                                  mr: 1
-                                }} 
+                                  mr: 1,
+                                }}
                               />
                               <Typography
-                                sx={{ 
+                                sx={{
                                   fontSize: '0.95rem',
                                   fontWeight: 500,
-                                  color: '#2a2a2a'
+                                  color: '#2a2a2a',
                                 }}
                               >
                                 {bullet}
@@ -557,22 +560,28 @@ export const HomePage = () => {
                             </Box>
                           ))}
                           {service.bullets.length > 3 && (
-                            <Box sx={{ py: 0.5, display: 'flex', alignItems: 'center' }}>
-                              <Typography 
-                                sx={{ 
-                                  color: service.color, 
+                            <Box
+                              sx={{
+                                py: 0.5,
+                                display: 'flex',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <Typography
+                                sx={{
+                                  color: service.color,
                                   fontSize: '0.85rem',
                                   fontWeight: 'bold',
-                                  mr: 1
+                                  mr: 1,
                                 }}
                               >
                                 +{service.bullets.length - 3}
                               </Typography>
                               <Typography
-                                sx={{ 
+                                sx={{
                                   fontSize: '0.9rem',
                                   fontStyle: 'italic',
-                                  color: 'text.secondary'
+                                  color: 'text.secondary',
                                 }}
                               >
                                 Và nhiều tính năng khác...
