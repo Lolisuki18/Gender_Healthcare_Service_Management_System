@@ -17,6 +17,7 @@ import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ControlPillsRequest;
 import com.healapp.dto.ControlPillsResponse;
 import com.healapp.dto.PillLogsRespone;
+import com.healapp.dto.PillReminderDetailsResponse;
 import com.healapp.model.UserDtls;
 import com.healapp.model.ControlPills;
 import com.healapp.model.PillLogs;
@@ -144,37 +145,35 @@ public class ControlPillsService {
 
     
 
-    //Cập nhật ttransg thái uống thuốc
-    public ApiResponse<PillLogsRespone> updateCheckIn( Long id){
+    //Cập nhật trạng thái uống thuốc
+    public ApiResponse<PillLogsRespone> updateCheckIn( Long logId){
     try {
-        
-        Optional<ControlPills> controllOpt = controlPillsRepository.findById(id);
-        if (!controllOpt.isPresent()) {
-            return ApiResponse.error("Lịch uống thuốc không tồn tại");
-        }
-        ControlPills controlPills = controllOpt.get();
-        LocalDate today = LocalDate.now();
-
-        //Tìm ra log hôm nay của cái lịch uống thuốc 
-        Optional<PillLogs> logOpt = pillLogsRepository.findByControlPillsAndLogDate(controlPills, today);
-        if(!logOpt.isPresent()){
-            return ApiResponse.error("Không tìm thấy log uống thuốc hôm nay");
+        Optional<PillLogs> logOpt = pillLogsRepository.findById(logId);
+        if (!logOpt.isPresent()) {
+            return ApiResponse.error("Không tìm thấy log uống thuốc");
         }
         
         PillLogs log = logOpt.get();
-        if(log.getStatus() != null && log.getStatus()){
-            return ApiResponse.error("Bạn đã check-in hôm nay");
+        
+        // Toggle status: if true -> false, if false -> true
+        boolean newStatus = !Boolean.TRUE.equals(log.getStatus());
+        log.setStatus(newStatus);
+
+        if (newStatus) {
+            log.setCheckIn(LocalDateTime.now());
+            log.setUpdatedAt(LocalDateTime.now()); // Update updatedAt field when check-in
+        } else {
+            log.setCheckIn(null);
+            log.setUpdatedAt(LocalDateTime.now()); // Update updatedAt field when uncheck-in
         }
-        //Cập nhật trang thái uống thuốc
-        log.setStatus(true);
-        log.setCheckIn(LocalDateTime.now());
+        
         pillLogsRepository.save(log);
         
         PillLogsRespone response = responePillLogs(log);
-        return ApiResponse.success("Check-in thành công", response);
+        return ApiResponse.success("Cập nhật trạng thái check-in thành công", response);
     } catch (Exception e) {
         e.printStackTrace();
-        return ApiResponse.error("Lỗi khi check-in");
+        return ApiResponse.error("Lỗi khi cập nhật trạng thái check-in");
     }
 }
 
@@ -218,7 +217,8 @@ public class ControlPillsService {
         int totalDays = 365;
         int drink = con.getNumberDaysDrinking();
         int off = con.getNumberDaysOff();
-        Boolean placebo = Boolean.TRUE.equals(con.getPlacebo());//cái thuốc giả
+        Boolean placebo = Boolean.TRUE.equals(con.getPlacebo());
+        List<PillLogs> logsToSave = new ArrayList<>();
     
         while (totalDays > 0) {
             // Tạo các ngày uống thuốc
@@ -226,9 +226,10 @@ public class ControlPillsService {
                 PillLogs log = new PillLogs();
                 log.setControlPills(con);
                 log.setCreatedAt(LocalDateTime.now());
+                log.setUpdatedAt(LocalDateTime.now()); // Ensure updatedAt is set
                 log.setStatus(false); // chưa uống
                 log.setLogDate(currentDate);
-                pillLogsRepository.save(log);
+                logsToSave.add(log);
     
                 currentDate = currentDate.plusDays(1);
                 totalDays--;
@@ -238,9 +239,10 @@ public class ControlPillsService {
                     PillLogs log = new PillLogs();
                     log.setControlPills(con);
                     log.setCreatedAt(LocalDateTime.now());
+                    log.setUpdatedAt(LocalDateTime.now()); // Ensure updatedAt is set
                     log.setStatus(false);
                     log.setLogDate(currentDate);
-                    pillLogsRepository.save(log);
+                    logsToSave.add(log);
                     
                     currentDate = currentDate.plusDays(1);
                     totalDays --;
@@ -249,8 +251,8 @@ public class ControlPillsService {
                 currentDate = currentDate.plusDays(off);
                 totalDays -= off;
             }
-            
         }
+        pillLogsRepository.saveAll(logsToSave);
     }
 
     
@@ -279,19 +281,24 @@ public class ControlPillsService {
         return res;
     }
     //Lấy ra thông tin của lịch uống thuốc
-    public ApiResponse<List<PillLogsRespone>> getPillLogs(Long controlPillsId) {
+    public ApiResponse<PillReminderDetailsResponse> getPillLogs(Long controlPillsId) {
         try {
             Optional<ControlPills> controlOpt = controlPillsRepository.findById(controlPillsId);
             if (!controlOpt.isPresent()) {
                 return ApiResponse.error("Không tìm thấy lịch uống thuốc");
             }
     
-            List<PillLogs> logs = pillLogsRepository.findByControlPills(controlOpt.get());
-            List<PillLogsRespone> responseList = logs.stream()
+            ControlPills controlPills = controlOpt.get();
+            List<PillLogs> logs = pillLogsRepository.findByControlPills(controlPills);
+            
+            ControlPillsResponse controlPillsResponse = convertResponse(controlPills);
+            List<PillLogsRespone> pillLogsResponses = logs.stream()
                     .map(this::responePillLogs)
                     .collect(Collectors.toList());
+
+            PillReminderDetailsResponse response = new PillReminderDetailsResponse(controlPillsResponse, pillLogsResponses);
     
-            return ApiResponse.success("Lấy danh sách log uống thuốc thành công", responseList);
+            return ApiResponse.success("Lấy danh sách log uống thuốc thành công", response);
         } catch (Exception e) {
             e.printStackTrace();
             return ApiResponse.error("Đã xảy ra lỗi khi lấy danh sách log uống thuốc");
@@ -299,28 +306,20 @@ public class ControlPillsService {
     }
     
     //Xóa lịch uống thuốc 
-    public ApiResponse<String> deletePill(Long controlPillId){
+    public ApiResponse<String> deleteControlPills(Long controlPillId){
         try {
-            Long userId = getCurrentUserId();
-            Optional<ControlPills> optionalControlPills = controlPillsRepository.findById(controlPillId);
-
-            if (optionalControlPills.isEmpty()) {
-                return ApiResponse.error("Lịch uống thuốc không tồn tại.");
+            Optional<ControlPills> controlPills = controlPillsRepository.findById(controlPillId);
+            if(!controlPills.isPresent()){
+                return ApiResponse.error("Lịch uống thuốc không tồn tại");
             }
-
-            ControlPills controlPills = optionalControlPills.get();
-
-            if (!controlPills.getUserId().getId().equals(userId)) {
-                return ApiResponse.error("Bạn không có quyền xóa lịch uống thuốc này.");
-            }
-            
-            pillLogsRepository.deleteByControlPills(controlPills);
-            controlPillsRepository.delete(controlPills);
-
-            return ApiResponse.success("Xóa lịch uống thuốc thành công.", null);
+            //Xóa đi mấy cái log trước vì nó 
+            pillLogsRepository.deleteByControlPills(controlPills.get());
+            //xau đó mưới xóa đc cái này
+            controlPillsRepository.delete(controlPills.get());
+            return ApiResponse.success("Xóa lịch uống thuốc thành công");
         } catch (Exception e) {
             e.printStackTrace();
-            return ApiResponse.error("Đã xảy ra lỗi khi xóa lịch uống thuốc: " + e.getMessage());
+            return ApiResponse.error("Lỗi khi xóa lịch uống thuốc");
         }
     }
 

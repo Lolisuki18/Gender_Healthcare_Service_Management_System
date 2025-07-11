@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +19,7 @@ import com.healapp.dto.ControlPillsRequest;
 import com.healapp.service.ControlPillsService;
 import com.healapp.dto.ControlPillsResponse;
 import com.healapp.dto.PillLogsRespone;
+import com.healapp.dto.PillReminderDetailsResponse;
 
 import jakarta.validation.Valid;
 
@@ -39,8 +41,9 @@ public class ControlPillsController {
       }
       //Cập nhật trạng thái 
       @PutMapping("/{id}/checkIn")
-      public ResponseEntity<ApiResponse<PillLogsRespone>> updateCheckIn(@PathVariable Long id) {
-          ApiResponse<PillLogsRespone> response = controlPillsService.updateCheckIn(id);
+      @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+      public ResponseEntity<ApiResponse<PillLogsRespone>> updateCheckIn(@PathVariable("id") Long logId) {
+          ApiResponse<PillLogsRespone> response = controlPillsService.updateCheckIn(logId);
           
           return ResponseEntity.ok(response);
       }
@@ -49,6 +52,7 @@ public class ControlPillsController {
        * 
        */
       @PutMapping("/{id}")
+      @PreAuthorize("hasRole('ROLE_CUSTOMER')")
       public ResponseEntity<ApiResponse<ControlPillsResponse>> updateControlPills(@PathVariable Long id, @RequestBody @Valid ControlPillsRequest request) {
           ApiResponse<ControlPillsResponse>  response = controlPillsService.updateControlPills(id, request);
           
@@ -57,8 +61,16 @@ public class ControlPillsController {
       
       //Lấy ra lịch uống thuốc
       @GetMapping("/{id}")
-       public ResponseEntity<ApiResponse<List<PillLogsRespone>>> getLogsByControlPillsId(@PathVariable Long id) {
-          ApiResponse<List<PillLogsRespone>> response = controlPillsService.getPillLogs(id);
+      @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+       public ResponseEntity<ApiResponse<PillReminderDetailsResponse>> getLogsByControlPillsId(@PathVariable Long id) {
+          ApiResponse<PillReminderDetailsResponse> response = controlPillsService.getPillLogs(id);
           return ResponseEntity.ok(response);
        }
+       //Xóa lịch uống thuốc
+      @DeleteMapping("/{id}")
+      @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+      public ResponseEntity<ApiResponse<String>> deleteControlPills(@PathVariable Long id) {
+          ApiResponse<String> response = controlPillsService.deleteControlPills(id);
+          return ResponseEntity.ok(response);
+      }
 }
