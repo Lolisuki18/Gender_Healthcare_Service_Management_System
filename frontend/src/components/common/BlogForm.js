@@ -1,4 +1,6 @@
 import React from 'react';
+
+import { getBlogImageUrl } from '@/utils/imageUrl';
 import {
   Box, Typography, TextField, FormControl, InputLabel, Select, MenuItem, Button, Grid, Card, IconButton
 } from '@mui/material';
@@ -82,9 +84,19 @@ const BlogForm = ({
             Xem trước hình ảnh
           </Typography>
           <img
-            src={thumbnailPreview || form.existingThumbnail}
+            src={
+              thumbnailPreview && typeof thumbnailPreview === 'string' && thumbnailPreview.startsWith('data:')
+                ? thumbnailPreview
+                : getBlogImageUrl(thumbnailPreview || form.existingThumbnail)
+            }
             alt="Thumbnail preview"
             style={{ maxWidth: '100%', height: 'auto', maxHeight: '200px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+            onError={e => {
+              if (!e.target.dataset.fallback) {
+                e.target.src = '/img/blog/default.svg';
+                e.target.dataset.fallback = '1';
+              }
+            }}
           />
         </Box>
       )}
@@ -171,9 +183,19 @@ const BlogForm = ({
                   Xem trước hình ảnh phần {index + 1}
                 </Typography>
                 <img
-                  src={section.sectionImage || section.existingSectionImage}
+                  src={
+                    section.sectionImage && typeof section.sectionImage === 'string' && section.sectionImage.startsWith('data:')
+                      ? section.sectionImage
+                      : getBlogImageUrl(section.sectionImage || section.existingSectionImage)
+                  }
                   alt={`Section ${index + 1} preview`}
                   style={{ maxWidth: '100%', height: 'auto', maxHeight: '150px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+                  onError={e => {
+                    if (!e.target.dataset.fallback) {
+                      e.target.src = '/img/blog/default.svg';
+                      e.target.dataset.fallback = '1';
+                    }
+                  }}
                 />
               </Box>
             )}

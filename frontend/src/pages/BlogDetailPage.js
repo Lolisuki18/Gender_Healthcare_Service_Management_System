@@ -134,10 +134,16 @@ const BlogDetailPage = () => {
   // ===== UTILITY FUNCTIONS =====
   const defaultImage = '/img/blog/default.svg';
 
+  // Xử lý lỗi load ảnh: chỉ fallback 1 lần, tránh lặp vô hạn
+  // Nếu ảnh lỗi, chỉ đổi sang ảnh mặc định 1 lần duy nhất
   const handleImageError = (e, imageType = 'image') => {
-    console.error(`❌ ${imageType} failed to load:`, e.target.src);
-    console.log(`🔄 Using default ${imageType}`);
-    e.target.src = defaultImage;
+    // Giải thích: Nếu ảnh lỗi, kiểm tra đã fallback chưa (dùng data-fallback). Nếu chưa thì đổi sang ảnh mặc định, nếu đã rồi thì không làm gì nữa để tránh lặp vô hạn.
+    if (!e.target.dataset.fallback) {
+      e.target.dataset.fallback = 'true';
+      console.error(`❌ ${imageType} lỗi khi tải:`, e.target.src);
+      console.log(`🔄 Đang dùng ảnh mặc định cho ${imageType}`);
+      e.target.src = defaultImage;
+    }
   };
 
   const formatDate = (dateString) => {

@@ -41,6 +41,7 @@ import {
   TableRows as TableRowsIcon,
 } from '@mui/icons-material';
 import blogService from '@/services/blogService';
+import categoryService from '@/services/categoryService';
 import { formatDateDisplay } from '@/utils/dateUtils';
 
 const colors = {
@@ -74,7 +75,7 @@ const AdminBlogManagementContent = () => {
 
   // Lấy danh mục từ API khi load trang
   useEffect(() => {
-    blogService
+    categoryService
       .getCategories()
       .then((data) => {
         // Chuẩn hóa: nếu trả về dạng {data: [...]}, lấy data.data

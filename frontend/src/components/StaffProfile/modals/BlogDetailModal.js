@@ -77,13 +77,16 @@ const BlogDetailModal = ({ open, blog, onClose, onReject }) => {
           <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 500 }}>{formatDateVN(blog.createdAt)}</Typography>
         </Box>
         <Box mb={2} textAlign="center">
+          {/* Robust image fallback logic: only fallback once, use /img/blog/default.svg */}
           <img
             src={getBlogImageUrl(blog.thumbnailImage || blog.existingThumbnail)}
             alt="thumbnail"
             style={{ maxWidth: '100%', borderRadius: 12, marginBottom: 16, boxShadow: '0 4px 20px rgba(25,118,210,0.08)' }}
-            onError={e => { 
-              console.error('❌ Blog thumbnail failed to load:', e.target.src);
-              e.target.src = '/img/thumbs/suckhoesinhsan.png'; 
+            onError={e => {
+              if (!e.target.dataset.fallback) {
+                e.target.dataset.fallback = 'true';
+                e.target.src = '/img/blog/default.svg';
+              }
             }}
           />
         </Box>
@@ -95,10 +98,17 @@ const BlogDetailModal = ({ open, blog, onClose, onReject }) => {
               <Box key={section.id || idx} mb={2} sx={{ background: '#fff', borderRadius: 8, p: 2, boxShadow: '0 2px 8px rgba(25,118,210,0.06)' }}>
                 <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#1a237e', mb: 1 }}>{section.sectionTitle}</Typography>
                 {section.sectionImage && (
-                  <img src={getBlogImageUrl(section.sectionImage)} alt="section" style={{ maxWidth: 180, borderRadius: 6, margin: '8px 0', boxShadow: '0 2px 8px rgba(25,118,210,0.08)' }} onError={e => { 
-                    console.error('❌ Section image failed to load:', e.target.src);
-                    e.target.src = '/img/thumbs/suckhoesinhsan.png'; 
-                  }} />
+                  <img
+                    src={getBlogImageUrl(section.sectionImage)}
+                    alt="section"
+                    style={{ maxWidth: 180, borderRadius: 6, margin: '8px 0', boxShadow: '0 2px 8px rgba(25,118,210,0.08)' }}
+                    onError={e => {
+                      if (!e.target.dataset.fallback) {
+                        e.target.dataset.fallback = 'true';
+                        e.target.src = '/img/blog/default.svg';
+                      }
+                    }}
+                  />
                 )}
                 <Typography variant="body2" sx={{ whiteSpace: 'pre-line', color: '#37474f', fontSize: '1rem', mt: 1 }}>{section.sectionContent}</Typography>
               </Box>
