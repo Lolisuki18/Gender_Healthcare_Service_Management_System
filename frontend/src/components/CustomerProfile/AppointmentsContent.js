@@ -89,6 +89,7 @@ import confirmDialog from '../../utils/confirmDialog';
 import reviewService from '../../services/reviewService';
 import ReviewForm from '../modals/ReviewForm';
 import { notify } from '../../utils/notify';
+import { useNavigate } from 'react-router-dom';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)',
@@ -130,6 +131,7 @@ const AppointmentsContent = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelError, setCancelError] = useState('');
   const [reviewedConsultationIds, setReviewedConsultationIds] = useState([]);
+  const [myConsultationReviews, setMyConsultationReviews] = useState([]); // Lưu toàn bộ review liên quan đến consultation
   
   // Cập nhật các state cho ReviewForm
   const [openReviewDialog, setOpenReviewDialog] = useState(false);
@@ -140,6 +142,8 @@ const AppointmentsContent = () => {
   const [editingReviewId, setEditingReviewId] = useState(null);
   const [reviewLoading, setReviewLoading] = useState(false);
 
+  const navigate = useNavigate();
+
   const fetchAppointments = async () => {
     try {
       setLoading(true);
@@ -149,12 +153,13 @@ const AppointmentsContent = () => {
       } else {
         toast.error(response.message || 'Không thể tải danh sách lịch hẹn');
       }
-      // Lấy danh sách consultationId đã đánh giá
+      // Lấy danh sách review liên quan đến consultation
       const reviewRes = await reviewService.getMyReviews(0, 100);
       const reviews = reviewRes?.content || reviewRes?.data || reviewRes || [];
-      const reviewedIds = reviews
-        .filter(r => (r.targetType === 'CONSULTANT' || r.serviceType === 'CONSULTATION') && r.consultationId)
-        .map(r => r.consultationId);
+      const consultationReviews = reviews.filter(r => (r.targetType === 'CONSULTANT' || r.serviceType === 'CONSULTATION') && r.consultationId);
+      setMyConsultationReviews(consultationReviews);
+      // Vẫn giữ reviewedConsultationIds để hiển thị số lượng nếu cần
+      const reviewedIds = consultationReviews.map(r => String(r.consultationId));
       setReviewedConsultationIds(reviewedIds);
     } catch (error) {
       toast.error('Không thể tải danh sách lịch hẹn');
@@ -462,10 +467,7 @@ const AppointmentsContent = () => {
         );
         notify.success('Thành công', 'Đánh giá đã được gửi thành công!');
         
-        // Cập nhật ngay lập tức mảng reviewedConsultationIds để hiển thị đúng trạng thái
-        if (reviewingAppointment.consultationId && !reviewedConsultationIds.includes(reviewingAppointment.consultationId)) {
-          setReviewedConsultationIds([...reviewedConsultationIds, reviewingAppointment.consultationId]);
-        }
+        // Không cần cập nhật thủ công reviewedConsultationIds nữa, chỉ cần fetchAppointments để reload lại danh sách review
       }
       
       handleCloseReviewDialog();
@@ -475,6 +477,19 @@ const AppointmentsContent = () => {
     } finally {
       setReviewLoading(false);
     }
+  };
+
+  // Xác định trạng thái đánh giá cho từng appointment (dựa trên danh sách review thay vì chỉ id)
+  const getReviewStatus = (appointment) => {
+    if (appointment.status?.toUpperCase() !== 'COMPLETED') {
+      return 'not_eligible'; // Chưa hoàn thành, không thể đánh giá
+    }
+    // Kiểm tra trực tiếp trong danh sách review
+    const found = myConsultationReviews.find(r => String(r.consultationId) === String(appointment.consultationId));
+    if (found) {
+      return 'reviewed'; // Đã đánh giá
+    }
+    return 'pending'; // Chưa đánh giá
   };
 
   return (
@@ -733,90 +748,20 @@ const AppointmentsContent = () => {
                             mr: 1
                           }}
                         />
-                        {appointment.status?.toUpperCase() === 'COMPLETED' && (
-                          reviewedConsultationIds.includes(appointment.consultationId) ? (
-                            <Chip
-                              label="Đã đánh giá"
-                              size="small"
-                              color="success"
-                              sx={{ fontWeight: 500, fontSize: '11px', ml: 1 }}
-                            />
-                          ) : (
-                            <Chip
-                              label="Chưa đánh giá"
-                              size="small"
-                              color="warning"
-                              sx={{ fontWeight: 500, fontSize: '11px', ml: 1 }}
-                            />
-                          )
-                        )}
                       </TableCell>
                       {/* Cột Đánh giá */}
                       <TableCell align="center">
-                        {appointment.status?.toUpperCase() === 'COMPLETED' && (
-                          reviewedConsultationIds.includes(appointment.consultationId) ? (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="info"
-                              sx={{ fontSize: 13, textTransform: 'none', borderRadius: 3, px: 1.5, height: 32 }}
-                              onClick={async () => {
-                                try {
-                                  setReviewLoading(true);
-                                  // Gọi API lấy chi tiết đánh giá
-                                  const reviewRes = await reviewService.getMyReviews(0, 100);
-                                  const reviews = reviewRes?.content || reviewRes?.data || reviewRes || [];
-                                  const found = reviews.find(r => r.consultationId === appointment.consultationId);
-                                  
-                                  if (found) {
-                                    const detail = await reviewService.getReviewById(found.id);
-                                    // Mở form chỉnh sửa với dữ liệu hiện tại
-                                    setReviewingAppointment({
-                                      ...appointment,
-                                      type: 'CONSULTANT',
-                                      isEligible: true
-                                    });
-                                    setRating(detail.rating || 0);
-                                    setFeedback(detail.comment || '');
-                                    setIsEditMode(true);
-                                    setEditingReviewId(found.id);
-                                    setOpenReviewDialog(true);
-                                  } else {
-                                    notify.warning('Thông báo', 'Không tìm thấy đánh giá!');
-                                  }
-                                } catch (err) {
-                                  notify.error('Lỗi', 'Không thể lấy thông tin đánh giá: ' + err.message);
-                                } finally {
-                                  setReviewLoading(false);
-                                }
-                              }}
-                            >
-                              Chỉnh sửa
-                            </Button>
-                          ) : (
-                            <Button
-                              size="small"
-                              variant="contained"
-                              color="primary"
-                              sx={{ fontSize: 13, textTransform: 'none', borderRadius: 3, px: 1.5, height: 32 }}
-                              onClick={() => {
-                                // Đặt lại trạng thái cho form tạo mới
-                                setReviewingAppointment({
-                                  ...appointment,
-                                  type: 'CONSULTANT',
-                                  isEligible: true
-                                });
-                                setRating(0);
-                                setFeedback('');
-                                setIsEditMode(false);
-                                setEditingReviewId(null);
-                                setOpenReviewDialog(true);
-                              }}
-                            >
-                              Đánh giá
-                            </Button>
-                          )
-                        )}
+                        <Button
+                          size="small"
+                          variant="contained"
+                          color="primary"
+                          sx={{ fontSize: 13, textTransform: 'none', borderRadius: 3, px: 1.5, height: 32 }}
+                          onClick={() => {
+                            navigate('/profile', { state: { initialTab: 'my-reviews' } });
+                          }}
+                        >
+                          Đánh giá
+                        </Button>
                       </TableCell>
                       <TableCell align="center">
                         <Box

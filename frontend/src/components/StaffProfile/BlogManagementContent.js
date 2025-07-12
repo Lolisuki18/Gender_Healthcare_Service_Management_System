@@ -8,6 +8,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
 import {
   Box,
   Typography,
@@ -54,9 +56,13 @@ import {
   CloudUpload as CloudUploadIcon,
   Remove as RemoveIcon,
   Check as CheckIcon,
+  HourglassEmpty as HourglassEmptyIcon,
+  Cancel as CancelIcon,
 } from '@mui/icons-material';
-import blogService from '../../services/blogService';
+import blogService from '@/services/blogService';
+import categoryService from '@/services/categoryService';
 import BlogDetailModal from './modals/BlogDetailModal';
+import BlogForm from '../common/BlogForm';
 
 // Teal theme colors
 const colors = {
@@ -92,14 +98,14 @@ const headerStyle = {
 };
 
 const cardStyle = {
-  backgroundColor: colors.white,
-  borderRadius: '10px',
-  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-  color: colors.text,
+  backgroundColor: '#fff',
+  borderRadius: '18px',
+  boxShadow: '0 4px 16px rgba(74, 144, 226, 0.10)',
+  color: '#264653',
   overflow: 'hidden',
-  transition: 'all 0.2s ease-in-out',
+  transition: 'all 0.2s',
   '&:hover': {
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+    boxShadow: '0 8px 24px rgba(74, 144, 226, 0.18)',
   },
 };
 
@@ -132,19 +138,24 @@ const statCardStyle = {
 };
 
 const tableHeadStyle = {
-  backgroundColor: colors.primary,
+  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
   '& th': {
-    color: colors.white,
-    fontWeight: 600,
-    padding: '16px',
+    color: 'white',
+    fontWeight: 700,
+    padding: '18px',
+    fontSize: '1.1rem',
+    letterSpacing: 0.5,
   },
 };
 
 const iconButtonStyle = {
-  transition: 'all 0.2s ease',
+  transition: 'all 0.2s',
   margin: '0 4px',
+  borderRadius: '50%',
+  background: 'rgba(74, 144, 226, 0.07)',
   '&:hover': {
-    backgroundColor: 'rgba(32, 178, 170, 0.1)',
+    background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+    color: 'white',
   },
 };
 
@@ -185,6 +196,27 @@ const searchBarStyle = {
   alignItems: 'center',
 };
 
+const BlogStatCard = ({ title, value, color, borderColor }) => (
+  <Box sx={{
+    flex: 1,
+    minWidth: 220,
+    background: '#fff',
+    borderRadius: '18px',
+    boxShadow: '0 4px 16px rgba(74, 144, 226, 0.10)',
+    p: 3,
+    textAlign: 'center',
+    borderBottom: `4px solid ${borderColor}`,
+    transition: 'all 0.2s',
+    '&:hover': {
+      boxShadow: `0 8px 24px ${borderColor}33`,
+      transform: 'translateY(-2px) scale(1.03)',
+    }
+  }}>
+    <Typography variant="body2" sx={{ fontWeight: 700, color: '#264653', mb: 1 }}>{title}</Typography>
+    <Typography variant="h5" sx={{ color, fontWeight: 900, letterSpacing: 1 }}>{value}</Typography>
+  </Box>
+);
+
 const BlogManagementContent = () => {
   // State management
   const [blogs, setBlogs] = useState([]);
@@ -200,6 +232,12 @@ const BlogManagementContent = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [openDetailModal, setOpenDetailModal] = useState(false);
+  // State cho dialog xác nhận xóa
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, blogId: null });
+  // State cho snackbar thông báo thành công khi xóa
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+  // State cho snackbar thông báo thành công khi tạo/cập nhật
+  const [saveSuccess, setSaveSuccess] = useState({ open: false, isUpdate: false });
 
   // File states
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -215,7 +253,7 @@ const BlogManagementContent = () => {
       try {
         const [blogsData, categoriesData] = await Promise.all([
           blogService.getAllBlogs(),
-          blogService.getCategories()
+          categoryService.getCategories()
         ]);
         console.log('API getAllBlogs raw:', blogsData);
         console.log('API getCategories raw:', categoriesData);
@@ -360,106 +398,108 @@ const BlogManagementContent = () => {
 
   const handleSaveBlog = async () => {
     if (!form.title || !form.content || !form.categoryId) {
-      alert('Vui lòng nhập đầy đủ thông tin bắt buộc!');
+      setError('Vui lòng nhập đầy đủ thông tin bắt buộc!');
       return;
     }
 
     // Kiểm tra thumbnail cho bài viết mới
     if (!currentBlog && !thumbnailFile) {
-      alert('Vui lòng chọn hình ảnh đại diện cho bài viết!');
+      setError('Vui lòng chọn hình ảnh đại diện cho bài viết!');
       return;
     }
 
     setLoading(true);
     try {
       const formData = new FormData();
-      
-      // Add thumbnail
-      if (thumbnailFile) {
-        formData.append('thumbnail', thumbnailFile);
-      } else if (currentBlog && form.existingThumbnail) {
-        // Nếu đang edit và có thumbnail cũ, gửi existingThumbnail
-        requestData.existingThumbnail = form.existingThumbnail;
-      }
-      
-      // Add section images
-      const sectionImages = [];
-      const sectionImageIndexes = [];
-      Object.keys(sectionFiles).forEach(index => {
-        sectionImages.push(sectionFiles[index]);
-        sectionImageIndexes.push(parseInt(index));
-      });
-      
-      if (sectionImages.length > 0) {
-        sectionImages.forEach((file, i) => {
-          formData.append('sectionImages', file);
-        });
-        sectionImageIndexes.forEach(index => {
-          formData.append('sectionImageIndexes', index);
-        });
-      }
-
-      // Add request data
+      // Build requestData
       const requestData = {
         title: form.title,
         content: form.content,
         categoryId: parseInt(form.categoryId),
+        existingThumbnail: currentBlog && !thumbnailFile ? form.existingThumbnail : undefined,
         sections: form.sections
-          .filter(section => section.sectionTitle || section.sectionContent) // Chỉ gửi sections có nội dung
+          .filter(section => section.sectionTitle || section.sectionContent)
           .map((section, index) => ({
             sectionTitle: section.sectionTitle || '',
             sectionContent: section.sectionContent || '',
             sectionImage: section.sectionImage || '',
             existingSectionImage: section.existingSectionImage || '',
             displayOrder: index
-          }))
+          })),
+        // Only set status for new blog
+        ...(currentBlog ? {} : { status: 'PROCESSING' })
       };
-
-      formData.append('request', new Blob([JSON.stringify(requestData)], {
-        type: 'application/json'
-      }));
-
+      // Always append 'request' part
+      formData.append('request', new Blob([JSON.stringify(requestData)], { type: 'application/json' }));
+      // Only append thumbnail if new file is selected
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      }
+      // Add section images if any
+      const sectionImages = [];
+      const sectionImageIndexes = [];
+      Object.keys(sectionFiles).forEach(index => {
+        sectionImages.push(sectionFiles[index]);
+        sectionImageIndexes.push(parseInt(index));
+      });
+      if (sectionImages.length > 0) {
+        sectionImages.forEach((file) => {
+          formData.append('sectionImages', file);
+        });
+        sectionImageIndexes.forEach(index => {
+          formData.append('sectionImageIndexes', index);
+        });
+      }
       let response;
       if (currentBlog) {
         response = await blogService.updateBlog(currentBlog.id, formData);
       } else {
         response = await blogService.createBlog(formData);
       }
-
       // Refresh blogs list
       const updatedBlogs = await blogService.getAllBlogs();
       setBlogs(updatedBlogs);
-      
       setOpenDialog(false);
-      alert(currentBlog ? 'Cập nhật bài viết thành công!' : 'Tạo bài viết thành công!');
+      setSaveSuccess({ open: true, isUpdate: !!currentBlog });
     } catch (err) {
       setError(err.message || 'Lưu bài viết thất bại');
-      alert('Lỗi: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteBlog = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
-      setLoading(true);
-      try {
-        await blogService.deleteBlog(id);
-        setBlogs((prev) => prev.filter((blog) => blog.id !== id));
-      } catch (err) {
-        setError(err.message || 'Xoá blog thất bại');
-      } finally {
-        setLoading(false);
-      }
+  // Mở dialog xác nhận xóa
+  const handleOpenDeleteDialog = (id) => {
+    setDeleteDialog({ open: true, blogId: id });
+  };
+
+  // Đóng dialog xác nhận xóa
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialog({ open: false, blogId: null });
+  };
+
+  // Đảm bảo logic xóa blog khi xác nhận:
+  const handleConfirmDeleteBlog = async () => {
+    const id = deleteDialog.blogId;
+    setLoading(true);
+    try {
+      await blogService.deleteBlog(id);
+      setBlogs(prev => prev.filter(blog => blog.id !== id)); // cập nhật trực tiếp
+      setDeleteDialog({ open: false, blogId: null });
+      setDeleteSuccess(true);
+    } catch (err) {
+      setError(err.message || 'Xóa bài viết thất bại');
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Fix handleStatusChange to use updateBlogStatus
   const handleStatusChange = async (id, newStatus) => {
     setLoading(true);
     setError(null);
     try {
-      // Gọi API cập nhật trạng thái (giả sử có blogService.updateBlogStatus)
-      await blogService.updateBlog(id, { status: newStatus });
+      await blogService.updateBlogStatus(id, { status: newStatus });
       setBlogs((prev) => prev.map((b) => b.id === id ? { ...b, status: newStatus } : b));
     } catch (err) {
       setError(err.message || 'Cập nhật trạng thái thất bại');
@@ -551,34 +591,59 @@ const BlogManagementContent = () => {
     <Box sx={gradientBg}>
       <Box sx={{ maxWidth: 1200, mx: 'auto', py: 3, px: 2 }}>
         {/* Header with logo and title */}
-        <Box sx={headerStyle}>
+        <Box sx={{
+          background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+          color: 'white',
+          padding: '18px 32px',
+          borderRadius: '18px',
+          boxShadow: '0 6px 24px rgba(74, 144, 226, 0.15)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 4
+        }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <LibraryBooksIcon sx={{ fontSize: 30, mr: 1 }} />
-            <Typography variant="h5" fontWeight={700}>
+            <LibraryBooksIcon sx={{ fontSize: 36, mr: 2 }} />
+            <Typography variant="h4" fontWeight={800}>
               Quản lý Blog
             </Typography>
           </Box>
-
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
               variant="contained"
-              color="primary"
-              startIcon={
-                viewMode === 'table' ? <FilterListIcon /> : <LibraryBooksIcon />
-              }
-              onClick={() =>
-                setViewMode(viewMode === 'table' ? 'grid' : 'table')
-              }
-              sx={secondaryButtonStyle}
+              startIcon={viewMode === 'table' ? <FilterListIcon /> : <LibraryBooksIcon />}
+              onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
+              sx={{
+                background: 'rgba(255,255,255,0.15)',
+                color: 'white',
+                fontWeight: 700,
+                borderRadius: '30px',
+                px: 3,
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.10)',
+                '&:hover': {
+                  background: 'rgba(255,255,255,0.25)',
+                  color: '#1ABC9C',
+                }
+              }}
             >
               {viewMode === 'table' ? 'XEM DẠNG LƯỚI' : 'XEM DẠNG BẢNG'}
             </Button>
-
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={handleOpenAddDialog}
-              sx={primaryButtonStyle}
+              sx={{
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                color: 'white',
+                fontWeight: 700,
+                borderRadius: '30px',
+                px: 4,
+                boxShadow: '0 4px 16px rgba(74, 144, 226, 0.18)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                  color: 'white',
+                }
+              }}
             >
               THÊM BÀI VIẾT
             </Button>
@@ -610,29 +675,28 @@ const BlogManagementContent = () => {
         </Box>
 
         {/* Thống kê tổng số bài viết */}
-        <Box sx={{ display: 'flex', gap: 4, mb: 3 }}>
-          <Paper sx={{ p: 2, minWidth: 180, textAlign: 'center' }}>
-            <Typography variant="h6">Tổng số bài viết</Typography>
-            <Typography variant="h4" color="primary">{totalBlogs}</Typography>
-          </Paper>
-          <Paper sx={{ p: 2, minWidth: 180, textAlign: 'center' }}>
-            <Typography variant="h6">Đã duyệt</Typography>
-            <Typography variant="h4" color="success.main">{confirmedBlogs}</Typography>
-          </Paper>
-          <Paper sx={{ p: 2, minWidth: 180, textAlign: 'center' }}>
-            <Typography variant="h6">Chờ duyệt</Typography>
-            <Typography variant="h4" color="warning.main">{processingBlogs}</Typography>
-          </Paper>
+        <Box sx={{ display: 'flex', gap: 4, mb: 3, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+          <BlogStatCard title="Tổng số bài viết" value={totalBlogs} color="#4A90E2" borderColor="#4A90E2" />
+          <BlogStatCard title="Đã duyệt" value={confirmedBlogs} color="#1ABC9C" borderColor="#1ABC9C" />
+          <BlogStatCard title="Chờ duyệt" value={processingBlogs} color="#FF9800" borderColor="#FF9800" />
         </Box>
 
         {/* Bộ lọc status và ngày */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-          <FormControl sx={{ minWidth: 180 }} size="small">
-            <InputLabel>Trạng thái</InputLabel>
+        <Box sx={{
+          display: 'flex',
+          gap: 2,
+          mb: 3,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          maxWidth: 500,
+        }}>
+          <FormControl sx={{ minWidth: 180, background: '#fff', borderRadius: 2, boxShadow: '0 1px 4px rgba(32,178,170,0.04)' }} size="small">
+            <InputLabel sx={{ fontWeight: 700, color: colors.primary }}>Trạng thái</InputLabel>
             <Select
               value={statusFilter}
               label="Trạng thái"
               onChange={e => setStatusFilter(e.target.value)}
+              sx={{ fontWeight: 600, borderRadius: 2, color: colors.text }}
             >
               {statusOptions.map(opt => (
                 <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
@@ -645,8 +709,9 @@ const BlogManagementContent = () => {
             size="small"
             value={dateFilter}
             onChange={handleDateFilterChange}
-            InputLabelProps={{ shrink: true }}
-            sx={{ minWidth: 180 }}
+            InputLabelProps={{ shrink: true, style: { fontWeight: 700, color: colors.primary } }}
+            sx={{ minWidth: 180, background: '#fff', borderRadius: 2, boxShadow: '0 1px 4px rgba(32,178,170,0.04)' }}
+            inputProps={{ style: { fontWeight: 600, color: colors.text, borderRadius: 2, padding: '10px 12px' } }}
           />
         </Box>
 
@@ -708,9 +773,9 @@ const BlogManagementContent = () => {
                         <TableCell>{blog.authorName || ''}</TableCell>
                         <TableCell>{formatDateVN(blog.createdAt)}</TableCell>
                         <TableCell>
-                          {blog.status === 'CONFIRMED' && <Chip label="Đã duyệt" color="success" size="small" />}
-                          {blog.status === 'PROCESSING' && <Chip label="Chờ duyệt" color="warning" size="small" />}
-                          {blog.status === 'CANCELED' && <Chip label="Đã huỷ" color="error" size="small" />}
+                          {blog.status === 'CONFIRMED' && <Chip label="Đã duyệt" sx={{ background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)', color: 'white', fontWeight: 600 }} size="small" />}
+                          {blog.status === 'PROCESSING' && <Chip label="Chờ duyệt" sx={{ background: 'linear-gradient(45deg, #FFD166, #FFB400)', color: '#333', fontWeight: 600 }} size="small" />}
+                          {blog.status === 'CANCELED' && <Chip label="Đã huỷ" sx={{ background: 'linear-gradient(45deg, #FF6B6B, #FF8C8C)', color: 'white', fontWeight: 600 }} size="small" />}
                         </TableCell>
                         <TableCell align="right">
                           <Tooltip title="Xem trước">
@@ -723,34 +788,93 @@ const BlogManagementContent = () => {
                               <VisibilityIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                          {blog.status === 'PROCESSING' && (
-                            <Tooltip title="Duyệt bài viết">
-                              <IconButton
-                                size="small"
-                                color="success"
-                                sx={iconButtonStyle}
-                                onClick={async () => {
-                                  setLoading(true);
-                                  try {
-                                    await blogService.updateBlogStatus(blog.id, { status: 'CONFIRMED' });
-                                    setBlogs((prev) => prev.map((b) => b.id === blog.id ? { ...b, status: 'CONFIRMED' } : b));
-                                  } catch (err) {
-                                    setError(err.message || 'Duyệt bài viết thất bại');
-                                  } finally {
-                                    setLoading(false);
-                                  }
-                                }}
-                              >
-                                <CheckIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
+                          <Tooltip title="Chỉnh sửa">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              sx={iconButtonStyle}
+                              onClick={() => handleOpenEditDialog(blog)}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          {/* Beautified status dropdown */}
+                          <FormControl size="small" sx={{
+                            minWidth: 140,
+                            mr: 1,
+                            borderRadius: 3,
+                            background: '#f8fafc',
+                            boxShadow: '0 1px 4px rgba(32,178,170,0.07)',
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 3,
+                              fontWeight: 700,
+                              fontSize: '1.05rem',
+                              color: blog.status === 'CONFIRMED' ? '#219a6f'
+                                    : blog.status === 'PROCESSING' ? '#ff9800'
+                                    : blog.status === 'CANCELED' ? '#e53935'
+                                    : colors.text,
+                              background: '#fff',
+                              border: '1.5px solid #e0e0e0',
+                              transition: 'border-color 0.2s',
+                              '&:hover fieldset': {
+                                borderColor: '#20B2AA',
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: '#20B2AA',
+                              },
+                            },
+                          }}>
+                            <Select
+                              value={blog.status}
+                              onChange={async (e) => {
+                                const newStatus = e.target.value;
+                                setLoading(true);
+                                try {
+                                  await blogService.updateBlogStatus(blog.id, { status: newStatus });
+                                  setBlogs((prev) => prev.map((b) => b.id === blog.id ? { ...b, status: newStatus } : b));
+                                } catch (err) {
+                                  setError(err.message || 'Cập nhật trạng thái thất bại');
+                                } finally {
+                                  setLoading(false);
+                                }
+                              }}
+                              disabled={loading}
+                              displayEmpty
+                              sx={{
+                                fontWeight: 700,
+                                pl: 1.5,
+                                color: blog.status === 'CONFIRMED' ? '#219a6f'
+                                      : blog.status === 'PROCESSING' ? '#ff9800'
+                                      : blog.status === 'CANCELED' ? '#e53935'
+                                      : colors.text,
+                                '& .MuiSelect-icon': { color: '#20B2AA' }
+                              }}
+                              renderValue={(selected) => (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  {selected === 'CONFIRMED' && <CheckIcon fontSize="small" sx={{ color: '#219a6f' }} />}
+                                  {selected === 'PROCESSING' && <HourglassEmptyIcon fontSize="small" sx={{ color: '#ff9800' }} />}
+                                  {selected === 'CANCELED' && <CancelIcon fontSize="small" sx={{ color: '#e53935' }} />}
+                                  <span>
+                                    {selected === 'CONFIRMED' ? 'Đã duyệt'
+                                      : selected === 'PROCESSING' ? 'Chờ duyệt'
+                                      : selected === 'CANCELED' ? 'Đã huỷ'
+                                      : selected}
+                                  </span>
+                                </Box>
+                              )}
+                            >
+                              <MenuItem value="PROCESSING">Chờ duyệt</MenuItem>
+                              <MenuItem value="CONFIRMED">Đã duyệt</MenuItem>
+
+                            </Select>
+                          </FormControl>
                           <Tooltip title="Xóa">
                             <IconButton
                               size="small"
                               color="error"
                               sx={iconButtonStyle}
-                              onClick={() => handleReject(blog, '')}
+                              onClick={() => handleOpenDeleteDialog(blog.id)}
+                              disabled={loading}
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
@@ -831,384 +955,24 @@ const BlogManagementContent = () => {
               },
             },
           }}>
-            <Box component="form">
-              <TextField
-                fullWidth
-                label="Tiêu đề bài viết *"
-                margin="normal"
-                name="title"
-                value={form.title}
-                onChange={handleFormChange}
-                sx={{ 
-                  mb: 3,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    '&:hover fieldset': {
-                      borderColor: colors.primary,
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: colors.primary,
-                    },
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: colors.primary,
-                  },
-                  '& .MuiInputBase-input': {
-                    fontSize: '1.1rem',
-                    fontWeight: 500,
-                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-                  },
-                }}
-                required
-              />
-
-              <FormControl fullWidth margin="normal" sx={{ 
-                mb: 3,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  '&:hover fieldset': {
-                    borderColor: colors.primary,
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: colors.primary,
-                  },
-                },
-                '& .MuiInputLabel-root.Mui-focused': {
-                  color: colors.primary,
-                },
-              }}>
-                <InputLabel>Danh mục *</InputLabel>
-                <Select
-                  name="categoryId"
-                  value={form.categoryId}
-                  label="Danh mục *"
-                  onChange={handleFormChange}
-                  required
-                >
-                  {categories.map(category => (
-                    <MenuItem key={category.categoryId} value={category.categoryId}>
-                      {category.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              {/* Thumbnail Upload */}
-              <Box sx={{ 
-                mb: 4,
-                p: 3,
-                backgroundColor: 'rgba(32, 178, 170, 0.05)',
-                borderRadius: 3,
-                border: '2px dashed rgba(32, 178, 170, 0.3)',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  borderColor: colors.primary,
-                  backgroundColor: 'rgba(32, 178, 170, 0.08)',
-                }
-              }}>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: colors.primary }}>
-                  🖼️ Hình ảnh đại diện *
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 3, color: colors.darkGray, opacity: 0.8 }}>
-                  Chọn hình ảnh đại diện cho bài viết. Hình ảnh sẽ được hiển thị ở đầu bài viết.
-                </Typography>
-                <input
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  id="thumbnail-upload"
-                  type="file"
-                  onChange={handleThumbnailChange}
-                />
-                <label htmlFor="thumbnail-upload">
-                  <Button
-                    variant="outlined"
-                    component="span"
-                    startIcon={<CloudUploadIcon />}
-                    sx={{ 
-                      mb: 2,
-                      borderRadius: 2,
-                      borderColor: colors.primary,
-                      color: colors.primary,
-                      fontWeight: 600,
-                      padding: '12px 24px',
-                      '&:hover': {
-                        backgroundColor: 'rgba(32, 178, 170, 0.1)',
-                        borderColor: colors.secondary,
-                      }
-                    }}
-                  >
-                    Chọn hình ảnh
-                  </Button>
-                </label>
-                {(thumbnailPreview || form.existingThumbnail) && (
-                  <Box sx={{ 
-                    mt: 3, 
-                    textAlign: 'center',
-                    p: 2,
-                    backgroundColor: colors.white,
-                    borderRadius: 2,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                  }}>
-                    <Typography variant="caption" sx={{ mb: 2, display: 'block', color: colors.darkGray }}>
-                      Xem trước hình ảnh
-                    </Typography>
-                    <img
-                      src={thumbnailPreview || form.existingThumbnail}
-                      alt="Thumbnail preview"
-                      style={{
-                        maxWidth: '100%',
-                        height: 'auto',
-                        maxHeight: '200px',
-                        borderRadius: '12px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      }}
-                    />
-                  </Box>
-                )}
-              </Box>
-
-              <TextField
-                fullWidth
-                label="Nội dung chính *"
-                margin="normal"
-                name="content"
-                value={form.content}
-                onChange={handleFormChange}
-                sx={{ 
-                  mb: 4,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    '&:hover fieldset': {
-                      borderColor: colors.primary,
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: colors.primary,
-                    },
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: colors.primary,
-                  },
-                  '& .MuiInputBase-input': {
-                    fontSize: '1rem',
-                    lineHeight: 1.6,
-                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-                  },
-                }}
-                required
-              />
-
-              {/* Sections */}
-              <Box sx={{ mb: 4 }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  mb: 3,
-                  p: 2,
-                  backgroundColor: 'rgba(32, 178, 170, 0.05)',
-                  borderRadius: 2,
-                }}>
-                  <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: colors.primary }}>
-                      📝 Các phần bổ sung (tùy chọn)
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: colors.darkGray, opacity: 0.8 }}>
-                      Thêm các phần nội dung bổ sung với hình ảnh
-                    </Typography>
-                  </Box>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={addSection}
-                    sx={{
-                      backgroundColor: colors.primary,
-                      borderRadius: 2,
-                      fontWeight: 600,
-                      '&:hover': {
-                        backgroundColor: colors.secondary,
-                      }
-                    }}
-                  >
-                    Thêm phần
-                  </Button>
-                </Box>
-
-                {form.sections.map((section, index) => (
-                  <Card key={index} sx={{ 
-                    mb: 4, 
-                    p: 4, 
-                    border: '2px solid rgba(32, 178, 170, 0.2)',
-                    borderRadius: 3,
-                    backgroundColor: colors.white,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      boxShadow: '0 6px 20px rgba(0,0,0,0.12)',
-                      borderColor: colors.primary,
-                    }
-                  }}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
-                      mb: 4,
-                      pb: 2,
-                      borderBottom: '2px solid rgba(32, 178, 170, 0.1)'
-                    }}>
-                      <Typography variant="h6" sx={{ 
-                        fontWeight: 600, 
-                        color: colors.primary,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1
-                      }}>
-                        <span style={{ fontSize: '1.2rem' }}>📄</span>
-                        Phần {index + 1}
-                      </Typography>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => removeSection(index)}
-                        sx={{
-                          backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                          '&:hover': {
-                            backgroundColor: 'rgba(255, 107, 107, 0.2)',
-                          }
-                        }}
-                      >
-                        <RemoveIcon />
-                      </IconButton>
-                    </Box>
-
-                    <Grid container spacing={4}>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Tiêu đề phần"
-                          value={section.sectionTitle}
-                          onChange={(e) => handleSectionChange(index, 'sectionTitle', e.target.value)}
-                          sx={{ 
-                            mb: 2,
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                              '&:hover fieldset': {
-                                borderColor: colors.primary,
-                              },
-                              '&.Mui-focused fieldset': {
-                                borderColor: colors.primary,
-                              },
-                            },
-                            '& .MuiInputLabel-root.Mui-focused': {
-                              color: colors.primary,
-                            },
-                            '& .MuiInputBase-input': {
-                              fontSize: '1rem',
-                              fontWeight: 500,
-                              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-                            },
-                          }}
-                        />
-                      </Grid>
-
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Nội dung phần"
-                          value={section.sectionContent}
-                          onChange={(e) => handleSectionChange(index, 'sectionContent', e.target.value)}
-                          sx={{ 
-                            mb: 2,
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                              '&:hover fieldset': {
-                                borderColor: colors.primary,
-                              },
-                              '&.Mui-focused fieldset': {
-                                borderColor: colors.primary,
-                              },
-                            },
-                            '& .MuiInputLabel-root.Mui-focused': {
-                              color: colors.primary,
-                            },
-                            '& .MuiInputBase-input': {
-                              fontSize: '1rem',
-                              lineHeight: 1.6,
-                              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-                            },
-                          }}
-                        />
-                      </Grid>
-
-                      <Grid item xs={12}>
-                        <Box sx={{
-                          p: 2,
-                          backgroundColor: 'rgba(32, 178, 170, 0.03)',
-                          borderRadius: 2,
-                          border: '1px dashed rgba(32, 178, 170, 0.3)',
-                        }}>
-                          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: colors.primary }}>
-                            🖼️ Hình ảnh phần (tùy chọn)
-                          </Typography>
-                          <input
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            id={`section-image-${index}`}
-                            type="file"
-                            onChange={(e) => handleSectionImageChange(index, e.target.files[0])}
-                          />
-                          <label htmlFor={`section-image-${index}`}>
-                            <Button
-                              variant="outlined"
-                              component="span"
-                              startIcon={<CloudUploadIcon />}
-                              size="small"
-                              sx={{ 
-                                mb: 2,
-                                borderRadius: 2,
-                                borderColor: colors.primary,
-                                color: colors.primary,
-                                fontWeight: 600,
-                                '&:hover': {
-                                  backgroundColor: 'rgba(32, 178, 170, 0.1)',
-                                  borderColor: colors.secondary,
-                                }
-                              }}
-                            >
-                              Chọn hình ảnh
-                            </Button>
-                          </label>
-                          {(section.sectionImage || section.existingSectionImage) && (
-                            <Box sx={{ 
-                              mt: 2,
-                              textAlign: 'center',
-                              p: 2,
-                              backgroundColor: colors.white,
-                              borderRadius: 2,
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                            }}>
-                              <Typography variant="caption" sx={{ mb: 2, display: 'block', color: colors.darkGray }}>
-                                Xem trước hình ảnh phần {index + 1}
-                              </Typography>
-                              <img
-                                src={section.sectionImage || section.existingSectionImage}
-                                alt={`Section ${index + 1} preview`}
-                                style={{
-                                  maxWidth: '100%',
-                                  height: 'auto',
-                                  maxHeight: '150px',
-                                  borderRadius: '12px',
-                                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                }}
-                              />
-                            </Box>
-                          )}
-                        </Box>
-                      </Grid>
-                    </Grid>
-                  </Card>
-                ))}
-              </Box>
-            </Box>
+            <BlogForm
+              form={form}
+              setForm={setForm}
+              categories={categories}
+              thumbnailFile={thumbnailFile}
+              thumbnailPreview={thumbnailPreview}
+              sectionFiles={sectionFiles}
+              handleFormChange={handleFormChange}
+              handleThumbnailChange={handleThumbnailChange}
+              handleSectionChange={handleSectionChange}
+              addSection={addSection}
+              removeSection={removeSection}
+              handleSectionImageChange={handleSectionImageChange}
+              loading={loading}
+              onSubmit={handleSaveBlog}
+              onCancel={handleCloseDialog}
+              isEdit={!!currentBlog}
+            />
           </DialogContent>
 
           <DialogActions sx={{ 
@@ -1264,6 +1028,97 @@ const BlogManagementContent = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Dialog xác nhận xóa */}
+        <Dialog
+          open={deleteDialog.open}
+          onClose={handleCloseDeleteDialog}
+          PaperProps={{
+            sx: { borderRadius: 3, minWidth: 380, textAlign: 'center', p: 2 }
+          }}
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, fontWeight: 700, fontSize: '1.3rem', color: '#e53935' }}>
+            <DeleteIcon sx={{ color: '#e53935', fontSize: 32 }} />
+            Xác nhận xóa bài viết
+          </DialogTitle>
+          <DialogContent>
+            <Typography sx={{ mt: 1, mb: 2, fontSize: '1.08rem', color: '#333', fontWeight: 500 }}>
+              Bạn có chắc chắn muốn xóa bài viết này không?
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+            <Button
+              onClick={handleCloseDeleteDialog}
+              disabled={loading}
+              variant="outlined"
+              sx={{
+                color: '#555',
+                borderColor: '#bbb',
+                fontWeight: 700,
+                borderRadius: 2,
+                px: 3,
+                textTransform: 'uppercase',
+                mr: 2,
+                '&:hover': { borderColor: '#888', background: '#f5f5f5' }
+              }}
+            >
+              HỦY BỎ
+            </Button>
+            <Button
+              onClick={handleConfirmDeleteBlog}
+              color="error"
+              variant="contained"
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <DeleteIcon />}
+              sx={{
+                fontWeight: 700,
+                borderRadius: 2,
+                px: 4,
+                textTransform: 'uppercase',
+                boxShadow: '0 2px 8px #e5393533'
+              }}
+            >
+              XÓA
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Snackbar thông báo thành công/thất bại */}
+        <Snackbar
+          open={deleteSuccess}
+          autoHideDuration={3000}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          onClose={() => setDeleteSuccess(false)}
+        >
+          <MuiAlert
+            elevation={6}
+            variant="filled"
+            severity="success"
+            onClose={() => setDeleteSuccess(false)}
+            iconMapping={{
+              success: <DeleteIcon fontSize="inherit" />,
+            }}
+            sx={{ fontWeight: 600, fontSize: '1.1rem' }}
+          >
+            Đã xóa bài viết thành công!
+          </MuiAlert>
+        </Snackbar>
+        <Snackbar
+          open={!!error}
+          autoHideDuration={4000}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          onClose={() => setError(null)}
+        >
+          <MuiAlert
+            elevation={6}
+            variant="filled"
+            severity="error"
+            onClose={() => setError(null)}
+            sx={{ fontWeight: 600, fontSize: '1.1rem' }}
+          >
+            Xóa bài viết thất bại: {error}
+          </MuiAlert>
+        </Snackbar>
 
         <BlogDetailModal
           open={openDetailModal}

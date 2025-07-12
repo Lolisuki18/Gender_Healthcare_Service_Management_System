@@ -26,6 +26,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, Search as SearchIcon, CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 import blogService from '@/services/blogService';
+import categoryService from '@/services/categoryService';
 import BlogDetailModal from '@/components/StaffProfile/modals/BlogDetailModal';
 import { useNavigate } from 'react-router-dom';
 import { getBlogImageUrl } from '@/utils/imageUrl';
@@ -45,7 +46,7 @@ const EditBlogDialog = ({ open, onClose, blog, onSaved }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    blogService.getCategories().then(setCategories);
+    categoryService.getCategories().then(setCategories);
   }, []);
 
   useEffect(() => {
@@ -413,7 +414,7 @@ const BlogMyContent = () => {
                   image={getBlogImageUrl(blog.thumbnailImage || blog.existingThumbnail)}
                   alt={blog.title}
                   sx={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 3, m: 2 }}
-                  onError={e => { e.target.src = '/img/thumbs/suckhoesinhsan.png'; }}
+                  onError={e => { e.target.onerror = null; e.target.src = '/img/blog/default.svg'; }}
                 />
                 <CardContent sx={{ flex: 1 }}>
                   <Typography variant="h6" fontWeight={700} sx={{ mb: 1, color: 'primary.main', cursor: 'pointer' }} onClick={() => handleView(blog)}>
