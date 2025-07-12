@@ -1403,37 +1403,38 @@ const OvulationPage = ({ stats }) => {
                       </Box>
                     </Box>
 
-                    {advice.map((item, index) => (
-                      <Card
-                        key={index}
-                        className={`${styles.adviceCardRegular} ${styles[`adviceCard${item.color.charAt(0).toUpperCase() + item.color.slice(1)}`]}`}
-                      >
-                        <Box className={styles.adviceCardHeader}>
-                          <Box className={styles.adviceCardIconRegular}>
-                            {item.icon}
+                    <Box>
+                      {advice.map((item, index) => (
+                        <Card
+                          key={index}
+                          className={`${styles.adviceCardRegular} ${styles[`adviceCard${item.color.charAt(0).toUpperCase() + item.color.slice(1)}`]}`}
+                        >
+                          <Box className={styles.adviceCardHeader}>
+                            <Box className={styles.adviceCardIconRegular}>
+                              {item.icon}
+                            </Box>
+                            <Box>
+                              <Typography className={styles.adviceCardTitleRegular}>
+                                {item.title}
+                              </Typography>
+                              <Typography className={styles.adviceCardTextRegular}>
+                                {item.description}
+                              </Typography>
+                            </Box>
                           </Box>
-                          <Typography
-                            variant="subtitle1"
-                            className={styles.adviceCardTitleRegular}
-                          >
-                            {item.title}
-                          </Typography>
-                        </Box>
-                        <Typography className={styles.adviceCardTextRegular}>
-                          {item.description}
-                        </Typography>
-                        <List className={styles.adviceCardList}>
-                          {item.tips.map((tip, tipIndex) => (
-                            <ListItem
-                              key={tipIndex}
-                              className={styles.adviceCardListItem}
-                            >
-                              {tip}
-                            </ListItem>
-                          ))}
-                        </List>
-                      </Card>
-                    ))}
+                          <List className={styles.adviceCardList}>
+                            {item.tips.map((tip, tipIndex) => (
+                              <ListItem
+                                key={tipIndex}
+                                className={styles.adviceCardListItem}
+                              >
+                                {tip}
+                              </ListItem>
+                            ))}
+                          </List>
+                        </Card>
+                      ))}
+                    </Box>
 
                     {/* Lưu ý */}
                     <Box className={styles.healthAdviceNote}>

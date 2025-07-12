@@ -29,7 +29,7 @@ const useStyles = makeStyles({
   },
   formHeader: {
     padding: '32px 32px 24px 32px',
-    background: 'linear-gradient(135deg, #e57399 0%, #a259e6 100%)',
+    background: 'linear-gradient(135deg, #43a6ef 0%, #2ec7b8 100%)',
     color: '#fff',
     textAlign: 'center',
     position: 'relative',
@@ -184,7 +184,7 @@ const useStyles = makeStyles({
     },
   },
   submitButton: {
-    background: 'linear-gradient(135deg, #e57399 0%, #a259e6 100%)',
+    background: 'linear-gradient(135deg, #43a6ef 0%, #2ec7b8 100%)',
     color: '#fff',
     fontWeight: 700,
     borderRadius: 14,
@@ -197,7 +197,7 @@ const useStyles = makeStyles({
     letterSpacing: 0.5,
     border: 'none',
     '&:hover': {
-      background: 'linear-gradient(135deg, #d5618b 0%, #8e47cc 100%)',
+      background: 'linear-gradient(135deg, #43a6ef 0%, #2ec7b8 100%)',
       transform: 'translateY(-2px)',
       boxShadow: '0 8px 28px rgba(162,89,230,0.35)',
     },
