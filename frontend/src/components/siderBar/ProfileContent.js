@@ -371,10 +371,41 @@ const ProfileContent = () => {
   // ====================================================================
 
   /**
+   * ✅ Fetch fresh user data from server when component mounts
+   */
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        // console.log('🔄 Fetching fresh user profile from server...');
+        const response = await userService.getCurrentUser();
+        if (response && response.success) {
+          // console.log('✅ Fresh user data from server:', response.data);
+          // Update Redux store with fresh data
+          dispatch(updateUserProfile(response.data));
+        }
+      } catch (error) {
+        console.error('❌ Error fetching user profile:', error);
+      }
+    };
+
+    // Only fetch if user is authenticated
+    if (isAuthenticated) {
+      fetchUserProfile();
+    }
+  }, [isAuthenticated, dispatch]);
+
+  /**
    * ✅ Sync form data với Redux store khi user thay đổi
    */
   useEffect(() => {
     if (user) {
+      // console.log('🔍 User object from Redux:', user);
+      // console.log('🔍 User phone:', user.phone);
+      // console.log('🔍 User birthDay:', user.birthDay);
+      // console.log('🔍 User birthDay type:', typeof user.birthDay);
+      // console.log('🔍 All user fields:', Object.keys(user));
+      // console.log('🔍 User values:', Object.values(user));
+
       const formData = {
         fullName: user.fullName || '',
         birthDay: user.birthDay || '',
@@ -382,8 +413,12 @@ const ProfileContent = () => {
         gender: user.gender || '',
         address: user.address || '',
       };
+
+      console.log('🔍 Form data after mapping:', formData);
       setFormDataUpdate(formData);
       setOriginalData(formData);
+    } else {
+      console.log('❌ No user data in Redux store');
     }
   }, [user]);
 

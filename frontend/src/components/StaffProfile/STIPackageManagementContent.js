@@ -58,6 +58,7 @@ import {
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import useSTIServicesAndPackages from '../../hooks/useSTIServicesAndPackages';
+import { confirmDialog } from '../../utils/confirmDialog';
 
 const STIPackageManagementContent = () => {
   const { services, packages, loading, error, reload } =
@@ -72,7 +73,6 @@ const STIPackageManagementContent = () => {
     name: '',
     description: '',
     price: 0,
-    recommended_for: '',
     isActive: true,
     stiService: [],
   });
@@ -123,7 +123,6 @@ const STIPackageManagementContent = () => {
       name: '',
       description: '',
       price: 0,
-      recommended_for: '',
       isActive: true,
       stiService: [],
     });
@@ -144,7 +143,6 @@ const STIPackageManagementContent = () => {
       name: pkg.name,
       description: pkg.description,
       price: pkg.price,
-      recommended_for: pkg.recommended_for,
       isActive: pkg.isActive,
     });
     setErrors({
@@ -335,15 +333,15 @@ const STIPackageManagementContent = () => {
             // setPackages(packages.map((pkg) => pkg.id === currentPackage.id ? mappedPackage : pkg));
           }
           toast.success(`Cập nhật gói STI ${mappedPackage.name} thành công`);
+          setOpenDialog(false);
         } catch (refreshError) {
           console.error(
             'Failed to refresh packages after update:',
             refreshError
           );
           // setPackages(packages.map((pkg) => pkg.id === currentPackage.id ? mappedPackage : pkg));
-          toast.success(
-            `Cập nhật gói STI ${mappedPackage.name} thành công, nhưng danh sách chưa được làm mới hoàn toàn`
-          );
+          toast.success(`Cập nhật gói STI ${mappedPackage.name} thành công`);
+          setOpenDialog(false);
         }
       } else {
         try {
@@ -352,6 +350,7 @@ const STIPackageManagementContent = () => {
             // setPackages([...packages, mappedPackage]);
           }
           toast.success(`Thêm gói STI ${mappedPackage.name} thành công`);
+          setOpenDialog(false);
         } catch (refreshError) {
           console.error(
             'Failed to refresh packages after create:',
@@ -361,6 +360,7 @@ const STIPackageManagementContent = () => {
           toast.success(
             `Thêm gói STI ${mappedPackage.name} thành công, nhưng danh sách chưa được làm mới`
           );
+          setOpenDialog(false);
         }
       }
     } catch (err) {
@@ -373,7 +373,10 @@ const STIPackageManagementContent = () => {
 
   // Xóa một gói STI theo id
   const handleDeletePackage = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa gói này?')) {
+    const confirmed = await confirmDialog.danger(
+      'Bạn có chắc chắn muốn xoá gói này?'
+    );
+    if (confirmed) {
       try {
         const response = await deleteSTIPackage(id);
 
@@ -462,9 +465,6 @@ const STIPackageManagementContent = () => {
           (pkg.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
           (pkg.description || '')
             .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          (pkg.recommended_for || '')
-            .toLowerCase()
             .includes(searchTerm.toLowerCase());
         const matchesStatus =
           statusFilter === 'all'
@@ -478,6 +478,14 @@ const STIPackageManagementContent = () => {
         return matchesSearch && matchesStatus && matchesPrice;
       })
     : [];
+
+  // Thêm hàm reset bộ lọc
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setMinPrice('');
+    setMaxPrice('');
+  };
 
   // ======================= UI HIỂN THỊ =======================
   return (
@@ -606,6 +614,27 @@ const STIPackageManagementContent = () => {
           sx={{ width: 120, ml: 1 }}
           InputProps={{ inputProps: { min: 0 } }}
         />
+        {/* Nút Xoá bộ lọc */}
+        <Button
+          variant="outlined"
+          onClick={handleResetFilters}
+          sx={{
+            ml: 2,
+            borderRadius: '8px',
+            fontWeight: 600,
+            color: '#4A90E2',
+            borderColor: '#4A90E2',
+            px: 2.5,
+            py: 1,
+            '&:hover': {
+              background: 'rgba(74, 144, 226, 0.08)',
+              borderColor: '#1ABC9C',
+              color: '#1ABC9C',
+            },
+          }}
+        >
+          Xoá bộ lọc
+        </Button>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -674,17 +703,6 @@ const STIPackageManagementContent = () => {
                 }}
               >
                 Mô tả
-              </TableCell>
-              <TableCell
-                sx={{
-                  color: 'white',
-                  fontWeight: 600,
-                  fontSize: '0.9rem',
-                  py: 2,
-                  width: '15%',
-                }}
-              >
-                Đề xuất cho
               </TableCell>
               <TableCell
                 sx={{
@@ -794,9 +812,6 @@ const STIPackageManagementContent = () => {
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ py: 1.5 }}>
-                        {pkg.recommended_for}
-                      </TableCell>
-                      <TableCell sx={{ py: 1.5 }}>
                         <Typography
                           variant="body2"
                           sx={{
@@ -831,39 +846,17 @@ const STIPackageManagementContent = () => {
                         )}
                       </TableCell>
                       <TableCell sx={{ py: 1.5 }}>
-                        <Box
+                        <Chip
+                          label={`${pkg.services.length} dịch vụ`}
+                          size="small"
                           sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
+                            background:
+                              'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                            color: 'white',
+                            fontWeight: 500,
+                            fontSize: '0.75rem',
                           }}
-                        >
-                          <Chip
-                            label={`${pkg.services.length} dịch vụ`}
-                            size="small"
-                            sx={{
-                              background:
-                                'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                              color: 'white',
-                              fontWeight: 500,
-                              fontSize: '0.75rem',
-                            }}
-                          />
-                          <Tooltip title="Xem chi tiết dịch vụ">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleOpenDetailsDialog(pkg)}
-                              sx={{
-                                color: '#4A90E2',
-                                '&:hover': {
-                                  backgroundColor: 'rgba(74, 144, 226, 0.1)',
-                                },
-                              }}
-                            >
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
+                        />
                       </TableCell>
                       <TableCell sx={{ py: 1.5 }}>
                         <Chip
@@ -888,6 +881,21 @@ const STIPackageManagementContent = () => {
                         <Box
                           sx={{ display: 'flex', justifyContent: 'flex-end' }}
                         >
+                          <Tooltip title="Xem chi tiết dịch vụ">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenDetailsDialog(pkg)}
+                              sx={{
+                                mr: 1,
+                                color: '#4A90E2',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                                },
+                              }}
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                           <Tooltip title="Chỉnh sửa">
                             <IconButton
                               size="small"
@@ -997,7 +1005,7 @@ const STIPackageManagementContent = () => {
         >
           <Box component="form">
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid item size={6} xs={12}>
                 <TextField
                   fullWidth
                   label="Tên gói"
@@ -1041,46 +1049,7 @@ const STIPackageManagementContent = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Đề xuất cho"
-                  margin="normal"
-                  placeholder="VD: Người có nguy cơ cao, phụ nữ có thai..."
-                  value={formData.recommended_for}
-                  onChange={(e) =>
-                    handleInputChange('recommended_for', e.target.value)
-                  }
-                  variant="outlined"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '12px',
-                      backgroundColor: 'white',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                      border: '1px solid rgba(0,0,0,0.05)',
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#4A90E2',
-                      },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#1ABC9C',
-                        borderWidth: '2px',
-                      },
-                      '& input': {
-                        fontWeight: '500',
-                        color: '#344767',
-                      },
-                    },
-                    '& .MuiInputLabel-root': {
-                      fontWeight: '500',
-                      color: '#344767',
-                      '&.Mui-focused': {
-                        color: '#1ABC9C',
-                      },
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid item size={6} xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Giá gói (VNĐ)"
@@ -1412,7 +1381,7 @@ const STIPackageManagementContent = () => {
                 }}
               >
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                  <Grid item size={6} xs={6}>
                     <Typography
                       variant="subtitle2"
                       sx={{ color: '#546E7A', fontWeight: '500' }}
@@ -1420,7 +1389,7 @@ const STIPackageManagementContent = () => {
                       Tổng giá dịch vụ:
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid item size={6} xs={6}>
                     <Typography
                       variant="subtitle2"
                       fontWeight="600"
@@ -1437,15 +1406,21 @@ const STIPackageManagementContent = () => {
                     </Typography>
                   </Grid>
 
-                  <Grid item xs={6}>
+                  <Grid item size={6} xs={6}>
                     <Typography
                       variant="subtitle2"
-                      sx={{ color: '#546E7A', fontWeight: '500' }}
+                      sx={{
+                        color: '#546E7A',
+                        fontWeight: '500',
+                        background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}
                     >
                       Giá gói:
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid item size={6} xs={6}>
                     <Typography
                       variant="subtitle2"
                       fontWeight="600"
@@ -1460,15 +1435,16 @@ const STIPackageManagementContent = () => {
                     </Typography>
                   </Grid>
 
-                  <Grid item xs={6}>
+                  <Grid item size={6} xs={6}>
                     <Typography
                       variant="subtitle2"
-                      sx={{ color: '#546E7A', fontWeight: '500' }}
+                      color="error"
+                      sx={{ fontWeight: '500' }}
                     >
                       Tiết kiệm:
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid item size={6} xs={6}>
                     <Typography
                       variant="subtitle2"
                       fontWeight="600"
@@ -1619,7 +1595,7 @@ const STIPackageManagementContent = () => {
                   Thông tin gói xét nghiệm
                 </Typography>
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
+                  <Grid item size={6} xs={12} md={6}>
                     <Typography variant="body1" sx={{ mb: 2 }}>
                       <span
                         style={{
@@ -1657,21 +1633,7 @@ const STIPackageManagementContent = () => {
                       </span>
                     </Typography>
                   </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                      <span
-                        style={{
-                          color: '#546E7A',
-                          marginRight: '8px',
-                          fontWeight: '500',
-                        }}
-                      >
-                        Đề xuất cho:
-                      </span>
-                      <span style={{ fontWeight: '600', color: '#2c3e50' }}>
-                        {packageDetails.recommended_for}
-                      </span>
-                    </Typography>
+                  <Grid item size={6} xs={12} md={6}>
                     <Typography variant="body1" sx={{ mb: 2 }}>
                       <span
                         style={{
@@ -1849,7 +1811,7 @@ const STIPackageManagementContent = () => {
                 }}
               >
                 <Grid container spacing={2.5} alignItems="center">
-                  <Grid item xs={6}>
+                  <Grid item size={6} xs={6}>
                     <Typography
                       variant="subtitle1"
                       sx={{ fontWeight: '500', color: '#546E7A' }}
@@ -1857,7 +1819,7 @@ const STIPackageManagementContent = () => {
                       Tổng giá nếu mua lẻ:
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid item size={6} xs={6}>
                     <Typography
                       variant="subtitle1"
                       sx={{ fontWeight: '600', color: '#344767' }}
@@ -1872,7 +1834,7 @@ const STIPackageManagementContent = () => {
                     </Typography>
                   </Grid>
 
-                  <Grid item xs={6}>
+                  <Grid item size={6} xs={6}>
                     <Typography
                       variant="subtitle1"
                       sx={{
@@ -1885,7 +1847,7 @@ const STIPackageManagementContent = () => {
                       Giá khi mua gói:
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid item size={6} xs={6}>
                     <Typography
                       variant="subtitle1"
                       sx={{
@@ -1900,7 +1862,7 @@ const STIPackageManagementContent = () => {
                     </Typography>
                   </Grid>
 
-                  <Grid item xs={6}>
+                  <Grid item size={6} xs={6}>
                     <Typography
                       variant="subtitle1"
                       sx={{ fontWeight: '600', color: '#E53935' }}
@@ -1908,7 +1870,7 @@ const STIPackageManagementContent = () => {
                       Tiết kiệm khi mua gói:
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid item size={6} xs={6}>
                     <Typography
                       variant="subtitle1"
                       sx={{ fontWeight: '600', color: '#E53935' }}

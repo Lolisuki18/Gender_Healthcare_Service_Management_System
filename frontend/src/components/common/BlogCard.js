@@ -58,10 +58,14 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
   };
 
   // Xử lý lỗi load hình ảnh - chuyển về hình mặc định
+  // Xử lý lỗi load hình ảnh - chỉ fallback 1 lần
   const handleImageError = (e) => {
     console.error('❌ Image failed to load:', e.target.src);
-    console.log('🔄 Using default image:', defaultImage);
-    e.target.src = defaultImage;
+    if (!e.target.dataset.fallback) {
+      e.target.dataset.fallback = 'true';
+      console.log('🔄 Using default image:', defaultImage);
+      e.target.src = defaultImage;
+    }
   };
 
   // Xử lý lỗi load avatar - chuyển về hình mặc định

@@ -40,6 +40,14 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableContainer,
+  Collapse,
+  IconButton,
 } from '@mui/material';
 import {
   QuestionAnswer as QuestionIcon,
@@ -51,6 +59,11 @@ import {
   CheckCircle as CheckCircleIcon,
   AccessTime as AccessTimeIcon,
   HelpOutline as HelpOutlineIcon,
+  KeyboardArrowDown,
+  KeyboardArrowUp,
+  Visibility as VisibilityIcon,
+  Cancel as CancelIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import AskQuestionDialog from '../common/AskQuestionDialog';
@@ -143,6 +156,8 @@ const QuestionsContent = () => {
   const tabStatusMap = [null, 'ANSWERED', 'PENDING', 'CANCELED'];
   const [categories, setCategories] = useState([]);
   const [questionIdFilter, setQuestionIdFilter] = useState('');
+  const [expandedRow, setExpandedRow] = useState(null);
+  const [detailQuestion, setDetailQuestion] = useState(null);
 
   // Handle tab change
   const handleTabChange = (event, newValue) => {
@@ -491,263 +506,205 @@ const QuestionsContent = () => {
           />
         </Tabs>
       </Box>
-      {/* Questions list */}
+      {/* Questions list dạng bảng */}
       {filteredQuestions.length > 0 ? (
         <>
-          {paginatedQuestions.map((question) => (
-            <QuestionCard key={question.id} sx={{ mb: 3 }}>
-              <CardContent sx={{ padding: { xs: 2.5, md: 3 } }}>
-                <Box
+          <TableContainer
+            component={Paper}
+            sx={{
+              borderRadius: '20px',
+              mb: 3,
+              boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.10)',
+              background: '#fafdff',
+              border: '1.5px solid #e3f0fa',
+            }}
+          >
+            <Table>
+              <TableHead>
+                <TableRow
                   sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    alignItems: { xs: 'flex-start', sm: 'center' },
-                    mb: 2,
+                    background:
+                      'linear-gradient(90deg, #fafdff 60%, #e3f0fa 100%)',
+                    borderBottom: '2px solid #b3e0f7',
                   }}
                 >
-                  <Box
+                  <TableCell
                     sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      mb: { xs: 1.5, sm: 0 },
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                      letterSpacing: 0.2,
                     }}
                   >
-                    {question.status === 'ANSWERED' ? (
-                      <Tooltip title="Đã trả lời">
-                        <CheckCircleIcon
-                          sx={{ color: '#4CAF50', mr: 1.5, fontSize: 20 }}
-                        />
-                      </Tooltip>
-                    ) : question.status === 'CANCELED' ? (
-                      <Tooltip title="Đã huỷ">
-                        <HelpOutlineIcon
-                          sx={{ color: '#ef4444', mr: 1.5, fontSize: 20 }}
-                        />
-                      </Tooltip>
-                    ) : (
-                      <Tooltip title="Đang chờ">
-                        <AccessTimeIcon
-                          sx={{ color: '#F39C12', mr: 1.5, fontSize: 20 }}
-                        />
-                      </Tooltip>
-                    )}
-                    <Typography
-                      variant="body1"
-                      color="#2D3748"
+                    Nội dung
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                    }}
+                  >
+                    Danh mục
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                    }}
+                  >
+                    Ngày tạo
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                    }}
+                  >
+                    Trạng thái
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                    }}
+                  >
+                    Người trả lời/huỷ
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                    }}
+                  >
+                    Thời gian trả lời
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                      textAlign: 'center',
+                    }}
+                  >
+                    Hành động
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedQuestions.map((question) => (
+                  <TableRow
+                    hover
+                    key={question.id}
+                    sx={{
+                      background: '#fff',
+                      transition: 'background 0.2s',
+                      '&:hover': { background: '#e3f0fa' },
+                    }}
+                  >
+                    <TableCell
                       sx={{
-                        fontWeight: 500,
-                        letterSpacing: '0.3px',
-                        fontSize: '0.95rem',
+                        maxWidth: 220,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        fontSize: '1rem',
                       }}
                     >
+                      {question.content}
+                    </TableCell>
+                    <TableCell sx={{ minWidth: 120, fontSize: '1rem' }}>
+                      {question.categoryName}
+                    </TableCell>
+                    <TableCell sx={{ minWidth: 120, fontSize: '1rem' }}>
                       {Array.isArray(question.createdAt)
                         ? formatDateTimeFromArray(question.createdAt)
                         : 'Chưa cập nhật'}
-                    </Typography>
-                  </Box>
-                  <StatusChip
-                    label={
-                      question.status === 'ANSWERED'
-                        ? 'Đã trả lời'
-                        : question.status === 'CANCELED'
-                          ? 'Đã huỷ'
-                          : 'Đang chờ'
-                    }
-                    size="small"
-                    status={
-                      question.status === 'ANSWERED'
-                        ? 'answered'
-                        : question.status === 'CANCELED'
-                          ? 'canceled'
-                          : 'pending'
-                    }
-                    icon={
-                      question.status === 'ANSWERED' ? (
-                        <CheckCircleIcon fontSize="small" />
-                      ) : question.status === 'CANCELED' ? (
-                        <HelpOutlineIcon
-                          fontSize="small"
-                          style={{ color: '#ef4444' }}
-                        />
-                      ) : (
-                        <AccessTimeIcon fontSize="small" />
-                      )
-                    }
-                    sx={
-                      question.status === 'CANCELED'
-                        ? {
-                            background:
-                              'linear-gradient(90deg, #ff8a80 60%, #ef4444 100%)',
-                            color: '#fff',
-                            boxShadow: '0 4px 16px rgba(239, 68, 68, 0.18)',
-                          }
-                        : {}
-                    }
-                  />
-                </Box>
-                <Typography
-                  variant="h6"
-                  fontWeight={700}
-                  sx={{
-                    mb: 2.5,
-                    fontSize: '1.1rem',
-                    lineHeight: 1.5,
-                    letterSpacing: '0.3px',
-                    color: '#2D3748',
-                  }}
-                >
-                  {question.content}
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    justifyContent: 'space-between',
-                    alignItems: { xs: 'flex-start', sm: 'center' },
-                    gap: 1.5,
-                  }}
-                >
-                  <Chip
-                    label={question.categoryName}
-                    size="small"
-                    sx={{
-                      background: 'rgba(74, 144, 226, 0.1)',
-                      color: '#4A5568',
-                      fontWeight: 500,
-                      borderRadius: '8px',
-                      border: '1px solid rgba(74, 144, 226, 0.2)',
-                    }}
-                  />
-                  <Typography
-                    variant="body2"
-                    color="#4A5568"
-                    sx={{ fontWeight: 500, mb: 1 }}
-                  >
-                    ID: {question.id}
-                  </Typography>
-                  {/* Người huỷ hoặc Người trả lời */}
-                  {question.status === 'CANCELED' && question.updaterName ? (
-                    <Typography
-                      variant="body2"
-                      color="#4A5568"
-                      sx={{ fontSize: '0.95rem', fontWeight: 500 }}
-                    >
-                      Người huỷ: {question.updaterName}
-                    </Typography>
-                  ) : question.status === 'ANSWERED' && question.replierName ? (
-                    <Typography
-                      variant="body2"
-                      color="#4A5568"
-                      sx={{ fontSize: '0.95rem', fontWeight: 500 }}
-                    >
-                      Người trả lời: {question.replierName}
-                    </Typography>
-                  ) : null}
-                </Box>
-                {/* Nếu bị huỷ thì hiển thị lý do huỷ nổi bật */}
-                {question.status === 'CANCELED' && question.rejectionReason && (
-                  <Box
-                    sx={{
-                      mt: 3,
-                      p: 2.5,
-                      borderRadius: '10px',
-                      background:
-                        'linear-gradient(90deg, #ffebee 60%, #ffcdd2 100%)',
-                      color: '#ef4444',
-                      fontWeight: 600,
-                      fontStyle: 'italic',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1.5,
-                      border: '1px solid #ffcdd2',
-                    }}
-                  >
-                    <HelpOutlineIcon sx={{ color: '#ef4444', mr: 1 }} />
-                    Lý do huỷ: {question.rejectionReason}
-                  </Box>
-                )}
-                {/* Nếu có câu trả lời và không bị huỷ */}
-                {question.status === 'ANSWERED' && question.answer && (
-                  <Box
-                    sx={{
-                      mt: 3,
-                      pt: 3,
-                      borderTop: '1px solid rgba(74, 144, 226, 0.2)',
-                      animation: 'fadeIn 0.5s ease-in-out',
-                      '@keyframes fadeIn': {
-                        '0%': { opacity: 0, transform: 'translateY(-10px)' },
-                        '100%': { opacity: 1, transform: 'translateY(0)' },
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{ display: 'flex', alignItems: 'center', mb: 2.5 }}
-                    >
-                      <Avatar
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={
+                          question.status === 'ANSWERED'
+                            ? 'Đã trả lời'
+                            : question.status === 'CANCELED'
+                              ? 'Đã huỷ'
+                              : 'Đang chờ'
+                        }
+                        icon={
+                          question.status === 'ANSWERED' ? (
+                            <CheckCircleIcon sx={{ color: '#43a047' }} />
+                          ) : question.status === 'CANCELED' ? (
+                            <CancelIcon sx={{ color: '#e53935' }} />
+                          ) : (
+                            <AccessTimeIcon sx={{ color: '#0288d1' }} />
+                          )
+                        }
+                        color={
+                          question.status === 'ANSWERED'
+                            ? 'success'
+                            : question.status === 'CANCELED'
+                              ? 'error'
+                              : 'info'
+                        }
                         sx={{
-                          width: 36,
-                          height: 36,
+                          fontWeight: 600,
+                          fontSize: '0.98rem',
+                          borderRadius: '16px',
+                          px: 1.5,
                           background:
-                            'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                          mr: 1.5,
-                          fontWeight: 700,
-                          fontSize: '1rem',
-                          border: '2px solid rgba(74, 144, 226, 0.2)',
-                          color: '#fff',
+                            question.status === 'ANSWERED'
+                              ? '#e8f5e9'
+                              : question.status === 'CANCELED'
+                                ? '#ffebee'
+                                : '#e3f2fd',
+                          color:
+                            question.status === 'CANCELED'
+                              ? '#e53935'
+                              : '#1976d2',
                         }}
-                      >
-                        {question.replierName
-                          ? question.replierName.split(' ').pop().charAt(0)
-                          : '?'}
-                      </Avatar>
-                      <Box>
-                        <Typography
-                          variant="body1"
-                          color="#2D3748"
-                          sx={{ fontWeight: 700, fontSize: '0.95rem', mb: 0.3 }}
-                        >
-                          {question.replierName || 'Chuyên gia'}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="#4A5568"
-                          sx={{ fontSize: '0.85rem' }}
-                        >
-                          Trả lời lúc:{' '}
-                          {Array.isArray(question.updatedAt)
-                            ? formatDateTimeFromArray(question.updatedAt)
-                            : 'Chưa cập nhật'}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Box
-                      sx={{
-                        p: 3,
-                        borderRadius: '14px',
-                        background:
-                          'linear-gradient(145deg, rgba(76, 175, 80, 0.15), rgba(46, 204, 113, 0.08))',
-                        border: '1px solid rgba(76, 175, 80, 0.3)',
-                        boxShadow: '0 4px 15px rgba(46, 204, 113, 0.15)',
-                      }}
-                    >
-                      <Typography
-                        variant="body1"
+                      />
+                    </TableCell>
+                    <TableCell sx={{ minWidth: 120, fontSize: '1rem' }}>
+                      {question.status === 'CANCELED' && question.updaterName
+                        ? question.updaterName
+                        : question.status === 'ANSWERED' && question.replierName
+                          ? question.replierName
+                          : ''}
+                    </TableCell>
+                    <TableCell sx={{ minWidth: 140, fontSize: '1rem' }}>
+                      {question.status === 'ANSWERED' && question.updatedAt
+                        ? Array.isArray(question.updatedAt)
+                          ? formatDateTimeFromArray(question.updatedAt)
+                          : 'Chưa cập nhật'
+                        : ''}
+                    </TableCell>
+                    <TableCell sx={{ textAlign: 'center' }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        startIcon={<VisibilityIcon />}
+                        onClick={() => setDetailQuestion(question)}
                         sx={{
-                          lineHeight: 1.8,
-                          fontSize: '1rem',
-                          letterSpacing: '0.3px',
-                          color: '#2D3748',
+                          borderRadius: '20px',
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          px: 2,
+                          boxShadow: '0 2px 8px 0 rgba(74, 144, 226, 0.10)',
                         }}
                       >
-                        {question.answer}
-                      </Typography>
-                    </Box>
-                  </Box>
-                )}
-              </CardContent>
-            </QuestionCard>
-          ))}
+                        Xem chi tiết
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
           {/* Thanh phân trang */}
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
             <Pagination
@@ -814,6 +771,243 @@ const QuestionsContent = () => {
           </Button>
         </Box>
       )}
+      {/* Dialog hiển thị chi tiết câu trả lời */}
+      <Dialog
+        open={!!detailQuestion}
+        onClose={() => setDetailQuestion(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '24px',
+            boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.18)',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            fontSize: '1.35rem',
+            color: '#1976d2',
+            letterSpacing: 0.5,
+            background: '#fafdff',
+            borderTopLeftRadius: '24px',
+            borderTopRightRadius: '24px',
+          }}
+        >
+          Chi tiết câu hỏi
+        </DialogTitle>
+        <DialogContent
+          dividers
+          sx={{
+            background: '#fafdff',
+            borderBottomLeftRadius: '24px',
+            borderBottomRightRadius: '24px',
+          }}
+        >
+          {detailQuestion && (
+            <>
+              <Typography
+                variant="subtitle1"
+                fontWeight={700}
+                gutterBottom
+                sx={{ color: '#1976d2', fontSize: '1.08rem' }}
+              >
+                Nội dung câu hỏi:
+              </Typography>
+              <Typography
+                variant="body1"
+                gutterBottom
+                sx={{
+                  mb: 2,
+                  fontSize: '1.05rem',
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-line',
+                }}
+              >
+                {detailQuestion.content}
+              </Typography>
+              <Typography
+                variant="subtitle1"
+                fontWeight={700}
+                gutterBottom
+                sx={{ color: '#1976d2', fontSize: '1.08rem' }}
+              >
+                Danh mục:
+              </Typography>
+              <Typography
+                variant="body2"
+                gutterBottom
+                sx={{ mb: 2, fontSize: '1.05rem' }}
+              >
+                {detailQuestion.categoryName}
+              </Typography>
+              <Typography
+                variant="subtitle1"
+                fontWeight={700}
+                gutterBottom
+                sx={{ color: '#1976d2', fontSize: '1.08rem' }}
+              >
+                Trạng thái:
+              </Typography>
+              <Typography
+                variant="body2"
+                gutterBottom
+                sx={{ mb: 2, fontSize: '1.05rem' }}
+              >
+                {detailQuestion.status === 'ANSWERED'
+                  ? 'Đã trả lời'
+                  : detailQuestion.status === 'CANCELED'
+                    ? 'Đã huỷ'
+                    : 'Đang chờ'}
+              </Typography>
+              {detailQuestion.status === 'ANSWERED' && (
+                <Box sx={{ display: 'flex', gap: 3, mb: 2 }}>
+                  <Box>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={700}
+                      gutterBottom
+                      sx={{ color: '#1976d2', fontSize: '1.08rem' }}
+                    >
+                      Người trả lời:
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      gutterBottom
+                      sx={{ fontSize: '1.05rem' }}
+                    >
+                      {detailQuestion.replierName || 'Chuyên gia'}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={700}
+                      gutterBottom
+                      sx={{ color: '#1976d2', fontSize: '1.08rem' }}
+                    >
+                      Thời gian trả lời:
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      gutterBottom
+                      sx={{ fontSize: '1.05rem' }}
+                    >
+                      {Array.isArray(detailQuestion.updatedAt)
+                        ? formatDateTimeFromArray(detailQuestion.updatedAt)
+                        : 'Chưa cập nhật'}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+              {detailQuestion.status === 'ANSWERED' &&
+                detailQuestion.answer && (
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2.5,
+                      borderRadius: '16px',
+                      background:
+                        'linear-gradient(145deg, #e8f5e9 60%, #f1f8e9 100%)',
+                      border: '1.5px solid #b2dfdb',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 1.5,
+                    }}
+                  >
+                    <CheckCircleIcon
+                      sx={{ color: '#43a047', mr: 1, mt: 0.5 }}
+                    />
+                    <Box>
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight={700}
+                        color="#388e3c"
+                        gutterBottom
+                      >
+                        Câu trả lời:
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          lineHeight: 1.8,
+                          fontSize: '1.05rem',
+                          color: '#2D3748',
+                        }}
+                      >
+                        {detailQuestion.answer}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+              {detailQuestion.status === 'CANCELED' &&
+                detailQuestion.rejectionReason && (
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      borderRadius: '16px',
+                      background:
+                        'linear-gradient(90deg, #ffebee 60%, #ffcdd2 100%)',
+                      color: '#e53935',
+                      border: '1.5px solid #ffcdd2',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 1.5,
+                    }}
+                  >
+                    <WarningIcon sx={{ color: '#e53935', mr: 1, mt: 0.5 }} />
+                    <Box>
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight={700}
+                        color="#e53935"
+                        gutterBottom
+                      >
+                        Lý do huỷ:
+                      </Typography>
+                      <Typography variant="body1">
+                        {detailQuestion.rejectionReason}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+              {detailQuestion.status !== 'ANSWERED' &&
+                detailQuestion.status !== 'CANCELED' && (
+                  <Typography
+                    variant="body2"
+                    color="#4A5568"
+                    sx={{ mt: 2, fontSize: '1.05rem' }}
+                  >
+                    Chưa có câu trả lời.
+                  </Typography>
+                )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions
+          sx={{
+            background: '#fafdff',
+            borderBottomLeftRadius: '24px',
+            borderBottomRightRadius: '24px',
+          }}
+        >
+          <Button
+            onClick={() => setDetailQuestion(null)}
+            color="primary"
+            variant="contained"
+            sx={{
+              borderRadius: '20px',
+              fontWeight: 600,
+              px: 4,
+              boxShadow: '0 2px 8px 0 rgba(74, 144, 226, 0.10)',
+            }}
+          >
+            Đóng
+          </Button>
+        </DialogActions>
+      </Dialog>
       <ToastContainer position="top-center" autoClose={3000} />
     </Box>
   );

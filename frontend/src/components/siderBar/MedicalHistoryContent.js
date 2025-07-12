@@ -88,6 +88,7 @@ import 'jspdf-autotable';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { useNavigate } from 'react-router-dom';
 
 // Styled Paper Component với hiệu ứng glass morphism hiện đại
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -161,6 +162,8 @@ const MedicalHistoryContent = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState(null);
+
+  const navigate = useNavigate();
 
   // Define fetchSTITests as a named function to allow calling it from retry button
   const fetchSTITests = () => {
@@ -993,6 +996,18 @@ const MedicalHistoryContent = () => {
                           ? 'Xem kết quả'
                           : 'Chưa có kết quả'}
                       </Button>
+                      {(record.type === 'Xét nghiệm STI' || record.type === 'STI' || record.serviceType === 'STI_SERVICE') &&
+                        ['COMPLETED', 'RESULTED', 'ANALYZED'].includes((record.status || record.displayStatus || '').toUpperCase()) && (
+                          <Button
+                            variant="outlined"
+                            color="primary"
+                            fullWidth
+                            sx={{ mt: 1, borderRadius: '12px', fontWeight: 600 }}
+                            onClick={() => navigate('/profile', { state: { initialTab: 'my-reviews' } })}
+                          >
+                            Đánh giá
+                          </Button>
+                        )}
                     </Box>
                   </CardContent>
                 </Card>

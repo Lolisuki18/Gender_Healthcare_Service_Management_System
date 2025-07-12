@@ -742,12 +742,12 @@ body, #root {
 }
 
 .healthAdviceCard {
-  padding: 36px;
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(162, 89, 230, 0.12);
-  margin-bottom: 24px;
-  background: linear-gradient(135deg, #fff 0%, #fafbff 100%);
-  border: 1px solid #e2e8f0;
+  padding: 0;
+  border-radius: var(--border-radius) !important;
+  box-shadow: 0 16px 48px rgba(99, 102, 241, 0.15);
+  margin-bottom: 32px;
+  background: #fff;
+  border: 1px solid rgba(99, 102, 241, 0.1);
   position: relative;
   overflow: hidden;
 }
@@ -758,64 +758,85 @@ body, #root {
   top: 0;
   left: 0;
   right: 0;
-  height: 5px;
-  background: linear-gradient(90deg, #e57399, #a259e6, #7c3aed, #059669);
-  border-radius: 20px 20px 0 0;
+  height: 6px;
+  background: linear-gradient(135deg, #43a6ef 0%, #2ec7b8 100%);
+  border-radius: 24px 24px 0 0;
 }
 
 .healthAdviceHeader {
   display: flex;
   align-items: center;
-  margin-bottom: 28px;
-  padding-top: 8px;
+  padding: 32px 36px 24px 36px;
+  margin-bottom: 0;
+  background: linear-gradient(135deg, #43a6ef 0%, #2ec7b8 100%);
+  position: relative;
+}
+
+.healthAdviceHeader::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
 }
 
 .healthAdviceIconWrapper {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 20px;
-  box-shadow: 0 6px 20px rgba(229, 115, 153, 0.25);
-  border: 3px solid #fff;
+  margin-right: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .healthAdviceIcon {
-  color: #e57399;
-  font-size: 32px !important;
+  color: #fff;
+  font-size: 36px !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .healthAdviceTitle {
-  font-weight: 800;
-  color: #1a202c;
-  font-size: 1.5rem;
+  font-weight: 700 !important;
+  font-size: 1.4rem !important;
+  color: #fff;
+  font-size: 1.75rem;
   letter-spacing: -0.025em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  line-height: 1.2;
 }
 
 .healthAdviceSubtitle {
-  color: #718096;
-  font-size: 1rem;
-  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Inter', 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-top: 6px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  line-height: 1.4;
 }
 .adviceCardRegular {
-  background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 28px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(135deg, #fff 0%, #fafbff 100%);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  border-radius: var(--border-radius) !important;
+  padding: 32px;
+  margin: 24px 36px;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.08);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
 
 .adviceCardRegular:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-  border-color: #e57399;
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.2);
 }
 
 .adviceCardRegular::before {
@@ -825,80 +846,106 @@ body, #root {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #e57399, #a259e6, #7c3aed);
-  border-radius: 16px 16px 0 0;
+  background: linear-gradient(90deg, #667eea, #764ba2, #a855f7);
+  border-radius: 20px 20px 0 0;
 }
 
 .adviceCardHeader {
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .adviceCardIconRegular {
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16px;
-  box-shadow: 0 4px 12px rgba(229, 115, 153, 0.2);
-  border: 2px solid #fff;
+  margin-right: 20px;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
+  border: 3px solid #fff;
+  transition: all 0.3s ease;
+}
+
+.adviceCardRegular:hover .adviceCardIconRegular {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 12px 24px rgba(102, 126, 234, 0.35);
 }
 
 .adviceCardIconRegularIcon {
-  color: #e57399;
-  font-size: 24px !important;
+  color: #fff;
+  font-size: 28px !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .adviceCardTitleRegular {
-  font-weight: 700;
-  color: #2d3748;
-  font-size: 1.25rem;
+  font-weight: 700 !important;
+  font-size: 1.25rem !important;
+  color: #1e293b;
+  font-size: 1.35rem;
   letter-spacing: -0.025em;
+  line-height: 1.3;
+  margin-bottom: 4px;
 }
 
 .adviceCardTextRegular {
-  color: #4a5568;
-  margin-bottom: 16px;
-  font-size: 1rem;
+  color: #64748b;
+  margin-bottom: 20px;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1.05rem;
   line-height: 1.6;
+  font-weight: 400;
 }
 
 .adviceCardList {
   padding-left: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .adviceCardListItem {
   display: flex;
   align-items: flex-start;
-  padding: 8px 0;
-  color: #2d3748;
-  font-size: 0.95rem;
-  line-height: 1.5;
+  padding: 0;
+  color: #475569;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: 500;
   position: relative;
-  padding-left: 24px;
+  padding-left: 36px;
+  margin-bottom: 8px;
+  margin-left: 36px;
+  transition: all 0.2s ease;
+}
+
+.adviceCardListItem:hover {
+  color: #334155;
+  transform: translateX(4px);
 }
 
 .adviceCardListItem::before {
   content: '✓';
   position: absolute;
-  left: 0;
-  top: 8px;
-  width: 16px;
-  height: 16px;
-  background: linear-gradient(135deg, #e57399, #a259e6);
+  left: -10px;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: bold;
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
 }
+
 .adviceCardGeneral {
   background: #fdf5f8;
   border: 2px solid #f8bbd0;
@@ -930,31 +977,38 @@ body, #root {
   margin-bottom: 8px;
 }
 .healthAdviceNote {
-  background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
-  border: 1px solid #c7d2fe;
-  border-radius: 12px;
-  padding: 20px;
+  background: linear-gradient(135deg, #f8faff 0%, #eef2ff 100%);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 16px;
+  padding: 24px 32px;
   text-align: center;
-  color: #3730a3;
-  font-weight: 600;
-  font-size: 15px;
-  margin-top: 24px;
+  color: #475569;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 24px 36px 32px 36px;
   position: relative;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.08);
 }
 
 .healthAdviceNote::before {
   content: '💡';
   position: absolute;
-  top: -8px;
+  top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  background: #fff;
-  padding: 4px 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
+
 .addButtonCard {
   background: var(--card-bg);
   border-radius: var(--border-radius);
@@ -1446,7 +1500,7 @@ body, #root {
 
 .cycleListHeader {
   padding: 24px 32px 20px 32px !important;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%) !important;
+  background: linear-gradient(45deg, #4A90E2, #1ABC9C) !important;
   color: #fff !important;
   display: flex !important;
   align-items: center !important;
@@ -1658,7 +1712,7 @@ body, #root {
 
 /* Add Cycle Button Styles */
 .addCycleButton {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%) !important;
+  background: linear-gradient(45deg, #4A90E2, #1ABC9C) !important;
   color: #fff !important;
   border: none !important;
   border-radius: 20px !important;
@@ -1732,7 +1786,7 @@ body, #root {
 }
 
 .addCycleButton:hover {
-  background: linear-gradient(135deg, #d5618b 0%, #8e47cc 100%) !important;
+  background: linear-gradient(135deg, #4A90E2, #1ABC9C) !important;
   transform: translateY(-4px) scale(1.05) !important;
   box-shadow: 0 12px 40px rgba(162,89,230,0.4) !important;
 }
@@ -1843,333 +1897,169 @@ body, #root {
   color: #e91e63;
 }
 
-/* Hover effects for color variants */
-.adviceCardGreen:hover {
-  border-color: #059669;
-  box-shadow: 0 12px 32px rgba(5, 150, 105, 0.15);
+/* Title and text colors for advice card variants */
+.adviceCardGreen .adviceCardTitleRegular {
+  color: #059669;
+  text-shadow: 0 1px 2px rgba(5, 150, 105, 0.1);
 }
 
-.adviceCardYellow:hover {
-  border-color: #f59e0b;
-  box-shadow: 0 12px 32px rgba(245, 158, 11, 0.15);
+.adviceCardGreen .adviceCardTextRegular {
+  color: #047857;
 }
 
-.adviceCardRed:hover {
-  border-color: #dc2626;
-  box-shadow: 0 12px 32px rgba(220, 38, 38, 0.15);
+.adviceCardYellow .adviceCardTitleRegular {
+  color: #f59e0b;
+  text-shadow: 0 1px 2px rgba(245, 158, 11, 0.1);
 }
 
-.adviceCardBlue:hover {
-  border-color: #2563eb;
-  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.15);
+.adviceCardYellow .adviceCardTextRegular {
+  color: #d97706;
 }
 
-.adviceCardPink:hover {
-  border-color: #e91e63;
-  box-shadow: 0 12px 32px rgba(233, 30, 99, 0.15);
+.adviceCardRed .adviceCardTitleRegular {
+  color: #dc2626;
+  text-shadow: 0 1px 2px rgba(220, 38, 38, 0.1);
 }
 
-/* Responsive design for advice cards */
-@media (max-width: 768px) {
-  .healthAdviceCard {
-    padding: 24px;
-    margin-bottom: 16px;
-  }
-  
-  .adviceCardRegular {
-    padding: 20px;
-    margin-bottom: 16px;
-  }
-  
-  .healthAdviceIconWrapper {
-    width: 48px;
-    height: 48px;
-    margin-right: 16px;
-  }
-  
-  .healthAdviceIcon {
-    font-size: 24px !important;
-  }
-  
-  .adviceCardIconRegular {
-    width: 40px;
-    height: 40px;
-    margin-right: 12px;
-  }
-  
-  .adviceCardIconRegularIcon {
-    font-size: 20px !important;
-  }
-  
-  .healthAdviceTitle {
-    font-size: 1.25rem;
-  }
-  
-  .adviceCardTitleRegular {
-    font-size: 1.1rem;
-  }
+.adviceCardRed .adviceCardTextRegular {
+  color: #b91c1c;
 }
 
-/* Animation for advice cards loading */
-.adviceCardRegular {
-  animation: fadeInUp 0.6s ease-out;
-  animation-fill-mode: both;
+.adviceCardBlue .adviceCardTitleRegular {
+  color: #2563eb;
+  text-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
 }
 
-.adviceCardRegular:nth-child(1) { animation-delay: 0.1s; }
-.adviceCardRegular:nth-child(2) { animation-delay: 0.2s; }
-.adviceCardRegular:nth-child(3) { animation-delay: 0.3s; }
-.adviceCardRegular:nth-child(4) { animation-delay: 0.4s; }
-.adviceCardRegular:nth-child(5) { animation-delay: 0.5s; }
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.adviceCardBlue .adviceCardTextRegular {
+  color: #1d4ed8;
 }
 
-/* Icon rotation on hover */
-.adviceCardIconRegular {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.adviceCardPink .adviceCardTitleRegular {
+  color: #e91e63;
+  text-shadow: 0 1px 2px rgba(233, 30, 99, 0.1);
 }
 
-.adviceCardRegular:hover .adviceCardIconRegular {
-  transform: rotate(5deg) scale(1.05);
+.adviceCardPink .adviceCardTextRegular {
+  color: #c2185b;
 }
 
-/* Smooth transitions for list items */
-.adviceCardListItem {
-  transition: all 0.2s ease;
+/* Enhanced gradient effects and shadows for advice cards */
+.adviceCardGreen .adviceCardHeader {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border-radius: 16px;
+  padding: 16px;
+  margin: -8px -8px 16px -8px;
 }
 
-.adviceCardListItem:hover {
-  transform: translateX(4px);
-  color: #1a202c;
+.adviceCardYellow .adviceCardHeader {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(251, 191, 36, 0.05) 100%);
+  border-radius: 16px;
+  padding: 16px;
+  margin: -8px -8px 16px -8px;
 }
 
-/* Reset button for calculation result */
-.resetButton {
-  color: #6b7280;
-  background-color: #f9fafb;
-  font-weight: 600;
-  padding: 16px 32px;
-  border-radius: 20px;
-  text-transform: none;
-  font-size: 1.1rem;
-  border: 2px solid #e5e7eb;
-  min-width: 160px;
-  max-width: 260px;
-  margin: 0 auto;
-  letter-spacing: 0.5px;
-  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+.adviceCardRed .adviceCardHeader {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.05) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border-radius: 16px;
+  padding: 16px;
+  margin: -8px -8px 16px -8px;
 }
 
-.resetButton:hover {
-  background-color: #f3f4f6;
-  border-color: #d1d5db;
-  color: #374151;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+.adviceCardBlue .adviceCardHeader {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border-radius: 16px;
+  padding: 16px;
+  margin: -8px -8px 16px -8px;
 }
 
-.resetButton:active {
-  transform: translateY(0px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+.adviceCardPink .adviceCardHeader {
+  background: linear-gradient(135deg, rgba(233, 30, 99, 0.05) 0%, rgba(236, 72, 153, 0.05) 100%);
+  border-radius: 16px;
+  padding: 16px;
+  margin: -8px -8px 16px -8px;
 }
 
-/* Refetch loading overlay */
-.refetchOverlay {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 9999;
-  background-color: rgba(255, 255, 255, 0.95);
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
+/* Enhanced icon hover effects */
+.adviceCardGreen:hover .adviceCardIconRegular {
+  box-shadow: 0 12px 24px rgba(5, 150, 105, 0.4);
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #e57399;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.adviceCardYellow:hover .adviceCardIconRegular {
+  box-shadow: 0 12px 24px rgba(245, 158, 11, 0.4);
 }
 
-.refetchText {
-  color: #e57399;
-  font-weight: 600;
-  font-size: 1rem;
+.adviceCardRed:hover .adviceCardIconRegular {
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.4);
 }
 
-/* Success message animations */
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+.adviceCardBlue:hover .adviceCardIconRegular {
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.4);
 }
 
-@keyframes slideOutRight {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
+.adviceCardPink:hover .adviceCardIconRegular {
+  box-shadow: 0 12px 24px rgba(233, 30, 99, 0.4);
 }
 
-/* Pagination Styles */
-.paginationContainer {
-  padding: 24px 32px;
-  border-top: 1px solid #f1f5f9;
-  background: linear-gradient(135deg, #fafbff 0%, #f8fafc 100%);
-  border-radius: 0 0 16px 16px;
+/* List item colors for different advice card variants */
+.adviceCardGreen .adviceCardListItem {
+  color: #047857;
 }
 
-.paginationInfo {
-  text-align: center;
-  margin-bottom: 16px;
+.adviceCardGreen .adviceCardListItem::before {
+  background: linear-gradient(135deg, #059669, #10b981);
 }
 
-.paginationText {
-  color: #64748b;
-  font-size: 0.875rem;
-  font-weight: 500;
+.adviceCardYellow .adviceCardListItem {
+  color: #d97706;
 }
 
-.paginationControls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
+.adviceCardYellow .adviceCardListItem::before {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
 }
 
-.paginationButton {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  color: #475569;
-  font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  min-width: 80px;
-  justify-content: center;
+.adviceCardRed .adviceCardListItem {
+  color: #b91c1c;
 }
 
-.paginationButton:hover:not(.disabled) {
-  background: linear-gradient(135deg, #e57399 0%, #a259e6 100%);
-  border-color: #e57399;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(229, 115, 153, 0.2);
+.adviceCardRed .adviceCardListItem::before {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
 }
 
-.paginationButton.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: #f1f5f9;
-  color: #94a3b8;
+.adviceCardBlue .adviceCardListItem {
+  color: #1d4ed8;
 }
 
-.paginationIcon {
-  width: 16px;
-  height: 16px;
-  transition: transform 0.2s ease;
+.adviceCardBlue .adviceCardListItem::before {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
 }
 
-.pageNumbers {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin: 0 8px;
-  flex-wrap: wrap;
-  justify-content: center;
+.adviceCardPink .adviceCardListItem {
+  color: #c2185b;
 }
 
-.pageNumber {
-  width: 40px;
-  height: 40px;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
-  color: #475569;
-  font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+.adviceCardPink .adviceCardListItem::before {
+  background: linear-gradient(135deg, #e91e63, #ec4899);
 }
 
-.pageNumber:hover {
-  background: linear-gradient(135deg, #e57399 0%, #a259e6 100%);
-  border-color: #e57399;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(229, 115, 153, 0.2);
+/* Hover effects for list items */
+.adviceCardGreen .adviceCardListItem:hover {
+  color: #059669;
 }
 
-.pageNumber.active {
-  background: linear-gradient(135deg, #e57399 0%, #a259e6 100%);
-  border-color: #e57399;
-  color: white;
-  box-shadow: 0 4px 12px rgba(229, 115, 153, 0.3);
-  transform: scale(1.05);
+.adviceCardYellow .adviceCardListItem:hover {
+  color: #f59e0b;
 }
 
-/* Responsive design */
-@media (max-width: 640px) {
-  .paginationContainer {
-    padding: 16px 20px;
-  }
-  
-  .paginationControls {
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .pageNumbers {
-    margin: 0;
-    order: -1;
-  }
-  
-  .paginationButton {
-    width: 120px;
-  }
+.adviceCardRed .adviceCardListItem:hover {
+  color: #dc2626;
+}
+
+.adviceCardBlue .adviceCardListItem:hover {
+  color: #2563eb;
+}
+
+.adviceCardPink .adviceCardListItem:hover {
+  color: #e91e63;
 }
 
 /* Cycle Item Actions */
@@ -2271,4 +2161,40 @@ body, #root {
     align-self: flex-end;
     margin-left: 0;
   }
+}
+
+/* Reset button for calculation result */
+.resetButton {
+  color: #6b7280;
+  background-color: #f9fafb;
+  font-weight: 600;
+  padding: 16px 32px;
+  border-radius: 20px;
+  text-transform: none;
+  font-size: 1.1rem;
+  border: 2px solid #e5e7eb;
+  min-width: 160px;
+  max-width: 260px;
+  margin: 0 auto;
+  letter-spacing: 0.5px;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.resetButton:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.resetButton:active {
+  transform: translateY(0px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }

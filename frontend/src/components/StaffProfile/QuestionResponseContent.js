@@ -58,7 +58,7 @@ import {
   HourglassEmpty as HourglassEmptyIcon,
 } from '@mui/icons-material';
 import questionService from '../../services/questionService';
-import { consultantService } from '../../services/userService';
+import consultantService from '../../services/consultantService';
 import { formatDateTimeFromArray } from '../../utils/dateUtils';
 import { confirmDialog } from '../../utils/confirmDialog';
 
@@ -150,7 +150,7 @@ const QuestionResponseContent = () => {
   useEffect(() => {
     const fetchConsultants = async () => {
       try {
-        const res = await consultantService.getConsultants();
+        const res = await consultantService.getAllConsultants();
         setConsultants(res.data || res || []);
       } catch (err) {
         setConsultants([]);
@@ -238,7 +238,7 @@ const QuestionResponseContent = () => {
     setReplierId(''); // reset về chuỗi rỗng
     setOpenApproveDialog(true);
     try {
-      const res = await consultantService.getConsultants();
+      const res = await consultantService.getAllConsultants();
       setConsultants(res.data || res || []);
     } catch (err) {
       setConsultants([]);

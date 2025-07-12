@@ -1,4 +1,4 @@
-    package com.healapp.service;
+package com.healapp.service;
 
 import java.util.List;
 import java.util.Optional;
@@ -74,7 +74,8 @@ public class CategoryQuestionService {
             }
 
             // Check if category exists
-            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository.findByCategoryQuestionIdAndIsActiveTrue(categoryId);
+            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository
+                    .findByCategoryQuestionId(categoryId);
             if (categoryOpt.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }
@@ -89,6 +90,7 @@ public class CategoryQuestionService {
             // Update category
             category.setName(request.getName());
             category.setDescription(request.getDescription());
+            category.setIsActive(request.getIsActive());
 
             CategoryQuestion updatedCategory = categoryQuestionRepository.save(category);
             CategoryQuestionResponse response = mapToCategoryResponse(updatedCategory);
@@ -109,7 +111,8 @@ public class CategoryQuestionService {
             }
 
             // Check if category exists
-            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository.findByCategoryQuestionIdAndIsActiveTrue(categoryId);
+            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository
+                    .findByCategoryQuestionIdAndIsActiveTrue(categoryId);
             if (categoryOpt.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }
@@ -145,7 +148,7 @@ public class CategoryQuestionService {
 
     public ApiResponse<List<CategoryQuestionResponse>> getAllCategories() {
         try {
-            List<CategoryQuestion> categories = categoryQuestionRepository.findAllByIsActiveTrue();
+            List<CategoryQuestion> categories = categoryQuestionRepository.findAll();
             List<CategoryQuestionResponse> response = categories.stream()
                     .map(this::mapToCategoryResponse)
                     .collect(Collectors.toList());
@@ -158,7 +161,8 @@ public class CategoryQuestionService {
 
     public ApiResponse<CategoryQuestionResponse> getCategoryById(Long categoryId) {
         try {
-            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository.findByCategoryQuestionIdAndIsActiveTrue(categoryId);
+            Optional<CategoryQuestion> categoryOpt = categoryQuestionRepository
+                    .findByCategoryQuestionIdAndIsActiveTrue(categoryId);
             if (categoryOpt.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }

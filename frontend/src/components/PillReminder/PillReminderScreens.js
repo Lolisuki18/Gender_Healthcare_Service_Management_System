@@ -10,7 +10,7 @@ export function PillReminderHomeScreen({ onAddSchedule, isAuthenticated }) {
       <div className={styles.container}>
         {/* Header Section */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 96, height: 96, background: 'linear-gradient(90deg, #e57399, #a259e6)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <div style={{ width: 96, height: 96, background: '#1877f2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <Pill style={{ width: 48, height: 48, color: '#fff' }} />
           </div>
           <h1 style={{ fontSize: 32, fontWeight: 700, color: '#181c32', marginBottom: 8 }}>Lịch Nhắc Nhở</h1>
@@ -170,7 +170,7 @@ export function PillReminderFormScreen({ formData, onFormChange, onFormSubmit, o
               className={styles.checkboxInput}
               aria-label="Uống thuốc giả dược"
             />
-            <label htmlFor="placebo" className={styles.checkboxLabel}>Uống thuốc giả dược</label>
+            <label htmlFor="placebo" className={styles.checkboxLabel}><strong>Uống thuốc giả dược</strong></label>
           </div>
           {isEditing && (
             <div className={styles.importantNote} style={{ marginBottom: 16 }}>
@@ -302,16 +302,16 @@ export function PillReminderCalendarScreen({ schedule, currentMonthIndex, setCur
         <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px', alignItems: 'stretch' }}>
           <button
             onClick={handleEditClick}
-            className={styles.btnEdit}
+            style={{ flex: 1, background: 'linear-gradient(to right, #1C9695, #35B4A6)', color: '#fff', padding: '14px 20px', borderRadius: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', fontSize: 16, cursor: 'pointer', boxShadow: '0 2px 8px rgba(28,150,149,0.15)' }}
           >
-            <Edit size={20} style={{ marginRight: 6 }} />
+            <Edit style={{ width: 20, height: 20 }} />
             Chỉnh sửa lịch
           </button>
           <button
             onClick={onDeleteSchedule}
-            className={styles.btnDeleteDanger}
+            style={{ flex: 1, background: 'linear-gradient(to right, #1C9695, #35B4A6)', color: '#fff', padding: '14px 20px', borderRadius: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', fontSize: 16, cursor: 'pointer', boxShadow: '0 2px 8px rgba(28,150,149,0.15)' }}
           >
-            <Trash size={20} style={{ marginRight: 6 }} />
+            <Trash style={{ width: 20, height: 20 }} />
             Xóa lịch
           </button>
         </div>

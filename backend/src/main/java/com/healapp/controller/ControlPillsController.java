@@ -73,4 +73,12 @@ public class ControlPillsController {
           ApiResponse<String> response = controlPillsService.deleteControlPills(id);
           return ResponseEntity.ok(response);
       }
+
+    // Endpoint mới để lấy lịch uống thuốc đang hoạt động của người dùng hiện tại
+    @GetMapping("/active")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    public ResponseEntity<ApiResponse<PillReminderDetailsResponse>> getActivePillSchedule() {
+        ApiResponse<PillReminderDetailsResponse> response = controlPillsService.getActivePillScheduleForCurrentUser();
+        return ResponseEntity.ok(response);
+    }
 }

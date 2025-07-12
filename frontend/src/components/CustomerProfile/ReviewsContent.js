@@ -1001,7 +1001,7 @@ const ReviewsContent = () => {
                     fontWeight: 500
                   }}
                 >
-                  {review.consultantName || review.providerName || 'Chuyên viên'}
+                  {review.maskedUserName || review.userFullName}
                 </Typography>
               </Box>
             </Box>

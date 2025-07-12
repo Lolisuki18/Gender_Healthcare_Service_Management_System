@@ -1,5 +1,6 @@
 import apiClient from '@services/api';
 import localStorageUtil from '@utils/localStorage';
+import tokenService from '@services/tokenService';
 
 // Service cho các API liên quan đến người dùng
 export const userService = {
@@ -211,8 +212,7 @@ export const userService = {
         // Lưu token mới vào localStorage và khởi tạo token service
         localStorageUtil.set('token', newToken);
 
-        // Import và sử dụng tokenService
-        const tokenService = (await import('@/services/tokenService')).default;
+        // Sử dụng tokenService đã import
         tokenService.setToken(newToken);
 
         // Cập nhật cả trong user data nếu có
@@ -432,28 +432,6 @@ export const userService = {
       throw error.response?.data || error;
     }
   },
-  /**
-   * Gửi mã xác nhận đổi số điện thoại qua email
-   * @returns {Promise<Object>} API response
-   */
-  sendPhoneChangeVerificationCode: async () => {
-    try {
-      const response = await apiClient.post(
-        '/users/profile/phone/send-verification'
-      );
-      return {
-        success: response.data.success,
-        message: response.data.message,
-        data: response.data.data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể gửi mã xác nhận',
-        error: error,
-      };
-    }
-  },
 
   /**
    * Xác thực mã và cập nhật số điện thoại
@@ -479,38 +457,6 @@ export const userService = {
           'Có lỗi xảy ra khi xác thực số điện thoại',
         error: error,
       };
-    }
-  },
-};
-export const consultantService = {
-  // Lấy danh sách bác sĩ
-  getConsultants: async () => {
-    try {
-      const response = await apiClient.get('/consultants');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  updateProfile: async (consultantDate) => {
-    try {
-      const response = await apiClient.put(
-        '/consultants/profile',
-        consultantDate
-      );
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  getConsultantProfile: async (consultantId) => {
-    try {
-      const response = await apiClient.get(`/consultants/${consultantId}`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
     }
   },
 };
