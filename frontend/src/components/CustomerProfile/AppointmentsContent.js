@@ -92,6 +92,7 @@ import confirmDialog from '../../utils/confirmDialog';
 import reviewService from '../../services/reviewService';
 import ReviewForm from '../modals/ReviewForm';
 import { notify } from '../../utils/notify';
+import { useNavigate } from 'react-router-dom';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)',
@@ -143,6 +144,8 @@ const AppointmentsContent = () => {
   const [editingReviewId, setEditingReviewId] = useState(null);
   const [reviewLoading, setReviewLoading] = useState(false);
 
+  const navigate = useNavigate();
+
   const fetchAppointments = async () => {
     try {
       setLoading(true);
@@ -152,7 +155,7 @@ const AppointmentsContent = () => {
       } else {
         toast.error(response.message || 'Không thể tải danh sách lịch hẹn');
       }
-      // Lấy danh sách consultationId đã đánh giá
+      // Lấy danh sách review liên quan đến consultation
       const reviewRes = await reviewService.getMyReviews(0, 100);
       const reviews = reviewRes?.content || reviewRes?.data || reviewRes || [];
       const reviewedIds = reviews
@@ -498,6 +501,18 @@ const AppointmentsContent = () => {
     } finally {
       setReviewLoading(false);
     }
+  };
+
+  // Xác định trạng thái đánh giá cho từng appointment (dựa trên danh sách review thay vì chỉ id)
+  const getReviewStatus = (appointment) => {
+    if (appointment.status?.toUpperCase() !== 'COMPLETED') {
+      return 'not_eligible'; // Chưa hoàn thành, không thể đánh giá
+    }
+    // Kiểm tra trực tiếp trong danh sách review
+    if (reviewedConsultationIds.includes(appointment.consultationId)) {
+      return 'reviewed'; // Đã đánh giá
+    }
+    return 'pending'; // Chưa đánh giá
   };
 
   return (
@@ -895,26 +910,14 @@ const AppointmentsContent = () => {
                               label="Đã đánh giá"
                               size="small"
                               color="success"
-                              sx={{
-                                fontWeight: 500,
-                                fontSize: '12px',
-                                ml: 1,
-                                borderRadius: '16px',
-                                px: 1.5,
-                              }}
+                              sx={{ fontWeight: 500, fontSize: '11px', ml: 1 }}
                             />
                           ) : (
                             <Chip
                               label="Chưa đánh giá"
                               size="small"
                               color="warning"
-                              sx={{
-                                fontWeight: 500,
-                                fontSize: '12px',
-                                ml: 1,
-                                borderRadius: '16px',
-                                px: 1.5,
-                              }}
+                              sx={{ fontWeight: 500, fontSize: '11px', ml: 1 }}
                             />
                           ))}
                       </TableCell>
@@ -931,10 +934,9 @@ const AppointmentsContent = () => {
                               sx={{
                                 fontSize: 13,
                                 textTransform: 'none',
-                                borderRadius: '20px',
-                                px: 2,
+                                borderRadius: 3,
+                                px: 1.5,
                                 height: 32,
-                                fontWeight: 600,
                               }}
                               onClick={async () => {
                                 try {
@@ -996,10 +998,9 @@ const AppointmentsContent = () => {
                               sx={{
                                 fontSize: 13,
                                 textTransform: 'none',
-                                borderRadius: '20px',
-                                px: 2,
+                                borderRadius: 3,
+                                px: 1.5,
                                 height: 32,
-                                fontWeight: 600,
                               }}
                               onClick={() => {
                                 // Đặt lại trạng thái cho form tạo mới
