@@ -72,6 +72,26 @@ const consultantService = {
     }
   },
 
+  // Cập nhật trạng thái consultation
+  updateConsultationStatus: async (consultationId, statusData) => {
+    try {
+      const response = await apiClient.put(
+        `/consultations/${consultationId}/status`,
+        statusData
+      );
+      return {
+        success: response.data.success,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể cập nhật trạng thái',
+        error,
+      };
+    }
+  },
 
   // Lấy tất cả lịch tư vấn được giao cho chuyên viên
   getAssignedConsultations: async () => {
