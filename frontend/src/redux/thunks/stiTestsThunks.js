@@ -5,7 +5,7 @@
  * liên quan đến quản lý xét nghiệm STI
  */
 
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk } from '@reduxjs/toolkit';
 import {
   getStaffTests as fetchStaffTests,
   getPendingTests as fetchPendingTests,
@@ -18,21 +18,21 @@ import {
   getTestResultsByTestId as getTestResultsByTestIdApi,
   getPackageTestDetails as getPackageTestDetailsApi,
   getTestPDF as getTestPDFApi,
-} from "@/services/stiService";
+} from '@/services/stiService';
 
 import {
   setLoading,
   setError,
   setTests,
   updateTest,
-} from "@/redux/slices/stiTestsSlice";
-
+} from '@/redux/slices/stiTestsSlice';
+import { notify } from '@/utils/notify';
 
 /**
  * Fetch STI tests based on status
  */
 export const fetchTests = createAsyncThunk(
-  "stiTests/fetchTests",
+  'stiTests/fetchTests',
   async (tabValue, { dispatch }) => {
     dispatch(setLoading(true));
     try {
@@ -57,7 +57,7 @@ export const fetchTests = createAsyncThunk(
           response = await fetchStaffTests();
       }
 
-      if (response && response.status === "SUCCESS") {
+      if (response && response.status === 'SUCCESS') {
         const testsData = response.data || [];
         dispatch(setTests(testsData));
       } else if (response && response.data) {
@@ -65,13 +65,15 @@ export const fetchTests = createAsyncThunk(
         dispatch(setTests(testsData));
       } else {
         dispatch(
-          setError(response?.message || "Không thể lấy danh sách xét nghiệm")
+          setError(response?.message || 'Không thể lấy danh sách xét nghiệm')
         );
       }
     } catch (err) {
-      const errorMsg = "Đã xảy ra lỗi khi tải dữ liệu: " + (err.message || "Lỗi không xác định");
+      const errorMsg =
+        'Đã xảy ra lỗi khi tải dữ liệu: ' +
+        (err.message || 'Lỗi không xác định');
       dispatch(setError(errorMsg));
-      console.error("Error fetching tests:", err);
+      console.error('Error fetching tests:', err);
     } finally {
       dispatch(setLoading(false));
     }
@@ -82,34 +84,35 @@ export const fetchTests = createAsyncThunk(
  * Confirm an STI test
  */
 export const confirmTest = createAsyncThunk(
-  "stiTests/confirmTest",
+  'stiTests/confirmTest',
   async (testId, { dispatch }) => {
     dispatch(setLoading(true));
     try {
       const response = await confirmTestApi(testId);
-      if (response.status === "SUCCESS") {
+      if (response.status === 'SUCCESS') {
         dispatch(updateTest(response.data));
         notify({
-          type: "success",
-          message: "Xác nhận xét nghiệm thành công",
+          type: 'success',
+          message: 'Xác nhận xét nghiệm thành công',
         });
         return response.data;
       } else {
-        dispatch(setError(response.message || "Không thể xác nhận xét nghiệm"));
+        dispatch(setError(response.message || 'Không thể xác nhận xét nghiệm'));
         notify({
-          type: "error",
-          message: response.message || "Không thể xác nhận xét nghiệm",
+          type: 'error',
+          message: response.message || 'Không thể xác nhận xét nghiệm',
         });
         return null;
       }
     } catch (err) {
-      const errorMsg = "Lỗi khi xác nhận xét nghiệm: " + (err.message || "Lỗi không xác định");
+      const errorMsg =
+        'Lỗi khi xác nhận xét nghiệm: ' + (err.message || 'Lỗi không xác định');
       dispatch(setError(errorMsg));
       notify({
-        type: "error",
+        type: 'error',
         message: errorMsg,
       });
-      console.error("Error confirming test:", err);
+      console.error('Error confirming test:', err);
       return null;
     } finally {
       dispatch(setLoading(false));
@@ -121,34 +124,38 @@ export const confirmTest = createAsyncThunk(
  * Sample an STI test
  */
 export const sampleTest = createAsyncThunk(
-  "stiTests/sampleTest",
+  'stiTests/sampleTest',
   async (testId, { dispatch }) => {
     dispatch(setLoading(true));
     try {
       const response = await sampleTestApi(testId);
-      if (response.status === "SUCCESS") {
+      if (response.status === 'SUCCESS') {
         dispatch(updateTest(response.data));
         notify({
-          type: "success",
-          message: "Cập nhật trạng thái lấy mẫu thành công",
+          type: 'success',
+          message: 'Cập nhật trạng thái lấy mẫu thành công',
         });
         return response.data;
       } else {
-        dispatch(setError(response.message || "Không thể cập nhật trạng thái lấy mẫu"));
+        dispatch(
+          setError(response.message || 'Không thể cập nhật trạng thái lấy mẫu')
+        );
         notify({
-          type: "error",
-          message: response.message || "Không thể cập nhật trạng thái lấy mẫu",
+          type: 'error',
+          message: response.message || 'Không thể cập nhật trạng thái lấy mẫu',
         });
         return null;
       }
     } catch (err) {
-      const errorMsg = "Lỗi khi cập nhật trạng thái lấy mẫu: " + (err.message || "Lỗi không xác định");
+      const errorMsg =
+        'Lỗi khi cập nhật trạng thái lấy mẫu: ' +
+        (err.message || 'Lỗi không xác định');
       dispatch(setError(errorMsg));
       notify({
-        type: "error",
+        type: 'error',
         message: errorMsg,
       });
-      console.error("Error sampling test:", err);
+      console.error('Error sampling test:', err);
       return null;
     } finally {
       dispatch(setLoading(false));
@@ -160,7 +167,7 @@ export const sampleTest = createAsyncThunk(
  * Add results to an STI test
  */
 export const addTestResults = createAsyncThunk(
-  "stiTests/addTestResults",
+  'stiTests/addTestResults',
   async ({ testId, resultData }, { dispatch }) => {
     dispatch(setLoading(true));
     try {
@@ -173,33 +180,36 @@ export const addTestResults = createAsyncThunk(
       }));
 
       const response = await addTestResultsApi(testId, {
-        status: "RESULTED",
+        status: 'RESULTED',
         results: formattedResults,
       });
 
-      if (response.status === "SUCCESS") {
+      if (response.status === 'SUCCESS') {
         dispatch(updateTest(response.data));
         notify({
-          type: "success",
-          message: "Cập nhật kết quả xét nghiệm thành công",
+          type: 'success',
+          message: 'Cập nhật kết quả xét nghiệm thành công',
         });
         return response.data;
       } else {
-        dispatch(setError(response.message || "Không thể cập nhật kết quả xét nghiệm"));
+        dispatch(
+          setError(response.message || 'Không thể cập nhật kết quả xét nghiệm')
+        );
         notify({
-          type: "error",
-          message: response.message || "Không thể cập nhật kết quả xét nghiệm",
+          type: 'error',
+          message: response.message || 'Không thể cập nhật kết quả xét nghiệm',
         });
         return null;
       }
     } catch (err) {
-      const errorMsg = "Lỗi khi cập nhật kết quả: " + (err.message || "Lỗi không xác định");
+      const errorMsg =
+        'Lỗi khi cập nhật kết quả: ' + (err.message || 'Lỗi không xác định');
       dispatch(setError(errorMsg));
       notify({
-        type: "error",
+        type: 'error',
         message: errorMsg,
       });
-      console.error("Error adding results:", err);
+      console.error('Error adding results:', err);
       return null;
     } finally {
       dispatch(setLoading(false));
@@ -211,34 +221,38 @@ export const addTestResults = createAsyncThunk(
  * Complete an STI test
  */
 export const completeTest = createAsyncThunk(
-  "stiTests/completeTest",
+  'stiTests/completeTest',
   async (testId, { dispatch }) => {
     dispatch(setLoading(true));
     try {
       const response = await completeTestApi(testId);
-      if (response.status === "SUCCESS") {
+      if (response.status === 'SUCCESS') {
         dispatch(updateTest(response.data));
         notify({
-          type: "success",
-          message: "Hoàn thành xét nghiệm thành công",
+          type: 'success',
+          message: 'Hoàn thành xét nghiệm thành công',
         });
         return response.data;
       } else {
-        dispatch(setError(response.message || "Không thể hoàn thành xét nghiệm"));
+        dispatch(
+          setError(response.message || 'Không thể hoàn thành xét nghiệm')
+        );
         notify({
-          type: "error",
-          message: response.message || "Không thể hoàn thành xét nghiệm",
+          type: 'error',
+          message: response.message || 'Không thể hoàn thành xét nghiệm',
         });
         return null;
       }
     } catch (err) {
-      const errorMsg = "Lỗi khi hoàn thành xét nghiệm: " + (err.message || "Lỗi không xác định");
+      const errorMsg =
+        'Lỗi khi hoàn thành xét nghiệm: ' +
+        (err.message || 'Lỗi không xác định');
       dispatch(setError(errorMsg));
       notify({
-        type: "error",
+        type: 'error',
         message: errorMsg,
       });
-      console.error("Error completing test:", err);
+      console.error('Error completing test:', err);
       return null;
     } finally {
       dispatch(setLoading(false));
@@ -250,34 +264,35 @@ export const completeTest = createAsyncThunk(
  * Cancel an STI test
  */
 export const cancelTest = createAsyncThunk(
-  "stiTests/cancelTest",
+  'stiTests/cancelTest',
   async (testId, { dispatch }) => {
     dispatch(setLoading(true));
     try {
       const response = await cancelSTITestApi(testId);
-      if (response.status === "SUCCESS") {
+      if (response.status === 'SUCCESS') {
         dispatch(updateTest(response.data));
         notify({
-          type: "success",
-          message: "Hủy xét nghiệm thành công",
+          type: 'success',
+          message: 'Hủy xét nghiệm thành công',
         });
         return response.data;
       } else {
-        dispatch(setError(response.message || "Không thể hủy xét nghiệm"));
+        dispatch(setError(response.message || 'Không thể hủy xét nghiệm'));
         notify({
-          type: "error",
-          message: response.message || "Không thể hủy xét nghiệm",
+          type: 'error',
+          message: response.message || 'Không thể hủy xét nghiệm',
         });
         return null;
       }
     } catch (err) {
-      const errorMsg = "Lỗi khi hủy xét nghiệm: " + (err.message || "Lỗi không xác định");
+      const errorMsg =
+        'Lỗi khi hủy xét nghiệm: ' + (err.message || 'Lỗi không xác định');
       dispatch(setError(errorMsg));
       notify({
-        type: "error",
+        type: 'error',
         message: errorMsg,
       });
-      console.error("Error canceling test:", err);
+      console.error('Error canceling test:', err);
       return null;
     } finally {
       dispatch(setLoading(false));
@@ -289,18 +304,18 @@ export const cancelTest = createAsyncThunk(
  * Get test results by test ID
  */
 export const getTestResults = createAsyncThunk(
-  "stiTests/getTestResults",
+  'stiTests/getTestResults',
   async (testId, { dispatch }) => {
     dispatch(setLoading(true));
     try {
       const response = await getTestResultsByTestIdApi(testId);
-      if (response && (response.status === "SUCCESS" || response.data)) {
+      if (response && (response.status === 'SUCCESS' || response.data)) {
         const results = response.data || response;
         return results;
       }
       return null;
     } catch (err) {
-      console.error("Error fetching test results:", err);
+      console.error('Error fetching test results:', err);
       return null;
     } finally {
       dispatch(setLoading(false));
@@ -312,18 +327,18 @@ export const getTestResults = createAsyncThunk(
  * Get package test details
  */
 export const getPackageTestDetails = createAsyncThunk(
-  "stiTests/getPackageTestDetails",
+  'stiTests/getPackageTestDetails',
   async (testId, { dispatch }) => {
     dispatch(setLoading(true));
     try {
       const response = await getPackageTestDetailsApi(testId);
-      if (response && (response.status === "SUCCESS" || response.data)) {
+      if (response && (response.status === 'SUCCESS' || response.data)) {
         const packageData = response.data || response;
         return packageData;
       }
       return null;
     } catch (err) {
-      console.error("Error fetching package details:", err);
+      console.error('Error fetching package details:', err);
       return null;
     } finally {
       dispatch(setLoading(false));
@@ -335,25 +350,27 @@ export const getPackageTestDetails = createAsyncThunk(
  * Export test results to PDF
  */
 export const exportTestResultsToPDF = createAsyncThunk(
-  "stiTests/exportTestResultsToPDF",
+  'stiTests/exportTestResultsToPDF',
   async (testId, { dispatch, getState }) => {
     dispatch(setLoading(true));
     try {
       // Implementation will depend on your API
       // This is a placeholder
       notify({
-        type: "success",
+        type: 'success',
         message: `Đã xuất kết quả xét nghiệm #${testId} thành công!`,
       });
       return true;
     } catch (err) {
-      const errorMsg = "Lỗi khi xuất kết quả xét nghiệm: " + (err.message || "Lỗi không xác định");
+      const errorMsg =
+        'Lỗi khi xuất kết quả xét nghiệm: ' +
+        (err.message || 'Lỗi không xác định');
       dispatch(setError(errorMsg));
       notify({
-        type: "error",
+        type: 'error',
         message: errorMsg,
       });
-      console.error("Error exporting test results to PDF:", err);
+      console.error('Error exporting test results to PDF:', err);
       return false;
     } finally {
       dispatch(setLoading(false));

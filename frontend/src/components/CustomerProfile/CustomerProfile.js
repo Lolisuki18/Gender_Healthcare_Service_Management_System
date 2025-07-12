@@ -47,7 +47,6 @@ import ReviewsContent from '@/components/CustomerProfile/ReviewsContent';
 import SecurityContent from '@/components/siderBar/SecurityContent';
 import PaymentMethodsSection from './PaymentMethodsSection';
 import BlogCustomerContent from './BlogCustomerContent';
-import MyBlogPage from '../siderBar/MyBlogPage';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar

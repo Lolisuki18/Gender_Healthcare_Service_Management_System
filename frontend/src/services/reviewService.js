@@ -2,31 +2,30 @@
  * reviewService.js
  *
  * Dịch vụ quản lý đánh giá (Rating) - Kết nối với backend Spring Boot
- * 
+ *
  * CẤU TRÚC PHÂN CHIA THEO VAI TRÒ:
- * 
+ *
  * 1. API KHÁCH HÀNG - Dành cho khách hàng đã đăng nhập
  *    - Tạo đánh giá (tư vấn viên, dịch vụ STI, gói STI)
  *    - Xem, sửa, xóa đánh giá của mình
  *    - Kiểm tra điều kiện đánh giá
- * 
+ *
  * 2. API CÔNG KHAI - Không cần xác thực
  *    - Xem đánh giá công khai
  *    - Xem tổng kết đánh giá
  *    - Lấy lời chứng thực
- * 
+ *
  * 3. API NHÂN VIÊN/QUẢN TRỊ - Dành cho Nhân viên và Quản trị viên
  *    - Quản lý tất cả đánh giá
  *    - Trả lời/Cập nhật/Xóa phản hồi
  *    - Xem thống kê
- * 
+ *
  * 4. PHƯƠNG THỨC CŨ - Tương thích ngược (không được khuyến khích)
  */
 
 import apiClient from './api';
 
 const reviewService = {
-  
   // ===================== API KHÁCH HÀNG =====================
   // API dành cho khách hàng đã đăng nhập (vai trò KHÁCH HÀNG)
   // Các API này yêu cầu xác thực token với vai trò khách hàng
@@ -43,25 +42,32 @@ const reviewService = {
     try {
       // Xác thực dữ liệu đầu vào
       if (!consultantId || isNaN(parseInt(consultantId))) {
-        throw new Error("ID tư vấn viên không hợp lệ");
+        throw new Error('ID tư vấn viên không hợp lệ');
       }
-      if (!reviewData.rating || reviewData.rating < 1 || reviewData.rating > 5) {
-        throw new Error("Đánh giá phải từ 1 đến 5 sao");
+      if (
+        !reviewData.rating ||
+        reviewData.rating < 1 ||
+        reviewData.rating > 5
+      ) {
+        throw new Error('Đánh giá phải từ 1 đến 5 sao');
       }
       if (!reviewData.comment || reviewData.comment.trim().length === 0) {
-        throw new Error("Bình luận là bắt buộc và không được để trống");
+        throw new Error('Bình luận là bắt buộc và không được để trống');
       }
 
       // Chuẩn bị dữ liệu đánh giá theo format yêu cầu (đơn giản)
       const requestBody = {
         rating: parseInt(reviewData.rating),
-        comment: reviewData.comment.trim()
+        comment: reviewData.comment.trim(),
       };
-      
+
       // URL mới theo yêu cầu: http://localhost:8080/ratings/consultant/24
-      const response = await apiClient.post(`/ratings/consultant/${consultantId}`, requestBody);
+      const response = await apiClient.post(
+        `/ratings/consultant/${consultantId}`,
+        requestBody
+      );
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể tạo đánh giá");
+        throw new Error(response.data.message || 'Không thể tạo đánh giá');
       }
       return response.data.data;
     } catch (error) {
@@ -79,23 +85,30 @@ const reviewService = {
     try {
       // Xác thực dữ liệu đầu vào
       if (!serviceId || isNaN(parseInt(serviceId))) {
-        throw new Error("ID dịch vụ không hợp lệ");
+        throw new Error('ID dịch vụ không hợp lệ');
       }
-      if (!reviewData.rating || reviewData.rating < 1 || reviewData.rating > 5) {
-        throw new Error("Đánh giá phải từ 1 đến 5 sao");
+      if (
+        !reviewData.rating ||
+        reviewData.rating < 1 ||
+        reviewData.rating > 5
+      ) {
+        throw new Error('Đánh giá phải từ 1 đến 5 sao');
       }
       if (!reviewData.comment || reviewData.comment.trim().length === 0) {
-        throw new Error("Bình luận là bắt buộc và không được để trống");
+        throw new Error('Bình luận là bắt buộc và không được để trống');
       }
 
       const requestBody = {
         rating: parseInt(reviewData.rating),
-        comment: reviewData.comment.trim()
+        comment: reviewData.comment.trim(),
       };
-      
-      const response = await apiClient.post(`/ratings/sti-service/${serviceId}`, requestBody);
+
+      const response = await apiClient.post(
+        `/ratings/sti-service/${serviceId}`,
+        requestBody
+      );
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể tạo đánh giá");
+        throw new Error(response.data.message || 'Không thể tạo đánh giá');
       }
       return response.data.data;
     } catch (error) {
@@ -113,23 +126,30 @@ const reviewService = {
     try {
       // Xác thực dữ liệu đầu vào
       if (!packageId || isNaN(parseInt(packageId))) {
-        throw new Error("ID gói không hợp lệ");
+        throw new Error('ID gói không hợp lệ');
       }
-      if (!reviewData.rating || reviewData.rating < 1 || reviewData.rating > 5) {
-        throw new Error("Đánh giá phải từ 1 đến 5 sao");
+      if (
+        !reviewData.rating ||
+        reviewData.rating < 1 ||
+        reviewData.rating > 5
+      ) {
+        throw new Error('Đánh giá phải từ 1 đến 5 sao');
       }
       if (!reviewData.comment || reviewData.comment.trim().length === 0) {
-        throw new Error("Bình luận là bắt buộc và không được để trống");
+        throw new Error('Bình luận là bắt buộc và không được để trống');
       }
 
       const requestBody = {
         rating: parseInt(reviewData.rating),
-        comment: reviewData.comment.trim()
+        comment: reviewData.comment.trim(),
       };
-      
-      const response = await apiClient.post(`/ratings/sti-package/${packageId}`, requestBody);
+
+      const response = await apiClient.post(
+        `/ratings/sti-package/${packageId}`,
+        requestBody
+      );
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể tạo đánh giá");
+        throw new Error(response.data.message || 'Không thể tạo đánh giá');
       }
       return response.data.data;
     } catch (error) {
@@ -145,22 +165,28 @@ const reviewService = {
   createReview: async (reviewData) => {
     try {
       // Xác định endpoint nào sử dụng dựa trên serviceType hoặc fallback về serviceId
-      const { serviceType, serviceId, consultantId, packageId, ...data } = reviewData;
-      
+      const { serviceType, serviceId, consultantId, packageId, ...data } =
+        reviewData;
+
       let response;
       if (consultantId) {
-        response = await reviewService.createConsultantReview(consultantId, data);
+        response = await reviewService.createConsultantReview(
+          consultantId,
+          data
+        );
       } else if (packageId) {
         response = await reviewService.createSTIPackageReview(packageId, data);
       } else if (serviceId) {
         response = await reviewService.createSTIServiceReview(serviceId, data);
       } else {
-        throw new Error("Thiếu ID bắt buộc (consultantId, serviceId, hoặc packageId)");
+        throw new Error(
+          'Thiếu ID bắt buộc (consultantId, serviceId, hoặc packageId)'
+        );
       }
-      
+
       return response;
     } catch (error) {
-      console.error("Lỗi tạo đánh giá:", error);
+      console.error('Lỗi tạo đánh giá:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -173,9 +199,13 @@ const reviewService = {
    */
   getMyReviews: async (page = 0, size = 10) => {
     try {
-      const response = await apiClient.get(`/ratings/my-ratings?page=${page}&size=${size}`);
+      const response = await apiClient.get(
+        `/ratings/my-ratings?page=${page}&size=${size}`
+      );
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy đánh giá của tôi");
+        throw new Error(
+          response.data.message || 'Không thể lấy đánh giá của tôi'
+        );
       }
       return response.data.data;
     } catch (error) {
@@ -193,15 +223,15 @@ const reviewService = {
     try {
       // Kiểm tra id hợp lệ, phải là số
       if (isNaN(parseInt(id))) {
-        throw new Error("ID đánh giá không hợp lệ. ID phải là một số.");
+        throw new Error('ID đánh giá không hợp lệ. ID phải là một số.');
       }
-      
+
       const response = await apiClient.put(`/ratings/${id}`, {
         rating: reviewData.rating,
-        comment: reviewData.comment
+        comment: reviewData.comment,
       });
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể cập nhật đánh giá");
+        throw new Error(response.data.message || 'Không thể cập nhật đánh giá');
       }
       return response.data.data;
     } catch (error) {
@@ -218,7 +248,7 @@ const reviewService = {
     try {
       const response = await apiClient.delete(`/ratings/${id}`);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể xóa đánh giá");
+        throw new Error(response.data.message || 'Không thể xóa đánh giá');
       }
       return response.data.data;
     } catch (error) {
@@ -234,9 +264,13 @@ const reviewService = {
    */
   canRate: async (targetType, targetId) => {
     try {
-      const response = await apiClient.get(`/ratings/can-rate/${targetType}/${targetId}`);
+      const response = await apiClient.get(
+        `/ratings/can-rate/${targetType}/${targetId}`
+      );
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể kiểm tra điều kiện đánh giá");
+        throw new Error(
+          response.data.message || 'Không thể kiểm tra điều kiện đánh giá'
+        );
       }
       return response.data.data;
     } catch (error) {
@@ -251,12 +285,14 @@ const reviewService = {
    */
   checkSTIServiceEligibility: async (serviceId) => {
     try {
-      const response = await apiClient.get(`/ratings/can-rate/STI_SERVICE/${serviceId}`);
+      const response = await apiClient.get(
+        `/ratings/can-rate/STI_SERVICE/${serviceId}`
+      );
       return response.data;
     } catch (error) {
       // Nếu API không tồn tại, trả về thông tin mặc định
       if (error.response?.status === 404) {
-        return { eligible: true, message: "Kiểm tra điều kiện không khả dụng" };
+        return { eligible: true, message: 'Kiểm tra điều kiện không khả dụng' };
       }
       throw new Error(error.response?.data?.message || error.message);
     }
@@ -269,12 +305,14 @@ const reviewService = {
    */
   checkConsultantEligibility: async (consultantId) => {
     try {
-      const response = await apiClient.get(`/ratings/can-rate/CONSULTANT/${consultantId}`);
+      const response = await apiClient.get(
+        `/ratings/can-rate/CONSULTANT/${consultantId}`
+      );
       return response.data;
     } catch (error) {
       // Nếu API không tồn tại, trả về thông tin mặc định
       if (error.response?.status === 404) {
-        return { eligible: true, message: "Kiểm tra điều kiện không khả dụng" };
+        return { eligible: true, message: 'Kiểm tra điều kiện không khả dụng' };
       }
       throw new Error(error.response?.data?.message || error.message);
     }
@@ -313,15 +351,24 @@ const reviewService = {
    * @param {string} keyword - Từ khóa tìm kiếm
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  getConsultantReviews: async (consultantId, page = 0, size = 10, sort = "newest", filterRating = null, keyword = null) => {
+  getConsultantReviews: async (
+    consultantId,
+    page = 0,
+    size = 10,
+    sort = 'newest',
+    filterRating = null,
+    keyword = null
+  ) => {
     try {
       let url = `/ratings/consultant/${consultantId}?page=${page}&size=${size}&sort=${sort}`;
       if (filterRating) url += `&filterRating=${filterRating}`;
       if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-      
+
       const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy đánh giá tư vấn viên");
+        throw new Error(
+          response.data.message || 'Không thể lấy đánh giá tư vấn viên'
+        );
       }
       return response.data.data;
     } catch (error) {
@@ -340,15 +387,24 @@ const reviewService = {
    * @param {string} keyword - Từ khóa tìm kiếm
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  getSTIServiceReviews: async (serviceId, page = 0, size = 10, sort = "newest", filterRating = null, keyword = null) => {
+  getSTIServiceReviews: async (
+    serviceId,
+    page = 0,
+    size = 10,
+    sort = 'newest',
+    filterRating = null,
+    keyword = null
+  ) => {
     try {
       let url = `/ratings/sti-service/${serviceId}?page=${page}&size=${size}&sort=${sort}`;
       if (filterRating) url += `&filterRating=${filterRating}`;
       if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-      
+
       const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy đánh giá dịch vụ STI");
+        throw new Error(
+          response.data.message || 'Không thể lấy đánh giá dịch vụ STI'
+        );
       }
       return response.data.data;
     } catch (error) {
@@ -367,15 +423,24 @@ const reviewService = {
    * @param {string} keyword - Từ khóa tìm kiếm
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  getSTIPackageReviews: async (packageId, page = 0, size = 10, sort = "newest", filterRating = null, keyword = null) => {
+  getSTIPackageReviews: async (
+    packageId,
+    page = 0,
+    size = 10,
+    sort = 'newest',
+    filterRating = null,
+    keyword = null
+  ) => {
     try {
       let url = `/ratings/sti-package/${packageId}?page=${page}&size=${size}&sort=${sort}`;
       if (filterRating) url += `&filterRating=${filterRating}`;
       if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-      
+
       const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy đánh giá gói STI");
+        throw new Error(
+          response.data.message || 'Không thể lấy đánh giá gói STI'
+        );
       }
       return response.data.data;
     } catch (error) {
@@ -390,11 +455,18 @@ const reviewService = {
    * @param {boolean} includeRecentReviews - Có bao gồm đánh giá gần đây không
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  getConsultantRatingSummary: async (consultantId, includeRecentReviews = false) => {
+  getConsultantRatingSummary: async (
+    consultantId,
+    includeRecentReviews = false
+  ) => {
     try {
-      const response = await apiClient.get(`/ratings/summary/consultant/${consultantId}?includeRecentReviews=${includeRecentReviews}`);
+      const response = await apiClient.get(
+        `/ratings/summary/consultant/${consultantId}?includeRecentReviews=${includeRecentReviews}`
+      );
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy tổng hợp đánh giá tư vấn viên");
+        throw new Error(
+          response.data.message || 'Không thể lấy tổng hợp đánh giá tư vấn viên'
+        );
       }
       return response.data.data;
     } catch (error) {
@@ -409,11 +481,18 @@ const reviewService = {
    * @param {boolean} includeRecentReviews - Có bao gồm đánh giá gần đây không
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  getSTIServiceRatingSummary: async (serviceId, includeRecentReviews = false) => {
+  getSTIServiceRatingSummary: async (
+    serviceId,
+    includeRecentReviews = false
+  ) => {
     try {
-      const response = await apiClient.get(`/ratings/summary/sti-service/${serviceId}?includeRecentReviews=${includeRecentReviews}`);
+      const response = await apiClient.get(
+        `/ratings/summary/sti-service/${serviceId}?includeRecentReviews=${includeRecentReviews}`
+      );
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy tổng hợp đánh giá dịch vụ STI");
+        throw new Error(
+          response.data.message || 'Không thể lấy tổng hợp đánh giá dịch vụ STI'
+        );
       }
       return response.data.data;
     } catch (error) {
@@ -428,11 +507,18 @@ const reviewService = {
    * @param {boolean} includeRecentReviews - Có bao gồm đánh giá gần đây không
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  getSTIPackageRatingSummary: async (packageId, includeRecentReviews = false) => {
+  getSTIPackageRatingSummary: async (
+    packageId,
+    includeRecentReviews = false
+  ) => {
     try {
-      const response = await apiClient.get(`/ratings/summary/sti-package/${packageId}?includeRecentReviews=${includeRecentReviews}`);
+      const response = await apiClient.get(
+        `/ratings/summary/sti-package/${packageId}?includeRecentReviews=${includeRecentReviews}`
+      );
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy tổng hợp đánh giá gói STI");
+        throw new Error(
+          response.data.message || 'Không thể lấy tổng hợp đánh giá gói STI'
+        );
       }
       return response.data.data;
     } catch (error) {
@@ -448,13 +534,17 @@ const reviewService = {
    */
   getTestimonials: async (limit = 5) => {
     try {
-      const response = await apiClient.get(`/ratings/testimonials?limit=${limit}`);
+      const response = await apiClient.get(
+        `/ratings/testimonials?limit=${limit}`
+      );
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy lời chứng thực");
+        throw new Error(
+          response.data.message || 'Không thể lấy lời chứng thực'
+        );
       }
       return response.data.data;
     } catch (error) {
-      console.error("Lỗi lấy lời chứng thực:", error);
+      console.error('Lỗi lấy lời chứng thực:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -472,36 +562,27 @@ const reviewService = {
    * @param {string} keyword - Tìm kiếm theo từ khóa
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  getAllReviews: async (page = 0, size = 20, sort = "newest", filterRating = null, keyword = null) => {
+  getAllReviews: async (
+    page = 0,
+    size = 20,
+    sort = 'newest',
+    filterRating = null,
+    keyword = null
+  ) => {
     try {
       let url = `/ratings/staff/all?page=${page}&size=${size}&sort=${sort}`;
       if (filterRating) url += `&filterRating=${filterRating}`;
       if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-      
+
       const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy tất cả đánh giá");
+        throw new Error(
+          response.data.message || 'Không thể lấy tất cả đánh giá'
+        );
       }
       return response.data.data;
     } catch (error) {
-      console.error("Lỗi lấy tất cả đánh giá:", error);
-      throw new Error(error.response?.data?.message || error.message);
-    }
-  },
-
-  /**
-   * [NHÂN VIÊN/QUẢN TRỊ] Lấy thống kê tổng quan
-   * @returns {Promise} Promise chứa kết quả từ API
-   */
-  getRatingStatistics: async () => {
-    try {
-      const response = await apiClient.get(`/ratings/staff/statistics`);
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy thống kê đánh giá");
-      }
-      return response.data.data;
-    } catch (error) {
-      console.error("Lỗi lấy thống kê đánh giá:", error);
+      console.error('Lỗi lấy tất cả đánh giá:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -515,19 +596,27 @@ const reviewService = {
    * @param {string} keyword - Từ khóa tìm kiếm
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  getConsultationReviews: async (page = 0, size = 20, sort = "newest", filterRating = null, keyword = null) => {
+  getConsultationReviews: async (
+    page = 0,
+    size = 20,
+    sort = 'newest',
+    filterRating = null,
+    keyword = null
+  ) => {
     try {
       let url = `/ratings/staff/consultation?page=${page}&size=${size}&sort=${sort}`;
       if (filterRating) url += `&filterRating=${filterRating}`;
       if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-      
+
       const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy đánh giá tư vấn");
+        throw new Error(
+          response.data.message || 'Không thể lấy đánh giá tư vấn'
+        );
       }
       return response.data.data;
     } catch (error) {
-      console.error("Lỗi lấy đánh giá tư vấn:", error);
+      console.error('Lỗi lấy đánh giá tư vấn:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -541,19 +630,27 @@ const reviewService = {
    * @param {string} keyword - Từ khóa tìm kiếm
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  getSTIServiceReviewsForStaff: async (page = 0, size = 20, sort = "newest", filterRating = null, keyword = null) => {
+  getSTIServiceReviewsForStaff: async (
+    page = 0,
+    size = 20,
+    sort = 'newest',
+    filterRating = null,
+    keyword = null
+  ) => {
     try {
       let url = `/ratings/staff/sti-service?page=${page}&size=${size}&sort=${sort}`;
       if (filterRating) url += `&filterRating=${filterRating}`;
       if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-      
+
       const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy đánh giá dịch vụ STI");
+        throw new Error(
+          response.data.message || 'Không thể lấy đánh giá dịch vụ STI'
+        );
       }
       return response.data.data;
     } catch (error) {
-      console.error("Lỗi lấy đánh giá dịch vụ STI:", error);
+      console.error('Lỗi lấy đánh giá dịch vụ STI:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -567,19 +664,27 @@ const reviewService = {
    * @param {string} keyword - Từ khóa tìm kiếm
    * @returns {Promise} Promise chứa kết quả từ API
    */
-  getSTIPackageReviewsForStaff: async (page = 0, size = 20, sort = "newest", filterRating = null, keyword = null) => {
+  getSTIPackageReviewsForStaff: async (
+    page = 0,
+    size = 20,
+    sort = 'newest',
+    filterRating = null,
+    keyword = null
+  ) => {
     try {
       let url = `/ratings/staff/sti-package?page=${page}&size=${size}&sort=${sort}`;
       if (filterRating) url += `&filterRating=${filterRating}`;
       if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-      
+
       const response = await apiClient.get(url);
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể lấy đánh giá gói STI");
+        throw new Error(
+          response.data.message || 'Không thể lấy đánh giá gói STI'
+        );
       }
       return response.data.data;
     } catch (error) {
-      console.error("Lỗi lấy đánh giá gói STI:", error);
+      console.error('Lỗi lấy đánh giá gói STI:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -592,13 +697,16 @@ const reviewService = {
    */
   createReply: async (ratingId, replyData) => {
     try {
-      const response = await apiClient.post(`/ratings/staff/reply/${ratingId}`, replyData);
+      const response = await apiClient.post(
+        `/ratings/staff/reply/${ratingId}`,
+        replyData
+      );
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể tạo phản hồi");
+        throw new Error(response.data.message || 'Không thể tạo phản hồi');
       }
       return response.data;
     } catch (error) {
-      console.error("Lỗi tạo phản hồi đánh giá:", error);
+      console.error('Lỗi tạo phản hồi đánh giá:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -611,13 +719,16 @@ const reviewService = {
    */
   updateReply: async (ratingId, replyData) => {
     try {
-      const response = await apiClient.put(`/ratings/staff/reply/${ratingId}`, replyData);
+      const response = await apiClient.put(
+        `/ratings/staff/reply/${ratingId}`,
+        replyData
+      );
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể cập nhật phản hồi");
+        throw new Error(response.data.message || 'Không thể cập nhật phản hồi');
       }
       return response.data;
     } catch (error) {
-      console.error("Lỗi cập nhật phản hồi đánh giá:", error);
+      console.error('Lỗi cập nhật phản hồi đánh giá:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -637,7 +748,7 @@ const reviewService = {
         return await reviewService.createReply(ratingId, replyData);
       }
     } catch (error) {
-      console.error("Lỗi phản hồi đánh giá:", error);
+      console.error('Lỗi phản hồi đánh giá:', error);
       throw error;
     }
   },
@@ -659,13 +770,15 @@ const reviewService = {
    */
   deleteStaffReply: async (ratingId) => {
     try {
-      const response = await apiClient.delete(`/ratings/staff/reply/${ratingId}`);
+      const response = await apiClient.delete(
+        `/ratings/staff/reply/${ratingId}`
+      );
       if (!response.data.success) {
-        throw new Error(response.data.message || "Không thể xóa phản hồi");
+        throw new Error(response.data.message || 'Không thể xóa phản hồi');
       }
       return response.data;
     } catch (error) {
-      console.error("Lỗi xóa phản hồi đánh giá:", error);
+      console.error('Lỗi xóa phản hồi đánh giá:', error);
       throw new Error(error.response?.data?.message || error.message);
     }
   },
@@ -690,8 +803,8 @@ const reviewService = {
    * @deprecated Sử dụng các phương thức nhân viên thay thế
    */
   approveReview: async (id) => {
-    console.warn("approveReview đã lỗi thời - đánh giá được tự động phê duyệt");
-    return { success: true, message: "Không cần phê duyệt đánh giá" };
+    console.warn('approveReview đã lỗi thời - đánh giá được tự động phê duyệt');
+    return { success: true, message: 'Không cần phê duyệt đánh giá' };
   },
 
   /**

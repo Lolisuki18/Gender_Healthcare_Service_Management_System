@@ -42,7 +42,6 @@ import STITestsContent from './STITestsContent';
 import MyReviewsContent from './MyReviewsContent';
 import MedicalHistoryContent from '../siderBar/MedicalHistoryContent';
 import InvoicesContent from '../siderBar/InvoicesContent';
-import MyBlogPage from '../siderBar/MyBlogPage';
 import PaymentMethodsSection from '../CustomerProfile/PaymentMethodsSection';
 
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({

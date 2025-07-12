@@ -25,6 +25,7 @@ import {
 import { Add, Edit, Delete } from '@mui/icons-material';
 import blogService from '@/services/blogService';
 import stiService from '@/services/stiService';
+import categoriesService from '@/services/categoryService';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -67,7 +68,7 @@ const CategoryManagementContent = () => {
   const fetchBlogCategories = async () => {
     setLoadingBlog(true);
     try {
-      const data = await blogService.getCategories();
+      const data = await categoriesService.getCategories();
       setBlogCategories(Array.isArray(data) ? data : []);
     } catch (e) {
       setSnackbar({
@@ -83,7 +84,7 @@ const CategoryManagementContent = () => {
   const fetchQuestionCategories = async () => {
     setLoadingQuestion(true);
     try {
-      const data = await stiService.getQuestionCategories();
+      const data = await categoriesService.getQuestionCategories();
       setQuestionCategories(Array.isArray(data) ? data : []);
     } catch (e) {
       setSnackbar({
@@ -120,14 +121,14 @@ const CategoryManagementContent = () => {
       // Blog
       try {
         if (dialogType === 'add') {
-          await blogService.createCategory(currentCategory);
+          await categoriesService.createCategory(currentCategory);
           setSnackbar({
             open: true,
             message: 'Thêm danh mục blog thành công',
             severity: 'success',
           });
         } else {
-          await blogService.updateCategory(editId, currentCategory);
+          await categoriesService.updateCategory(editId, currentCategory);
           setSnackbar({
             open: true,
             message: 'Cập nhật danh mục blog thành công',
@@ -147,14 +148,17 @@ const CategoryManagementContent = () => {
       // Question
       try {
         if (dialogType === 'add') {
-          await stiService.createQuestionCategory(currentCategory);
+          await categoriesService.createQuestionCategory(currentCategory);
           setSnackbar({
             open: true,
             message: 'Thêm danh mục câu hỏi thành công',
             severity: 'success',
           });
         } else {
-          await stiService.updateQuestionCategory(editId, currentCategory);
+          await categoriesService.updateQuestionCategory(
+            editId,
+            currentCategory
+          );
           setSnackbar({
             open: true,
             message: 'Cập nhật danh mục câu hỏi thành công',
@@ -175,7 +179,7 @@ const CategoryManagementContent = () => {
   const handleDeleteCategory = async (id) => {
     if (tab === 0) {
       try {
-        await blogService.deleteCategory(id);
+        await categoriesService.deleteCategory(id);
         setSnackbar({
           open: true,
           message: 'Xóa danh mục blog thành công',
@@ -191,7 +195,7 @@ const CategoryManagementContent = () => {
       }
     } else {
       try {
-        await stiService.deleteQuestionCategory(id);
+        await categoriesService.deleteQuestionCategory(id);
         setSnackbar({
           open: true,
           message: 'Xóa danh mục câu hỏi thành công',

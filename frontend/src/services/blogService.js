@@ -103,40 +103,6 @@ const blogService = {
   },
 
   /**
-   * Xuất bản bài viết
-   * @param {number} id ID của bài viết
-   * @returns {Promise} Promise chứa kết quả từ API
-   */
-  publishBlog: async (id) => {
-    try {
-      const response = await apiClient.put(`/blog/${id}/publish`);
-      if (!response.data.success) {
-        throw new Error(response.data.message || 'Failed to publish blog');
-      }
-      return response.data.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || error.message);
-    }
-  },
-
-  /**
-   * Gỡ xuất bản bài viết
-   * @param {number} id ID của bài viết
-   * @returns {Promise} Promise chứa kết quả từ API
-   */
-  unpublishBlog: async (id) => {
-    try {
-      const response = await apiClient.put(`/blog/${id}/unpublish`);
-      if (!response.data.success) {
-        throw new Error(response.data.message || 'Failed to unpublish blog');
-      }
-      return response.data.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || error.message);
-    }
-  },
-
-  /**
    * Cập nhật trạng thái bài viết
    * @param {number} id ID của bài viết
    * @param {Object} statusData Dữ liệu trạng thái {status, rejectionReason?}
@@ -148,24 +114,6 @@ const blogService = {
       if (!response.data.success) {
         throw new Error(
           response.data.message || 'Failed to update blog status'
-        );
-      }
-      return response.data.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || error.message);
-    }
-  },
-
-  /**
-   * Lấy danh sách các danh mục blog
-   * @returns {Promise} Promise chứa kết quả từ API
-   */
-  getCategories: async () => {
-    try {
-      const response = await apiClient.get('/categories');
-      if (!response.data.success) {
-        throw new Error(
-          response.data.message || 'Failed to fetch blog categories'
         );
       }
       return response.data.data;
@@ -388,8 +336,8 @@ const blogService = {
         params: { page, size, sortBy, sortDir },
       });
 
-      // Log response để debug
-      console.log(`GET /blog/category/${categoryId} response:`, response.data);
+      // // Log response để debug
+      // console.log(`GET /blog/category/${categoryId} response:`, response.data);
 
       if (!response.data.success) {
         throw new Error(

@@ -48,7 +48,6 @@ import SecurityContent from '../siderBar/SecurityContent';
 import MedicalHistoryContent from '../siderBar/MedicalHistoryContent';
 import InvoicesContent from '../siderBar/InvoicesContent';
 import PaymentMethodsSection from '../CustomerProfile/PaymentMethodsSection';
-import MyBlogPage from '../siderBar/MyBlogPage';
 
 // Styled component cho nội dung chính
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({

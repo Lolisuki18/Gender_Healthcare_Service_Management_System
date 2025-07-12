@@ -19,19 +19,19 @@ export const adminService = {
   //Hàm lấy toàn bộ người dùng
   getAllUsers: async () => {
     try {
-      console.log('Making API call to: /admin/users');
+      // console.log('Making API call to: /admin/users');
       const response = await apiClient.get(`/admin/users`);
 
-      // ✅ Log để debug structure
-      console.log('Raw API Response:', response);
-      console.log('Response data:', response.data);
-      console.log('Response structure:', {
-        success: response.data?.success,
-        dataType: Array.isArray(response.data?.data),
-        dataLength: response.data?.data?.length,
-      });
+      // Log để debug structure
+      // console.log('Raw API Response:', response);
+      // console.log('Response data:', response.data);
+      // console.log('Response structure:', {
+      //   success: response.data?.success,
+      //   dataType: Array.isArray(response.data?.data),
+      //   dataLength: response.data?.data?.length,
+      // });
 
-      // ✅ Backend trả về ApiResponse với structure: { success, message, data }
+      // Backend trả về ApiResponse với structure: { success, message, data }
       if (response.data && response.data.success) {
         return {
           success: true,
@@ -43,13 +43,13 @@ export const adminService = {
       }
     } catch (error) {
       console.error('AdminService.getAllUsers error:', error);
-      console.error('Error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-      });
+      // console.error('Error details:', {
+      //   status: error.response?.status,
+      //   statusText: error.response?.statusText,
+      //   data: error.response?.data,
+      // });
 
-      // ✅ Handle different error types
+      // Handle different error types
       if (error.response?.status === 404) {
         throw new Error('API endpoint not found');
       }
@@ -97,40 +97,12 @@ export const adminService = {
 
   //================================================Xoá thông tin=================================================
 
-  // Xóa customer theo ID
-  deleteCustomer: async (customerId) => {
-    try {
-      const response = await apiClient.delete(`/admin/customer/${customerId}`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
   // Xóa consultant (bao gồm cả profile nếu có)
   deleteConsultant: async (consultantId) => {
     try {
       const response = await apiClient.delete(
         `/admin/consultants/${consultantId}`
       );
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-  //xoá staff theo id
-  deleteStaff: async (staffId) => {
-    try {
-      const response = await apiClient.delete(`/admin/consultants/${staffId}`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-  //xoá admin theo id
-  deleteAdmin: async (adminId) => {
-    try {
-      const response = await apiClient.delete(`/admin/admins/${adminId}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -167,31 +139,6 @@ export const adminService = {
   },
 
   //=================================================Utility Methods=================================================
-
-  // Kiểm tra xem consultant có profile hay không
-  checkConsultantProfile: async (consultantId) => {
-    try {
-      const response = await apiClient.head(
-        `/admin/consultants/${consultantId}/profile`
-      );
-      return true; // Profile exists
-    } catch (error) {
-      if (error.response?.status === 404) {
-        return false; // Profile doesn't exist
-      }
-      throw error.response?.data || error;
-    }
-  },
-
-  // Get statistics
-  getUserStatistics: async () => {
-    try {
-      const response = await apiClient.get('/admin/users/statistics');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
 
   // Lấy tổng quan doanh thu
   getRevenueSummary: async (params = {}) => {

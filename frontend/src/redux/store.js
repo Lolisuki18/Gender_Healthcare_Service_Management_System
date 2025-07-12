@@ -15,21 +15,21 @@
  * - Cấu hình chỉ lưu trữ các state quan trọng (whitelist)
  */
 
-import { configureStore } from "@reduxjs/toolkit";
-import { combineReducers } from "redux";
-import { persistStore, persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage";
+import { configureStore } from '@reduxjs/toolkit';
+import { combineReducers } from 'redux';
+import { persistStore, persistReducer } from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
 
 // Import các reducers
-import authReducer from "./slices/authSlice";
-import stiTestsReducer from "./slices/stiTestsSlice";
-import localStorageMiddleware from "./middleware/localStorageMiddleware";
+import authReducer from './slices/authSlice';
+import stiTestsReducer from './slices/stiTestsSlice';
+import localStorageMiddleware from './middleware/localStorageMiddleware';
 
 // Cấu hình Redux Persist
 const persistConfig = {
-  key: "root",
+  key: 'root',
   storage,
-  whitelist: ["auth"], // Chỉ lưu trữ state auth
+  whitelist: ['auth'], // Chỉ lưu trữ state auth
 };
 
 // Kết hợp các reducer
@@ -48,10 +48,10 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ["persist/PERSIST"],
+        ignoredActions: ['persist/PERSIST'],
       },
     }).concat(localStorageMiddleware),
-  devTools: process.env.NODE_ENV !== "production",
+  devTools: process.env.NODE_ENV !== 'production',
 });
 
 // Tạo persistor
