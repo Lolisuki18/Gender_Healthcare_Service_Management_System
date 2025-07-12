@@ -2,6 +2,7 @@ package com.healapp.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
@@ -329,15 +330,32 @@ public class NotificationService {
         }
 
         LocalDate today = LocalDate.now();
-        boolean pillReminderSent = false;
+        LocalTime currentTime = LocalTime.now();
 
         for (ControlPills schedule : activePillSchedules) {
-            Optional<PillLogs> todayPillLog = pillLogsRepository.findByControlPillsAndLogDate(schedule, today);
-            
-            if (todayPillLog.isPresent()) {
-                PillLogs log = todayPillLog.get();
-                // Kiểm tra nếu thời gian nhắc nhở đã đến hoặc đã qua
-                if (!java.time.LocalTime.now().isBefore(schedule.getRemindTime())) {
+            // 1. Kiểm tra xem thời gian nhắc nhở cho lịch trình này đã qua hoặc đang đến chưa
+            if (!currentTime.isBefore(schedule.getRemindTime())) {
+                // 2. Kiểm tra tất cả các nhật ký uống thuốc đã tồn tại cho hôm nay đối với lịch trình cụ thể này
+                Optional<PillLogs> todayPillLogOptional = pillLogsRepository.findByControlPillsAndLogDate(schedule, today);
+
+                boolean alreadyCheckedIn = todayPillLogOptional.isPresent() && todayPillLogOptional.get().getStatus();
+                boolean logExistsForToday = todayPillLogOptional.isPresent();
+
+                if (alreadyCheckedIn) {
+                    // Nếu đã có log đã check-in cho hôm nay, bỏ qua việc gửi nhắc nhở
+                    logger.info("Bỏ qua lời nhắc nhở uống thuốc cho lịch trình ID {} (người dùng ID {}): Đã check-in cho hôm nay.",
+                               schedule.getPillsId(), userId);
+                } else if (!logExistsForToday) {
+                    // Nếu chưa có log nào cho hôm nay, tạo log mới (ban đầu là bỏ lỡ) và gửi nhắc nhở
+                    PillLogs newPillLog = new PillLogs();
+                    newPillLog.setControlPills(schedule);
+                    newPillLog.setLogDate(today);
+                    newPillLog.setStatus(false); // Mặc định là bỏ lỡ, người dùng có thể check-in sau
+                    newPillLog.setCreatedAt(LocalDateTime.now()); // Đặt thời gian tạo
+                    newPillLog.setUpdatedAt(LocalDateTime.now()); // Đặt thời gian cập nhật
+                    pillLogsRepository.save(newPillLog); // Lưu nhật ký trước
+
+                    // Bây giờ, gửi thông báo
                     Notification notification = new Notification();
                     notification.setUser(user);
                     notification.setTitle("Nhắc nhở uống thuốc");
@@ -349,28 +367,26 @@ public class NotificationService {
                         emailService.sendPillReminderAsync(user.getEmail(), user.getFullName(), schedule.getRemindTime());
                         notification.setStatus(NotificationStatus.SENT);
                         notification.setSentAt(LocalDateTime.now());
-                        logger.info("Successfully sent pill reminder email to user {} ({}) for schedule ID {}", 
+                        logger.info("Đã gửi email nhắc nhở uống thuốc thành công cho người dùng {} ({}) cho lịch trình ID {}", 
                                    user.getFullName(), user.getEmail(), schedule.getPillsId());
-                        pillReminderSent = true;
                     } catch (Exception ex) {
                         notification.setStatus(NotificationStatus.FAILED);
                         notification.setErrorMessage(ex.getMessage());
-                        logger.error("Failed to send pill reminder email to user {} ({}) for schedule ID {}. Reason: {}", 
+                        logger.error("Không thể gửi email nhắc nhở uống thuốc cho người dùng {} ({}) cho lịch trình ID {}. Lý do: {}", 
                                     user.getFullName(), user.getEmail(), schedule.getPillsId(), ex.getMessage(), ex);
                     }
                     notificationRepository.save(notification);
-                    logger.info("Pill reminder notification record saved for user ID: {} with status: {}", 
+                    logger.info("Đã lưu bản ghi thông báo nhắc nhở uống thuốc cho người dùng ID: {} với trạng thái: {}", 
                                userId, notification.getStatus());
                 } else {
-                    logger.info("Skipping pill reminder for schedule ID {} (user ID {}): Reminder time not yet reached.", 
+                    // Log tồn tại nhưng chưa check-in, không gửi thêm nhắc nhở để tránh spam
+                    logger.info("Bỏ qua lời nhắc nhở uống thuốc cho lịch trình ID {} (người dùng ID {}): Log tồn tại nhưng chưa check-in.",
                                schedule.getPillsId(), userId);
                 }
             } else {
-                logger.info("No pill log found for today for schedule ID {} (user ID {})", schedule.getPillsId(), userId);
+                logger.info("Bỏ qua lời nhắc nhở uống thuốc cho lịch trình ID {} (người dùng ID {}): Thời gian nhắc nhở chưa đến.", 
+                           schedule.getPillsId(), userId);
             }
-        }
-        if (!pillReminderSent) {
-            logger.info("No pill reminders sent for user ID {} today.", userId);
         }
     }
 

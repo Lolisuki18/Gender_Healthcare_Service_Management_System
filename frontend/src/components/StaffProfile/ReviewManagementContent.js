@@ -800,244 +800,188 @@ const ReviewManagementContent = () => {
           sx={{
             background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
             color: '#fff',
-            fontWeight: 600,
-            boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+            fontWeight: 700,
+            fontSize: '22px',
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
+            justifyContent: 'space-between',
+            borderRadius: '16px 16px 0 0',
+            boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
+            py: 2,
+            px: 3
           }}
         >
-          <span>Chi tiết đánh giá</span>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <StarBorderIcon sx={{ fontSize: 32 }} />
+            <span>Chi tiết đánh giá</span>
+          </Box>
           <IconButton
             size="small"
             onClick={handleCloseViewDialog}
-            sx={{ color: 'white' }}
+            sx={{ color: 'white', ml: 2 }}
           >
             <CloseIcon />
           </IconButton>
-        </DialogTitle>{' '}
-        <DialogContent sx={{ pt: 3 }}>
-          <Grid container spacing={3}>
-            {/* Thông tin cơ bản */}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 4, pb: 3, px: { xs: 2, md: 5 }, bgcolor: '#F7FAFC' }}>
+          <Grid container spacing={4}>
+            {/* Thông tin khách hàng và dịch vụ */}
             <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Mã đánh giá
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                #{currentReview?.ratingId || 'N/A'}
-              </Typography>
-
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                sx={{ mt: 2 }}
-              >
-                Khách hàng
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Avatar
-                  src={currentReview?.userAvatar}
-                  alt={currentReview?.userFullName}
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    mr: 2,
-                    bgcolor: theme.palette.primary.main,
-                  }}
-                >
-                  {currentReview?.userFullName?.[0] || 'U'}
-                </Avatar>
-                <Box>
-                  <Typography variant="body1" fontWeight={500}>
-                    {currentReview?.userFullName || 'Khách hàng'}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    ID: {currentReview?.userId || 'N/A'}
+              <Box sx={{
+                background: 'white',
+                borderRadius: 4,
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.10)',
+                p: 3,
+                mb: 2
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Avatar
+                    src={currentReview?.userAvatar}
+                    alt={currentReview?.userFullName}
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      mr: 2,
+                      bgcolor: theme.palette.primary.main,
+                      fontSize: 28,
+                      boxShadow: '0 4px 16px rgba(74, 144, 226, 0.15)'
+                    }}
+                  >
+                    {currentReview?.userFullName?.[0] || 'U'}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" fontWeight={600} sx={{ color: '#2D3748' }}>
+                      {currentReview?.userFullName || 'Khách hàng'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      ID: {currentReview?.userId || 'N/A'}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+                  Dịch vụ
+                </Typography>
+                <Typography variant="body1" gutterBottom sx={{ fontWeight: 500 }}>
+                  {currentReview?.targetName || 'Không xác định'}
+                </Typography>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+                  Loại dịch vụ
+                </Typography>
+                <Typography variant="body1" gutterBottom>
+                  {currentReview?.targetType === 'CONSULTANT' && 'Tư vấn'}
+                  {currentReview?.targetType === 'STI_SERVICE' && 'Dịch vụ STI'}
+                  {currentReview?.targetType === 'STI_PACKAGE' && 'Gói STI'}
+                  {!currentReview?.targetType && 'Không xác định'}
+                </Typography>
+                {currentReview?.targetId && (
+                  <>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+                      ID Dịch vụ/Tư vấn viên
+                    </Typography>
+                    <Typography variant="body1" gutterBottom>
+                      {currentReview.targetId}
+                    </Typography>
+                  </>
+                )}
+              </Box>
+            </Grid>
+            {/* Đánh giá và nội dung */}
+            <Grid item xs={12} md={6}>
+              <Box sx={{
+                background: 'white',
+                borderRadius: 4,
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.10)',
+                p: 3,
+                mb: 2
+              }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Ngày đánh giá
+                </Typography>
+                <Typography variant="body1" gutterBottom>
+                  {currentReview?.createdAt 
+                    ? (Array.isArray(currentReview.createdAt) 
+                        ? new Date(currentReview.createdAt[0], currentReview.createdAt[1] - 1, currentReview.createdAt[2], currentReview.createdAt[3] || 0, currentReview.createdAt[4] || 0, currentReview.createdAt[5] || 0).toLocaleString('vi-VN')
+                        : new Date(currentReview.createdAt).toLocaleString('vi-VN'))
+                    : 'N/A'}
+                </Typography>
+                {currentReview?.updatedAt && (
+                  <>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+                      Cập nhật lần cuối
+                    </Typography>
+                    <Typography variant="body1" gutterBottom>
+                      {Array.isArray(currentReview.updatedAt) 
+                        ? new Date(currentReview.updatedAt[0], currentReview.updatedAt[1] - 1, currentReview.updatedAt[2], currentReview.updatedAt[3] || 0, currentReview.updatedAt[4] || 0, currentReview.updatedAt[5] || 0).toLocaleString('vi-VN')
+                        : new Date(currentReview.updatedAt).toLocaleString('vi-VN')}
+                    </Typography>
+                  </>
+                )}
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+                  Đánh giá
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Rating
+                    value={currentReview?.rating || 0}
+                    readOnly
+                    size="large"
+                    emptyIcon={<StarBorderIcon fontSize="inherit" />}
+                    sx={{ color: '#FFB400', mr: 1, fontSize: 32 }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    ({currentReview?.rating || 0}/5 sao)
                   </Typography>
                 </Box>
+                {/* Quyền chỉnh sửa */}
+                {typeof currentReview?.canEdit !== 'undefined' && (
+                  <>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+                      Quyền chỉnh sửa
+                    </Typography>
+                    <Chip
+                      size="small"
+                      label={currentReview.canEdit ? 'Có thể chỉnh sửa' : 'Không thể chỉnh sửa'}
+                      color={currentReview.canEdit ? 'success' : 'default'}
+                      variant="outlined"
+                    />
+                  </>
+                )}
               </Box>
-
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                sx={{ mt: 2 }}
-              >
-                Loại dịch vụ
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {currentReview?.targetType === 'CONSULTANT' && 'Tư vấn'}
-                {currentReview?.targetType === 'STI_SERVICE' && 'Dịch vụ STI'}
-                {currentReview?.targetType === 'STI_PACKAGE' && 'Gói STI'}
-                {!currentReview?.targetType && 'Không xác định'}
-              </Typography>
-
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                sx={{ mt: 2 }}
-              >
-                Tên dịch vụ/Tư vấn viên
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {currentReview?.targetName || 'Không xác định'}
-              </Typography>
-
-              {currentReview?.targetId && (
-                <>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{ mt: 2 }}
-                  >
-                    ID Dịch vụ/Tư vấn viên
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {currentReview.targetId}
-                  </Typography>
-                </>
-              )}
             </Grid>
-
-            {/* Thông tin đánh giá */}
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Ngày đánh giá
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {currentReview?.createdAt 
-                  ? (Array.isArray(currentReview.createdAt) 
-                      ? new Date(currentReview.createdAt[0], currentReview.createdAt[1] - 1, currentReview.createdAt[2], currentReview.createdAt[3] || 0, currentReview.createdAt[4] || 0, currentReview.createdAt[5] || 0).toLocaleString('vi-VN')
-                      : new Date(currentReview.createdAt).toLocaleString('vi-VN'))
-                  : 'N/A'}
-              </Typography>
-
-              {currentReview?.updatedAt && (
-                <>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{ mt: 2 }}
-                  >
-                    Cập nhật lần cuối
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {Array.isArray(currentReview.updatedAt) 
-                      ? new Date(currentReview.updatedAt[0], currentReview.updatedAt[1] - 1, currentReview.updatedAt[2], currentReview.updatedAt[3] || 0, currentReview.updatedAt[4] || 0, currentReview.updatedAt[5] || 0).toLocaleString('vi-VN')
-                      : new Date(currentReview.updatedAt).toLocaleString('vi-VN')}
-                  </Typography>
-                </>
-              )}
-
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                sx={{ mt: 2 }}
-              >
-                Đánh giá
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Rating
-                  value={currentReview?.rating || 0}
-                  readOnly
-                  emptyIcon={<StarBorderIcon fontSize="inherit" />}
-                  sx={{ color: theme.palette.warning.main, mr: 1 }}
-                />
-                <Typography variant="body2" color="text.secondary">
-                  ({currentReview?.rating || 0}/5 sao)
-                </Typography>
-              </Box>
-
-              {/* Thông tin liên kết */}
-              {currentReview?.consultationId && (
-                <>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{ mt: 2 }}
-                  >
-                    ID Cuộc tư vấn
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {currentReview.consultationId}
-                  </Typography>
-                </>
-              )}
-
-              {currentReview?.stiTestId && (
-                <>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{ mt: 2 }}
-                  >
-                    ID Bài test STI
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {currentReview.stiTestId}
-                  </Typography>
-                </>
-              )}
-
-              {/* Quyền chỉnh sửa */}
-              {typeof currentReview?.canEdit !== 'undefined' && (
-                <>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{ mt: 2 }}
-                  >
-                    Quyền chỉnh sửa
-                  </Typography>
-                  <Chip
-                    size="small"
-                    label={currentReview.canEdit ? 'Có thể chỉnh sửa' : 'Không thể chỉnh sửa'}
-                    color={currentReview.canEdit ? 'success' : 'default'}
-                    variant="outlined"
-                  />
-                </>
-              )}
-            </Grid>
-
             {/* Nội dung đánh giá */}
             <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="subtitle2" color="text.secondary">
-                Nội dung đánh giá
-              </Typography>
-              <Box
-                sx={{
-                  p: 2,
-                  mt: 1,
-                  bgcolor: alpha(theme.palette.background.default, 0.5),
-                  borderRadius: '4px',
-                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                }}
-              >
-                <Typography variant="body1">
+              <Box sx={{
+                p: 3,
+                mt: 1,
+                bgcolor: '#F5F7FA',
+                borderRadius: 4,
+                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.07)'
+              }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Nội dung đánh giá
+                </Typography>
+                <Typography variant="body1" sx={{ mt: 1 }}>
                   {currentReview?.comment || 'Không có nội dung đánh giá'}
                 </Typography>
               </Box>
             </Grid>
-
             {/* Phản hồi từ nhân viên */}
             {currentReview?.staffReply && (
               <Grid item xs={12}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Phản hồi từ nhân viên y tế
-                </Typography>
-                <Box
-                  sx={{
-                    p: 2,
-                    mt: 1,
-                    bgcolor: alpha(theme.palette.primary.light, 0.1),
-                    borderRadius: '4px',
-                    border: `1px solid ${alpha(theme.palette.primary.light, 0.2)}`,
-                  }}
-                >
-                  <Typography variant="body1" sx={{ mb: 1 }}>
+                <Box sx={{
+                  p: 3,
+                  mt: 1,
+                  bgcolor: 'rgba(26, 188, 156, 0.08)',
+                  borderRadius: 4,
+                  border: '1px solid #1ABC9C',
+                  boxShadow: '0 1px 3px rgba(26,188,156,0.07)'
+                }}>
+                  <Typography variant="subtitle2" color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <ReplyIcon sx={{ fontSize: 18 }} /> Phản hồi từ nhân viên y tế
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 1 }}>
                     {currentReview.staffReply}
                   </Typography>
-                  
                   {/* Thông tin người phản hồi */}
                   <Box sx={{ mt: 2, pt: 1, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
                     {currentReview?.repliedByName && (
@@ -1046,7 +990,6 @@ const ReviewManagementContent = () => {
                         {currentReview?.repliedById && ` (ID: ${currentReview.repliedById})`}
                       </Typography>
                     )}
-                    
                     {currentReview?.repliedAt && (
                       <Typography variant="caption" color="text.secondary" display="block">
                         <strong>Thời gian phản hồi:</strong> {
@@ -1060,7 +1003,6 @@ const ReviewManagementContent = () => {
                 </Box>
               </Grid>
             )}
-
             {/* Thông tin bổ sung */}
             {currentReview?.maskedUserName && currentReview.maskedUserName !== currentReview.userFullName && (
               <Grid item xs={12}>
@@ -1071,7 +1013,7 @@ const ReviewManagementContent = () => {
             )}
           </Grid>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
+        <DialogActions sx={{ p: 3, pt: 2 }}>
           {!currentReview?.staffReply ? (
             <Button
               onClick={() => {
@@ -1112,7 +1054,7 @@ const ReviewManagementContent = () => {
             >
               Sửa phản hồi
             </Button>
-          )}{' '}
+          )}
           <Button
             onClick={handleCloseViewDialog}
             variant="outlined"

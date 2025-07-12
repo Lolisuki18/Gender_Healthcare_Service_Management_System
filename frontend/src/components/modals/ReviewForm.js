@@ -182,7 +182,7 @@ const ReviewForm = ({
                     {review.serviceName}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#4A5568', fontWeight: 500 }}>
-                    {review.type === 'CONSULTANT' ? 'Tư vấn viên:' : 'Bác sĩ:'} {review.consultantName || 'Chuyên viên'}
+                    {review.maskedUserName || review.userFullName || 'Khách hàng'}
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
                     <Typography variant="caption" sx={{ color: '#6B7280' }}>

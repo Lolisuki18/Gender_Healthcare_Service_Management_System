@@ -221,14 +221,26 @@ public class ControlPillsService {
         List<PillLogs> logsToSave = new ArrayList<>();
     
         while (totalDays > 0) {
+            // Kiểm tra xem đã có log cho ngày này chưa
+            Optional<PillLogs> existingLog = pillLogsRepository.findByControlPillsAndLogDate(con, currentDate);
+            
             // Tạo các ngày uống thuốc
             for (int i = 0; i < drink && totalDays > 0; i++) {
-                PillLogs log = new PillLogs();
-                log.setControlPills(con);
-                log.setCreatedAt(LocalDateTime.now());
-                log.setUpdatedAt(LocalDateTime.now()); // Ensure updatedAt is set
-                log.setStatus(false); // chưa uống
-                log.setLogDate(currentDate);
+                PillLogs log;
+                Optional<PillLogs> innerExistingLog = pillLogsRepository.findByControlPillsAndLogDate(con, currentDate);
+                if (innerExistingLog.isPresent()) {
+                    log = innerExistingLog.get();
+                    // Cập nhật trạng thái và các trường khác nếu cần
+                    log.setStatus(false); // Đảm bảo trạng thái ban đầu là chưa uống
+                    log.setUpdatedAt(LocalDateTime.now());
+                } else {
+                    log = new PillLogs();
+                    log.setControlPills(con);
+                    log.setCreatedAt(LocalDateTime.now());
+                    log.setUpdatedAt(LocalDateTime.now());
+                    log.setStatus(false); // chưa uống
+                    log.setLogDate(currentDate);
+                }
                 logsToSave.add(log);
     
                 currentDate = currentDate.plusDays(1);
@@ -236,18 +248,27 @@ public class ControlPillsService {
             }
             if(placebo){
                 for(int i = 0; i < off && totalDays > 0; i++){
-                    PillLogs log = new PillLogs();
-                    log.setControlPills(con);
-                    log.setCreatedAt(LocalDateTime.now());
-                    log.setUpdatedAt(LocalDateTime.now()); // Ensure updatedAt is set
-                    log.setStatus(false);
-                    log.setLogDate(currentDate);
+                    PillLogs log;
+                    Optional<PillLogs> innerExistingLog = pillLogsRepository.findByControlPillsAndLogDate(con, currentDate);
+                    if (innerExistingLog.isPresent()) {
+                        log = innerExistingLog.get();
+                        log.setStatus(false); // Đảm bảo trạng thái ban đầu là chưa uống
+                        log.setUpdatedAt(LocalDateTime.now());
+                    } else {
+                        log = new PillLogs();
+                        log.setControlPills(con);
+                        log.setCreatedAt(LocalDateTime.now());
+                        log.setUpdatedAt(LocalDateTime.now());
+                        log.setStatus(false);
+                        log.setLogDate(currentDate);
+                    }
                     logsToSave.add(log);
                     
                     currentDate = currentDate.plusDays(1);
                     totalDays --;
                 }
             }else{
+                // Nếu không dùng giả dược, chỉ cần tăng ngày cho ngày nghỉ
                 currentDate = currentDate.plusDays(off);
                 totalDays -= off;
             }
@@ -330,5 +351,36 @@ public class ControlPillsService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         return userService.getUserIdFromUsername(username);
+    }
+
+    // Lấy lịch uống thuốc đang hoạt động của người dùng hiện tại
+    public ApiResponse<PillReminderDetailsResponse> getActivePillScheduleForCurrentUser() {
+        try {
+            Long userId = getCurrentUserId();
+            if (userId == null) {
+                return ApiResponse.error("Người dùng chưa được xác thực.");
+            }
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (!userOpt.isPresent()) {
+                return ApiResponse.error("Không tìm thấy người dùng.");
+            }
+            UserDtls currentUser = userOpt.get();
+
+            // Lấy danh sách các lịch đang hoạt động (thường chỉ có một)
+            Optional<List<ControlPills>> activeSchedulesOpt = controlPillsRepository.findByUserIdAndIsActive(currentUser, true);
+
+            if (activeSchedulesOpt.isEmpty() || activeSchedulesOpt.get().isEmpty()) {
+                return ApiResponse.error("Không tìm thấy lịch uống thuốc đang hoạt động cho người dùng này.");
+            }
+            
+            // Lấy lịch đầu tiên trong danh sách (giả định chỉ có một lịch hoạt động)
+            ControlPills activeSchedule = activeSchedulesOpt.get().get(0);
+
+            return getPillLogs(activeSchedule.getPillsId());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.error("Lỗi khi lấy lịch uống thuốc đang hoạt động: " + e.getMessage());
+        }
     }
 }

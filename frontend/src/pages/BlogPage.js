@@ -18,7 +18,9 @@ import {
   Link,
   Button,
   Fab,
-  Tooltip
+  Tooltip,
+  DialogTitle,
+  DialogActions
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
@@ -26,15 +28,43 @@ import HomeIcon from '@mui/icons-material/Home';
 import AddIcon from '@mui/icons-material/Add';
 import blogService from '@/services/blogService';
 import BlogCard from '@/components/common/BlogCard';
+import BlogForm from '@/components/common/BlogForm';
+import Dialog from '@mui/material/Dialog';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 
 const BlogPage = () => {
   // ===== STATE MANAGEMENT =====
   const [blogs, setBlogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [openBlogForm, setOpenBlogForm] = useState(false);
+  const [form, setForm] = useState({
+    title: '',
+    content: '',
+    categoryId: '',
+    thumbnail: null,
+    existingThumbnail: '',
+    sections: []
+  });
+  const [categories, setCategories] = useState([]);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState('');
+  const [sectionFiles, setSectionFiles] = useState({});
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const cats = await blogService.getCategories();
+        setCategories(cats);
+      } catch (e) {
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const navigate = useNavigate();
   const blogsPerPage = 6;
@@ -198,7 +228,129 @@ const BlogPage = () => {
   };
 
   const handleCreateBlog = () => {
-    navigate('/blog/create');
+    setOpenBlogForm(true);
+  };
+
+  const handleCloseBlogForm = () => {
+    setOpenBlogForm(false);
+    setForm({
+      title: '',
+      content: '',
+      categoryId: '',
+      thumbnail: null,
+      existingThumbnail: '',
+      sections: []
+    });
+    setThumbnailFile(null);
+    setThumbnailPreview('');
+    setSectionFiles({});
+  };
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setThumbnailFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setThumbnailPreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+  const handleSectionChange = (index, field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      sections: prev.sections.map((section, i) =>
+        i === index ? { ...section, [field]: value } : section
+      )
+    }));
+  };
+  const addSection = () => {
+    setForm((prev) => ({
+      ...prev,
+      sections: [...prev.sections, {
+        sectionTitle: '',
+        sectionContent: '',
+        sectionImage: '',
+        existingSectionImage: '',
+        displayOrder: prev.sections.length
+      }]
+    }));
+  };
+  const removeSection = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      sections: prev.sections.filter((_, i) => i !== index)
+    }));
+    setSectionFiles(prev => {
+      const newFiles = { ...prev };
+      delete newFiles[index];
+      return newFiles;
+    });
+  };
+  const handleSectionImageChange = (index, file) => {
+    if (file) {
+      setSectionFiles(prev => ({ ...prev, [index]: file }));
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setForm(prev => ({
+          ...prev,
+          sections: prev.sections.map((section, i) =>
+            i === index ? { ...section, sectionImage: e.target.result } : section
+          )
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  const handleSubmitBlog = async () => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      const requestData = {
+        title: form.title,
+        content: form.content,
+        categoryId: parseInt(form.categoryId),
+        sections: form.sections
+          .filter(section => section.sectionTitle || section.sectionContent)
+          .map((section, index) => ({
+            sectionTitle: section.sectionTitle || '',
+            sectionContent: section.sectionContent || '',
+            sectionImage: section.sectionImage || '',
+            existingSectionImage: section.existingSectionImage || '',
+            displayOrder: index
+          })),
+        status: 'PROCESSING'
+      };
+      formData.append('request', new Blob([JSON.stringify(requestData)], { type: 'application/json' }));
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      }
+      const sectionImages = [];
+      const sectionImageIndexes = [];
+      Object.keys(sectionFiles).forEach(index => {
+        sectionImages.push(sectionFiles[index]);
+        sectionImageIndexes.push(parseInt(index));
+      });
+      if (sectionImages.length > 0) {
+        sectionImages.forEach((file) => {
+          formData.append('sectionImages', file);
+        });
+        sectionImageIndexes.forEach(index => {
+          formData.append('sectionImageIndexes', index);
+        });
+      }
+      await blogService.createBlog(formData);
+      setOpenBlogForm(false);
+      // Reload blogs
+      // fetchBlogs();
+    } catch (e) {
+      // handle error
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ===== RENDER =====
@@ -683,6 +835,94 @@ const BlogPage = () => {
           <AddIcon sx={{ fontSize: 28 }} />
         </Fab>
       </Tooltip>
+
+      <Dialog open={openBlogForm} onClose={handleCloseBlogForm} maxWidth="md" fullWidth>
+        <DialogTitle
+          sx={{
+            background: 'linear-gradient(135deg, #20B2AA 0%, #5F9EA0 100%)',
+            color: '#fff',
+            fontWeight: 700,
+            fontSize: '1.5rem',
+            padding: '20px 30px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          <LibraryBooksIcon sx={{ fontSize: 28 }} />
+          Thêm bài viết mới
+        </DialogTitle>
+        <BlogForm
+          form={form}
+          setForm={setForm}
+          categories={categories}
+          thumbnailFile={thumbnailFile}
+          thumbnailPreview={thumbnailPreview}
+          sectionFiles={sectionFiles}
+          handleFormChange={handleFormChange}
+          handleThumbnailChange={handleThumbnailChange}
+          handleSectionChange={handleSectionChange}
+          addSection={addSection}
+          removeSection={removeSection}
+          handleSectionImageChange={handleSectionImageChange}
+          loading={loading}
+          onSubmit={handleSubmitBlog}
+          onCancel={handleCloseBlogForm}
+          isEdit={false}
+        />
+        <DialogActions
+          sx={{
+            p: 4,
+            backgroundColor: 'rgba(32, 178, 170, 0.02)',
+            borderTop: '1px solid rgba(32, 178, 170, 0.1)',
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 2
+          }}
+        >
+          <Button
+            onClick={handleCloseBlogForm}
+            variant="outlined"
+            sx={{
+              color: '#1976d2',
+              borderColor: '#1976d2',
+              borderRadius: 3,
+              fontWeight: 700,
+              px: 4,
+              fontSize: '1rem',
+              '&:hover': {
+                background: '#e3f0ff',
+                borderColor: '#1565c0',
+              },
+            }}
+          >
+            HỦY BỎ
+          </Button>
+          <Button
+            onClick={handleSubmitBlog}
+            variant="contained"
+            disabled={loading}
+            sx={{
+              borderRadius: 3,
+              fontWeight: 700,
+              px: 4,
+              fontSize: '1rem',
+              background: '#1976d2',
+              boxShadow: '0 2px 8px rgba(74,144,226,0.10)',
+              textTransform: 'uppercase',
+              letterSpacing: 1,
+              '&:hover': { background: '#1565c0' },
+              '&:disabled': {
+                backgroundColor: '#e0e0e0',
+                color: '#bdbdbd',
+                boxShadow: 'none',
+              }
+            }}
+          >
+            TẠO BÀI VIẾT MỚI
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
