@@ -21,8 +21,15 @@ import {
   Snackbar,
   Alert,
   Tooltip,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  Chip,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
-import { Add, Edit, Delete } from '@mui/icons-material';
+import { Add, Edit, Delete, LocalHospital } from '@mui/icons-material';
 import blogService from '@/services/blogService';
 import stiService from '@/services/stiService';
 import categoriesService from '@/services/categoryService';
@@ -63,6 +70,8 @@ const CategoryManagementContent = () => {
     message: '',
     severity: 'success',
   });
+  // Filter state
+  const [statusFilter, setStatusFilter] = useState('all'); // all | active | inactive
 
   // Fetch blog categories
   const fetchBlogCategories = async () => {
@@ -212,82 +221,229 @@ const CategoryManagementContent = () => {
     }
   };
 
+  // Filtered data
+  const getFilteredCategories = (categories, isQuestion = false) => {
+    if (statusFilter === 'all') return categories;
+    if (isQuestion) {
+      return categories.filter((cat) =>
+        statusFilter === 'active' ? cat.isActive : !cat.isActive
+      );
+    }
+    return categories.filter((cat) =>
+      statusFilter === 'active' ? cat.isActive : !cat.isActive
+    );
+  };
+
   // UI
   return (
-    <Box sx={{ p: { xs: 1, sm: 3 }, maxWidth: 900, mx: 'auto' }}>
-      <Typography variant="h5" fontWeight={700} mb={2} textAlign="center">
-        Quản lý danh mục
-      </Typography>
+    <Box
+      sx={{
+        p: { xs: 1, sm: 3 },
+        maxWidth: 900,
+        mx: 'auto',
+        background: 'linear-gradient(135deg, #e3f6fd 0%, #f8fdff 100%)',
+        borderRadius: 5,
+        boxShadow: 6,
+        minHeight: '80vh',
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          mb: 2,
+        }}
+      >
+        <LocalHospital sx={{ color: '#00bcd4', fontSize: 36, mr: 1 }} />
+        <Typography
+          variant="h5"
+          fontWeight={700}
+          textAlign="center"
+          sx={{ color: '#2196f3', letterSpacing: 1 }}
+        >
+          Quản lý danh mục
+        </Typography>
+      </Box>
       <Tabs
         value={tab}
         onChange={(_, v) => setTab(v)}
         centered
         sx={{
           mb: 2,
-          '.MuiTab-root': { fontWeight: 600, fontSize: { xs: 14, sm: 16 } },
-          '.MuiTabs-indicator': { height: 4, borderRadius: 2 },
+          '.MuiTab-root': {
+            fontWeight: 700,
+            fontSize: { xs: 15, sm: 17 },
+            color: '#2196f3',
+            borderRadius: 3,
+            transition: 'background 0.2s',
+            '&.Mui-selected': {
+              background: '#e0f7fa',
+              color: '#00bcd4',
+              boxShadow: 2,
+            },
+            mx: 1,
+            px: 3,
+          },
+          '.MuiTabs-indicator': {
+            height: 5,
+            borderRadius: 2,
+            background: 'linear-gradient(90deg, #00bcd4 0%, #2196f3 100%)',
+          },
         }}
       >
         <Tab label="Danh mục Blog" />
         <Tab label="Danh mục Câu hỏi" />
       </Tabs>
       <TabPanel value={tab} index={0}>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            mb: 2,
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Trạng thái</InputLabel>
+            <Select
+              value={statusFilter}
+              label="Trạng thái"
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <MenuItem value="all">Tất cả</MenuItem>
+              <MenuItem value="active">Đang hoạt động</MenuItem>
+              <MenuItem value="inactive">Ngừng hoạt động</MenuItem>
+            </Select>
+          </FormControl>
           <Button
             variant="contained"
             startIcon={<Add />}
             onClick={() => handleOpenDialog('add')}
-            sx={{ borderRadius: 2, fontWeight: 600, boxShadow: 1 }}
+            sx={{
+              borderRadius: 3,
+              fontWeight: 700,
+              boxShadow: 3,
+              background: 'linear-gradient(90deg, #00bcd4 0%, #2196f3 100%)',
+              color: '#fff',
+              px: 3,
+              py: 1,
+              '&:hover': {
+                background: 'linear-gradient(90deg, #2196f3 0%, #00bcd4 100%)',
+                boxShadow: 6,
+              },
+            }}
           >
             Thêm danh mục
           </Button>
         </Box>
         <TableContainer
           component={Paper}
-          sx={{ borderRadius: 3, boxShadow: 3 }}
+          sx={{ borderRadius: 4, boxShadow: 6, background: '#fff' }}
         >
           <Table>
             <TableHead>
-              <TableRow sx={{ background: '#f5f5f5' }}>
-                <TableCell sx={{ fontWeight: 700 }}>Tên danh mục</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Mô tả</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700 }}>
+              <TableRow
+                sx={{
+                  background:
+                    'linear-gradient(90deg, #e0f7fa 0%, #e3f6fd 100%)',
+                }}
+              >
+                <TableCell
+                  sx={{ fontWeight: 800, color: '#00bcd4', fontSize: 16 }}
+                >
+                  Tên danh mục
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, color: '#00bcd4', fontSize: 16 }}
+                >
+                  Mô tả
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, color: '#00bcd4', fontSize: 16 }}
+                >
+                  Trạng thái
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{ fontWeight: 800, color: '#00bcd4', fontSize: 16 }}
+                >
                   Hành động
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {blogCategories.map((cat) => (
+              {getFilteredCategories(blogCategories).map((cat) => (
                 <TableRow
                   key={cat.categoryId}
                   hover
                   sx={{
                     transition: 'background 0.2s',
-                    ':hover': { background: '#f0f7fa' },
+                    ':hover': { background: '#e0f7fa' },
                   }}
                 >
-                  <TableCell>{cat.name}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{cat.name}</TableCell>
                   <TableCell>{cat.description}</TableCell>
+                  <TableCell>
+                    {cat.isActive ? (
+                      <Chip
+                        label="Đang hoạt động"
+                        color="success"
+                        size="small"
+                        sx={{ fontWeight: 700 }}
+                      />
+                    ) : (
+                      <Chip
+                        label="Ngừng hoạt động"
+                        color="default"
+                        size="small"
+                        sx={{
+                          fontWeight: 700,
+                          background: '#eee',
+                          color: '#888',
+                        }}
+                      />
+                    )}
+                  </TableCell>
                   <TableCell align="right">
                     <Tooltip title="Sửa">
                       <IconButton
                         onClick={() =>
                           handleOpenDialog(
                             'edit',
-                            { name: cat.name, description: cat.description },
+                            {
+                              name: cat.name,
+                              description: cat.description,
+                              isActive: cat.isActive,
+                            },
                             cat.categoryId
                           )
                         }
-                        sx={{ color: 'primary.main' }}
+                        sx={{
+                          color: '#2196f3',
+                          background: '#e3f6fd',
+                          borderRadius: 2,
+                          mx: 0.5,
+                          '&:hover': {
+                            background: '#b2ebf2',
+                            color: '#00bcd4',
+                          },
+                        }}
                       >
                         <Edit />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Xóa">
                       <IconButton
-                        color="error"
                         onClick={() => handleDeleteCategory(cat.categoryId)}
-                        sx={{ ml: 1 }}
+                        sx={{
+                          color: '#fff',
+                          background: '#f44336',
+                          borderRadius: 2,
+                          mx: 0.5,
+                          '&:hover': { background: '#d32f2f' },
+                        }}
                       >
                         <Delete />
                       </IconButton>
@@ -300,64 +456,156 @@ const CategoryManagementContent = () => {
         </TableContainer>
       </TabPanel>
       <TabPanel value={tab} index={1}>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            mb: 2,
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Trạng thái</InputLabel>
+            <Select
+              value={statusFilter}
+              label="Trạng thái"
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <MenuItem value="all">Tất cả</MenuItem>
+              <MenuItem value="active">Đang hoạt động</MenuItem>
+              <MenuItem value="inactive">Ngừng hoạt động</MenuItem>
+            </Select>
+          </FormControl>
           <Button
             variant="contained"
             startIcon={<Add />}
             onClick={() => handleOpenDialog('add')}
-            sx={{ borderRadius: 2, fontWeight: 600, boxShadow: 1 }}
+            sx={{
+              borderRadius: 3,
+              fontWeight: 700,
+              boxShadow: 3,
+              background: 'linear-gradient(90deg, #00bcd4 0%, #2196f3 100%)',
+              color: '#fff',
+              px: 3,
+              py: 1,
+              '&:hover': {
+                background: 'linear-gradient(90deg, #2196f3 0%, #00bcd4 100%)',
+                boxShadow: 6,
+              },
+            }}
           >
             Thêm danh mục
           </Button>
         </Box>
         <TableContainer
           component={Paper}
-          sx={{ borderRadius: 3, boxShadow: 3 }}
+          sx={{ borderRadius: 4, boxShadow: 6, background: '#fff' }}
         >
           <Table>
             <TableHead>
-              <TableRow sx={{ background: '#f5f5f5' }}>
-                <TableCell sx={{ fontWeight: 700 }}>Tên danh mục</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Mô tả</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700 }}>
+              <TableRow
+                sx={{
+                  background:
+                    'linear-gradient(90deg, #e0f7fa 0%, #e3f6fd 100%)',
+                }}
+              >
+                <TableCell
+                  sx={{ fontWeight: 800, color: '#00bcd4', fontSize: 16 }}
+                >
+                  Tên danh mục
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, color: '#00bcd4', fontSize: 16 }}
+                >
+                  Mô tả
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, color: '#00bcd4', fontSize: 16 }}
+                >
+                  Trạng thái
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{ fontWeight: 800, color: '#00bcd4', fontSize: 16 }}
+                >
                   Hành động
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {questionCategories.map((cat) => (
+              {getFilteredCategories(questionCategories, true).map((cat) => (
                 <TableRow
                   key={cat.categoryQuestionId}
                   hover
                   sx={{
                     transition: 'background 0.2s',
-                    ':hover': { background: '#f0f7fa' },
+                    ':hover': { background: '#e0f7fa' },
                   }}
                 >
-                  <TableCell>{cat.name}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{cat.name}</TableCell>
                   <TableCell>{cat.description}</TableCell>
+                  <TableCell>
+                    {cat.isActive ? (
+                      <Chip
+                        label="Đang hoạt động"
+                        color="success"
+                        size="small"
+                        sx={{ fontWeight: 700 }}
+                      />
+                    ) : (
+                      <Chip
+                        label="Ngừng hoạt động"
+                        color="default"
+                        size="small"
+                        sx={{
+                          fontWeight: 700,
+                          background: '#eee',
+                          color: '#888',
+                        }}
+                      />
+                    )}
+                  </TableCell>
                   <TableCell align="right">
                     <Tooltip title="Sửa">
                       <IconButton
                         onClick={() =>
                           handleOpenDialog(
                             'edit',
-                            { name: cat.name, description: cat.description },
+                            {
+                              name: cat.name,
+                              description: cat.description,
+                              isActive: cat.isActive,
+                            },
                             cat.categoryQuestionId
                           )
                         }
-                        sx={{ color: 'primary.main' }}
+                        sx={{
+                          color: '#2196f3',
+                          background: '#e3f6fd',
+                          borderRadius: 2,
+                          mx: 0.5,
+                          '&:hover': {
+                            background: '#b2ebf2',
+                            color: '#00bcd4',
+                          },
+                        }}
                       >
                         <Edit />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Xóa">
                       <IconButton
-                        color="error"
                         onClick={() =>
                           handleDeleteCategory(cat.categoryQuestionId)
                         }
-                        sx={{ ml: 1 }}
+                        sx={{
+                          color: '#fff',
+                          background: '#f44336',
+                          borderRadius: 2,
+                          mx: 0.5,
+                          '&:hover': { background: '#d32f2f' },
+                        }}
                       >
                         <Delete />
                       </IconButton>
@@ -375,8 +623,22 @@ const CategoryManagementContent = () => {
         onClose={handleCloseDialog}
         maxWidth="xs"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            boxShadow: 8,
+            background: '#f8fdff',
+          },
+        }}
       >
-        <DialogTitle sx={{ fontWeight: 700, textAlign: 'center' }}>
+        <DialogTitle
+          sx={{
+            fontWeight: 800,
+            textAlign: 'center',
+            color: '#2196f3',
+            letterSpacing: 1,
+          }}
+        >
           {dialogType === 'add' ? 'Thêm danh mục' : 'Chỉnh sửa danh mục'}
         </DialogTitle>
         <DialogContent sx={{ pb: 1 }}>
@@ -388,7 +650,8 @@ const CategoryManagementContent = () => {
             }
             fullWidth
             margin="normal"
-            sx={{ mb: 2 }}
+            sx={{ mb: 2, borderRadius: 2, background: '#fff' }}
+            InputProps={{ sx: { borderRadius: 2 } }}
           />
           <TextField
             label="Mô tả"
@@ -403,18 +666,53 @@ const CategoryManagementContent = () => {
             margin="normal"
             multiline
             minRows={2}
-            sx={{ mb: 1 }}
+            sx={{ mb: 1, borderRadius: 2, background: '#fff' }}
+            InputProps={{ sx: { borderRadius: 2 } }}
           />
+          {dialogType === 'edit' && (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={currentCategory.isActive ?? true}
+                  onChange={(e) =>
+                    setCurrentCategory({
+                      ...currentCategory,
+                      isActive: e.target.checked,
+                    })
+                  }
+                  color="success"
+                />
+              }
+              label={
+                currentCategory.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'
+              }
+              sx={{ mt: 1, ml: 0 }}
+            />
+          )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2, justifyContent: 'space-between' }}>
-          <Button onClick={handleCloseDialog} sx={{ borderRadius: 2 }}>
+          <Button
+            onClick={handleCloseDialog}
+            sx={{ borderRadius: 3, color: '#2196f3', fontWeight: 700 }}
+          >
             Hủy
           </Button>
           <Button
             variant="contained"
             onClick={handleSaveCategory}
             disabled={!currentCategory.name.trim()}
-            sx={{ borderRadius: 2, fontWeight: 600 }}
+            sx={{
+              borderRadius: 3,
+              fontWeight: 700,
+              background: 'linear-gradient(90deg, #00bcd4 0%, #2196f3 100%)',
+              color: '#fff',
+              px: 4,
+              py: 1,
+              '&:hover': {
+                background: 'linear-gradient(90deg, #2196f3 0%, #00bcd4 100%)',
+                boxShadow: 6,
+              },
+            }}
           >
             {dialogType === 'add' ? 'Thêm' : 'Lưu'}
           </Button>
@@ -427,7 +725,10 @@ const CategoryManagementContent = () => {
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert
+          severity={snackbar.severity}
+          sx={{ width: '100%', borderRadius: 2, fontWeight: 600 }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

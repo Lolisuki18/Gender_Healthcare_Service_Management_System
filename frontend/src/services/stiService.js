@@ -205,36 +205,36 @@ export const getStaffTests = async () => {
 // Add test results (Staff only)
 export const addTestResults = async (testId, resultsData) => {
   try {
-    // Add very detailed logging for debugging
-    console.group('Test Results API Call');
-    console.log(`Test ID: ${testId}`);
-    console.log('Raw request data:', resultsData);
-    console.log('Stringified data:', JSON.stringify(resultsData, null, 2));
-    console.log('Data structure:', {
-      hasStatus: !!resultsData.status,
-      statusIs: resultsData.status,
-      hasResults: !!resultsData.results,
-      resultsIsArray: Array.isArray(resultsData.results),
-      resultsLength: resultsData.results ? resultsData.results.length : 0,
-      firstResult:
-        resultsData.results && resultsData.results.length > 0
-          ? resultsData.results[0]
-          : null,
-      serviceId: resultsData.serviceId || 'Not specified',
-    });
+    // // Add very detailed logging for debugging
+    // console.group('Test Results API Call');
+    // console.log(`Test ID: ${testId}`);
+    // console.log('Raw request data:', resultsData);
+    // console.log('Stringified data:', JSON.stringify(resultsData, null, 2));
+    // console.log('Data structure:', {
+    //   hasStatus: !!resultsData.status,
+    //   statusIs: resultsData.status,
+    //   hasResults: !!resultsData.results,
+    //   resultsIsArray: Array.isArray(resultsData.results),
+    //   resultsLength: resultsData.results ? resultsData.results.length : 0,
+    //   firstResult:
+    //     resultsData.results && resultsData.results.length > 0
+    //       ? resultsData.results[0]
+    //       : null,
+    //   serviceId: resultsData.serviceId || 'Not specified',
+    // });
 
     // Make sure resultsData has the correct format expected by the backend
     if (!resultsData.status || !Array.isArray(resultsData.results)) {
-      console.error('Invalid data structure', resultsData);
-      console.groupEnd();
+      // console.error('Invalid data structure', resultsData);
+      // console.groupEnd();
       throw new Error('Invalid test result data format');
     }
 
     // If we have a specific serviceId, we need to get existing results and merge them
     if (resultsData.serviceId && resultsData.results.length > 0) {
-      console.log(
-        `Processing results for specific service ID: ${resultsData.serviceId}`
-      );
+      // console.log(
+      //   `Processing results for specific service ID: ${resultsData.serviceId}`
+      // );
 
       try {
         // Fetch existing results for this test
@@ -291,73 +291,6 @@ export const addTestResults = async (testId, resultsData) => {
       }
     }
 
-    // For HIV Test ID 12, we need specific component IDs and must exclude invalid components
-    if (testId === '12' || testId === 12) {
-      console.log(
-        'Processing HIV test with ID 12 - requires specific component IDs'
-      );
-
-      // These are the ONLY valid component IDs for test ID 12
-      const validComponentIds = [1, 2, 20, 21];
-
-      // Filter out any invalid component IDs
-      const filteredResults = resultsData.results.filter((result) => {
-        const componentId =
-          typeof result.componentId === 'number'
-            ? result.componentId
-            : parseInt(result.componentId);
-
-        // Keep only components with valid IDs
-        return validComponentIds.includes(componentId);
-      });
-
-      console.log(
-        `Filtered out invalid components. Kept ${filteredResults.length} valid components`
-      );
-
-      // Get the IDs of components we have
-      const existingComponentIds = filteredResults.map((r) =>
-        typeof r.componentId === 'number'
-          ? r.componentId
-          : parseInt(r.componentId)
-      );
-
-      console.log('Valid existing component IDs:', existingComponentIds);
-
-      // Find missing valid component IDs
-      const missingComponentIds = validComponentIds.filter(
-        (id) => !existingComponentIds.includes(id)
-      );
-
-      console.log('Missing required component IDs:', missingComponentIds);
-
-      // Add any missing required components
-      if (missingComponentIds.length > 0) {
-        // For HIV tests, use appropriate defaults
-        const defaultValue = 'NEGATIVE';
-        const defaultUnit = 'Positive/Negative';
-        const defaultNormalRange = 'Negative';
-
-        // Add missing components
-        missingComponentIds.forEach((componentId) => {
-          filteredResults.push({
-            componentId,
-            resultValue: defaultValue,
-            unit: defaultUnit,
-            normalRange: defaultNormalRange,
-          });
-        });
-
-        console.log('Added missing required components');
-      }
-
-      // Replace the original results with our filtered and complete set
-      resultsData.results = filteredResults;
-      console.log(
-        'Final results after filtering and adding required components:',
-        resultsData.results.map((r) => r.componentId)
-      );
-    } // Final validation to ensure all componentIds are numeric
     const validData = {
       status: resultsData.status, // Ensure we send exactly what the backend expects
       // Include serviceId if provided - helps backend identify which service components to update
@@ -404,9 +337,9 @@ export const addTestResults = async (testId, resultsData) => {
         validData
       );
 
-      console.log('API response status:', response.status);
-      console.log('API response data:', response.data);
-      console.groupEnd();
+      // console.log('API response status:', response.status);
+      // console.log('API response data:', response.data);
+      // console.groupEnd();
       return response.data;
     } catch (apiError) {
       console.error('API call failed:', apiError);
@@ -481,21 +414,6 @@ export const getTestResults = async (testId) => {
   try {
     const response = await apiClient.get(`${API_URL}/tests/${testId}/results`);
     return response.data;
-  } catch (error) {
-    throw error.response?.data || error.message;
-  }
-};
-
-// Get PDF report for a test
-export const getTestPDF = async (testId) => {
-  try {
-    const response = await apiClient.get(`${API_URL}/tests/${testId}/pdf`, {
-      responseType: 'blob', // Quan trọng: chỉ định kiểu dữ liệu trả về là blob
-    });
-    return {
-      blob: response.data,
-      filename: `test-report-${testId}.pdf`,
-    };
   } catch (error) {
     throw error.response?.data || error.message;
   }
@@ -717,19 +635,6 @@ export const updateTestResults = async (testId, resultsData) => {
   }
 };
 
-// Category Question management
-const getQuestionCategories = async () => {
-  const res = await apiClient.get('/question-categories');
-  // Chuẩn hóa lấy mảng từ res.data.data
-  return Array.isArray(res.data.data) ? res.data.data : [];
-};
-const createQuestionCategory = (data) =>
-  apiClient.post('/question-categories', data);
-const updateQuestionCategory = (id, data) =>
-  apiClient.put(`/question-categories/${id}`, data);
-const deleteQuestionCategory = (id) =>
-  apiClient.delete(`/question-categories/${id}`);
-
 // Update consultant notes for a STI test (Consultant only)
 export const updateConsultantNotes = async (testId, consultantNotes) => {
   try {
@@ -772,7 +677,6 @@ const stiService = {
   addTestResults,
   completeTest,
   getTestResults,
-  getTestPDF,
   getTestResultsByTestId,
   getAllSTIPackages,
   createSTIPackage,
@@ -783,10 +687,7 @@ const stiService = {
   getActiveSTIServices,
   savePartialTestResults,
   updateTestResults,
-  getQuestionCategories,
-  createQuestionCategory,
-  updateQuestionCategory,
-  deleteQuestionCategory,
+
   updateConsultantNotes,
   getConsultantSTITests,
 
