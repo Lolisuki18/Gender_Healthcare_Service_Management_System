@@ -230,8 +230,7 @@ const MedicalHistoryContent = () => {
         type: 'Xét nghiệm STI',
         notes: test.customerNotes || 'Không có ghi chú',
         testId: test.testId,
-        hasTestResults:
-          test.status === 'RESULTED' || test.status === 'COMPLETED',
+        hasTestResults: test.status === 'COMPLETED',
         payment: test.paymentStatus,
         paymentMethod: test.getPaymentDisplayText
           ? test.getPaymentDisplayText()
@@ -741,49 +740,38 @@ const MedicalHistoryContent = () => {
             Danh sách lịch sử khám bệnh ({filteredRecords.length} kết quả)
           </Typography>
         </Box>
-        <Grid container spacing={3}>
-          {paginatedRecords.length > 0 ? (
-            paginatedRecords.map((record, idx) => (
-              <Grid item xs={12} md={6} lg={4} key={record.id || idx}>
-                <Card
-                  sx={{
-                    borderRadius: '18px',
-                    boxShadow: '0 4px 24px rgba(74,144,226,0.08)',
-                  }}
-                >
-                  <CardContent>
-                    {/* Status */}
-                    <Box
-                      sx={{
-                        mb: 2,
-                        width: '100%',
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                      }}
-                    >
-                      <Tooltip
-                        title={(() => {
-                          const status = record.displayStatus || record.status;
-                          switch (status) {
-                            case 'RESULTED':
-                              return 'Đã có kết quả xét nghiệm, bạn có thể xem kết quả';
-                            case 'COMPLETED':
-                              return 'Quá trình xét nghiệm đã hoàn tất';
-                            case 'CONFIRMED':
-                              return 'Đã xác nhận thông tin, chờ lấy mẫu';
-                            case 'SAMPLED':
-                              return 'Đã lấy mẫu, đang xét nghiệm';
-                            case 'CANCELED':
-                              return 'Xét nghiệm đã bị hủy';
-                            case 'PENDING':
-                              return 'Đang chờ xác nhận thông tin';
-                            default:
-                              return status;
-                          }
-                        })()}
-                        arrow
-                        placement="top"
-                      >
+        <Alert
+          severity="info"
+          sx={{
+            mb: 2,
+            borderRadius: '8px',
+            fontSize: '0.95rem',
+            background: 'rgba(16,185,129,0.07)',
+          }}
+        >
+          Chỉ có thể xem kết quả khi ở trạng thái <b>Hoàn thành</b>.
+        </Alert>
+        {paginatedRecords.length > 0 ? (
+          <>
+            <TableContainer>
+              <StyledTable>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Ngày khám</TableCell>
+                    <TableCell>Bác sĩ</TableCell>
+                    <TableCell>Dịch vụ</TableCell>
+                    <TableCell>Trạng thái</TableCell>
+                    <TableCell>Ghi chú</TableCell>
+                    <TableCell align="center">Hành động</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedRecords.map((record, idx) => (
+                    <TableRow key={record.id || idx}>
+                      <TableCell>{formatDateDisplay(record.date)}</TableCell>
+                      <TableCell>{record.doctor}</TableCell>
+                      <TableCell>{getTypeName(record.type)}</TableCell>
+                      <TableCell>
                         <Chip
                           label={(() => {
                             const status =
@@ -825,117 +813,11 @@ const MedicalHistoryContent = () => {
                             py: 0.5,
                           }}
                         />
-                      </Tooltip>
-                    </Box>
-                    {/* Doctor and Date */}
-                    <Box sx={{ mb: 2, width: '100%' }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          mb: 1,
-                          width: '100%',
-                        }}
-                      >
-                        <DoctorIcon
-                          sx={{ color: '#4A90E2', mr: 1, fontSize: 18 }}
-                        />
-                        <Typography variant="body2" sx={{ color: '#4A5568' }}>
-                          {record.doctor}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <TimeIcon
-                          sx={{ color: '#F39C12', mr: 1, fontSize: 18 }}
-                        />
-                        <Typography variant="body2" sx={{ color: '#4A5568' }}>
-                          {formatDateDisplay(record.date)}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    {/* Type & Payment */}
-                    <Box sx={{ mb: 2, width: '100%' }}>
-                      <Chip
-                        label={getTypeName(record.type)}
-                        size="small"
-                        sx={{
-                          backgroundColor: `${getTypeColor(record.type)}15`,
-                          color: getTypeColor(record.type),
-                          border: `1px solid ${getTypeColor(record.type)}30`,
-                          fontWeight: 500,
-                          borderRadius: '8px',
-                        }}
-                      />
-                      {record.paymentMethod && (
-                        <Chip
-                          label={getPaymentMethodName(record.paymentMethod)}
-                          size="small"
-                          sx={{
-                            ml: 1,
-                            backgroundColor: '#F3F4F630',
-                            color: '#64748b',
-                            border: '1px solid #e2e8f080',
-                            fontWeight: 500,
-                            borderRadius: '8px',
-                          }}
-                        />
-                      )}
-                    </Box>
-                    {/* Notes */}
-                    <Box
-                      sx={{
-                        p: 2,
-                        borderRadius: '12px',
-                        background: 'rgba(255, 255, 255, 0.9)',
-                        border: '1px solid rgba(74, 144, 226, 0.1)',
-                        mb: 3,
-                        height: '120px',
-                        minHeight: '120px',
-                        width: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
-                      >
-                        <ReportIcon
-                          sx={{ color: '#4A90E2', mr: 1, fontSize: 16 }}
-                        />
-                        <Typography
-                          variant="body2"
-                          sx={{ color: '#4A5568', fontWeight: 600 }}
-                        >
-                          Ghi chú
-                        </Typography>
-                      </Box>
-                      <Tooltip
-                        title={record.notes ? record.notes : 'Không có ghi chú'}
-                        placement="top"
-                      >
-                        <Box
-                          sx={{
-                            position: 'relative',
-                            flex: 1,
-                            overflow: 'hidden',
-                            '&:hover': {
-                              '&::after': {
-                                content:
-                                  record.notes && record.notes.length > 100
-                                    ? '"Xem thêm..."'
-                                    : '""',
-                                position: 'absolute',
-                                bottom: 0,
-                                right: 0,
-                                backgroundColor: 'rgba(255,255,255,0.9)',
-                                px: 1,
-                                fontSize: '0.75rem',
-                                color: '#3b82f6',
-                                fontWeight: 'bold',
-                              },
-                            },
-                          }}
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip
+                          title={record.notes || 'Không có ghi chú'}
+                          placement="top"
                         >
                           <Typography
                             variant="body2"
@@ -945,67 +827,69 @@ const MedicalHistoryContent = () => {
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               display: '-webkit-box',
-                              WebkitLineClamp: 3,
+                              WebkitLineClamp: 2,
                               WebkitBoxOrient: 'vertical',
-                              height: '4.5em',
+                              maxWidth: 200,
                             }}
                           >
                             {record.notes || 'Không có ghi chú'}
                           </Typography>
-                        </Box>
-                      </Tooltip>
-                    </Box>
-                    {/* View Results Button */}
-                    <Box sx={{ mt: 'auto', flexShrink: 0, width: '100%' }}>
-                      <Button
-                        variant="contained"
-                        startIcon={<ScienceIcon />}
-                        fullWidth
-                        onClick={() =>
-                          record.hasTestResults &&
-                          handleViewTestResults(record.testId)
-                        }
-                        disabled={!record.hasTestResults}
-                        sx={{
-                          backgroundColor: record.hasTestResults
-                            ? '#10b981'
-                            : '#cbd5e0',
-                          color: 'white',
-                          fontWeight: 600,
-                          borderRadius: '12px',
-                          py: 1.5,
-                          '&:hover': {
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Button
+                          variant="contained"
+                          startIcon={<ScienceIcon />}
+                          onClick={() =>
+                            record.hasTestResults &&
+                            handleViewTestResults(record.testId)
+                          }
+                          disabled={!record.hasTestResults}
+                          sx={{
                             backgroundColor: record.hasTestResults
-                              ? '#059669'
+                              ? '#10b981'
                               : '#cbd5e0',
-                            transform: record.hasTestResults
-                              ? 'translateY(-2px)'
-                              : 'none',
-                          },
-                          transition: 'all 0.3s ease',
-                          cursor: record.hasTestResults
-                            ? 'pointer'
-                            : 'not-allowed',
-                          opacity: record.hasTestResults ? 1 : 0.7,
-                        }}
-                      >
-                        {record.hasTestResults
-                          ? 'Xem kết quả'
-                          : 'Chưa có kết quả'}
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))
-          ) : (
-            <Grid item xs={12}>
-              <Alert severity="info" sx={{ p: 2 }}>
-                Không có dữ liệu lịch sử khám bệnh nào.
-              </Alert>
-            </Grid>
-          )}
-        </Grid>
+                            color: 'white',
+                            fontWeight: 600,
+                            borderRadius: '12px',
+                            py: 1,
+                            minWidth: 120,
+                            '&:hover': {
+                              backgroundColor: record.hasTestResults
+                                ? '#059669'
+                                : '#cbd5e0',
+                            },
+                            transition: 'all 0.3s ease',
+                            cursor: record.hasTestResults
+                              ? 'pointer'
+                              : 'not-allowed',
+                            opacity: record.hasTestResults ? 1 : 0.7,
+                          }}
+                        >
+                          Xem kết quả
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </StyledTable>
+            </TableContainer>
+            <TablePagination
+              component="div"
+              count={filteredRecords.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25]}
+              labelRowsPerPage="Số dòng mỗi trang:"
+            />
+          </>
+        ) : (
+          <Alert severity="info" sx={{ p: 2 }}>
+            Không có lịch sử khám bệnh nào.
+          </Alert>
+        )}
       </StyledPaper>
       {/* Hiển thị kết quả xét nghiệm */}
       {selectedTestId && <TestResults testId={selectedTestId} />}
@@ -1108,10 +992,7 @@ const MedicalHistoryContent = () => {
                     if (medicalRecords[0]?.hasTestResults) {
                       handleViewTestResults(medicalRecords[0].testId);
                     } else {
-                      toast.warning(
-                        'Chưa có kết quả',
-                        'Xét nghiệm gần nhất chưa có kết quả'
-                      );
+                      toast.warning('Xét nghiệm gần nhất chưa có kết quả');
                     }
                   }}
                   sx={{
