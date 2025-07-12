@@ -36,7 +36,6 @@ import {
   Work as WorkIcon,
   Save as SaveIcon,
   Email as EmailIcon,
-  Phone as PhoneIcon,
   Cake as CakeIcon,
   Wc as GenderIcon,
   Home as AddressIcon,
@@ -329,12 +328,11 @@ const ConsultantProfileContent = () => {
   // Data from API
   const [userProfile, setUserProfile] = useState(null);
 
-  // Form data để edit - merged từ personal và professional info
+  // Form data để edit - merged từ personal và professional info (bỏ phone)
   const [formData, setFormData] = useState({
     // Personal info
     fullName: '',
     email: '',
-    phone: '',
     dob: '',
     gender: '',
     address: '',
@@ -411,7 +409,6 @@ const ConsultantProfileContent = () => {
         const personalInfo = {
           fullName: userData.fullName || '',
           email: userData.email || '',
-          phone: userData.phoneNumber || userData.phone || '',
           dob: dobValue,
           gender: userData.gender || '',
           address: userData.address || '',
@@ -502,10 +499,9 @@ const ConsultantProfileContent = () => {
     setError('');
 
     try {
-      // Update personal info using UserController APIs
+      // Update personal info using UserController APIs (bỏ phone)
       const personalInfoPayload = {
         fullName: formData.fullName,
-        phone: formData.phone,
         birthDay: formData.dob,
         gender: formData.gender,
         address: formData.address,

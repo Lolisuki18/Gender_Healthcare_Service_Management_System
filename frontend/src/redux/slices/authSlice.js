@@ -35,7 +35,16 @@ const getUserFromStorage = () => {
 
 // Kiểm tra trạng thái xác thực từ localStorage
 const getAuthStatus = () => {
-  return !!localStorageUtil.get("token");
+  try {
+    const token = localStorageUtil.get("token");
+    const userProfile = localStorageUtil.get("userProfile");
+    
+    // Kiểm tra cả token và userProfile
+    return !!(token && token.accessToken && userProfile && userProfile.data);
+  } catch (e) {
+    console.error("Không thể kiểm tra auth status:", e);
+    return false;
+  }
 };
 
 const initialState = {
@@ -71,9 +80,12 @@ const authSlice = createSlice({
         data: userData,
       });
       
-      // Lưu tokens nếu có
+      // Lưu tokens nếu có bằng setTokens method
       if (action.payload.accessToken) {
-        localStorageUtil.set("token", action.payload.accessToken);
+        localStorageUtil.setTokens({
+          accessToken: action.payload.accessToken,
+          refreshToken: action.payload.refreshToken
+        });
       }
     },
     loginFailed: (state, action) => {
@@ -90,10 +102,35 @@ const authSlice = createSlice({
 
       // Xóa dữ liệu từ localStorage
       localStorageUtil.remove("userProfile");
-      localStorageUtil.remove("token");
+      localStorageUtil.clearTokens();
     },
     clearError: (state) => {
       state.error = null;
+    },
+    restoreAuthState: (state) => {
+      try {
+        const token = localStorageUtil.get("token");
+        const userProfile = localStorageUtil.get("userProfile");
+        
+        if (token && token.accessToken && userProfile && userProfile.data) {
+          state.isAuthenticated = true;
+          state.user = userProfile.data;
+          state.avatarUrl = userProfile.data.avatar || null;
+          state.error = null;
+        } else {
+          // Nếu thiếu thông tin, logout hoàn toàn
+          state.isAuthenticated = false;
+          state.user = null;
+          state.avatarUrl = null;
+          localStorageUtil.clearTokens();
+          localStorageUtil.remove("userProfile");
+        }
+      } catch (e) {
+        console.error("Error restoring auth state:", e);
+        state.isAuthenticated = false;
+        state.user = null;
+        state.avatarUrl = null;
+      }
     },
     updateUserAvatar: (state, action) => {
       const newAvatarUrl = action.payload;
@@ -127,6 +164,7 @@ export const {
   loginFailed,
   logout,
   clearError,
+  restoreAuthState,
   updateUserAvatar,
   updateUserProfile,
 } = authSlice.actions;

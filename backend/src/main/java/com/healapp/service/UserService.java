@@ -458,9 +458,8 @@ public class UserService {
 
             UserDtls user = userOpt.get();
 
-            // Cập nhật thông tin cơ bản
+            // Cập nhật thông tin cơ bản (không bao gồm phone)
             user.setFullName(request.getFullName());
-            user.setPhone(request.getPhone());
             user.setBirthDay(request.getBirthDay());
             user.setAddress(request.getAddress());
 

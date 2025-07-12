@@ -54,7 +54,6 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import PersonIcon from '@mui/icons-material/Person';
 import CakeIcon from '@mui/icons-material/Cake';
 import WcIcon from '@mui/icons-material/Wc';
-import PhoneIcon from '@mui/icons-material/Phone';
 import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import LockIcon from '@mui/icons-material/Lock';
@@ -334,10 +333,9 @@ const ProfileContent = () => {
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [avatarError, setAvatarError] = useState('');
 
-  // ✅ Form data để edit - sử dụng từ Redux store
+  // ✅ Form data để edit - sử dụng từ Redux store (bỏ phone)
   const [formDataUpdate, setFormDataUpdate] = useState({
     fullName: '',
-    phone: '',
     birthDay: '',
     email: '',
     gender: '',
@@ -379,7 +377,6 @@ const ProfileContent = () => {
     if (user) {
       const formData = {
         fullName: user.fullName || '',
-        phone: user.phone || '',
         birthDay: user.birthDay || '',
         email: user.email || '',
         gender: user.gender || '',
@@ -484,7 +481,6 @@ const ProfileContent = () => {
 
       const updateData = {
         fullName: formDataUpdate.fullName.trim(),
-        phone: formDataUpdate.phone?.trim() || '',
         birthDay: formDataUpdate.birthDay || '',
         address: formDataUpdate.address?.trim() || '',
         gender: formDataUpdate.gender || '',

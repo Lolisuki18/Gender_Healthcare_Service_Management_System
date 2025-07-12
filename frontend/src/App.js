@@ -31,6 +31,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import tokenService from '@/services/tokenService';
 import ScrollToTop from './components/common/ScrollToTop';
+import AuthStateRestorer from './components/common/AuthStateRestorer';
 
 function App() {
   useEffect(() => {
@@ -46,16 +47,18 @@ function App() {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <CustomThemeProvider>
-          <UserProvider>
-            <CssBaseline />
-            <ToastContainer position="top-right" autoClose={3000} />
-            <HashRouter>
-              <ScrollToTop />
-              <AppRoutes />
-            </HashRouter>
-          </UserProvider>
-        </CustomThemeProvider>
+        <AuthStateRestorer>
+          <CustomThemeProvider>
+            <UserProvider>
+              <CssBaseline />
+              <ToastContainer position="top-right" autoClose={3000} />
+              <HashRouter>
+                <ScrollToTop />
+                <AppRoutes />
+              </HashRouter>
+            </UserProvider>
+          </CustomThemeProvider>
+        </AuthStateRestorer>
       </PersistGate>
     </Provider>
   );
