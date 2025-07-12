@@ -46,7 +46,7 @@ import QuestionsContent from '@/components/CustomerProfile/QuestionsContent';
 import ReviewsContent from '@/components/CustomerProfile/ReviewsContent';
 import SecurityContent from '@/components/siderBar/SecurityContent';
 import PaymentMethodsSection from './PaymentMethodsSection';
-import BlogCustomerContent from './BlogCustomerContent';
+import BlogCustomerContent from '../siderBar/BlogCustomerContent';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
@@ -201,6 +201,8 @@ const CustomerProfile = () => {
               {selectedMenuItem === 'reviews' && 'Đánh giá dịch vụ'}
               {selectedMenuItem === 'security' && 'Bảo mật'}
               {selectedMenuItem === 'myBlogs' && 'Đánh giá của tôi'}
+              {selectedMenuItem === 'invoices' && 'Hóa đơn'}
+              {selectedMenuItem === 'security' && 'Bảo mật tài khoản'}
             </Typography>
           </Box>{' '}
           <Chip

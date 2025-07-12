@@ -43,6 +43,7 @@ import MyReviewsContent from './MyReviewsContent';
 import MedicalHistoryContent from '../siderBar/MedicalHistoryContent';
 import InvoicesContent from '../siderBar/InvoicesContent';
 import PaymentMethodsSection from '../CustomerProfile/PaymentMethodsSection';
+import BlogMyContent from '../siderBar/BlogCustomerContent';
 
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
   flexGrow: 1,
@@ -86,8 +87,12 @@ const ConsultantProfile = ({ user = {} }) => {
         return 'Quản lý STI Tests';
       case 'my-reviews':
         return 'Đánh giá của tôi';
-      case 'myBlogs':
+      case 'blog-customer':
         return 'Blog của tôi';
+      case 'invoices':
+        return 'Hoá đơn của tôi';
+      case 'medical-history':
+        return 'Lịch sử khám bệnh';
       default:
         return 'Câu hỏi của tôi';
     }
@@ -114,6 +119,8 @@ const ConsultantProfile = ({ user = {} }) => {
         return <InvoicesContent />;
       case 'payment-methods':
         return <PaymentMethodsSection />;
+      case 'blog-customer':
+        return <BlogMyContent />;
       default:
         return <ConsultantProfileContent />;
     }

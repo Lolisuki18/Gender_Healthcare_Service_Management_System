@@ -72,6 +72,9 @@ import {
   Clear as ClearIcon,
   ReportProblemRounded as WarningIcon,
   Close as CloseIcon,
+  CheckCircle as CheckCircleIcon,
+  HourglassEmpty as HourglassIcon,
+  DoneAll as DoneAllIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import {
@@ -130,7 +133,7 @@ const AppointmentsContent = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelError, setCancelError] = useState('');
   const [reviewedConsultationIds, setReviewedConsultationIds] = useState([]);
-  
+
   // Cập nhật các state cho ReviewForm
   const [openReviewDialog, setOpenReviewDialog] = useState(false);
   const [reviewingAppointment, setReviewingAppointment] = useState(null);
@@ -153,8 +156,13 @@ const AppointmentsContent = () => {
       const reviewRes = await reviewService.getMyReviews(0, 100);
       const reviews = reviewRes?.content || reviewRes?.data || reviewRes || [];
       const reviewedIds = reviews
-        .filter(r => (r.targetType === 'CONSULTANT' || r.serviceType === 'CONSULTATION') && r.consultationId)
-        .map(r => r.consultationId);
+        .filter(
+          (r) =>
+            (r.targetType === 'CONSULTANT' ||
+              r.serviceType === 'CONSULTATION') &&
+            r.consultationId
+        )
+        .map((r) => r.consultationId);
       setReviewedConsultationIds(reviewedIds);
     } catch (error) {
       toast.error('Không thể tải danh sách lịch hẹn');
@@ -429,26 +437,29 @@ const AppointmentsContent = () => {
    */
   const handleSubmitReview = async () => {
     if (!reviewingAppointment) return;
-    
+
     if (rating === 0) {
       notify.warning('Thông báo', 'Vui lòng chọn số sao đánh giá!');
       return;
     }
 
     if (feedback.trim().length < 10) {
-      notify.warning('Thông báo', 'Vui lòng nhập ít nhất 10 ký tự cho phần đánh giá!');
+      notify.warning(
+        'Thông báo',
+        'Vui lòng nhập ít nhất 10 ký tự cho phần đánh giá!'
+      );
       return;
     }
 
     try {
       setReviewLoading(true);
-      
+
       const reviewData = {
         rating: rating,
         comment: feedback.trim(),
-        consultationId: reviewingAppointment.consultationId
+        consultationId: reviewingAppointment.consultationId,
       };
-      
+
       // Kiểm tra nếu là chỉnh sửa hoặc tạo mới
       if (isEditMode && editingReviewId) {
         // Gọi API cập nhật đánh giá
@@ -461,17 +472,29 @@ const AppointmentsContent = () => {
           reviewData
         );
         notify.success('Thành công', 'Đánh giá đã được gửi thành công!');
-        
+
         // Cập nhật ngay lập tức mảng reviewedConsultationIds để hiển thị đúng trạng thái
-        if (reviewingAppointment.consultationId && !reviewedConsultationIds.includes(reviewingAppointment.consultationId)) {
-          setReviewedConsultationIds([...reviewedConsultationIds, reviewingAppointment.consultationId]);
+        if (
+          reviewingAppointment.consultationId &&
+          !reviewedConsultationIds.includes(reviewingAppointment.consultationId)
+        ) {
+          setReviewedConsultationIds([
+            ...reviewedConsultationIds,
+            reviewingAppointment.consultationId,
+          ]);
         }
       }
-      
+
       handleCloseReviewDialog();
       await fetchAppointments(); // reload lại danh sách để cập nhật trạng thái
     } catch (err) {
-      notify.error('Lỗi', 'Lỗi khi ' + (isEditMode ? 'cập nhật' : 'tạo') + ' đánh giá: ' + err.message);
+      notify.error(
+        'Lỗi',
+        'Lỗi khi ' +
+          (isEditMode ? 'cập nhật' : 'tạo') +
+          ' đánh giá: ' +
+          err.message
+      );
     } finally {
       setReviewLoading(false);
     }
@@ -661,24 +684,82 @@ const AppointmentsContent = () => {
       {/* Appointments Table */}
       {!loading && filteredAppointments.length > 0 && (
         <>
-          <TableContainer component={MuiPaper} sx={{ borderRadius: 3, mb: 0 }}>
+          <TableContainer
+            component={MuiPaper}
+            sx={{
+              borderRadius: 4,
+              mb: 0,
+              boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.10)',
+              background: '#fafdff',
+              border: '1.5px solid #e3f0fa',
+            }}
+          >
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>Ngày đăng ký</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>
+                <TableRow
+                  sx={{
+                    background:
+                      'linear-gradient(90deg, #fafdff 60%, #e3f0fa 100%)',
+                    borderBottom: '2px solid #b3e0f7',
+                  }}
+                >
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                      letterSpacing: 0.2,
+                    }}
+                  >
+                    Ngày đăng ký
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                    }}
+                  >
                     Thời gian bắt đầu
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                    }}
+                  >
                     Thời gian kết thúc
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700 }} align="center">
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                    }}
+                    align="center"
+                  >
                     Trạng thái
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700 }} align="center">
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                    }}
+                    align="center"
+                  >
                     Đánh giá
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700 }} align="center">
+                  <TableCell
+                    sx={{
+                      fontWeight: 700,
+                      color: '#1976d2',
+                      fontSize: '1.05rem',
+                      textAlign: 'center',
+                    }}
+                    align="center"
+                  >
                     Hành động
                   </TableCell>
                 </TableRow>
@@ -687,8 +768,17 @@ const AppointmentsContent = () => {
                 {filteredAppointments
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((appointment) => (
-                    <TableRow key={appointment.testId} hover>
-                      <TableCell>
+                    <TableRow
+                      key={appointment.testId}
+                      hover
+                      sx={{
+                        background: '#fff',
+                        transition: 'background 0.2s',
+                        '&:hover': { background: '#e3f0fa' },
+                        borderRadius: 3,
+                      }}
+                    >
+                      <TableCell sx={{ fontSize: '1rem' }}>
                         {Array.isArray(appointment.createdAt)
                           ? formatDateTimeFromArray(appointment.createdAt)
                           : appointment.createdAt &&
@@ -699,7 +789,7 @@ const AppointmentsContent = () => {
                             ? formatDateTime(appointment.createdAt)
                             : 'Chưa cập nhật'}
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ fontSize: '1rem' }}>
                         {Array.isArray(appointment.startTime)
                           ? formatDateTimeFromArray(appointment.startTime)
                           : appointment.startTime &&
@@ -710,7 +800,7 @@ const AppointmentsContent = () => {
                             ? formatDateTime(appointment.startTime)
                             : 'Chưa cập nhật'}
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ fontSize: '1rem' }}>
                         {Array.isArray(appointment.endTime)
                           ? formatDateTimeFromArray(appointment.endTime)
                           : appointment.endTime &&
@@ -725,56 +815,154 @@ const AppointmentsContent = () => {
                         <Chip
                           label={getStatusText(appointment.status)}
                           size="small"
+                          icon={
+                            appointment.status?.toUpperCase() ===
+                            'COMPLETED' ? (
+                              <DoneAllIcon
+                                sx={{ color: '#1976d2', fontSize: 18 }}
+                              />
+                            ) : appointment.status?.toUpperCase() ===
+                              'CONFIRMED' ? (
+                              <CheckCircleIcon
+                                sx={{ color: '#219653', fontSize: 18 }}
+                              />
+                            ) : appointment.status?.toUpperCase() ===
+                              'PENDING' ? (
+                              <HourglassIcon
+                                sx={{ color: '#f57c00', fontSize: 18 }}
+                              />
+                            ) : appointment.status?.toUpperCase() ===
+                              'CANCELED' ? (
+                              <CancelIcon
+                                sx={{ color: '#d32f2f', fontSize: 18 }}
+                              />
+                            ) : null
+                          }
                           sx={{
-                            background: getStatusColor(appointment.status),
-                            color: '#fff',
-                            fontWeight: 500,
-                            fontSize: '11px',
-                            mr: 1
+                            background:
+                              appointment.status?.toUpperCase() === 'CONFIRMED'
+                                ? '#e6f9ed'
+                                : appointment.status?.toUpperCase() ===
+                                    'CANCELED'
+                                  ? '#ffebee'
+                                  : appointment.status?.toUpperCase() ===
+                                      'PENDING'
+                                    ? '#fff8e1'
+                                    : appointment.status?.toUpperCase() ===
+                                        'COMPLETED'
+                                      ? '#e3f2fd'
+                                      : '#e3f2fd',
+                            color:
+                              appointment.status?.toUpperCase() === 'CONFIRMED'
+                                ? '#219653'
+                                : appointment.status?.toUpperCase() ===
+                                    'CANCELED'
+                                  ? '#d32f2f'
+                                  : appointment.status?.toUpperCase() ===
+                                      'PENDING'
+                                    ? '#f57c00'
+                                    : appointment.status?.toUpperCase() ===
+                                        'COMPLETED'
+                                      ? '#1976d2'
+                                      : '#1976d2',
+                            border:
+                              appointment.status?.toUpperCase() === 'CONFIRMED'
+                                ? '1.5px solid #b7e4c7'
+                                : appointment.status?.toUpperCase() ===
+                                    'CANCELED'
+                                  ? '1.5px solid #ffcdd2'
+                                  : appointment.status?.toUpperCase() ===
+                                      'PENDING'
+                                    ? '1.5px solid #ffe082'
+                                    : appointment.status?.toUpperCase() ===
+                                        'COMPLETED'
+                                      ? '1.5px solid #90caf9'
+                                      : '1.5px solid #90caf9',
+                            fontWeight: 600,
+                            fontSize: '13px',
+                            borderRadius: '16px',
+                            px: 2,
+                            minWidth: 120,
+                            display: 'flex',
+                            alignItems: 'center',
                           }}
                         />
-                        {appointment.status?.toUpperCase() === 'COMPLETED' && (
-                          reviewedConsultationIds.includes(appointment.consultationId) ? (
+                        {appointment.status?.toUpperCase() === 'COMPLETED' &&
+                          (reviewedConsultationIds.includes(
+                            appointment.consultationId
+                          ) ? (
                             <Chip
                               label="Đã đánh giá"
                               size="small"
                               color="success"
-                              sx={{ fontWeight: 500, fontSize: '11px', ml: 1 }}
+                              sx={{
+                                fontWeight: 500,
+                                fontSize: '12px',
+                                ml: 1,
+                                borderRadius: '16px',
+                                px: 1.5,
+                              }}
                             />
                           ) : (
                             <Chip
                               label="Chưa đánh giá"
                               size="small"
                               color="warning"
-                              sx={{ fontWeight: 500, fontSize: '11px', ml: 1 }}
+                              sx={{
+                                fontWeight: 500,
+                                fontSize: '12px',
+                                ml: 1,
+                                borderRadius: '16px',
+                                px: 1.5,
+                              }}
                             />
-                          )
-                        )}
+                          ))}
                       </TableCell>
                       {/* Cột Đánh giá */}
                       <TableCell align="center">
-                        {appointment.status?.toUpperCase() === 'COMPLETED' && (
-                          reviewedConsultationIds.includes(appointment.consultationId) ? (
+                        {appointment.status?.toUpperCase() === 'COMPLETED' &&
+                          (reviewedConsultationIds.includes(
+                            appointment.consultationId
+                          ) ? (
                             <Button
                               size="small"
                               variant="outlined"
                               color="info"
-                              sx={{ fontSize: 13, textTransform: 'none', borderRadius: 3, px: 1.5, height: 32 }}
+                              sx={{
+                                fontSize: 13,
+                                textTransform: 'none',
+                                borderRadius: '20px',
+                                px: 2,
+                                height: 32,
+                                fontWeight: 600,
+                              }}
                               onClick={async () => {
                                 try {
                                   setReviewLoading(true);
                                   // Gọi API lấy chi tiết đánh giá
-                                  const reviewRes = await reviewService.getMyReviews(0, 100);
-                                  const reviews = reviewRes?.content || reviewRes?.data || reviewRes || [];
-                                  const found = reviews.find(r => r.consultationId === appointment.consultationId);
-                                  
+                                  const reviewRes =
+                                    await reviewService.getMyReviews(0, 100);
+                                  const reviews =
+                                    reviewRes?.content ||
+                                    reviewRes?.data ||
+                                    reviewRes ||
+                                    [];
+                                  const found = reviews.find(
+                                    (r) =>
+                                      r.consultationId ===
+                                      appointment.consultationId
+                                  );
+
                                   if (found) {
-                                    const detail = await reviewService.getReviewById(found.id);
+                                    const detail =
+                                      await reviewService.getReviewById(
+                                        found.id
+                                      );
                                     // Mở form chỉnh sửa với dữ liệu hiện tại
                                     setReviewingAppointment({
                                       ...appointment,
                                       type: 'CONSULTANT',
-                                      isEligible: true
+                                      isEligible: true,
                                     });
                                     setRating(detail.rating || 0);
                                     setFeedback(detail.comment || '');
@@ -782,10 +970,17 @@ const AppointmentsContent = () => {
                                     setEditingReviewId(found.id);
                                     setOpenReviewDialog(true);
                                   } else {
-                                    notify.warning('Thông báo', 'Không tìm thấy đánh giá!');
+                                    notify.warning(
+                                      'Thông báo',
+                                      'Không tìm thấy đánh giá!'
+                                    );
                                   }
                                 } catch (err) {
-                                  notify.error('Lỗi', 'Không thể lấy thông tin đánh giá: ' + err.message);
+                                  notify.error(
+                                    'Lỗi',
+                                    'Không thể lấy thông tin đánh giá: ' +
+                                      err.message
+                                  );
                                 } finally {
                                   setReviewLoading(false);
                                 }
@@ -798,13 +993,20 @@ const AppointmentsContent = () => {
                               size="small"
                               variant="contained"
                               color="primary"
-                              sx={{ fontSize: 13, textTransform: 'none', borderRadius: 3, px: 1.5, height: 32 }}
+                              sx={{
+                                fontSize: 13,
+                                textTransform: 'none',
+                                borderRadius: '20px',
+                                px: 2,
+                                height: 32,
+                                fontWeight: 600,
+                              }}
                               onClick={() => {
                                 // Đặt lại trạng thái cho form tạo mới
                                 setReviewingAppointment({
                                   ...appointment,
                                   type: 'CONSULTANT',
-                                  isEligible: true
+                                  isEligible: true,
                                 });
                                 setRating(0);
                                 setFeedback('');
@@ -815,8 +1017,7 @@ const AppointmentsContent = () => {
                             >
                               Đánh giá
                             </Button>
-                          )
-                        )}
+                          ))}
                       </TableCell>
                       <TableCell align="center">
                         <Box
@@ -824,7 +1025,7 @@ const AppointmentsContent = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: 1,
+                            gap: 1.5,
                           }}
                         >
                           {appointment.meetUrl && (
@@ -837,11 +1038,21 @@ const AppointmentsContent = () => {
                               sx={{
                                 fontSize: 13,
                                 textTransform: 'none',
-                                borderRadius: 3,
+                                borderRadius: '20px',
                                 minWidth: 0,
-                                px: 1.5,
+                                px: 2,
                                 height: 36,
                                 boxShadow: 'none',
+                                fontWeight: 600,
+                                color: '#1976d2',
+                                borderColor: '#1976d2',
+                                '&:hover': {
+                                  background: '#e3f2fd',
+                                  borderColor: '#1565c0',
+                                  color: '#1565c0',
+                                  boxShadow:
+                                    '0 2px 8px 0 rgba(25, 118, 210, 0.10)',
+                                },
                               }}
                             >
                               Vào phòng họp
@@ -858,7 +1069,7 @@ const AppointmentsContent = () => {
                               border: '1.5px solid #1976d2',
                               color: '#1976d2',
                               background: '#fff',
-                              ml: appointment.meetUrl ? 0 : 0,
+                              borderRadius: '20px',
                               transition: 'all 0.2s',
                               '&:hover': {
                                 background: '#e3f2fd',
@@ -883,6 +1094,7 @@ const AppointmentsContent = () => {
                                 border: '1.5px solid #e53935',
                                 color: '#e53935',
                                 background: '#fff',
+                                borderRadius: '20px',
                                 transition: 'all 0.2s',
                                 '&:hover': {
                                   background: '#ffebee',
@@ -1105,9 +1317,34 @@ const AppointmentsContent = () => {
         onClose={handleCloseDetailDialog}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 6,
+            boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.18)',
+          },
+        }}
       >
-        <DialogTitle>Chi tiết lịch hẹn</DialogTitle>
-        <DialogContent dividers>
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            fontSize: '1.35rem',
+            color: '#1976d2',
+            letterSpacing: 0.5,
+            background: '#fafdff',
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+          }}
+        >
+          Chi tiết lịch hẹn
+        </DialogTitle>
+        <DialogContent
+          dividers
+          sx={{
+            background: '#fafdff',
+            borderBottomLeftRadius: 24,
+            borderBottomRightRadius: 24,
+          }}
+        >
           {selectedAppointment ? (
             <Box>
               {/* Trạng thái & Vào phòng họp */}
@@ -1117,6 +1354,21 @@ const AppointmentsContent = () => {
                 <Chip
                   label={getStatusText(selectedAppointment.status)}
                   size="small"
+                  icon={
+                    selectedAppointment.status?.toUpperCase() ===
+                    'COMPLETED' ? (
+                      <DoneAllIcon sx={{ color: '#388e3c' }} />
+                    ) : selectedAppointment.status?.toUpperCase() ===
+                      'CONFIRMED' ? (
+                      <CheckCircleIcon sx={{ color: '#43a047' }} />
+                    ) : selectedAppointment.status?.toUpperCase() ===
+                      'PENDING' ? (
+                      <HourglassIcon sx={{ color: '#0288d1' }} />
+                    ) : selectedAppointment.status?.toUpperCase() ===
+                      'CANCELED' ? (
+                      <CancelIcon sx={{ color: '#e53935' }} />
+                    ) : null
+                  }
                   sx={{
                     background: getStatusColor(selectedAppointment.status),
                     color: '#fff',
@@ -1124,6 +1376,7 @@ const AppointmentsContent = () => {
                     fontSize: '13px',
                     height: 28,
                     borderRadius: 2,
+                    px: 2,
                   }}
                 />
                 {selectedAppointment.status?.toUpperCase() === 'CANCELED' &&
@@ -1152,11 +1405,20 @@ const AppointmentsContent = () => {
                     sx={{
                       fontSize: 13,
                       textTransform: 'none',
-                      borderRadius: 3,
+                      borderRadius: '20px',
                       minWidth: 0,
                       px: 2,
                       height: 32,
                       boxShadow: 'none',
+                      fontWeight: 600,
+                      color: '#1976d2',
+                      borderColor: '#1976d2',
+                      '&:hover': {
+                        background: '#e3f2fd',
+                        borderColor: '#1565c0',
+                        color: '#1565c0',
+                        boxShadow: '0 2px 8px 0 rgba(25, 118, 210, 0.10)',
+                      },
                     }}
                   >
                     Vào phòng họp
@@ -1174,29 +1436,41 @@ const AppointmentsContent = () => {
                   mb: 1,
                 }}
               >
-                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: 700, color: '#1976d2' }}
+                >
                   Tư vấn viên:
                 </Typography>
-                <Typography variant="body1">
+                <Typography variant="body1" sx={{ fontSize: '1.05rem' }}>
                   {selectedAppointment.consultantName || 'Chưa cập nhật'}
                 </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: 700, color: '#1976d2' }}
+                >
                   Bằng cấp:
                 </Typography>
-                <Typography variant="body1">
+                <Typography variant="body1" sx={{ fontSize: '1.05rem' }}>
                   {selectedAppointment.consultantQualifications ||
                     'Chưa cập nhật'}
                 </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: 700, color: '#1976d2' }}
+                >
                   Kinh nghiệm:
                 </Typography>
-                <Typography variant="body1">
+                <Typography variant="body1" sx={{ fontSize: '1.05rem' }}>
                   {selectedAppointment.consultantExperience || 'Chưa cập nhật'}
                 </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: 700, color: '#1976d2' }}
+                >
                   Ngày đăng ký:
                 </Typography>
-                <Typography variant="body1">
+                <Typography variant="body1" sx={{ fontSize: '1.05rem' }}>
                   {Array.isArray(selectedAppointment.createdAt)
                     ? formatDateTimeFromArray(selectedAppointment.createdAt)
                     : selectedAppointment.createdAt &&
@@ -1213,11 +1487,14 @@ const AppointmentsContent = () => {
                   <CalendarIcon
                     sx={{ color: '#4CAF50', fontSize: 22, mr: 1 }}
                   />
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                  <Typography
+                    variant="body1"
+                    sx={{ fontWeight: 700, color: '#1976d2' }}
+                  >
                     Thời gian:
                   </Typography>
                 </Box>
-                <Typography variant="body1">
+                <Typography variant="body1" sx={{ fontSize: '1.05rem' }}>
                   {Array.isArray(selectedAppointment.startTime)
                     ? formatDateTimeFromArray(selectedAppointment.startTime)
                     : selectedAppointment.startTime &&
@@ -1245,13 +1522,31 @@ const AppointmentsContent = () => {
             <Typography>Không có thông tin chi tiết để hiển thị.</Typography>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDetailDialog}>Đóng</Button>
+        <DialogActions
+          sx={{
+            background: '#fafdff',
+            borderBottomLeftRadius: 24,
+            borderBottomRightRadius: 24,
+          }}
+        >
+          <Button
+            onClick={handleCloseDetailDialog}
+            color="primary"
+            variant="contained"
+            sx={{
+              borderRadius: '20px',
+              fontWeight: 600,
+              px: 4,
+              boxShadow: '0 2px 8px 0 rgba(74, 144, 226, 0.10)',
+            }}
+          >
+            Đóng
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Dialog đánh giá */}
-      <ReviewForm 
+      <ReviewForm
         open={openReviewDialog}
         onClose={handleCloseReviewDialog}
         review={reviewingAppointment}

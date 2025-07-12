@@ -108,6 +108,7 @@ const STIServiceManagementContent = () => {
     referenceRange: '',
     interpretation: '',
     testType: 'QUANTITATIVE', // Default value
+    sampleType: '', // Thêm trường loại mẫu
   });
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -282,7 +283,7 @@ const STIServiceManagementContent = () => {
     });
 
     // Show success message
-    toast.success('Success', 'Component updated successfully');
+    toast.success('Cập nhập thành phần thành công');
 
     handleCloseEditComponentDialog();
   };
@@ -312,6 +313,7 @@ const STIServiceManagementContent = () => {
     const component = {
       ...newComponent,
       isActive: true, // Default to active for new components
+      sampleType: newComponent.sampleType || '', // Đảm bảo có sampleType
     };
 
     setFormData((prev) => ({
@@ -326,6 +328,7 @@ const STIServiceManagementContent = () => {
       referenceRange: '',
       interpretation: '',
       testType: 'QUANTITATIVE', // Default value
+      sampleType: '', // Reset sampleType
     });
 
     // Clear component error if exists
@@ -1061,7 +1064,7 @@ const STIServiceManagementContent = () => {
                             Khoảng tham chiếu
                           </TableCell>
                           <TableCell sx={{ color: 'white', fontWeight: 700 }}>
-                            Mô tả
+                            Loại mẫu
                           </TableCell>
                           <TableCell
                             align="center"
@@ -1085,7 +1088,7 @@ const STIServiceManagementContent = () => {
                             <TableCell>{component.unit}</TableCell>
                             <TableCell>{component.referenceRange}</TableCell>
                             <TableCell>
-                              {component.interpretation || 'Không có'}
+                              {component.sampleType || 'Không có'}
                             </TableCell>
                             <TableCell align="center">
                               <Stack
@@ -1234,6 +1237,26 @@ const STIServiceManagementContent = () => {
                             'referenceRange',
                             e.target.value
                           )
+                        }
+                        fullWidth
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: '10px',
+                            background: '#f6fafd',
+                            fontWeight: 500,
+                            fontSize: '1.05rem',
+                          },
+                        }}
+                      />
+                    </Grid>
+                    {/* Thêm ô nhập liệu loại mẫu */}
+                    <Grid item size={12} xs={12} sm={6} md={3}>
+                      <TextField
+                        label="Loại mẫu"
+                        value={newComponent.sampleType}
+                        onChange={(e) =>
+                          handleComponentChange('sampleType', e.target.value)
                         }
                         fullWidth
                         size="small"
@@ -1396,7 +1419,8 @@ const STIServiceManagementContent = () => {
               }}
             >
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
+                {/* Mã dịch vụ */}
+                <Grid item size={4} xs={12} sm={6}>
                   <Box
                     sx={{
                       mb: 2,
@@ -1417,7 +1441,30 @@ const STIServiceManagementContent = () => {
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                {/* Cập nhật lần cuối */}
+                <Grid item size={4} xs={12} sm={6}>
+                  <Box
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      borderRadius: 2,
+                      background: '#fff',
+                      boxShadow: '0 1px 4px rgba(74,144,226,0.07)',
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 700, color: '#4A90E2', mb: 0.5 }}
+                    >
+                      Cập nhật lần cuối
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {formatDate(selectedService.updatedAt)}
+                    </Typography>
+                  </Box>
+                </Grid>
+                {/* Giá */}
+                <Grid item size={4} xs={12} sm={6}>
                   <Box
                     sx={{
                       mb: 2,
@@ -1438,7 +1485,8 @@ const STIServiceManagementContent = () => {
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12}>
+                {/* Mô tả */}
+                <Grid item size={12} xs={12}>
                   <Box
                     sx={{
                       mb: 2,
@@ -1466,7 +1514,8 @@ const STIServiceManagementContent = () => {
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                {/* Trạng thái */}
+                <Grid item size={12} xs={12} sm={6}>
                   <Box
                     sx={{
                       mb: 2,
@@ -1505,29 +1554,9 @@ const STIServiceManagementContent = () => {
                     />
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box
-                    sx={{
-                      mb: 2,
-                      p: 2,
-                      borderRadius: 2,
-                      background: '#fff',
-                      boxShadow: '0 1px 4px rgba(74,144,226,0.07)',
-                    }}
-                  >
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ fontWeight: 700, color: '#4A90E2', mb: 0.5 }}
-                    >
-                      Cập nhật lần cuối
-                    </Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {formatDate(selectedService.updatedAt)}
-                    </Typography>
-                  </Box>
-                </Grid>
+
                 {/* Components */}
-                <Grid item xs={12}>
+                <Grid item size={12} xs={12}>
                   <Typography
                     variant="subtitle1"
                     sx={{
@@ -1594,6 +1623,15 @@ const STIServiceManagementContent = () => {
                               fontSize: '1rem',
                             }}
                           >
+                            Loại mẫu
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              color: 'white',
+                              fontWeight: 700,
+                              fontSize: '1rem',
+                            }}
+                          >
                             Mô tả
                           </TableCell>
                           <TableCell
@@ -1625,6 +1663,9 @@ const STIServiceManagementContent = () => {
                             </TableCell>
                             <TableCell sx={{ fontWeight: 500 }}>
                               {component.normalRange}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 500 }}>
+                              {component.sampleType || 'Không có'}
                             </TableCell>
                             <TableCell sx={{ fontWeight: 400 }}>
                               {component.description || 'Không có'}
@@ -1759,7 +1800,7 @@ const STIServiceManagementContent = () => {
         <DialogContent dividers sx={{ px: 4, py: 4, background: '#f8fafc' }}>
           {editingComponent && (
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid size={12} item xs={12}>
                 <Typography
                   variant="body2"
                   color="text.secondary"
@@ -1769,10 +1810,10 @@ const STIServiceManagementContent = () => {
                   là bắt buộc.
                 </Typography>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item size={12} xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Tên thành phần *"
+                  label="Tên thành phần"
                   required
                   value={editingComponent.testName}
                   onChange={(e) =>
@@ -1798,7 +1839,7 @@ const STIServiceManagementContent = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Đơn vị *"
+                  label="Đơn vị "
                   required
                   value={editingComponent.unit}
                   onChange={(e) =>
@@ -1822,7 +1863,7 @@ const STIServiceManagementContent = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Khoảng tham chiếu *"
+                  label="Khoảng tham chiếu "
                   required
                   value={editingComponent.referenceRange}
                   onChange={(e) =>
@@ -1845,7 +1886,7 @@ const STIServiceManagementContent = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item size={12} xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Mô tả"

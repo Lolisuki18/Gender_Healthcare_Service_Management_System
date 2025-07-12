@@ -78,7 +78,7 @@ export const HomePage = () => {
       setLoaded(true);
     }, 1000);
 
-    toast.success('Chào mừng bạn đến với trang chủ');
+    // toast.success('Chào mừng bạn đến với trang chủ');
     console.log('HomePage component mounted');
 
     return () => clearTimeout(timer);

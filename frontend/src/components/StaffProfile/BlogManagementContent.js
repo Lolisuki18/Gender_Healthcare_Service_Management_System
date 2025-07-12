@@ -56,69 +56,87 @@ import {
   Check as CheckIcon,
 } from '@mui/icons-material';
 import blogService from '../../services/blogService';
+import categoryService from '../../services/categoryService';
 import BlogDetailModal from './modals/BlogDetailModal';
 
-// Teal theme colors
+// Modern theme colors
 const colors = {
-  primary: '#20B2AA', // Light Sea Green
-  secondary: '#5F9EA0', // Cadet Blue
-  accent: '#48D1CC', // Medium Turquoise
-  background: '#E0F2F1', // Very light teal
-  text: '#264653', // Dark blue-green
-  white: '#FFFFFF',
-  lightGray: '#F5F5F5',
-  darkGray: '#333333',
-  success: '#2E8B57', // Sea Green
-  error: '#FF6B6B', // Light Red
-  warning: '#FFD166', // Light Yellow
+  primary: '#6366F1', // Indigo
+  secondary: '#8B5CF6', // Violet
+  accent: '#06B6D4', // Cyan
+  background: '#F8FAFC', // Slate 50
+  surface: '#FFFFFF',
+  text: '#1E293B', // Slate 800
+  textSecondary: '#64748B', // Slate 500
+  border: '#E2E8F0', // Slate 200
+  success: '#10B981', // Emerald 500
+  error: '#EF4444', // Red 500
+  warning: '#F59E0B', // Amber 500
+  info: '#3B82F6', // Blue 500
 };
 
 const gradientBg = {
   minHeight: '100vh',
-  background: '#E0F2F1',
+  background: 'linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)',
   padding: 0,
 };
 
 const headerStyle = {
-  background: '#20B2AA',
+  background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
   color: 'white',
-  padding: '15px 25px',
-  borderRadius: '10px',
-  boxShadow: '0 4px 6px rgba(32, 178, 170, 0.2)',
+  padding: '24px 32px',
+  borderRadius: '16px',
+  boxShadow: '0 10px 25px rgba(99, 102, 241, 0.15)',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  marginBottom: 3,
+  marginBottom: 4,
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: '200px',
+    height: '100%',
+    background:
+      'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 100%)',
+    borderRadius: '16px',
+  },
 };
 
 const cardStyle = {
-  backgroundColor: colors.white,
-  borderRadius: '10px',
-  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+  backgroundColor: colors.surface,
+  borderRadius: '16px',
+  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
   color: colors.text,
   overflow: 'hidden',
-  transition: 'all 0.2s ease-in-out',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  border: `1px solid ${colors.border}`,
   '&:hover': {
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05)',
+    transform: 'translateY(-2px)',
   },
 };
 
 const statCardStyle = {
-  backgroundColor: colors.white,
-  borderRadius: '10px',
-  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+  backgroundColor: colors.surface,
+  borderRadius: '16px',
+  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
   color: colors.text,
-  padding: 2,
+  padding: 3,
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'center',
-  transition: 'all 0.2s ease-in-out',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   position: 'relative',
   overflow: 'hidden',
+  border: `1px solid ${colors.border}`,
   '&:hover': {
-    transform: 'translateY(-5px)',
-    boxShadow: '0 6px 12px rgba(0, 0, 0, 0.1)',
+    transform: 'translateY(-4px)',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.05)',
   },
   '&::before': {
     content: '""',
@@ -127,62 +145,80 @@ const statCardStyle = {
     left: 0,
     width: '100%',
     height: '4px',
-    backgroundColor: colors.primary,
+    background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)',
   },
 };
 
 const tableHeadStyle = {
-  backgroundColor: colors.primary,
+  background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
   '& th': {
-    color: colors.white,
-    fontWeight: 600,
-    padding: '16px',
+    color: colors.surface,
+    fontWeight: 700,
+    padding: '20px 16px',
+    fontSize: '0.875rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
 };
 
 const iconButtonStyle = {
-  transition: 'all 0.2s ease',
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   margin: '0 4px',
+  borderRadius: '8px',
   '&:hover': {
-    backgroundColor: 'rgba(32, 178, 170, 0.1)',
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    transform: 'scale(1.05)',
   },
 };
 
 const primaryButtonStyle = {
-  backgroundColor: colors.primary,
-  color: colors.white,
-  fontWeight: 600,
-  borderRadius: '50px',
-  padding: '10px 24px',
-  boxShadow: '0 2px 10px rgba(32, 178, 170, 0.3)',
-  transition: 'all 0.2s ease',
+  background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+  color: colors.surface,
+  fontWeight: 700,
+  borderRadius: '12px',
+  padding: '12px 28px',
+  boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  textTransform: 'none',
+  fontSize: '0.875rem',
   '&:hover': {
-    backgroundColor: colors.secondary,
-    boxShadow: '0 4px 15px rgba(32, 178, 170, 0.4)',
+    background: 'linear-gradient(135deg, #5B5BD6 0%, #7C3AED 100%)',
+    boxShadow: '0 8px 25px rgba(99, 102, 241, 0.4)',
     transform: 'translateY(-2px)',
   },
 };
 
 const secondaryButtonStyle = {
-  backgroundColor: 'rgba(32, 178, 170, 0.1)',
+  backgroundColor: 'rgba(99, 102, 241, 0.1)',
   color: colors.primary,
   fontWeight: 600,
-  borderRadius: '50px',
-  padding: '10px 24px',
-  transition: 'all 0.2s ease',
+  borderRadius: '12px',
+  padding: '12px 28px',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  textTransform: 'none',
+  fontSize: '0.875rem',
+  border: `1px solid ${colors.primary}`,
   '&:hover': {
-    backgroundColor: 'rgba(32, 178, 170, 0.2)',
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    transform: 'translateY(-1px)',
   },
 };
 
 const searchBarStyle = {
-  backgroundColor: colors.white,
-  borderRadius: '50px',
-  boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
-  padding: '5px 15px',
+  backgroundColor: colors.surface,
+  borderRadius: '12px',
+  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
+  padding: '8px 20px',
   width: '100%',
   display: 'flex',
   alignItems: 'center',
+  border: `1px solid ${colors.border}`,
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:focus-within': {
+    boxShadow:
+      '0 0 0 3px rgba(99, 102, 241, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05)',
+    borderColor: colors.primary,
+  },
 };
 
 const BlogManagementContent = () => {
@@ -215,7 +251,7 @@ const BlogManagementContent = () => {
       try {
         const [blogsData, categoriesData] = await Promise.all([
           blogService.getAllBlogs(),
-          blogService.getCategories()
+          categoryService.getCategories(),
         ]);
         console.log('API getAllBlogs raw:', blogsData);
         console.log('API getCategories raw:', categoriesData);
@@ -237,7 +273,7 @@ const BlogManagementContent = () => {
     categoryId: '',
     thumbnail: null,
     existingThumbnail: '',
-    sections: []
+    sections: [],
   });
 
   // Handlers
@@ -263,7 +299,7 @@ const BlogManagementContent = () => {
       categoryId: '',
       thumbnail: null,
       existingThumbnail: '',
-      sections: []
+      sections: [],
     });
     setThumbnailFile(null);
     setThumbnailPreview('');
@@ -280,7 +316,7 @@ const BlogManagementContent = () => {
       categoryId: blog.categoryId || '',
       thumbnail: null,
       existingThumbnail: blog.thumbnailImage || '',
-      sections: blog.sections || []
+      sections: blog.sections || [],
     });
     setThumbnailFile(null);
     setThumbnailPreview(blog.thumbnailImage || '');
@@ -309,33 +345,36 @@ const BlogManagementContent = () => {
   };
 
   const handleSectionChange = (index, field, value) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      sections: prev.sections.map((section, i) => 
+      sections: prev.sections.map((section, i) =>
         i === index ? { ...section, [field]: value } : section
-      )
+      ),
     }));
   };
 
   const addSection = () => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      sections: [...prev.sections, {
-        sectionTitle: '',
-        sectionContent: '',
-        sectionImage: '',
-        existingSectionImage: '',
-        displayOrder: prev.sections.length
-      }]
+      sections: [
+        ...prev.sections,
+        {
+          sectionTitle: '',
+          sectionContent: '',
+          sectionImage: '',
+          existingSectionImage: '',
+          displayOrder: prev.sections.length,
+        },
+      ],
     }));
   };
 
   const removeSection = (index) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      sections: prev.sections.filter((_, i) => i !== index)
+      sections: prev.sections.filter((_, i) => i !== index),
     }));
-    setSectionFiles(prev => {
+    setSectionFiles((prev) => {
       const newFiles = { ...prev };
       delete newFiles[index];
       return newFiles;
@@ -344,14 +383,16 @@ const BlogManagementContent = () => {
 
   const handleSectionImageChange = (index, file) => {
     if (file) {
-      setSectionFiles(prev => ({ ...prev, [index]: file }));
+      setSectionFiles((prev) => ({ ...prev, [index]: file }));
       const reader = new FileReader();
       reader.onload = (e) => {
-        setForm(prev => ({
+        setForm((prev) => ({
           ...prev,
-          sections: prev.sections.map((section, i) => 
-            i === index ? { ...section, sectionImage: e.target.result } : section
-          )
+          sections: prev.sections.map((section, i) =>
+            i === index
+              ? { ...section, sectionImage: e.target.result }
+              : section
+          ),
         }));
       };
       reader.readAsDataURL(file);
@@ -373,7 +414,7 @@ const BlogManagementContent = () => {
     setLoading(true);
     try {
       const formData = new FormData();
-      
+
       // Add thumbnail
       if (thumbnailFile) {
         formData.append('thumbnail', thumbnailFile);
@@ -381,20 +422,20 @@ const BlogManagementContent = () => {
         // Nếu đang edit và có thumbnail cũ, gửi existingThumbnail
         requestData.existingThumbnail = form.existingThumbnail;
       }
-      
+
       // Add section images
       const sectionImages = [];
       const sectionImageIndexes = [];
-      Object.keys(sectionFiles).forEach(index => {
+      Object.keys(sectionFiles).forEach((index) => {
         sectionImages.push(sectionFiles[index]);
         sectionImageIndexes.push(parseInt(index));
       });
-      
+
       if (sectionImages.length > 0) {
         sectionImages.forEach((file, i) => {
           formData.append('sectionImages', file);
         });
-        sectionImageIndexes.forEach(index => {
+        sectionImageIndexes.forEach((index) => {
           formData.append('sectionImageIndexes', index);
         });
       }
@@ -405,19 +446,22 @@ const BlogManagementContent = () => {
         content: form.content,
         categoryId: parseInt(form.categoryId),
         sections: form.sections
-          .filter(section => section.sectionTitle || section.sectionContent) // Chỉ gửi sections có nội dung
+          .filter((section) => section.sectionTitle || section.sectionContent) // Chỉ gửi sections có nội dung
           .map((section, index) => ({
             sectionTitle: section.sectionTitle || '',
             sectionContent: section.sectionContent || '',
             sectionImage: section.sectionImage || '',
             existingSectionImage: section.existingSectionImage || '',
-            displayOrder: index
-          }))
+            displayOrder: index,
+          })),
       };
 
-      formData.append('request', new Blob([JSON.stringify(requestData)], {
-        type: 'application/json'
-      }));
+      formData.append(
+        'request',
+        new Blob([JSON.stringify(requestData)], {
+          type: 'application/json',
+        })
+      );
 
       let response;
       if (currentBlog) {
@@ -429,9 +473,13 @@ const BlogManagementContent = () => {
       // Refresh blogs list
       const updatedBlogs = await blogService.getAllBlogs();
       setBlogs(updatedBlogs);
-      
+
       setOpenDialog(false);
-      alert(currentBlog ? 'Cập nhật bài viết thành công!' : 'Tạo bài viết thành công!');
+      alert(
+        currentBlog
+          ? 'Cập nhật bài viết thành công!'
+          : 'Tạo bài viết thành công!'
+      );
     } catch (err) {
       setError(err.message || 'Lưu bài viết thất bại');
       alert('Lỗi: ' + err.message);
@@ -460,7 +508,9 @@ const BlogManagementContent = () => {
     try {
       // Gọi API cập nhật trạng thái (giả sử có blogService.updateBlogStatus)
       await blogService.updateBlog(id, { status: newStatus });
-      setBlogs((prev) => prev.map((b) => b.id === id ? { ...b, status: newStatus } : b));
+      setBlogs((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b))
+      );
     } catch (err) {
       setError(err.message || 'Cập nhật trạng thái thất bại');
     } finally {
@@ -470,8 +520,8 @@ const BlogManagementContent = () => {
 
   // Thống kê
   const totalBlogs = blogs.length;
-  const confirmedBlogs = blogs.filter(b => b.status === 'CONFIRMED').length;
-  const processingBlogs = blogs.filter(b => b.status === 'PROCESSING').length;
+  const confirmedBlogs = blogs.filter((b) => b.status === 'CONFIRMED').length;
+  const processingBlogs = blogs.filter((b) => b.status === 'PROCESSING').length;
 
   // Bộ lọc status
   const statusOptions = [
@@ -492,13 +542,17 @@ const BlogManagementContent = () => {
   const filteredBlogs = blogs.filter((blog) => {
     const matchSearch =
       blog.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (blog.categoryName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (blog.categoryName || '')
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       (blog.authorName || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchStatus = statusFilter === 'ALL' || blog.status === statusFilter;
     let matchDate = true;
     if (dateFilter) {
       // createdAt là array [YYYY, MM, DD, ...]
-      const dateStr = blog.createdAt ? `${blog.createdAt[0]}-${String(blog.createdAt[1]).padStart(2, '0')}-${String(blog.createdAt[2]).padStart(2, '0')}` : '';
+      const dateStr = blog.createdAt
+        ? `${blog.createdAt[0]}-${String(blog.createdAt[1]).padStart(2, '0')}-${String(blog.createdAt[2]).padStart(2, '0')}`
+        : '';
       matchDate = dateStr === dateFilter;
     }
     return matchSearch && matchStatus && matchDate;
@@ -514,12 +568,24 @@ const BlogManagementContent = () => {
     if (!date) return '';
     let d = date;
     if (Array.isArray(d) && d.length >= 3) {
-      d = new Date(d[0], d[1] - 1, d[2], d[3] || 0, d[4] || 0, d[5] || 0, d[6] || 0);
+      d = new Date(
+        d[0],
+        d[1] - 1,
+        d[2],
+        d[3] || 0,
+        d[4] || 0,
+        d[5] || 0,
+        d[6] || 0
+      );
     } else if (!(d instanceof Date)) {
       d = new Date(d);
     }
     if (isNaN(d.getTime())) return '';
-    return d.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    return d.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
   }
 
   const handleView = (blog) => {
@@ -536,8 +602,13 @@ const BlogManagementContent = () => {
     if (!reason || !reason.trim()) return;
     setLoading(true);
     try {
-      await blogService.updateBlogStatus(blog.id, { status: 'CANCELED', rejectionReason: reason });
-      setBlogs((prev) => prev.map((b) => b.id === blog.id ? { ...b, status: 'CANCELED' } : b));
+      await blogService.updateBlogStatus(blog.id, {
+        status: 'CANCELED',
+        rejectionReason: reason,
+      });
+      setBlogs((prev) =>
+        prev.map((b) => (b.id === blog.id ? { ...b, status: 'CANCELED' } : b))
+      );
       setOpenDetailModal(false);
       setSelectedBlog(null);
     } catch (err) {
@@ -610,45 +681,209 @@ const BlogManagementContent = () => {
         </Box>
 
         {/* Thống kê tổng số bài viết */}
-        <Box sx={{ display: 'flex', gap: 4, mb: 3 }}>
-          <Paper sx={{ p: 2, minWidth: 180, textAlign: 'center' }}>
-            <Typography variant="h6">Tổng số bài viết</Typography>
-            <Typography variant="h4" color="primary">{totalBlogs}</Typography>
-          </Paper>
-          <Paper sx={{ p: 2, minWidth: 180, textAlign: 'center' }}>
-            <Typography variant="h6">Đã duyệt</Typography>
-            <Typography variant="h4" color="success.main">{confirmedBlogs}</Typography>
-          </Paper>
-          <Paper sx={{ p: 2, minWidth: 180, textAlign: 'center' }}>
-            <Typography variant="h6">Chờ duyệt</Typography>
-            <Typography variant="h4" color="warning.main">{processingBlogs}</Typography>
-          </Paper>
-        </Box>
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper sx={statCardStyle}>
+              <Box sx={{ textAlign: 'center', p: 3 }}>
+                <Box
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 60,
+                    height: 60,
+                    borderRadius: '50%',
+                    background:
+                      'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+                    mb: 2,
+                    boxShadow: '0 8px 25px rgba(99, 102, 241, 0.3)',
+                  }}
+                >
+                  <LibraryBooksIcon sx={{ color: 'white', fontSize: 28 }} />
+                </Box>
+                <Typography
+                  variant="h6"
+                  sx={{ color: colors.textSecondary, mb: 1, fontWeight: 600 }}
+                >
+                  Tổng số bài viết
+                </Typography>
+                <Typography
+                  variant="h3"
+                  sx={{ color: colors.primary, fontWeight: 700 }}
+                >
+                  {totalBlogs}
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper sx={statCardStyle}>
+              <Box sx={{ textAlign: 'center', p: 3 }}>
+                <Box
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 60,
+                    height: 60,
+                    borderRadius: '50%',
+                    background:
+                      'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                    mb: 2,
+                    boxShadow: '0 8px 25px rgba(16, 185, 129, 0.3)',
+                  }}
+                >
+                  <CheckIcon sx={{ color: 'white', fontSize: 28 }} />
+                </Box>
+                <Typography
+                  variant="h6"
+                  sx={{ color: colors.textSecondary, mb: 1, fontWeight: 600 }}
+                >
+                  Đã duyệt
+                </Typography>
+                <Typography
+                  variant="h3"
+                  sx={{ color: colors.success, fontWeight: 700 }}
+                >
+                  {confirmedBlogs}
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper sx={statCardStyle}>
+              <Box sx={{ textAlign: 'center', p: 3 }}>
+                <Box
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 60,
+                    height: 60,
+                    borderRadius: '50%',
+                    background:
+                      'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                    mb: 2,
+                    boxShadow: '0 8px 25px rgba(245, 158, 11, 0.3)',
+                  }}
+                >
+                  <FilterListIcon sx={{ color: 'white', fontSize: 28 }} />
+                </Box>
+                <Typography
+                  variant="h6"
+                  sx={{ color: colors.textSecondary, mb: 1, fontWeight: 600 }}
+                >
+                  Chờ duyệt
+                </Typography>
+                <Typography
+                  variant="h3"
+                  sx={{ color: colors.warning, fontWeight: 700 }}
+                >
+                  {processingBlogs}
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
 
         {/* Bộ lọc status và ngày */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-          <FormControl sx={{ minWidth: 180 }} size="small">
-            <InputLabel>Trạng thái</InputLabel>
-            <Select
-              value={statusFilter}
-              label="Trạng thái"
-              onChange={e => setStatusFilter(e.target.value)}
-            >
-              {statusOptions.map(opt => (
-                <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            label="Ngày tạo"
-            type="date"
-            size="small"
-            value={dateFilter}
-            onChange={handleDateFilterChange}
-            InputLabelProps={{ shrink: true }}
-            sx={{ minWidth: 180 }}
-          />
-        </Box>
+        <Paper
+          sx={{
+            p: 3,
+            mb: 4,
+            background:
+              'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)',
+            border: `1px solid ${colors.border}`,
+            borderRadius: '16px',
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={{ mb: 3, color: colors.text, fontWeight: 600 }}
+          >
+            🔍 Bộ lọc tìm kiếm
+          </Typography>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={4}>
+              <FormControl fullWidth size="small">
+                <InputLabel sx={{ color: colors.textSecondary }}>
+                  Trạng thái
+                </InputLabel>
+                <Select
+                  value={statusFilter}
+                  label="Trạng thái"
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  sx={{
+                    borderRadius: '12px',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: colors.border,
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: colors.primary,
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: colors.primary,
+                    },
+                  }}
+                >
+                  {statusOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                label="Ngày tạo"
+                type="date"
+                size="small"
+                fullWidth
+                value={dateFilter}
+                onChange={handleDateFilterChange}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  borderRadius: '12px',
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: colors.border,
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: colors.primary,
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: colors.primary,
+                  },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setStatusFilter('ALL');
+                  setDateFilter('');
+                  setSearchTerm('');
+                }}
+                sx={{
+                  height: '40px',
+                  borderRadius: '12px',
+                  borderColor: colors.border,
+                  color: colors.textSecondary,
+                  '&:hover': {
+                    borderColor: colors.primary,
+                    color: colors.primary,
+                  },
+                }}
+              >
+                Xóa bộ lọc
+              </Button>
+            </Grid>
+          </Grid>
+        </Paper>
 
         {/* Blog List Table */}
         <Fade in={true}>
@@ -703,14 +938,58 @@ const BlogManagementContent = () => {
                         <TableCell>{blog.id}</TableCell>
                         <TableCell>{blog.title}</TableCell>
                         <TableCell>
-                          {blog.categoryIsActive === false ? 'Danh mục đã bị xoá' : (blog.categoryName || 'Chưa phân loại')}
+                          {blog.categoryIsActive === false
+                            ? 'Danh mục đã bị xoá'
+                            : blog.categoryName || 'Chưa phân loại'}
                         </TableCell>
                         <TableCell>{blog.authorName || ''}</TableCell>
                         <TableCell>{formatDateVN(blog.createdAt)}</TableCell>
                         <TableCell>
-                          {blog.status === 'CONFIRMED' && <Chip label="Đã duyệt" color="success" size="small" />}
-                          {blog.status === 'PROCESSING' && <Chip label="Chờ duyệt" color="warning" size="small" />}
-                          {blog.status === 'CANCELED' && <Chip label="Đã huỷ" color="error" size="small" />}
+                          {blog.status === 'CONFIRMED' && (
+                            <Chip
+                              label="Đã duyệt"
+                              sx={{
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                color: colors.success,
+                                fontWeight: 600,
+                                borderRadius: '8px',
+                                '& .MuiChip-label': {
+                                  px: 2,
+                                },
+                              }}
+                              size="small"
+                            />
+                          )}
+                          {blog.status === 'PROCESSING' && (
+                            <Chip
+                              label="Chờ duyệt"
+                              sx={{
+                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                color: colors.warning,
+                                fontWeight: 600,
+                                borderRadius: '8px',
+                                '& .MuiChip-label': {
+                                  px: 2,
+                                },
+                              }}
+                              size="small"
+                            />
+                          )}
+                          {blog.status === 'CANCELED' && (
+                            <Chip
+                              label="Đã huỷ"
+                              sx={{
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                color: colors.error,
+                                fontWeight: 600,
+                                borderRadius: '8px',
+                                '& .MuiChip-label': {
+                                  px: 2,
+                                },
+                              }}
+                              size="small"
+                            />
+                          )}
                         </TableCell>
                         <TableCell align="right">
                           <Tooltip title="Xem trước">
@@ -732,10 +1011,21 @@ const BlogManagementContent = () => {
                                 onClick={async () => {
                                   setLoading(true);
                                   try {
-                                    await blogService.updateBlogStatus(blog.id, { status: 'CONFIRMED' });
-                                    setBlogs((prev) => prev.map((b) => b.id === blog.id ? { ...b, status: 'CONFIRMED' } : b));
+                                    await blogService.updateBlogStatus(
+                                      blog.id,
+                                      { status: 'CONFIRMED' }
+                                    );
+                                    setBlogs((prev) =>
+                                      prev.map((b) =>
+                                        b.id === blog.id
+                                          ? { ...b, status: 'CONFIRMED' }
+                                          : b
+                                      )
+                                    );
                                   } catch (err) {
-                                    setError(err.message || 'Duyệt bài viết thất bại');
+                                    setError(
+                                      err.message || 'Duyệt bài viết thất bại'
+                                    );
                                   } finally {
                                     setLoading(false);
                                   }
@@ -796,41 +1086,56 @@ const BlogManagementContent = () => {
         >
           <DialogTitle
             sx={{
-              background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
-              color: colors.white,
+              background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+              color: colors.surface,
               fontWeight: 700,
               fontSize: '1.5rem',
-              padding: '20px 30px',
+              padding: '24px 32px',
               display: 'flex',
               alignItems: 'center',
               gap: 2,
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '150px',
+                height: '100%',
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 100%)',
+              },
             }}
           >
-            <LibraryBooksIcon sx={{ fontSize: 28 }} />
-            {currentBlog ? 'Chỉnh sửa bài viết' : 'Thêm bài viết mới'}
+            <LibraryBooksIcon sx={{ fontSize: 32, zIndex: 1 }} />
+            <Typography variant="h5" sx={{ zIndex: 1 }}>
+              {currentBlog ? 'Chỉnh sửa bài viết' : 'Thêm bài viết mới'}
+            </Typography>
           </DialogTitle>
 
-          <DialogContent sx={{ 
-            pt: 4, 
-            pb: 2, 
-            px: 4,
-            overflowY: 'auto',
-            maxHeight: 'calc(95vh - 140px)', // Trừ đi header và footer
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: 'rgba(32, 178, 170, 0.1)',
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: colors.primary,
-              borderRadius: '4px',
-              '&:hover': {
-                background: colors.secondary,
+          <DialogContent
+            sx={{
+              pt: 4,
+              pb: 2,
+              px: 4,
+              overflowY: 'auto',
+              maxHeight: 'calc(95vh - 140px)', // Trừ đi header và footer
+              '&::-webkit-scrollbar': {
+                width: '8px',
               },
-            },
-          }}>
+              '&::-webkit-scrollbar-track': {
+                background: 'rgba(32, 178, 170, 0.1)',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: colors.primary,
+                borderRadius: '4px',
+                '&:hover': {
+                  background: colors.secondary,
+                },
+              },
+            }}
+          >
             <Box component="form">
               <TextField
                 fullWidth
@@ -839,7 +1144,7 @@ const BlogManagementContent = () => {
                 name="title"
                 value={form.title}
                 onChange={handleFormChange}
-                sx={{ 
+                sx={{
                   mb: 3,
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 2,
@@ -856,27 +1161,32 @@ const BlogManagementContent = () => {
                   '& .MuiInputBase-input': {
                     fontSize: '1.1rem',
                     fontWeight: 500,
-                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                    fontFamily:
+                      '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                   },
                 }}
                 required
               />
 
-              <FormControl fullWidth margin="normal" sx={{ 
-                mb: 3,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  '&:hover fieldset': {
-                    borderColor: colors.primary,
+              <FormControl
+                fullWidth
+                margin="normal"
+                sx={{
+                  mb: 3,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&:hover fieldset': {
+                      borderColor: colors.primary,
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: colors.primary,
+                    },
                   },
-                  '&.Mui-focused fieldset': {
-                    borderColor: colors.primary,
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: colors.primary,
                   },
-                },
-                '& .MuiInputLabel-root.Mui-focused': {
-                  color: colors.primary,
-                },
-              }}>
+                }}
+              >
                 <InputLabel>Danh mục *</InputLabel>
                 <Select
                   name="categoryId"
@@ -885,8 +1195,11 @@ const BlogManagementContent = () => {
                   onChange={handleFormChange}
                   required
                 >
-                  {categories.map(category => (
-                    <MenuItem key={category.categoryId} value={category.categoryId}>
+                  {categories.map((category) => (
+                    <MenuItem
+                      key={category.categoryId}
+                      value={category.categoryId}
+                    >
                       {category.name}
                     </MenuItem>
                   ))}
@@ -894,23 +1207,32 @@ const BlogManagementContent = () => {
               </FormControl>
 
               {/* Thumbnail Upload */}
-              <Box sx={{ 
-                mb: 4,
-                p: 3,
-                backgroundColor: 'rgba(32, 178, 170, 0.05)',
-                borderRadius: 3,
-                border: '2px dashed rgba(32, 178, 170, 0.3)',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  borderColor: colors.primary,
-                  backgroundColor: 'rgba(32, 178, 170, 0.08)',
-                }
-              }}>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: colors.primary }}>
+              <Box
+                sx={{
+                  mb: 4,
+                  p: 3,
+                  backgroundColor: 'rgba(32, 178, 170, 0.05)',
+                  borderRadius: 3,
+                  border: '2px dashed rgba(32, 178, 170, 0.3)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    borderColor: colors.primary,
+                    backgroundColor: 'rgba(32, 178, 170, 0.08)',
+                  },
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{ mb: 2, fontWeight: 600, color: colors.primary }}
+                >
                   🖼️ Hình ảnh đại diện *
                 </Typography>
-                <Typography variant="body2" sx={{ mb: 3, color: colors.darkGray, opacity: 0.8 }}>
-                  Chọn hình ảnh đại diện cho bài viết. Hình ảnh sẽ được hiển thị ở đầu bài viết.
+                <Typography
+                  variant="body2"
+                  sx={{ mb: 3, color: colors.darkGray, opacity: 0.8 }}
+                >
+                  Chọn hình ảnh đại diện cho bài viết. Hình ảnh sẽ được hiển thị
+                  ở đầu bài viết.
                 </Typography>
                 <input
                   accept="image/*"
@@ -924,7 +1246,7 @@ const BlogManagementContent = () => {
                     variant="outlined"
                     component="span"
                     startIcon={<CloudUploadIcon />}
-                    sx={{ 
+                    sx={{
                       mb: 2,
                       borderRadius: 2,
                       borderColor: colors.primary,
@@ -934,22 +1256,27 @@ const BlogManagementContent = () => {
                       '&:hover': {
                         backgroundColor: 'rgba(32, 178, 170, 0.1)',
                         borderColor: colors.secondary,
-                      }
+                      },
                     }}
                   >
                     Chọn hình ảnh
                   </Button>
                 </label>
                 {(thumbnailPreview || form.existingThumbnail) && (
-                  <Box sx={{ 
-                    mt: 3, 
-                    textAlign: 'center',
-                    p: 2,
-                    backgroundColor: colors.white,
-                    borderRadius: 2,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                  }}>
-                    <Typography variant="caption" sx={{ mb: 2, display: 'block', color: colors.darkGray }}>
+                  <Box
+                    sx={{
+                      mt: 3,
+                      textAlign: 'center',
+                      p: 2,
+                      backgroundColor: colors.white,
+                      borderRadius: 2,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{ mb: 2, display: 'block', color: colors.darkGray }}
+                    >
                       Xem trước hình ảnh
                     </Typography>
                     <img
@@ -974,7 +1301,7 @@ const BlogManagementContent = () => {
                 name="content"
                 value={form.content}
                 onChange={handleFormChange}
-                sx={{ 
+                sx={{
                   mb: 4,
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 2,
@@ -991,7 +1318,8 @@ const BlogManagementContent = () => {
                   '& .MuiInputBase-input': {
                     fontSize: '1rem',
                     lineHeight: 1.6,
-                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                    fontFamily:
+                      '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                   },
                 }}
                 required
@@ -999,20 +1327,28 @@ const BlogManagementContent = () => {
 
               {/* Sections */}
               <Box sx={{ mb: 4 }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  mb: 3,
-                  p: 2,
-                  backgroundColor: 'rgba(32, 178, 170, 0.05)',
-                  borderRadius: 2,
-                }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 3,
+                    p: 2,
+                    backgroundColor: 'rgba(32, 178, 170, 0.05)',
+                    borderRadius: 2,
+                  }}
+                >
                   <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: colors.primary }}>
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: 600, color: colors.primary }}
+                    >
                       📝 Các phần bổ sung (tùy chọn)
                     </Typography>
-                    <Typography variant="body2" sx={{ color: colors.darkGray, opacity: 0.8 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: colors.darkGray, opacity: 0.8 }}
+                    >
                       Thêm các phần nội dung bổ sung với hình ảnh
                     </Typography>
                   </Box>
@@ -1026,7 +1362,7 @@ const BlogManagementContent = () => {
                       fontWeight: 600,
                       '&:hover': {
                         backgroundColor: colors.secondary,
-                      }
+                      },
                     }}
                   >
                     Thêm phần
@@ -1034,34 +1370,42 @@ const BlogManagementContent = () => {
                 </Box>
 
                 {form.sections.map((section, index) => (
-                  <Card key={index} sx={{ 
-                    mb: 4, 
-                    p: 4, 
-                    border: '2px solid rgba(32, 178, 170, 0.2)',
-                    borderRadius: 3,
-                    backgroundColor: colors.white,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      boxShadow: '0 6px 20px rgba(0,0,0,0.12)',
-                      borderColor: colors.primary,
-                    }
-                  }}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
+                  <Card
+                    key={index}
+                    sx={{
                       mb: 4,
-                      pb: 2,
-                      borderBottom: '2px solid rgba(32, 178, 170, 0.1)'
-                    }}>
-                      <Typography variant="h6" sx={{ 
-                        fontWeight: 600, 
-                        color: colors.primary,
+                      p: 4,
+                      border: '2px solid rgba(32, 178, 170, 0.2)',
+                      borderRadius: 3,
+                      backgroundColor: colors.white,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: '0 6px 20px rgba(0,0,0,0.12)',
+                        borderColor: colors.primary,
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
                         display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
-                        gap: 1
-                      }}>
+                        mb: 4,
+                        pb: 2,
+                        borderBottom: '2px solid rgba(32, 178, 170, 0.1)',
+                      }}
+                    >
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontWeight: 600,
+                          color: colors.primary,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                        }}
+                      >
                         <span style={{ fontSize: '1.2rem' }}>📄</span>
                         Phần {index + 1}
                       </Typography>
@@ -1073,7 +1417,7 @@ const BlogManagementContent = () => {
                           backgroundColor: 'rgba(255, 107, 107, 0.1)',
                           '&:hover': {
                             backgroundColor: 'rgba(255, 107, 107, 0.2)',
-                          }
+                          },
                         }}
                       >
                         <RemoveIcon />
@@ -1086,8 +1430,14 @@ const BlogManagementContent = () => {
                           fullWidth
                           label="Tiêu đề phần"
                           value={section.sectionTitle}
-                          onChange={(e) => handleSectionChange(index, 'sectionTitle', e.target.value)}
-                          sx={{ 
+                          onChange={(e) =>
+                            handleSectionChange(
+                              index,
+                              'sectionTitle',
+                              e.target.value
+                            )
+                          }
+                          sx={{
                             mb: 2,
                             '& .MuiOutlinedInput-root': {
                               borderRadius: 2,
@@ -1104,7 +1454,8 @@ const BlogManagementContent = () => {
                             '& .MuiInputBase-input': {
                               fontSize: '1rem',
                               fontWeight: 500,
-                              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                              fontFamily:
+                                '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                             },
                           }}
                         />
@@ -1115,8 +1466,14 @@ const BlogManagementContent = () => {
                           fullWidth
                           label="Nội dung phần"
                           value={section.sectionContent}
-                          onChange={(e) => handleSectionChange(index, 'sectionContent', e.target.value)}
-                          sx={{ 
+                          onChange={(e) =>
+                            handleSectionChange(
+                              index,
+                              'sectionContent',
+                              e.target.value
+                            )
+                          }
+                          sx={{
                             mb: 2,
                             '& .MuiOutlinedInput-root': {
                               borderRadius: 2,
@@ -1133,20 +1490,30 @@ const BlogManagementContent = () => {
                             '& .MuiInputBase-input': {
                               fontSize: '1rem',
                               lineHeight: 1.6,
-                              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                              fontFamily:
+                                '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                             },
                           }}
                         />
                       </Grid>
 
                       <Grid item xs={12}>
-                        <Box sx={{
-                          p: 2,
-                          backgroundColor: 'rgba(32, 178, 170, 0.03)',
-                          borderRadius: 2,
-                          border: '1px dashed rgba(32, 178, 170, 0.3)',
-                        }}>
-                          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: colors.primary }}>
+                        <Box
+                          sx={{
+                            p: 2,
+                            backgroundColor: 'rgba(32, 178, 170, 0.03)',
+                            borderRadius: 2,
+                            border: '1px dashed rgba(32, 178, 170, 0.3)',
+                          }}
+                        >
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              mb: 2,
+                              fontWeight: 600,
+                              color: colors.primary,
+                            }}
+                          >
                             🖼️ Hình ảnh phần (tùy chọn)
                           </Typography>
                           <input
@@ -1154,7 +1521,9 @@ const BlogManagementContent = () => {
                             style={{ display: 'none' }}
                             id={`section-image-${index}`}
                             type="file"
-                            onChange={(e) => handleSectionImageChange(index, e.target.files[0])}
+                            onChange={(e) =>
+                              handleSectionImageChange(index, e.target.files[0])
+                            }
                           />
                           <label htmlFor={`section-image-${index}`}>
                             <Button
@@ -1162,7 +1531,7 @@ const BlogManagementContent = () => {
                               component="span"
                               startIcon={<CloudUploadIcon />}
                               size="small"
-                              sx={{ 
+                              sx={{
                                 mb: 2,
                                 borderRadius: 2,
                                 borderColor: colors.primary,
@@ -1171,26 +1540,39 @@ const BlogManagementContent = () => {
                                 '&:hover': {
                                   backgroundColor: 'rgba(32, 178, 170, 0.1)',
                                   borderColor: colors.secondary,
-                                }
+                                },
                               }}
                             >
                               Chọn hình ảnh
                             </Button>
                           </label>
-                          {(section.sectionImage || section.existingSectionImage) && (
-                            <Box sx={{ 
-                              mt: 2,
-                              textAlign: 'center',
-                              p: 2,
-                              backgroundColor: colors.white,
-                              borderRadius: 2,
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                            }}>
-                              <Typography variant="caption" sx={{ mb: 2, display: 'block', color: colors.darkGray }}>
+                          {(section.sectionImage ||
+                            section.existingSectionImage) && (
+                            <Box
+                              sx={{
+                                mt: 2,
+                                textAlign: 'center',
+                                p: 2,
+                                backgroundColor: colors.white,
+                                borderRadius: 2,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  mb: 2,
+                                  display: 'block',
+                                  color: colors.darkGray,
+                                }}
+                              >
                                 Xem trước hình ảnh phần {index + 1}
                               </Typography>
                               <img
-                                src={section.sectionImage || section.existingSectionImage}
+                                src={
+                                  section.sectionImage ||
+                                  section.existingSectionImage
+                                }
                                 alt={`Section ${index + 1} preview`}
                                 style={{
                                   maxWidth: '100%',
@@ -1211,11 +1593,13 @@ const BlogManagementContent = () => {
             </Box>
           </DialogContent>
 
-          <DialogActions sx={{ 
-            p: 4, 
-            backgroundColor: 'rgba(32, 178, 170, 0.02)',
-            borderTop: '1px solid rgba(32, 178, 170, 0.1)'
-          }}>
+          <DialogActions
+            sx={{
+              p: 4,
+              backgroundColor: 'rgba(32, 178, 170, 0.02)',
+              borderTop: '1px solid rgba(32, 178, 170, 0.1)',
+            }}
+          >
             <Button
               onClick={handleCloseDialog}
               variant="outlined"
@@ -1254,7 +1638,7 @@ const BlogManagementContent = () => {
                   color: colors.darkGray,
                   boxShadow: 'none',
                   transform: 'none',
-                }
+                },
               }}
               startIcon={
                 loading ? <CircularProgress size={20} color="inherit" /> : null

@@ -377,14 +377,12 @@ const InvoicesContent = () => {
                 <StyledTableHead>Dịch vụ</StyledTableHead>
                 <StyledTableHead>Nhân viên đảm nhận</StyledTableHead>
                 <StyledTableHead>Số tiền</StyledTableHead>
-                <StyledTableHead>Trạng thái</StyledTableHead>
                 <StyledTableHead>Thanh toán</StyledTableHead>
                 <StyledTableHead>Thao tác</StyledTableHead>
               </TableRow>
             </TableHead>
             <TableBody>
               {invoices.map((invoice) => {
-                const statusInfo = getStatusColor(invoice.status);
                 const paymentInfo = getPaymentStatusColor(
                   invoice.paymentStatus
                 );
@@ -402,18 +400,6 @@ const InvoicesContent = () => {
                     </StyledTableCell>
                     <StyledTableCell sx={{ fontWeight: 600 }}>
                       {formatCurrency(invoice.totalPrice)}
-                    </StyledTableCell>
-                    <StyledTableCell>
-                      <Chip
-                        label={statusInfo.text}
-                        size="small"
-                        sx={{
-                          background: statusInfo.bg,
-                          color: '#fff',
-                          fontWeight: 600,
-                          fontSize: '0.75rem',
-                        }}
-                      />
                     </StyledTableCell>
                     <StyledTableCell>
                       <Chip
