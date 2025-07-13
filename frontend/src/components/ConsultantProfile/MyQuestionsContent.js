@@ -43,6 +43,7 @@ import {
   Tooltip,
   Tabs,
   Tab,
+  Grid,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -63,6 +64,7 @@ import questionService from '../../services/questionService';
 import { formatDateTimeFromArray } from '../../utils/dateUtils';
 import { confirmDialog } from '../../utils/confirmDialog';
 import { useUser } from '../../context/UserContext';
+import { notify } from '../../utils/notify';
 
 // SỬA styled component cho nền tổng thể
 const SimpleContainer = styled(Box)(() => ({
@@ -320,6 +322,7 @@ const MyQuestionsContent = () => {
       try {
         await questionService.answerQuestion(question.id, { answer });
         fetchQuestions();
+        notify.success('Thành công', 'Đã trả lời câu hỏi thành công!');
       } catch (error) {
         await confirmDialog.danger(
           'Có lỗi xảy ra khi gửi câu trả lời. Vui lòng thử lại sau.'
@@ -350,6 +353,7 @@ const MyQuestionsContent = () => {
       setOpenAnswerRowId(null);
       setInlineAnswerContent('');
       fetchQuestions();
+      notify.success('Thành công', 'Đã trả lời câu hỏi thành công!');
     } catch (error) {
       setInlineAnswerError(
         'Có lỗi xảy ra khi gửi câu trả lời. Vui lòng thử lại sau.'
@@ -799,72 +803,226 @@ const MyQuestionsContent = () => {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: '18px',
-            background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)',
+            borderRadius: '20px',
+            background: 'linear-gradient(135deg, #fafdff 0%, #e3f2fd 100%)',
+            boxShadow: '0 8px 32px rgba(33,150,243,0.10)',
           },
         }}
       >
         <DialogTitle
           sx={{
-            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+            background: 'linear-gradient(90deg, #43c6ac 0%, #191654 100%)',
             color: '#fff',
             display: 'flex',
             alignItems: 'center',
-            gap: 1,
+            gap: 2,
+            fontWeight: 800,
+            fontSize: '1.5rem',
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            minHeight: 70,
+            p: '28px 36px 18px 36px',
+            boxShadow: '0 6px 24px rgba(33,150,243,0.10)',
+            letterSpacing: 1,
           }}
         >
-          <VisibilityIcon />
+          <VisibilityIcon sx={{ fontSize: 36, mr: 2 }} />
           Chi tiết câu hỏi
         </DialogTitle>
-        <DialogContent sx={{ p: 3 }}>
+        <DialogContent sx={{ p: { xs: 2, md: 5 }, background: 'none' }}>
           {detailDialogQuestion && (
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary">
-                Tiêu đề:
-              </Typography>
-              <Typography variant="h6" fontWeight={700} mb={1}>
-                {detailDialogQuestion.title}
-              </Typography>
-              <Typography variant="subtitle2" color="text.secondary">
-                Nội dung:
-              </Typography>
-              <Typography variant="body1" mb={1}>
-                {detailDialogQuestion.content}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" mb={1}>
-                Người hỏi: {detailDialogQuestion.customerName} | Ngày tạo:{' '}
-                {Array.isArray(detailDialogQuestion.createdAt)
-                  ? formatDateTimeFromArray(detailDialogQuestion.createdAt)
-                  : ''}
-              </Typography>
-              <SimpleCategoryChip
-                label={
-                  detailDialogQuestion.categoryName ||
-                  detailDialogQuestion.category ||
-                  ''
-                }
-                size="small"
-              />
-              <Box mt={3}>
-                <Typography variant="subtitle2" color="success.main">
-                  Câu trả lời:
-                </Typography>
+            <Stack spacing={3}>
+              {/* Thông tin chung */}
+              <Card
+                sx={{
+                  p: { xs: 2, md: 3 },
+                  borderRadius: 4,
+                  boxShadow: '0 2px 12px rgba(33,150,243,0.07)',
+                  mb: 1,
+                }}
+              >
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={12} md={2}>
+                    <SimpleCategoryChip
+                      label={
+                        detailDialogQuestion.categoryName ||
+                        detailDialogQuestion.category ||
+                        ''
+                      }
+                      size="small"
+                      sx={{ fontWeight: 700, fontSize: 13, px: 2, py: 0.5 }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={2}>
+                    <Stack direction="row" alignItems="center" gap={1}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        fontWeight={600}
+                      >
+                        <strong>ID:</strong> #{detailDialogQuestion.id}
+                      </Typography>
+                    </Stack>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Stack direction="row" alignItems="center" gap={1}>
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          bgcolor: '#90caf9',
+                          fontWeight: 700,
+                          fontSize: 16,
+                        }}
+                      >
+                        {detailDialogQuestion.customerName?.charAt(0) || '?'}
+                      </Avatar>
+                      <Box>
+                        <Typography
+                          variant="body2"
+                          fontWeight={700}
+                          color="#1976d2"
+                        >
+                          {detailDialogQuestion.customerName}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {detailDialogQuestion.customerEmail}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Stack direction="row" alignItems="center" gap={1}>
+                      <MedicalIcon sx={{ color: '#43c6ac', fontSize: 20 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Ngày tạo:</strong>{' '}
+                        {Array.isArray(detailDialogQuestion.createdAt)
+                          ? formatDateTimeFromArray(
+                              detailDialogQuestion.createdAt
+                            )
+                          : ''}
+                      </Typography>
+                    </Stack>
+                  </Grid>
+                </Grid>
+              </Card>
+              {/* Nội dung câu hỏi */}
+              <Card
+                sx={{
+                  p: { xs: 2, md: 3 },
+                  borderRadius: 4,
+                  background: 'linear-gradient(90deg, #e3f2fd 60%, #fff 100%)',
+                  border: '1px solid #bbdefb',
+                  boxShadow: '0 1px 6px rgba(33,150,243,0.06)',
+                }}
+              >
+                <Stack direction="row" alignItems="center" gap={1} mb={1}>
+                  <QuestionIcon sx={{ color: '#1976d2', fontSize: 24 }} />
+                  <Typography
+                    variant="subtitle1"
+                    color="#1976d2"
+                    fontWeight={700}
+                  >
+                    Nội dung câu hỏi
+                  </Typography>
+                </Stack>
                 <Typography
-                  variant="body1"
-                  sx={{ background: '#e8f5e9', borderRadius: 2, p: 2, mt: 1 }}
+                  variant="h6"
+                  fontWeight={800}
+                  sx={{ mb: 1, wordBreak: 'break-word', color: '#222' }}
                 >
-                  {detailDialogQuestion.answer}
+                  {detailDialogQuestion.content}
                 </Typography>
-              </Box>
-            </Box>
+              </Card>
+              {/* Thông tin người trả lời */}
+              <Card
+                sx={{
+                  p: { xs: 2, md: 3 },
+                  borderRadius: 4,
+                  background: 'linear-gradient(90deg, #e8f5e9 60%, #fff 100%)',
+                  border: '1px solid #a5d6a7',
+                  boxShadow: '0 1px 6px rgba(76,175,80,0.06)',
+                }}
+              >
+                <Stack direction="row" alignItems="center" gap={2}>
+                  <Avatar
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      bgcolor: '#a5d6a7',
+                      fontWeight: 700,
+                      fontSize: 16,
+                    }}
+                  >
+                    {detailDialogQuestion.replierName?.charAt(0) || '?'}
+                  </Avatar>
+                  <Box>
+                    <Typography
+                      variant="body2"
+                      fontWeight={700}
+                      color="success.main"
+                    >
+                      {detailDialogQuestion.replierName}
+                    </Typography>
+                    {detailDialogQuestion.replierEmail && (
+                      <Typography variant="caption" color="text.secondary">
+                        {detailDialogQuestion.replierEmail}
+                      </Typography>
+                    )}
+                  </Box>
+                  <CheckCircleIcon color="success" sx={{ ml: 2 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Ngày trả lời:</strong>{' '}
+                    {Array.isArray(detailDialogQuestion.updatedAt)
+                      ? formatDateTimeFromArray(detailDialogQuestion.updatedAt)
+                      : ''}
+                  </Typography>
+                </Stack>
+              </Card>
+              {/* Câu trả lời */}
+              <Card
+                sx={{
+                  background: 'linear-gradient(135deg, #e8f5e9 0%, #fff 100%)',
+                  border: '1px solid #a5d6a7',
+                  borderRadius: 4,
+                  mt: 1,
+                  p: 0,
+                  boxShadow: '0 1px 6px rgba(76,175,80,0.08)',
+                }}
+              >
+                <CardContent>
+                  <Stack direction="row" alignItems="center" gap={1} mb={1}>
+                    <CheckCircleIcon color="success" />
+                    <Typography
+                      variant="subtitle1"
+                      color="success.main"
+                      fontWeight={800}
+                    >
+                      Câu trả lời chuyên môn
+                    </Typography>
+                  </Stack>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      lineHeight: 1.7,
+                      wordBreak: 'break-word',
+                      fontSize: 17,
+                      color: '#222',
+                    }}
+                  >
+                    {detailDialogQuestion.answer}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Stack>
           )}
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button
             onClick={handleCloseDetailDialog}
-            sx={{ borderRadius: '12px', px: 3 }}
+            sx={{ borderRadius: '12px', px: 3, fontWeight: 700 }}
           >
-            Đóng
+            ĐÓNG
           </Button>
         </DialogActions>
       </Dialog>

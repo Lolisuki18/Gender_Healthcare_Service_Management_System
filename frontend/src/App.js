@@ -32,6 +32,13 @@ import './App.css';
 import tokenService from '@/services/tokenService';
 import ScrollToTop from './components/common/ScrollToTop';
 import AuthStateRestorer from './components/common/AuthStateRestorer';
+import useConnectionMonitor from '@/hooks/useConnectionMonitor';
+
+// Component để theo dõi kết nối
+const ConnectionMonitor = () => {
+  useConnectionMonitor();
+  return null; // Component này không render gì, chỉ theo dõi
+};
 
 function App() {
   useEffect(() => {
@@ -52,6 +59,7 @@ function App() {
             <UserProvider>
               <CssBaseline />
               <ToastContainer position="top-right" autoClose={3000} />
+              <ConnectionMonitor />
               <HashRouter>
                 <ScrollToTop />
                 <AppRoutes />

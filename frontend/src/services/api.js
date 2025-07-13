@@ -68,7 +68,7 @@ const isTokenExpiringSoon = (token) => {
     const expiryTime = payload.exp * 1000;
     const currentTime = Date.now();
 
-    // Token sắp hết hạn trong 5 phút (phù hợp với access token 1 giờ)
+    // Token sắp hết hạn trong 5 phút (phù hợp với access token 1 giờ từ backend)
     return expiryTime - currentTime < 5 * 60 * 1000;
   } catch (error) {
     return true;
@@ -209,17 +209,26 @@ apiClient.interceptors.response.use(
         return apiClient.request(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
+
         // Nếu có flag skipAutoRedirect, không redirect và không alert
         if (originalRequest?.skipAutoRedirect) {
           return Promise.reject(error);
         }
+
+        // Kiểm tra nếu đang ở trang login thì không hiển thị dialog
+        if (window.location.pathname.includes('/login')) {
+          return Promise.reject(refreshError);
+        }
+
         // Thông báo cho người dùng bằng dialog đẹp
         await confirmDialog.info(
           'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!'
         );
+
         // XÓA TOÀN BỘ DỮ LIỆU TRÊN LOCALSTORAGE VÀ SESSIONSTORAGE
         localStorage.clear();
         sessionStorage.clear();
+
         // Chỉ redirect nếu không phải đang ở trang login
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';
@@ -228,6 +237,15 @@ apiClient.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+    }
+
+    // Xử lý các lỗi khác
+    if (error.response?.status === 403) {
+      // Forbidden - có thể do token không đủ quyền
+      console.error('Access forbidden - insufficient permissions');
+    } else if (error.response?.status >= 500) {
+      // Server error
+      console.error('Server error:', error.response?.status);
     }
 
     return Promise.reject(error);

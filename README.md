@@ -1,8 +1,8 @@
-# Gender Healthcare Service Management System
+# Hệ Thống Quản Lý Dịch Vụ Chăm Sóc Sức Khỏe Giới Tính
 
 ## 🏥 Giới thiệu dự án
 
-**Gender Healthcare Service Management System** là nền tảng quản lý dịch vụ chăm sóc sức khỏe chuyên biệt, hỗ trợ đa dạng nghiệp vụ như tư vấn, xét nghiệm, quản lý chu kỳ, blog sức khỏe, đánh giá, nhắc uống thuốc, v.v. Dự án hướng tới việc cung cấp giải pháp toàn diện cho khách hàng, bác sĩ, nhân viên và quản trị viên.
+**Hệ Thống Quản Lý Dịch Vụ Chăm Sóc Sức Khỏe Giới Tính** là nền tảng quản lý dịch vụ chăm sóc sức khỏe chuyên biệt, hỗ trợ đa dạng nghiệp vụ như tư vấn, xét nghiệm, quản lý chu kỳ, blog sức khỏe, đánh giá, nhắc uống thuốc, v.v. Dự án hướng tới việc cung cấp giải pháp toàn diện cho khách hàng, bác sĩ, nhân viên và quản trị viên.
 
 ---
 
@@ -11,382 +11,650 @@
 ### Backend (Java Spring Boot)
 
 - **Spring Boot 3.4.5**: Framework chính xây dựng RESTful API
+- **Java 24**: Ngôn ngữ lập trình
 - **Spring Data JPA**: ORM truy xuất dữ liệu
 - **Spring Security + JWT**: Xác thực, phân quyền, bảo mật API
 - **MSSQL**: Cơ sở dữ liệu chính
 - **Lombok**: Giảm boilerplate code
-- **Stripe Java SDK**: Thanh toán trực tuyến
+- **Stripe Java SDK (v22.0.0)**: Thanh toán trực tuyến
 - **Spring Mail**: Gửi email tự động
-- **Log4j2**: Logging
-- **OpenAPI/Swagger**: Tài liệu hóa API
+- **Log4j2**: Ghi log
+- **OpenAPI/Swagger (v2.8.5)**: Tài liệu hóa API
 - **WebFlux**: Hỗ trợ reactive API
+- **Google Cloud Storage**: Lưu trữ file đám mây
+- **Twilio SDK (v10.6.1)**: Gửi SMS
+- **Google OAuth2**: Đăng nhập bằng Google
+- **JJWT (v0.12.3)**: Xử lý JWT tokens
 
 ### Frontend (ReactJS)
 
-- **React 19**: Xây dựng giao diện người dùng
-- **Redux Toolkit, Redux Thunk, Redux Persist**: Quản lý state phức tạp
-- **Material UI (MUI)**: Thư viện UI hiện đại
-- **React Router v7**: Điều hướng SPA
-- **Axios**: Giao tiếp API
-- **Styled-components**: CSS-in-JS
-- **Chart.js, Recharts**: Biểu đồ thống kê
-- **JSPDF, html2canvas**: Xuất PDF
-- **Dayjs, date-fns**: Xử lý ngày tháng
+- **React 19.1.0**: Xây dựng giao diện người dùng
+- **Redux Toolkit (v2.8.2)**: Quản lý state phức tạp
+- **Redux Thunk (v3.1.0)**: Xử lý bất đồng bộ
+- **Redux Persist (v6.0.0)**: Lưu state vào localStorage
+- **Material UI (MUI v7.1.0)**: Thư viện UI hiện đại
+- **React Router v7.6.1**: Điều hướng SPA
+- **Axios (v1.9.0)**: Giao tiếp API
+- **Styled-components (v6.1.18)**: CSS-in-JS
+- **Chart.js (v4.5.0) & Recharts (v2.15.4)**: Biểu đồ thống kê
+- **jsPDF (v3.0.1) & html2canvas (v1.4.1)**: Xuất PDF
+- **Dayjs (v1.11.13) & date-fns (v4.1.0)**: Xử lý ngày tháng
+- **React Toastify (v11.0.5)**: Thông báo
+- **CRACO (v7.1.0)**: Cấu hình build tùy chỉnh
 
 ---
 
 ## 🏗️ Kiến trúc tổng quan
 
-- **Backend**: Kiến trúc RESTful, chia module rõ ràng (controller, service, repository, model, dto, config, exception). Sử dụng Spring Security cho xác thực, phân quyền; JPA cho truy vấn dữ liệu; tích hợp Stripe cho thanh toán; gửi email qua Spring Mail; lưu trữ file tĩnh (ảnh, PDF) trên server.
-- **Frontend**: Tổ chức theo chuẩn React: chia component, page, layout, service, redux slice/thunk, context, hooks, assets. State phức tạp dùng Redux, state đơn giản dùng Context API. Giao tiếp backend qua các service (axios). UI responsive, dễ mở rộng.
+### Kiến trúc Backend
+
+- **RESTful API**: Kiến trúc REST chuẩn với JSON response
+- **Layered Architecture**: Controller → Service → Repository → Model
+- **Security Layer**: Spring Security với JWT authentication
+- **Database Layer**: JPA/Hibernate với MSSQL
+- **File Storage**: Hỗ trợ local storage và Google Cloud Storage
+- **Payment Integration**: Stripe và MB Bank API
+- **Email/SMS**: SendGrid và Twilio integration
+- **AI Integration**: Google Gemini AI cho content moderation
+
+### Kiến trúc Frontend
+
+- **Component-Based**: Chia nhỏ UI thành các component tái sử dụng
+- **State Management**: Redux Toolkit cho global state, Context API cho local state
+- **Routing**: React Router với nested routes
+- **UI Framework**: Material-UI với custom theme
+- **API Integration**: Axios với interceptors và error handling
+- **Responsive Design**: Mobile-first approach
 
 ---
 
 ## 🌟 Các tính năng chính
 
-### Backend
+### Tính năng Backend
 
-- **Quản lý người dùng**: Đăng ký, đăng nhập, phân quyền (Admin, Staff, Consultant, Customer), đổi mật khẩu, xác thực JWT, quên mật khẩu, xác thực email
-- **Quản lý dịch vụ & gói xét nghiệm STI**: CRUD dịch vụ, gói, xét nghiệm, quản lý kết quả
-- **Tư vấn & đặt lịch**: Đặt lịch tư vấn, quản lý lịch, trạng thái, phản hồi
-- **Quản lý chu kỳ kinh nguyệt, nhắc uống thuốc**: Lưu lịch sử, nhắc nhở, dự đoán
-- **Quản lý blog sức khỏe**: CRUD bài viết, phân loại, duyệt bài
-- **Đánh giá & phản hồi**: Gửi, xem, tổng hợp đánh giá
-- **Thanh toán trực tuyến**: Tích hợp Stripe, quản lý giao dịch
-- **Gửi email tự động**: Thông báo, xác thực, quên mật khẩu
-- **Quản lý file upload**: Ảnh đại diện, ảnh blog, PDF kết quả xét nghiệm
-- **API tài liệu hóa với Swagger**
+#### 🔐 Xác thực & Phân quyền
 
-### Frontend
+- **JWT Authentication**: Access token (4h) và refresh token (7 ngày)
+- **Role-based Access Control**: ADMIN, STAFF, CONSULTANT, CUSTOMER
+- **OAuth2 Integration**: Đăng nhập bằng Google
+- **Password Reset**: Email và SMS OTP
+- **Email Verification**: Xác thực tài khoản qua email
 
-- **Đăng ký, đăng nhập, xác thực, phân quyền giao diện**
-- **Trang chủ, giới thiệu, điều khoản, chính sách**
-- **Quản lý hồ sơ, đổi thông tin, đổi mật khẩu**
-- **Đặt lịch tư vấn, xem lịch sử, nhận thông báo**
-- **Đăng ký xét nghiệm, xem kết quả, xuất PDF**
-- **Quản lý chu kỳ, nhắc uống thuốc, dự đoán rụng trứng**
-- **Xem/gửi câu hỏi, blog sức khỏe, đánh giá dịch vụ**
-- **Quản trị viên: quản lý người dùng, dịch vụ, blog, báo cáo**
-- **Nhân viên: duyệt xét nghiệm, quản lý phản hồi**
-- **Tư vấn viên: quản lý lịch tư vấn, trả lời câu hỏi**
+#### 👥 Quản lý người dùng
+
+- **User Registration**: Đăng ký với validation
+- **Profile Management**: Cập nhật thông tin cá nhân
+- **Avatar Upload**: Hỗ trợ local và cloud storage
+- **Account Status**: Quản lý trạng thái tài khoản
+
+#### 🏥 Dịch vụ chăm sóc sức khỏe
+
+- **STI Testing**: Quản lý xét nghiệm STI
+- **Service Packages**: Gói xét nghiệm tổng hợp
+- **Test Results**: Kết quả xét nghiệm với PDF export
+- **Appointment Booking**: Đặt lịch xét nghiệm
+- **Payment Processing**: Stripe và QR payment
+
+#### 💬 Hệ thống tư vấn
+
+- **Consultant Profiles**: Hồ sơ chuyên gia tư vấn
+- **Booking Management**: Đặt lịch tư vấn
+- **Video Meeting**: Tích hợp meet URL
+- **Status Tracking**: PENDING, CONFIRMED, COMPLETED, CANCELED
+
+#### 📝 Quản lý blog
+
+- **Content Creation**: Tạo bài viết với rich text
+- **Image Upload**: Hỗ trợ multiple images
+- **Moderation System**: Duyệt bài trước khi publish
+- **Category Management**: Phân loại bài viết
+
+#### 📊 Hệ thống đánh giá & phản hồi
+
+- **Multi-target Rating**: Đánh giá consultant, service, package
+- **Rating Summary**: Thống kê đánh giá
+- **Staff Response**: Phản hồi từ nhân viên
+- **Star Distribution**: Phân bố sao đánh giá
+
+#### 🔄 Hệ thống chu kỳ & nhắc nhở
+
+- **Menstrual Cycle Tracking**: Theo dõi chu kỳ kinh nguyệt
+- **Ovulation Prediction**: Dự đoán ngày rụng trứng
+- **Pill Reminder**: Nhắc nhở uống thuốc
+- **Notification System**: Email và SMS notifications
+
+#### 💳 Hệ thống thanh toán
+
+- **Stripe Integration**: Thanh toán thẻ quốc tế
+- **MB Bank API**: QR payment
+- **Payment History**: Lịch sử giao dịch
+- **Refund Processing**: Xử lý hoàn tiền
+
+#### 📧 Hệ thống liên lạc
+
+- **Email Service**: SendGrid integration
+- **SMS Service**: Twilio integration
+- **Automated Notifications**: Thông báo tự động
+- **Template System**: Email templates
+
+### Tính năng Frontend
+
+#### 🎨 Giao diện người dùng
+
+- **Responsive Design**: Tương thích mobile/desktop
+- **Material Design**: UI/UX hiện đại
+- **Dark/Light Theme**: Tùy chọn giao diện
+- **Loading States**: Skeleton loading
+- **Error Handling**: User-friendly error messages
+
+#### 🔐 Giao diện xác thực
+
+- **Login/Register**: Form validation
+- **OAuth Buttons**: Đăng nhập Google
+- **Password Reset**: Step-by-step flow
+- **Profile Management**: Upload avatar
+
+#### 📱 Dashboard theo vai trò
+
+- **Admin Dashboard**: Quản lý toàn hệ thống
+- **Staff Dashboard**: Xử lý xét nghiệm và phản hồi
+- **Consultant Dashboard**: Quản lý lịch tư vấn
+- **Customer Dashboard**: Theo dõi dịch vụ cá nhân
+
+#### 📊 Hiển thị dữ liệu
+
+- **Charts & Graphs**: Biểu đồ thống kê
+- **Progress Tracking**: Theo dõi tiến độ
+- **Analytics**: Báo cáo chi tiết
+- **Export Features**: PDF, Excel export
+
+#### 🔔 Tính năng thời gian thực
+
+- **Notifications**: Toast notifications
+- **Status Updates**: Real-time status changes
+- **Connection Monitoring**: Network status
+- **Auto-refresh**: Tự động cập nhật dữ liệu
 
 ---
 
 ## 🔒 Bảo mật & xác thực
 
-- **JWT Authentication**: Đăng nhập trả về JWT, frontend lưu localStorage, gửi kèm header Authorization cho API bảo vệ
-- **Role-based Access Control**: Phân quyền chi tiết từng API, từng giao diện
-- **Validation & Exception Handling**: Kiểm tra dữ liệu đầu vào, trả lỗi rõ ràng
-- **Email Verification & Reset Password**: Gửi email xác thực, quên mật khẩu
+### Tính năng bảo mật
+
+- **JWT Token Management**: Quản lý token an toàn
+- **Role-based Authorization**: Phân quyền chi tiết
+- **Input Validation**: Validation phía server
+- **SQL Injection Prevention**: Parameterized queries
+- **XSS Protection**: Content sanitization
+- **CORS Configuration**: Cross-origin resource sharing
+- **Rate Limiting**: Giới hạn tốc độ API
+- **Audit Logging**: Ghi log sự kiện bảo mật
+
+### Quy trình xác thực
+
+1. **Login**: Username/email + password
+2. **JWT Generation**: Access + refresh tokens
+3. **Token Storage**: Quản lý localStorage an toàn
+4. **Auto-refresh**: Tự động làm mới token
+5. **Logout**: Vô hiệu hóa token
 
 ---
 
 ## 💳 Thanh toán & upload
 
-- **Stripe**: Thanh toán dịch vụ/gói xét nghiệm, lưu lịch sử giao dịch
-- **File upload**: Ảnh đại diện, ảnh blog, PDF kết quả xét nghiệm, lưu server
+### Phương thức thanh toán
+
+- **Stripe**: Thẻ tín dụng/ghi nợ
+- **MB Bank QR**: Thanh toán QR Việt Nam
+- **Payment Status**: PENDING, PAID, FAILED, REFUNDED
+- **Transaction History**: Lịch sử giao dịch đầy đủ
+
+### Hệ thống upload file
+
+- **Local Storage**: Lưu trữ file hệ thống
+- **Cloud Storage**: Google Cloud Storage
+- **Image Processing**: Tạo thumbnail
+- **File Validation**: Kiểm tra loại và kích thước file
+- **CDN Integration**: Content delivery network
 
 ---
 
 ## 🌐 API & Service
 
-- **RESTful API**: Chuẩn REST, trả về JSON
-- **Swagger UI**: Tài liệu hóa, test API trực tiếp
-- **Service Layer**: Tách biệt logic nghiệp vụ, dễ bảo trì
-- **Frontend Service**: Tất cả API gọi qua các service (axios), dễ mở rộng/test
+### Thiết kế RESTful API
+
+- **Standard HTTP Methods**: GET, POST, PUT, DELETE
+- **Consistent Response Format**: JSON responses chuẩn
+- **Error Handling**: HTTP status codes phù hợp
+- **API Documentation**: Swagger/OpenAPI
+
+### Kiến trúc Service Layer
+
+- **Business Logic Separation**: Service layer pattern
+- **Transaction Management**: ACID compliance
+- **Exception Handling**: Global exception handler
+- **Caching Strategy**: Redis caching (planned)
 
 ---
 
 ## 🗄️ Quản lý state (Frontend)
 
-- **Redux Toolkit**: Quản lý state phức tạp (auth, xét nghiệm, user...)
-- **Redux Thunk**: Xử lý bất đồng bộ (API call)
-- **Redux Persist**: Lưu state vào localStorage
-- **Context API**: Quản lý theme, user context đơn giản
+### Quản lý state Redux
+
+- **Auth State**: Dữ liệu xác thực người dùng
+- **STI Tests State**: Dữ liệu đăng ký xét nghiệm
+- **UI State**: Loading, error states
+- **Persistent Storage**: Redux Persist integration
+
+### Context API
+
+- **Theme Context**: Dark/light mode
+- **User Context**: Dữ liệu người dùng hiện tại
+- **Notification Context**: Toast notifications
 
 ---
 
-## 📦 Cấu trúc thư mục tiêu biểu
+## 📦 Cấu trúc thư mục
 
-### Backend
+### Cấu trúc Backend
 
-- `controller/`: API endpoint
-- `service/`: Xử lý nghiệp vụ
-- `repository/`: Truy vấn DB
-- `model/`: Entity, enum
-- `dto/`: Đối tượng truyền dữ liệu
-- `config/`: Cấu hình bảo mật, JWT, email...
-- `exception/`: Xử lý lỗi
+```
+backend/
+├── src/main/java/com/healapp/
+│   ├── config/           # Các lớp cấu hình
+│   ├── controller/       # REST API endpoints
+│   ├── service/          # Logic nghiệp vụ
+│   ├── repository/       # Tầng truy cập dữ liệu
+│   ├── model/           # Các lớp entity
+│   ├── dto/             # Data transfer objects
+│   ├── exception/       # Custom exceptions
+│   └── scheduler/       # Các tác vụ định lịch
+├── src/main/resources/
+│   ├── application.properties
+│   └── application-cloud.properties
+└── uploads/             # Lưu trữ file
+```
 
-### Frontend
+### Cấu trúc Frontend
 
-- `components/`: UI component chia module
-- `pages/`: Trang chính
-- `redux/`: State management
-- `services/`: API service
-- `context/`: Context API
-- `assets/`: Ảnh, style, font
-- `utils/`: Hàm tiện ích
+```
+frontend/src/
+├── components/          # Các component UI tái sử dụng
+│   ├── AdminProfile/   # Component dashboard admin
+│   ├── CustomerProfile/ # Component dashboard khách hàng
+│   ├── common/         # Component dùng chung
+│   └── layouts/        # Component layout
+├── pages/              # Component trang
+├── redux/              # Quản lý state
+│   ├── slices/         # Redux slices
+│   ├── thunks/         # Async actions
+│   └── middleware/     # Custom middleware
+├── services/           # API services
+├── context/            # React Context
+├── hooks/              # Custom hooks
+├── utils/              # Utility functions
+└── assets/             # Static assets
+```
 
 ---
 
-## 🧑‍💻 Hướng dẫn sử dụng nhanh (Quick Usage Guide)
+## 🧑‍💻 Hướng dẫn sử dụng nhanh
 
-### Đối với người dùng (User)
+### Đối với người dùng (Customer)
 
-- **Đăng ký tài khoản:** Truy cập trang đăng ký, nhập thông tin, xác thực email.
-- **Đăng nhập:** Sử dụng email/mật khẩu, nhận JWT, truy cập các tính năng cá nhân.
-- **Đặt lịch tư vấn:** Chọn chuyên gia, thời gian, xác nhận đặt lịch, nhận thông báo.
-- **Đăng ký xét nghiệm:** Chọn dịch vụ/gói, thanh toán online, theo dõi kết quả, xuất PDF.
-- **Quản lý chu kỳ/nhắc uống thuốc:** Nhập thông tin, nhận nhắc nhở, xem thống kê.
-- **Đọc blog/gửi câu hỏi:** Xem bài viết, gửi câu hỏi cho chuyên gia.
+#### Đăng ký & Đăng nhập
+
+1. **Đăng ký**: Truy cập `/register`, nhập thông tin cá nhân
+2. **Email Verification**: Xác thực email qua link
+3. **Đăng nhập**: Sử dụng email/username + password
+4. **OAuth Login**: Đăng nhập bằng Google
+
+#### Sử dụng dịch vụ
+
+1. **Đặt lịch tư vấn**: Chọn consultant → chọn thời gian → xác nhận
+2. **Đăng ký xét nghiệm**: Chọn service/package → thanh toán → theo dõi kết quả
+3. **Quản lý chu kỳ**: Nhập thông tin → nhận nhắc nhở
+4. **Đọc blog**: Xem bài viết sức khỏe
+5. **Gửi câu hỏi**: Hỏi đáp với chuyên gia
 
 ### Đối với quản trị viên (Admin)
 
-- **Quản lý người dùng:** Thêm/sửa/xóa, phân quyền, khóa/mở tài khoản.
-- **Quản lý dịch vụ, blog, báo cáo:** CRUD dịch vụ, duyệt bài blog, xem báo cáo tổng hợp.
+#### Quản lý hệ thống
+
+1. **User Management**: Thêm/sửa/xóa người dùng
+2. **Service Management**: Quản lý dịch vụ và gói xét nghiệm
+3. **Blog Management**: Duyệt và quản lý bài viết
+4. **Reports**: Xem báo cáo thống kê
+5. **System Settings**: Cấu hình hệ thống
 
 ### Đối với nhân viên (Staff)
 
-- **Duyệt xét nghiệm:** Xác nhận đăng ký, nhập kết quả, cập nhật trạng thái.
-- **Quản lý phản hồi:** Xem, xử lý đánh giá, phản hồi khách hàng.
+#### Xử lý xét nghiệm
+
+1. **Test Confirmation**: Xác nhận đăng ký xét nghiệm
+2. **Result Input**: Nhập kết quả xét nghiệm
+3. **Review Management**: Phản hồi đánh giá
+4. **Question Response**: Trả lời câu hỏi khách hàng
 
 ### Đối với tư vấn viên (Consultant)
 
-- **Quản lý lịch tư vấn:** Xem lịch, xác nhận, hoàn thành hoặc hủy lịch.
-- **Trả lời câu hỏi:** Xem và trả lời các câu hỏi từ người dùng.
+#### Quản lý tư vấn
+
+1. **Schedule Management**: Xem và quản lý lịch hẹn
+2. **Consultation**: Thực hiện tư vấn
+3. **Question Response**: Trả lời câu hỏi
+4. **Profile Management**: Cập nhật hồ sơ chuyên môn
 
 ---
 
-## ⚙️ Các thao tác kỹ thuật tiêu biểu (Technical Highlights)
+## ⚙️ Cài đặt & chạy thử
 
-- **Đăng nhập/Đăng ký:** Sử dụng JWT, xác thực email, lưu token ở localStorage.
-- **Gọi API:** Giao tiếp backend qua axios:
-  ```js
-  import api from "./src/services/api";
-  api.post("/auth/login", { username, password });
-  ```
-- **Quản lý state:** Sử dụng Redux Toolkit:
-  ```js
-  import { useSelector, useDispatch } from "react-redux";
-  const user = useSelector((state) => state.auth.user);
-  ```
-- **Xuất PDF:** Sử dụng jsPDF, html2canvas để xuất kết quả xét nghiệm.
-- **Upload ảnh:** Gửi file qua FormData, backend lưu vào thư mục uploads.
-- **Thanh toán Stripe:** Giao diện frontend gọi API backend để tạo paymentIntent, xác nhận thanh toán.
+### Yêu cầu hệ thống
 
----
+- **Java 24+**
+- **Node.js 18+**
+- **MSSQL Server**
+- **Maven 3.6+**
+- **Git**
 
-## 🔄 Các luồng logic phức tạp (Complex Logic Flows)
-
-### 1. Luồng xác thực & phân quyền (Authentication & Authorization Flow)
-
-- Người dùng đăng nhập → Backend xác thực thông tin → Sinh JWT → Frontend lưu token → Gửi token cho các API cần bảo vệ.
-- Backend kiểm tra token, giải mã, xác định vai trò (role) → Cho phép hoặc từ chối truy cập API.
-- Một số API chỉ cho phép Admin/Staff/Consultant truy cập.
-
-### 2. Luồng thanh toán trực tuyến (Online Payment Flow)
-
-- Người dùng chọn dịch vụ/gói xét nghiệm → Frontend gọi API tạo paymentIntent (Stripe) → Nhận clientSecret → Xác nhận thanh toán trên frontend → Backend lưu lịch sử giao dịch, cập nhật trạng thái xét nghiệm.
-- Xử lý các trường hợp thanh toán thất bại, hoàn tiền, v.v.
-
-### 3. Luồng gửi email tự động (Automated Email Flow)
-
-- Khi đăng ký, quên mật khẩu, đặt lịch, nhận kết quả xét nghiệm... → Backend tự động gửi email xác thực/thông báo cho người dùng.
-- Sử dụng Spring Mail, template động, kiểm soát lỗi gửi mail.
-
-### 4. Luồng đặt lịch tư vấn & quản lý lịch (Consultation Booking Flow)
-
-- Người dùng chọn chuyên gia, thời gian → Kiểm tra trùng lịch, trạng thái chuyên gia → Đặt lịch thành công → Gửi thông báo cho cả hai phía.
-- Quản lý trạng thái lịch hẹn: Đã đặt, Đã xác nhận, Đã hoàn thành, Đã hủy.
-
-### 5. Luồng xét nghiệm & trả kết quả (STI Test & Result Flow)
-
-- Người dùng đăng ký xét nghiệm → Nhân viên xác nhận, nhập kết quả → Kết quả được lưu, gửi thông báo cho người dùng → Người dùng xem kết quả, xuất PDF.
-- Quản lý trạng thái xét nghiệm: Chờ xác nhận, Đang xử lý, Đã có kết quả, Đã hủy.
-
-### 6. Luồng nhắc nhở chu kỳ & uống thuốc (Cycle & Pill Reminder Flow)
-
-- Người dùng nhập thông tin chu kỳ → Hệ thống dự đoán ngày rụng trứng, gửi nhắc nhở uống thuốc qua giao diện/email.
-- Lưu lịch sử chu kỳ, thống kê, dự đoán lần tiếp theo.
-
-### 7. Luồng quản lý blog & duyệt bài (Blog Management & Moderation Flow)
-
-- Nhân viên/admin tạo/sửa/xóa bài blog → Bài viết chờ duyệt → Admin duyệt hoặc từ chối → Bài viết được public cho người dùng.
-
----
-
-## 📝 Ví dụ thao tác chi tiết (Step-by-step Usage Example)
-
-### Đăng ký tài khoản & xác thực email
-
-1. Truy cập trang đăng ký, nhập thông tin cá nhân.
-2. Nhấn “Đăng ký”, hệ thống gửi email xác thực.
-3. Mở email, nhấn vào link xác thực để kích hoạt tài khoản.
-4. Đăng nhập bằng email/mật khẩu vừa đăng ký.
-
-### Đặt lịch tư vấn
-
-1. Đăng nhập, vào mục “Tư vấn”.
-2. Chọn chuyên gia, chọn thời gian phù hợp.
-3. Xác nhận đặt lịch, nhận thông báo xác nhận.
-
-### Đăng ký xét nghiệm & thanh toán
-
-1. Vào mục “Xét nghiệm”, chọn dịch vụ/gói.
-2. Nhập thông tin, xác nhận.
-3. Thanh toán online qua Stripe.
-4. Nhận thông báo và theo dõi kết quả.
-
-### Xem & xuất kết quả xét nghiệm PDF
-
-1. Vào mục “Kết quả xét nghiệm”.
-2. Chọn xét nghiệm đã hoàn thành.
-3. Nhấn “Xuất PDF” để tải về.
-
----
-
-## 📊 Flowchart/Sơ đồ luồng nghiệp vụ (Mermaid)
-
-### Đăng ký & xác thực email
-
-```mermaid
-flowchart TD
-  A["Người dùng nhập thông tin đăng ký"] --> B{"Kiểm tra hợp lệ?"}
-  B -- "Không" --> C["Thông báo lỗi"]
-  B -- "Có" --> D["Gửi email xác thực"]
-  D --> E["Người dùng xác nhận qua email"]
-  E --> F["Tài khoản được kích hoạt"]
-  F --> G["Đăng nhập thành công"]
-```
-
-### Đặt lịch tư vấn
-
-```mermaid
-flowchart TD
-  A["Người dùng chọn chuyên gia & thời gian"] --> B{"Chuyên gia rảnh?"}
-  B -- "Không" --> C["Thông báo chọn lại"]
-  B -- "Có" --> D["Tạo lịch tư vấn"]
-  D --> E["Gửi thông báo cho chuyên gia & người dùng"]
-  E --> F["Chuyên gia xác nhận hoặc từ chối"]
-  F --> G["Trạng thái lịch được cập nhật"]
-```
-
-### Đăng nhập & phân quyền
-
-```mermaid
-flowchart TD
-  A["Người dùng đăng nhập"] --> B["Gửi thông tin tới backend"]
-  B --> C{"Thông tin hợp lệ?"}
-  C -- "Không" --> D["Thông báo lỗi"]
-  C -- "Có" --> E["Backend sinh JWT"]
-  E --> F["Frontend lưu token"]
-  F --> G["Gửi token cho các API cần bảo vệ"]
-  G --> H["Backend kiểm tra token, xác định vai trò"]
-  H --> I{"Đủ quyền?"}
-  I -- "Không" --> J["Từ chối truy cập"]
-  I -- "Có" --> K["Truy cập thành công"]
-```
-
-### Xét nghiệm & trả kết quả
-
-```mermaid
-flowchart TD
-  A["Người dùng đăng ký xét nghiệm"] --> B["Nhân viên xác nhận"]
-  B --> C["Nhập kết quả xét nghiệm"]
-  C --> D["Lưu kết quả vào hệ thống"]
-  D --> E["Gửi thông báo cho người dùng"]
-  E --> F["Người dùng xem kết quả, xuất PDF"]
-```
-
-### Nhắc nhở chu kỳ & uống thuốc
-
-```mermaid
-flowchart TD
-  A["Người dùng nhập thông tin chu kỳ"] --> B["Hệ thống dự đoán ngày rụng trứng"]
-  B --> C["Gửi nhắc nhở uống thuốc qua giao diện/email"]
-  C --> D["Lưu lịch sử chu kỳ"]
-  D --> E["Thống kê, dự đoán lần tiếp theo"]
-```
-
-### Quản lý blog & duyệt bài
-
-```mermaid
-flowchart TD
-  A["Nhân viên/Admin tạo/sửa/xóa bài blog"] --> B["Bài viết chờ duyệt"]
-  B --> C["Admin duyệt hoặc từ chối"]
-  C --> D{"Duyệt?"}
-  D -- "Không" --> E["Bài viết bị từ chối"]
-  D -- "Có" --> F["Bài viết được public cho người dùng"]
-```
-
----
-
-## 🔗 Ví dụ API thực tế (API Example)
-
-### Đăng nhập
-
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "yourpassword"
-}
-```
-
-**Response:**
-
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": 1,
-    "role": "CUSTOMER",
-    "email": "user@example.com"
-  }
-}
-```
-
----
-
-## 🚀 Hướng dẫn cài đặt & chạy thử
-
-### 1. Backend
+### Cài đặt Backend
 
 ```bash
-# Yêu cầu: Java 17+, Maven, SQL Server
-cd backend
+# Clone repository
+git clone <repository-url>
+cd Gender_Healthcare_Service_Management_System/backend
+
+# Cấu hình database
+# Tạo database "HealApp" trong MSSQL
+# Cập nhật connection string trong application.properties
+
+# Build và chạy
 mvn clean install
-# Cấu hình DB trong src/main/resources/application.properties
 mvn spring-boot:run
+
+# Hoặc sử dụng Docker
+docker build -t healapp-backend .
+docker run -p 8080:8080 healapp-backend
 ```
 
-### 2. Frontend
+### Cài đặt Frontend
 
 ```bash
-# Yêu cầu: NodeJS 18+, npm
-cd frontend
+# Chuyển đến thư mục frontend
+cd ../frontend
+
+# Cài đặt dependencies
 npm install
+
+# Chạy development server
 npm start
+
+# Build production
+npm run build
 ```
 
-### 3. Truy cập
+### Truy cập ứng dụng
 
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8080
-- Swagger UI: http://localhost:8080/swagger-ui.html
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8080
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **Admin Account**: admin123 / Admin123@
 
 ---
 
-## 🤝 Đóng góp & liên hệ
+## 🔧 Cấu hình môi trường
 
-- Đóng góp: Pull request, issue trên Github
-- Liên hệ: [Tên nhóm/Email]
+### Cấu hình Backend
+
+```properties
+# Database
+spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=HealApp
+spring.datasource.username=sa
+spring.datasource.password=12345
+
+# JWT
+jwt.secret=your-secret-key
+jwt.access-token-expiration=3600000
+jwt.refresh-token-expiration=86400000
+
+# Email (SendGrid)
+spring.mail.host=smtp.sendgrid.net
+spring.mail.username=apikey
+spring.mail.password=your-sendgrid-api-key
+
+# Stripe
+stripe.api.key=your-stripe-secret-key
+stripe.publishable.key=your-stripe-publishable-key
+
+# Google OAuth
+google.oauth.client-id=your-google-client-id
+google.oauth.client-secret=your-google-client-secret
+```
+
+### Cấu hình Frontend
+
+```javascript
+// API Base URL
+REACT_APP_API_BASE_URL=http://localhost:8080
+
+// Google OAuth
+REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id
+
+// Stripe
+REACT_APP_STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
+```
+
+---
+
+## 🚀 Triển khai
+
+### Triển khai Backend
+
+```bash
+# Build JAR file
+mvn clean package
+
+# Run with profile
+java -jar -Dspring.profiles.active=cloud target/HealApp-0.0.1-SNAPSHOT.jar
+
+# Docker deployment
+docker-compose up -d
+```
+
+### Triển khai Frontend
+
+```bash
+# Build production
+npm run build
+
+# Deploy to GitHub Pages
+npm run deploy
+
+# Or deploy to other platforms
+# - Vercel
+# - Netlify
+# - AWS S3
+```
+
+---
+
+## 📊 Cấu trúc cơ sở dữ liệu
+
+### Các bảng chính
+
+- **users**: Thông tin người dùng
+- **roles**: Phân quyền hệ thống
+- **consultant_profiles**: Hồ sơ tư vấn viên
+- **consultations**: Lịch tư vấn
+- **sti_services**: Dịch vụ xét nghiệm
+- **sti_packages**: Gói xét nghiệm
+- **sti_tests**: Đăng ký xét nghiệm
+- **test_results**: Kết quả xét nghiệm
+- **blog_posts**: Bài viết blog
+- **ratings**: Đánh giá dịch vụ
+- **questions**: Câu hỏi khách hàng
+- **payments**: Giao dịch thanh toán
+- **menstrual_cycle**: Chu kỳ kinh nguyệt
+- **control_pills**: Nhắc uống thuốc
+
+---
+
+## 🔄 API Endpoints
+
+### Xác thực
+
+- `POST /auth/login` - Đăng nhập
+- `POST /auth/refresh-token` - Làm mới token
+- `POST /users/register` - Đăng ký
+- `POST /users/forgot-password` - Quên mật khẩu
+
+### Quản lý người dùng
+
+- `GET /users/profile` - Lấy thông tin profile
+- `PUT /users/profile` - Cập nhật profile
+- `POST /users/avatar` - Upload avatar
+
+### Dịch vụ chăm sóc sức khỏe
+
+- `GET /sti-services` - Danh sách dịch vụ
+- `GET /sti-packages` - Danh sách gói
+- `POST /sti-tests` - Đăng ký xét nghiệm
+- `GET /sti-tests/{id}/results` - Kết quả xét nghiệm
+
+### Tư vấn
+
+- `GET /consultants` - Danh sách consultant
+- `POST /consultations` - Đặt lịch tư vấn
+- `PUT /consultations/{id}/status` - Cập nhật trạng thái
+
+### Blog
+
+- `GET /blog` - Danh sách bài viết
+- `POST /blog` - Tạo bài viết (Staff/Admin)
+- `PUT /blog/{id}/status` - Duyệt bài viết
+
+---
+
+## 🧪 Kiểm thử
+
+### Kiểm thử Backend
+
+```bash
+# Chạy tất cả test
+mvn test
+
+# Chạy test cụ thể
+mvn test -Dtest=UserServiceTest
+
+# Integration tests
+mvn test -Dtest=*IntegrationTest
+```
+
+### Kiểm thử Frontend
+
+```bash
+# Chạy test
+npm test
+
+# Chạy test với coverage
+npm test -- --coverage
+
+# Chạy test cụ thể
+npm test -- --testNamePattern="LoginPage"
+```
+
+---
+
+## 📈 Giám sát & Ghi log
+
+### Giám sát Backend
+
+- **Log4j2**: Ghi log có cấu trúc
+- **Health Checks**: Health endpoints
+- **Metrics**: Metrics ứng dụng
+- **Error Tracking**: Global exception handler
+
+### Giám sát Frontend
+
+- **Error Boundaries**: React error boundaries
+- **Performance Monitoring**: Web vitals
+- **User Analytics**: Theo dõi hành vi người dùng
+- **Console Logging**: Debug development
+
+---
+
+## 🔧 Công cụ phát triển
+
+### Công cụ Backend
+
+- **Spring Boot DevTools**: Hot reload
+- **Swagger UI**: Tài liệu API
+- **H2 Console**: Database console (dev)
+- **Maven**: Build tool
+
+### Công cụ Frontend
+
+- **React Developer Tools**: Kiểm tra component
+- **Redux DevTools**: Debug state
+- **ESLint**: Code linting
+- **Prettier**: Code formatting
+
+---
+
+## 🤝 Đóng góp
+
+### Quy trình đóng góp
+
+1. **Fork repository**
+2. **Tạo feature branch**: `git checkout -b feature/new-feature`
+3. **Commit changes**: `git commit -m 'Add new feature'`
+4. **Push to branch**: `git push origin feature/new-feature`
+5. **Tạo Pull Request**
+
+### Tiêu chuẩn code
+
+- **Backend**: Java coding conventions
+- **Frontend**: ESLint + Prettier
+- **Git**: Conventional commits
+- **Documentation**: JSDoc comments
 
 ---
 
 ## 📄 Bản quyền
 
-Copyright (c) 2025 Gender Healthcare Team. All rights reserved.
+Dự án này thuộc sở hữu của nhóm SWP391 - GROUP 5, thực hiện cho môn học SWP391 tại Trường Đại học FPT Hồ Chí Minh.
+
+Mọi quyền sử dụng chỉ dành cho mục đích học tập, nghiên cứu và phi thương mại.
+
+Copyright (c) 2025 - Nhóm SWP391 - GROUP 5, Đại học FPT Hồ Chí Minh.
+
+---
+
+## 👥 Thông tin nhóm SWP391 - GROUP 5
+
+| STT | Họ và tên             | MSSV     | Email                      | Vai trò                         |
+| --- | --------------------- | -------- | -------------------------- | ------------------------------- |
+| 1   | Nguyễn Thị Tường Vy   | SE181801 | vynttse181801@fpt.edu.vn   | Backend (BE)                    |
+| 2   | Nguyễn Lý Vi          | SE181814 | vinlse181814@fpt.edu.vn    | Backend (BE)                    |
+| 3   | Nguyễn Đình Duy       | SE181803 | duyndse181803@fpt.edu.vn   | Frontend (FE)                   |
+| 4   | **Lê Nguyễn An Ninh** | SE181799 | ninhlnase181799@fpt.edu.vn | Frontend (FE) (**Nhóm trưởng**) |
+| 5   | Nguyễn Văn Cường      | SE183645 | cuongnvse183645@fpt.edu.vn | Backend (BE)                    |
+
+---
+
+## 📞 Liên hệ
+
+- **Email**: [contact@healapp.com]
+- **GitHub**: [repository-url]
+- **Documentation**: [docs-url]
+
+---
+
+## 🙏 Lời cảm ơn
+
+- **Spring Boot Team**: Backend framework
+- **Material-UI Team**: Frontend UI library
+- **Stripe**: Payment processing
+- **Google Cloud**: Cloud services
+- **SendGrid**: Email service
+- **Twilio**: SMS service
