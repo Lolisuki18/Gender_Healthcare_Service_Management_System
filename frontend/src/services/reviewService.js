@@ -60,6 +60,16 @@ const reviewService = {
         rating: parseInt(reviewData.rating),
         comment: reviewData.comment.trim(),
       };
+      // Nếu có consultationId thì thêm vào body và log ra
+      if (reviewData.consultationId) {
+        requestBody.consultationId = reviewData.consultationId;
+        console.log('[LOG][reviewService] consultationId gửi lên:', reviewData.consultationId);
+      } else {
+        console.warn('[WARN][reviewService] consultationId không tồn tại trong reviewData:', reviewData);
+      }
+
+      // Log toàn bộ requestBody trước khi gửi
+      console.log('[LOG][reviewService] requestBody gửi lên backend:', requestBody);
 
       // URL mới theo yêu cầu: http://localhost:8080/ratings/consultant/24
       const response = await apiClient.post(
@@ -102,6 +112,16 @@ const reviewService = {
         rating: parseInt(reviewData.rating),
         comment: reviewData.comment.trim(),
       };
+      // Nếu có sti_test_id thì thêm vào body và log ra
+      if (reviewData.sti_test_id) {
+        requestBody.sti_test_id = reviewData.sti_test_id;
+        console.log('[LOG][reviewService] sti_test_id gửi lên:', reviewData.sti_test_id);
+      } else {
+        console.warn('[WARN][reviewService] sti_test_id không tồn tại trong reviewData:', reviewData);
+      }
+
+      // Log toàn bộ requestBody trước khi gửi
+      console.log('[LOG][reviewService] requestBody gửi lên backend:', requestBody);
 
       const response = await apiClient.post(
         `/ratings/sti-service/${serviceId}`,

@@ -118,6 +118,9 @@ const ReviewsContent = () => {
   const [consultations, setConsultations] = useState([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(true);
   const [serviceFilter, setServiceFilter] = useState('all'); // 'all', 'sti', 'consultation'
+  // Thêm state cho lọc ngày đánh giá
+  const [dateFrom, setDateFrom] = useState(null); // Date hoặc null
+  const [dateTo, setDateTo] = useState(null); // Date hoặc null
   
   // States for edit/delete functionality
   const [isEditMode, setIsEditMode] = useState(false);
@@ -230,112 +233,73 @@ const ReviewsContent = () => {
     }
   };
 
-  // Tạo danh sách tất cả các dịch vụ có thể đánh giá (chỉ của user hiện tại)
+
+  // Refactor: Lấy tất cả dịch vụ đã hoàn thành, sau đó so sánh với đánh giá của tôi
   const createReviewableServices = useCallback(() => {
-    console.log('🔄 Creating reviewable services list for current user...');
-    console.log('📊 Current stiTests (user only):', stiTests);
-    console.log('📊 Current consultations (user only):', consultations);
-    console.log('📊 Current reviews (user only):', reviews);
-    
-    const reviewableServices = [];
-    
-    // Thêm STI Tests đã hoàn thành và chưa được đánh giá (chỉ của user hiện tại)
-    // API getMySTITests() đã filter theo user
+    // 1. Gom tất cả dịch vụ đã hoàn thành (STI + Consultation)
+    const completedServices = [];
+    const completedStatusesSTI = ['COMPLETED', 'RESULTED', 'FINISHED', 'DONE', 'SUCCESS', 'ANALYZED'];
+    const completedStatusesConsult = ['COMPLETED', 'RESULTED', 'FINISHED', 'DONE', 'SUCCESS', 'CLOSED'];
+
     stiTests.forEach((test, index) => {
-      // Kiểm tra dữ liệu hợp lệ
-      if (!test || (!test.id && !test.serviceId)) {
-        return;
-      }
-
-      // Tạo unique ID cho service
-      const uniqueId = test.id || test.serviceId || `sti_temp_${index}_${Date.now()}`;
-      
-      // Kiểm tra xem đã có đánh giá cho test này chưa
-      const existingReview = reviews.find(review => 
-        (review.targetType === 'STI_SERVICE' && review.targetId === test.serviceId) ||
-        (review.testId && review.testId === test.id)
-      );
-      
-      // Kiểm tra trạng thái hoàn thành với nhiều trạng thái khác nhau
-      const completedStatuses = ['COMPLETED', 'RESULTED', 'FINISHED', 'DONE', 'SUCCESS', 'ANALYZED'];
-      const isCompleted = completedStatuses.includes(test.status?.toUpperCase());
-      
-      // Chỉ thêm vào danh sách nếu test đã hoàn thành và có serviceId
-      if (isCompleted && test.serviceId) {
-        // Kiểm tra xem có đủ thông tin cần thiết không
-        const hasRequiredInfo = test.serviceId && test.serviceName;
-        
-        reviewableServices.push({
-          id: `sti_${uniqueId}`,
-          type: 'STI_SERVICE',
-          serviceId: test.serviceId,
-          serviceName: test.serviceName || `Xét nghiệm STI #${test.id || 'N/A'}`,
-          consultantName: test.consultantName || 'Chuyên viên STI',
-          date: test.completedDate || test.updatedAt || new Date().toISOString(),
-          status: existingReview ? 'completed' : 'pending',
-          rating: existingReview?.rating || 0,
-          comment: existingReview?.comment || '',
-          reviewId: existingReview?.id,
-          testId: test.id,
-          // Thêm thông tin để kiểm tra điều kiện - strict hơn
-          isEligible: isCompleted && !existingReview && test.serviceId && hasRequiredInfo,
-        });
-      }
+      if (!test || (!test.testId && !test.id) || !test.serviceName) return;
+      if (!test.status || !completedStatusesSTI.includes(test.status.toUpperCase())) return;
+      // testId là duy nhất cho mỗi lần xét nghiệm, ưu tiên test.testId, fallback test.id
+      const uniqueTestId = test.testId || test.id;
+      completedServices.push({
+        id: `sti_${uniqueTestId}`,
+        type: 'STI_SERVICE',
+        serviceId: test.serviceId,
+        serviceName: test.serviceName,
+        consultantName: test.consultantName || 'Chuyên viên STI',
+        date: test.completedDate || test.updatedAt || new Date().toISOString(),
+        testId: uniqueTestId,
+        raw: test,
+      });
     });
 
-    // Thêm Consultations đã hoàn thành và chưa được đánh giá (chỉ của user hiện tại)
-    // API getMyConsultations() đã filter theo user
     consultations.forEach((consultation, index) => {
-      // Kiểm tra dữ liệu hợp lệ
-      if (!consultation || (!consultation.id && !consultation.consultantId)) {
-        return;
-      }
-
-      // Tạo unique ID cho consultation
-      const uniqueId = consultation.id || `consultation_temp_${index}_${Date.now()}`;
-      
-      // Kiểm tra xem đã có đánh giá cho consultation này chưa
-      const existingReview = reviews.find(review => 
-        (review.targetType === 'CONSULTANT' && review.targetId === consultation.consultantId) ||
-        (review.consultationId && review.consultationId === consultation.id)
-      );
-      
-      // Kiểm tra trạng thái hoàn thành với nhiều trạng thái khác nhau
-      const completedStatuses = ['COMPLETED', 'RESULTED', 'FINISHED', 'DONE', 'SUCCESS', 'CLOSED'];
-      const isCompleted = completedStatuses.includes(consultation.status?.toUpperCase());
-      
-      // Chỉ thêm vào danh sách nếu consultation đã hoàn thành và có consultantId
-      if (isCompleted && consultation.consultantId) {
-        // Kiểm tra xem có đủ thông tin cần thiết không
-        const hasRequiredInfo = consultation.consultantId && consultation.consultantName;
-        
-        reviewableServices.push({
-          id: `consultation_${uniqueId}`,
-          type: 'CONSULTANT',
-          consultantId: consultation.consultantId,
-          serviceName: `Tư vấn với ${consultation.consultantName || 'Chuyên viên'}`,
-          consultantName: consultation.consultantName || 'Chuyên viên tư vấn',
-          date: consultation.completedDate || consultation.updatedAt || new Date().toISOString(),
-          status: existingReview ? 'completed' : 'pending',
-          rating: existingReview?.rating || 0,
-          comment: existingReview?.comment || '',
-          reviewId: existingReview?.id,
-          consultationId: consultation.id,
-          // Thêm thông tin để kiểm tra điều kiện - strict hơn
-          isEligible: isCompleted && !existingReview && consultation.consultantId && hasRequiredInfo,
-          // Thêm debug info
-          debugInfo: {
-            originalStatus: consultation.status,
-            isCompleted,
-            hasExistingReview: !!existingReview,
-            hasConsultantId: !!consultation.consultantId,
-            hasRequiredInfo,
-          }
-        });
-      }
+      if (!consultation || !consultation.consultantId || !consultation.consultantName) return;
+      if (!consultation.status || !completedStatusesConsult.includes(consultation.status.toUpperCase())) return;
+      completedServices.push({
+        id: `consultation_${consultation.consultationId || consultation.consultantId}`,
+        type: 'CONSULTANT',
+        consultantId: consultation.consultantId,
+        serviceName: `Tư vấn với ${consultation.consultantName}`,
+        consultantName: consultation.consultantName,
+        date: consultation.completedDate || consultation.updatedAt || new Date().toISOString(),
+        consultationId: consultation.consultationId,
+        raw: consultation,
+      });
     });
 
-    console.log('✅ Created reviewable services for current user:', reviewableServices);
+    // 2. Lấy danh sách đánh giá của tôi (reviews)
+    // So sánh từng dịch vụ đã hoàn thành với danh sách đánh giá
+    const reviewableServices = completedServices.map((service) => {
+      let matchedReview = null;
+      if (service.type === 'STI_SERVICE') {
+        // So sánh chính xác theo testId (mỗi lần test là một đánh giá riêng)
+        matchedReview = reviews.find(
+          (r) =>
+            (r.targetType === 'STI_SERVICE' && r.testId && String(r.testId) === String(service.testId))
+        );
+      } else if (service.type === 'CONSULTANT') {
+        matchedReview = reviews.find(
+          (r) =>
+            (r.targetType === 'CONSULTANT' && String(r.targetId) === String(service.consultantId)) ||
+            (r.consultationId && String(r.consultationId) === String(service.consultationId))
+        );
+      }
+      return {
+        ...service,
+        status: matchedReview ? 'completed' : 'pending',
+        rating: matchedReview?.rating || 0,
+        comment: matchedReview?.comment || '',
+        reviewId: matchedReview?.id,
+        isEligible: !matchedReview, // Chỉ cho phép đánh giá nếu chưa có review
+        // debugInfo: matchedReview ? { ...matchedReview } : undefined,
+      };
+    });
     return reviewableServices;
   }, [stiTests, consultations, reviews]);
 
@@ -343,8 +307,7 @@ const ReviewsContent = () => {
     return createReviewableServices();
   }, [createReviewableServices]);
   
-  console.log('📈 All reviewable services created:', allReviewableServices);
-  console.log('📊 Service filter:', serviceFilter);
+  // ...existing code...
 
   
   // Apply service filter with memoized services
@@ -355,12 +318,28 @@ const ReviewsContent = () => {
     return true;
   });
 
-  // Sử dụng myRatings từ API cho completed reviews
-  const filteredMyRatings = myRatings.filter(rating => {
-    if (serviceFilter === 'all') return true;
-    if (serviceFilter === 'sti') return rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI';
-    if (serviceFilter === 'consultation') return rating.targetType === 'CONSULTANT' || rating.serviceType === 'CONSULTATION';
+  // Hàm lọc theo ngày đánh giá (áp dụng cho completed reviews)
+  const isWithinDateRange = (date) => {
+    if (!date) return true;
+    let reviewDate = null;
+    if (typeof date === 'string' || date instanceof Date) {
+      reviewDate = new Date(date);
+    } else if (Array.isArray(date) && date.length >= 6) {
+      reviewDate = new Date(date[0], date[1] - 1, date[2], date[3], date[4], date[5]);
+    } else {
+      reviewDate = new Date();
+    }
+    if (dateFrom && reviewDate < new Date(dateFrom)) return false;
+    if (dateTo && reviewDate > new Date(dateTo)) return false;
     return true;
+  };
+
+  // Sử dụng myRatings từ API cho completed reviews, có lọc ngày
+  const filteredMyRatings = myRatings.filter(rating => {
+    if (serviceFilter === 'all') return isWithinDateRange(rating.createdAt);
+    if (serviceFilter === 'sti') return (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI') && isWithinDateRange(rating.createdAt);
+    if (serviceFilter === 'consultation') return (rating.targetType === 'CONSULTANT' || rating.serviceType === 'CONSULTATION') && isWithinDateRange(rating.createdAt);
+    return isWithinDateRange(rating.createdAt);
   });
 
   // Create unique service counts to avoid duplicates - only count current user's services
@@ -381,46 +360,63 @@ const ReviewsContent = () => {
   });
   
   // Add pending services (chỉ những dịch vụ chưa được đánh giá và thuộc về user hiện tại)
-  allReviewableServices.forEach(service => {
-    if (service.type === 'STI_SERVICE' && service.status === 'pending') {
-      // Kiểm tra xem service này đã được đánh giá chưa
-      const serviceIdentifier = service.serviceId;
-      const hasReview = filteredMyRatings.some(rating => 
-        (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI') && 
-        (rating.targetId === serviceIdentifier || rating.serviceId === serviceIdentifier)
-      );
-      
-      if (!hasReview && serviceIdentifier) {
-        uniqueSTIServices.add(serviceIdentifier);
-      }
-    } else if (service.type === 'CONSULTANT' && service.status === 'pending') {
-      // Kiểm tra xem consultation này đã được đánh giá chưa
-      const consultantIdentifier = service.consultantId;
-      const consultationIdentifier = service.consultationId;
-      const hasReview = filteredMyRatings.some(rating => 
-        (rating.targetType === 'CONSULTANT' || rating.serviceType === 'CONSULTATION') && 
-        (rating.targetId === consultantIdentifier || 
-         (rating.consultantId === consultantIdentifier && rating.consultationId === consultationIdentifier))
-      );
-      
-      if (!hasReview && consultantIdentifier) {
-        const identifier = `consultant_${consultantIdentifier}_${consultationIdentifier || 'unknown'}`;
-        uniqueConsultationServices.add(identifier);
-      }
+allReviewableServices.forEach(service => {
+  if (service.type === 'STI_SERVICE' && service.status === 'pending') {
+    // So sánh bằng stiTestId (FE truyền testId, BE trả stiTestId)
+    const serviceTestId = service.testId;
+    const hasReview = filteredMyRatings.some(rating =>
+      (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI') &&
+      (
+        (rating.stiTestId && String(rating.stiTestId) === String(serviceTestId)) ||
+        (rating.testId && String(rating.testId) === String(serviceTestId)) // fallback nếu BE trả testId
+      )
+    );
+    if (!hasReview && serviceTestId) {
+      uniqueSTIServices.add(serviceTestId);
     }
-  });
+  } else if (service.type === 'CONSULTANT' && service.status === 'pending') {
+    // So sánh bằng consultationId
+    const consultationIdentifier = service.consultationId;
+    const hasReview = filteredMyRatings.some(rating =>
+      (rating.targetType === 'CONSULTANT' || rating.serviceType === 'CONSULTATION') &&
+      (
+        (rating.consultationId && String(rating.consultationId) === String(consultationIdentifier))
+      )
+    );
+    if (!hasReview && consultationIdentifier) {
+      const identifier = `consultant_${service.consultantId}_${consultationIdentifier}`;
+      uniqueConsultationServices.add(identifier);
+    }
+  }
+});
 
-  console.log('📊 Unique STI services count:', uniqueSTIServices.size);
-  console.log('📊 Unique Consultation services count:', uniqueConsultationServices.size);
+  // ...existing code...
 
   const completedReviews = filteredMyRatings; // Sử dụng API data (đã filter theo user)
-  const pendingReviews = filteredServices.filter(service => service.status === 'pending');
+  // Lọc lại pendingReviews: chỉ lấy những dịch vụ chưa có đánh giá (so sánh consultationId hoặc stiTestId/testId)
+  const pendingReviews = filteredServices.filter(service => {
+    if (service.type === 'STI_SERVICE') {
+      // So sánh với tất cả review đã có bằng stiTestId hoặc testId
+      return !filteredMyRatings.some(rating =>
+        (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI') &&
+        (
+          (rating.stiTestId && String(rating.stiTestId) === String(service.testId)) ||
+          (rating.testId && String(rating.testId) === String(service.testId))
+        )
+      );
+    } else if (service.type === 'CONSULTANT') {
+      return !filteredMyRatings.some(rating =>
+        (rating.targetType === 'CONSULTANT' || rating.serviceType === 'CONSULTATION') &&
+        (
+          (rating.consultationId && String(rating.consultationId) === String(service.consultationId))
+        )
+      );
+    }
+    return true;
+  });
   const allReviews = [...completedReviews, ...pendingReviews];
   
-  console.log('📊 Final data summary:');
-  console.log('  - Completed reviews:', completedReviews.length);
-  console.log('  - Pending reviews:', pendingReviews.length);
-  console.log('  - All reviews:', allReviews.length);
+  // ...existing code...
 
   // Tính toán dữ liệu phân trang cho từng tab
   const paginatedAllReviews = allReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
@@ -500,99 +496,14 @@ const ReviewsContent = () => {
     }
   };
 
-  // Handle delete review action
-  const handleDeleteReview = async (review) => {
-    console.log('🗑️ Starting delete review:', review);
-    
-    try {
-      // Check if this is a pending review (no actual review ID in the database)
-      const isPendingTempReview = review.id && typeof review.id === 'string' && 
-                                 (review.id.includes('temp') || review.id.includes('consultation_') || 
-                                  review.id.includes('sti_'));
-      
-      // Check if the review has a valid ID for deleting
-      const hasValidRatingId = review.ratingId && !isNaN(parseInt(review.ratingId));
-      const hasValidId = review.id && typeof review.id === 'number' && !isNaN(review.id);
-      
-      // For pending reviews without valid IDs, this is not a deletable review
-      if (isPendingTempReview && !hasValidRatingId && !hasValidId) {
-        notify.warning(
-          'Không thể xóa', 
-          'Đánh giá này chưa được gửi nên không cần xóa. Hãy bỏ qua hoặc thực hiện đánh giá.'
-        );
-        return;
-      }
-      
-      // Get confirmation from the user
-      const { confirmDialog } = await import('../../utils/confirmDialog');
-      const confirmed = await confirmDialog.danger(
-        `Bạn có chắc chắn muốn xóa đánh giá này không?\n\nDịch vụ: ${review.serviceName || review.targetName || 'N/A'}\nĐánh giá: ${review.rating} sao\nBình luận: "${(review.comment || '').substring(0, 50)}${review.comment?.length > 50 ? '...' : ''}"\n\nHành động này không thể hoàn tác!`,
-        {
-          title: 'Xác nhận xóa đánh giá',
-          confirmText: 'Xóa đánh giá',
-          cancelText: 'Hủy bỏ'
-        }
-      );
-
-      if (!confirmed) {
-        return;
-      }
-
-      setLoading(true);
-      const reviewId = hasValidRatingId ? review.ratingId : (hasValidId ? review.id : null);
-      
-      if (!reviewId) {
-        throw new Error('Không tìm thấy ID đánh giá. Vui lòng làm mới trang và thử lại.');
-      }
-
-      console.log('🗑️ Deleting review with ID:', reviewId);
-      await reviewService.deleteReview(reviewId);
-      
-      notify.success('Thành công', 'Đánh giá đã được xóa thành công!');
-      
-      // Reload data to update the list
-      await loadAllData();
-      
-    } catch (error) {
-      console.error('❌ Error deleting review:', error);
-      
-      let errorMessage = 'Có lỗi xảy ra khi xóa đánh giá. Vui lòng thử lại!';
-      let errorTitle = 'Không thể xóa đánh giá';
-      
-      if (error.message) {
-        if (error.message.includes('not found') || error.message.includes('không tìm thấy')) {
-          errorMessage = 'Đánh giá không tồn tại hoặc đã được xóa trước đó.';
-          errorTitle = 'Đánh giá không tồn tại';
-        } else if (error.message.includes('unauthorized') || error.message.includes('không có quyền')) {
-          errorMessage = 'Bạn không có quyền xóa đánh giá này.';
-          errorTitle = 'Không có quyền truy cập';
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      }
-      
-      notify.error(errorTitle, errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ...existing code...
 
   /**
    * Xử lý submit đánh giá (tạo mới hoặc cập nhật)
    * Form được quản lý bởi component ReviewForm đã tách
    */
   const handleSubmitReview = async () => {
-    console.log('🚀 Starting review submission process...');
-    console.log('📋 Review data check:', {
-      rating,
-      feedbackLength: feedback.trim().length,
-      selectedReview,
-      isEligible: selectedReview?.isEligible
-    });
+    // ...existing code...
     
     if (rating === 0) {
       notify.warning('Thông báo', 'Vui lòng chọn số sao đánh giá!');
@@ -606,23 +517,25 @@ const ReviewsContent = () => {
 
     try {
       setLoading(true);
+      // Tạo payload đúng chuẩn yêu cầu backend: chỉ truyền rating (bắt buộc), comment (nếu có), consultationId hoặc stiTestId nếu có
       const reviewData = {
-        rating: rating,
-        comment: feedback.trim(),
+        rating: rating
       };
-      
-      // Thêm thông tin bổ sung cho reviewData dựa trên loại dịch vụ
+      if (feedback && feedback.trim().length > 0) {
+        reviewData.comment = feedback.trim();
+      }
       if (selectedReview.type === 'STI_SERVICE' && selectedReview.testId) {
         reviewData.stiTestId = selectedReview.testId;
-      } else if (selectedReview.type === 'CONSULTANT' && selectedReview.consultationId) {
+      }
+      if (selectedReview.type === 'CONSULTANT' && selectedReview.consultationId) {
         reviewData.consultationId = selectedReview.consultationId;
       }
 
-      console.log('📋 Final review data:', reviewData);
+      // ...existing code...
 
       // Kiểm tra xem đây là edit mode hay create mode
       if (isEditMode && editingReviewId) {
-        console.log('✏️ Updating existing review with ID:', editingReviewId);
+        // ...existing code...
         
         // Kiểm tra ID phải là số hợp lệ
         if (isNaN(parseInt(editingReviewId))) {
@@ -633,7 +546,7 @@ const ReviewsContent = () => {
         console.log('✅ Review updated successfully');
         notify.success('Thành công', 'Đánh giá đã được cập nhật thành công!');
       } else {
-        console.log('🆕 Creating new review');
+        // ...existing code...
         
         // Kiểm tra chi tiết điều kiện trước khi gửi (chỉ cho create mode)
         if (!selectedReview.isEligible) {
@@ -660,9 +573,8 @@ const ReviewsContent = () => {
           throw new Error('Thiếu thông tin serviceId. Không thể gửi đánh giá cho dịch vụ STI.');
         }
         if (!selectedReview.testId) {
-          // Thiếu testId, nhưng có serviceId nên vẫn tiếp tục
+          throw new Error('Thiếu thông tin stiTestId. Không thể gửi đánh giá cho dịch vụ STI.');
         }
-        
         // Kiểm tra thêm xem có phải là dịch vụ của user này không
         const originalTest = stiTests.find(test => 
           test.serviceId === selectedReview.serviceId || test.id === selectedReview.testId
@@ -670,13 +582,10 @@ const ReviewsContent = () => {
         if (!originalTest) {
           throw new Error('Không tìm thấy thông tin dịch vụ STI tương ứng. Vui lòng thử lại.');
         }
-        
         // Kiểm tra điều kiện với backend trước khi gửi (nếu API hỗ trợ)
         try {
           const eligibilityCheck = await reviewService.checkSTIServiceEligibility(selectedReview.serviceId);
           console.log('🔍 STI Service Eligibility Check Response:', eligibilityCheck);
-          
-          // Kiểm tra response format từ backend
           if (eligibilityCheck && eligibilityCheck.success) {
             const eligibilityData = eligibilityCheck.data;
             if (eligibilityData && !eligibilityData.canRate) {
@@ -690,7 +599,6 @@ const ReviewsContent = () => {
             throw new Error(`Backend từ chối: ${eligibilityCheck.message || 'Không đủ điều kiện đánh giá dịch vụ này'}`);
           }
         } catch (eligibilityError) {
-          // Nếu API eligibility không tồn tại hoặc lỗi server, tiếp tục với validation frontend
           if (eligibilityError.message?.includes('not available') || 
               eligibilityError.message?.includes('404') ||
               eligibilityError.message?.includes('No static resource') ||
@@ -698,27 +606,21 @@ const ReviewsContent = () => {
               eligibilityError.response?.status === 500) {
             // Skip eligibility check
           } else {
-            // Nếu là lỗi khác (thực sự từ business logic), throw lỗi đó
             throw eligibilityError;
           }
         }
-        
         // Đánh giá cho dịch vụ STI
-        console.log('📤 Sending STI Service Review:', {
-          serviceId: selectedReview.serviceId,
-          reviewData,
-          selectedReview
-        });
-        
-        // Chuẩn bị dữ liệu đánh giá theo format mẫu JSON
+        // Luôn truyền sti_test_id (snake_case cho backend Java)
         const stiServiceReviewData = {
           rating: reviewData.rating,
-          comment: reviewData.comment
+          comment: reviewData.comment,
+          sti_test_id: selectedReview.testId
         };
-        
+        // Log payload gửi lên backend
+        console.log('[DEBUG] Payload gửi đánh giá STI:', stiServiceReviewData);
         // URL endpoint: /ratings/sti-service/{serviceId}
-        const result = await reviewService.createSTIServiceReview(selectedReview.serviceId, stiServiceReviewData);
-        console.log('✅ STI Service Review Result:', result);
+        await reviewService.createSTIServiceReview(selectedReview.serviceId, stiServiceReviewData);
+        // ...existing code...
         
       } else if (selectedReview.type === 'STI_PACKAGE') {
         // Kiểm tra packageId
@@ -727,11 +629,7 @@ const ReviewsContent = () => {
         }
         
         // Đánh giá cho gói STI
-        console.log('📤 Sending STI Package Review:', {
-          packageId: selectedReview.packageId,
-          reviewData,
-          selectedReview
-        });
+        // ...existing code...
         
         // Chuẩn bị dữ liệu đánh giá theo format mẫu JSON
         const stiPackageReviewData = {
@@ -740,8 +638,8 @@ const ReviewsContent = () => {
         };
         
         // URL endpoint: /ratings/sti-package/{packageId}
-        const result = await reviewService.createSTIPackageReview(selectedReview.packageId, stiPackageReviewData);
-        console.log('✅ STI Package Review Result:', result);
+        await reviewService.createSTIPackageReview(selectedReview.packageId, stiPackageReviewData);
+        // ...existing code...
         
       } else if (selectedReview.type === 'CONSULTANT') {
         // Kiểm tra consultantId và consultationId
@@ -751,21 +649,17 @@ const ReviewsContent = () => {
         if (!selectedReview.consultationId) {
           // Thiếu consultationId, nhưng có consultantId nên vẫn tiếp tục
         }
-        
         // Kiểm tra thêm xem có phải là consultation của user này không
         const originalConsultation = consultations.find(consultation => 
-          consultation.consultantId === selectedReview.consultantId || consultation.id === selectedReview.consultationId
+          consultation.consultantId === selectedReview.consultantId || consultation.consultationId === selectedReview.consultationId
         );
         if (!originalConsultation) {
           throw new Error('Không tìm thấy thông tin buổi tư vấn tương ứng. Vui lòng thử lại.');
         }
-        
         // Kiểm tra điều kiện với backend trước khi gửi (nếu API hỗ trợ)
         try {
           const eligibilityCheck = await reviewService.checkConsultantEligibility(selectedReview.consultantId);
           console.log('🔍 Consultant Eligibility Check Response:', eligibilityCheck);
-          
-          // Kiểm tra response format từ backend
           if (eligibilityCheck && eligibilityCheck.success) {
             const eligibilityData = eligibilityCheck.data;
             if (eligibilityData && !eligibilityData.canRate) {
@@ -779,7 +673,6 @@ const ReviewsContent = () => {
             throw new Error(`Backend từ chối: ${eligibilityCheck.message || 'Không đủ điều kiện đánh giá tư vấn viên này'}`);
           }
         } catch (eligibilityError) {
-          // Nếu API eligibility không tồn tại hoặc lỗi server, tiếp tục với validation frontend
           if (eligibilityError.message?.includes('not available') || 
               eligibilityError.message?.includes('404') ||
               eligibilityError.message?.includes('No static resource') ||
@@ -787,34 +680,30 @@ const ReviewsContent = () => {
               eligibilityError.response?.status === 500) {
             // Skip eligibility check
           } else {
-            // Nếu là lỗi khác (thực sự từ business logic), throw lỗi đó
             throw eligibilityError;
           }
         }
-        
         // Đánh giá cho tư vấn viên
-        console.log('📤 Sending Consultant Review:', {
-          consultantId: selectedReview.consultantId,
-          reviewData,
-          selectedReview
-        });
-        
         // Chuẩn bị dữ liệu đánh giá theo format mẫu JSON
         const consultantReviewData = {
           rating: reviewData.rating,
           comment: reviewData.comment
         };
-        
+        if (selectedReview.consultationId) {
+          consultantReviewData.consultationId = selectedReview.consultationId;
+        }
+        // Log payload gửi lên backend
+        console.log('[DEBUG] Payload gửi đánh giá tư vấn:', consultantReviewData);
         // URL endpoint: /ratings/consultant/{consultantId}
-        const result = await reviewService.createConsultantReview(selectedReview.consultantId, consultantReviewData);
-        console.log('✅ Consultant Review Result:', result);
+        await reviewService.createConsultantReview(selectedReview.consultantId, consultantReviewData);
+        // ...existing code...
         
       } else {
         throw new Error(`Loại đánh giá không được hỗ trợ: ${selectedReview.type}`);
       }
       } // Kết thúc else block for create mode
 
-      console.log('🎉 Review submission completed successfully');
+      // ...existing code...
       
       // Thông báo thành công khác nhau cho edit vs create
       if (isEditMode) {
@@ -903,6 +792,38 @@ const ReviewsContent = () => {
     }
   };
 
+  // Hàm kiểm tra còn trong thời gian cho phép chỉnh sửa (ví dụ: 7 ngày)
+  // Cho phép chỉnh sửa nếu vẫn cùng ngày (theo local time) hoặc chưa quá 24h
+  // Sử dụng updatedAt (nếu có), nếu không thì dùng createdAt. Hỗ trợ cả kiểu mảng [yyyy,mm,dd,hh,mm,ss,ms]
+  const getApiDate = (dateField) => {
+    if (!dateField) return null;
+    if (Array.isArray(dateField) && dateField.length >= 6) {
+      // [yyyy, mm, dd, hh, mm, ss, ms?] (mm: 1-12)
+      const [y, m, d, h, min, s] = dateField;
+      return new Date(y, m - 1, d, h, min, s);
+    }
+    return new Date(dateField);
+  };
+
+  const isEditAllowed = (review) => {
+    // Chỉ dùng ngày tạo (createdAt)
+    const baseDate = getApiDate(review.createdAt);
+    if (!baseDate) return false;
+    const now = new Date();
+    // So sánh theo ngày tháng năm local
+    if (
+      baseDate.getFullYear() === now.getFullYear() &&
+      baseDate.getMonth() === now.getMonth() &&
+      baseDate.getDate() === now.getDate()
+    ) {
+      return true;
+    }
+    // Nếu khác ngày, vẫn cho phép nếu chưa quá 24h thực tế
+    const diffMs = now - baseDate;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    return diffHours <= 24;
+  };
+
   const renderCompletedReview = (review, uniqueKey) => (
     <Card 
       key={uniqueKey} 
@@ -930,12 +851,13 @@ const ReviewsContent = () => {
       <CardContent sx={{ p: { xs: 2, md: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Grid container spacing={{ xs: 2, md: 5 }} sx={{ width: '100%', m: 0, justifyContent: 'space-between' }}>
           <Grid xs={12} md={6.5} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
               <Avatar 
                 sx={{ 
                   width: 48, 
                   height: 48, 
                   mr: 2,
+                  alignSelf: 'flex-start',
                   background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
                   fontSize: '18px',
                   fontWeight: 600,
@@ -945,18 +867,24 @@ const ReviewsContent = () => {
                 {(review.consultantName || review.providerName || 'N/A').split(' ').pop()[0]}
               </Avatar>
               <Box>
+                {/* Thông tin dịch vụ */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
-                      fontWeight: 600, 
-                      color: '#2D3748', 
-                      fontSize: '18px'
-                    }}
-                  >
-                    {review.serviceName || review.targetName || 'Dịch vụ'}
+                  <Typography variant="h6" sx={{ fontWeight: 600, color: '#2D3748', fontSize: '18px' }}>
+                    {/* Lấy tên dịch vụ hoặc tên tư vấn viên từ API */}
+                    {review.targetType === 'STI_SERVICE' ? (review.targetName || 'Dịch vụ') : review.targetType === 'CONSULTANT' ? (review.targetName || 'Tư vấn viên') : (review.serviceName || review.consultantName || 'Dịch vụ')}
                   </Typography>
-                  {(review.targetType === 'STI_SERVICE' || review.serviceType === 'STI') && (
+                  {/* Hiển thị ID dịch vụ */}
+                  {review.targetType === 'STI_SERVICE' && (
+                    <Typography variant="caption" sx={{ color: '#888', ml: 1 }}>
+                      (ID: {review.stiTestId || review.testId || review.targetId || 'N/A'})
+                    </Typography>
+                  )}
+                  {review.targetType === 'CONSULTANT' && (
+                    <Typography variant="caption" sx={{ color: '#888', ml: 1 }}>
+                      (ID: {review.consultationId || review.targetId || 'N/A'})
+                    </Typography>
+                  )}
+                  {review.targetType === 'STI_SERVICE' && (
                     <Chip
                       icon={<ScienceIcon sx={{ fontSize: '12px !important' }} />}
                       label="STI"
@@ -974,7 +902,7 @@ const ReviewsContent = () => {
                       }}
                     />
                   )}
-                  {(review.targetType === 'CONSULTANT' || review.serviceType === 'CONSULTATION') && (
+                  {review.targetType === 'CONSULTANT' && (
                     <Chip
                       icon={<PsychologyIcon sx={{ fontSize: '12px !important' }} />}
                       label="Tư vấn"
@@ -993,116 +921,100 @@ const ReviewsContent = () => {
                     />
                   )}
                 </Box>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: '#4A5568',
-                    fontSize: '14px',
-                    fontWeight: 500
-                  }}
-                >
-                  {review.maskedUserName || review.userFullName}
+                {/* Tên người đánh giá */}
+                <Typography variant="body2" sx={{ color: '#4A5568', fontSize: '14px', fontWeight: 500, mb: 0.5 }}>
+                  {review.maskedUserName || review.userFullName || review.customerName || review.userName || ''}
                 </Typography>
-              </Box>
-            </Box>
-            
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Rating 
-                value={review.rating || 0} 
-                readOnly 
-                sx={{ 
-                  mb: 1.5,
-                  '& .MuiRating-iconFilled': {
-                    color: '#FFB400',
-                  },
-                  '& .MuiRating-iconEmpty': {
-                    color: '#E0E7FF',
-                  }
-                }} 
-              />
-              <Typography 
-                variant="body1" 
-                sx={{ 
-                  color: '#2D3748',
-                  fontSize: '15px',
-                  lineHeight: 1.6,
-                  fontStyle: 'italic',
-                  pl: 1,
-                  borderLeft: '3px solid #4A90E2',
-                  background: 'rgba(74, 144, 226, 0.05)',
-                  p: 2,
-                  borderRadius: '8px',
-                  mb: 1, // Thêm margin bottom
-                  display: 'block', // Đảm bảo hiển thị toàn bộ nội dung
-                  wordWrap: 'break-word', // Xuống dòng khi cần
-                  whiteSpace: 'pre-wrap', // Giữ nguyên định dạng và xuống dòng
-                  maxWidth: { xs: '100%', md: '600px' }, // Giới hạn chiều rộng tối đa
-                  overflow: 'auto', // Thêm thanh cuộn nếu nội dung quá dài
-                  maxHeight: '300px', // Giới hạn chiều cao tối đa
-                }}
-              >
-                "{review.comment || 'Không có bình luận'}"
-              </Typography>
-
-              {/* Hiển thị phản hồi từ staff nếu có */}
-              {review.staffReply && (
-                <Box sx={{ mt: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Avatar 
-                      sx={{ 
-                        width: 24, 
-                        height: 24, 
-                        mr: 1,
-                        background: 'linear-gradient(135deg, #1ABC9C, #4A90E2)',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                      }}
-                    >
-                      <MedicalServicesIcon sx={{ fontSize: '14px', color: 'white' }} />
-                    </Avatar>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      color: '#2D3748',
+                      fontSize: '15px',
+                      lineHeight: 1.6,
+                      fontStyle: 'italic',
+                      pl: 1,
+                      borderLeft: '3px solid #4A90E2',
+                      background: 'rgba(74, 144, 226, 0.05)',
+                      p: 2,
+                      borderRadius: '8px',
+                      mb: 1,
+                      display: 'block',
+                      wordWrap: 'break-word',
+                      whiteSpace: 'pre-line',
+                      width: { xs: '100%', md: '850px' },
+                      minWidth: { xs: '100%', md: '850px' },
+                      maxWidth: { xs: '100%', md: '850px' },
+                      overflow: 'auto',
+                      // height: { xs: 'auto', md: '120px' },
+                      // maxHeight: { xs: 'none', md: '120px' },
+                      // minHeight: { xs: '60px', md: '120px' },
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    "{review.comment || 'Không có bình luận'}"
+                  </Typography>
+                </Box>
+                {/* Hiển thị phản hồi từ staff nếu có */}
+                {review.staffReply && (
+                  <Box sx={{ mt: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Avatar 
+                        sx={{ 
+                          width: 24, 
+                          height: 24, 
+                          mr: 1,
+                          background: 'linear-gradient(135deg, #1ABC9C, #4A90E2)',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        <MedicalServicesIcon sx={{ fontSize: '14px', color: 'white' }} />
+                      </Avatar>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: '#1ABC9C',
+                          fontSize: '13px',
+                          fontWeight: 600
+                        }}
+                      >
+                        Phản hồi từ nhân viên y tế
+                        {review.repliedAt && (
+                          <Typography 
+                            component="span" 
+                            variant="caption" 
+                            sx={{ 
+                              color: '#6B7280',
+                              fontSize: '11px',
+                              fontWeight: 400,
+                              ml: 1
+                            }}
+                          >
+                            • {convertApiDateToDate(review.repliedAt).toLocaleDateString('vi-VN')}
+                          </Typography>
+                        )}
+                      </Typography>
+                    </Box>
                     <Typography 
                       variant="body2" 
                       sx={{ 
-                        color: '#1ABC9C',
-                        fontSize: '13px',
-                        fontWeight: 600
+                        color: '#2D3748',
+                        fontSize: '14px',
+                        lineHeight: 1.5,
+                        pl: 1,
+                        borderLeft: '3px solid #1ABC9C',
+                        background: 'rgba(26, 188, 156, 0.05)',
+                        p: 1.5,
+                        borderRadius: '8px',
+                        fontStyle: 'normal'
                       }}
                     >
-                      Phản hồi từ nhân viên y tế
-                      {review.repliedAt && (
-                        <Typography 
-                          component="span" 
-                          variant="caption" 
-                          sx={{ 
-                            color: '#6B7280',
-                            fontSize: '11px',
-                            fontWeight: 400,
-                            ml: 1
-                          }}
-                        >
-                          • {convertApiDateToDate(review.repliedAt).toLocaleDateString('vi-VN')}
-                        </Typography>
-                      )}
+                      {review.staffReply}
                     </Typography>
                   </Box>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#2D3748',
-                      fontSize: '14px',
-                      lineHeight: 1.5,
-                      pl: 1,
-                      borderLeft: '3px solid #1ABC9C',
-                      background: 'rgba(26, 188, 156, 0.05)',
-                      p: 1.5,
-                      borderRadius: '8px',
-                      fontStyle: 'normal'
-                    }}
-                  >
-                    {review.staffReply}
-                  </Typography>
-                </Box>
-              )}
+                )}
+              </Box>
             </Box>
           </Grid>
           
@@ -1184,9 +1096,11 @@ const ReviewsContent = () => {
               width: '100%',
               mr: { xs: 0, md: -1 }
             }}>
+              {/* Luôn hiển thị nút chỉnh sửa, nhưng disable nếu quá 24h */}
               <IconButton
                 size="small"
-                onClick={() => handleEditReview(review)}
+                onClick={() => isEditAllowed(review) && handleEditReview(review)}
+                disabled={!isEditAllowed(review)}
                 sx={{
                   color: '#4A90E2',
                   background: 'rgba(74, 144, 226, 0.1)',
@@ -1199,31 +1113,15 @@ const ReviewsContent = () => {
                     background: 'rgba(74, 144, 226, 0.2)',
                     border: '1px solid rgba(74, 144, 226, 0.3)',
                     transform: 'scale(1.05)',
+                  },
+                  '&.Mui-disabled': {
+                    color: '#BDBDBD',
+                    background: 'rgba(189, 189, 189, 0.1)',
+                    border: '1px solid rgba(189, 189, 189, 0.2)',
                   }
                 }}
               >
                 <EditIcon sx={{ fontSize: '20px' }} />
-              </IconButton>
-              
-              <IconButton
-                size="small"
-                onClick={() => handleDeleteReview(review)}
-                sx={{
-                  color: '#F56565',
-                  background: 'rgba(245, 101, 101, 0.1)',
-                  border: '1px solid rgba(245, 101, 101, 0.2)',
-                  borderRadius: '8px',
-                  width: 40,
-                  height: 40,
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    background: 'rgba(245, 101, 101, 0.2)',
-                    border: '1px solid rgba(245, 101, 101, 0.3)',
-                    transform: 'scale(1.05)',
-                  }
-                }}
-              >
-                <DeleteIcon sx={{ fontSize: '20px' }} />
               </IconButton>
             </Box>
           </Grid>
@@ -1259,12 +1157,13 @@ const ReviewsContent = () => {
       <CardContent sx={{ p: { xs: 2, md: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Grid container spacing={{ xs: 2, md: 5 }} sx={{ width: '100%', m: 0, justifyContent: 'space-between' }}>
           <Grid xs={12} md={6.5} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
               <Avatar 
                 sx={{ 
                   width: 48, 
                   height: 48, 
                   mr: 2,
+                  alignSelf: 'flex-start',
                   background: 'linear-gradient(135deg, #FF9800, #FFB74D)',
                   fontSize: '18px',
                   fontWeight: 600,
@@ -1285,6 +1184,17 @@ const ReviewsContent = () => {
                   >
                     {review.serviceName}
                   </Typography>
+                  {/* Hiển thị ID dịch vụ */}
+                  {review.type === 'STI_SERVICE' && (
+                    <Typography variant="caption" sx={{ color: '#888', ml: 1 }}>
+                      (ID: {review.testId || review.serviceId || 'N/A'})
+                    </Typography>
+                  )}
+                  {review.type === 'CONSULTANT' && (
+                    <Typography variant="caption" sx={{ color: '#888', ml: 1 }}>
+                      (ID: {review.consultationId || review.consultantId || 'N/A'})
+                    </Typography>
+                  )}
                   {review.type === 'STI_SERVICE' && (
                     <Chip
                       icon={<ScienceIcon sx={{ fontSize: '12px !important' }} />}
@@ -1510,17 +1420,21 @@ const ReviewsContent = () => {
       margin: '0 auto', // Căn giữa
       px: { xs: 1, sm: 2, md: 3 } // Padding responsive
     }}>
-      {/* Filter Section */}
+      {/* Filter Section + Lọc ngày đánh giá */}
       <Box sx={{ mb: 3 }}>
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center', 
-          gap: 3,
+          gap: 2.5,
           p: 2.5,
           background: 'rgba(255, 255, 255, 0.8)',
           borderRadius: '16px',
           border: '1px solid rgba(74, 144, 226, 0.1)',
           boxShadow: '0 4px 20px rgba(74, 144, 226, 0.05)',
+          flexWrap: 'nowrap',
+          overflowX: 'auto',
+          minHeight: 80,
+          scrollbarWidth: 'thin',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FilterListIcon sx={{ color: '#4A90E2', fontSize: '20px' }} />
@@ -1528,7 +1442,6 @@ const ReviewsContent = () => {
               Lọc theo loại dịch vụ:
             </Typography>
           </Box>
-          
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel 
               sx={{ 
@@ -1575,6 +1488,53 @@ const ReviewsContent = () => {
               </MenuItem>
             </Select>
           </FormControl>
+
+          {/* Lọc theo ngày đánh giá */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2, minWidth: 320, flexShrink: 0 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: '#2D3748' }}>
+              Lọc theo ngày đánh giá:
+            </Typography>
+            <input
+              type="date"
+              value={dateFrom ? new Date(dateFrom).toISOString().slice(0, 10) : ''}
+              onChange={e => setDateFrom(e.target.value ? e.target.value : null)}
+              style={{
+                borderRadius: 8,
+                border: '1px solid #B0BEC5',
+                padding: '4px 8px',
+                fontSize: 14,
+                marginRight: 8,
+                outline: 'none',
+                minWidth: 120,
+                maxWidth: 160,
+                width: '100%',
+                flex: 1
+              }}
+              placeholder="Từ ngày"
+            />
+            <span style={{ fontWeight: 600, color: '#4A90E2' }}>-</span>
+            <input
+              type="date"
+              value={dateTo ? new Date(dateTo).toISOString().slice(0, 10) : ''}
+              onChange={e => setDateTo(e.target.value ? e.target.value : null)}
+              style={{
+                borderRadius: 8,
+                border: '1px solid #B0BEC5',
+                padding: '4px 8px',
+                fontSize: 14,
+                minWidth: 120,
+                maxWidth: 160,
+                width: '100%',
+                flex: 1
+              }}
+              placeholder="Đến ngày"
+            />
+            {(dateFrom || dateTo) && (
+              <IconButton size="small" onClick={() => { setDateFrom(null); setDateTo(null); }} sx={{ ml: 1 }}>
+                <span style={{ fontSize: 18, color: '#F44336', fontWeight: 700 }}>&times;</span>
+              </IconButton>
+            )}
+          </Box>
 
           {/* Statistics */}
           <Box sx={{ display: 'flex', gap: 2, ml: 'auto' }}>

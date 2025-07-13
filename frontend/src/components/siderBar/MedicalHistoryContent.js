@@ -150,6 +150,24 @@ const ActionButton = styled(Button)(({ theme, color = 'primary' }) => ({
 }));
 
 const MedicalHistoryContent = () => {
+  const [myRatings, setMyRatings] = useState([]);
+  const [isLoadingRatings, setIsLoadingRatings] = useState(true);
+  // Lấy danh sách đánh giá của user khi mount
+  useEffect(() => {
+    const fetchMyRatings = async () => {
+      setIsLoadingRatings(true);
+      try {
+        // Lấy tối đa 1000 đánh giá, nếu nhiều hơn thì cần phân trang
+        const data = await import('../../services/reviewService').then(m => m.default.getMyReviews(0, 1000));
+        setMyRatings(data?.content || data?.data || data || []);
+      } catch (err) {
+        setMyRatings([]);
+      } finally {
+        setIsLoadingRatings(false);
+      }
+    };
+    fetchMyRatings();
+  }, []);
   const [selectedTestId, setSelectedTestId] = useState(null);
   const [stiTests, setStiTests] = useState([]);
   // Define loading and error states for tracking API call status
@@ -208,19 +226,30 @@ const MedicalHistoryContent = () => {
       return [];
     }
     return stiTests.map((test) => {
-      // Chỉ chuyển array [YYYY, MM, DD, ...] thành Date object, còn lại để formatDateDisplay xử lý
       let dateToUse = test.appointmentDate || test.createdAt;
       if (Array.isArray(dateToUse) && dateToUse.length >= 3) {
         const [y, m, d, h = 0, min = 0, s = 0] = dateToUse;
         dateToUse = new Date(y, m - 1, d, h, min, s);
       }
+      // Kiểm tra đã đánh giá chưa bằng myRatings
+      let hasRated = false;
+      if (myRatings && myRatings.length > 0) {
+        hasRated = myRatings.some(rating => {
+          // So sánh theo testId hoặc serviceId
+          return (
+            (rating.stiTestId && rating.stiTestId === test.testId) ||
+            (rating.targetId && rating.targetId === test.serviceId) ||
+            (rating.serviceId && rating.serviceId === test.serviceId)
+          );
+        });
+      }
       return {
         id: `sti-${test.testId}`,
         date: dateToUse,
         doctor: test.staffName || test.consultantName || 'Chưa xác định',
-        consultantName: test.consultantName, // thêm dòng này để lưu consultantName vào record
+        consultantName: test.consultantName,
         diagnosis: test.serviceName || 'Xét nghiệm STI',
-        serviceName: test.serviceName, // truyền đúng tên dịch vụ
+        serviceName: test.serviceName,
         status: test.status,
         displayStatus: test.getStatusDisplayText
           ? test.getStatusDisplayText()
@@ -258,6 +287,7 @@ const MedicalHistoryContent = () => {
         cancelReason: test.cancelReason,
         createdAt: test.createdAt,
         updatedAt: test.updatedAt,
+        hasRated,
       };
     });
   };
@@ -878,6 +908,7 @@ const MedicalHistoryContent = () => {
                 <TableCell>Trạng thái</TableCell>
                 <TableCell>Ghi chú</TableCell>
                 <TableCell>Hành động</TableCell>
+                <TableCell>Đánh giá</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -907,17 +938,14 @@ const MedicalHistoryContent = () => {
                             case 'CANCELED':
                               return 'Đã hủy';
                             default:
-                              // Nếu đã là tiếng Việt thì giữ nguyên
-                              if (
-                                [
-                                  'Hoàn thành',
-                                  'Đang xử lý',
-                                  'Đã có kết quả',
-                                  'Đã xác nhận',
-                                  'Đã lấy mẫu',
-                                  'Đã hủy',
-                                ].includes(record.status)
-                              ) {
+                              if ([
+                                'Hoàn thành',
+                                'Đang xử lý',
+                                'Đã có kết quả',
+                                'Đã xác nhận',
+                                'Đã lấy mẫu',
+                                'Đã hủy',
+                              ].includes(record.status)) {
                                 return record.status;
                               }
                               return 'Không xác định';
@@ -951,6 +979,7 @@ const MedicalHistoryContent = () => {
                         </span>
                       </Tooltip>
                     </TableCell>
+                    {/* Cột Hành động */}
                     <TableCell>
                       {/* Nếu đã huỷ thì chỉ hiển thị nút xem chi tiết huỷ */}
                       {record.status === 'CANCELED' ? (
@@ -999,6 +1028,9 @@ const MedicalHistoryContent = () => {
                             : 'Huỷ'}
                         </Button>
                       )}
+                    </TableCell>
+                    {/* Cột Đánh giá */}
+                    <TableCell>
                       {(record.type === 'Xét nghiệm STI' ||
                         record.type === 'STI' ||
                         record.serviceType === 'STI_SERVICE') &&
@@ -1008,19 +1040,38 @@ const MedicalHistoryContent = () => {
                             record.displayStatus ||
                             ''
                           ).toUpperCase()
-                        ) && (
+                        ) ? (
+                        record.hasRated ? (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="success"
+                            onClick={() =>
+                              navigate('/profile', {
+                                state: { initialTab: 'my-reviews', viewRated: record.testId },
+                              })
+                            }
+                          >
+                            Xem đánh giá
+                          </Button>
+                        ) : (
                           <Button
                             variant="outlined"
                             size="small"
                             onClick={() =>
                               navigate('/profile', {
-                                state: { initialTab: 'my-reviews' },
+                                state: { initialTab: 'my-reviews', rateTestId: record.testId },
                               })
                             }
                           >
                             Đánh giá
                           </Button>
-                        )}
+                        )
+                      ) : (
+                        <span style={{ color: '#BDBDBD', fontSize: 13 }}>
+                          {['CANCELED', 'PENDING'].includes((record.status || '').toUpperCase()) ? '—' : 'Chỉ đánh giá khi hoàn thành'}
+                        </span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
