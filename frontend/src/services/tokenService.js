@@ -6,6 +6,7 @@
  * - Proactive refresh token
  * - Quản lý token lifecycle
  * - Tự động refresh trước khi hết hạn
+ * - Xử lý khi window focus/visibility change (khi máy treo)
  */
 
 import localStorageUtil from '@/utils/localStorage';
@@ -15,6 +16,10 @@ class TokenService {
     this.refreshTimeout = null;
     this.isRefreshing = false;
     this.refreshPromise = null;
+    this.lastActivityTime = Date.now();
+    this.focusHandler = null;
+    this.visibilityHandler = null;
+    this.activityHandler = null;
   }
 
   /**
@@ -100,7 +105,7 @@ class TokenService {
       const expiryTime = payload.exp * 1000; // Convert to milliseconds
       const currentTime = Date.now();
 
-      // Token sắp hết hạn trong 5 phút (phù hợp với access token 1 giờ)
+      // Token sắp hết hạn trong 5 phút (phù hợp với access token 1 giờ từ backend)
       return expiryTime - currentTime < 5 * 60 * 1000;
     } catch (error) {
       return true;
@@ -170,7 +175,7 @@ class TokenService {
       return;
     }
 
-    // Lên lịch refresh 5 phút trước khi hết hạn (phù hợp với access token 1 giờ)
+    // Lên lịch refresh 5 phút trước khi hết hạn (phù hợp với access token 1 giờ từ backend)
     const refreshTime = (timeLeft - 5 * 60) * 1000; // Convert to milliseconds
 
     this.refreshTimeout = setTimeout(() => {
@@ -266,6 +271,98 @@ class TokenService {
   }
 
   /**
+   * Xử lý khi window focus (người dùng quay lại tab)
+   */
+  handleWindowFocus = () => {
+    const currentTime = Date.now();
+    const timeSinceLastActivity = currentTime - this.lastActivityTime;
+
+    // Nếu đã hơn 5 phút kể từ lần hoạt động cuối, kiểm tra và refresh token
+    if (timeSinceLastActivity > 5 * 60 * 1000) {
+      console.log('Window focused after inactivity, checking token...');
+      this.refreshTokenIfNeeded().catch((error) => {
+        console.error('Failed to refresh token on window focus:', error);
+      });
+    }
+
+    this.lastActivityTime = currentTime;
+  };
+
+  /**
+   * Xử lý khi visibility change (tab ẩn/hiện)
+   */
+  handleVisibilityChange = () => {
+    if (!document.hidden) {
+      // Tab trở nên visible
+      const currentTime = Date.now();
+      const timeSinceLastActivity = currentTime - this.lastActivityTime;
+
+      // Nếu đã hơn 10 phút kể từ lần hoạt động cuối, kiểm tra và refresh token
+      if (timeSinceLastActivity > 10 * 60 * 1000) {
+        console.log('Tab became visible after inactivity, checking token...');
+        this.refreshTokenIfNeeded().catch((error) => {
+          console.error('Failed to refresh token on visibility change:', error);
+        });
+      }
+
+      this.lastActivityTime = currentTime;
+    }
+  };
+
+  /**
+   * Xử lý user activity (click, scroll, keypress)
+   */
+  handleUserActivity = () => {
+    this.lastActivityTime = Date.now();
+  };
+
+  /**
+   * Thiết lập các event listeners để theo dõi hoạt động
+   */
+  setupActivityListeners() {
+    // Xóa listeners cũ nếu có
+    this.removeActivityListeners();
+
+    // Window focus event
+    this.focusHandler = this.handleWindowFocus.bind(this);
+    window.addEventListener('focus', this.focusHandler);
+
+    // Visibility change event
+    this.visibilityHandler = this.handleVisibilityChange.bind(this);
+    document.addEventListener('visibilitychange', this.visibilityHandler);
+
+    // User activity events
+    this.activityHandler = this.handleUserActivity.bind(this);
+    window.addEventListener('click', this.activityHandler);
+    window.addEventListener('scroll', this.activityHandler);
+    window.addEventListener('keypress', this.activityHandler);
+    window.addEventListener('mousemove', this.activityHandler);
+  }
+
+  /**
+   * Xóa các event listeners
+   */
+  removeActivityListeners() {
+    if (this.focusHandler) {
+      window.removeEventListener('focus', this.focusHandler);
+      this.focusHandler = null;
+    }
+
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
+
+    if (this.activityHandler) {
+      window.removeEventListener('click', this.activityHandler);
+      window.removeEventListener('scroll', this.activityHandler);
+      window.removeEventListener('keypress', this.activityHandler);
+      window.removeEventListener('mousemove', this.activityHandler);
+      this.activityHandler = null;
+    }
+  }
+
+  /**
    * Khởi tạo service và lên lịch refresh token
    */
   init() {
@@ -273,6 +370,9 @@ class TokenService {
     if (token?.accessToken) {
       this.scheduleTokenRefresh(token.accessToken);
     }
+
+    // Thiết lập activity listeners
+    this.setupActivityListeners();
   }
 
   /**
@@ -280,6 +380,7 @@ class TokenService {
    */
   cleanup() {
     this.clearRefreshTimeout();
+    this.removeActivityListeners();
     this.isRefreshing = false;
     this.refreshPromise = null;
   }
