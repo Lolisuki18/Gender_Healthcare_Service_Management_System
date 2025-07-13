@@ -45,11 +45,26 @@ const OvulationPage = ({ stats }) => {
 
   React.useEffect(() => {
     const checkLogin = async () => {
-      const userData = await ovulationService.getCurrentUser();
-      if (userData) {
-        setIsLoggedIn(true);
-      } else {
-        setIsLoggedIn(false);
+      try {
+        // Tạo timeout promise
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 10000) // 10 giây timeout
+        );
+
+        // Chạy getCurrentUser với timeout
+        const userData = await Promise.race([
+          ovulationService.getCurrentUser(),
+          timeoutPromise
+        ]);
+
+        if (userData) {
+          setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
+        }
+      } catch (error) {
+        console.warn('Check login failed:', error.message);
+        setIsLoggedIn(false); // Mặc định là chưa đăng nhập nếu có lỗi
       }
     };
 
@@ -898,9 +913,52 @@ const OvulationPage = ({ stats }) => {
         {isLoggedIn ? (
           <>
             {isLoading ? (
-              <div style={{ textAlign: 'center', padding: '20px' }}>
-                <Typography>Đang tải dữ liệu...</Typography>
-              </div>
+              <Box 
+                sx={{ 
+                  textAlign: 'center', 
+                  padding: '60px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 3
+                }}
+              >
+                <Box 
+                  sx={{
+                    width: '50px',
+                    height: '50px',
+                    border: '4px solid #f3f4f6',
+                    borderTop: '4px solid #43a6ef',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                    '@keyframes spin': {
+                      '0%': { transform: 'rotate(0deg)' },
+                      '100%': { transform: 'rotate(360deg)' }
+                    }
+                  }}
+                />
+                <Typography 
+                  variant="h6"
+                  sx={{
+                    color: '#6b7280',
+                    fontWeight: 500,
+                    fontSize: '1.1rem',
+                    letterSpacing: '0.5px'
+                  }}
+                >
+                  Đang tải dữ liệu...
+                </Typography>
+                <Typography 
+                  variant="body2"
+                  sx={{
+                    color: '#9ca3af',
+                    fontStyle: 'italic',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  Vui lòng đợi trong giây lát
+                </Typography>
+              </Box>
             ) : (
               <>
                 {/* Refetching indicator */}
