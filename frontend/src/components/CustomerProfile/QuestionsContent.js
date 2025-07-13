@@ -64,6 +64,7 @@ import {
   Visibility as VisibilityIcon,
   Cancel as CancelIcon,
   Warning as WarningIcon,
+  RestartAlt as RestartAltIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import AskQuestionDialog from '../common/AskQuestionDialog';
@@ -155,7 +156,10 @@ const QuestionsContent = () => {
   const pageSize = 5;
   const tabStatusMap = [null, 'ANSWERED', 'PENDING', 'CANCELED'];
   const [categories, setCategories] = useState([]);
-  const [questionIdFilter, setQuestionIdFilter] = useState('');
+  // Bỏ questionIdFilter
+  // Thêm state cho lọc ngày tạo
+  const [createdFrom, setCreatedFrom] = useState('');
+  const [createdTo, setCreatedTo] = useState('');
   const [expandedRow, setExpandedRow] = useState(null);
   const [detailQuestion, setDetailQuestion] = useState(null);
 
@@ -215,16 +219,11 @@ const QuestionsContent = () => {
       return false;
     if (tabValue === 3 && q.status !== 'CANCELED') return false;
 
-    // Filter by question ID
-    if (questionIdFilter && String(q.id) !== questionIdFilter.trim())
-      return false;
+    // Bỏ filter by question ID
 
     // Filter by search term
     const matchesSearch =
-      (q.content &&
-        q.content.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (q.categoryName &&
-        q.categoryName.toLowerCase().includes(searchTerm.toLowerCase()));
+      q.content && q.content.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Filter by category (chuẩn hóa theo BE)
     let matchesCategory = true;
@@ -236,7 +235,46 @@ const QuestionsContent = () => {
       }
     }
 
-    return matchesSearch && matchesCategory;
+    // Filter by created date
+    let matchesDate = true;
+    if (createdFrom) {
+      // createdAt có thể là array hoặc string
+      let createdDate = null;
+      if (Array.isArray(q.createdAt)) {
+        // [yyyy, mm, dd, hh, mm, ss]
+        createdDate = new Date(
+          q.createdAt[0],
+          (q.createdAt[1] || 1) - 1,
+          q.createdAt[2] || 1
+        );
+      } else if (typeof q.createdAt === 'string') {
+        createdDate = new Date(q.createdAt);
+      }
+      if (createdDate) {
+        const fromDate = new Date(createdFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        if (createdDate < fromDate) matchesDate = false;
+      }
+    }
+    if (createdTo) {
+      let createdDate = null;
+      if (Array.isArray(q.createdAt)) {
+        createdDate = new Date(
+          q.createdAt[0],
+          (q.createdAt[1] || 1) - 1,
+          q.createdAt[2] || 1
+        );
+      } else if (typeof q.createdAt === 'string') {
+        createdDate = new Date(q.createdAt);
+      }
+      if (createdDate) {
+        const toDate = new Date(createdTo);
+        toDate.setHours(23, 59, 59, 999);
+        if (createdDate > toDate) matchesDate = false;
+      }
+    }
+
+    return matchesSearch && matchesCategory && matchesDate;
   });
 
   const paginatedQuestions = filteredQuestions.slice(
@@ -269,6 +307,14 @@ const QuestionsContent = () => {
   // Pagination handler
   const handlePageChange = (event, value) => {
     setPage(value);
+  };
+
+  // Hàm xoá bộ lọc
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setCreatedFrom('');
+    setCreatedTo('');
+    setCategoryFilter('all');
   };
 
   return (
@@ -306,27 +352,52 @@ const QuestionsContent = () => {
           >
             Câu hỏi của tôi
           </Typography>{' '}
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setShowNewQuestionForm(true)}
-            sx={{
-              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)', // Medical blue to teal
-              borderRadius: '12px',
-              textTransform: 'none',
-              fontWeight: 600,
-              boxShadow: '0 8px 15px rgba(74, 144, 226, 0.5)',
-              padding: '10px 20px',
-              fontSize: '1rem',
-              alignSelf: { xs: 'stretch', sm: 'auto' },
-              '&:hover': {
-                background: 'linear-gradient(45deg, #357ABD, #16A085)',
-                boxShadow: '0 10px 20px rgba(74, 144, 226, 0.6)',
-              },
-            }}
-          >
-            Đặt câu hỏi mới
-          </Button>
+          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<RestartAltIcon />}
+              onClick={handleClearFilters}
+              sx={{
+                borderRadius: '10px',
+                fontWeight: 600,
+                height: '40px',
+                alignSelf: 'center',
+                whiteSpace: 'nowrap',
+                fontSize: '1rem',
+                mr: 1,
+                borderColor: '#4A90E2',
+                color: '#1976d2',
+                '&:hover': {
+                  borderColor: '#1976d2',
+                  background: 'rgba(74, 144, 226, 0.08)',
+                },
+              }}
+            >
+              Xoá bộ lọc
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setShowNewQuestionForm(true)}
+              sx={{
+                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)', // Medical blue to teal
+                borderRadius: '12px',
+                textTransform: 'none',
+                fontWeight: 600,
+                boxShadow: '0 8px 15px rgba(74, 144, 226, 0.5)',
+                padding: '10px 20px',
+                fontSize: '1rem',
+                alignSelf: { xs: 'stretch', sm: 'auto' },
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #357ABD, #16A085)',
+                  boxShadow: '0 10px 20px rgba(74, 144, 226, 0.6)',
+                },
+              }}
+            >
+              Đặt câu hỏi mới
+            </Button>
+          </Box>
         </Box>{' '}
         <AskQuestionDialog
           open={showNewQuestionForm}
@@ -381,11 +452,21 @@ const QuestionsContent = () => {
             }}
           />
           <TextField
-            placeholder="Lọc theo ID câu hỏi"
-            variant="outlined"
-            value={questionIdFilter}
-            onChange={(e) => setQuestionIdFilter(e.target.value)}
-            sx={{ minWidth: 180, ml: { xs: 0, md: 2 } }}
+            label="Từ ngày"
+            type="date"
+            value={createdFrom}
+            onChange={(e) => setCreatedFrom(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 150, ml: { xs: 0, md: 2 } }}
+            size="small"
+          />
+          <TextField
+            label="Đến ngày"
+            type="date"
+            value={createdTo}
+            onChange={(e) => setCreatedTo(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 150, ml: { xs: 0, md: 2 } }}
             size="small"
           />
           {/* Category filter */}{' '}
@@ -579,15 +660,6 @@ const QuestionsContent = () => {
                       fontWeight: 700,
                       color: '#1976d2',
                       fontSize: '1.05rem',
-                    }}
-                  >
-                    Thời gian trả lời
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      fontWeight: 700,
-                      color: '#1976d2',
-                      fontSize: '1.05rem',
                       textAlign: 'center',
                     }}
                   >
@@ -632,7 +704,9 @@ const QuestionsContent = () => {
                             ? 'Đã trả lời'
                             : question.status === 'CANCELED'
                               ? 'Đã huỷ'
-                              : 'Đang chờ'
+                              : question.status === 'CONFIRMED'
+                                ? 'Đã xác nhận'
+                                : 'Đang chờ'
                         }
                         icon={
                           question.status === 'ANSWERED' ? (
@@ -671,16 +745,11 @@ const QuestionsContent = () => {
                     <TableCell sx={{ minWidth: 120, fontSize: '1rem' }}>
                       {question.status === 'CANCELED' && question.updaterName
                         ? question.updaterName
-                        : question.status === 'ANSWERED' && question.replierName
+                        : (question.status === 'ANSWERED' ||
+                              question.status === 'CONFIRMED') &&
+                            question.replierName
                           ? question.replierName
                           : ''}
-                    </TableCell>
-                    <TableCell sx={{ minWidth: 140, fontSize: '1rem' }}>
-                      {question.status === 'ANSWERED' && question.updatedAt
-                        ? Array.isArray(question.updatedAt)
-                          ? formatDateTimeFromArray(question.updatedAt)
-                          : 'Chưa cập nhật'
-                        : ''}
                     </TableCell>
                     <TableCell sx={{ textAlign: 'center' }}>
                       <Button
