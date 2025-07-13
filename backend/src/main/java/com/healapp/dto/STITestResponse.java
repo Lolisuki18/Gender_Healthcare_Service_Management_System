@@ -54,6 +54,9 @@ public class STITestResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Lý do hủy xét nghiệm (nếu có)
+    private String cancelReason;
+
     public boolean isPaymentCompleted() {
         return "COMPLETED".equals(this.paymentStatus);
     }

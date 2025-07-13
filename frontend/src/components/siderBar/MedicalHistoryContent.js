@@ -80,7 +80,8 @@ import { styled } from '@mui/material/styles';
 // Import dateUtils for consistent date formatting
 import { formatDateDisplay } from '../../utils/dateUtils.js';
 // Import stiService for API calls
-import stiService from '../../services/stiService.js';
+import stiService, { cancelSTITest } from '../../services/stiService.js';
+import confirmDialog from '../../utils/confirmDialog';
 // Import notification system
 import { toast } from 'react-toastify';
 import jsPDF from 'jspdf';
@@ -89,6 +90,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useNavigate } from 'react-router-dom';
+import CanceledTestDetailModal from '../StaffProfile/modals/CanceledTestDetailModal';
 
 // Styled Paper Component với hiệu ứng glass morphism hiện đại
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -153,6 +155,10 @@ const MedicalHistoryContent = () => {
   // Define loading and error states for tracking API call status
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [cancellingTestId, setCancellingTestId] = useState(null);
+  // State cho modal chi tiết huỷ
+  const [openCanceledDetailModal, setOpenCanceledDetailModal] = useState(false);
+  const [selectedCanceledTest, setSelectedCanceledTest] = useState(null);
 
   // Table pagination states
   const [page, setPage] = useState(0);
@@ -214,6 +220,7 @@ const MedicalHistoryContent = () => {
         doctor: test.staffName || test.consultantName || 'Chưa xác định',
         consultantName: test.consultantName, // thêm dòng này để lưu consultantName vào record
         diagnosis: test.serviceName || 'Xét nghiệm STI',
+        serviceName: test.serviceName, // truyền đúng tên dịch vụ
         status: test.status,
         displayStatus: test.getStatusDisplayText
           ? test.getStatusDisplayText()
@@ -248,6 +255,9 @@ const MedicalHistoryContent = () => {
                 : test.paymentMethod,
         appointmentDate: test.appointmentDate,
         isApiData: true,
+        cancelReason: test.cancelReason,
+        createdAt: test.createdAt,
+        updatedAt: test.updatedAt,
       };
     });
   };
@@ -473,6 +483,31 @@ const MedicalHistoryContent = () => {
     setPage(0);
   };
 
+  // Hàm huỷ xét nghiệm
+  const handleCancelTest = async (testId) => {
+    if (!testId) return;
+    const reason = await confirmDialog.cancelWithReason(
+      'Bạn có chắc chắn muốn huỷ xét nghiệm này? Vui lòng nhập lý do huỷ.'
+    );
+    if (!reason) return;
+    setCancellingTestId(testId);
+    try {
+      await cancelSTITest(testId, reason);
+      toast.success('Huỷ xét nghiệm thành công!');
+      fetchSTITests();
+    } catch (err) {
+      toast.error('Huỷ xét nghiệm thất bại!');
+    } finally {
+      setCancellingTestId(null);
+    }
+  };
+
+  // Hàm mở modal chi tiết huỷ
+  const handleOpenCanceledDetailModal = (test) => {
+    setSelectedCanceledTest(test);
+    setOpenCanceledDetailModal(true);
+  };
+
   return (
     <Box sx={{ maxWidth: '1400px', mx: 'auto', p: { xs: 2, md: 4 } }}>
       {/* Header Section */}
@@ -551,6 +586,7 @@ const MedicalHistoryContent = () => {
               gap: 3,
             }}
           >
+            {/* Tổng số lần khám */}
             <Box
               sx={{
                 p: 2,
@@ -589,6 +625,7 @@ const MedicalHistoryContent = () => {
               </Box>
             </Box>
 
+            {/* Lần khám gần nhất */}
             <Box
               sx={{
                 p: 2,
@@ -629,6 +666,7 @@ const MedicalHistoryContent = () => {
               </Box>
             </Box>
 
+            {/* Có kết quả */}
             <Box
               sx={{
                 p: 2,
@@ -667,7 +705,7 @@ const MedicalHistoryContent = () => {
               </Box>
             </Box>
 
-            {/* Box hiển thị số hoàn thành */}
+            {/* Hoàn thành */}
             <Box
               sx={{
                 p: 2,
@@ -708,6 +746,45 @@ const MedicalHistoryContent = () => {
                         r.displayStatus === 'Hoàn thành'
                     ).length
                   }
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Bị huỷ */}
+            <Box
+              sx={{
+                p: 2,
+                flexGrow: 1,
+                flexBasis: '200px',
+                borderRadius: '12px',
+                background: 'rgba(239, 83, 80, 0.05)',
+                border: '1px solid rgba(239, 83, 80, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <Box
+                sx={{
+                  backgroundColor: 'rgba(239, 83, 80, 0.1)',
+                  borderRadius: '50%',
+                  p: 1,
+                  mr: 2,
+                }}
+              >
+                <ScienceIcon sx={{ color: '#EF5350', fontSize: 24 }} />
+              </Box>
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{ color: '#EF5350', fontWeight: 500 }}
+                >
+                  Bị huỷ
+                </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{ color: '#EF5350', fontWeight: 700 }}
+                >
+                  {medicalRecords.filter((r) => r.status === 'CANCELED').length}
                 </Typography>
               </Box>
             </Box>
@@ -875,25 +952,53 @@ const MedicalHistoryContent = () => {
                       </Tooltip>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<ScienceIcon />}
-                        onClick={() =>
-                          (record.status === 'COMPLETED' ||
-                            record.displayStatus === 'Hoàn thành') &&
-                          handleViewTestResults(record.testId)
-                        }
-                        disabled={
-                          !(
-                            record.status === 'COMPLETED' ||
-                            record.displayStatus === 'Hoàn thành'
-                          )
-                        }
-                        sx={{ mr: 1, mb: 0.5 }}
-                      >
-                        Xem kết quả
-                      </Button>
+                      {/* Nếu đã huỷ thì chỉ hiển thị nút xem chi tiết huỷ */}
+                      {record.status === 'CANCELED' ? (
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => handleOpenCanceledDetailModal(record)}
+                          sx={{ mr: 1, mb: 0.5 }}
+                        >
+                          Xem chi tiết huỷ
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<ScienceIcon />}
+                          onClick={() =>
+                            (record.status === 'COMPLETED' ||
+                              record.displayStatus === 'Hoàn thành') &&
+                            handleViewTestResults(record.testId)
+                          }
+                          disabled={
+                            !(
+                              record.status === 'COMPLETED' ||
+                              record.displayStatus === 'Hoàn thành'
+                            )
+                          }
+                          sx={{ mr: 1, mb: 0.5 }}
+                        >
+                          Xem kết quả
+                        </Button>
+                      )}
+                      {/* Nút Huỷ cho trạng thái Đang xử lý */}
+                      {record.status === 'PENDING' && (
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => handleCancelTest(record.testId)}
+                          disabled={cancellingTestId === record.testId}
+                          sx={{ mr: 1, mb: 0.5 }}
+                        >
+                          {cancellingTestId === record.testId
+                            ? 'Đang huỷ...'
+                            : 'Huỷ'}
+                        </Button>
+                      )}
                       {(record.type === 'Xét nghiệm STI' ||
                         record.type === 'STI' ||
                         record.serviceType === 'STI_SERVICE') &&
@@ -1072,6 +1177,13 @@ const MedicalHistoryContent = () => {
           onClose={() => setSelectedTestId(null)}
         />
       )}
+      {/* Modal chi tiết huỷ */}
+      <CanceledTestDetailModal
+        open={openCanceledDetailModal}
+        onClose={() => setOpenCanceledDetailModal(false)}
+        test={selectedCanceledTest}
+        formatDateDisplay={formatDateDisplay}
+      />
     </Box>
   );
 };

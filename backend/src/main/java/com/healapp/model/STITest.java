@@ -59,6 +59,9 @@ public class STITest { // Lưu thông tin các đơn xét nghiệm STIs của kh
     @Column(name = "status", length = 20, nullable = false)
     private STITestStatus status;
 
+    @Column(name = "cancel_reason", columnDefinition = "NVARCHAR(255)") // Lý do hủy xét nghiệm (nếu có)
+    private String cancelReason;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

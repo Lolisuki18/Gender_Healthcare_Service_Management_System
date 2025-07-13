@@ -104,9 +104,12 @@ export const getSTITestDetails = async (testId) => {
 };
 
 // Cancel a test
-export const cancelSTITest = async (testId) => {
+export const cancelSTITest = async (testId, reason) => {
   try {
-    const response = await apiClient.put(`${API_URL}/tests/${testId}/cancel`);
+    // Luôn gửi body JSON, kể cả khi reason rỗng
+    const response = await apiClient.put(`${API_URL}/tests/${testId}/cancel`, {
+      reason: reason ?? '',
+    });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -658,6 +661,16 @@ export const getConsultantSTITests = async () => {
   }
 };
 
+// Get canceled tests (Staff only)
+export const getCanceledTests = async () => {
+  try {
+    const response = await apiClient.get('/sti-services/staff/canceled-tests');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
 // Export as a default object with all functions
 const stiService = {
   createSTIService,
@@ -690,6 +703,7 @@ const stiService = {
 
   updateConsultantNotes,
   getConsultantSTITests,
+  getCanceledTests,
 
   // New function to get services within a package
   // getServicesInPackage: async (packageId) => {

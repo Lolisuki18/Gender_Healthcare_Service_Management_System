@@ -400,15 +400,15 @@ public class STITestService {
         return savedPayment;
     }
 
-        private ApiResponse<Payment> processVisaPaymentWithValidation(STITest stiTest, STITestRequest request) {
+    private ApiResponse<Payment> processVisaPaymentWithValidation(STITest stiTest, STITestRequest request) {
         String cardNumber, expiryMonth, expiryYear, cvc, cardHolderName;
 
         // Kiểm tra xem có sử dụng thẻ đã lưu không
         if (request.getSavedCardId() != null) {
             // Sử dụng thẻ đã lưu
             ApiResponse<PaymentInfoResponse> savedCardResponse = paymentInfoService.getPaymentInfoForPayment(
-                request.getSavedCardId(), stiTest.getCustomer().getId());
-            
+                    request.getSavedCardId(), stiTest.getCustomer().getId());
+
             if (!savedCardResponse.isSuccess()) {
                 return ApiResponse.error("Saved card not found or invalid: " + savedCardResponse.getMessage());
             }
@@ -986,7 +986,7 @@ public class STITestService {
     }
 
     @Transactional
-    public ApiResponse<STITestResponse> cancelTest(Long testId, Long userId) {
+    public ApiResponse<STITestResponse> cancelTest(Long testId, Long userId, String reason) {
         try {
             Optional<STITest> testOpt = stiTestRepository.findById(testId);
             if (testOpt.isEmpty()) {
@@ -1046,6 +1046,10 @@ public class STITestService {
                 }
             }
 
+            // Lưu lý do hủy nếu có
+            if (reason != null && !reason.trim().isEmpty()) {
+                stiTest.setCancelReason(reason.trim());
+            }
             stiTest.setStatus(STITestStatus.CANCELED);
             stiTest.setUpdatedAt(LocalDateTime.now());
             STITest canceledTest = stiTestRepository.save(stiTest);
@@ -1221,8 +1225,12 @@ public class STITestService {
         response.setCustomerNotes(stiTest.getCustomerNotes());
         response.setConsultantNotes(stiTest.getConsultantNotes());
         response.setResultDate(stiTest.getResultDate());
+        response.setCancelReason(stiTest.getCancelReason());
         response.setCreatedAt(stiTest.getCreatedAt());
         response.setUpdatedAt(stiTest.getUpdatedAt());
+
+        // Bổ sung lý do huỷ nếu có
+        response.setCancelReason(stiTest.getCancelReason());
 
         return response;
     }
@@ -1628,5 +1636,13 @@ public class STITestService {
         } catch (Exception e) {
             return ApiResponse.error("Failed to retrieve consultant tests: " + e.getMessage());
         }
+    }
+
+    public ApiResponse<List<STITestResponse>> getTestsByStatus(STITestStatus status) {
+        List<STITest> tests = stiTestRepository.findByStatus(status);
+        List<STITestResponse> responses = tests.stream()
+                .map(this::convertToResponse)
+                .collect(java.util.stream.Collectors.toList());
+        return ApiResponse.success("Retrieved tests by status: " + status, responses);
     }
 }

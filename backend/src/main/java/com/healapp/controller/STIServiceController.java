@@ -172,10 +172,11 @@ public class STIServiceController {
 
     @PutMapping("/tests/{testId}/cancel")
     @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
-    public ResponseEntity<ApiResponse<STITestResponse>> cancelSTITest(@PathVariable Long testId) {
-
+    public ResponseEntity<ApiResponse<STITestResponse>> cancelSTITest(@PathVariable Long testId,
+            @RequestBody java.util.Map<String, String> body) {
         Long userId = getCurrentUserId();
-        ApiResponse<STITestResponse> response = stiTestService.cancelTest(testId, userId);
+        String reason = body != null ? body.get("reason") : null;
+        ApiResponse<STITestResponse> response = stiTestService.cancelTest(testId, userId, reason);
         return getResponseEntity(response);
     }
 
@@ -340,6 +341,14 @@ public class STIServiceController {
     public ResponseEntity<ApiResponse<List<STITestResponse>>> getConsultantTests() {
         Long consultantId = getCurrentUserId();
         ApiResponse<List<STITestResponse>> response = stiTestService.getTestsForConsultant(consultantId);
+        return getResponseEntity(response);
+    }
+
+    @GetMapping("/staff/canceled-tests")
+    @PreAuthorize("hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<List<STITestResponse>>> getCanceledTests() {
+        ApiResponse<List<STITestResponse>> response = stiTestService
+                .getTestsByStatus(com.healapp.model.STITestStatus.CANCELED);
         return getResponseEntity(response);
     }
 

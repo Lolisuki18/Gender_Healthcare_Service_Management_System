@@ -51,6 +51,7 @@ import {
   getSTIServiceById,
   getSTIPackageById,
   savePartialTestResults,
+  getCanceledTests,
 } from '../../services/stiService';
 import { formatDateDisplay } from '../../utils/dateUtils';
 
@@ -69,6 +70,9 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import SampleCollectionModal from './modals/SampleCollectionModal';
 import TestResultInputModal from './modals/TestResultInputModal';
 import FinalTestResultModal from './modals/FinalTestResultModal';
+import { confirmDialog } from '../../utils/confirmDialog';
+import { notify } from '@/utils/notify';
+import CanceledTestDetailModal from './modals/CanceledTestDetailModal';
 
 // TabPanel component for tab content
 function TabPanel(props) {
@@ -169,6 +173,8 @@ const STITestManagementContent = () => {
     useState({});
 
   const [openFinalResultModal, setOpenFinalResultModal] = useState(false);
+  const [openCanceledDetailModal, setOpenCanceledDetailModal] = useState(false);
+  const [selectedCanceledTest, setSelectedCanceledTest] = useState(null);
 
   const fetchTests = useCallback(async () => {
     setLoading(true);
@@ -185,14 +191,13 @@ const STITestManagementContent = () => {
         case 2: // Confirmed tests
           response = await getConfirmedTests();
           break;
-        case 3: // Sampled tests
-        case 4: // Resulted tests
-        case 5: // Completed tests
-          // Lấy tất cả các xét nghiệm của staff, sau đó lọc theo trạng thái
+        case 3: // Sampled
+        case 4: // Resulted
+        case 5: // Completed
           response = await getStaffTests();
-          console.log(
-            `Lấy tất cả xét nghiệm, sau đó lọc theo trạng thái cho tab ${response}`
-          );
+          break;
+        case 6: // Canceled
+          response = await getCanceledTests();
           break;
         default:
           response = await getStaffTests();
@@ -260,6 +265,9 @@ const STITestManagementContent = () => {
     } else if (tabValue === 5) {
       // Filter for COMPLETED tests in tab 5
       result = result.filter((test) => test && test.status === 'COMPLETED');
+    } else if (tabValue === 6) {
+      // Filter for CANCELED tests in tab 6
+      result = result.filter((test) => test && test.status === 'CANCELED');
     }
 
     // Filter by status
@@ -902,21 +910,38 @@ const STITestManagementContent = () => {
       setLoading(false);
     }
   };
-  const handleCancelTestAction = async (testId) => {
+  const handleCancelTestAction = async (testId, reason) => {
     try {
       setLoading(true);
-      const response = await cancelSTITest(testId);
-      if (response.status === 'SUCCESS') {
+      const response = await cancelSTITest(testId, reason);
+      notify.success('Thành công', 'Đã hủy xét nghiệm thành công!');
+      if (response.success) {
         updateTestInState(response.data);
+        setSuccess('Đã hủy xét nghiệm thành công!');
+        setTimeout(() => setSuccess(null), 3000);
         return true;
       } else {
-        setError(response.message || 'Không thể hủy xét nghiệm');
+        // Nếu lỗi là "Cannot cancel test within 24 hours of appointment" thì dịch sang tiếng Việt
+        if (
+          response.message ===
+          'Cannot cancel test within 24 hours of appointment'
+        ) {
+          setError('Không thể hủy xét nghiệm trong vòng 24 giờ trước giờ hẹn!');
+          notify.error(
+            'Lỗi',
+            'Không thể hủy xét nghiệm trong vòng 24 giờ trước giờ hẹn!'
+          );
+        } else {
+          setError(response.message || 'Không thể hủy xét nghiệm');
+        }
+        setTimeout(() => setError(null), 3000);
         return false;
       }
     } catch (err) {
       setError(
         'Lỗi khi hủy xét nghiệm: ' + (err.message || 'Lỗi không xác định')
       );
+      setTimeout(() => setError(null), 3000);
       console.error('Error canceling test:', err);
       return false;
     } finally {
@@ -952,6 +977,8 @@ const STITestManagementContent = () => {
           filtered = filtered.filter((t) => t && t.status === 'RESULTED');
         } else if (tabValue === 5) {
           filtered = filtered.filter((t) => t && t.status === 'COMPLETED');
+        } else if (tabValue === 6) {
+          filtered = filtered.filter((t) => t && t.status === 'CANCELED');
         }
         setFilteredTests(filtered);
       }
@@ -982,6 +1009,8 @@ const STITestManagementContent = () => {
           } else if (tabValue === 4 && test && test.status !== 'RESULTED') {
             return false;
           } else if (tabValue === 5 && test && test.status !== 'COMPLETED') {
+            return false;
+          } else if (tabValue === 6 && test && test.status !== 'CANCELED') {
             return false;
           }
           return true;
@@ -1115,7 +1144,14 @@ const STITestManagementContent = () => {
                 size="small"
                 color="error"
                 startIcon={<CancelIcon />}
-                onClick={() => handleCancelTestAction(test.testId)}
+                onClick={async () => {
+                  const reason = await confirmDialog.cancelWithReason(
+                    'Bạn có chắc chắn muốn hủy xét nghiệm này? Vui lòng nhập lý do hủy.'
+                  );
+                  if (reason) {
+                    await handleCancelTestAction(test.testId, reason);
+                  }
+                }}
               >
                 Hủy
               </Button>
@@ -1195,6 +1231,20 @@ const STITestManagementContent = () => {
               }}
             >
               Xem kết quả
+            </Button>
+          </Tooltip>
+        );
+      case 'CANCELED':
+        return (
+          <Tooltip title="Xem chi tiết">
+            <Button
+              variant="outlined"
+              size="small"
+              color="error"
+              onClick={() => handleOpenCanceledDetailModal(test)}
+              sx={{ borderColor: '#EF5350', color: '#EF5350', fontWeight: 600 }}
+            >
+              XEM CHI TIẾT
             </Button>
           </Tooltip>
         );
@@ -1412,6 +1462,11 @@ const STITestManagementContent = () => {
     setOpenFinalResultModal(true);
   };
 
+  const handleOpenCanceledDetailModal = (test) => {
+    setSelectedCanceledTest(test);
+    setOpenCanceledDetailModal(true);
+  };
+
   return (
     <Container maxWidth="xl" sx={{ mt: 3, mb: 4 }}>
       <Paper
@@ -1477,6 +1532,7 @@ const STITestManagementContent = () => {
             <Tab label="Đã lấy mẫu" />
             <Tab label="Có kết quả" />
             <Tab label="Hoàn thành" />
+            <Tab label="Đã hủy" />
           </Tabs>
         </Box>
         {/* Filter Section */}
@@ -1587,6 +1643,9 @@ const STITestManagementContent = () => {
         <TabPanel value={tabValue} index={5}>
           {renderTestTable()}
         </TabPanel>
+        <TabPanel value={tabValue} index={6}>
+          {renderTestTable()}
+        </TabPanel>
         {/* Modals */} {/* Modal lấy mẫu */}
         <SampleCollectionModal
           open={openComponentModal}
@@ -1629,6 +1688,12 @@ const STITestManagementContent = () => {
           open={openFinalResultModal}
           onClose={() => setOpenFinalResultModal(false)}
           test={selectedTest}
+          formatDateDisplay={formatDateDisplay}
+        />
+        <CanceledTestDetailModal
+          open={openCanceledDetailModal}
+          onClose={() => setOpenCanceledDetailModal(false)}
+          test={selectedCanceledTest}
           formatDateDisplay={formatDateDisplay}
         />
       </Paper>

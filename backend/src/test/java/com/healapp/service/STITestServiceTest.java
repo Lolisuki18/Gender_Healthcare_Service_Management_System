@@ -683,7 +683,7 @@ class STITestServiceTest {
         when(paymentService.getPaymentByService("STI", 1L)).thenReturn(Optional.of(payment));
         when(stiTestRepository.save(any(STITest.class))).thenReturn(stiTest);
 
-        ApiResponse<STITestResponse> response = stiTestService.cancelTest(1L, 1L);
+        ApiResponse<STITestResponse> response = stiTestService.cancelTest(1L, 1L, null);
 
         assertTrue(response.isSuccess());
         assertTrue(response.getMessage().contains("STI test canceled successfully"));
@@ -698,7 +698,7 @@ class STITestServiceTest {
     void cancelTest_TestNotFound() {
         when(stiTestRepository.findById(999L)).thenReturn(Optional.empty());
 
-        ApiResponse<STITestResponse> response = stiTestService.cancelTest(999L, 1L);
+        ApiResponse<STITestResponse> response = stiTestService.cancelTest(999L, 1L, null);
 
         assertFalse(response.isSuccess());
         assertEquals("STI test not found", response.getMessage());
@@ -712,7 +712,7 @@ class STITestServiceTest {
     void cancelTest_NoPermission() {
         when(stiTestRepository.findById(1L)).thenReturn(Optional.of(stiTest));
 
-        ApiResponse<STITestResponse> response = stiTestService.cancelTest(1L, 999L);
+        ApiResponse<STITestResponse> response = stiTestService.cancelTest(1L, 999L, null);
 
         assertFalse(response.isSuccess());
         assertEquals("You can only cancel your own tests", response.getMessage());
@@ -728,7 +728,7 @@ class STITestServiceTest {
 
         when(stiTestRepository.findById(1L)).thenReturn(Optional.of(stiTest));
 
-        ApiResponse<STITestResponse> response = stiTestService.cancelTest(1L, 1L);
+        ApiResponse<STITestResponse> response = stiTestService.cancelTest(1L, 1L, null);
 
         assertFalse(response.isSuccess());
         assertEquals("Cannot cancel test in current status: SAMPLED", response.getMessage());
@@ -743,7 +743,7 @@ class STITestServiceTest {
 
         when(stiTestRepository.findById(1L)).thenReturn(Optional.of(stiTest));
 
-        ApiResponse<STITestResponse> response = stiTestService.cancelTest(1L, 1L);
+        ApiResponse<STITestResponse> response = stiTestService.cancelTest(1L, 1L, null);
 
         assertFalse(response.isSuccess());
         assertEquals("Cannot cancel test within 24 hours of appointment", response.getMessage());
