@@ -35,6 +35,7 @@ import {
   Security as SecurityIcon,
   Verified as VerifiedIcon,
   Shield as ShieldIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { toast } from 'react-toastify';
@@ -43,10 +44,13 @@ import { toast } from 'react-toastify';
 import { PasswordChangeDialog } from '../modals/PasswordChangeModal';
 import { EmailChangeDialog } from '../modals/EmailChangeModal';
 import { PhoneChangeDialog } from '../modals/PhoneChangeModal';
+import DeleteAccountModal from '../modals/DeleteAccountModal';
 
 import localStorageUtil from '@/utils/localStorage';
 import apiClient from '../../services/api';
 import { userService } from '../../services/userService';
+import { notify } from '@/utils/notify';
+import { confirmDialog } from '@/utils/confirmDialog';
 
 // Styled components
 const HeaderSection = styled(Box)(({ theme }) => ({
@@ -107,6 +111,7 @@ const ConsultantSecurityContent = () => {
     password: false,
     email: false,
     phone: false,
+    deleteAccount: false,
   });
 
   const [phoneModalMode, setPhoneModalMode] = useState('change'); // 'verify' or 'change'
@@ -115,6 +120,7 @@ const ConsultantSecurityContent = () => {
     password: false,
     email: false,
     phone: false,
+    deleteAccount: false,
   });
 
   const [userData, setUserData] = useState({});
@@ -267,9 +273,12 @@ const ConsultantSecurityContent = () => {
   const handleSendPhoneCode = async (phone) => {
     setIsLoading((prev) => ({ ...prev, phone: true }));
     try {
-      const response = await apiClient.post('/users/send-phone-verification-code', {
-        phone: phone
-      });
+      const response = await apiClient.post(
+        '/users/send-phone-verification-code',
+        {
+          phone: phone,
+        }
+      );
 
       if (response.data.success) {
         toast.success('Mã xác thực đã được gửi đến số điện thoại của bạn!', {
@@ -278,7 +287,8 @@ const ConsultantSecurityContent = () => {
         return { success: true };
       } else {
         toast.error(
-          response.data.message || 'Không thể gửi mã xác thực. Vui lòng thử lại.',
+          response.data.message ||
+            'Không thể gửi mã xác thực. Vui lòng thử lại.',
           { duration: 4000 }
         );
         return { success: false, message: response.data.message };
@@ -325,7 +335,11 @@ const ConsultantSecurityContent = () => {
         } catch (error) {
           console.error('Error refreshing user data:', error);
           // Fallback update nếu API call fails
-          const updatedUser = { ...userData, phone: phone + '_V', phoneNumber: phone + '_V' };
+          const updatedUser = {
+            ...userData,
+            phone: phone + '_V',
+            phoneNumber: phone + '_V',
+          };
           localStorageUtil.set('user', updatedUser);
           setUserData(updatedUser);
         }
@@ -342,7 +356,8 @@ const ConsultantSecurityContent = () => {
       return {
         success: false,
         message:
-          error.response?.data?.message || 'Có lỗi xảy ra khi xác thực số điện thoại',
+          error.response?.data?.message ||
+          'Có lỗi xảy ra khi xác thực số điện thoại',
       };
     } finally {
       setIsLoading((prev) => ({ ...prev, phone: false }));
@@ -359,7 +374,9 @@ const ConsultantSecurityContent = () => {
   const getCleanPhoneNumber = (phone) => {
     if (!phone) return '';
     const phoneStr = phone.toString();
-    return phoneStr.endsWith('_V') ? phoneStr.substring(0, phoneStr.length - 2) : phoneStr;
+    return phoneStr.endsWith('_V')
+      ? phoneStr.substring(0, phoneStr.length - 2)
+      : phoneStr;
   };
 
   // Handler cho xác thực phone number hiện tại
@@ -372,6 +389,96 @@ const ConsultantSecurityContent = () => {
 
     setPhoneModalMode('verify');
     handleOpenModal('phone');
+  };
+
+  // Handler cho gửi mã xác thực để xóa tài khoản
+  const handleSendDeleteAccountVerificationCode = async (password) => {
+    setIsLoading((prev) => ({ ...prev, deleteAccount: true }));
+    try {
+      const response = await apiClient.post(
+        '/users/profile/delete-account/send-verification',
+        {
+          password: password,
+        }
+      );
+
+      if (response.data.success) {
+        notify.success(
+          'Xóa tài khoản',
+          'Mã xác thực đã được gửi đến email của bạn'
+        );
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          message: response.data.message || 'Có lỗi xảy ra khi gửi mã xác thực',
+        };
+      }
+    } catch (error) {
+      console.error('Error sending delete account verification code:', error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || 'Có lỗi xảy ra khi gửi mã xác thực',
+      };
+    } finally {
+      setIsLoading((prev) => ({ ...prev, deleteAccount: false }));
+    }
+  };
+
+  // Handler cho xóa tài khoản
+  const handleDeleteAccount = async (password, verificationCode) => {
+    setIsLoading((prev) => ({ ...prev, deleteAccount: true }));
+    try {
+      const response = await apiClient.delete('/users/profile/delete-account', {
+        data: {
+          password: password,
+          verificationCode: verificationCode,
+        },
+      });
+
+      if (response.data.success) {
+        notify.success('Xóa tài khoản', 'Tài khoản đã được xóa thành công');
+
+        // Xóa dữ liệu local và chuyển về trang đăng nhập
+        localStorage.clear();
+        window.location.href = '/login';
+
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          message: response.data.message || 'Có lỗi xảy ra khi xóa tài khoản',
+        };
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || 'Có lỗi xảy ra khi xóa tài khoản',
+      };
+    } finally {
+      setIsLoading((prev) => ({ ...prev, deleteAccount: false }));
+    }
+  };
+
+  // Handler cho mở modal xóa tài khoản
+  const handleOpenDeleteAccountModal = async () => {
+    const confirmed = await confirmDialog.danger(
+      'Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản của mình?',
+      {
+        title: 'Xác nhận xóa tài khoản',
+        message:
+          'Hành động này sẽ xóa vĩnh viễn tất cả dữ liệu của bạn và không thể khôi phục lại. Bạn có chắc chắn muốn tiếp tục?',
+        confirmText: 'Xóa tài khoản',
+        cancelText: 'Hủy',
+      }
+    );
+
+    if (confirmed) {
+      handleOpenModal('deleteAccount');
+    }
   };
 
   const securityItems = [
@@ -423,6 +530,18 @@ const ConsultantSecurityContent = () => {
         const currentPhone = userData.phoneNumber || userData.phone;
         return currentPhone && !isPhoneVerified(currentPhone);
       })(),
+    },
+    {
+      id: 'deleteAccount',
+      title: 'Xóa tài khoản',
+      description: 'Xóa vĩnh viễn tài khoản và tất cả dữ liệu',
+      icon: <DeleteIcon />,
+      currentValue: 'Hành động không thể hoàn tác',
+      status: 'Nguy hiểm',
+      lastUpdate: 'Xóa vĩnh viễn',
+      actionText: 'Xóa tài khoản',
+      color: '#DC3545',
+      isDanger: true,
     },
   ];
 
@@ -560,7 +679,9 @@ const ConsultantSecurityContent = () => {
 
                 {/* Action buttons - special handling for phone verification */}
                 {item.id === 'phone' && item.showVerifyButton ? (
-                  <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+                  <Box
+                    sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}
+                  >
                     <ActionButton
                       fullWidth
                       onClick={handleVerifyExistingPhone}
@@ -568,7 +689,8 @@ const ConsultantSecurityContent = () => {
                       sx={{
                         background: 'linear-gradient(45deg, #FF9800, #FF5722)',
                         '&:hover': {
-                          background: 'linear-gradient(45deg, #F57C00, #D84315)',
+                          background:
+                            'linear-gradient(45deg, #F57C00, #D84315)',
                         },
                       }}
                     >
@@ -597,6 +719,28 @@ const ConsultantSecurityContent = () => {
                       Đổi số điện thoại
                     </Button>
                   </Box>
+                ) : item.id === 'deleteAccount' ? (
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={handleOpenDeleteAccountModal}
+                    startIcon={<DeleteIcon />}
+                    sx={{
+                      borderRadius: '12px',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      background: 'linear-gradient(45deg, #DC3545, #C82333)',
+                      color: 'white',
+                      boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)',
+                      '&:hover': {
+                        background: 'linear-gradient(45deg, #C82333, #BD2130)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 6px 20px rgba(220, 53, 69, 0.4)',
+                      },
+                    }}
+                  >
+                    {item.actionText}
+                  </Button>
                 ) : (
                   <ActionButton
                     fullWidth
@@ -670,9 +814,21 @@ const ConsultantSecurityContent = () => {
         onVerifyAndSave={handleVerifyAndSavePhone}
         isSendingCode={isLoading.phone}
         isVerifying={isLoading.phone}
-        currentPhone={getCleanPhoneNumber(userData.phoneNumber || userData.phone || '')}
-        isPhoneVerified={isPhoneVerified(userData.phoneNumber || userData.phone)}
+        currentPhone={getCleanPhoneNumber(
+          userData.phoneNumber || userData.phone || ''
+        )}
+        isPhoneVerified={isPhoneVerified(
+          userData.phoneNumber || userData.phone
+        )}
         mode={phoneModalMode}
+      />
+      <DeleteAccountModal
+        open={modalStates.deleteAccount}
+        onClose={(success) => handleCloseModal('deleteAccount', success)}
+        onSendVerificationCode={handleSendDeleteAccountVerificationCode}
+        onDeleteAccount={handleDeleteAccount}
+        isSendingCode={isLoading.deleteAccount}
+        isDeleting={isLoading.deleteAccount}
       />
     </Box>
   );

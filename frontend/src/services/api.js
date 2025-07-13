@@ -145,8 +145,10 @@ apiClient.interceptors.request.use(
           processQueue(null, newToken.accessToken);
         } catch (error) {
           processQueue(error, null);
+          localStorageUtil.remove('token');
+          localStorageUtil.remove('user');
+          localStorageUtil.remove('userProfile');
           // Redirect to login nếu không phải đang ở trang login
-
           if (!window.location.pathname.includes('/login')) {
             window.location.href = '/login';
           }

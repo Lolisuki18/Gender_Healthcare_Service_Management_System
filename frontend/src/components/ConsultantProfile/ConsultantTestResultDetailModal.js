@@ -21,6 +21,7 @@ import {
   Alert,
 } from '@mui/material';
 import confirmDialog from '../../utils/confirmDialog';
+import { notify } from '../../utils/notify';
 
 const MEDICAL_GRADIENT = 'linear-gradient(45deg, #4A90E2, #1ABC9C)';
 const FONT_FAMILY = '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
@@ -40,8 +41,6 @@ const ConsultantTestResultDetailModal = ({
     test?.consultantNotes || ''
   );
   const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
 
   const handleSave = async () => {
     // Hiện dialog xác nhận
@@ -50,13 +49,11 @@ const ConsultantTestResultDetailModal = ({
     );
     if (!ok) return;
     setSaving(true);
-    setError('');
     try {
       await onSaveNote(consultantNote);
-      setSuccess('Lưu kết luận thành công!');
-      setTimeout(() => setSuccess(''), 2000);
+      notify.success('Thành công', 'Lưu kết luận thành công!');
     } catch (e) {
-      setError('Lưu kết luận thất bại!');
+      notify.error('Lỗi', 'Lưu kết luận thất bại!');
     } finally {
       setSaving(false);
     }
@@ -251,16 +248,6 @@ const ConsultantTestResultDetailModal = ({
             disabled={saving}
           />
         </Box>
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {success}
-          </Alert>
-        )}
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
         <Button onClick={onClose} color="secondary">
