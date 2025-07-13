@@ -173,81 +173,20 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
-
-    // Xử lý token hết hạn (401 Unauthorized) hoặc JWT expired
+    // Nếu lỗi là do refresh token và message là 'User not found'
+    const errMsg = error?.response?.data?.message;
     if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url?.includes('/auth/refresh-token')
+      errMsg &&
+      typeof errMsg === 'string' &&
+      errMsg.toLowerCase().includes('user not found')
     ) {
-      // ✅ KIỂM TRA FLAG ĐỂ BỎ QUA AUTO-REDIRECT
-      if (originalRequest?.skipAutoRedirect) {
-        return Promise.reject(error);
-      }
-
-      if (isRefreshing) {
-        // Nếu đang refresh, thêm request vào queue
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return apiClient.request(originalRequest);
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const newToken = await refreshToken();
-        originalRequest.headers.Authorization = `Bearer ${newToken.accessToken}`;
-        processQueue(null, newToken.accessToken);
-        return apiClient.request(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-
-        // Nếu có flag skipAutoRedirect, không redirect và không alert
-        if (originalRequest?.skipAutoRedirect) {
-          return Promise.reject(error);
-        }
-
-        // Kiểm tra nếu đang ở trang login thì không hiển thị dialog
-        if (window.location.pathname.includes('/login')) {
-          return Promise.reject(refreshError);
-        }
-
-        // Thông báo cho người dùng bằng dialog đẹp
-        await confirmDialog.info(
-          'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!'
-        );
-
-        // XÓA TOÀN BỘ DỮ LIỆU TRÊN LOCALSTORAGE VÀ SESSIONSTORAGE
-        localStorage.clear();
-        sessionStorage.clear();
-
-        // Chỉ redirect nếu không phải đang ở trang login
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
-        }
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
+      await confirmDialog.info(
+        'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+        { confirmText: 'Đăng nhập lại', cancelText: 'Đóng' }
+      );
+      window.location.href = '/login';
+      return Promise.reject(error);
     }
-
-    // Xử lý các lỗi khác
-    if (error.response?.status === 403) {
-      // Forbidden - có thể do token không đủ quyền
-      console.error('Access forbidden - insufficient permissions');
-    } else if (error.response?.status >= 500) {
-      // Server error
-      console.error('Server error:', error.response?.status);
-    }
-
     return Promise.reject(error);
   }
 );
