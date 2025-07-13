@@ -69,7 +69,7 @@ const LoginPage = () => {
     } else {
       setIsLoggedIn(false);
       setUser(null);
-      
+
       // Kiểm tra thông tin tự động đăng nhập từ trang đăng ký
       const autoLoginInfo = localStorageUtil.get('autoLoginInfo');
       if (autoLoginInfo && autoLoginInfo.timestamp) {
@@ -77,17 +77,17 @@ const LoginPage = () => {
         const now = Date.now();
         const timeDiff = now - autoLoginInfo.timestamp;
         const fiveMinutes = 5 * 60 * 1000; // 5 phút
-        
+
         if (timeDiff <= fiveMinutes) {
           // Tự động điền thông tin đăng nhập
           setFormData({
             usernameOrEmail: autoLoginInfo.username,
             password: autoLoginInfo.password,
           });
-          
+
           // Xóa thông tin tự động đăng nhập sau khi đã sử dụng
           localStorageUtil.remove('autoLoginInfo');
-          
+
           // Hiển thị thông báo
           notify.info(
             'Thông tin đã được điền',
@@ -271,9 +271,40 @@ const LoginPage = () => {
         console.error('Login error:', error);
         let errorMessage =
           error.message || 'Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.';
-        if (errorMessage === 'Invalid username or password') {
-          errorMessage = 'Tên đăng nhập hoặc mật khẩu không đúng';
+
+        // Việt hóa các thông báo lỗi phổ biến
+        if (
+          errorMessage === 'Invalid username or password' ||
+          errorMessage === 'Invalid username/email or password' ||
+          errorMessage === 'Invalid credentials' ||
+          errorMessage === 'Username or password is incorrect'
+        ) {
+          errorMessage = 'Tên đăng nhập/email hoặc mật khẩu không đúng';
+        } else if (
+          errorMessage === 'User not found' ||
+          errorMessage === 'Username not found'
+        ) {
+          errorMessage = 'Tài khoản không tồn tại';
+        } else if (
+          errorMessage === 'Account is disabled' ||
+          errorMessage === 'Account is locked'
+        ) {
+          errorMessage = 'Tài khoản đã bị khóa hoặc vô hiệu hóa';
+        } else if (errorMessage === 'Too many login attempts') {
+          errorMessage =
+            'Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau';
+        } else if (
+          errorMessage === 'Network error' ||
+          errorMessage === 'Connection failed'
+        ) {
+          errorMessage = 'Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet';
+        } else if (
+          errorMessage === 'Server error' ||
+          errorMessage === 'Internal server error'
+        ) {
+          errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau';
         }
+
         notify.error('Lỗi đăng nhập', errorMessage);
       })
       .finally(() => {
