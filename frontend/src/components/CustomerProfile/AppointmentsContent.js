@@ -90,7 +90,7 @@ import { toast } from 'react-toastify';
 import consultantService from '../../services/consultantService';
 import confirmDialog from '../../utils/confirmDialog';
 import reviewService from '../../services/reviewService';
-import ReviewForm from '../modals/ReviewForm';
+import ReviewForm from '../common/ReviewForm.js';
 import { notify } from '../../utils/notify';
 import { useNavigate } from 'react-router-dom';
 

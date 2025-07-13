@@ -93,6 +93,24 @@ const ReviewForm = ({
   isEditMode,
   loading
 }) => {
+  // Gom logic hiển thị thông tin đầu form vào 1 biến duy nhất
+  const displayInfo = React.useMemo(() => {
+    // Dòng 1: tên dịch vụ hoặc tên tư vấn viên (ưu tiên targetName nếu có)
+    let mainName =
+      review?.serviceName ||
+      review?.consultantName ||
+      review?.targetName ||
+      '';
+    // Dòng 2: tên khách hàng (ưu tiên customerName)
+    let customerName = review?.customerName || review?.userFullName || review?.maskedUserName || '';
+    // Dòng 3: ngày đánh giá
+    let reviewedDateRaw = review?.reviewedDate || review?.createdAt || review?.date;
+    let reviewedDate = reviewedDateRaw ? convertApiDateToDate(reviewedDateRaw).toLocaleDateString('vi-VN') : '';
+    let avatarChar = (mainName || customerName || 'N')[0];
+    let isConsultant = review?.type === 'CONSULTANT' && !!review?.consultantName;
+    return { mainName, customerName, reviewedDate, avatarChar, isConsultant };
+  }, [review]);
+
   return (
     <Dialog
       open={open}
@@ -175,19 +193,35 @@ const ReviewForm = ({
                     fontWeight: 600,
                   }}
                 >
-                  {(review.consultantName || 'N/A').split(' ').pop()[0]}
+                  {displayInfo.avatarChar}
                 </Avatar>
                 <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: '#2D3748', mb: 0.5 }}>
-                    {review.serviceName}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#4A5568', fontWeight: 500 }}>
-                    {review.maskedUserName || review.userFullName || 'Khách hàng'}
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
-                    <Typography variant="caption" sx={{ color: '#6B7280' }}>
-                      Ngày sử dụng: {convertApiDateToDate(review.date).toLocaleDateString('vi-VN')}
+                  {/* Dòng 1: Tên dịch vụ hoặc tư vấn viên */}
+                  {displayInfo.mainName && (
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#2D3748', mb: 0.5 }}>
+                      {displayInfo.isConsultant ? (
+                        <>
+                          <b>Tư vấn viên</b> {displayInfo.mainName}
+                        </>
+                      ) : (
+                        displayInfo.mainName
+                      )}
                     </Typography>
+                  )}
+                  {/* Dòng 2: Tên khách hàng */}
+                  {displayInfo.customerName && (
+                    <Typography variant="body2" sx={{ color: '#4A5568', fontWeight: 500 }}>
+                      {displayInfo.customerName}
+                    </Typography>
+                  )}
+                  {/* Dòng 3: Ngày đánh giá nếu có */}
+                  {isEditMode && displayInfo.reviewedDate && (
+                    <Typography variant="caption" sx={{ color: '#6B7280' }}>
+                      Ngày đánh giá: {displayInfo.reviewedDate}
+                    </Typography>
+                  )}
+                  {/* Thời gian và lý do tư vấn giữ nguyên nếu có */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
                     {review.startTime && review.endTime && (
                       <Typography variant="caption" sx={{ color: '#6B7280' }}>
                         Thời gian: {convertApiDateToDate(review.startTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})} - {convertApiDateToDate(review.endTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}

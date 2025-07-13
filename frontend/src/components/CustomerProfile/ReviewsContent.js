@@ -46,7 +46,7 @@ import {
   Star as StarIcon,
   Add as AddIcon,
 } from '@mui/icons-material';
-import ReviewForm from '../modals/ReviewForm';
+import ReviewForm from '../common/ReviewForm';
 import Pagination from '@mui/material/Pagination';
 
 // Import services
@@ -56,6 +56,7 @@ import consultantService from '../../services/consultantService';
 
 // Import utils
 import { notify } from '../../utils/notify';
+import localStorageUtil from '@/utils/localStorage';
 
 // Tab Panel Component
 function TabPanel({ children, value, index, ...other }) {
@@ -446,48 +447,44 @@ allReviewableServices.forEach(service => {
   // Handle edit or add review action
   const handleEditReview = async (review) => {
     console.log('✏️ Starting edit/add review:', review);
-    
     try {
+      // Lấy tên khách hàng từ localStorage
+      const userData = localStorageUtil.getUserData();
+      const customerName = userData?.fullName || userData?.name || '';
+      // Merge customerName vào review object
+      const reviewWithCustomer = { ...review, customerName };
+
       // Determine if this is a pending review with a temporary ID
-      const isPendingTempReview = review.id && typeof review.id === 'string' && 
-                                 (review.id.includes('temp') || review.id.includes('consultation_') || 
-                                  review.id.includes('sti_'));
-      
+      const isPendingTempReview = reviewWithCustomer.id && typeof reviewWithCustomer.id === 'string' && 
+        (reviewWithCustomer.id.includes('temp') || reviewWithCustomer.id.includes('consultation_') || 
+          reviewWithCustomer.id.includes('sti_'));
       // Check if the review has a valid ID for editing
-      const hasValidRatingId = review.ratingId && !isNaN(parseInt(review.ratingId));
-      const hasValidId = review.id && typeof review.id === 'number' && !isNaN(review.id);
-      
+      const hasValidRatingId = reviewWithCustomer.ratingId && !isNaN(parseInt(reviewWithCustomer.ratingId));
+      const hasValidId = reviewWithCustomer.id && typeof reviewWithCustomer.id === 'number' && !isNaN(reviewWithCustomer.id);
       // For pending reviews without valid IDs, this is an "add" operation
       const isAddOperation = isPendingTempReview && !hasValidRatingId && !hasValidId;
-      
       // Prepare form data
-      setSelectedReview(review);
-      setRating(review.rating || 0);
-      setFeedback(review.comment || '');
-      
+      setSelectedReview(reviewWithCustomer);
+      setRating(reviewWithCustomer.rating || 0);
+      setFeedback(reviewWithCustomer.comment || '');
       // Set edit mode based on whether this is an add or edit operation
       setIsEditMode(!isAddOperation);
-      
       // For edit operations, ensure we have a valid numeric ID
       if (!isAddOperation) {
-        const numericId = hasValidRatingId ? review.ratingId : (hasValidId ? review.id : null);
-        
+        const numericId = hasValidRatingId ? reviewWithCustomer.ratingId : (hasValidId ? reviewWithCustomer.id : null);
         if (!numericId) {
           throw new Error("Không tìm thấy ID đánh giá hợp lệ. Bạn cần gửi đánh giá trước khi có thể chỉnh sửa.");
         }
-        
         setEditingReviewId(numericId);
         console.log('✅ Edit review dialog opened with valid ID:', numericId);
       } else {
         // For add operations, check eligibility
-        if (!review.isEligible) {
+        if (!reviewWithCustomer.isEligible) {
           throw new Error("Dịch vụ này chưa hoàn thành hoặc không đủ điều kiện để đánh giá.");
         }
-        
         setEditingReviewId(null);
         console.log('✅ Add review dialog opened for new review');
       }
-      
       // Open the review dialog
       setReviewDialogOpen(true);
     } catch (error) {
