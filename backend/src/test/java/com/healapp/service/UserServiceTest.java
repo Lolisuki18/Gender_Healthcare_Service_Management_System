@@ -231,7 +231,8 @@ class UserServiceTest {
         when(passwordEncoder.encode("password123")).thenReturn("encodedPassword123");
         when(roleService.getDefaultUserRole()).thenReturn(userRole);
         when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
-        when(notificationPreferenceRepository.save(any(NotificationPreference.class))).thenReturn(new NotificationPreference());
+        when(notificationPreferenceRepository.save(any(NotificationPreference.class)))
+                .thenReturn(new NotificationPreference());
 
         ApiResponse<UserResponse> response = userService.registerUser(request, avatarFile);
 
@@ -252,32 +253,33 @@ class UserServiceTest {
         verify(userRepository).existsByEmail("test@example.com");
         verify(passwordEncoder).encode("password123");
         verify(roleService).getDefaultUserRole();
-        
-        // Verify notification preferences are created (3 types: OVULATION, PREGNANCY_PROBABILITY, PILL_REMINDER)
+
+        // Verify notification preferences are created (3 types: OVULATION,
+        // PREGNANCY_PROBABILITY, PILL_REMINDER)
         verify(notificationPreferenceRepository, times(3)).save(any(NotificationPreference.class));
-        
+
         // Capture notification preferences to verify their properties
-        ArgumentCaptor<NotificationPreference> notificationCaptor = ArgumentCaptor.forClass(NotificationPreference.class);
+        ArgumentCaptor<NotificationPreference> notificationCaptor = ArgumentCaptor
+                .forClass(NotificationPreference.class);
         verify(notificationPreferenceRepository, times(3)).save(notificationCaptor.capture());
-        
+
         List<NotificationPreference> savedNotifications = notificationCaptor.getAllValues();
         assertEquals(3, savedNotifications.size());
-        
+
         // Verify all notifications are enabled and have correct user
         for (NotificationPreference notification : savedNotifications) {
             assertTrue(notification.getEnabled());
             assertEquals(sampleUser, notification.getUser());
         }
-        
+
         // Verify notification types are set correctly
         List<NotificationType> expectedTypes = List.of(
-            NotificationType.OVULATION, 
-            NotificationType.PREGNANCY_PROBABILITY, 
-            NotificationType.PILL_REMINDER
-        );
+                NotificationType.OVULATION,
+                NotificationType.PREGNANCY_PROBABILITY,
+                NotificationType.PILL_REMINDER);
         List<NotificationType> actualTypes = savedNotifications.stream()
-            .map(NotificationPreference::getType)
-            .collect(Collectors.toList());
+                .map(NotificationPreference::getType)
+                .collect(Collectors.toList());
         assertTrue(actualTypes.containsAll(expectedTypes));
     }
 
@@ -369,7 +371,8 @@ class UserServiceTest {
         when(roleRepository.findByRoleName("CUSTOMER")).thenReturn(Optional.of(userRole));
         when(passwordEncoder.encode("newPassword123")).thenReturn("encodedNewPassword123");
         when(userRepository.save(any(UserDtls.class))).thenReturn(createdUser);
-        when(notificationPreferenceRepository.save(any(NotificationPreference.class))).thenReturn(new NotificationPreference());
+        when(notificationPreferenceRepository.save(any(NotificationPreference.class)))
+                .thenReturn(new NotificationPreference());
 
         ApiResponse<UserDtls> response = userService.createNewAccount(request);
 
@@ -388,31 +391,32 @@ class UserServiceTest {
         assertEquals(Gender.FEMALE, savedUser.getGender());
         assertTrue(savedUser.getIsActive());
 
-        // Verify notification preferences are created (3 types: OVULATION, PREGNANCY_PROBABILITY, PILL_REMINDER)
+        // Verify notification preferences are created (3 types: OVULATION,
+        // PREGNANCY_PROBABILITY, PILL_REMINDER)
         verify(notificationPreferenceRepository, times(3)).save(any(NotificationPreference.class));
-        
+
         // Capture notification preferences to verify their properties
-        ArgumentCaptor<NotificationPreference> notificationCaptor = ArgumentCaptor.forClass(NotificationPreference.class);
+        ArgumentCaptor<NotificationPreference> notificationCaptor = ArgumentCaptor
+                .forClass(NotificationPreference.class);
         verify(notificationPreferenceRepository, times(3)).save(notificationCaptor.capture());
-        
+
         List<NotificationPreference> savedNotifications = notificationCaptor.getAllValues();
         assertEquals(3, savedNotifications.size());
-        
+
         // Verify all notifications are enabled and have correct user reference
         for (NotificationPreference notification : savedNotifications) {
             assertTrue(notification.getEnabled());
             assertEquals(savedUser, notification.getUser());
         }
-        
+
         // Verify notification types are set correctly
         List<NotificationType> expectedTypes = List.of(
-            NotificationType.OVULATION, 
-            NotificationType.PREGNANCY_PROBABILITY, 
-            NotificationType.PILL_REMINDER
-        );
+                NotificationType.OVULATION,
+                NotificationType.PREGNANCY_PROBABILITY,
+                NotificationType.PILL_REMINDER);
         List<NotificationType> actualTypes = savedNotifications.stream()
-            .map(NotificationPreference::getType)
-            .collect(Collectors.toList());
+                .map(NotificationPreference::getType)
+                .collect(Collectors.toList());
         assertTrue(actualTypes.containsAll(expectedTypes));
 
         verify(userRepository).existsByEmail("newaccount@example.com");
@@ -433,10 +437,10 @@ class UserServiceTest {
         when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
 
         ApiResponse<UserDtls> response = userService.createNewAccount(request);
-        
+
         assertFalse(response.isSuccess());
         assertTrue(response.getMessage().contains("Email already exists"));
-        
+
         verify(userRepository).existsByEmail("existing@example.com");
         verify(userRepository, never()).save(any(UserDtls.class));
         verify(notificationPreferenceRepository, never()).save(any(NotificationPreference.class));
@@ -454,10 +458,10 @@ class UserServiceTest {
         when(userRepository.existsByUsername("existinguser")).thenReturn(true);
 
         ApiResponse<UserDtls> response = userService.createNewAccount(request);
-        
+
         assertFalse(response.isSuccess());
         assertTrue(response.getMessage().contains("Username already exists"));
-        
+
         verify(userRepository).existsByEmail("newuser@example.com");
         verify(userRepository).existsByUsername("existinguser");
         verify(userRepository, never()).save(any(UserDtls.class));
@@ -918,7 +922,6 @@ class UserServiceTest {
     void updateBasicProfile_Success() {
         UpdateProfileRequest request = new UpdateProfileRequest();
         request.setFullName("Updated Name");
-        request.setPhone("0987654321");
         request.setBirthDay(LocalDate.of(1991, 2, 20));
 
         UserDtls updatedUser = new UserDtls();

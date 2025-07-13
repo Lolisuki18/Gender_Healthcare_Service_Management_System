@@ -99,6 +99,7 @@ const QuestionResponseContent = () => {
   const [replierId, setReplierId] = useState(''); // luôn là string
   const [consultants, setConsultants] = useState([]);
   const [approveError, setApproveError] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
 
   // Lấy danh sách câu hỏi từ backend (gộp nhiều trạng thái)
   const fetchQuestions = async (
@@ -282,7 +283,22 @@ const QuestionResponseContent = () => {
           .includes(searchTerm.toLowerCase())) ||
       (question.content &&
         question.content.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchStatus && matchesSearch;
+    let matchDate = true;
+    if (dateFilter) {
+      // question.createdAt là mảng [YYYY, MM, DD, ...]
+      if (Array.isArray(question.createdAt) && question.createdAt.length >= 3) {
+        const qDate = new Date(
+          question.createdAt[0],
+          question.createdAt[1] - 1,
+          question.createdAt[2]
+        );
+        const filterDate = new Date(dateFilter);
+        matchDate = qDate >= filterDate;
+      } else {
+        matchDate = true;
+      }
+    }
+    return matchStatus && matchesSearch && matchDate;
   });
 
   const handleOpenDetailDialog = (question) => {
@@ -419,6 +435,23 @@ const QuestionResponseContent = () => {
                 <SearchIcon sx={{ color: theme.primary, ml: 0.5 }} />
               </InputAdornment>
             ),
+          }}
+        />
+        <TextField
+          label="Từ ngày"
+          type="date"
+          size="small"
+          value={dateFilter}
+          onChange={(e) => {
+            setDateFilter(e.target.value);
+            setPage(0);
+          }}
+          InputLabelProps={{ shrink: true }}
+          sx={{
+            minWidth: 160,
+            background: '#fff',
+            borderRadius: 2,
+            boxShadow: '0 2px 8px #4A90E215',
           }}
         />
         <FormControl
@@ -606,9 +639,7 @@ const QuestionResponseContent = () => {
                                 variant="body2"
                                 sx={{
                                   maxWidth: 400,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
+                                  overflowWrap: 'break-word',
                                   color: theme.text,
                                 }}
                               >
@@ -924,6 +955,7 @@ const QuestionResponseContent = () => {
                     borderLeft: `4px solid ${theme.primary}`,
                     fontStyle: 'italic',
                     boxShadow: '0 2px 8px #0001',
+                    overflowWrap: 'break-word',
                   }}
                 >
                   {detailQuestion.content}
@@ -962,7 +994,12 @@ const QuestionResponseContent = () => {
                   </Typography>
                   <Typography
                     variant="body1"
-                    sx={{ background: '#e0f7fa', p: 2, borderRadius: 2 }}
+                    sx={{
+                      background: '#e0f7fa',
+                      p: 2,
+                      borderRadius: 2,
+                      overflowWrap: 'break-word',
+                    }}
                   >
                     {detailQuestion.answer}
                   </Typography>

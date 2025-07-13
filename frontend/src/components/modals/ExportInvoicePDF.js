@@ -46,7 +46,7 @@ const ExportInvoicePDF = ({
   };
 
   // Thông tin cơ sở y tế (placeholder nếu không truyền props)
-  const name = orgName || 'PHÒNG KHÁM ĐA KHOA ABC';
+  const name = orgName || 'Phòng khám FPT Hồ Chí Minh';
   const address = orgAddress || '123 Đường Sức Khỏe, Quận 1, TP.HCM';
   const phone = orgPhone || '0123 456 789';
   const tax = orgTaxCode || 'MST: 0123456789';
