@@ -171,7 +171,7 @@ export const EmailChangeDialog = ({
         if (result && result.success) {
           setActiveStep(2);
           // Thông báo thành công
-          notify.success('Thành công', 'Email đã được thay đổi thành công!');
+          // notify.success('Thành công', 'Email đã được thay đổi thành công!');
           // Đóng modal sau một chút delay để user thấy step thành công
           setTimeout(() => handleSuccessClose(), 1000);
         } else {
