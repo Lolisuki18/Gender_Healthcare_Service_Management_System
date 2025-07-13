@@ -75,7 +75,11 @@ export const userService = {
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      // Handle the case where the API returns a response with success: false
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      throw error;
     }
   },
   resetPassword: async (email, code, newPassword) => {
@@ -87,7 +91,11 @@ export const userService = {
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      // Handle the case where the API returns a response with success: false
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      throw error;
     }
   },
 
