@@ -80,25 +80,25 @@ public class RatingService {
             }
             UserDtls user = userOpt.get(); 
             
-            // Check if user has already rated this target (consistent with eligibility check)
-            boolean hasRated;
-            if (targetType == Rating.RatingTargetType.CONSULTANT && request.getConsultationId() != null) {
-                // For consultants, check if user has rated this specific consultation OR the consultant in general
-                hasRated = ratingRepository.existsByUserIdAndConsultationIdAndIsActiveTrue(userId, request.getConsultationId()) ||
-                          ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId, targetType, targetId);
-            } else if ((targetType == Rating.RatingTargetType.STI_SERVICE || targetType == Rating.RatingTargetType.STI_PACKAGE) 
-                      && request.getStiTestId() != null) {
-                // For STI services/packages, check if user has rated this specific test OR the service/package in general
-                hasRated = ratingRepository.existsByUserIdAndStiTestIdAndIsActiveTrue(userId, request.getStiTestId()) ||
-                          ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId, targetType, targetId);
-            } else {
-                // Fall back to general check
-                hasRated = ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId, targetType, targetId);
-            }
+            // --- BLOCK: Check if user has already rated this target (disabled to allow multiple ratings, even for different consultationId or stiTestId) ---
+            // boolean hasRated;
+            // if (targetType == Rating.RatingTargetType.CONSULTANT && request.getConsultationId() != null) {
+            //     // For consultants, check if user has rated this specific consultation OR the consultant in general
+            //     hasRated = ratingRepository.existsByUserIdAndConsultationIdAndIsActiveTrue(userId, request.getConsultationId()) ||
+            //               ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId, targetType, targetId);
+            // } else if ((targetType == Rating.RatingTargetType.STI_SERVICE || targetType == Rating.RatingTargetType.STI_PACKAGE) 
+            //           && request.getStiTestId() != null) {
+            //     // For STI services/packages, check if user has rated this specific test OR the service/package in general
+            //     hasRated = ratingRepository.existsByUserIdAndStiTestIdAndIsActiveTrue(userId, request.getStiTestId()) ||
+            //               ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId, targetType, targetId);
+            // } else {
+            //     // Fall back to general check
+            //     hasRated = ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId, targetType, targetId);
+            // }
 
-            if (hasRated) {
-                return ApiResponse.error("You have already rated this " + targetType.name().toLowerCase());
-            }
+            // if (hasRated) {
+            //     return ApiResponse.error("You have already rated this " + targetType.name().toLowerCase());
+            // }
 
             // Check if user is eligible to rate
             boolean isEligible;
@@ -339,14 +339,14 @@ public class RatingService {
         try {
             Map<String, Object> result = new HashMap<>();
             
-            // Use the general eligibility check (any completed service with this target)
+            // --- BLOCK: Check if user has already rated this target (disabled to allow multiple ratings, even for different consultationId or stiTestId) ---
             boolean canRate = isEligibleToRate(userId, targetType, targetId);
-            boolean hasRated = ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId,
-                    targetType, targetId);
+            // boolean hasRated = ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId,
+            //         targetType, targetId);
 
-            result.put("canRate", canRate && !hasRated);
-            result.put("hasRated", hasRated);
-            result.put("reason", canRate ? (hasRated ? "Already rated" : "Eligible to rate") : "Not eligible to rate");
+            result.put("canRate", canRate); // always allow if eligible
+            result.put("hasRated", false); // always allow
+            result.put("reason", canRate ? "Eligible to rate" : "Not eligible to rate");
 
             return ApiResponse.success("Check completed", result);
 

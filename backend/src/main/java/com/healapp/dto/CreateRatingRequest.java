@@ -23,5 +23,6 @@ public class CreateRatingRequest {
 
     // Reference to specific service usage
     private Long consultationId; // For CONSULTANT ratings
+    @com.fasterxml.jackson.annotation.JsonProperty("sti_test_id")
     private Long stiTestId; // For STI_SERVICE ratings
 }

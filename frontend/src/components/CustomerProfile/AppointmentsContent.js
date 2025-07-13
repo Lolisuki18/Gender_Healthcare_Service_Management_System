@@ -537,10 +537,6 @@ const AppointmentsContent = () => {
     }
   };
 
-  // Xác định trạng thái đánh giá cho từng appointment (dựa trên comment và rating)
-  const isReviewed = (appointment) => {
-    return appointment.comment && appointment.rating != null;
-  };
 
   return (
     <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
@@ -894,95 +890,69 @@ const AppointmentsContent = () => {
                             alignItems: 'center',
                           }}
                         />
-                        {appointment.status?.toUpperCase() === 'COMPLETED' &&
-                          (isReviewed(appointment) ? (
-                            <Chip
-                              label="Đã đánh giá"
-                              size="small"
-                              color="success"
-                              sx={{ fontWeight: 500, fontSize: '11px', ml: 1 }}
-                            />
-                          ) : (
-                            <Chip
-                              label="Chưa đánh giá"
-                              size="small"
-                              color="warning"
-                              sx={{ fontWeight: 500, fontSize: '11px', ml: 1 }}
-                            />
-                          ))}
                       </TableCell>
                       {/* Cột Đánh giá */}
                       <TableCell align="center">
-                        {appointment.status?.toUpperCase() === 'COMPLETED' &&
-                          (isReviewed(appointment) ? (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="info"
-                              sx={{
-                                fontSize: 13,
-                                textTransform: 'none',
-                                borderRadius: 3,
-                                px: 1.5,
-                                height: 32,
-                              }}
-                              onClick={async () => {
-                                try {
-                                  setReviewLoading(true);
-                                  // Gọi API lấy chi tiết đánh giá nếu cần, hoặc dùng luôn dữ liệu hiện tại
+                        {appointment.status?.toUpperCase() === 'COMPLETED' && (() => {
+                          // Tìm review tương ứng trong myRatings
+                          const foundReview = myRatings.find(
+                            (r) =>
+                              r.targetType === 'CONSULTANT' &&
+                              r.targetId === appointment.consultationId
+                          );
+                          if (foundReview) {
+                            // Đã đánh giá, hiện nút Xem đánh giá
+                            return (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="info"
+                                sx={{
+                                  fontSize: 13,
+                                  textTransform: 'none',
+                                  borderRadius: 3,
+                                  px: 1.5,
+                                  height: 32,
+                                }}
+                                onClick={() => {
+                                  navigate(`/review/${foundReview.ratingId}`);
+                                }}
+                              >
+                                Xem đánh giá
+                              </Button>
+                            );
+                          } else {
+                            // Chưa đánh giá, hiện nút Đánh giá như cũ
+                            return (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="primary"
+                                sx={{
+                                  fontSize: 13,
+                                  textTransform: 'none',
+                                  borderRadius: 3,
+                                  px: 1.5,
+                                  height: 32,
+                                }}
+                                onClick={() => {
                                   setReviewingAppointment({
                                     ...appointment,
                                     type: 'CONSULTANT',
                                     isEligible: true,
                                   });
-                                  setRating(appointment.rating || 0);
-                                  setFeedback(appointment.comment || '');
-                                  setIsEditMode(true);
-                                  setEditingReviewId(
-                                    appointment.ratingId || null
-                                  );
+                                  setRating(0);
+                                  setFeedback('');
+                                  setIsEditMode(false);
+                                  setEditingReviewId(null);
                                   setOpenReviewDialog(true);
-                                } catch (err) {
-                                  notify.error(
-                                    'Lỗi',
-                                    'Không thể lấy thông tin đánh giá: ' +
-                                      err.message
-                                  );
-                                } finally {
-                                  setReviewLoading(false);
-                                }
-                              }}
-                            >
-                              Chỉnh sửa
-                            </Button>
-                          ) : (
-                            <Button
-                              size="small"
-                              variant="contained"
-                              color="primary"
-                              sx={{
-                                fontSize: 13,
-                                textTransform: 'none',
-                                borderRadius: 3,
-                                px: 1.5,
-                                height: 32,
-                              }}
-                              onClick={() => {
-                                setReviewingAppointment({
-                                  ...appointment,
-                                  type: 'CONSULTANT',
-                                  isEligible: true,
-                                });
-                                setRating(0);
-                                setFeedback('');
-                                setIsEditMode(false);
-                                setEditingReviewId(null);
-                                setOpenReviewDialog(true);
-                              }}
-                            >
-                              Đánh giá
-                            </Button>
-                          ))}
+                                }}
+                              >
+                                Đánh giá
+                              </Button>
+                            );
+                          }
+                        })()}
                       </TableCell>
                       <TableCell align="center">
                         <Box
