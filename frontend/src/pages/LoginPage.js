@@ -390,7 +390,7 @@ const LoginPage = () => {
 
                 {/* Username hoặc Email */}
                 <TextField
-                  label="Username hoặc Email"
+                  label="Tên đăng nhập hoặc Email"
                   name="usernameOrEmail"
                   fullWidth
                   value={formData.usernameOrEmail}
@@ -545,16 +545,23 @@ const LoginPage = () => {
 
               {/* Divider "hoặc" */}
               <Box sx={{ display: 'flex', alignItems: 'center', my: 3 }}>
-                <Divider sx={{ flex: 1, opacity: 0.3, borderColor: '#4A90E2' }} />
-                <Typography variant="body2" sx={{ mx: 2, color: 'text.secondary', fontWeight: 500 }}>
+                <Divider
+                  sx={{ flex: 1, opacity: 0.3, borderColor: '#4A90E2' }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{ mx: 2, color: 'text.secondary', fontWeight: 500 }}
+                >
                   hoặc
                 </Typography>
-                <Divider sx={{ flex: 1, opacity: 0.3, borderColor: '#4A90E2' }} />
+                <Divider
+                  sx={{ flex: 1, opacity: 0.3, borderColor: '#4A90E2' }}
+                />
               </Box>
 
               {/* Nút đăng nhập Google */}
-              <GoogleLoginButton 
-                fullWidth 
+              <GoogleLoginButton
+                fullWidth
                 variant="outlined"
                 disabled={loading}
               />
