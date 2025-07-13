@@ -134,6 +134,7 @@ const AppointmentsContent = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelError, setCancelError] = useState('');
   const [reviewedConsultationIds, setReviewedConsultationIds] = useState([]);
+  const [myRatings, setMyRatings] = useState([]);
 
   // Cập nhật các state cho ReviewForm
   const [openReviewDialog, setOpenReviewDialog] = useState(false);
@@ -150,23 +151,36 @@ const AppointmentsContent = () => {
     try {
       setLoading(true);
       const response = await consultantService.getMyConsultations();
+      let appointmentsData = [];
       if (response && response.success && response.data) {
-        setAppointments(response.data);
+        appointmentsData = response.data;
       } else {
         toast.error(response.message || 'Không thể tải danh sách lịch hẹn');
       }
       // Lấy danh sách review liên quan đến consultation
       const reviewRes = await reviewService.getMyReviews(0, 100);
       const reviews = reviewRes?.content || reviewRes?.data || reviewRes || [];
-      const reviewedIds = reviews
-        .filter(
+      setMyRatings(reviews);
+      // Mapping: gắn comment, rating vào từng appointment nếu có đánh giá tương ứng
+      const mappedAppointments = appointmentsData.map((appointment) => {
+        const found = reviews.find(
           (r) =>
-            (r.targetType === 'CONSULTANT' ||
-              r.serviceType === 'CONSULTATION') &&
-            r.consultationId
-        )
-        .map((r) => r.consultationId);
-      setReviewedConsultationIds(reviewedIds);
+            r.targetType === 'CONSULTANT' &&
+            r.targetId === appointment.consultationId && // So sánh targetId với consultationId
+            r.rating != null &&
+            r.comment
+        );
+        if (found) {
+          return {
+            ...appointment,
+            comment: found.comment,
+            rating: found.rating,
+            ratingId: found.ratingId,
+          };
+        }
+        return appointment;
+      });
+      setAppointments(mappedAppointments);
     } catch (error) {
       toast.error('Không thể tải danh sách lịch hẹn');
     } finally {
@@ -227,15 +241,35 @@ const AppointmentsContent = () => {
   const getStatusColor = (status) => {
     switch (status?.toUpperCase()) {
       case 'CONFIRMED':
-        return 'linear-gradient(45deg, #4CAF50, #2ECC71)';
+        return {
+          background: '#e6f9ed',
+          color: '#219653',
+          border: '1.5px solid #b7e4c7',
+        };
       case 'PENDING':
-        return 'linear-gradient(45deg, #F39C12, #E67E22)';
+        return {
+          background: '#fff8e1',
+          color: '#f57c00',
+          border: '1.5px solid #ffe082',
+        };
       case 'COMPLETED':
-        return 'linear-gradient(45deg, #4A90E2, #1ABC9C)';
+        return {
+          background: '#e3f2fd',
+          color: '#1976d2',
+          border: '1.5px solid #90caf9',
+        };
       case 'CANCELED':
-        return 'linear-gradient(45deg, #E74C3C, #C0392B)';
+        return {
+          background: '#ffebee',
+          color: '#d32f2f',
+          border: '1.5px solid #ffcdd2',
+        };
       default:
-        return 'linear-gradient(45deg, #607D8B, #455A64)';
+        return {
+          background: '#ececec',
+          color: '#455A64',
+          border: '1.5px solid #b0bec5',
+        };
     }
   };
 
@@ -503,16 +537,9 @@ const AppointmentsContent = () => {
     }
   };
 
-  // Xác định trạng thái đánh giá cho từng appointment (dựa trên danh sách review thay vì chỉ id)
-  const getReviewStatus = (appointment) => {
-    if (appointment.status?.toUpperCase() !== 'COMPLETED') {
-      return 'not_eligible'; // Chưa hoàn thành, không thể đánh giá
-    }
-    // Kiểm tra trực tiếp trong danh sách review
-    if (reviewedConsultationIds.includes(appointment.consultationId)) {
-      return 'reviewed'; // Đã đánh giá
-    }
-    return 'pending'; // Chưa đánh giá
+  // Xác định trạng thái đánh giá cho từng appointment (dựa trên comment và rating)
+  const isReviewed = (appointment) => {
+    return appointment.comment && appointment.rating != null;
   };
 
   return (
@@ -576,7 +603,7 @@ const AppointmentsContent = () => {
                 sx={{
                   background:
                     statusFilter === option.value
-                      ? getStatusColor(option.value)
+                      ? getStatusColor(option.value).background
                       : 'transparent',
                   color: statusFilter === option.value ? '#fff' : '#4A5568',
                   border:
@@ -589,7 +616,7 @@ const AppointmentsContent = () => {
                   '&:hover': {
                     background:
                       statusFilter === option.value
-                        ? getStatusColor(option.value)
+                        ? getStatusColor(option.value).background
                         : 'rgba(74, 144, 226, 0.1)',
                     transform: 'translateY(-1px)',
                     boxShadow: '0 2px 8px 0 rgba(74, 144, 226, 0.2)',
@@ -854,45 +881,10 @@ const AppointmentsContent = () => {
                             ) : null
                           }
                           sx={{
-                            background:
-                              appointment.status?.toUpperCase() === 'CONFIRMED'
-                                ? '#e6f9ed'
-                                : appointment.status?.toUpperCase() ===
-                                    'CANCELED'
-                                  ? '#ffebee'
-                                  : appointment.status?.toUpperCase() ===
-                                      'PENDING'
-                                    ? '#fff8e1'
-                                    : appointment.status?.toUpperCase() ===
-                                        'COMPLETED'
-                                      ? '#e3f2fd'
-                                      : '#e3f2fd',
-                            color:
-                              appointment.status?.toUpperCase() === 'CONFIRMED'
-                                ? '#219653'
-                                : appointment.status?.toUpperCase() ===
-                                    'CANCELED'
-                                  ? '#d32f2f'
-                                  : appointment.status?.toUpperCase() ===
-                                      'PENDING'
-                                    ? '#f57c00'
-                                    : appointment.status?.toUpperCase() ===
-                                        'COMPLETED'
-                                      ? '#1976d2'
-                                      : '#1976d2',
-                            border:
-                              appointment.status?.toUpperCase() === 'CONFIRMED'
-                                ? '1.5px solid #b7e4c7'
-                                : appointment.status?.toUpperCase() ===
-                                    'CANCELED'
-                                  ? '1.5px solid #ffcdd2'
-                                  : appointment.status?.toUpperCase() ===
-                                      'PENDING'
-                                    ? '1.5px solid #ffe082'
-                                    : appointment.status?.toUpperCase() ===
-                                        'COMPLETED'
-                                      ? '1.5px solid #90caf9'
-                                      : '1.5px solid #90caf9',
+                            background: getStatusColor(appointment.status)
+                              .background,
+                            color: getStatusColor(appointment.status).color,
+                            border: getStatusColor(appointment.status).border,
                             fontWeight: 600,
                             fontSize: '13px',
                             borderRadius: '16px',
@@ -903,9 +895,7 @@ const AppointmentsContent = () => {
                           }}
                         />
                         {appointment.status?.toUpperCase() === 'COMPLETED' &&
-                          (reviewedConsultationIds.includes(
-                            appointment.consultationId
-                          ) ? (
+                          (isReviewed(appointment) ? (
                             <Chip
                               label="Đã đánh giá"
                               size="small"
@@ -924,9 +914,7 @@ const AppointmentsContent = () => {
                       {/* Cột Đánh giá */}
                       <TableCell align="center">
                         {appointment.status?.toUpperCase() === 'COMPLETED' &&
-                          (reviewedConsultationIds.includes(
-                            appointment.consultationId
-                          ) ? (
+                          (isReviewed(appointment) ? (
                             <Button
                               size="small"
                               variant="outlined"
@@ -941,42 +929,19 @@ const AppointmentsContent = () => {
                               onClick={async () => {
                                 try {
                                   setReviewLoading(true);
-                                  // Gọi API lấy chi tiết đánh giá
-                                  const reviewRes =
-                                    await reviewService.getMyReviews(0, 100);
-                                  const reviews =
-                                    reviewRes?.content ||
-                                    reviewRes?.data ||
-                                    reviewRes ||
-                                    [];
-                                  const found = reviews.find(
-                                    (r) =>
-                                      r.consultationId ===
-                                      appointment.consultationId
+                                  // Gọi API lấy chi tiết đánh giá nếu cần, hoặc dùng luôn dữ liệu hiện tại
+                                  setReviewingAppointment({
+                                    ...appointment,
+                                    type: 'CONSULTANT',
+                                    isEligible: true,
+                                  });
+                                  setRating(appointment.rating || 0);
+                                  setFeedback(appointment.comment || '');
+                                  setIsEditMode(true);
+                                  setEditingReviewId(
+                                    appointment.ratingId || null
                                   );
-
-                                  if (found) {
-                                    const detail =
-                                      await reviewService.getReviewById(
-                                        found.id
-                                      );
-                                    // Mở form chỉnh sửa với dữ liệu hiện tại
-                                    setReviewingAppointment({
-                                      ...appointment,
-                                      type: 'CONSULTANT',
-                                      isEligible: true,
-                                    });
-                                    setRating(detail.rating || 0);
-                                    setFeedback(detail.comment || '');
-                                    setIsEditMode(true);
-                                    setEditingReviewId(found.id);
-                                    setOpenReviewDialog(true);
-                                  } else {
-                                    notify.warning(
-                                      'Thông báo',
-                                      'Không tìm thấy đánh giá!'
-                                    );
-                                  }
+                                  setOpenReviewDialog(true);
                                 } catch (err) {
                                   notify.error(
                                     'Lỗi',
@@ -1003,7 +968,6 @@ const AppointmentsContent = () => {
                                 height: 32,
                               }}
                               onClick={() => {
-                                // Đặt lại trạng thái cho form tạo mới
                                 setReviewingAppointment({
                                   ...appointment,
                                   type: 'CONSULTANT',
@@ -1029,36 +993,39 @@ const AppointmentsContent = () => {
                             gap: 1.5,
                           }}
                         >
-                          {appointment.meetUrl && (
-                            <Button
-                              href={appointment.meetUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              size="small"
-                              variant="outlined"
-                              sx={{
-                                fontSize: 13,
-                                textTransform: 'none',
-                                borderRadius: '20px',
-                                minWidth: 0,
-                                px: 2,
-                                height: 36,
-                                boxShadow: 'none',
-                                fontWeight: 600,
-                                color: '#1976d2',
-                                borderColor: '#1976d2',
-                                '&:hover': {
-                                  background: '#e3f2fd',
-                                  borderColor: '#1565c0',
-                                  color: '#1565c0',
-                                  boxShadow:
-                                    '0 2px 8px 0 rgba(25, 118, 210, 0.10)',
-                                },
-                              }}
-                            >
-                              Vào phòng họp
-                            </Button>
-                          )}
+                          {appointment.meetUrl &&
+                            appointment.status?.toUpperCase() !== 'CANCELED' &&
+                            appointment.status?.toUpperCase() !==
+                              'COMPLETED' && (
+                              <Button
+                                href={appointment.meetUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  fontSize: 13,
+                                  textTransform: 'none',
+                                  borderRadius: '20px',
+                                  minWidth: 0,
+                                  px: 2,
+                                  height: 36,
+                                  boxShadow: 'none',
+                                  fontWeight: 600,
+                                  color: '#1976d2',
+                                  borderColor: '#1976d2',
+                                  '&:hover': {
+                                    background: '#e3f2fd',
+                                    borderColor: '#1565c0',
+                                    color: '#1565c0',
+                                    boxShadow:
+                                      '0 2px 8px 0 rgba(25, 118, 210, 0.10)',
+                                  },
+                                }}
+                              >
+                                Vào phòng họp
+                              </Button>
+                            )}
                           <IconButton
                             aria-label="Xem chi tiết"
                             onClick={() => {
@@ -1371,9 +1338,11 @@ const AppointmentsContent = () => {
                     ) : null
                   }
                   sx={{
-                    background: getStatusColor(selectedAppointment.status),
-                    color: '#fff',
-                    fontWeight: 500,
+                    background: getStatusColor(selectedAppointment.status)
+                      .background,
+                    color: getStatusColor(selectedAppointment.status).color,
+                    border: getStatusColor(selectedAppointment.status).border,
+                    fontWeight: 600,
                     fontSize: '13px',
                     height: 28,
                     borderRadius: 2,
@@ -1396,35 +1365,37 @@ const AppointmentsContent = () => {
                       Lý do huỷ của bạn: {selectedAppointment.reason}
                     </Typography>
                   ) : null)}
-                {selectedAppointment.meetUrl && (
-                  <Button
-                    href={selectedAppointment.meetUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    size="small"
-                    variant="outlined"
-                    sx={{
-                      fontSize: 13,
-                      textTransform: 'none',
-                      borderRadius: '20px',
-                      minWidth: 0,
-                      px: 2,
-                      height: 32,
-                      boxShadow: 'none',
-                      fontWeight: 600,
-                      color: '#1976d2',
-                      borderColor: '#1976d2',
-                      '&:hover': {
-                        background: '#e3f2fd',
-                        borderColor: '#1565c0',
-                        color: '#1565c0',
-                        boxShadow: '0 2px 8px 0 rgba(25, 118, 210, 0.10)',
-                      },
-                    }}
-                  >
-                    Vào phòng họp
-                  </Button>
-                )}
+                {selectedAppointment.meetUrl &&
+                  selectedAppointment.status?.toUpperCase() !== 'CANCELED' &&
+                  selectedAppointment.status?.toUpperCase() !== 'COMPLETED' && (
+                    <Button
+                      href={selectedAppointment.meetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        fontSize: 13,
+                        textTransform: 'none',
+                        borderRadius: '20px',
+                        minWidth: 0,
+                        px: 2,
+                        height: 32,
+                        boxShadow: 'none',
+                        fontWeight: 600,
+                        color: '#1976d2',
+                        borderColor: '#1976d2',
+                        '&:hover': {
+                          background: '#e3f2fd',
+                          borderColor: '#1565c0',
+                          color: '#1565c0',
+                          boxShadow: '0 2px 8px 0 rgba(25, 118, 210, 0.10)',
+                        },
+                      }}
+                    >
+                      Vào phòng họp
+                    </Button>
+                  )}
               </Box>
               {/* Thông tin chi tiết */}
               <Box
@@ -1518,6 +1489,40 @@ const AppointmentsContent = () => {
                       : ''}
                 </Typography>
               </Box>
+              {/* Hiển thị đánh giá nếu đã có */}
+              {selectedAppointment.comment &&
+                selectedAppointment.rating != null && (
+                  <Box
+                    sx={{
+                      mt: 3,
+                      p: 2,
+                      background: '#f5fafd',
+                      borderRadius: 2,
+                      border: '1px solid #e3f0fa',
+                      boxShadow: '0 2px 8px 0 rgba(74, 144, 226, 0.05)',
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ fontWeight: 700, color: '#1976d2', mb: 1 }}
+                    >
+                      Đánh giá của bạn
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Typography sx={{ fontWeight: 500, mr: 1 }}>
+                        Số sao:
+                      </Typography>
+                      <Rating
+                        value={selectedAppointment.rating}
+                        readOnly
+                        size="small"
+                      />
+                    </Box>
+                    <Typography sx={{ fontStyle: 'italic', color: '#333' }}>
+                      {selectedAppointment.comment}
+                    </Typography>
+                  </Box>
+                )}
             </Box>
           ) : (
             <Typography>Không có thông tin chi tiết để hiển thị.</Typography>

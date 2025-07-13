@@ -891,7 +891,7 @@ const MyConsultationsContent = () => {
 
   // Handle update consultation status
   const VALID_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELED', 'COMPLETED'];
-  const handleUpdateStatus = async (consultationId, newStatus) => {
+  const handleUpdateStatus = async (consultationId, newStatus, notesCheck) => {
     const statusEnum =
       typeof newStatus === 'string' ? newStatus.toUpperCase() : '';
     if (!VALID_STATUSES.includes(statusEnum)) {
@@ -900,6 +900,15 @@ const MyConsultationsContent = () => {
       );
       setUpdateStatus({ loading: false, success: false, error: '' });
       return;
+    }
+    // Nếu là hoàn thành mà chưa có ghi chú thì không cho hoàn thành
+    if (statusEnum === 'COMPLETED') {
+      // notesCheck là ghi chú hiện tại (notesValue nếu đang edit, hoặc consultation.notes)
+      if (!notesCheck || notesCheck.trim() === '') {
+        toast.error('Vui lòng nhập ghi chú trước khi hoàn thành!');
+        setUpdateStatus({ loading: false, success: false, error: '' });
+        return;
+      }
     }
     setUpdateStatus({ loading: true, success: false, error: '' });
     try {
@@ -2002,10 +2011,12 @@ const MyConsultationsContent = () => {
                 <MedicalButton
                   variant="contained"
                   onClick={async () => {
+                    // Kiểm tra notes trước khi hoàn thành
                     await handleUpdateStatus(
                       selectedConsultation.id ||
                         selectedConsultation.consultationId,
-                      'COMPLETED'
+                      'COMPLETED',
+                      selectedConsultation.notes
                     );
                     setDetailsDialogOpen(false);
                   }}
