@@ -93,6 +93,7 @@ const RegisterPage = () => {
     email: '',
     confirmPassword: '',
     password: '',
+    birthDay: '',
   });
 
   // --- LIFECYCLE HOOKS ---
@@ -133,6 +134,42 @@ const RegisterPage = () => {
     return '';
   };
 
+  /**
+   * Validation ngày sinh
+   */
+  const validateBirthDay = (birthDay) => {
+    if (!birthDay) {
+      return ''; // Không bắt buộc nhập ngày sinh
+    }
+
+    const today = new Date();
+    const birthDate = new Date(birthDay);
+
+    // Kiểm tra ngày sinh không được lớn hơn ngày hiện tại
+    if (birthDate > today) {
+      return 'Ngày sinh không thể lớn hơn ngày hiện tại';
+    }
+
+    // Tính tuổi
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    // Nếu chưa đến sinh nhật trong năm nay thì trừ đi 1 tuổi
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+
+    // Kiểm tra tuổi ít nhất 2 tuổi
+    if (age < 2) {
+      return 'Bạn phải ít nhất 2 tuổi để đăng ký tài khoản';
+    }
+
+    return '';
+  };
+
   // --- EVENT HANDLERS ---
   /**
    * Xử lý thay đổi giá trị của các trường input
@@ -157,9 +194,9 @@ const RegisterPage = () => {
     if (name === 'username') {
       let usernameError = '';
       if (value.length > 0 && value.length < 4) {
-        usernameError = 'Username phải có ít nhất 4 ký tự';
+        usernameError = 'Tên đăng nhập phải có ít nhất 4 ký tự';
       } else if (value.length > 50) {
-        usernameError = 'Username không được vượt quá 50 ký tự';
+        usernameError = 'Tên đăng nhập không được vượt quá 50 ký tự';
       }
       setErrors({
         ...errors,
@@ -179,12 +216,22 @@ const RegisterPage = () => {
       });
     }
 
+    // Validation cho birthDay
+    if (name === 'birthDay') {
+      const birthDayError = validateBirthDay(value);
+      setErrors({
+        ...errors,
+        birthDay: birthDayError,
+      });
+    }
+
     // Reset lỗi khi người dùng thay đổi giá trị (cho các trường khác)
     if (
       errors[name] &&
       name !== 'password' &&
       name !== 'username' &&
-      name !== 'fullName'
+      name !== 'fullName' &&
+      name !== 'birthDay'
     ) {
       setErrors({
         ...errors,
@@ -220,7 +267,7 @@ const RegisterPage = () => {
     }
 
     if (formData.username.length < 4 || formData.username.length > 50) {
-      notify.error('Lỗi đăng ký', 'Username phải có từ 4-50 ký tự');
+      notify.error('Lỗi đăng ký', 'Tên đăng nhập phải có từ 4-50 ký tự');
       return;
     }
 
@@ -245,6 +292,15 @@ const RegisterPage = () => {
     if (formData.fullName.length > 100) {
       notify.error('Lỗi đăng ký', 'Họ tên không được vượt quá 100 ký tự');
       return;
+    }
+
+    // Kiểm tra birthDay nếu có nhập
+    if (formData.birthDay) {
+      const birthDayError = validateBirthDay(formData.birthDay);
+      if (birthDayError) {
+        notify.warning('Lỗi đăng ký', birthDayError);
+        return;
+      }
     }
 
     // Kiểm tra gender - sửa logic validation
@@ -312,6 +368,15 @@ const RegisterPage = () => {
             'Đăng ký thành công',
             'Tài khoản của bạn đã được tạo thành công, sẽ chuyển đến trang đăng nhập trong giây lát'
           );
+
+          // Lưu thông tin đăng nhập để tự động điền
+          const loginInfo = {
+            username: formData.username,
+            password: formData.password,
+            timestamp: Date.now(),
+          };
+          localStorageUtil.set('autoLoginInfo', loginInfo);
+
           // Chuyển hướng về trang đăng nhập sau một khoảng thời gian ngắn
           setTimeout(() => {
             navigate('/login');
@@ -333,7 +398,7 @@ const RegisterPage = () => {
 
         // Phân tích message để xác định loại lỗi và hiển thị thông báo tương ứng
         if (errorMessage.includes('Username already exists')) {
-          notify.error('Đăng ký thất bại', 'Username đã tồn tại');
+          notify.error('Đăng ký thất bại', 'Tên đăng nhập đã tồn tại');
         } else if (errorMessage.includes('Email already exists')) {
           notify.error('Đăng ký thất bại', 'Email đã được sử dụng');
         } else if (errorMessage.includes('verification code')) {
@@ -469,7 +534,7 @@ const RegisterPage = () => {
       if (res.exists) {
         setErrors((prev) => ({
           ...prev,
-          username: 'Username đã tồn tại, vui lòng chọn tên khác',
+          username: 'Tên đăng nhập đã tồn tại, vui lòng chọn tên khác',
         }));
       } else {
         setErrors((prev) => ({ ...prev, username: '' }));
@@ -594,7 +659,7 @@ const RegisterPage = () => {
 
                 {/* Username  */}
                 <TextField
-                  label="Username"
+                  label="Tên đăng nhập"
                   name="username"
                   fullWidth
                   value={formData.username}
@@ -883,6 +948,8 @@ const RegisterPage = () => {
                   value={formData.birthDay}
                   onChange={handleOnChange}
                   variant="outlined"
+                  error={!!errors.birthDay}
+                  helperText={errors.birthDay}
                   sx={{
                     mb: 3,
                     '& .MuiOutlinedInput-root': {
@@ -1075,16 +1142,23 @@ const RegisterPage = () => {
 
               {/* Divider "hoặc" */}
               <Box sx={{ display: 'flex', alignItems: 'center', my: 3 }}>
-                <Divider sx={{ flex: 1, opacity: 0.3, borderColor: '#4A90E2' }} />
-                <Typography variant="body2" sx={{ mx: 2, color: 'text.secondary', fontWeight: 500 }}>
+                <Divider
+                  sx={{ flex: 1, opacity: 0.3, borderColor: '#4A90E2' }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{ mx: 2, color: 'text.secondary', fontWeight: 500 }}
+                >
                   hoặc
                 </Typography>
-                <Divider sx={{ flex: 1, opacity: 0.3, borderColor: '#4A90E2' }} />
+                <Divider
+                  sx={{ flex: 1, opacity: 0.3, borderColor: '#4A90E2' }}
+                />
               </Box>
 
               {/* Nút đăng nhập Google */}
-              <GoogleLoginButton 
-                fullWidth 
+              <GoogleLoginButton
+                fullWidth
                 variant="outlined"
                 disabled={loading}
               />

@@ -69,6 +69,35 @@ const LoginPage = () => {
     } else {
       setIsLoggedIn(false);
       setUser(null);
+      
+      // Kiểm tra thông tin tự động đăng nhập từ trang đăng ký
+      const autoLoginInfo = localStorageUtil.get('autoLoginInfo');
+      if (autoLoginInfo && autoLoginInfo.timestamp) {
+        // Kiểm tra xem thông tin có còn hợp lệ không (trong vòng 5 phút)
+        const now = Date.now();
+        const timeDiff = now - autoLoginInfo.timestamp;
+        const fiveMinutes = 5 * 60 * 1000; // 5 phút
+        
+        if (timeDiff <= fiveMinutes) {
+          // Tự động điền thông tin đăng nhập
+          setFormData({
+            usernameOrEmail: autoLoginInfo.username,
+            password: autoLoginInfo.password,
+          });
+          
+          // Xóa thông tin tự động đăng nhập sau khi đã sử dụng
+          localStorageUtil.remove('autoLoginInfo');
+          
+          // Hiển thị thông báo
+          notify.info(
+            'Thông tin đã được điền',
+            'Thông tin đăng nhập đã được tự động điền từ quá trình đăng ký'
+          );
+        } else {
+          // Xóa thông tin cũ nếu đã quá hạn
+          localStorageUtil.remove('autoLoginInfo');
+        }
+      }
     }
   }, []);
 
