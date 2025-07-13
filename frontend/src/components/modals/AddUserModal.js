@@ -457,7 +457,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
             {/* Username */}
             <TextField
               fullWidth
-              label="Tên đăng nhập (không bắt buộc)"
+              label="Tên đăng nhập *"
               name="username"
               value={formData.username}
               onChange={handleInputChange}
@@ -468,13 +468,13 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
                   </InputAdornment>
                 ),
               }}
-              helperText={`${formData.username.length}/50 ký tự (không bắt buộc)`}
+              helperText={`${formData.username.length}/50 ký tự (4-50 ký tự)`}
               sx={{ mb: 2 }}
             />{' '}
             {/* Password */}
             <TextField
               fullWidth
-              label="Mật khẩu (không bắt buộc)"
+              label="Mật khẩu *"
               name="password"
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
@@ -496,7 +496,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
                   </InputAdornment>
                 ),
               }}
-              helperText={`${formData.password.length}/100 ký tự (không bắt buộc)`}
+              helperText={`${formData.password.length}/100 ký tự (6-100 ký tự, ít nhất 1 chữ hoa, 1 chữ thường, 1 số, 1 ký tự đặc biệt)`}
               sx={{ mb: 1 }}
             />
             {/* Password Strength Meter */}

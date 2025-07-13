@@ -4,35 +4,35 @@ import {
   Button, 
   TextField, 
   Typography,
-  Divider
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton
 } from "@mui/material";
 import { makeStyles } from '@mui/styles';
-import { CalendarToday, Timer, Loop } from '@mui/icons-material';
+import { CalendarToday, Timer, Loop, Close } from '@mui/icons-material';
 
 const useStyles = makeStyles({
-  formContainer: {
-    maxWidth: '100%',
-    margin: '0',
+  dialogPaper: {
     borderRadius: 20,
     boxShadow: '0 4px 24px rgba(162,89,230,0.08)',
     overflow: 'hidden',
-    background: '#fff',
-    border: '1px solid #f3f4f6',
-    transition: 'all 0.22s cubic-bezier(0.4,0,0.2,1)',
-    '&:hover': {
-      boxShadow: '0 6px 28px rgba(162,89,230,0.1)',
-      transform: 'translateY(-1px)',
-    },
-    '&:active': {
-      transform: 'translateY(0px)',
-    },
+    maxWidth: 600,
+    width: '100%',
+    margin: 16,
+    maxHeight: '90vh',
+    display: 'flex',
+    flexDirection: 'column',
   },
-  formHeader: {
+  dialogTitle: {
     padding: '32px 32px 24px 32px',
     background: 'linear-gradient(135deg, #43a6ef 0%, #2ec7b8 100%)',
     color: '#fff',
     textAlign: 'center',
     position: 'relative',
+    flexShrink: 0,
     '&::before': {
       content: '""',
       position: 'absolute',
@@ -41,6 +41,15 @@ const useStyles = makeStyles({
       right: 0,
       height: '4px',
       background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+    },
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+    color: '#fff',
+    '&:hover': {
+      backgroundColor: 'rgba(255,255,255,0.1)',
     },
   },
   titleText: {
@@ -58,9 +67,28 @@ const useStyles = makeStyles({
     fontWeight: 400,
     letterSpacing: 0.25,
   },
-  formContent: {
-    padding: '32px',
+  dialogContent: {
+    padding: '32px !important',
     background: '#fff',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    flexGrow: 1,
+    minHeight: 0,
+    maxHeight: 'calc(90vh - 250px)',
+    '&::-webkit-scrollbar': {
+      width: '8px',
+    },
+    '&::-webkit-scrollbar-track': {
+      background: 'rgba(46, 199, 184, 0.1)',
+      borderRadius: '10px',
+    },
+    '&::-webkit-scrollbar-thumb': {
+      background: 'rgba(46, 199, 184, 0.3)',
+      borderRadius: '10px',
+      '&:hover': {
+        background: 'rgba(46, 199, 184, 0.6)',
+      },
+    },
   },
   form: {
     display: 'flex',
@@ -83,8 +111,8 @@ const useStyles = makeStyles({
   },
   labelIcon: {
     fontSize: '1.25rem',
-    color: '#e57399',
-    filter: 'drop-shadow(0 2px 4px rgba(229, 115, 153, 0.2))',
+    color: '#43a6ef',
+    filter: 'drop-shadow(0 2px 4px rgba(67, 166, 239, 0.2))',
   },
   textField: {
     '& .MuiOutlinedInput-root': {
@@ -168,16 +196,22 @@ const useStyles = makeStyles({
     color: '#e57399',
     filter: 'drop-shadow(0 2px 4px rgba(229, 115, 153, 0.2))',
   },
-  actions: {
-    padding: '24px 32px 32px 32px',
+  dialogActions: {
+    padding: '20px 32px 24px 32px !important',
     justifyContent: 'center',
     background: '#fff',
     borderTop: '1px solid #f3f4f6',
     display: 'flex',
     flexWrap: 'wrap',
     gap: 16,
+    flexShrink: 0,
+    minHeight: 'auto',
+    position: 'sticky',
+    bottom: 0,
+    zIndex: 1,
     '@media (max-width: 768px)': {
       flexDirection: 'column',
+      padding: '16px 24px 20px 24px !important',
       '& button': {
         width: '100%',
       },
@@ -250,7 +284,7 @@ const useStyles = makeStyles({
   },
   divider: {
     margin: '20px 0',
-    background: 'linear-gradient(90deg, transparent 0%, rgba(229, 115, 153, 0.3) 20%, rgba(229, 115, 153, 0.6) 50%, rgba(229, 115, 153, 0.3) 80%, transparent 100%)',
+    background: 'linear-gradient(90deg, #43a6ef 0%, #2ec7b8 100%)',
     height: 2,
     border: 'none',
     borderRadius: 1,
@@ -281,7 +315,7 @@ const useStyles = makeStyles({
   },
 });
 
-const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode = false }) => {
+const MenstrualCycleForm = ({ open, onSubmit, onCancel, initialData = null, isEditMode = false }) => {
   const classes = useStyles();
   const [form, setForm] = useState({
     startDate: "",
@@ -330,12 +364,12 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
     
     // Kiểm tra số ngày hành kinh
     if (days > 0) {
-      if (days === 1) {
-        newWarnings.numberOfDays = "⚠️ Kỳ kinh chỉ 1 ngày là rất bất thường, nên tham khảo bác sĩ";
-      } else if (days < 3) {
-        newWarnings.numberOfDays = "⚠️ Kỳ kinh ngắn hơn 3 ngày có thể không bình thường";
-      } else if (days > 7) {
-        newWarnings.numberOfDays = "⚠️ Kỳ kinh dài hơn 7 ngày có thể không bình thường";
+      if (days < 2) {
+        newWarnings.numberOfDays = "⚠️ Kỳ kinh ngắn hơn 2 ngày có thể không bình thường";
+      } else if (days > 8 && days <= 15) {
+        newWarnings.numberOfDays = "⚠️ Kỳ kinh dài hơn 8 ngày có thể không bình thường";
+      } else if (days > 15) {
+        newWarnings.numberOfDays = "⚠️ Kỳ kinh quá dài, có thể không đúng hoặc cần khám bác sĩ";
       }
     }
     
@@ -343,11 +377,11 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
     if (length > 0) {
       if (length < 15) {
         newWarnings.cycleLength = "⚠️ Chu kỳ quá ngắn, có thể không đúng hoặc cần khám bác sĩ";
-      } else if (length < 21) {
-        newWarnings.cycleLength = "⚠️ Chu kỳ ngắn hơn 21 ngày có thể không bình thường";
-      } else if (length > 35 && length <= 90) {
-        newWarnings.cycleLength = "⚠️ Chu kỳ dài hơn 35 ngày có thể không bình thường";
-      } else if (length > 90) {
+      } else if (length < 24) {
+        newWarnings.cycleLength = "⚠️ Chu kỳ ngắn hơn 24 ngày có thể không bình thường";
+      } else if (length > 38 && length <= 60) {
+        newWarnings.cycleLength = "⚠️ Chu kỳ dài hơn 38 ngày có thể không bình thường";
+      } else if (length > 60) {
         newWarnings.cycleLength = "⚠️ Chu kỳ quá dài, có thể không đúng hoặc cần khám bác sĩ";
       }
     }
@@ -434,20 +468,36 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
   };
 
   return (
-    <Box className={classes.formContainer}>
+    <Dialog 
+      open={open} 
+      onClose={onCancel}
+      maxWidth="sm"
+      fullWidth
+      scroll="paper"
+      PaperProps={{
+        className: classes.dialogPaper
+      }}
+    >
       {/* Header */}
-      <Box className={classes.formHeader}>
+      <DialogTitle className={classes.dialogTitle}>
+        <IconButton
+          className={classes.closeButton}
+          onClick={onCancel}
+          size="small"
+        >
+          <Close />
+        </IconButton>
         <Typography className={classes.titleText}>
           {isEditMode ? 'Cập nhật chu kỳ' : 'Ghi nhận chu kỳ mới'}
         </Typography>
         <Typography className={classes.titleSubtext}>
           {isEditMode ? 'Chỉnh sửa thông tin chu kỳ kinh nguyệt' : 'Cập nhật thông tin chu kỳ kinh nguyệt của bạn'}
         </Typography>
-      </Box>
+      </DialogTitle>
 
       {/* Form Content */}
       <form onSubmit={handleSubmit}>
-        <Box className={classes.formContent}>
+        <DialogContent className={classes.dialogContent}>
           <Box className={classes.form}>
             {/* Ngày bắt đầu */}
             <Box className={classes.fieldWrapper}>
@@ -502,7 +552,7 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
                 </Typography>
               ) : (
                 <Typography className={classes.helpText}>
-                  Thường từ 3-7 ngày
+                  Thường từ 2-8 ngày
                 </Typography>
               )}
             </Box>
@@ -571,10 +621,10 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
             </Typography>
           </Box>
         )}
-      </Box>
+        </DialogContent>
 
         {/* Actions */}
-        <Box className={classes.actions}>
+        <DialogActions className={classes.dialogActions}>
           {onCancel && (
             <Button 
               onClick={onCancel}
@@ -598,9 +648,9 @@ const MenstrualCycleForm = ({ onSubmit, onCancel, initialData = null, isEditMode
           >
             {isEditMode ? 'Cập nhật chu kỳ' : 'Tính toán'}
           </Button>
-        </Box>
+        </DialogActions>
       </form>
-    </Box>
+    </Dialog>
   );
 };
 

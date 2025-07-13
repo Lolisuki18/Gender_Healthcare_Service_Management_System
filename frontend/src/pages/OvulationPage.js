@@ -1,4 +1,4 @@
-import { Container, Box, Typography, Card, Modal, Backdrop, Fade } from '@mui/material';
+import { Container, Box, Typography, Card } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { vi } from 'date-fns/locale';
@@ -10,6 +10,7 @@ import { CheckCircle } from '@mui/icons-material';
 import 'chart.js/auto';
 import { List, ListItem } from '@mui/material';
 import styles from '../styles/OvulationPage.module.css';
+import { confirmDialog } from '@/utils/confirmDialog';
 import {
   Heart,
   Calendar,
@@ -243,12 +244,12 @@ const OvulationPage = ({ stats }) => {
   const getConsistency = (menstrualCycles) => {
     console.log('🔍 [getConsistency] Input data:', menstrualCycles);
 
-    if (!Array.isArray(menstrualCycles)) {
+    if (!Array.isArray(menstrualCycles) || menstrualCycles.length === 0) {
       console.log(
         '❌ [getConsistency] Không đủ dữ liệu. Hiện có:',
         menstrualCycles?.length || 0
       );
-      return 'regular';
+      return 'unknown';
     }
 
     try {
@@ -264,11 +265,11 @@ const OvulationPage = ({ stats }) => {
           startDate: cycle.startDate,
         });
 
-        // Kiểm tra số ngày kinh nguyệt (2-7 ngày là bình thường)
+        // Kiểm tra số ngày kinh nguyệt (2-8 ngày là bình thường)
         if (
           !cycle.numberOfDays ||
-          cycle.numberOfDays <= 2 ||
-          cycle.numberOfDays > 7
+          cycle.numberOfDays < 2 ||
+          cycle.numberOfDays > 8
         ) {
           console.log(
             '❌ [getConsistency] Chu kỳ không đều - số ngày kinh không hợp lệ:',
@@ -276,10 +277,10 @@ const OvulationPage = ({ stats }) => {
           );
           return 'irregular';
         } else if (
-          // Kiểm tra độ dài chu kỳ (21-35 ngày là bình thường)
+          // Kiểm tra độ dài chu kỳ (24-38 ngày là bình thường)
           !cycle.cycleLength ||
-          cycle.cycleLength < 21 ||
-          cycle.cycleLength > 35
+          cycle.cycleLength < 24 ||
+          cycle.cycleLength > 38
         ) {
           console.log(
             '❌ [getConsistency] Chu kỳ không bình thường - độ dài chu kỳ không hợp lệ:',
@@ -335,71 +336,6 @@ const OvulationPage = ({ stats }) => {
 
   const consistency = getConsistency(menstrualCycles);
   console.log('🎯 [Main] Kết quả consistency đã tính:', consistency);
-
-  // Data cho biểu đồ
-  // const chartData = {
-  //   labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5'],
-  //   datasets: [
-  //     {
-  //       label: 'Chu kỳ thực tế',
-  //       data: [28, 29, 28, 28, 28],
-  //       borderColor: '#E91E63',
-  //       backgroundColor: '#E91E63',
-  //       tension: 0.4,
-  //       pointRadius: 4,
-  //       pointBackgroundColor: '#E91E63',
-  //     },
-  //     {
-  //       label: 'Trung bình',
-  //       data: [28, 28, 28, 28, 28],
-  //       borderColor: '#9C27B0',
-  //       backgroundColor: '#9C27B0',
-  //       borderDash: [5, 5],
-  //       tension: 0.4,
-  //       pointRadius: 4,
-  //       pointBackgroundColor: '#9C27B0',
-  //     },
-  //   ],
-  // };
-
-  // const chartOptions = {
-  //   responsive: true,
-  //   maintainAspectRatio: false,
-  //   plugins: {
-  //     legend: {
-  //       display: false,
-  //     },
-  //   },
-  //   scales: {
-  //     y: {
-  //       beginAtZero: false,
-  //       min: 20,
-  //       max: 35,
-  //       ticks: {
-  //         stepSize: 2,
-  //         color: '#666',
-  //         font: {
-  //           size: 12,
-  //         },
-  //       },
-  //       grid: {
-  //         color: 'rgba(0,0,0,0.05)',
-  //         drawBorder: false,
-  //       },
-  //     },
-  //     x: {
-  //       grid: {
-  //         display: false,
-  //       },
-  //       ticks: {
-  //         color: '#666',
-  //         font: {
-  //           size: 12,
-  //         },
-  //       },
-  //     },
-  //   },
-  // };
 
   const [expandedSection, setExpandedSection] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -497,8 +433,10 @@ const OvulationPage = ({ stats }) => {
         return styles.regular;
       case 'irregular':
         return styles.irregular;
+      case 'unknown':
+        return styles.unknown;
       default:
-        return styles.regular;
+        return styles.unknown;
     }
   };
 
@@ -508,8 +446,10 @@ const OvulationPage = ({ stats }) => {
         return 'Bình thường';
       case 'irregular':
         return 'Không bình thường';
+      case 'unknown':
+        return 'Chưa có thông tin';
       default:
-        return 'Bình thường';
+        return 'Chưa có thông tin';
     }
   };
 
@@ -630,16 +570,29 @@ const OvulationPage = ({ stats }) => {
         ],
         color: 'yellow',
       });
+    } else if (consistency === 'unknown') {
+      advice.push({
+        icon: <AlertCircle className="h-6 w-6 text-gray-600" />,
+        title: 'Cần thêm dữ liệu',
+        description:
+          'Bạn cần ghi nhận thêm chu kỳ để có thể đánh giá tính đều đặn.',
+        tips: [
+          'Ghi chép ít nhất 3 chu kỳ để có đánh giá chính xác',
+          'Theo dõi ngày bắt đầu và kết thúc kỳ kinh',
+          'Ghi chú các triệu chứng và cảm giác',
+        ],
+        color: 'gray',
+      });
     }
 
     if (
-      averageCycleLengthOfCurrentCycles < 21 &&
+      averageCycleLengthOfCurrentCycles < 24 &&
       averageCycleLengthOfCurrentCycles !== null
     ) {
       advice.push({
         icon: <Zap className="h-6 w-6 text-red-600" />,
         title: 'Chu kỳ ngắn',
-        description: 'Chu kỳ ngắn hơn 21 ngày có thể cần được kiểm tra y tế.',
+        description: 'Chu kỳ ngắn hơn 24 ngày có thể cần được kiểm tra y tế.',
         tips: [
           'Theo dõi kỹ hơn các triệu chứng',
           'Ghi chú về stress và thay đổi lối sống',
@@ -647,12 +600,12 @@ const OvulationPage = ({ stats }) => {
         ],
         color: 'red',
       });
-    } else if (averageCycleLengthOfCurrentCycles > 35) {
+    } else if (averageCycleLengthOfCurrentCycles > 38) {
       advice.push({
         icon: <Lightbulb className="h-6 w-6 text-blue-600" />,
         title: 'Chu kỳ dài',
         description:
-          'Chu kỳ dài hơn 35 ngày có thể do nhiều nguyên nhân khác nhau.',
+          'Chu kỳ dài hơn 38 ngày có thể do nhiều nguyên nhân khác nhau.',
         tips: [
           'Kiểm tra hormone nếu có thể',
           'Duy trì chế độ ăn giàu dinh dưỡng',
@@ -772,6 +725,18 @@ const OvulationPage = ({ stats }) => {
 
   // Hàm xử lý submit khi edit chu kỳ
   const handleSubmitEditCycle = async (data) => {
+    const result = await confirmDialog.info(
+      'Bạn có chắc chắn muốn cập nhật chu kỳ này?',
+      {
+        title: 'Cập nhật chu kỳ kinh nguyệt',
+        confirmText: 'Cập nhật',
+        cancelText: 'Hủy',
+        message: 'Thông tin chu kỳ sẽ được cập nhật và có thể ảnh hưởng đến các dự đoán chu kỳ tiếp theo.'
+      }
+    );
+
+    if (!result) return;
+
     try {
       await ovulationService.updateMenstrualCycle(editingCycle.id, data);
 
@@ -793,11 +758,19 @@ const OvulationPage = ({ stats }) => {
 
   // Hàm xử lý xóa chu kỳ
   const handleDeleteCycle = async (cycle) => {
-    if (
-      window.confirm(
-        `Bạn có chắc chắn muốn xóa chu kỳ #${menstrualCycles.length - menstrualCycles.indexOf(cycle)} không? Hành động này không thể hoàn tác.`
-      )
-    ) {
+    const cycleNumber = menstrualCycles.length - menstrualCycles.indexOf(cycle);
+    
+    const result = await confirmDialog.danger(
+      `Bạn có chắc chắn muốn xóa chu kỳ #${cycleNumber} không?`,
+      {
+        title: 'Xóa chu kỳ kinh nguyệt',
+        confirmText: 'Xóa',
+        cancelText: 'Hủy bỏ',
+        message: `Hành động này sẽ xóa vĩnh viễn chu kỳ #${cycleNumber} khỏi hệ thống và không thể hoàn tác.`
+      }
+    );
+
+    if (result) {
       try {
         await ovulationService.deleteMenstrualCycle(cycle.id);
 
@@ -821,18 +794,60 @@ const OvulationPage = ({ stats }) => {
   };
 
   // Hàm cancel edit
-  const handleCancelEdit = () => {
-    setShowEditForm(false);
-    setEditingCycle(null);
+  const handleCancelEdit = async () => {
+    const result = await confirmDialog.warning(
+      'Bạn có chắc chắn muốn hủy chỉnh sửa?',
+      {
+        title: 'Hủy chỉnh sửa',
+        confirmText: 'Hủy chỉnh sửa',
+        cancelText: 'Tiếp tục chỉnh sửa',
+        message: 'Mọi thay đổi chưa được lưu sẽ bị mất.'
+      }
+    );
+
+    if (result) {
+      setShowEditForm(false);
+      setEditingCycle(null);
+    }
+  };
+
+  // Hàm cancel add form
+  const handleCancelAddForm = async () => {
+    const result = await confirmDialog.warning(
+      'Bạn có chắc chắn muốn hủy thêm chu kỳ mới?',
+      {
+        title: 'Hủy thêm chu kỳ',
+        confirmText: 'Hủy',
+        cancelText: 'Tiếp tục nhập',
+        message: 'Mọi thông tin đã nhập sẽ bị mất.'
+      }
+    );
+
+    if (result) {
+      setShowForm(false);
+      setCalculationResult(null);
+    }
   };
 
 
 
   // Hàm xử lý lưu chu kỳ đã tính toán vào database
   const handleSaveCycleToDatabase = async () => {
+    if (!calculationResult) return;
+
+    const result = await confirmDialog.success(
+      'Bạn có muốn lưu chu kỳ này vào hệ thống không?',
+      {
+        title: 'Lưu chu kỳ kinh nguyệt',
+        confirmText: 'Lưu',
+        cancelText: 'Hủy',
+        message: 'Chu kỳ sẽ được lưu vào dữ liệu cá nhân của bạn và có thể được sử dụng để theo dõi và dự đoán các chu kỳ tiếp theo.'
+      }
+    );
+
+    if (!result) return;
+
     try {
-      if (!calculationResult) return;
-      
       // Chuẩn bị dữ liệu từ calculationResult
       const cycleData = {
         startDate: calculationResult.startDate,
@@ -857,6 +872,23 @@ const OvulationPage = ({ stats }) => {
     } catch (error) {
       console.error('Lỗi khi lưu chu kỳ:', error);
       notify.error('Lỗi', 'Lưu chu kỳ thất bại!');
+    }
+  };
+
+  // Hàm xử lý đóng kết quả tính toán
+  const handleClearCalculationResult = async () => {
+    const result = await confirmDialog.warning(
+      'Bạn có chắc chắn muốn đóng kết quả tính toán?',
+      {
+        title: 'Đóng kết quả',
+        confirmText: 'Đóng',
+        cancelText: 'Hủy',
+        message: 'Kết quả tính toán sẽ bị mất và bạn cần phải tính toán lại nếu muốn.'
+      }
+    );
+
+    if (result) {
+      setCalculationResult(null);
     }
   };
 
@@ -1114,70 +1146,20 @@ const OvulationPage = ({ stats }) => {
                 )}
 
                 {/* Form tạo chu kỳ mới */}
-                {showForm && (
-                  <Box sx={{ marginBottom: 4 }}>
-                    <MenstrualCycleForm
-                      onSubmit={handleSubmitCycle}
-                      onCancel={() => setShowForm(false)}
-                    />
-                  </Box>
-                )}
+                <MenstrualCycleForm
+                  open={showForm}
+                  onSubmit={handleSubmitCycle}
+                  onCancel={handleCancelAddForm}
+                />
 
-                {/* Form chỉnh sửa chu kỳ - Modal */}
-                <Modal
+                {/* Form chỉnh sửa chu kỳ */}
+                <MenstrualCycleForm
                   open={showEditForm && !!editingCycle}
-                  onClose={handleCancelEdit}
-                  closeAfterTransition
-                  BackdropComponent={Backdrop}
-                  BackdropProps={{
-                    timeout: 500,
-                    sx: {
-                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                      backdropFilter: 'blur(8px)',
-                    }
-                  }}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: { xs: 1, sm: 2 },
-                    zIndex: 1300,
-                  }}
-                >
-                  <Fade in={showEditForm && !!editingCycle}>
-                    <Box
-                      sx={{
-                        outline: 'none',
-                        width: { xs: '95vw', sm: '90vw', md: '600px' },
-                        maxHeight: '90vh',
-                        overflowY: 'auto',
-                        backgroundColor: 'transparent',
-                        borderRadius: '20px',
-                        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
-                        '&::-webkit-scrollbar': {
-                          width: '8px',
-                        },
-                        '&::-webkit-scrollbar-track': {
-                          background: 'rgba(255, 255, 255, 0.1)',
-                          borderRadius: '10px',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                          background: 'rgba(255, 255, 255, 0.3)',
-                          borderRadius: '10px',
-                        },
-                      }}
-                    >
-                      {editingCycle && (
-                        <MenstrualCycleForm
-                          onSubmit={handleSubmitEditCycle}
-                          onCancel={handleCancelEdit}
-                          initialData={editingCycle}
-                          isEditMode={true}
-                        />
-                      )}
-                    </Box>
-                  </Fade>
-                </Modal>
+                  onSubmit={handleSubmitEditCycle}
+                  onCancel={handleCancelEdit}
+                  initialData={editingCycle}
+                  isEditMode={true}
+                />
 
                 {/* Kết quả tính toán */}
                 {calculationResult && (
@@ -1338,7 +1320,7 @@ const OvulationPage = ({ stats }) => {
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
                               <path d="M21 12a9 9 0 01-9 9"></path>
-                              <path d="M3 12a9 9 0 019-9"></path>
+                              <path d="M3 12a9 9 0 009-9"></path>
                               <path d="M12 7l-3-3 3-3"></path>
                               <path d="M12 17l3 3-3 3"></path>
                             </svg>
@@ -1360,7 +1342,7 @@ const OvulationPage = ({ stats }) => {
                         </Box>
                         <button
                           className={styles.resetButton}
-                          onClick={() => setCalculationResult(null)}
+                          onClick={handleClearCalculationResult}
                         >
                           Đóng kết quả
                         </button>

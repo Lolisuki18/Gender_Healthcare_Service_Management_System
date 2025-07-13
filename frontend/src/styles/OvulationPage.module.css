@@ -36,11 +36,11 @@ body, #root {
   border: 1px solid #b91c1c;
 }
 
-/* .unknown {
-  background-color: #fef9c3;
-  color: #92400e;
-  border: 1px solid #92400e;
-} */
+.unknown {
+  background-color: #f3f4f6; /* xám nhạt */
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
 
 .consistencyTag {
   display: inline-flex;
@@ -1829,6 +1829,23 @@ body, #root {
   color: #059669;
 }
 
+.adviceCardGray {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border: 1px solid #d1d5db;
+}
+
+.adviceCardGray::before {
+  background: linear-gradient(90deg, #6b7280, #9ca3af, #d1d5db);
+}
+
+.adviceCardGray .adviceCardIconRegular {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+}
+
+.adviceCardGray .adviceCardIconRegularIcon {
+  color: #6b7280;
+}
+
 .adviceCardYellow {
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
   border: 1px solid #fde68a;
@@ -1905,6 +1922,15 @@ body, #root {
 
 .adviceCardGreen .adviceCardTextRegular {
   color: #047857;
+}
+
+.adviceCardGray .adviceCardTitleRegular {
+  color: #6b7280;
+  text-shadow: 0 1px 2px rgba(107, 114, 128, 0.1);
+}
+
+.adviceCardGray .adviceCardTextRegular {
+  color: #4b5563;
 }
 
 .adviceCardYellow .adviceCardTitleRegular {
@@ -1984,6 +2010,10 @@ body, #root {
   box-shadow: 0 12px 24px rgba(5, 150, 105, 0.4);
 }
 
+.adviceCardGray:hover .adviceCardIconRegular {
+  box-shadow: 0 12px 24px rgba(107, 114, 128, 0.4);
+}
+
 .adviceCardYellow:hover .adviceCardIconRegular {
   box-shadow: 0 12px 24px rgba(245, 158, 11, 0.4);
 }
@@ -2002,11 +2032,19 @@ body, #root {
 
 /* List item colors for different advice card variants */
 .adviceCardGreen .adviceCardListItem {
-  color: #047857;
+  color: #059669;
 }
 
 .adviceCardGreen .adviceCardListItem::before {
   background: linear-gradient(135deg, #059669, #10b981);
+}
+
+.adviceCardGray .adviceCardListItem {
+  color: #4b5563;
+}
+
+.adviceCardGray .adviceCardListItem::before {
+  background: linear-gradient(135deg, #6b7280, #9ca3af);
 }
 
 .adviceCardYellow .adviceCardListItem {
@@ -2044,6 +2082,10 @@ body, #root {
 /* Hover effects for list items */
 .adviceCardGreen .adviceCardListItem:hover {
   color: #059669;
+}
+
+.adviceCardGray .adviceCardListItem:hover {
+  color: #6b7280;
 }
 
 .adviceCardYellow .adviceCardListItem:hover {

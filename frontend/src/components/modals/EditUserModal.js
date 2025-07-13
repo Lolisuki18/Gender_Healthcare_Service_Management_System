@@ -374,7 +374,6 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
    */
   const getRoleDisplayName = (role) => {
     const roleNames = {
-      ADMIN: 'Quản trị viên',
       STAFF: 'Nhân viên',
       CUSTOMER: 'Khách hàng',
       CONSULTANT: 'Tư vấn viên',
@@ -927,7 +926,6 @@ const EditUserModal = ({ open, onClose, user, onSubmit }) => {
                           backgroundColor: 'rgba(248,255,248,0.8)',
                         }}
                       >
-                        <MenuItem value="ADMIN">🔐 Quản trị viên</MenuItem>
                         <MenuItem value="STAFF">👔 Nhân viên</MenuItem>
                         <MenuItem value="CONSULTANT">🩺 Tư vấn viên</MenuItem>
                         <MenuItem value="CUSTOMER">👤 Khách hàng</MenuItem>
