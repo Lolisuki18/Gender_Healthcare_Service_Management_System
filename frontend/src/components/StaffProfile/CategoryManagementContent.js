@@ -34,6 +34,23 @@ import blogService from '@/services/blogService';
 import stiService from '@/services/stiService';
 import categoriesService from '@/services/categoryService';
 
+// Component để xử lý text wrapping
+const WrappedTextCell = ({ children, maxWidth = 200 }) => (
+  <TableCell
+    sx={{
+      maxWidth,
+      wordWrap: 'break-word',
+      whiteSpace: 'pre-wrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      verticalAlign: 'top',
+      padding: '12px 16px',
+    }}
+  >
+    {children}
+  </TableCell>
+);
+
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
   return (
@@ -356,7 +373,14 @@ const CategoryManagementContent = () => {
                   Tên danh mục
                 </TableCell>
                 <TableCell
-                  sx={{ fontWeight: 800, color: '#00bcd4', fontSize: 16 }}
+                  sx={{
+                    fontWeight: 800,
+                    color: '#00bcd4',
+                    fontSize: 16,
+                    maxWidth: 200,
+                    wordWrap: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                  }}
                 >
                   Mô tả
                 </TableCell>
@@ -384,7 +408,7 @@ const CategoryManagementContent = () => {
                   }}
                 >
                   <TableCell sx={{ fontWeight: 600 }}>{cat.name}</TableCell>
-                  <TableCell>{cat.description}</TableCell>
+                  <WrappedTextCell>{cat.description}</WrappedTextCell>
                   <TableCell>
                     {cat.isActive ? (
                       <Chip
@@ -516,7 +540,14 @@ const CategoryManagementContent = () => {
                   Tên danh mục
                 </TableCell>
                 <TableCell
-                  sx={{ fontWeight: 800, color: '#00bcd4', fontSize: 16 }}
+                  sx={{
+                    fontWeight: 800,
+                    color: '#00bcd4',
+                    fontSize: 16,
+                    maxWidth: 200,
+                    wordWrap: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                  }}
                 >
                   Mô tả
                 </TableCell>
@@ -544,7 +575,7 @@ const CategoryManagementContent = () => {
                   }}
                 >
                   <TableCell sx={{ fontWeight: 600 }}>{cat.name}</TableCell>
-                  <TableCell>{cat.description}</TableCell>
+                  <WrappedTextCell>{cat.description}</WrappedTextCell>
                   <TableCell>
                     {cat.isActive ? (
                       <Chip
