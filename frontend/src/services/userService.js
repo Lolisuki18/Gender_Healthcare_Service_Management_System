@@ -1,6 +1,7 @@
 import apiClient from '@services/api';
 import localStorageUtil from '@utils/localStorage';
 import tokenService from '@services/tokenService';
+import { confirmDialog } from '@/utils/confirmDialog';
 
 // Service cho các API liên quan đến người dùng
 export const userService = {
@@ -239,17 +240,14 @@ export const userService = {
       throw new Error('Invalid refresh token response');
     } catch (error) {
       // Xử lý lỗi authentication
-      if (error.response?.status === 401) {
-        localStorageUtil.remove('token');
-        localStorageUtil.remove('user');
-
-        // Chỉ redirect nếu không phải đang ở trang login
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
-        }
-      }
-
-      throw error.response?.data || error;
+      await confirmDialog.warning(
+        'Phiên đăng nhập đã hết hạn hoặc tài khoản không tồn tại. Vui lòng đăng nhập lại.'
+      );
+      localStorageUtil.remove('token');
+      localStorageUtil.remove('user');
+      localStorageUtil.remove('userProfile');
+      window.location.href = '/login';
+      throw error;
     }
   },
 

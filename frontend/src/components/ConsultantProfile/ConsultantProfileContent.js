@@ -52,39 +52,48 @@ import apiClient from '../../services/api';
 import {
   formatDateTimeFromArray,
   formatDateDisplay,
+  formatDateForInput,
 } from '../../utils/dateUtils';
 import imageUrl from '../../utils/imageUrl';
+import { notify } from '../../utils/notify';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import viLocale from 'date-fns/locale/vi';
 
 // Styled components - giống ProfileContent
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  background: 'rgba(255, 255, 255, 0.95)',
-  backdropFilter: 'blur(20px)',
-  borderRadius: '20px',
-  border: '1px solid rgba(74, 144, 226, 0.15)',
+  background: 'rgba(255,255,255,0.85)',
+  backdropFilter: 'blur(24px)',
+  borderRadius: 24,
+  border: '1.5px solid rgba(74, 144, 226, 0.18)',
   color: '#2D3748',
-  boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.1)',
+  boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.13)',
+  padding: theme.spacing(4),
+  marginBottom: theme.spacing(4),
 }));
 
 const ProfileCard = styled(Card)(({ theme }) => ({
-  background: 'linear-gradient(145deg, #FFFFFF, #F5F7FA)',
-  backdropFilter: 'blur(20px)',
-  borderRadius: '24px',
-  border: '1px solid rgba(74, 144, 226, 0.12)',
+  background: 'linear-gradient(120deg, #e3f0fa 60%, #f8feff 100%)',
+  backdropFilter: 'blur(30px)',
+  borderRadius: 32,
+  border: '2px solid #b3e0fc',
   color: '#2D3748',
-  boxShadow: '0 4px 15px 0 rgba(0, 0, 0, 0.05)',
+  boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.18)',
   overflow: 'visible',
+  marginBottom: theme.spacing(4),
 }));
 
 const IconWrapper = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: '40px',
-  height: '40px',
-  borderRadius: '12px',
-  background:
-    'linear-gradient(45deg, rgba(74, 144, 226, 0.1), rgba(26, 188, 156, 0.1))',
-  marginRight: '16px',
+  width: 48,
+  height: 48,
+  borderRadius: '50%',
+  background: 'linear-gradient(135deg, #e3f0fa 60%, #b3e0fc 100%)',
+  marginRight: 20,
+  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.10)',
   flexShrink: 0,
 }));
 
@@ -264,6 +273,7 @@ const FieldInfoBox = ({
               borderRadius: '8px',
               backgroundColor: 'rgba(255, 255, 255, 0.5)',
               flex: 1,
+              whiteSpace: 'pre-line',
             }}
           >
             {value || 'Chưa cập nhật'}
@@ -308,6 +318,92 @@ const FieldInfoBox = ({
 //   );
 // }
 
+// Styled FieldInfoBox cho DatePicker đồng bộ với các ô khác
+const DatePickerFieldBox = ({ icon, label, value, onChange, error }) => (
+  <Paper
+    elevation={0}
+    sx={{
+      p: 3,
+      borderRadius: '16px',
+      background:
+        'linear-gradient(45deg, rgba(74, 144, 226, 0.05), rgba(26, 188, 156, 0.05))',
+      border: error ? '1px solid #E53E3E' : '1px solid rgba(74, 144, 226, 0.1)',
+      transition: 'all 0.3s ease',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 2,
+      mb: 0,
+      boxShadow: error
+        ? '0 4px 16px rgba(229, 62, 62, 0.1)'
+        : '0 4px 16px rgba(74, 144, 226, 0.06)',
+    }}
+  >
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 48,
+        height: 48,
+        borderRadius: '50%',
+        background: error
+          ? 'linear-gradient(135deg, #FED7D7 60%, #FC8181 100%)'
+          : 'linear-gradient(135deg, #e3f0fa 60%, #b3e0fc 100%)',
+        mr: 2,
+        boxShadow: '0 2px 8px rgba(74, 144, 226, 0.10)',
+        flexShrink: 0,
+      }}
+    >
+      {icon}
+    </Box>
+    <Box sx={{ flex: 1 }}>
+      <Typography
+        variant="body2"
+        sx={{ color: '#4A5568', fontWeight: 600, mb: 1 }}
+      >
+        {label}
+      </Typography>
+      <LocalizationProvider
+        dateAdapter={AdapterDateFns}
+        adapterLocale={viLocale}
+      >
+        <DatePicker
+          value={value}
+          onChange={onChange}
+          inputFormat="dd/MM/yyyy"
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              fullWidth
+              error={!!error}
+              helperText={error}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  '& fieldset': {
+                    borderColor: error ? '#E53E3E' : 'rgba(74, 144, 226, 0.2)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: error ? '#E53E3E' : 'rgba(26, 188, 156, 0.4)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: error ? '#E53E3E' : '#1ABC9C',
+                  },
+                },
+                '& .MuiFormHelperText-root': {
+                  color: '#E53E3E',
+                  fontSize: '0.75rem',
+                  marginTop: '4px',
+                },
+              }}
+            />
+          )}
+        />
+      </LocalizationProvider>
+    </Box>
+  </Paper>
+);
+
 const ConsultantProfileContent = () => {
   // ====================================================================
   // STATE MANAGEMENT
@@ -319,8 +415,6 @@ const ConsultantProfileContent = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Messages
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
   // Modal states
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [avatarError, setAvatarError] = useState('');
@@ -342,6 +436,8 @@ const ConsultantProfileContent = () => {
     experience: '',
     bio: '',
   });
+  // Validation state
+  const [dobError, setDobError] = useState('');
   // Original data để reset khi cancel
   const [originalData, setOriginalData] = useState({});
   // ====================================================================
@@ -364,7 +460,6 @@ const ConsultantProfileContent = () => {
    */
   const loadProfileData = async () => {
     setIsProfileLoading(true);
-    setError('');
 
     try {
       // Load user profile (personal info)
@@ -452,7 +547,10 @@ const ConsultantProfileContent = () => {
       }
     } catch (error) {
       console.error('Error loading profile data:', error);
-      setError('Không thể tải thông tin hồ sơ. Vui lòng thử lại sau.');
+      notify.error(
+        'Lỗi',
+        'Không thể tải thông tin hồ sơ. Vui lòng thử lại sau.'
+      );
     } finally {
       setIsProfileLoading(false);
     }
@@ -487,8 +585,95 @@ const ConsultantProfileContent = () => {
     if (isEditing) {
       // Cancel edit - reset to original data
       setFormData(originalData);
+      setDobError(''); // Reset error when cancel
+    } else {
+      // Khi chuyển sang edit mode, set lại formData từ originalData (và format ngày sinh, giới tính nếu cần)
+      let newFormData = { ...originalData };
+      // Format ngày sinh về yyyy-MM-dd nếu có dữ liệu
+      if (newFormData.dob) {
+        if (Array.isArray(newFormData.dob)) {
+          // [2025, 7, 24] => '2025-07-24'
+          const [y, m, d] = newFormData.dob;
+          newFormData.dob = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        } else if (
+          typeof newFormData.dob === 'string' &&
+          newFormData.dob.match(/^\d{4}-\d{2}-\d{2}$/)
+        ) {
+          // đã đúng định dạng
+        } else if (
+          typeof newFormData.dob === 'number' ||
+          (typeof newFormData.dob === 'string' &&
+            newFormData.dob.match(/^\d{7,8}$/))
+        ) {
+          // 20250724 hoặc 2025724
+          const str = newFormData.dob.toString();
+          if (str.length === 7) {
+            newFormData.dob = `${str.slice(0, 4)}-0${str.slice(4, 5)}-${str.slice(5, 7)}`;
+          } else if (str.length === 8) {
+            newFormData.dob = `${str.slice(0, 4)}-${str.slice(4, 6)}-${str.slice(6, 8)}`;
+          }
+        } else {
+          newFormData.dob = '';
+        }
+      }
+      // Chuẩn hóa giới tính về 'Nam', 'Nữ', 'Khác'
+      if (newFormData.gender) {
+        if (!['Nam', 'Nữ', 'Khác'].includes(newFormData.gender))
+          newFormData.gender = '';
+      }
+      setFormData(newFormData);
+      setDobError(''); // Reset error when entering edit mode
     }
     setIsEditing(!isEditing);
+  };
+
+  /**
+   * Validate date of birth
+   */
+  const validateDateOfBirth = (dob) => {
+    if (!dob) return { isValid: true, message: '' };
+
+    let birthDate;
+
+    // Parse date from different formats
+    if (Array.isArray(dob)) {
+      // [2025, 7, 24] format
+      const [year, month, day] = dob;
+      birthDate = new Date(year, month - 1, day); // month is 0-indexed
+    } else if (typeof dob === 'string' && dob.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      // '2025-07-24' format
+      birthDate = new Date(dob);
+    } else {
+      return { isValid: false, message: 'Định dạng ngày sinh không hợp lệ' };
+    }
+
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    // Check if birthday has occurred this year
+    const hasHadBirthday =
+      monthDiff > 0 ||
+      (monthDiff === 0 && today.getDate() >= birthDate.getDate());
+    const actualAge = hasHadBirthday ? age : age - 1;
+
+    // Check if date is in the future
+    if (birthDate > today) {
+      return {
+        isValid: false,
+        message: 'Ngày sinh không thể lớn hơn ngày hiện tại',
+      };
+    }
+
+    // Check if age is less than 18
+    if (actualAge < 18) {
+      return {
+        isValid: false,
+        message: 'Bạn phải đủ 18 tuổi để sử dụng dịch vụ này',
+      };
+    }
+
+    return { isValid: true, message: '' };
   };
 
   /**
@@ -496,9 +681,16 @@ const ConsultantProfileContent = () => {
    */
   const handleSaveProfile = async () => {
     setIsLoading(true);
-    setError('');
 
     try {
+      // Validate date of birth first
+      const dobValidation = validateDateOfBirth(formData.dob);
+      if (!dobValidation.isValid) {
+        notify.warning('Cảnh báo', dobValidation.message);
+        setIsLoading(false);
+        return;
+      }
+
       // Update personal info using UserController APIs (bỏ phone)
       const personalInfoPayload = {
         fullName: formData.fullName,
@@ -531,12 +723,12 @@ const ConsultantProfileContent = () => {
         await loadProfileData();
 
         setIsEditing(false);
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
+        notify.success('Thành công', 'Cập nhật hồ sơ thành công!');
       }
     } catch (err) {
       console.error('Error saving profile:', err);
-      setError(
+      notify.error(
+        'Lỗi',
         err.message || 'Có lỗi xảy ra khi cập nhật hồ sơ. Vui lòng thử lại sau.'
       );
     } finally {
@@ -590,157 +782,12 @@ const ConsultantProfileContent = () => {
 
   // Gender options for select
   const genderOptions = [
-    { value: 'male', label: 'Nam' },
-    { value: 'female', label: 'Nữ' },
-    { value: 'other', label: 'Khác' },
+    { value: 'Nam', label: 'Nam' },
+    { value: 'Nữ', label: 'Nữ' },
+    { value: 'Khác', label: 'Khác' },
   ];
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
-      {' '}
-      {/* Enhanced Header */}
-      <Box
-        sx={{
-          mb: 4,
-          p: 3,
-          borderRadius: '20px',
-          background:
-            'linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(26, 188, 156, 0.1) 100%)',
-          border: '1px solid rgba(74, 144, 226, 0.15)',
-          backdropFilter: 'blur(10px)',
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '4px',
-            background:
-              'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 50%, #4A90E2 100%)',
-            backgroundSize: '200% 100%',
-            animation: 'gradient 3s ease infinite',
-          },
-          '@keyframes gradient': {
-            '0%, 100%': {
-              backgroundPosition: '0% 50%',
-            },
-            '50%': {
-              backgroundPosition: '100% 50%',
-            },
-          },
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: { xs: 3, md: 0 },
-          }}
-        >
-          <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
-            <Typography
-              variant="h3"
-              sx={{
-                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontWeight: 800,
-                mb: 1,
-                fontSize: { xs: '2rem', md: '2.5rem' },
-                letterSpacing: '-0.02em',
-              }}
-            >
-              Hồ sơ chuyên gia
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{
-                color: '#4A5568',
-                fontWeight: 500,
-                opacity: 0.8,
-                fontSize: { xs: '1rem', md: '1.1rem' },
-              }}
-            >
-              Quản lý và cập nhật thông tin cá nhân của bạn
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <Chip
-              icon={<WorkIcon />}
-              label="Đã xác thực"
-              sx={{
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                color: '#059669',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                fontWeight: 600,
-                '& .MuiChip-icon': {
-                  color: '#059669',
-                },
-              }}
-            />
-            <Button
-              variant="outlined"
-              startIcon={
-                isRefreshing ? <CircularProgress size={16} /> : <RefreshIcon />
-              }
-              onClick={handleRefreshData}
-              disabled={isRefreshing}
-              sx={{
-                borderRadius: '12px',
-                textTransform: 'none',
-                fontWeight: 600,
-                px: 3,
-                py: 1,
-                borderColor: 'rgba(74, 144, 226, 0.3)',
-                color: '#4A90E2',
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                backdropFilter: 'blur(10px)',
-                '&:hover': {
-                  borderColor: '#1ABC9C',
-                  color: '#1ABC9C',
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 12px rgba(74, 144, 226, 0.2)',
-                },
-                transition: 'all 0.3s ease',
-              }}
-            >
-              {isRefreshing ? 'Đang tải...' : 'Làm mới'}{' '}
-            </Button>
-          </Box>
-        </Box>
-      </Box>
-      {/* Success/Error Messages */}
-      {success && (
-        <Alert
-          severity="success"
-          sx={{
-            mb: 3,
-            borderRadius: '12px',
-            '& .MuiAlert-icon': {
-              color: '#059669',
-            },
-          }}
-        >
-          Cập nhật hồ sơ thành công!
-        </Alert>
-      )}
-      {error && (
-        <Alert
-          severity="error"
-          sx={{
-            mb: 3,
-            borderRadius: '12px',
-          }}
-        >
-          {error}
-        </Alert>
-      )}{' '}
       {/* Profile Header Card - Cải thiện layout */}
       <ProfileCard sx={{ mb: 4, overflow: 'visible' }}>
         <Box sx={{ p: 4 }}>
@@ -824,10 +871,28 @@ const ConsultantProfileContent = () => {
                     color: '#2D3748',
                     mb: 1,
                     fontSize: { xs: '1.75rem', md: '2rem' },
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {formData.fullName || 'Chưa cập nhật'}
                 </Typography>
+                {userProfile && userProfile.id && (
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      color: '#4A90E2',
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      mb: 1,
+                      letterSpacing: 1,
+                      wordBreak: 'break-all',
+                      whiteSpace: 'pre-line',
+                    }}
+                  >
+                    Mã chuyên viên: #{userProfile.id}
+                  </Typography>
+                )}
 
                 <Box
                   sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}
@@ -893,47 +958,6 @@ const ConsultantProfileContent = () => {
                         sx={{ fontWeight: 600, color: '#2D3748' }}
                       >
                         {formatDateDisplay(formData.dob)}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <Paper
-                      sx={{
-                        p: 2,
-                        borderRadius: '12px',
-                        background: 'rgba(159, 122, 234, 0.08)',
-                        border: '1px solid rgba(159, 122, 234, 0.15)',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          background: 'rgba(159, 122, 234, 0.12)',
-                          transform: 'translateY(-2px)',
-                        },
-                      }}
-                    >
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={1}
-                        sx={{ mb: 1 }}
-                      >
-                        <GenderIcon sx={{ fontSize: 16, color: '#9F7AEA' }} />
-                        <Typography
-                          variant="body2"
-                          sx={{ color: '#4A5568', fontWeight: 600 }}
-                        >
-                          Giới tính
-                        </Typography>
-                      </Stack>
-                      <Typography
-                        variant="body1"
-                        sx={{ fontWeight: 600, color: '#2D3748' }}
-                      >
-                        {formData.gender === 'male'
-                          ? 'Nam'
-                          : formData.gender === 'female'
-                            ? 'Nữ'
-                            : formData.gender || 'Chưa cập nhật'}
                       </Typography>
                     </Paper>
                   </Grid>
@@ -1107,7 +1131,7 @@ const ConsultantProfileContent = () => {
           </Typography>
 
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid item size={12} xs={12}>
               <FieldInfoBox
                 icon={<PersonIcon />}
                 label="Họ và tên"
@@ -1118,19 +1142,43 @@ const ConsultantProfileContent = () => {
                 iconColor="#4A90E2"
               />
             </Grid>{' '}
-            <Grid item xs={12} sm={6}>
-              <FieldInfoBox
-                icon={<CakeIcon />}
-                label="Ngày sinh"
-                name="dob"
-                value={formatDateDisplay(formData.dob)}
-                onChange={handleFormChange}
-                isEditing={isEditing}
-                type="date"
-                iconColor="#D69E2E"
-              />
+            <Grid item size={6} xs={12} sm={6}>
+              {isEditing ? (
+                <DatePickerFieldBox
+                  icon={<CakeIcon sx={{ color: '#F1C40F', fontSize: 28 }} />}
+                  label="Ngày sinh"
+                  value={
+                    formData.dob
+                      ? new Date(formatDateForInput(formData.dob))
+                      : null
+                  }
+                  onChange={(date) => {
+                    const newDob = date ? formatDateForInput(date) : '';
+                    setFormData((prev) => ({
+                      ...prev,
+                      dob: newDob,
+                    }));
+
+                    // Validate date of birth
+                    const validation = validateDateOfBirth(newDob);
+                    setDobError(validation.message);
+                  }}
+                  error={dobError}
+                />
+              ) : (
+                <FieldInfoBox
+                  icon={<CakeIcon />}
+                  label="Ngày sinh"
+                  name="dob"
+                  value={formatDateDisplay(formData.dob)}
+                  onChange={handleFormChange}
+                  isEditing={false}
+                  type="date"
+                  iconColor="#D69E2E"
+                />
+              )}
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item size={6} xs={12} sm={6}>
               <FieldInfoBox
                 icon={<GenderIcon />}
                 label="Giới tính"
@@ -1142,7 +1190,7 @@ const ConsultantProfileContent = () => {
                 iconColor="#9F7AEA"
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item size={12} xs={12}>
               <FieldInfoBox
                 icon={<AddressIcon />}
                 label="Địa chỉ hiện tại"
@@ -1178,7 +1226,21 @@ const ConsultantProfileContent = () => {
             Thông tin chuyên môn
           </Typography>
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid item size={12} xs={12}>
+              <FieldInfoBox
+                icon={<BioIcon />}
+                label="Giới thiệu bản thân"
+                name="bio"
+                value={formData.bio}
+                onChange={handleFormChange}
+                isEditing={isEditing}
+                multiline={true}
+                rows={4}
+                iconColor="#38A169"
+                backgroundColor="linear-gradient(45deg, rgba(56, 161, 105, 0.05), rgba(72, 187, 120, 0.05))"
+              />
+            </Grid>
+            <Grid item size={12} xs={12}>
               <FieldInfoBox
                 icon={<QualificationsIcon />}
                 label="Trình độ chuyên môn"
@@ -1192,7 +1254,7 @@ const ConsultantProfileContent = () => {
                 backgroundColor="linear-gradient(45deg, rgba(128, 90, 213, 0.05), rgba(159, 122, 234, 0.05))"
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item size={12} xs={12}>
               <FieldInfoBox
                 icon={<ExperienceIcon />}
                 label="Kinh nghiệm làm việc"
@@ -1204,20 +1266,6 @@ const ConsultantProfileContent = () => {
                 rows={3}
                 iconColor="#3182CE"
                 backgroundColor="linear-gradient(45deg, rgba(49, 130, 206, 0.05), rgba(66, 153, 225, 0.05))"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <FieldInfoBox
-                icon={<BioIcon />}
-                label="Giới thiệu bản thân"
-                name="bio"
-                value={formData.bio}
-                onChange={handleFormChange}
-                isEditing={isEditing}
-                multiline={true}
-                rows={4}
-                iconColor="#38A169"
-                backgroundColor="linear-gradient(45deg, rgba(56, 161, 105, 0.05), rgba(72, 187, 120, 0.05))"
               />
             </Grid>
           </Grid>{' '}
@@ -1275,8 +1323,11 @@ const ConsultantProfileContent = () => {
                 }
                 setIsAvatarModalOpen(false);
                 setAvatarError('');
-                setSuccess(true);
-                setTimeout(() => setSuccess(false), 2000);
+                notify.success(
+                  'Thành công',
+                  'Cập nhật ảnh đại diện thành công!'
+                );
+                setTimeout(() => notify.success(false), 2000);
               }}
               onUploadError={handleAvatarUploadError}
               onClose={handleCloseAvatarModal}

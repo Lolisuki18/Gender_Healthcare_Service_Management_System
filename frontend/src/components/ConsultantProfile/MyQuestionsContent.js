@@ -324,7 +324,8 @@ const MyQuestionsContent = () => {
         fetchQuestions();
         notify.success('Thành công', 'Đã trả lời câu hỏi thành công!');
       } catch (error) {
-        await confirmDialog.danger(
+        notify.error(
+          'Lỗi',
           'Có lỗi xảy ra khi gửi câu trả lời. Vui lòng thử lại sau.'
         );
       }

@@ -76,6 +76,7 @@ import WcIcon from '@mui/icons-material/Wc';
 import CakeIcon from '@mui/icons-material/Cake';
 import HomeIcon from '@mui/icons-material/Home';
 import confirmDialog from '@/utils/confirmDialog';
+import { notify } from '../../utils/notify';
 
 // Thêm mapping ENUM -> text tiếng Việt ở đầu file (sau import)
 const STATUS_TEXT = {
@@ -950,7 +951,8 @@ const MyConsultationsContent = () => {
     const statusEnum =
       typeof newStatus === 'string' ? newStatus.toUpperCase() : '';
     if (!VALID_STATUSES.includes(statusEnum)) {
-      toast.error(
+      notify.error(
+        'Lỗi',
         `Trạng thái gửi lên không hợp lệ! (Chỉ chấp nhận: ${VALID_STATUSES.join(', ')})`
       );
       setUpdateStatus({ loading: false, success: false, error: '' });
@@ -960,7 +962,7 @@ const MyConsultationsContent = () => {
     if (statusEnum === 'COMPLETED') {
       // notesCheck là ghi chú hiện tại (notesValue nếu đang edit, hoặc consultation.notes)
       if (!notesCheck || notesCheck.trim() === '') {
-        toast.error('Vui lòng nhập ghi chú trước khi hoàn thành!');
+        notify.error('Lỗi', 'Vui lòng nhập ghi chú trước khi hoàn thành!');
         setUpdateStatus({ loading: false, success: false, error: '' });
         return;
       }
@@ -1002,7 +1004,7 @@ const MyConsultationsContent = () => {
               : c
           )
         );
-        toast.success('Cập nhật trạng thái thành công!');
+        notify.success('Thành công', 'Cập nhật trạng thái thành công!');
         setUpdateStatus({ loading: false, success: true, error: '' });
         setTimeout(
           () => setUpdateStatus((prev) => ({ ...prev, success: false })),
@@ -1018,7 +1020,7 @@ const MyConsultationsContent = () => {
           errorMsg =
             'Không thể đánh dấu hoàn thành trước khi kết thúc buổi tư vấn';
         }
-        toast.error(errorMsg);
+        notify.error('Lỗi', errorMsg);
         setUpdateStatus({ loading: false, success: false, error: '' });
       }
     } catch (err) {
@@ -1031,7 +1033,7 @@ const MyConsultationsContent = () => {
         errorMsg =
           'Không thể đánh dấu hoàn thành trước khi kết thúc buổi tư vấn';
       }
-      toast.error(errorMsg);
+      notify.error('Lỗi', errorMsg);
       setUpdateStatus({ loading: false, success: false, error: '' });
     }
   };
@@ -2296,7 +2298,8 @@ const MyConsultationsContent = () => {
                                           notesValue
                                         );
                                       if (res.success) {
-                                        toast.success(
+                                        notify.success(
+                                          'Thành công',
                                           'Cập nhật ghi chú thành công!'
                                         );
                                         setSelectedConsultation((prev) => ({
@@ -2305,7 +2308,8 @@ const MyConsultationsContent = () => {
                                         }));
                                         setEditingNotes(false);
                                       } else {
-                                        toast.error(
+                                        notify.error(
+                                          'Lỗi',
                                           res.message ||
                                             'Cập nhật ghi chú thất bại'
                                         );

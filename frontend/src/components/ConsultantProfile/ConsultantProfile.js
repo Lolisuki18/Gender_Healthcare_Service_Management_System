@@ -61,7 +61,8 @@ const ConsultantProfile = ({ user = {} }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-  const [selectedMenuItem, setSelectedMenuItem] = useState('dashboard');
+  const [selectedMenuItem, setSelectedMenuItem] =
+    useState('consultant-profile');
 
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);
@@ -94,7 +95,7 @@ const ConsultantProfile = ({ user = {} }) => {
       case 'medical-history':
         return 'Lịch sử khám bệnh';
       default:
-        return 'Câu hỏi của tôi';
+        return 'Hồ sơ chuyên gia';
     }
   };
 
