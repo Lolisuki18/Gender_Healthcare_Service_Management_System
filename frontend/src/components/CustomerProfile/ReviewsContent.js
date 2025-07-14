@@ -422,10 +422,21 @@ const ReviewsContent = () => {
   
   // ...existing code...
 
-  // Tính toán dữ liệu phân trang cho từng tab
-  const paginatedAllReviews = allReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
-  const paginatedCompletedReviews = completedReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
-  const paginatedPendingReviews = pendingReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
+  // Nếu có lọc ngày, chỉ hiển thị các card có ngày đánh giá (createdAt)
+  const isDateFilterActive = !!dateFrom || !!dateTo;
+  const filterHasReviewDate = (review) => {
+    // Chỉ hiển thị card có ngày đánh giá nếu lọc ngày đang bật
+    if (!isDateFilterActive) return true;
+    return !!review.createdAt;
+  };
+
+  const filteredAllReviews = allReviews.filter(filterHasReviewDate);
+  const filteredCompletedReviews = completedReviews.filter(filterHasReviewDate);
+  const filteredPendingReviews = pendingReviews.filter(filterHasReviewDate);
+
+  const paginatedAllReviews = filteredAllReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
+  const paginatedCompletedReviews = filteredCompletedReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
+  const paginatedPendingReviews = filteredPendingReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
