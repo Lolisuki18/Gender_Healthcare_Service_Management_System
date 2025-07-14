@@ -42,6 +42,8 @@ import {
   Snackbar,
   Divider,
   FormHelperText,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -114,8 +116,9 @@ const PaymentInfoContent = () => {
     cardHolderName: '',
     expiryMonth: '',
     expiryYear: '',
-    cvv: '',
+    cvc: '',
     nickname: '',
+    isDefault: false,
   });
 
   // Form validation
@@ -131,9 +134,25 @@ const PaymentInfoContent = () => {
     setError(null);
     try {
       const response = await getUserPaymentInfos();
-      setPaymentMethods(response.data || []);
+      
+      // Handle response structure properly
+      if (response.data && response.data.success) {
+        const paymentData = response.data.data || [];
+        // Debug: Check isDefault values
+        console.log('Payment methods with isDefault status:', paymentData.map(card => ({
+          id: card.paymentInfoId,
+          cardNumber: card.cardNumber.slice(-4),
+          isDefault: card.isDefault
+        })));
+        setPaymentMethods(paymentData);
+      } else {
+        setPaymentMethods([]);
+        console.warn('Invalid response structure:', response);
+      }
     } catch (err) {
+      console.error('Error fetching payment methods:', err);
       setError('Không thể tải danh sách thẻ thanh toán.');
+      setPaymentMethods([]); // Ensure it's always an array
     } finally {
       setLoading(false);
     }
@@ -141,6 +160,11 @@ const PaymentInfoContent = () => {
 
   // Handle form input changes
   const handleInputChange = (field, value) => {
+    // Format CVC to only allow numbers
+    if (field === 'cvc') {
+      value = value.replace(/\D/g, '').slice(0, 4);
+    }
+    
     setFormData((prev) => ({ ...prev, [field]: value }));
 
     // Clear error when user starts typing
@@ -167,15 +191,27 @@ const PaymentInfoContent = () => {
     if (!validateForm()) {
       return;
     }
-
+    
     try {
       const cardData = {
-        ...formData,
         cardNumber: formData.cardNumber.replace(/\s/g, ''), // Remove spaces for API
+        cardHolderName: formData.cardHolderName,
+        expiryMonth: formData.expiryMonth,
+        expiryYear: formData.expiryYear,
+        cvv: formData.cvc, // Backend expects 'cvv', frontend uses 'cvc'
+        cardType: getCardType(formData.cardNumber), // Auto-detect card type
+        nickname: formData.nickname,
+        isDefault: formData.isDefault || false,
       };
 
       if (editingCard) {
-        await updatePaymentInfo(editingCard.paymentInfoId, cardData);
+        const cardId = editingCard.paymentInfoId; // Backend uses paymentInfoId
+        
+        if (!cardId) {
+          throw new Error('Card ID not found for update');
+        }
+
+        await updatePaymentInfo(cardId, cardData);
         showSnackbar('Cập nhật thẻ thành công!', 'success');
       } else {
         await createPaymentInfo(cardData);
@@ -186,6 +222,7 @@ const PaymentInfoContent = () => {
       resetForm();
       fetchPaymentMethods();
     } catch (err) {
+      console.error('Error in handleSubmit:', err);
       showSnackbar(err.message || 'Có lỗi xảy ra!', 'error');
     }
   };
@@ -198,8 +235,9 @@ const PaymentInfoContent = () => {
       cardHolderName: card.cardHolderName,
       expiryMonth: card.expiryMonth,
       expiryYear: card.expiryYear,
-      cvv: '', // Don't populate CVV for security
+      cvc: '', // Don't populate CVV for security
       nickname: card.nickname || '',
+      isDefault: card.isDefault || false,
     });
     setOpenDialog(true);
   };
@@ -211,10 +249,17 @@ const PaymentInfoContent = () => {
     }
 
     try {
-      await deletePaymentInfo(card.paymentInfoId);
+      const cardId = card.paymentInfoId; // Backend uses paymentInfoId
+      
+      if (!cardId) {
+        throw new Error('Card ID not found');
+      }
+
+      await deletePaymentInfo(cardId);
       showSnackbar('Xóa thẻ thành công!', 'success');
       fetchPaymentMethods();
     } catch (err) {
+      console.error('Error deleting card:', err);
       showSnackbar(err.message || 'Có lỗi xảy ra!', 'error');
     }
   };
@@ -222,10 +267,17 @@ const PaymentInfoContent = () => {
   // Handle set default card
   const handleSetDefault = async (card) => {
     try {
-      await setDefaultPaymentInfo(card.paymentInfoId);
+      const cardId = card.paymentInfoId; // Backend uses paymentInfoId
+      
+      if (!cardId) {
+        throw new Error('Card ID not found');
+      }
+
+      await setDefaultPaymentInfo(cardId);
       showSnackbar('Đặt thẻ mặc định thành công!', 'success');
       fetchPaymentMethods();
     } catch (err) {
+      console.error('Error setting default card:', err);
       showSnackbar(err.message || 'Có lỗi xảy ra!', 'error');
     }
   };
@@ -244,8 +296,9 @@ const PaymentInfoContent = () => {
       cardHolderName: '',
       expiryMonth: '',
       expiryYear: '',
-      cvv: '',
+      cvc: '',
       nickname: '',
+      isDefault: false,
     });
     setFormErrors({});
   };
@@ -372,9 +425,11 @@ const PaymentInfoContent = () => {
         <Grid container spacing={3}>
           {paymentMethods.map((card) => {
             const cardType = getCardType(card.cardNumber);
+            const isCardDefault = Boolean(card.isDefault); // Ensure boolean value
+            
             return (
               <Grid item xs={12} sm={6} md={4} key={card.paymentInfoId}>
-                <StyledCard isDefault={card.isDefault}>
+                <StyledCard isDefault={isCardDefault}>
                   <CardContent sx={{ p: 3, pb: 2 }}>
                     {/* Top row: Nickname + Default chip + Card type icon */}
                     <Box
@@ -391,7 +446,7 @@ const PaymentInfoContent = () => {
                         >
                           {card.nickname || card.cardHolderName}
                         </Typography>
-                        {card.isDefault && (
+                        {isCardDefault && (
                           <Chip
                             icon={<StarIcon sx={{ color: '#FFD700' }} />}
                             label="Mặc định"
@@ -480,7 +535,7 @@ const PaymentInfoContent = () => {
                     </IconButton>
                   </CardActions>
                   {/* Set default button bottom left */}
-                  {!card.isDefault && (
+                  {!isCardDefault && (
                     <Button
                       size="small"
                       startIcon={<StarBorderIcon />}
@@ -503,6 +558,25 @@ const PaymentInfoContent = () => {
                     >
                       Đặt mặc định
                     </Button>
+                  )}
+                  
+                  {/* Default indicator when card is default */}
+                  {isCardDefault && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: 12,
+                        left: 16,
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: '#FFD700',
+                        fontWeight: 600,
+                        fontSize: 13,
+                      }}
+                    >
+                      <StarIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                      Mặc định
+                    </Box>
                   )}
                 </StyledCard>
               </Grid>
@@ -698,10 +772,10 @@ const PaymentInfoContent = () => {
                 <TextField
                   fullWidth
                   label="CVV"
-                  value={formData.cvv}
-                  onChange={(e) => handleInputChange('cvv', e.target.value)}
-                  error={!!formErrors.cvv}
-                  helperText={formErrors.cvv}
+                  value={formData.cvc}
+                  onChange={(e) => handleInputChange('cvc', e.target.value)}
+                  error={!!formErrors.cvc}
+                  helperText={formErrors.cvc}
                   placeholder="123"
                   type="password"
                   inputProps={{ maxLength: 4 }}
@@ -714,6 +788,26 @@ const PaymentInfoContent = () => {
                     },
                   }}
                   InputLabelProps={{ sx: { fontWeight: 500 } }}
+                />
+              </Grid>
+              
+              {/* Row 4: Set as Default */}
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.isDefault}
+                      onChange={(e) => handleInputChange('isDefault', e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label="Đặt làm thẻ mặc định"
+                  sx={{ 
+                    '& .MuiFormControlLabel-label': { 
+                      fontWeight: 500,
+                      color: '#4A90E2'
+                    }
+                  }}
                 />
               </Grid>
             </Grid>

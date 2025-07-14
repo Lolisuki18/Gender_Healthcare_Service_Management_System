@@ -1,556 +1,457 @@
 import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import {
   Box,
+  Card,
+  CardContent,
   Typography,
+  Radio,
   RadioGroup,
   FormControlLabel,
-  Radio,
-  TextField,
+  FormControl,
+  FormLabel,
   Button,
+  CircularProgress,
+  Alert,
+  Chip,
+  Grid,
+  Divider,
+  IconButton,
+  Tooltip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Grid,
-  Alert,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
-  Chip,
-  Divider,
-  CircularProgress,
-  Tooltip,
+  TextField
 } from '@mui/material';
 import {
+  AccountBalance as BankIcon,
   CreditCard as CreditCardIcon,
   Add as AddIcon,
   Star as StarIcon,
+  Edit as EditIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
-import { bookSTITest } from '@/services/stiService';
-import { getUserPaymentInfos, getDefaultPaymentInfo } from '@/services/paymentInfoService';
-import SavedCardsDialog from './SavedCardsDialog';
+import { toast } from 'react-toastify';
+import paymentInfoService from '@/services/paymentInfoService';
 import AddEditCardDialog from './AddEditCardDialog';
 
-// ===== COMPONENT THANH TOÁN VÀ ĐẶT LỊCH =====
-// Component này xử lý việc chọn phương thức thanh toán và gửi yêu cầu đặt lịch khám
-const PaymentSection = ({
-  selectedService,  // Dịch vụ được chọn
-  selectedDate,     // Ngày khám được chọn
-  selectedTime,     // Giờ khám được chọn
-  note,            // Ghi chú từ người dùng
-  onSuccess,       // Callback khi đặt lịch thành công
+const PaymentSection = ({ 
+  selectedPaymentMethod, 
+  onPaymentMethodChange, 
+  selectedCard,
+  onCardChange,
+  disabled = false 
 }) => {
-  // ===== CÁC STATE QUẢN LÝ TRẠNG THÁI COMPONENT =====
-  const [paymentMethod, setPaymentMethod] = useState('cash'); // Phương thức thanh toán được chọn (mặc định: tiền mặt)
-  
-  // State cho thông tin thẻ Visa/Master
-  const [visaInfo, setVisaInfo] = useState({
-    cardNumber: '',  // Số thẻ (16 chữ số)
-    cardName: '',    // Tên chủ thẻ
-    expiry: '',      // Ngày hết hạn (MM/YY)
-    cvv: '',         // Mã CVV (3-4 chữ số)
-  });
-  
-  const [visaErrors, setVisaErrors] = useState({}); // Lỗi validation cho thông tin thẻ
-  const [openVisaDialog, setOpenVisaDialog] = useState(false); // Điều khiển dialog nhập thông tin thẻ
-  const [openBankDialog, setOpenBankDialog] = useState(false); // Điều khiển dialog thông tin chuyển khoản
-  const [openSavedCardsDialog, setOpenSavedCardsDialog] = useState(false); // Điều khiển dialog thẻ đã lưu
-  const [openAddCardDialog, setOpenAddCardDialog] = useState(false); // Điều khiển dialog thêm thẻ
-  const [loading, setLoading] = useState(false); // Trạng thái đang xử lý booking
-  const [error, setError] = useState(''); // Thông báo lỗi khi booking thất bại
-  
-  // State cho thẻ đã lưu
-  const [savedCards, setSavedCards] = useState([]);
-  const [defaultCard, setDefaultCard] = useState(null);
-  const [selectedCard, setSelectedCard] = useState(null);
-  const [loadingCards, setLoadingCards] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [cardDialogOpen, setCardDialogOpen] = useState(false);
+  const [editingCard, setEditingCard] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [cvcDialogOpen, setCvcDialogOpen] = useState(false);
+  const [cvcInput, setCvcInput] = useState('');
+  const [cvcError, setCvcError] = useState('');
 
-  // ===== LOAD THẺ ĐÃ LƯU KHI COMPONENT MOUNT =====
+  // Tải danh sách thẻ khi component mount
   useEffect(() => {
-    loadSavedCards();
+    loadPaymentMethods();
   }, []);
 
-  const loadSavedCards = async () => {
-    try {
-      setLoadingCards(true);
-      const [cardsResponse, defaultResponse] = await Promise.all([
-        getUserPaymentInfos(),
-        getDefaultPaymentInfo()
-      ]);
-
-      if (cardsResponse.success) {
-        setSavedCards(cardsResponse.data || []);
+  // Auto-select thẻ mặc định khi có
+  useEffect(() => {
+    if (paymentMethods.length > 0 && selectedPaymentMethod === 'card' && !selectedCard) {
+      const defaultCard = paymentMethods.find(card => card.isDefault);
+      if (defaultCard) {
+        onCardChange(defaultCard.paymentInfoId);
+      } else {
+        // Nếu không có thẻ mặc định, chọn thẻ đầu tiên
+        onCardChange(paymentMethods[0].paymentInfoId);
       }
+    }
+  }, [paymentMethods, selectedPaymentMethod, selectedCard, onCardChange]);
 
-      if (defaultResponse.success) {
-        setDefaultCard(defaultResponse.data);
+  const loadPaymentMethods = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await paymentInfoService.getAll();
+      if (response.data.success) {
+        setPaymentMethods(response.data.data || []);
+      } else {
+        throw new Error(response.data.message || 'Không thể tải danh sách thẻ');
       }
     } catch (err) {
-      console.error('Error loading saved cards:', err);
+      console.error('Error loading payment methods:', err);
+      setError('Không thể tải danh sách thẻ');
     } finally {
-      setLoadingCards(false);
+      setLoading(false);
     }
   };
 
-  // ===== HÀM XỬ LÝ THAY ĐỔI PHƯƠNG THỨC THANH TOÁN =====
   const handlePaymentMethodChange = (event) => {
-    setPaymentMethod(event.target.value);
-    setSelectedCard(null); // Reset selected card
+    const method = event.target.value;
+    onPaymentMethodChange(method);
     
-    // Mở dialog tương ứng khi chọn phương thức cần nhập thông tin
-    if (event.target.value === 'visa') {
-      if (savedCards.length > 0) {
-        setOpenSavedCardsDialog(true); // Mở dialog chọn thẻ đã lưu
-      } else {
-        setOpenVisaDialog(true); // Mở dialog nhập thông tin thẻ mới
-      }
-    } else if (event.target.value === 'bank') {
-      setOpenBankDialog(true); // Mở dialog thông tin chuyển khoản
+    // Reset selected card khi đổi sang cash
+    if (method === 'cash') {
+      onCardChange(null);
+    } else if (method === 'card' && paymentMethods.length > 0) {
+      // Auto-select thẻ mặc định hoặc thẻ đầu tiên
+      const defaultCard = paymentMethods.find(card => card.isDefault);
+      const cardToSelect = defaultCard || paymentMethods[0];
+      onCardChange(cardToSelect.paymentInfoId); // Sử dụng paymentInfoId
     }
   };
 
-  // ===== HÀM VALIDATION THÔNG TIN THẺ VISA =====
-  // Kiểm tra tính hợp lệ của các thông tin thẻ tín dụng
-  const validateVisaInfo = () => {
-    const errors = {};
-    
-    // Kiểm tra số thẻ: phải là 16 chữ số
-    if (!/^[0-9]{16}$/.test(visaInfo.cardNumber)) {
-      errors.cardNumber = 'Số thẻ không hợp lệ (phải có 16 chữ số)';
-    }
-    
-    // Kiểm tra tên chủ thẻ: không được để trống
-    if (!visaInfo.cardName.trim()) {
-      errors.cardName = 'Vui lòng nhập tên chủ thẻ';
-    }
-    
-    // Kiểm tra ngày hết hạn: định dạng MM/YY
-    if (!/^(0[1-9]|1[0-2])\/([0-9]{2})$/.test(visaInfo.expiry)) {
-      errors.expiry = 'Định dạng MM/YY không hợp lệ (ví dụ: 12/25)';
-    }
-    
-    // Kiểm tra mã CVV: 3-4 chữ số
-    if (!/^[0-9]{3,4}$/.test(visaInfo.cvv)) {
-      errors.cvv = 'CVV không hợp lệ (3-4 chữ số)';
-    }
-    
-    return errors;
+  const handleCardSelect = (cardId) => {
+    onCardChange(cardId);
   };
 
-  // ===== HÀM XỬ LÝ CHỌN THẺ ĐÃ LƯU =====
-  const handleCardSelect = (card) => {
-    setSelectedCard(card);
-    setOpenSavedCardsDialog(false);
+  const handleAddCard = () => {
+    setEditingCard(null);
+    setCardDialogOpen(true);
   };
 
-  // ===== HÀM XỬ LÝ THÊM THẺ MỚI =====
-  const handleAddNewCard = () => {
-    setOpenSavedCardsDialog(false);
-    setOpenAddCardDialog(true);
+  const handleEditCard = (card) => {
+    setEditingCard(card);
+    setCardDialogOpen(true);
   };
 
-  // ===== HÀM XỬ LÝ THÊM THẺ THÀNH CÔNG =====
-  const handleCardAdded = (newCard) => {
-    setSavedCards(prev => [newCard, ...prev]);
-    if (newCard.isDefault) {
-      setDefaultCard(newCard);
-    }
-    setOpenAddCardDialog(false);
-    // Tự động chọn thẻ vừa thêm
-    setSelectedCard(newCard);
-  };
-
-  // ===== HÀM XỬ LÝ SUBMIT THÔNG TIN THẺ VISA =====
-  const handleVisaSubmit = () => {
-    const errors = validateVisaInfo(); // Validate thông tin thẻ
-    
-    if (Object.keys(errors).length === 0) {
-      // Nếu không có lỗi, đóng dialog và tiến hành booking
-      setOpenVisaDialog(false);
-      handleBooking('VISA');
-    } else {
-      // Nếu có lỗi, hiển thị thông báo lỗi
-      setVisaErrors(errors);
-    }
-  };
-
-  // ===== HÀM XỬ LÝ XÁC NHẬN CHUYỂN KHOẢN =====
-  const handleBankConfirm = () => {
-    setOpenBankDialog(false); // Đóng dialog
-    handleBooking('BANK_TRANSFER'); // Tiến hành booking với phương thức chuyển khoản
-  };
-
-  // ===== HÀM XỬ LÝ ĐẶT LỊCH CHÍNH =====
-  // Hàm này gửi yêu cầu đặt lịch khám lên server
-  const handleBooking = async (paymentMethodApi) => {
+  const handleSaveCard = async (cardData) => {
     try {
-      setLoading(true); // Bật trạng thái loading
-      setError(''); // Reset lỗi cũ
-
-      // ===== CHUẨN BỊ DỮ LIỆU GỬI LÊN SERVER =====
-      const bookingData = {
-        serviceId: selectedService.id,           // ID dịch vụ
-        date: selectedDate.toISOString(),        // Ngày khám (chuyển sang ISO string)
-        time: selectedTime,                      // Giờ khám
-        note,                                    // Ghi chú
-        paymentMethod: paymentMethodApi,         // Phương thức thanh toán
-        // Gửi thông tin thẻ tùy theo loại thanh toán
-        ...(paymentMethodApi === 'VISA' && {
-          ...(selectedCard ? { savedCardId: selectedCard.paymentInfoId } : { visaInfo }),
-        }),
-      };
-
-      // ===== GỬI REQUEST LÊN SERVER =====
-      const response = await bookSTITest(bookingData);
+      setActionLoading(true);
+      let response;
       
-      if (response.success) {
-        // Nếu thành công, gọi callback onSuccess
-        onSuccess(response.message);
+      if (editingCard) {
+        response = await paymentInfoService.update(editingCard.paymentInfoId, cardData);
       } else {
-        // Nếu thất bại, hiển thị thông báo lỗi
-        setError(response.message || 'Đã có lỗi xảy ra khi đặt lịch');
+        response = await paymentInfoService.create(cardData);
+      }
+
+      if (response.data.success) {
+        toast.success(editingCard ? 'Cập nhật thẻ thành công!' : 'Thêm thẻ thành công!');
+        setCardDialogOpen(false);
+        setEditingCard(null);
+        await loadPaymentMethods(); // Reload danh sách
+        
+        // Auto-select thẻ mới thêm nếu đang ở mode card
+        if (!editingCard && selectedPaymentMethod === 'card') {
+          const newCard = response.data.data;
+          onCardChange(newCard.paymentInfoId); // Sử dụng paymentInfoId
+        }
+      } else {
+        throw new Error(response.data.message || 'Không thể lưu thông tin thẻ');
       }
     } catch (err) {
-      // Xử lý lỗi khi gọi API
-      console.error('Booking error:', err);
-      setError(err.message || 'Đã có lỗi xảy ra khi đặt lịch');
+      console.error('Error saving card:', err);
+      toast.error(err.message || 'Không thể lưu thông tin thẻ');
     } finally {
-      setLoading(false); // Tắt trạng thái loading
+      setActionLoading(false);
     }
   };
 
-  // ===== GIAO DIỆN COMPONENT =====
-  return (
-    <Box sx={{ 
-      backgroundColor: '#f8faff', // Nền xanh rất nhạt
-      borderRadius: 3, // Bo góc 24px
-      p: 3 // Padding 24px
-    }}>
-      
-      {/* ===== TIÊU ĐỀ PHẦN THANH TOÁN ===== */}
-      <Typography 
-        variant="h5" 
-        sx={{ 
-          mb: 4, // Margin bottom 32px
-          fontWeight: 600,
-          color: 'primary.main', // Màu chủ đạo của theme
-          textAlign: 'center'
-        }}
-      >
-        Chọn phương thức thanh toán
-      </Typography>
+  const maskCardNumber = (cardNumber) => {
+    if (!cardNumber) return '';
+    return cardNumber.slice(0, 4) + ' **** **** ' + cardNumber.slice(-4);
+  };
 
-      {/* ===== HIỂN THỊ THÔNG BÁO LỖI ===== */}
-      {/* Chỉ hiển thị khi có lỗi xảy ra */}
-      {error && (
-        <Alert 
-          severity="error" 
-          sx={{ 
-            mb: 3,
-            borderRadius: 2, // Bo góc 16px
-            '& .MuiAlert-icon': {
-              fontSize: '1.5rem' // Icon lớn hơn
-            }
-          }}
-        >
-          {error}
-        </Alert>
-      )}
+  const getCardTypeIcon = (cardNumber) => {
+    if (!cardNumber) return '💳';
+    const firstDigit = cardNumber.charAt(0);
+    if (firstDigit === '4') return '💳'; // Visa
+    if (firstDigit === '5') return '💳'; // MasterCard
+    return '💳';
+  };
 
-      {/* ===== KHUNG CHỨA CÁC OPTION THANH TOÁN ===== */}
-      <Box sx={{ 
-        backgroundColor: 'white', // Nền trắng
-        borderRadius: 2, // Bo góc 16px
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)', // Đổ bóng nhẹ
-        p: 3 // Padding 24px
-      }}>
-        
-        {/* ===== RADIO GROUP CÁC PHƯƠNG THỨC THANH TOÁN ===== */}
-        <RadioGroup 
-          value={paymentMethod} 
-          onChange={handlePaymentMethodChange}
-          sx={{
-            // Style cho từng FormControlLabel
-            '& .MuiFormControlLabel-root': {
-              mb: 2, // Margin bottom giữa các option
-              mx: 1, // Margin horizontal
-              '&:last-child': {
-                mb: 0 // Option cuối không có margin bottom
-              }
-            },
-            // Style cho radio button
-            '& .MuiRadio-root': {
-              color: 'primary.main', // Màu chủ đạo
-              '&.Mui-checked': {
-                color: 'primary.main' // Màu khi được chọn
-              }
-            }
-          }}
-        >
-          {/* ===== OPTION 1: TIỀN MẶT ===== */}
-          <FormControlLabel 
-            value="cash" 
-            control={<Radio />} 
-            label={
-              <Typography sx={{ fontWeight: 500 }}>
-                💵 Thanh toán tiền mặt tại phòng khám
-              </Typography>
-            } 
-          />
-          
-          {/* ===== OPTION 2: THẺ TÍN DỤNG ===== */}
-          <FormControlLabel 
-            value="visa" 
-            control={<Radio />} 
-            label={
-              <Box>
-                <Typography sx={{ fontWeight: 500 }}>
-                  💳 Thanh toán bằng thẻ Visa/Master
-                </Typography>
-                {selectedCard && (
-                  <Box sx={{ mt: 1, ml: 2 }}>
-                    <Chip
-                      label={`${selectedCard.nickname || selectedCard.cardHolderName} (${selectedCard.maskedCardNumber})`}
-                      color="primary"
-                      size="small"
-                      icon={<StarIcon />}
-                    />
-                  </Box>
-                )}
-              </Box>
-            }
-          />
-          
-          {/* ===== OPTION 3: CHUYỂN KHOẢN ===== */}
-          <FormControlLabel 
-            value="bank" 
-            control={<Radio />} 
-            label={
-              <Typography sx={{ fontWeight: 500 }}>
-                🏦 Chuyển khoản ngân hàng
-              </Typography>
-            }
-          />
-        </RadioGroup>
-      </Box>
+  const getSelectedCardInfo = () => {
+    if (!selectedCard) return null;
+    return paymentMethods.find(card => card.paymentInfoId === selectedCard); // So sánh với paymentInfoId
+  };
 
-      {/* ===== DIALOG NHẬP THÔNG TIN THẺ VISA ===== */}
-      {/* Dialog này mở khi người dùng chọn thanh toán bằng thẻ */}
-      <Dialog open={openVisaDialog} onClose={() => setOpenVisaDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ textAlign: 'center', fontWeight: 600 }}>
-          💳 Nhập thông tin thẻ tín dụng
-        </DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            
-            {/* ===== FIELD SỐ THẺ ===== */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Số thẻ *"
-                placeholder="1234 5678 9012 3456"
-                value={visaInfo.cardNumber}
-                onChange={(e) => {
-                  // Chỉ cho phép nhập số và giới hạn 16 ký tự
-                  const value = e.target.value.replace(/\D/g, '').slice(0, 16);
-                  setVisaInfo({ ...visaInfo, cardNumber: value });
-                }}
-                error={!!visaErrors.cardNumber}
-                helperText={visaErrors.cardNumber}
-                inputProps={{ maxLength: 16 }}
-              />
-            </Grid>
-            
-            {/* ===== FIELD TÊN CHỦ THẺ ===== */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Tên chủ thẻ *"
-                placeholder="NGUYEN VAN A"
-                value={visaInfo.cardName}
-                onChange={(e) => setVisaInfo({ ...visaInfo, cardName: e.target.value.toUpperCase() })}
-                error={!!visaErrors.cardName}
-                helperText={visaErrors.cardName}
-              />
-            </Grid>
-            
-            {/* ===== FIELD NGÀY HẾT HẠN ===== */}
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Hạn thẻ *"
-                placeholder="MM/YY"
-                value={visaInfo.expiry}
-                onChange={(e) => {
-                  // Format tự động MM/YY
-                  let value = e.target.value.replace(/\D/g, '');
-                  if (value.length >= 2) {
-                    value = value.slice(0, 2) + '/' + value.slice(2, 4);
-                  }
-                  setVisaInfo({ ...visaInfo, expiry: value });
-                }}
-                error={!!visaErrors.expiry}
-                helperText={visaErrors.expiry}
-                inputProps={{ maxLength: 5 }}
-              />
-            </Grid>
-            
-            {/* ===== FIELD CVV ===== */}
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="CVV *"
-                placeholder="123"
-                value={visaInfo.cvv}
-                onChange={(e) => {
-                  // Chỉ cho phép nhập số và giới hạn 4 ký tự
-                  const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setVisaInfo({ ...visaInfo, cvv: value });
-                }}
-                error={!!visaErrors.cvv}
-                helperText={visaErrors.cvv}
-                inputProps={{ maxLength: 4 }}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 1 }}>
-          <Button 
-            onClick={() => {
-              setOpenVisaDialog(false);
-              setPaymentMethod('cash'); // Reset về tiền mặt nếu hủy
-            }}
-          >
-            Hủy
-          </Button>
-          <Button onClick={handleVisaSubmit} variant="contained">
-            Xác nhận thanh toán
-          </Button>
-        </DialogActions>
-      </Dialog>
+  const handleCvcConfirm = () => {
+    if (!cvcInput || cvcInput.length < 3 || cvcInput.length > 4) {
+      setCvcError('Mã CVC phải có 3-4 chữ số');
+      return;
+    }
+    
+    setCvcDialogOpen(false);
+    setCvcInput('');
+    setCvcError('');
+    toast.success('Xác thực thành công!');
+  };
 
-      {/* ===== DIALOG CHỌN THẺ ĐÃ LƯU ===== */}
-      <SavedCardsDialog
-        open={openSavedCardsDialog}
-        onClose={() => setOpenSavedCardsDialog(false)}
-        onCardSelect={handleCardSelect}
-        onAddNewCard={handleAddNewCard}
-      />
-
-      {/* ===== DIALOG THÊM/SỬA THẺ ===== */}
-      <AddEditCardDialog
-        open={openAddCardDialog}
-        onClose={() => setOpenAddCardDialog(false)}
-        onSuccess={handleCardAdded}
-      />
-
-      {/* ===== DIALOG THÔNG TIN CHUYỂN KHOẢN NGÂN HÀNG ===== */}
-      {/* Dialog này hiển thị thông tin tài khoản để người dùng chuyển khoản */}
-      <Dialog 
-        open={openBankDialog} 
-        onClose={() => {
-          setOpenBankDialog(false);
-          setPaymentMethod('cash'); // Reset về tiền mặt nếu đóng dialog
-        }}
-        maxWidth="sm" 
-        fullWidth
-      >
-        <DialogTitle sx={{ textAlign: 'center', fontWeight: 600 }}>
-          🏦 Thông tin chuyển khoản ngân hàng
-        </DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          {/* Hướng dẫn chuyển khoản */}
-          <Typography variant="body1" gutterBottom sx={{ fontWeight: 500, color: 'primary.main' }}>
-            Vui lòng chuyển khoản theo thông tin sau:
-          </Typography>
-          
-          {/* ===== THÔNG TIN TÀI KHOẢN NGÂN HÀNG ===== */}
-          <Box sx={{ 
-            backgroundColor: '#f8faff', 
-            borderRadius: 2, 
-            p: 2, 
-            mt: 2,
-            border: '1px solid rgba(33, 150, 243, 0.2)'
-          }}>
-            <Typography variant="body2" sx={{ lineHeight: 2, fontFamily: 'monospace' }}>
-              <strong>🏛️ Ngân hàng:</strong> VietinBank
-              <br />
-              <strong>💳 Số tài khoản:</strong> 123456789
-              <br />
-              <strong>👤 Chủ tài khoản:</strong> CÔNG TY TNHH DỊCH VỤ Y TẾ ABC
-              <br />
-              <strong>📝 Nội dung:</strong> XN_[Họ tên]_[Số điện thoại]
-            </Typography>
+  if (loading) {
+    return (
+      <Card>
+        <CardContent>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+            <CircularProgress />
           </Box>
-          
-          {/* Lưu ý quan trọng */}
-          <Typography variant="caption" sx={{ 
-            mt: 2, 
-            display: 'block', 
-            color: 'error.main',
-            fontStyle: 'italic' 
-          }}>
-            ⚠️ Lưu ý: Vui lòng ghi đúng nội dung chuyển khoản để chúng tôi có thể xác nhận thanh toán nhanh chóng
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 1 }}>
-          <Button 
-            onClick={() => {
-              setOpenBankDialog(false);
-              setPaymentMethod('cash'); // Reset về tiền mặt nếu hủy
-            }}
-          >
-            Hủy
-          </Button>
-          <Button onClick={handleBankConfirm} variant="contained">
-            ✅ Tôi đã chuyển khoản
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </CardContent>
+      </Card>
+    );
+  }
 
-      {/* ===== NÚT XÁC NHẬN ĐẶT LỊCH ===== */}
-      {/* Nút chính để hoàn tất quá trình đặt lịch khám */}
-      <Button
-        variant="contained"
-        onClick={() => handleBooking(
-          // Chuyển đổi giá trị paymentMethod sang format API
-          paymentMethod === 'cash' ? 'CASH' :           // Tiền mặt
-          paymentMethod === 'visa' ? 'VISA' :           // Thẻ tín dụng  
-          'BANK_TRANSFER'                               // Chuyển khoản
+  return (
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          Phương thức thanh toán
+        </Typography>
+
+        <FormControl component="fieldset" fullWidth disabled={disabled}>
+          <RadioGroup
+            value={selectedPaymentMethod}
+            onChange={handlePaymentMethodChange}
+          >
+            {/* Thanh toán tiền mặt */}
+            <FormControlLabel
+              value="cash"
+              control={<Radio />}
+              label={
+                <Box display="flex" alignItems="center">
+                  <BankIcon sx={{ mr: 1, color: 'success.main' }} />
+                  <Box>
+                    <Typography variant="body1" fontWeight={500}>
+                      Thanh toán tiền mặt (COD)
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Thanh toán khi nhận dịch vụ
+                    </Typography>
+                  </Box>
+                </Box>
+              }
+            />
+
+            {/* Thanh toán thẻ */}
+            <FormControlLabel
+              value="card"
+              control={<Radio />}
+              label={
+                <Box display="flex" alignItems="center" justifyContent="space-between" width="100%">
+                  <Box display="flex" alignItems="center">
+                    <CreditCardIcon sx={{ mr: 1, color: 'primary.main' }} />
+                    <Box>
+                      <Typography variant="body1" fontWeight={500}>
+                        Thanh toán bằng thẻ
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Thẻ tín dụng/ghi nợ đã lưu
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box display="flex" alignItems="center">
+                    <Tooltip title="Làm mới danh sách">
+                      <IconButton size="small" onClick={loadPaymentMethods}>
+                        <RefreshIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Button
+                      size="small"
+                      startIcon={<AddIcon />}
+                      onClick={handleAddCard}
+                      disabled={disabled}
+                    >
+                      Thêm thẻ
+                    </Button>
+                  </Box>
+                </Box>
+              }
+              sx={{ alignItems: 'flex-start' }}
+            />
+          </RadioGroup>
+        </FormControl>
+
+        {/* Hiển thị lỗi nếu có */}
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }} action={
+            <Button color="inherit" size="small" onClick={loadPaymentMethods}>
+              Thử lại
+            </Button>
+          }>
+            {error}
+          </Alert>
         )}
-        disabled={loading} // Vô hiệu hóa khi đang xử lý
-        sx={{ 
-          mt: 3, // Margin top 24px
-          width: '100%', // Chiếm toàn bộ chiều rộng
-          py: 1.5, // Padding vertical để nút cao hơn
-          fontSize: '1.1rem', // Chữ lớn hơn
-          fontWeight: 600,
-          borderRadius: 2, // Bo góc 16px
-          boxShadow: loading ? 'none' : '0 4px 12px rgba(33, 150, 243, 0.3)', // Đổ bóng khi không loading
-          '&:hover': {
-            boxShadow: loading ? 'none' : '0 6px 16px rgba(33, 150, 243, 0.4)', // Đổ bóng đậm hơn khi hover
-          }
-        }}
-      >
-        {/* Text thay đổi tùy theo trạng thái loading */}
-        {loading ? '⏳ Đang xử lý...' : '🎯 Xác nhận đặt lịch khám'}
-      </Button>
-    </Box>
+
+        {/* Danh sách thẻ khi chọn thanh toán bằng thẻ */}
+        {selectedPaymentMethod === 'card' && (
+          <Box mt={2} ml={4}>
+            {paymentMethods.length === 0 ? (
+              <Alert severity="info">
+                Bạn chưa có thẻ nào. Hãy thêm thẻ mới để sử dụng.
+              </Alert>
+            ) : (
+              <Grid container spacing={2}>
+                {paymentMethods.map((card) => (
+                  <Grid item xs={12} md={6} key={card.paymentInfoId}>
+                    <Card 
+                      variant="outlined"
+                      sx={{ 
+                        cursor: disabled ? 'default' : 'pointer',
+                        border: selectedCard === card.paymentInfoId ? 2 : 1, // So sánh với paymentInfoId
+                        borderColor: selectedCard === card.paymentInfoId ? 'primary.main' : 'divider',
+                        transition: 'all 0.2s ease',
+                        '&:hover': disabled ? {} : {
+                          borderColor: 'primary.main',
+                          transform: 'translateY(-2px)',
+                          boxShadow: 2
+                        }
+                      }}
+                      onClick={() => !disabled && handleCardSelect(card.paymentInfoId)} // Truyền paymentInfoId
+                    >
+                      <CardContent sx={{ position: 'relative', pb: '16px !important' }}>
+                        {card.isDefault && (
+                          <Chip
+                            icon={<StarIcon />}
+                            label="Mặc định"
+                            color="primary"
+                            size="small"
+                            sx={{ 
+                              position: 'absolute', 
+                              top: 8, 
+                              right: 8
+                            }}
+                          />
+                        )}
+
+                        <Box display="flex" alignItems="center" mb={1}>
+                          <Box sx={{ fontSize: 20, mr: 1 }}>
+                            {getCardTypeIcon(card.cardNumber)}
+                          </Box>
+                          <Typography variant="body1" fontWeight={500}>
+                            {maskCardNumber(card.cardNumber)}
+                          </Typography>
+                        </Box>
+
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          {card.cardHolderName}
+                        </Typography>
+
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Hết hạn: {card.expiryMonth}/{card.expiryYear}
+                        </Typography>
+
+                        <Box display="flex" justifyContent="between" alignItems="center" mt={1}>
+                          <Radio
+                            checked={selectedCard === card.paymentInfoId} // So sánh với paymentInfoId
+                            disabled={disabled}
+                            size="small"
+                          />
+                          <Tooltip title="Chỉnh sửa">
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditCard(card);
+                              }}
+                              disabled={disabled}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </Box>
+        )}
+
+        {/* Thông tin tóm tắt thanh toán */}
+        {selectedPaymentMethod && (
+          <>
+            <Divider sx={{ my: 3 }} />
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Phương thức thanh toán đã chọn:
+              </Typography>
+              {selectedPaymentMethod === 'cash' ? (
+                <Box display="flex" alignItems="center">
+                  <BankIcon sx={{ mr: 1, color: 'success.main' }} />
+                  <Typography variant="body2">
+                    Thanh toán tiền mặt khi nhận dịch vụ
+                  </Typography>
+                </Box>
+              ) : (
+                (() => {
+                  const cardInfo = getSelectedCardInfo();
+                  return cardInfo ? (
+                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                      <Box display="flex" alignItems="center">
+                        <Box sx={{ fontSize: 20, mr: 1 }}>
+                          {getCardTypeIcon(cardInfo.cardNumber)}
+                        </Box>
+                        <Box>
+                          <Typography variant="body2">
+                            {maskCardNumber(cardInfo.cardNumber)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {cardInfo.cardHolderName}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      {cardInfo.isDefault && (
+                        <Chip icon={<StarIcon />} label="Mặc định" color="primary" size="small" />
+                      )}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="error">
+                      Vui lòng chọn thẻ thanh toán
+                    </Typography>
+                  );
+                })()
+              )}
+            </Box>
+          </>
+        )}
+
+        {/* Dialog CVC confirmation */}
+        <Dialog open={cvcDialogOpen} onClose={() => setCvcDialogOpen(false)}>
+          <DialogTitle>Xác thực thanh toán</DialogTitle>
+          <DialogContent>
+            <Typography gutterBottom>
+              Vui lòng nhập mã CVC để xác thực thanh toán:
+            </Typography>
+            <TextField
+              autoFocus
+              fullWidth
+              type="password"
+              label="Mã CVC"
+              value={cvcInput}
+              onChange={(e) => {
+                setCvcInput(e.target.value.replace(/\D/g, '').slice(0, 4));
+                setCvcError('');
+              }}
+              error={!!cvcError}
+              helperText={cvcError}
+              placeholder="123"
+              sx={{ mt: 2 }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setCvcDialogOpen(false)}>Hủy</Button>
+            <Button onClick={handleCvcConfirm} variant="contained">
+              Xác nhận
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Dialog thêm/sửa thẻ */}
+        <AddEditCardDialog
+          open={cardDialogOpen}
+          onClose={() => {
+            setCardDialogOpen(false);
+            setEditingCard(null);
+          }}
+          onSave={handleSaveCard}
+          cardData={editingCard}
+          loading={actionLoading}
+        />
+      </CardContent>
+    </Card>
   );
 };
 
-// ===== ĐỊNH NGHĨA PROP TYPES =====
-// Xác định kiểu dữ liệu cho các props để đảm bảo tính chính xác và dễ debug
-PaymentSection.propTypes = {
-  selectedService: PropTypes.object.isRequired,       // Dịch vụ được chọn (bắt buộc, object)
-  selectedDate: PropTypes.instanceOf(Date).isRequired, // Ngày khám (bắt buộc, Date object)
-  selectedTime: PropTypes.string.isRequired,           // Giờ khám (bắt buộc, string như "14:30")
-  note: PropTypes.string.isRequired,                   // Ghi chú (bắt buộc, có thể là string rỗng)
-  onSuccess: PropTypes.func.isRequired,                // Callback khi đặt lịch thành công (bắt buộc, function)
-};
-
-// Export component để sử dụng ở các file khác
 export default PaymentSection;

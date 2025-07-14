@@ -25,10 +25,12 @@ import HomeIcon from '@mui/icons-material/Home'; // Icon cho breadcrumb
 
 // ===== IMPORT CÁC SERVICE API =====
 import stiService from '@/services/stiService'; // Service gọi API liên quan đến xét nghiệm STI
+import paymentInfoService from '@/services/paymentInfoService'; // Service gọi API thông tin thanh toán
 
 // ===== IMPORT CÁC COMPONENT TỰ TẠO =====
 import ServiceSelection from '@/components/TestRegistration/ServiceSelection';         // Component chọn dịch vụ
 import DateTimeSelection from '@/components/TestRegistration/DateTimeSelection';       // Component chọn ngày giờ
+import PaymentSection from '@/components/TestRegistration/PaymentSection';             // Component chọn phương thức thanh toán
 import BookingSuccessDialog from '@/components/TestRegistration/BookingSuccessDialog'; // Dialog thông báo đặt lịch thành công
 import ServiceDetailDialog from '@/components/TestRegistration/ServiceDetailDialog';   // Dialog hiển thị chi tiết dịch vụ
 
@@ -446,6 +448,7 @@ function TestRegistrationPage() {
   const [bookingSuccess, setBookingSuccess] = useState(false);           // Trạng thái đặt lịch thành công
   const [bookingMessage, setBookingMessage] = useState('');              // Thông báo kết quả đặt lịch
   const [paymentMethod, setPaymentMethod] = useState('cash');            // Phương thức thanh toán
+  const [selectedCard, setSelectedCard] = useState(null);               // ID thẻ được chọn
   const [isBooking, setIsBooking] = useState(false);                     // Trạng thái đang xử lý đặt lịch
   const [paymentFailed, setPaymentFailed] = useState(false);             // Trạng thái thanh toán thất bại
   const [paymentFailedMessage, setPaymentFailedMessage] = useState('');  // Thông báo thanh toán thất bại
@@ -455,16 +458,6 @@ function TestRegistrationPage() {
   const [detailData, setDetailData] = useState(null);                     // Dữ liệu chi tiết để hiển thị trong dialog
   const [detailType, setDetailType] = useState('single');               // Loại chi tiết ('single' hoặc 'package')
   const [loadingDetail, setLoadingDetail] = useState(false);            // Trạng thái loading chi tiết
-
-  // ===== STATE QUẢN LÝ DIALOG THÔNG TIN THẺ =====
-  const [cardDialogOpen, setCardDialogOpen] = useState(false);           // Hiển thị dialog nhập thông tin thẻ
-  const [cardInfo, setCardInfo] = useState({                             // Thông tin thẻ
-    cardNumber: '',
-    expiryMonth: '',
-    expiryYear: '',
-    cvc: '',
-    cardHolderName: ''
-  });
 
   // ===== ROUTER HOOKS =====
   const location = useLocation();  // Hook để lấy location object (state từ navigate)
@@ -725,29 +718,18 @@ function TestRegistrationPage() {
     setPaymentFailed(false);
     setPaymentFailedMessage('');
     
-    // Nếu chọn VISA, mở dialog nhập thông tin thẻ
-    if (method === 'visa') {
-      setCardDialogOpen(true);
+    // Reset selected card khi đổi về cash
+    if (method === 'cash') {
+      setSelectedCard(null);
     }
   };
 
   /**
-   * Xử lý khi đóng dialog thông tin thẻ
+   * Xử lý khi chọn thẻ thanh toán
+   * @param {number} cardId - ID của thẻ được chọn
    */
-  const handleCloseCardDialog = () => {
-    setCardDialogOpen(false);
-    // Nếu đóng dialog mà chưa nhập thông tin, chuyển về cash
-    if (!cardInfo.cardNumber || !cardInfo.cardHolderName) {
-      setPaymentMethod('cash');
-    }
-  };
-
-  /**
-   * Xử lý khi lưu thông tin thẻ
-   */
-  const handleSaveCardInfo = (cardData) => {
-    setCardInfo(cardData);
-    setCardDialogOpen(false);
+  const handleCardChange = (cardId) => {
+    setSelectedCard(cardId);
   };
 
   // ===============================
@@ -826,8 +808,7 @@ function TestRegistrationPage() {
       
     // Chuyển đổi payment method sang format API
     let paymentMethodApi = 'COD';
-    if (paymentMethod === 'bank') paymentMethodApi = 'BANK_TRANSFER';
-    if (paymentMethod === 'visa') paymentMethodApi = 'VISA';
+    if (paymentMethod === 'card') paymentMethodApi = 'VISA'; // Cập nhật từ 'visa' thành 'card'
     
     // Tạo payload gửi lên server
     const payload = {
@@ -840,13 +821,27 @@ function TestRegistrationPage() {
     if (serviceId) payload.serviceId = serviceId;
     if (packageId) payload.packageId = packageId;
     
-    // Thêm thông tin thẻ nếu chọn VISA
-    if (paymentMethod === 'visa') {
-      payload.cardNumber = cardInfo.cardNumber;
-      payload.expiryMonth = cardInfo.expiryMonth;
-      payload.expiryYear = cardInfo.expiryYear;
-      payload.cvc = cardInfo.cvc;
-      payload.cardHolderName = cardInfo.cardHolderName;
+    // Thêm thông tin thẻ nếu chọn thanh toán bằng thẻ
+    if (paymentMethod === 'card' && selectedCard) {
+      try {
+        // Lấy thông tin thẻ đầy đủ từ backend để thanh toán
+        const cardResponse = await paymentInfoService.getForPayment(selectedCard);
+        if (cardResponse.data.success && cardResponse.data.data) {
+          const cardData = cardResponse.data.data;
+          payload.cardNumber = cardData.cardNumber;
+          payload.expiryMonth = cardData.expiryMonth;
+          payload.expiryYear = cardData.expiryYear;
+          payload.cvc = cardData.cvc;
+          payload.cardHolderName = cardData.cardHolderName;
+        } else {
+          throw new Error('Không thể lấy thông tin thẻ thanh toán');
+        }
+      } catch (cardError) {
+        console.error('Error getting card info:', cardError);
+        toast.error('Không thể lấy thông tin thẻ. Vui lòng thử lại.');
+        setIsBooking(false);
+        return;
+      }
     }
     
     console.log('Payload gửi đăng ký:', payload);
@@ -1412,114 +1407,72 @@ function TestRegistrationPage() {
                   Hoàn tất đặt lịch của bạn với phương thức thanh toán phù hợp
                 </Typography>
 
-                {/* Section chọn phương thức thanh toán */}
-                <Box sx={{ 
-                  background: 'rgba(255,255,255,0.95)',
-                  backdropFilter: 'blur(20px)',
-                  borderRadius: 5,
-                  p: 4,
-                  mb: 4,
-                  boxShadow: '0 8px 32px rgba(33,150,243,0.12)',
-                  border: '1px solid rgba(33, 150, 243, 0.08)',
-                }}>
-                  <Typography 
-                    variant="h6" 
-                    fontWeight={700} 
-                    mb={3}
-                    sx={{ 
-                      color: '#212121',
-                      textAlign: 'center'
-                    }}
-                  >
-                    Chọn phương thức thanh toán
-                  </Typography>
-                  {/* Radio group để chọn payment method */}
-                  <RadioGroup
-                    value={paymentMethod}
-                    onChange={(e) => handlePaymentMethodChange(e.target.value)}
-                    sx={{ mb: 2 }}
-                  >
-                    {/* Option thanh toán tiền mặt */}
-                    <FormControlLabel 
-                      value="cash" 
-                      control={<Radio sx={{ color: '#2196F3' }} />} 
-                      label={
-                        <Typography sx={{ fontWeight: 500, fontSize: '1rem' }}>
-                          💵 Thanh toán tiền mặt
-                        </Typography>
-                      }
-                      sx={{ mb: 1 }}
-                    />
-                    {/* Option thanh toán thẻ Visa */}
-                    <FormControlLabel 
-                      value="visa" 
-                      control={<Radio sx={{ color: '#2196F3' }} />} 
-                      label={
-                        <Typography sx={{ fontWeight: 500, fontSize: '1rem' }}>
-                          💳 Thanh toán bằng thẻ Visa
-                        </Typography>
-                      }
-                    />
-                  </RadioGroup>
-                  
-                  {/* Thông báo thanh toán thất bại */}
-                  {paymentFailed && (
+                {/* Component chọn phương thức thanh toán */}
+                <PaymentSection
+                  selectedPaymentMethod={paymentMethod}
+                  onPaymentMethodChange={handlePaymentMethodChange}
+                  selectedCard={selectedCard}
+                  onCardChange={handleCardChange}
+                  disabled={isBooking}
+                />
+
+                {/* Thông báo thanh toán thất bại */}
+                {paymentFailed && (
+                  <Box sx={{
+                    background: 'rgba(255, 193, 7, 0.1)',
+                    border: '1px solid #ffc107',
+                    borderRadius: 3,
+                    p: 3,
+                    mt: 3,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}>
                     <Box sx={{
-                      background: 'rgba(255, 193, 7, 0.1)',
-                      border: '1px solid #ffc107',
-                      borderRadius: 3,
-                      p: 3,
-                      mt: 3,
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      background: '#ffc107',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 2,
+                      justifyContent: 'center',
+                      flexShrink: 0,
                     }}>
-                      <Box sx={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        background: '#ffc107',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}>
-                        <Typography sx={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                          ⚠️
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography sx={{ 
-                          fontWeight: 600, 
-                          color: '#d68910', 
-                          mb: 0.5,
-                          fontSize: '1rem'
-                        }}>
-                          Thanh toán không thành công
-                        </Typography>
-                        <Typography sx={{ 
-                          color: '#8d6e63', 
-                          fontSize: '0.9rem',
-                          lineHeight: 1.4
-                        }}>
-                          {paymentFailedMessage}
-                        </Typography>
-                        <Typography sx={{ 
-                          color: '#2196F3', 
-                          fontSize: '0.85rem',
-                          fontWeight: 500,
-                          mt: 1,
-                          cursor: 'pointer',
-                          '&:hover': {
-                            textDecoration: 'underline'
-                          }
-                        }}>
-                          💡 Bạn có thể thử lại với phương thức thanh toán khác hoặc liên hệ hỗ trợ
-                        </Typography>
-                      </Box>
+                      <Typography sx={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                        ⚠️
+                      </Typography>
                     </Box>
-                  )}
-                </Box>
+                    <Box>
+                      <Typography sx={{ 
+                        fontWeight: 600, 
+                        color: '#d68910', 
+                        mb: 0.5,
+                        fontSize: '1rem'
+                      }}>
+                        Thanh toán không thành công
+                      </Typography>
+                      <Typography sx={{ 
+                        color: '#8d6e63', 
+                        fontSize: '0.9rem',
+                        lineHeight: 1.4
+                      }}>
+                        {paymentFailedMessage}
+                      </Typography>
+                      <Typography sx={{ 
+                        color: '#2196F3', 
+                        fontSize: '0.85rem',
+                        fontWeight: 500,
+                        mt: 1,
+                        cursor: 'pointer',
+                        '&:hover': {
+                          textDecoration: 'underline'
+                        }
+                      }}>
+                        💡 Bạn có thể thử lại với phương thức thanh toán khác hoặc liên hệ hỗ trợ
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
 
                 {/* Tóm tắt thông tin đặt lịch */}
                 {selectedService && (
@@ -1528,6 +1481,7 @@ function TestRegistrationPage() {
                     backdropFilter: 'blur(20px)',
                     borderRadius: 5,
                     p: 4,
+                    mt: 4,
                     mb: 4,
                     boxShadow: '0 8px 32px rgba(33,150,243,0.12)',
                     border: '1px solid rgba(33, 150, 243, 0.08)',
@@ -1583,15 +1537,6 @@ function TestRegistrationPage() {
                           <Typography sx={{ fontWeight: 600, color: '#616161' }}>Ghi chú:</Typography>
                           <Typography sx={{ fontWeight: 500, color: '#212121', maxWidth: '60%', textAlign: 'right' }}>
                             {note}
-                          </Typography>
-                        </Box>
-                      )}
-                      {/* Thông tin thẻ (nếu chọn VISA) */}
-                      {paymentMethod === 'visa' && cardInfo.cardNumber && (
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography sx={{ fontWeight: 600, color: '#616161' }}>Thẻ:</Typography>
-                          <Typography sx={{ fontWeight: 700, color: '#212121' }}>
-                            **** **** **** {cardInfo.cardNumber.slice(-4)}
                           </Typography>
                         </Box>
                       )}
@@ -1710,301 +1655,10 @@ function TestRegistrationPage() {
           paymentFailedMessage={paymentFailedMessage}
           onViewBookings={() => navigate('/profile', { state: { initialTab: 'medical-history' } })}
         />
-
-        {/* Dialog nhập thông tin thẻ */}
-        <CardInfoDialog
-          open={cardDialogOpen}
-          cardInfo={cardInfo}
-          onClose={handleCloseCardDialog}
-          onSave={handleSaveCardInfo}
-        />
       </Container>
     </Box>
   );
 }
-
-// ===== COMPONENT DIALOG NHẬP THÔNG TIN THẺ =====
-const CardInfoDialog = ({ open, cardInfo, onClose, onSave }) => {
-  const [formData, setFormData] = useState(cardInfo);
-  const [errors, setErrors] = useState({});
-
-  // Reset form khi dialog mở
-  useEffect(() => {
-    if (open) {
-      setFormData(cardInfo);
-      setErrors({});
-    }
-  }, [open, cardInfo]);
-
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error khi user bắt đầu nhập
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    // Validate card number (16 digits)
-    if (!formData.cardNumber || formData.cardNumber.length !== 16) {
-      newErrors.cardNumber = 'Số thẻ phải có 16 chữ số';
-    }
-
-    // Validate expiry month (1-12)
-    if (!formData.expiryMonth || formData.expiryMonth < 1 || formData.expiryMonth > 12) {
-      newErrors.expiryMonth = 'Tháng hết hạn phải từ 1-12';
-    }
-
-    // Validate expiry year (current year or later)
-    const currentYear = new Date().getFullYear();
-    if (!formData.expiryYear || formData.expiryYear < currentYear) {
-      newErrors.expiryYear = 'Năm hết hạn phải từ năm hiện tại trở đi';
-    }
-
-    // Validate CVC (3-4 digits)
-    if (!formData.cvc || formData.cvc.length < 3 || formData.cvc.length > 4) {
-      newErrors.cvc = 'CVC phải có 3-4 chữ số';
-    }
-
-    // Validate card holder name
-    if (!formData.cardHolderName || formData.cardHolderName.trim().length < 2) {
-      newErrors.cardHolderName = 'Tên chủ thẻ phải có ít nhất 2 ký tự';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSave = () => {
-    if (validateForm()) {
-      onSave(formData);
-    }
-  };
-
-  return (
-    <Box
-      sx={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: open ? 'flex' : 'none',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        p: 2,
-      }}
-      onClick={onClose}
-    >
-      <Box
-        sx={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: 3,
-          p: 4,
-          maxWidth: 500,
-          width: '100%',
-          maxHeight: '90vh',
-          overflow: 'auto',
-          boxShadow: '0 8px 32px rgba(33,150,243,0.12)',
-          border: '1px solid rgba(33, 150, 243, 0.08)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <Typography variant="h5" fontWeight={700} mb={3} textAlign="center" color="#1565c0">
-          💳 Nhập thông tin thẻ Visa
-        </Typography>
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {/* Số thẻ */}
-          <Box>
-            <Typography variant="body2" fontWeight={600} mb={1} color="#616161">
-              Số thẻ *
-            </Typography>
-            <input
-              type="text"
-              value={formData.cardNumber}
-              onChange={(e) => handleInputChange('cardNumber', e.target.value.replace(/\D/g, '').slice(0, 16))}
-              placeholder="1234 5678 9012 3456"
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: `2px solid ${errors.cardNumber ? '#f44336' : '#e0e0e0'}`,
-                borderRadius: '8px',
-                fontSize: '16px',
-                outline: 'none',
-                transition: 'border-color 0.3s',
-              }}
-            />
-            {errors.cardNumber && (
-              <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                {errors.cardNumber}
-              </Typography>
-            )}
-          </Box>
-
-          {/* Tháng và năm hết hạn */}
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="body2" fontWeight={600} mb={1} color="#616161">
-                Tháng hết hạn *
-              </Typography>
-              <input
-                type="number"
-                value={formData.expiryMonth}
-                onChange={(e) => handleInputChange('expiryMonth', e.target.value.slice(0, 2))}
-                placeholder="MM"
-                min="1"
-                max="12"
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: `2px solid ${errors.expiryMonth ? '#f44336' : '#e0e0e0'}`,
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  transition: 'border-color 0.3s',
-                }}
-              />
-              {errors.expiryMonth && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                  {errors.expiryMonth}
-                </Typography>
-              )}
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="body2" fontWeight={600} mb={1} color="#616161">
-                Năm hết hạn *
-              </Typography>
-              <input
-                type="number"
-                value={formData.expiryYear}
-                onChange={(e) => handleInputChange('expiryYear', e.target.value.slice(0, 4))}
-                placeholder="YYYY"
-                min={new Date().getFullYear()}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: `2px solid ${errors.expiryYear ? '#f44336' : '#e0e0e0'}`,
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  transition: 'border-color 0.3s',
-                }}
-              />
-              {errors.expiryYear && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                  {errors.expiryYear}
-                </Typography>
-              )}
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="body2" fontWeight={600} mb={1} color="#616161">
-                CVC *
-              </Typography>
-              <input
-                type="text"
-                value={formData.cvc}
-                onChange={(e) => handleInputChange('cvc', e.target.value.replace(/\D/g, '').slice(0, 4))}
-                placeholder="123"
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: `2px solid ${errors.cvc ? '#f44336' : '#e0e0e0'}`,
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  transition: 'border-color 0.3s',
-                }}
-              />
-              {errors.cvc && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                  {errors.cvc}
-                </Typography>
-              )}
-            </Box>
-          </Box>
-
-          {/* Tên chủ thẻ */}
-          <Box>
-            <Typography variant="body2" fontWeight={600} mb={1} color="#616161">
-              Tên chủ thẻ *
-            </Typography>
-            <input
-              type="text"
-              value={formData.cardHolderName}
-              onChange={(e) => handleInputChange('cardHolderName', e.target.value)}
-              placeholder="NGUYEN VAN A"
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: `2px solid ${errors.cardHolderName ? '#f44336' : '#e0e0e0'}`,
-                borderRadius: '8px',
-                fontSize: '16px',
-                outline: 'none',
-                transition: 'border-color 0.3s',
-                textTransform: 'uppercase',
-              }}
-            />
-            {errors.cardHolderName && (
-              <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                {errors.cardHolderName}
-              </Typography>
-            )}
-          </Box>
-        </Box>
-
-        {/* Nút hành động */}
-        <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
-          <Button
-            variant="outlined"
-            onClick={onClose}
-            sx={{
-              flex: 1,
-              py: 1.5,
-              borderColor: '#2196F3',
-              color: '#2196F3',
-              '&:hover': {
-                borderColor: '#1976D2',
-                backgroundColor: 'rgba(33,150,243,0.08)',
-              },
-            }}
-          >
-            Hủy
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            sx={{
-              flex: 1,
-              py: 1.5,
-              background: 'linear-gradient(45deg, #2196F3, #00BFA5)',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #00BFA5, #2196F3)',
-              },
-            }}
-          >
-            Lưu thông tin
-          </Button>
-        </Box>
-      </Box>
-    </Box>
-  );
-};
-
-// ===============================
-// PROPTYPES & EXPORT
-// ===============================
-
-// PropTypes để type checking (có thể thêm props validation nếu cần)
-TestRegistrationPage.propTypes = {
-  // Hiện tại component không nhận props từ parent
-  // Có thể thêm PropTypes validation ở đây nếu cần thiết trong tương lai
-};
 
 // Export component làm default để sử dụng trong routing
 export default TestRegistrationPage;

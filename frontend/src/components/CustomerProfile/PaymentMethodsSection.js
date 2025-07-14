@@ -1,321 +1,360 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
+  Card,
+  CardContent,
   Typography,
   Button,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
   IconButton,
   Chip,
-  Divider,
-  Alert,
+  Grid,
   CircularProgress,
+  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Fab,
-  Tooltip,
-  Paper,
+  Divider,
+  Tooltip
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Star as StarIcon,
-  StarBorder as StarBorderIcon,
   CreditCard as CreditCardIcon,
-  Security as SecurityIcon,
+  Star as StarIcon,
+  StarBorder as StarBorderIcon
 } from '@mui/icons-material';
-import {
-  getUserPaymentInfos,
-  deletePaymentInfo,
-  setDefaultPaymentInfo,
-} from '@/services/paymentInfoService';
-import AddEditCardDialog from '../TestRegistration/AddEditCardDialog';
+import { toast } from 'react-toastify';
+import paymentInfoService from '@/services/paymentInfoService';
+import AddEditCardDialog from '@/components/TestRegistration/AddEditCardDialog';
 
 const PaymentMethodsSection = () => {
-  const [cards, setCards] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [openAddDialog, setOpenAddDialog] = useState(false);
-  const [cardToEdit, setCardToEdit] = useState(null);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingCard, setDeletingCard] = useState(null);
+  const [cardDialogOpen, setCardDialogOpen] = useState(false);
+  const [editingCard, setEditingCard] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  // Load danh sách thẻ khi component mount
+  // Tải danh sách thẻ khi component mount
   useEffect(() => {
-    loadCards();
+    loadPaymentMethods();
   }, []);
 
-  const loadCards = async () => {
+  const loadPaymentMethods = async () => {
     try {
       setLoading(true);
-      setError('');
-      const response = await getUserPaymentInfos();
-      if (response.success) {
-        setCards(response.data || []);
+      setError(null);
+      const response = await paymentInfoService.getAll();
+      if (response.data.success) {
+        setPaymentMethods(response.data.data || []);
       } else {
-        setError(response.message || 'Không thể tải danh sách thẻ');
+        throw new Error(response.data.message || 'Không thể tải danh sách thẻ');
       }
     } catch (err) {
-      console.error('Error loading cards:', err);
-      setError('Không thể tải danh sách thẻ: ' + err.message);
+      console.error('Error loading payment methods:', err);
+      setError('Không thể tải danh sách thẻ. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteCard = async (cardId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa thẻ này?')) {
-      return;
-    }
-
-    try {
-      const response = await deletePaymentInfo(cardId);
-      if (response.success) {
-        await loadCards();
-      } else {
-        setError(response.message || 'Không thể xóa thẻ');
-      }
-    } catch (err) {
-      console.error('Error deleting card:', err);
-      setError('Không thể xóa thẻ: ' + err.message);
-    }
-  };
-
-  const handleSetDefault = async (cardId) => {
-    try {
-      const response = await setDefaultPaymentInfo(cardId);
-      if (response.success) {
-        await loadCards();
-      } else {
-        setError(response.message || 'Không thể đặt thẻ mặc định');
-      }
-    } catch (err) {
-      console.error('Error setting default card:', err);
-      setError('Không thể đặt thẻ mặc định: ' + err.message);
-    }
+  const handleAddCard = () => {
+    setEditingCard(null);
+    setCardDialogOpen(true);
   };
 
   const handleEditCard = (card) => {
-    setCardToEdit(card);
-    setOpenAddDialog(true);
+    setEditingCard(card);
+    setCardDialogOpen(true);
   };
 
-  const handleAddNewCard = () => {
-    setCardToEdit(null);
-    setOpenAddDialog(true);
+  const handleDeleteCard = (card) => {
+    setDeletingCard(card);
+    setDeleteDialogOpen(true);
   };
 
-  const handleCardSaved = (savedCard) => {
-    setOpenAddDialog(false);
-    setCardToEdit(null);
-    loadCards(); // Reload danh sách
-  };
+  const confirmDeleteCard = async () => {
+    if (!deletingCard) return;
 
-  const getCardTypeIcon = (cardType) => {
-    switch (cardType?.toUpperCase()) {
-      case 'VISA':
-        return '💳';
-      case 'MASTERCARD':
-        return '💳';
-      default:
-        return '💳';
+    try {
+      setActionLoading(true);
+      const response = await paymentInfoService.remove(deletingCard.id);
+      if (response.data.success) {
+        toast.success('Xóa thẻ thành công!');
+        loadPaymentMethods(); // Reload danh sách
+      } else {
+        throw new Error(response.data.message || 'Không thể xóa thẻ');
+      }
+    } catch (err) {
+      console.error('Error deleting card:', err);
+      toast.error(err.message || 'Không thể xóa thẻ. Vui lòng thử lại.');
+    } finally {
+      setActionLoading(false);
+      setDeleteDialogOpen(false);
+      setDeletingCard(null);
     }
   };
 
-  const getCardTypeColor = (cardType) => {
-    switch (cardType?.toUpperCase()) {
-      case 'VISA':
-        return '#1a1f71';
-      case 'MASTERCARD':
-        return '#eb001b';
-      default:
-        return '#666';
+  const handleSetDefault = async (card) => {
+    try {
+      setActionLoading(true);
+      const response = await paymentInfoService.setDefault(card.id);
+      if (response.data.success) {
+        toast.success('Đã đặt làm thẻ mặc định!');
+        loadPaymentMethods(); // Reload danh sách
+      } else {
+        throw new Error(response.data.message || 'Không thể đặt thẻ mặc định');
+      }
+    } catch (err) {
+      console.error('Error setting default card:', err);
+      toast.error(err.message || 'Không thể đặt thẻ mặc định. Vui lòng thử lại.');
+    } finally {
+      setActionLoading(false);
     }
   };
+
+  const handleSaveCard = async (cardData) => {
+    try {
+      setActionLoading(true);
+      let response;
+      
+      if (editingCard) {
+        // Cập nhật thẻ
+        response = await paymentInfoService.update(editingCard.id, cardData);
+      } else {
+        // Tạo thẻ mới
+        response = await paymentInfoService.create(cardData);
+      }
+
+      if (response.data.success) {
+        toast.success(editingCard ? 'Cập nhật thẻ thành công!' : 'Thêm thẻ thành công!');
+        setCardDialogOpen(false);
+        setEditingCard(null);
+        loadPaymentMethods(); // Reload danh sách
+      } else {
+        throw new Error(response.data.message || 'Không thể lưu thông tin thẻ');
+      }
+    } catch (err) {
+      console.error('Error saving card:', err);
+      toast.error(err.message || 'Không thể lưu thông tin thẻ. Vui lòng thử lại.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const maskCardNumber = (cardNumber) => {
+    if (!cardNumber) return '';
+    return cardNumber.slice(0, 4) + ' **** **** ' + cardNumber.slice(-4);
+  };
+
+  const getCardTypeIcon = (cardNumber) => {
+    if (!cardNumber) return <CreditCardIcon />;
+    const firstDigit = cardNumber.charAt(0);
+    if (firstDigit === '4') return '💳'; // Visa
+    if (firstDigit === '5') return '💳'; // MasterCard
+    return <CreditCardIcon />;
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+            <CircularProgress />
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent>
+          <Alert severity="error" action={
+            <Button color="inherit" size="small" onClick={loadPaymentMethods}>
+              Thử lại
+            </Button>
+          }>
+            {error}
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <SecurityIcon sx={{ mr: 2, color: 'primary.main' }} />
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          Thẻ thanh toán
-        </Typography>
-        <Box sx={{ flexGrow: 1 }} />
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAddNewCard}
-        >
-          Thêm thẻ mới
-        </Button>
-      </Box>
-
-      {/* Error Alert */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-
-      {/* Loading */}
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress />
-        </Box>
-      ) : cards.length === 0 ? (
-        /* Empty State */
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <CreditCardIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            Chưa có thẻ nào được lưu
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Thêm thẻ để thanh toán nhanh hơn khi đặt lịch khám
+    <Card>
+      <CardContent>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h6" component="h2">
+            Phương thức thanh toán
           </Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={handleAddNewCard}
+            onClick={handleAddCard}
+            disabled={actionLoading}
           >
-            Thêm thẻ đầu tiên
+            Thêm thẻ mới
           </Button>
-        </Paper>
-      ) : (
-        /* Cards List */
-        <Paper>
-          <List>
-            {cards.map((card, index) => (
-              <React.Fragment key={card.paymentInfoId}>
-                <ListItem
-                  sx={{
-                    py: 2,
+        </Box>
+
+        {paymentMethods.length === 0 ? (
+          <Box textAlign="center" py={4}>
+            <CreditCardIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Chưa có thẻ nào
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              Thêm thẻ để thanh toán nhanh chóng và tiện lợi
+            </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={handleAddCard}
+            >
+              Thêm thẻ đầu tiên
+            </Button>
+          </Box>
+        ) : (
+          <Grid container spacing={2}>
+            {paymentMethods.map((card) => (
+              <Grid item xs={12} md={6} key={card.id}>
+                <Card 
+                  variant="outlined" 
+                  sx={{ 
+                    position: 'relative',
+                    transition: 'all 0.2s ease',
                     '&:hover': {
-                      backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                    },
+                      boxShadow: 2,
+                      transform: 'translateY(-2px)'
+                    }
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <Box sx={{ mr: 2 }}>
-                      <Typography variant="h4" sx={{ color: getCardTypeColor(card.cardType) }}>
-                        {getCardTypeIcon(card.cardType)}
-                      </Typography>
-                    </Box>
-                    
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                          {card.nickname || card.cardHolderName}
-                        </Typography>
-                        {card.isDefault && (
-                          <Chip
-                            label="Mặc định"
-                            size="small"
-                            color="primary"
-                            sx={{ ml: 1 }}
-                          />
-                        )}
-                        {card.isExpired && (
-                          <Chip
-                            label="Hết hạn"
-                            size="small"
-                            color="error"
-                            sx={{ ml: 1 }}
-                          />
-                        )}
+                  {card.isDefault && (
+                    <Chip
+                      icon={<StarIcon />}
+                      label="Mặc định"
+                      color="primary"
+                      size="small"
+                      sx={{ 
+                        position: 'absolute', 
+                        top: 8, 
+                        right: 8,
+                        zIndex: 1
+                      }}
+                    />
+                  )}
+                  
+                  <CardContent>
+                    <Box display="flex" alignItems="center" mb={2}>
+                      <Box sx={{ fontSize: 24, mr: 1 }}>
+                        {getCardTypeIcon(card.cardNumber)}
                       </Box>
-                      
-                      <Typography variant="body2" color="text.secondary">
-                        {card.maskedCardNumber}
-                      </Typography>
-                      
-                      <Typography variant="caption" color="text.secondary">
-                        Hết hạn: {card.expiryDisplay} • {card.cardType}
+                      <Typography variant="h6" component="div">
+                        {maskCardNumber(card.cardNumber)}
                       </Typography>
                     </Box>
-                  </Box>
 
-                  <ListItemSecondaryAction>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      {!card.isDefault && (
-                        <Tooltip title="Đặt làm mặc định">
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Tên chủ thẻ: {card.cardHolderName}
+                    </Typography>
+                    
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Hết hạn: {card.expiryMonth}/{card.expiryYear}
+                    </Typography>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Box>
+                        {!card.isDefault && (
+                          <Tooltip title="Đặt làm mặc định">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleSetDefault(card)}
+                              disabled={actionLoading}
+                            >
+                              <StarBorderIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        
+                        <Tooltip title="Chỉnh sửa">
                           <IconButton
                             size="small"
-                            onClick={() => handleSetDefault(card.paymentInfoId)}
+                            onClick={() => handleEditCard(card)}
+                            disabled={actionLoading}
                           >
-                            <StarBorderIcon />
+                            <EditIcon />
                           </IconButton>
                         </Tooltip>
-                      )}
-                      
-                      {card.isDefault && (
-                        <Tooltip title="Thẻ mặc định">
-                          <IconButton size="small" disabled>
-                            <StarIcon color="primary" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                      
-                      <Tooltip title="Sửa thẻ">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEditCard(card)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      
+                      </Box>
+
                       <Tooltip title="Xóa thẻ">
                         <IconButton
                           size="small"
                           color="error"
-                          onClick={() => handleDeleteCard(card.paymentInfoId)}
+                          onClick={() => handleDeleteCard(card)}
+                          disabled={actionLoading}
                         >
                           <DeleteIcon />
                         </IconButton>
                       </Tooltip>
                     </Box>
-                  </ListItemSecondaryAction>
-                </ListItem>
-                
-                {index < cards.length - 1 && <Divider />}
-              </React.Fragment>
+                  </CardContent>
+                </Card>
+              </Grid>
             ))}
-          </List>
-        </Paper>
-      )}
+          </Grid>
+        )}
 
-      {/* Add/Edit Card Dialog */}
-      <AddEditCardDialog
-        open={openAddDialog}
-        onClose={() => {
-          setOpenAddDialog(false);
-          setCardToEdit(null);
-        }}
-        onSuccess={handleCardSaved}
-        cardToEdit={cardToEdit}
-      />
+        {/* Dialog xác nhận xóa */}
+        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+          <DialogTitle>Xác nhận xóa thẻ</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Bạn có chắc chắn muốn xóa thẻ{' '}
+              <strong>{deletingCard && maskCardNumber(deletingCard.cardNumber)}</strong>?
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mt={1}>
+              Hành động này không thể hoàn tác.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteDialogOpen(false)} disabled={actionLoading}>
+              Hủy
+            </Button>
+            <Button 
+              onClick={confirmDeleteCard} 
+              color="error" 
+              variant="contained"
+              disabled={actionLoading}
+            >
+              {actionLoading ? <CircularProgress size={20} /> : 'Xóa'}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
-      {/* Floating Action Button */}
-      {cards.length > 0 && (
-        <Fab
-          color="primary"
-          aria-label="add card"
-          sx={{
-            position: 'fixed',
-            bottom: 16,
-            right: 16,
+        {/* Dialog thêm/sửa thẻ */}
+        <AddEditCardDialog
+          open={cardDialogOpen}
+          onClose={() => {
+            setCardDialogOpen(false);
+            setEditingCard(null);
           }}
-          onClick={handleAddNewCard}
-        >
-          <AddIcon />
-        </Fab>
-      )}
-    </Box>
+          onSave={handleSaveCard}
+          cardData={editingCard}
+          loading={actionLoading}
+        />
+      </CardContent>
+    </Card>
   );
 };
 
-export default PaymentMethodsSection; 
+export default PaymentMethodsSection;
