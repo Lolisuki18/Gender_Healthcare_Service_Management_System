@@ -61,12 +61,11 @@ import { userService } from '@/services/userService';
 import { adminService } from '@/services/adminService';
 import { getAvatarUrl } from '@/utils/imageUrl';
 
-const UserManagementContent = () => {
+const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState(0);
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [openModal, setOpenModal] = useState(false);
   const [modalType, setModalType] = useState('');
   const [openViewModal, setOpenViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -82,6 +81,13 @@ const UserManagementContent = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // useEffect để tự động mở modal khi openAddModal prop thay đổi
+  useEffect(() => {
+    if (openAddModal) {
+      setModalType('all');
+    }
+  }, [openAddModal]);
 
   const fetchUsers = async (newUserId = null) => {
     try {
@@ -509,7 +515,9 @@ const UserManagementContent = () => {
 
         await fetchUsers(newId);
 
-        setOpenModal(false);
+        if (onCloseAddModal) {
+          onCloseAddModal();
+        }
         setModalType('');
 
         console.log('Tạo người dùng thành công:', result);
@@ -563,7 +571,7 @@ const UserManagementContent = () => {
 
   const handleAddNew = () => {
     setModalType('all');
-    setOpenModal(true);
+    // Không cần setOpenModal(true) vì đã được truyền từ props
   };
 
   const roleOptions = [
@@ -1129,8 +1137,12 @@ const UserManagementContent = () => {
       </Box>
 
       <AddUserModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
+        open={openAddModal}
+        onClose={() => {
+          if (onCloseAddModal) {
+            onCloseAddModal();
+          }
+        }}
         userType={modalType}
         onSubmit={handleModalSubmit}
       />

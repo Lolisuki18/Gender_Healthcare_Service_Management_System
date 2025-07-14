@@ -191,4 +191,67 @@ export const adminService = {
       throw error.response?.data || error;
     }
   },
+
+  // Lấy danh sách dịch vụ STI còn hoạt động
+  getActiveSTIServices: async () => {
+    try {
+      const response = await apiClient.get('/sti-services');
+      if (response.data && response.data.success) {
+        return {
+          success: true,
+          data: response.data.data || [],
+          message: response.data.message,
+        };
+      } else {
+        throw new Error(
+          response.data?.message || 'Failed to fetch active STI services'
+        );
+      }
+    } catch (error) {
+      console.error('AdminService.getActiveSTIServices error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Lấy tất cả dịch vụ STI (cho staff/admin)
+  getAllSTIServices: async () => {
+    try {
+      const response = await apiClient.get('/sti-services/staff');
+      if (response.data && response.data.success) {
+        return {
+          success: true,
+          data: response.data.data || [],
+          message: response.data.message,
+        };
+      } else {
+        throw new Error(
+          response.data?.message || 'Failed to fetch all STI services'
+        );
+      }
+    } catch (error) {
+      console.error('AdminService.getAllSTIServices error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Lấy tất cả STI tests cho admin
+  getAllSTITests: async () => {
+    try {
+      const response = await apiClient.get('/sti-services/admin/all-tests');
+      if (response.data && response.data.success) {
+        return {
+          success: true,
+          data: response.data.data || [],
+          message: response.data.message,
+        };
+      } else {
+        throw new Error(
+          response.data?.message || 'Failed to fetch all STI tests'
+        );
+      }
+    } catch (error) {
+      console.error('AdminService.getAllSTITests error:', error);
+      throw error.response?.data || error;
+    }
+  },
 };
