@@ -15,10 +15,6 @@ import {
   TextField,
   InputAdornment,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Grid,
   Card,
   CardContent,
@@ -40,9 +36,11 @@ import {
   GridView as GridViewIcon,
   TableRows as TableRowsIcon,
 } from '@mui/icons-material';
-import blogService from '@/services/blogService';
-import categoryService from '@/services/categoryService';
-import { formatDateDisplay } from '@/utils/dateUtils';
+import blogService from '../../services/blogService';
+import categoryService from '../../services/categoryService';
+import { formatDateDisplay } from '../../utils/dateUtils';
+import { getBlogImageUrl } from '../../utils/imageUrl';
+import BlogDetailModal from '../StaffProfile/modals/BlogDetailModal';
 
 const colors = {
   primary: '#20B2AA',
@@ -68,6 +66,7 @@ const AdminBlogManagementContent = () => {
   const [viewMode, setViewMode] = useState('table');
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Extract unique categories for filter
   const [categories, setCategories] = useState([]);
@@ -136,10 +135,11 @@ const AdminBlogManagementContent = () => {
   // Xem chi tiết
   const handleViewDetail = (blog) => {
     setSelectedBlog(blog);
-    setDetailOpen(true);
+    setModalOpen(true);
   };
-  const handleCloseDetail = () => {
-    setDetailOpen(false);
+  
+  const handleCloseModal = () => {
+    setModalOpen(false);
     setSelectedBlog(null);
   };
 
@@ -406,12 +406,16 @@ const AdminBlogManagementContent = () => {
                       <CardMedia
                         component="img"
                         height="180"
-                        image={blog.thumbnailImage || blog.imageUrl}
+                        image={getBlogImageUrl(blog.thumbnailImage || blog.existingThumbnail)}
                         alt={blog.title}
                         sx={{
                           objectFit: 'cover',
                           borderTopLeftRadius: 12,
                           borderTopRightRadius: 12,
+                        }}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/img/blog/default.jpg';
                         }}
                       />
                       <CardContent sx={{ flexGrow: 1 }}>
@@ -478,74 +482,13 @@ const AdminBlogManagementContent = () => {
           </Grid>
         )}
 
-        {/* Detail Dialog */}
-        <Dialog
-          open={detailOpen}
-          onClose={handleCloseDetail}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle
-            sx={{
-              background: colors.primary,
-              color: colors.white,
-              fontWeight: 700,
-            }}
-          >
-            {selectedBlog?.title}
-          </DialogTitle>
-          <DialogContent sx={{ py: 3 }}>
-            {selectedBlog && (
-              <>
-                <Box sx={{ mb: 2, textAlign: 'center' }}>
-                  <img
-                    src={selectedBlog.thumbnailImage || selectedBlog.imageUrl}
-                    alt={selectedBlog.title}
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: 320,
-                      borderRadius: 12,
-                    }}
-                  />
-                </Box>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  Danh mục:{' '}
-                  {selectedBlog.categoryName ||
-                    categories.find(
-                      (c) =>
-                        String(c.categoryId || c.id) ===
-                        String(selectedBlog.categoryId)
-                    )?.name ||
-                    ''}
-                </Typography>
-                <Typography
-                  variant="subtitle2"
-                  color="text.secondary"
-                  gutterBottom
-                >
-                  Tác giả:{' '}
-                  {selectedBlog.authorName || selectedBlog.author || ''} | Ngày
-                  tạo: {formatDateDisplay(selectedBlog.createdAt)} | Người
-                  duyệt: {selectedBlog.reviewerName || ''}
-                </Typography>
-                <Box sx={{ mt: 2 }}>
-                  <div
-                    dangerouslySetInnerHTML={{ __html: selectedBlog.content }}
-                  />
-                </Box>
-              </>
-            )}
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Button
-              onClick={handleCloseDetail}
-              variant="contained"
-              sx={{ borderRadius: 2 }}
-            >
-              Đóng
-            </Button>
-          </DialogActions>
-        </Dialog>
+        {/* Detail Modal */}
+        <BlogDetailModal
+          open={modalOpen}
+          onClose={handleCloseModal}
+          blog={selectedBlog}
+          categories={categories}
+        />
       </Box>
     </Box>
   );

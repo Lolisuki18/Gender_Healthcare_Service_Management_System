@@ -25,11 +25,12 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, Search as SearchIcon, CloudUpload as CloudUploadIcon } from '@mui/icons-material';
-import blogService from '@/services/blogService';
-import categoryService from '@/services/categoryService';
-import BlogDetailModal from '@/components/StaffProfile/modals/BlogDetailModal';
+import blogService from '../../services/blogService';
+import categoryService from '../../services/categoryService';
+import BlogDetailModal from '../StaffProfile/modals/BlogDetailModal';
 import { useNavigate } from 'react-router-dom';
-import { getBlogImageUrl } from '@/utils/imageUrl';
+import { getBlogImageUrl } from '../../utils/imageUrl';
+import { formatDateDisplay, formatDateForInput } from '../../utils/dateUtils';
 
 const EditBlogDialog = ({ open, onClose, blog, onSaved }) => {
   const [form, setForm] = useState({
@@ -180,10 +181,7 @@ const EditBlogDialog = ({ open, onClose, blog, onSaved }) => {
         </Box>
         <TextField fullWidth label="Nội dung chính *" name="content" value={form.content} onChange={handleFormChange} sx={{ mb: 2 }} multiline minRows={3} required />
         <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="subtitle2">Các phần bổ sung</Typography>
-            <Button variant="contained" size="small" onClick={addSection}>Thêm phần</Button>
-          </Box>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>Các phần bổ sung</Typography>
           {form.sections.map((section, idx) => (
             <Card key={idx} sx={{ mb: 2, p: 2, background: '#f8fbff' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -212,6 +210,9 @@ const EditBlogDialog = ({ open, onClose, blog, onSaved }) => {
               </Box>
             </Card>
           ))}
+          <Box sx={{ textAlign: 'center', mt: 2 }}>
+            <Button variant="contained" size="small" onClick={addSection}>Thêm phần</Button>
+          </Box>
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
@@ -325,9 +326,14 @@ const BlogMyContent = () => {
     const matchStatus = statusFilter === 'ALL' || blog.status === statusFilter;
     let matchDate = true;
     if (dateFilter) {
-      const d = new Date(blog.createdAt);
-      const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      matchDate = dateStr === dateFilter;
+      // Sử dụng formatDateForInput để convert blog.createdAt thành YYYY-MM-DD
+      const blogDateFormatted = formatDateDisplay(blog.createdAt);
+      if (blogDateFormatted && blogDateFormatted !== 'Chưa cập nhật' && blogDateFormatted !== 'Ngày không hợp lệ') {
+        // Convert DD/MM/YYYY thành YYYY-MM-DD để so sánh
+        const [day, month, year] = blogDateFormatted.split('/');
+        const blogDateStr = `${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`;
+        matchDate = blogDateStr === dateFilter;
+      }
     }
     return matchSearch && matchStatus && matchDate;
   });
@@ -414,7 +420,7 @@ const BlogMyContent = () => {
                   image={getBlogImageUrl(blog.thumbnailImage || blog.existingThumbnail)}
                   alt={blog.title}
                   sx={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 3, m: 2 }}
-                  onError={e => { e.target.onerror = null; e.target.src = '/img/blog/default.svg'; }}
+                  onError={e => { e.target.onerror = null; e.target.src = '/img/blog/default.jpg'; }}
                 />
                 <CardContent sx={{ flex: 1 }}>
                   <Typography variant="h6" fontWeight={700} sx={{ mb: 1, color: 'primary.main', cursor: 'pointer' }} onClick={() => handleView(blog)}>
@@ -426,7 +432,7 @@ const BlogMyContent = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <Chip label={blog.status === 'CONFIRMED' ? 'Đã duyệt' : blog.status === 'PROCESSING' ? 'Chờ duyệt' : 'Đã huỷ'} color={blog.status === 'CONFIRMED' ? 'success' : blog.status === 'PROCESSING' ? 'warning' : 'error'} size="small" />
                     <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                      {new Date(blog.createdAt).toLocaleDateString('vi-VN')}
+                      {formatDateDisplay(blog.createdAt)}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', gap: 1 }}>

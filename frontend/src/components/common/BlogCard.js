@@ -13,7 +13,7 @@ import {
 import PersonIcon from '@mui/icons-material/Person';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { getBlogImageUrl, getAvatarUrl as getAvatarUrlUtil } from '../../utils/imageUrl';
+import { getBlogImageUrl, getAvatarUrl } from '../../utils/imageUrl';
 
 function formatDateVN(date) {
   if (!date) return '';
@@ -35,44 +35,54 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
 
   // Debug logging
   console.log('🃏 BlogCard rendering post:', post);
-  console.log('🖼️ Post thumbnail:', post.thumbnailImage);
-  console.log('🖼️ Post existingThumbnail:', post.existingThumbnail);
 
-  // Hình ảnh mặc định duy nhất
-  const defaultImage = '/img/blog/default.svg';
+  // Hình ảnh mặc định
+  const defaultImage = '/img/blog/default.jpg';
 
   // Xác định URL hình ảnh để hiển thị
   const getImageUrl = () => {
-    if (post.thumbnailImage || post.existingThumbnail) {
-      return getBlogImageUrl(post.thumbnailImage || post.existingThumbnail);
+    // Kiểm tra các field có thể chứa đường dẫn ảnh
+    const imagePath = post.thumbnailImage || 
+                     post.existingThumbnail || 
+                     post.displayThumbnail ||
+                     post.imageUrl || 
+                     post.thumbnail || 
+                     post.image;
+    
+    if (imagePath) {
+      const generatedUrl = getBlogImageUrl(imagePath);
+      console.log('🔗 Generated image URL:', generatedUrl, 'from path:', imagePath);
+      return generatedUrl;
     }
+    
+    console.log('📷 No thumbnail found, using default image:', defaultImage);
     return defaultImage;
   };
 
-  // Xác định URL avatar để hiển thị
-  const getAvatarUrl = () => {
-    if (post.authorAvatar) {
-      return getAvatarUrlUtil(post.authorAvatar);
-    }
-    return defaultImage;
+  // Xác định URL avatar
+  const getAvatarUrlForDisplay = () => {
+    const avatarUrl = getAvatarUrl(post.authorAvatar);
+    console.log('👤 Generated avatar URL:', avatarUrl, 'from path:', post.authorAvatar);
+    return avatarUrl;
   };
 
-  // Xử lý lỗi load hình ảnh - chuyển về hình mặc định
-  // Xử lý lỗi load hình ảnh - chỉ fallback 1 lần
+  // Xử lý lỗi load hình ảnh
   const handleImageError = (e) => {
     console.error('❌ Image failed to load:', e.target.src);
     if (!e.target.dataset.fallback) {
       e.target.dataset.fallback = 'true';
-      console.log('🔄 Using default image:', defaultImage);
-      e.target.src = defaultImage;
+      // Sử dụng getBlogImageUrl để có URL đúng cho default.jpg
+      const fallbackUrl = getBlogImageUrl('/img/blog/default.jpg');
+      console.log('🔄 Using default image:', fallbackUrl);
+      e.target.src = fallbackUrl;
     }
   };
 
-  // Xử lý lỗi load avatar - chuyển về hình mặc định
+  // Xử lý lỗi load avatar
   const handleAvatarError = (e) => {
     console.error('❌ Avatar failed to load:', e.target.src);
-    console.log('🔄 Using default avatar:', defaultImage);
-    e.target.src = defaultImage;
+    console.log('🔄 Using default avatar icon');
+    // Không thay đổi src, để MUI Avatar tự động hiển thị PersonIcon
   };
 
   const handleReadMore = () => navigate(`/blog/${post.id}`);
@@ -130,19 +140,23 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
     >
       {/* Image Section */}
       <Box sx={{ 
-        position: 'relative',          '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'linear-gradient(135deg, rgba(38, 198, 218, 0.1), rgba(77, 208, 225, 0.05))',
-            opacity: 0,
-            transition: 'opacity 0.3s ease',
-            borderRadius: { xs: '20px 20px 0 0', sm: '20px 0 0 20px' },
-            pointerEvents: 'none'
-          },
+        position: 'relative',
+        width: { xs: '100%', sm: '300px' },
+        height: { xs: '220px', sm: '200px' },
+        flexShrink: 0,
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(135deg, rgba(38, 198, 218, 0.1), rgba(77, 208, 225, 0.05))',
+          opacity: 0,
+          transition: 'opacity 0.3s ease',
+          borderRadius: { xs: '20px 20px 0 0', sm: '20px 0 0 20px' },
+          pointerEvents: 'none'
+        },
         '.MuiCard-root:hover &::after': {
           opacity: 1
         }
@@ -150,8 +164,8 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
         <CardMedia
           component="img"
           sx={{ 
-            width: { xs: '100%', sm: '300px' },
-            height: { xs: '220px', sm: '200px' },
+            width: '100%',
+            height: '100%',
             objectFit: 'cover',
             borderRadius: { xs: '20px 20px 0 0', sm: '20px 0 0 20px' },
             transition: 'all 0.3s ease',
@@ -186,7 +200,7 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
         
         {/* Category Badge */}
         <Chip
-          label={post.categoryIsActive === false ? 'Danh mục đã bị xoá' : post.categoryName}
+          label={post.categoryName || 'Chưa phân loại'}
           size="small"
           sx={{
             position: 'absolute',
@@ -199,151 +213,130 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.2)'
+            border: '1px solid rgba(255,255,255,0.3)'
           }}
         />
       </Box>
 
       {/* Content Section */}
       <CardContent sx={{ 
-        flex: 1, 
-        p: { xs: 3, md: 4 },
+        p: 4, 
+        flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
-        background: 'linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)'
+        justifyContent: 'space-between'
       }}>
-        <Box>
-          {/* Meta Info */}
-          <Box sx={{ 
-            display: 'flex', 
-            flexWrap: 'wrap',
-            gap: 2, 
+        {/* Title */}
+        <Typography 
+          variant="h5" 
+          component="h2" 
+          sx={{ 
+            fontWeight: 800,
+            color: '#1a237e',
             mb: 3,
-            alignItems: 'center'
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <CalendarTodayIcon sx={{ fontSize: '1rem', color: '#26c6da' }} />
-              <Typography variant="caption" sx={{ 
-                color: '#546e7a', 
-                fontWeight: 500, 
-                fontSize: '0.85rem',
-                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
-              }}>
-                {formatDateVN(post.createdAt)}
-              </Typography>
-            </Box>
-          </Box>
+            fontSize: { xs: '1.3rem', sm: '1.5rem' },
+            lineHeight: 1.3,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+          }}
+        >
+          {post.title}
+        </Typography>
 
-          {/* Title */}
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              fontWeight: 700,
-              color: '#1a237e',
-              mb: 2,
-              lineHeight: 1.4,
-              fontSize: { xs: '1.1rem', md: '1.25rem' },
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',            transition: 'color 0.3s ease',
-            '.MuiCard-root:hover &': {
-              color: '#26c6da'
-            }
-            }}
-          >
-            {post.title}
-          </Typography>
+        {/* Content Preview */}
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            color: '#546e7a',
+            mb: 4,
+            lineHeight: 1.7,
+            fontSize: '1rem',
+            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+          }}
+        >
+          {getCleanContentPreview(post.content, truncateContent)}
+        </Typography>
 
-          {/* Excerpt */}
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              color: '#546e7a',
-              lineHeight: 1.7,
-              mb: 3,
-              fontSize: '1rem',
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
-            }}
-          >
-            {getCleanContentPreview(post.content, truncateContent)}
-          </Typography>
-        </Box>
-
-        {/* Footer */}
+        {/* Author and Date Section */}
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          pt: 3,
-          borderTop: '1px solid #e3f2fd'
+          flexWrap: 'wrap',
+          gap: 2
         }}>
           {/* Author Info */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Avatar 
-              src={getAvatarUrl()}
+            <Avatar
+              src={getAvatarUrlForDisplay()}
+              alt={post.authorName}
               sx={{ 
                 width: 36, 
                 height: 36,
-                border: '2px solid #e0f7fa',
                 backgroundColor: '#26c6da',
-                filter: 'none'
+                color: '#ffffff',
+                fontWeight: 600
               }}
               onError={handleAvatarError}
             >
-              <PersonIcon sx={{ fontSize: '1.1rem' }} />
+              <PersonIcon />
             </Avatar>
             <Box>
-              <Typography variant="caption" sx={{ 
-                color: '#1a237e', 
-                fontWeight: 600,
-                fontSize: '0.9rem',
-                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
-              }}>
-                {post.authorName || 'Admin'}
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  fontWeight: 600,
+                  color: '#37474f',
+                  fontSize: '0.875rem',
+                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+                }}
+              >
+                {post.authorName || 'Tác giả'}
               </Typography>
-              <Typography variant="caption" sx={{ 
-                display: 'block',
-                color: '#90a4ae',
-                fontSize: '0.75rem',
-                fontWeight: 500
-              }}>
-                Tác giả
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <CalendarTodayIcon sx={{ fontSize: 14, color: '#90a4ae' }} />
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#90a4ae',
+                    fontSize: '0.75rem',
+                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+                  }}
+                >
+                  {formatDateVN(post.createdAt)}
+                </Typography>
+              </Box>
             </Box>
           </Box>
 
           {/* Read More Button */}
           <Button
             variant="contained"
-            size="small"
             endIcon={<ArrowForwardIcon />}
-            onClick={(e) => { 
-              e.stopPropagation(); 
-              handleReadMore(); 
-            }}
-            sx={{            backgroundColor: '#26c6da',
-            color: 'white',
-            fontWeight: 600,
-            fontSize: '0.85rem',
-            textTransform: 'none',
-            borderRadius: '12px',
-            px: 2.5,
-            py: 1,
-            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-            boxShadow: '0 4px 15px rgba(38, 198, 218, 0.3)',
-            transition: 'all 0.3s ease',
-            '&:hover': {
-              backgroundColor: '#00acc1',
-              transform: 'translateX(4px)',
-              boxShadow: '0 6px 20px rgba(38, 198, 218, 0.4)'
-            }
+            onClick={handleReadMore}
+            sx={{
+              background: 'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
+              color: '#ffffff',
+              borderRadius: '12px',
+              px: 3,
+              py: 1,
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+              boxShadow: 'none',
+              textTransform: 'none',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #00acc1 0%, #00838f 100%)',
+                boxShadow: '0 4px 15px rgba(38, 198, 218, 0.3)',
+                transform: 'translateY(-2px)',
+              },
+              '&:active': {
+                transform: 'translateY(0)',
+              }
             }}
           >
             Đọc thêm
