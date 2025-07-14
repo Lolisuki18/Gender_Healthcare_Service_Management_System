@@ -14,7 +14,11 @@ import {
   FormControlLabel,
   Switch,
   Alert,
-  CircularProgress
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -80,19 +84,9 @@ const AddEditCardDialog = ({
     if (field === 'cardNumber') {
       // Chỉ cho phép số và giới hạn 16 ký tự
       formattedValue = value.replace(/\D/g, '').slice(0, 16);
-    } else if (field === 'expiryMonth') {
-      // Chỉ cho phép số, giới hạn 2 ký tự, từ 01-12
-      formattedValue = value.replace(/\D/g, '').slice(0, 2);
-      if (formattedValue && (parseInt(formattedValue) < 1 || parseInt(formattedValue) > 12)) {
-        return; // Không cập nhật nếu không hợp lệ
-      }
-    } else if (field === 'expiryYear') {
-      // Chỉ cho phép số, giới hạn 4 ký tự, từ năm hiện tại
-      formattedValue = value.replace(/\D/g, '').slice(0, 4);
-      const currentYear = new Date().getFullYear();
-      if (formattedValue.length === 4 && parseInt(formattedValue) < currentYear) {
-        return; // Không cập nhật nếu năm nhỏ hơn năm hiện tại
-      }
+    } else if (field === 'expiryMonth' || field === 'expiryYear') {
+      // Với Select, chỉ cần lấy value trực tiếp
+      formattedValue = value;
     } else if (field === 'cvc') {
       // Chỉ cho phép số, giới hạn 3-4 ký tự
       formattedValue = value.replace(/\D/g, '').slice(0, 4);
@@ -285,29 +279,76 @@ const AddEditCardDialog = ({
 
           {/* Expiry Date */}
           <Grid item xs={6}>
-            <TextField
-              fullWidth
-              label="Tháng hết hạn"
-              value={formData.expiryMonth}
-              onChange={handleInputChange('expiryMonth')}
-              error={!!errors.expiryMonth}
-              helperText={errors.expiryMonth}
-              placeholder="MM"
-              inputProps={{ maxLength: 2 }}
-            />
+            <FormControl fullWidth error={!!errors.expiryMonth}>
+              <InputLabel>Tháng hết hạn</InputLabel>
+              <Select
+                value={formData.expiryMonth}
+                onChange={handleInputChange('expiryMonth')}
+                label="Tháng hết hạn"
+                sx={{
+                  '& .MuiSelect-select': {
+                    minHeight: 20,
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '1rem',
+                    fontWeight: 500
+                  }
+                }}
+              >
+                {Array.from({ length: 12 }, (_, i) => {
+                  const month = String(i + 1).padStart(2, '0');
+                  return (
+                    <MenuItem key={month} value={month}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                        <span>{month}</span>
+                        <span style={{ opacity: 0.7, fontSize: '0.9rem' }}>
+                          {new Date(2000, i).toLocaleDateString('vi-VN', { month: 'long' })}
+                        </span>
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+              {errors.expiryMonth && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                  {errors.expiryMonth}
+                </Typography>
+              )}
+            </FormControl>
           </Grid>
 
           <Grid item xs={6}>
-            <TextField
-              fullWidth
-              label="Năm hết hạn"
-              value={formData.expiryYear}
-              onChange={handleInputChange('expiryYear')}
-              error={!!errors.expiryYear}
-              helperText={errors.expiryYear}
-              placeholder="YYYY"
-              inputProps={{ maxLength: 4 }}
-            />
+            <FormControl fullWidth error={!!errors.expiryYear}>
+              <InputLabel>Năm hết hạn</InputLabel>
+              <Select
+                value={formData.expiryYear}
+                onChange={handleInputChange('expiryYear')}
+                label="Năm hết hạn"
+                sx={{
+                  '& .MuiSelect-select': {
+                    minHeight: 20,
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '1rem',
+                    fontWeight: 500
+                  }
+                }}
+              >
+                {Array.from({ length: 15 }, (_, i) => {
+                  const year = String(new Date().getFullYear() + i);
+                  return (
+                    <MenuItem key={year} value={year}>
+                      {year}
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+              {errors.expiryYear && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                  {errors.expiryYear}
+                </Typography>
+              )}
+            </FormControl>
           </Grid>
 
           {/* CVC */}
