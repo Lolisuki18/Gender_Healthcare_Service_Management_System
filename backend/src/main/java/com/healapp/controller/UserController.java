@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.healapp.dto.ApiResponse;
@@ -28,9 +29,12 @@ import com.healapp.dto.UpdatePhoneRequest;
 import com.healapp.dto.UpdateProfileRequest;
 import com.healapp.dto.UserResponse;
 import com.healapp.dto.VerificationCodeRequest;
+import com.healapp.dto.DeleteAccountRequest;
+import com.healapp.dto.SendDeleteVerificationRequest;
 import com.healapp.service.EmailService;
 import com.healapp.service.EmailVerificationService;
 import com.healapp.service.UserService;
+import com.healapp.service.AccountDeletionService;
 
 import jakarta.validation.Valid;
 
@@ -46,6 +50,9 @@ public class UserController {
 
     @Autowired
     private EmailVerificationService emailVerificationService;
+
+    @Autowired
+    private AccountDeletionService accountDeletionService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> registerUser(@Valid @RequestBody RegisterRequest request) {
@@ -371,6 +378,51 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Error updating phone number: " + e.getMessage()));
+        }
+    }
+
+    // Gửi mã xác thực xóa tài khoản
+    @PostMapping("/profile/delete-account/send-verification")
+    public ResponseEntity<ApiResponse<String>> sendDeleteAccountVerification(
+            @Valid @RequestBody SendDeleteVerificationRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("User not authenticated"));
+        }
+        String username = authentication.getName();
+        Long userId = userService.getUserIdFromUsername(username);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("User not found"));
+        }
+        ApiResponse<String> response = accountDeletionService.sendDeleteVerificationCode(userId, request);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // Xác nhận xóa tài khoản vĩnh viễn
+    @DeleteMapping("/profile/delete-account")
+    public ResponseEntity<ApiResponse<String>> deleteAccount(@Valid @RequestBody DeleteAccountRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("User not authenticated"));
+        }
+        String username = authentication.getName();
+        Long userId = userService.getUserIdFromUsername(username);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("User not found"));
+        }
+        ApiResponse<String> response = accountDeletionService.deleteAccount(userId, request);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }

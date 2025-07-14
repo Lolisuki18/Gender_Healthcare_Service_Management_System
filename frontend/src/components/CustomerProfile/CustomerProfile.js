@@ -199,7 +199,7 @@ const CustomerProfile = () => {
               {selectedMenuItem === 'help' && 'Trợ giúp'}
               {selectedMenuItem === 'questions' && 'Câu hỏi đã đặt'}
               {selectedMenuItem === 'reviews' && 'Đánh giá dịch vụ'}
-              {selectedMenuItem === 'security' && 'Bảo mật'}
+              {/* {selectedMenuItem === 'security' && 'Bảo mật'} */}
               {selectedMenuItem === 'myBlogs' && 'Đánh giá của tôi'}
               {selectedMenuItem === 'invoices' && 'Hóa đơn'}
               {selectedMenuItem === 'security' && 'Bảo mật tài khoản'}

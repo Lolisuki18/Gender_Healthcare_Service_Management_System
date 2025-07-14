@@ -245,7 +245,6 @@ public class EmailService {
         }
     }
 
-    
     private MimeMessage createEmailUpdateVerificationMessage(String to, String code, String fullName)
             throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
@@ -382,7 +381,6 @@ public class EmailService {
         return message;
     }
 
-    
     @Async("asyncExecutor")
     public void sendOvulationReminderAsync(String email, String fullName, LocalDate ovulationDate) {
         try {
@@ -394,10 +392,10 @@ public class EmailService {
         }
     }
 
-
     // Tạo thông báo nhắc nhở ngày rụng trứng với tỉ lệ mang thai
-    private MimeMessage createOvulationWithPregnancyProbReminderMessage(String email, String fullName, int daysBeforeOvulation, double pregnancyProb, LocalDate ovulationDate)
-        throws MessagingException {
+    private MimeMessage createOvulationWithPregnancyProbReminderMessage(String email, String fullName,
+            int daysBeforeOvulation, double pregnancyProb, LocalDate ovulationDate)
+            throws MessagingException {
 
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -410,162 +408,171 @@ public class EmailService {
 
         String htmlContent = "";
 
-        if(daysBeforeOvulation < 0) {
-            htmlContent = String.format("""
-                <div style="background: linear-gradient(135deg, #ff69b4 0%%, #ff8da1 100%%); padding: 30px; text-align: center; color: white;">
-                    <h1 style="margin: 0; font-size: 28px; font-weight: 300;">HealApp</h1>
-                    <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Theo dõi sức khỏe sinh sản</p>
-                </div>
-                
-                <!-- Main Content -->
-                <div style="padding: 40px 30px;">
-                    <h2 style="color: #333; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">
-                        Xin chào %s!
-                    </h2>
-                    
-                    <!-- Day Information -->
-                    <div style="background: linear-gradient(135deg, #f8f9fa 0%%, #e9ecef 100%%); padding: 25px; border-radius: 15px; margin-bottom: 25px; border-left: 5px solid #ff69b4;">
-                        <p style="margin: 0; color: #666; font-size: 14px;">
-                            Ngày rụng trứng dự kiến: <strong>%s</strong>
-                        </p>
-                    </div>
-                    
-                    <!-- Pregnancy Probability -->
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <span style="font-size: 32px; margin-bottom: 10px; display: block;"></span>
-                        <div>
-                            <p>Hôm nay là <strong>%d ngày</strong> trước ngày rụng trứng.</p>
-                        </div>
-                        <div>
-                            <p>Tỉ lệ mang thai hiện tại</p>
-                            <div style="font-size: 36px; font-weight: bold; color: #dc3545; margin: 10px 0;">
-                                %.2f%%
-                            </div>
-                        </div>
-                        <div style="background: #e9ecef; height: 8px; border-radius: 4px; margin: 15px 0;">
-                            <div style="background: #dc3545; height: 100%%; border-radius: 4px; transition: width 0.3s ease;"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Important Notes -->
-                    <h4 style="margin: 0 0 10px 0; color: #e65100; font-size: 16px;">Lưu ý quan trọng</h4>
-                    <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.5;">
-                        Thông tin này chỉ mang tính chất tham khảo. Để có kết quả chính xác nhất, 
-                        hãy tham khảo ý kiến từ các chuyên gia y tế hoặc bác sĩ sản phụ khoa.
-                    </p>
-                </div>
-            """, fullName, dateFormatted, (int)Math.abs(daysBeforeOvulation), pregnancyProb);
-        } else if(daysBeforeOvulation == 0) {
-            htmlContent = String.format("""
-            <div style="background: linear-gradient(135deg, #ff69b4 0%%, #ff8da1 100%%); padding: 30px; text-align: center; color: white;">
-                    <h1 style="margin: 0; font-size: 28px; font-weight: 300;">HealApp</h1>
-                    <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Theo dõi sức khỏe sinh sản</p>
-                </div>
-                
-                <!-- Main Content -->
-                <div style="padding: 40px 30px;">
-                    <h2 style="color: #333; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">
-                        Xin chào %s!
-                    </h2>
-                    
-                    <!-- Day Information -->
-                    <div style="background: linear-gradient(135deg, #f8f9fa 0%%, #e9ecef 100%%); padding: 25px; border-radius: 15px; margin-bottom: 25px; border-left: 5px solid #ff69b4;">
-                        <p style="margin: 0; color: #666; font-size: 14px;">
-                            Ngày rụng trứng dự kiến: <strong>%s</strong>
-                        </p>
-                    </div>
-                    
-                    <!-- Pregnancy Probability -->
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <span style="font-size: 32px; margin-bottom: 10px; display: block;"></span>
-                        <div>
-                            <p>Hôm nay là ngày rụng trứng.</p>
-                        </div>
-                        <div>
-                            <p>Tỉ lệ mang thai hiện tại</p>
-                            <div style="font-size: 36px; font-weight: bold; color: #dc3545; margin: 10px 0;">
-                                %.2f%%
-                            </div>
-                        </div>
-                        <div style="background: #e9ecef; height: 8px; border-radius: 4px; margin: 15px 0;">
-                            <div style="background: #dc3545; height: 100%%; border-radius: 4px; transition: width 0.3s ease;"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Important Notes -->
-                    <h4 style="margin: 0 0 10px 0; color: #e65100; font-size: 16px;">Lưu ý quan trọng</h4>
-                    <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.5;">
-                        Thông tin này chỉ mang tính chất tham khảo. Để có kết quả chính xác nhất, 
-                        hãy tham khảo ý kiến từ các chuyên gia y tế hoặc bác sĩ sản phụ khoa.
-                    </p>
-                </div>
-            """, fullName, dateFormatted, pregnancyProb);
+        if (daysBeforeOvulation < 0) {
+            htmlContent = String.format(
+                    """
+                                <div style="background: linear-gradient(135deg, #ff69b4 0%%, #ff8da1 100%%); padding: 30px; text-align: center; color: white;">
+                                    <h1 style="margin: 0; font-size: 28px; font-weight: 300;">HealApp</h1>
+                                    <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Theo dõi sức khỏe sinh sản</p>
+                                </div>
+
+                                <!-- Main Content -->
+                                <div style="padding: 40px 30px;">
+                                    <h2 style="color: #333; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">
+                                        Xin chào %s!
+                                    </h2>
+
+                                    <!-- Day Information -->
+                                    <div style="background: linear-gradient(135deg, #f8f9fa 0%%, #e9ecef 100%%); padding: 25px; border-radius: 15px; margin-bottom: 25px; border-left: 5px solid #ff69b4;">
+                                        <p style="margin: 0; color: #666; font-size: 14px;">
+                                            Ngày rụng trứng dự kiến: <strong>%s</strong>
+                                        </p>
+                                    </div>
+
+                                    <!-- Pregnancy Probability -->
+                                    <div style="text-align: center; margin-bottom: 20px;">
+                                        <span style="font-size: 32px; margin-bottom: 10px; display: block;"></span>
+                                        <div>
+                                            <p>Hôm nay là <strong>%d ngày</strong> trước ngày rụng trứng.</p>
+                                        </div>
+                                        <div>
+                                            <p>Tỉ lệ mang thai hiện tại</p>
+                                            <div style="font-size: 36px; font-weight: bold; color: #dc3545; margin: 10px 0;">
+                                                %.2f%%
+                                            </div>
+                                        </div>
+                                        <div style="background: #e9ecef; height: 8px; border-radius: 4px; margin: 15px 0;">
+                                            <div style="background: #dc3545; height: 100%%; border-radius: 4px; transition: width 0.3s ease;"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Important Notes -->
+                                    <h4 style="margin: 0 0 10px 0; color: #e65100; font-size: 16px;">Lưu ý quan trọng</h4>
+                                    <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.5;">
+                                        Thông tin này chỉ mang tính chất tham khảo. Để có kết quả chính xác nhất,
+                                        hãy tham khảo ý kiến từ các chuyên gia y tế hoặc bác sĩ sản phụ khoa.
+                                    </p>
+                                </div>
+                            """,
+                    fullName, dateFormatted, (int) Math.abs(daysBeforeOvulation), pregnancyProb);
+        } else if (daysBeforeOvulation == 0) {
+            htmlContent = String.format(
+                    """
+                            <div style="background: linear-gradient(135deg, #ff69b4 0%%, #ff8da1 100%%); padding: 30px; text-align: center; color: white;">
+                                    <h1 style="margin: 0; font-size: 28px; font-weight: 300;">HealApp</h1>
+                                    <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Theo dõi sức khỏe sinh sản</p>
+                                </div>
+
+                                <!-- Main Content -->
+                                <div style="padding: 40px 30px;">
+                                    <h2 style="color: #333; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">
+                                        Xin chào %s!
+                                    </h2>
+
+                                    <!-- Day Information -->
+                                    <div style="background: linear-gradient(135deg, #f8f9fa 0%%, #e9ecef 100%%); padding: 25px; border-radius: 15px; margin-bottom: 25px; border-left: 5px solid #ff69b4;">
+                                        <p style="margin: 0; color: #666; font-size: 14px;">
+                                            Ngày rụng trứng dự kiến: <strong>%s</strong>
+                                        </p>
+                                    </div>
+
+                                    <!-- Pregnancy Probability -->
+                                    <div style="text-align: center; margin-bottom: 20px;">
+                                        <span style="font-size: 32px; margin-bottom: 10px; display: block;"></span>
+                                        <div>
+                                            <p>Hôm nay là ngày rụng trứng.</p>
+                                        </div>
+                                        <div>
+                                            <p>Tỉ lệ mang thai hiện tại</p>
+                                            <div style="font-size: 36px; font-weight: bold; color: #dc3545; margin: 10px 0;">
+                                                %.2f%%
+                                            </div>
+                                        </div>
+                                        <div style="background: #e9ecef; height: 8px; border-radius: 4px; margin: 15px 0;">
+                                            <div style="background: #dc3545; height: 100%%; border-radius: 4px; transition: width 0.3s ease;"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Important Notes -->
+                                    <h4 style="margin: 0 0 10px 0; color: #e65100; font-size: 16px;">Lưu ý quan trọng</h4>
+                                    <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.5;">
+                                        Thông tin này chỉ mang tính chất tham khảo. Để có kết quả chính xác nhất,
+                                        hãy tham khảo ý kiến từ các chuyên gia y tế hoặc bác sĩ sản phụ khoa.
+                                    </p>
+                                </div>
+                            """,
+                    fullName, dateFormatted, pregnancyProb);
         } else {
-            htmlContent = String.format("""
-            <div style="background: linear-gradient(135deg, #ff69b4 0%%, #ff8da1 100%%); padding: 30px; text-align: center; color: white;">
-                    <h1 style="margin: 0; font-size: 28px; font-weight: 300;">HealApp</h1>
-                    <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Theo dõi sức khỏe sinh sản</p>
-                </div>
-                
-                <!-- Main Content -->
-                <div style="padding: 40px 30px;">
-                    <h2 style="color: #333; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">
-                        Xin chào %s!
-                    </h2>
-                    
-                    <!-- Day Information -->
-                    <div style="background: linear-gradient(135deg, #f8f9fa 0%%, #e9ecef 100%%); padding: 25px; border-radius: 15px; margin-bottom: 25px; border-left: 5px solid #ff69b4;">
-                        <p style="margin: 0; color: #666; font-size: 14px;">
-                            Ngày rụng trứng dự kiến: <strong>%s</strong>
-                        </p>
-                    </div>
-                    
-                    <!-- Pregnancy Probability -->
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <span style="font-size: 32px; margin-bottom: 10px; display: block;"></span>
-                        <div>
-                            <p>Hôm nay là <strong>%d ngày</strong> sau ngày rụng trứng.</p>
-                        </div>
-                        <div>
-                            <p>Tỉ lệ mang thai hiện tại</p>
-                            <div style="font-size: 36px; font-weight: bold; color: #dc3545; margin: 10px 0;">
-                                %.2f%%
-                            </div>
-                        </div>
-                        <div style="background: #e9ecef; height: 8px; border-radius: 4px; margin: 15px 0;">
-                            <div style="background: #dc3545; height: 100%%; border-radius: 4px; transition: width 0.3s ease;"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Important Notes -->
-                    <h4 style="margin: 0 0 10px 0; color: #e65100; font-size: 16px;">Lưu ý quan trọng</h4>
-                    <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.5;">
-                        Thông tin này chỉ mang tính chất tham khảo. Để có kết quả chính xác nhất, 
-                        hãy tham khảo ý kiến từ các chuyên gia y tế hoặc bác sĩ sản phụ khoa.
-                    </p>
-                </div>
-            """, fullName, dateFormatted, (int)Math.abs(daysBeforeOvulation), pregnancyProb);
+            htmlContent = String.format(
+                    """
+                            <div style="background: linear-gradient(135deg, #ff69b4 0%%, #ff8da1 100%%); padding: 30px; text-align: center; color: white;">
+                                    <h1 style="margin: 0; font-size: 28px; font-weight: 300;">HealApp</h1>
+                                    <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Theo dõi sức khỏe sinh sản</p>
+                                </div>
+
+                                <!-- Main Content -->
+                                <div style="padding: 40px 30px;">
+                                    <h2 style="color: #333; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">
+                                        Xin chào %s!
+                                    </h2>
+
+                                    <!-- Day Information -->
+                                    <div style="background: linear-gradient(135deg, #f8f9fa 0%%, #e9ecef 100%%); padding: 25px; border-radius: 15px; margin-bottom: 25px; border-left: 5px solid #ff69b4;">
+                                        <p style="margin: 0; color: #666; font-size: 14px;">
+                                            Ngày rụng trứng dự kiến: <strong>%s</strong>
+                                        </p>
+                                    </div>
+
+                                    <!-- Pregnancy Probability -->
+                                    <div style="text-align: center; margin-bottom: 20px;">
+                                        <span style="font-size: 32px; margin-bottom: 10px; display: block;"></span>
+                                        <div>
+                                            <p>Hôm nay là <strong>%d ngày</strong> sau ngày rụng trứng.</p>
+                                        </div>
+                                        <div>
+                                            <p>Tỉ lệ mang thai hiện tại</p>
+                                            <div style="font-size: 36px; font-weight: bold; color: #dc3545; margin: 10px 0;">
+                                                %.2f%%
+                                            </div>
+                                        </div>
+                                        <div style="background: #e9ecef; height: 8px; border-radius: 4px; margin: 15px 0;">
+                                            <div style="background: #dc3545; height: 100%%; border-radius: 4px; transition: width 0.3s ease;"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Important Notes -->
+                                    <h4 style="margin: 0 0 10px 0; color: #e65100; font-size: 16px;">Lưu ý quan trọng</h4>
+                                    <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.5;">
+                                        Thông tin này chỉ mang tính chất tham khảo. Để có kết quả chính xác nhất,
+                                        hãy tham khảo ý kiến từ các chuyên gia y tế hoặc bác sĩ sản phụ khoa.
+                                    </p>
+                                </div>
+                            """,
+                    fullName, dateFormatted, (int) Math.abs(daysBeforeOvulation), pregnancyProb);
         }
 
         helper.setText(htmlContent, true);
         return message;
     }
-    
 
     @Async("asyncExecutor")
-    public void sendOvulationWithPregnancyProbReminderAsync(String email, String fullName, int daysBeforeOvulation, double pregnancyProb, LocalDate ovulationDate) {
+    public void sendOvulationWithPregnancyProbReminderAsync(String email, String fullName, int daysBeforeOvulation,
+            double pregnancyProb, LocalDate ovulationDate) {
         try {
-            MimeMessage message = createOvulationWithPregnancyProbReminderMessage(email, fullName, daysBeforeOvulation, pregnancyProb, ovulationDate);
+            MimeMessage message = createOvulationWithPregnancyProbReminderMessage(email, fullName, daysBeforeOvulation,
+                    pregnancyProb, ovulationDate);
             mailSender.send(message);
             logger.info("Email nhắc nhở ngày rụng trứng với tỉ lệ mang thai đã được gửi thành công đến: {}", email);
         } catch (MessagingException e) {
-            logger.error("Không thể gửi email nhắc nhở ngày rụng trứng với tỉ lệ mang thai đến {}: {}", email, e.getMessage());
+            logger.error("Không thể gửi email nhắc nhở ngày rụng trứng với tỉ lệ mang thai đến {}: {}", email,
+                    e.getMessage());
         }
     }
 
-    //Tạo cái nội dung cho email gửi thông báo uống thuốc tránh thai
-    //tạo lịch là cái thuốc có cái remind time
-    private MimeMessage createPillReminderMessage(String mail, String fullName, LocalTime remindTime) throws MessagingException {
+    // Tạo cái nội dung cho email gửi thông báo uống thuốc tránh thai
+    // tạo lịch là cái thuốc có cái remind time
+    private MimeMessage createPillReminderMessage(String mail, String fullName, LocalTime remindTime)
+            throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -658,6 +665,43 @@ public class EmailService {
             sendEmail(email, subject, body);
         } catch (Exception e) {
         }
+    }
+
+    @Async("asyncExecutor")
+    public void sendDeleteAccountVerificationCodeAsync(String email, String code) {
+        try {
+            MimeMessage message = createDeleteAccountVerificationMessage(email, code);
+            mailSender.send(message);
+            logger.info("Delete account verification code sent successfully to {}", email);
+        } catch (MessagingException e) {
+            logger.error("Failed to send delete account verification code to {}: {}", email, e.getMessage());
+        }
+    }
+
+    private MimeMessage createDeleteAccountVerificationMessage(String email, String code) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        helper.setFrom(from);
+        helper.setTo(email);
+        helper.setSubject("Xác thực xóa tài khoản - HealApp");
+
+        String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
+                + "<h2 style='color: #dc3545;'>⚠️ Xác thực xóa tài khoản</h2>"
+                + "<p>Bạn đã yêu cầu xóa vĩnh viễn tài khoản HealApp của mình.</p>"
+                + "<p><strong>⚠️ Cảnh báo:</strong> Hành động này sẽ xóa vĩnh viễn tất cả dữ liệu của bạn và không thể khôi phục lại.</p>"
+                + "<p>Để xác nhận việc xóa tài khoản, vui lòng nhập mã xác thực sau:</p>"
+                + "<div style='background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; "
+                + "text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold; color: #856404;'>"
+                + code
+                + "</div>"
+                + "<p><strong>Mã xác thực có hiệu lực trong vòng 10 phút.</strong></p>"
+                + "<p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>"
+                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "</div>";
+
+        helper.setText(htmlContent, true);
+
+        return message;
     }
 
     private void sendEmail(String to, String subject, String htmlContent) throws MessagingException {
