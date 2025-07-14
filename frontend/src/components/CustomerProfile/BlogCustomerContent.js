@@ -30,7 +30,7 @@ import categoryService from '../../services/categoryService';
 import BlogDetailModal from '../StaffProfile/modals/BlogDetailModal';
 import { useNavigate } from 'react-router-dom';
 import { getBlogImageUrl } from '../../utils/imageUrl';
-import { formatDateDisplay, formatDateForInput } from '../../utils/dateUtils';
+import { formatDateDisplay  } from '../../utils/dateUtils';
 
 const EditBlogDialog = ({ open, onClose, blog, onSaved }) => {
   const [form, setForm] = useState({

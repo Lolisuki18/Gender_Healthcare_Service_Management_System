@@ -7,7 +7,7 @@
  * - Quản lý thông tin chi tiết dịch vụ
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -38,10 +38,7 @@ import {
   Grid,
   Tooltip,
   Stack,
-  Alert,
-  Snackbar,
   CircularProgress,
-  FormHelperText,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
@@ -53,7 +50,6 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { toast } from 'react-toastify';
 
 import {
-  getAllSTIServices,
   createSTIService,
   updateSTIService,
   deleteSTIService,
@@ -62,7 +58,7 @@ import {
 import useSTIServicesAndPackages from '../../hooks/useSTIServicesAndPackages';
 
 const STIServiceManagementContent = () => {
-  const { services, loading, error, reload } = useSTIServicesAndPackages();
+  const { services, loading, reload } = useSTIServicesAndPackages();
   // State management
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);

@@ -26,7 +26,7 @@ public class EmailService {
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    // private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @Autowired
     private JavaMailSender mailSender;
@@ -157,9 +157,9 @@ public class EmailService {
         sendEmail(consultant.getEmail(), subject, htmlContent);
     }
 
-    private String formatDateTime(LocalDateTime dateTime) {
-        return dateTime.format(DATETIME_FORMATTER);
-    }
+    // private String formatDateTime(LocalDateTime dateTime) {
+    //     return dateTime.format(DATETIME_FORMATTER);
+    // }
 
     private MimeMessage createEmailVerificationMessage(String to, String code) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();

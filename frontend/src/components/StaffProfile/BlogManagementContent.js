@@ -13,30 +13,30 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  IconButton,
+  TextField,
   Button,
   Chip,
-  IconButton,
   Dialog,
   DialogTitle,
+  Tooltip,
   DialogContent,
   DialogActions,
-  TextField,
   Alert,
   Pagination,
   InputAdornment,
-  Tooltip
 } from '@mui/material';
 import {
   Visibility as ViewIcon,
-  Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import blogService from '../../services/blogService';
 import BlogDetailModal from './modals/BlogDetailModal';
+
 import { formatDateDisplay } from '../../utils/dateUtils';
 
 const BlogManagementContent = () => {
@@ -45,72 +45,87 @@ const BlogManagementContent = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  
+
   // Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalBlogs, setTotalBlogs] = useState(0);
   const pageSize = 10;
-  
+
   // Search
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Filters
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState('');
-  
+
   // Dialog states
   const [viewDialog, setViewDialog] = useState({ open: false, blog: null });
-  const [statusDialog, setStatusDialog] = useState({ open: false, blog: null, action: null });
+  const [statusDialog, setStatusDialog] = useState({
+    open: false,
+    blog: null,
+    action: null,
+  });
   const [rejectionReason, setRejectionReason] = useState('');
 
   // Fetch blogs
-  const fetchBlogs = async (currentPage = 1, search = '', status = 'ALL', date = '') => {
+  const fetchBlogs = async (
+    currentPage = 1,
+    search = '',
+    status = 'ALL',
+    date = ''
+  ) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const params = {
         page: currentPage - 1, // Backend uses 0-based indexing
         size: pageSize,
         sortBy: 'createdAt',
-        sortDir: 'desc'
+        sortDir: 'desc',
       };
-      
+
       // Add status filter if not ALL
       if (status && status !== 'ALL') {
         params.status = status;
       }
-      
+
       let response;
       if (search.trim()) {
         response = await blogService.searchBlogs(search.trim(), params);
       } else {
         response = await blogService.getAllBlogsPaginated(params);
       }
-      
+
       if (response.success) {
         let data = response.data;
         let filteredContent = data.content || [];
-        
+
         // Client-side date filtering if needed
         if (date) {
-          filteredContent = filteredContent.filter(blog => {
+          filteredContent = filteredContent.filter((blog) => {
             const blogDateFormatted = formatDateDisplay(blog.createdAt);
-            if (blogDateFormatted && blogDateFormatted !== 'Chưa cập nhật' && blogDateFormatted !== 'Ngày không hợp lệ') {
+            if (
+              blogDateFormatted &&
+              blogDateFormatted !== 'Chưa cập nhật' &&
+              blogDateFormatted !== 'Ngày không hợp lệ'
+            ) {
               const [day, month, year] = blogDateFormatted.split('/');
-              const blogDateStr = `${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`;
+              const blogDateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
               return blogDateStr === date;
             }
             return false;
           });
         }
-        
+
         // Client-side status filtering if backend doesn't support it
         if (status && status !== 'ALL') {
-          filteredContent = filteredContent.filter(blog => blog.status === status);
+          filteredContent = filteredContent.filter(
+            (blog) => blog.status === status
+          );
         }
-        
+
         setBlogs(filteredContent);
         setTotalPages(Math.ceil(filteredContent.length / pageSize) || 1);
         setTotalBlogs(filteredContent.length);
@@ -164,7 +179,7 @@ const BlogManagementContent = () => {
       setLoading(true);
       await blogService.deleteBlog(blog.id);
       setSuccess('Xóa blog thành công!');
-      
+
       // Refresh data
       fetchBlogs(page, searchQuery, statusFilter, dateFilter);
     } catch (error) {
@@ -175,23 +190,31 @@ const BlogManagementContent = () => {
     }
   };
 
+  // Bộ lọc ngày
+  const handleDateFilterChange = (e) => {
+    setDateFilter(e.target.value);
+    setPage(1);
+  };
+
   // Handle status update
   const handleStatusUpdate = async (action) => {
     try {
       setLoading(true);
       const { blog } = statusDialog;
-      
+
       const statusData = {
         status: action === 'approve' ? 'CONFIRMED' : 'CANCELED',
-        rejectionReason: action === 'reject' ? rejectionReason : null
+        rejectionReason: action === 'reject' ? rejectionReason : null,
       };
-      
+
       await blogService.updateBlogStatus(blog.id, statusData);
-      
-      setSuccess(`Blog đã được ${action === 'approve' ? 'duyệt' : 'từ chối'} thành công!`);
+
+      setSuccess(
+        `Blog đã được ${action === 'approve' ? 'duyệt' : 'từ chối'} thành công!`
+      );
       setStatusDialog({ open: false, blog: null, action: null });
       setRejectionReason('');
-      
+
       // Refresh data
       fetchBlogs(page, searchQuery, statusFilter, dateFilter);
     } catch (error) {
@@ -205,9 +228,9 @@ const BlogManagementContent = () => {
   // Get status badge
   const getStatusBadge = (status) => {
     const statusMap = {
-      'PROCESSING': { text: 'Chờ duyệt', color: 'warning' },
-      'CONFIRMED': { text: 'Đã duyệt', color: 'success' },
-      'CANCELED': { text: 'Đã từ chối', color: 'error' }
+      PROCESSING: { text: 'Chờ duyệt', color: 'warning' },
+      CONFIRMED: { text: 'Đã duyệt', color: 'success' },
+      CANCELED: { text: 'Đã từ chối', color: 'error' },
     };
     return statusMap[status] || { text: status, color: 'default' };
   };
@@ -221,7 +244,10 @@ const BlogManagementContent = () => {
     <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a237e', mb: 1 }}>
+        <Typography
+          variant="h4"
+          sx={{ fontWeight: 700, color: '#1a237e', mb: 1 }}
+        >
           Quản lý Blog
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -230,8 +256,16 @@ const BlogManagementContent = () => {
       </Box>
 
       {/* Messages */}
-      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          {success}
+        </Alert>
+      )}
 
       {/* Search and Actions */}
       <Card sx={{ mb: 3, p: 3 }}>
@@ -257,13 +291,13 @@ const BlogManagementContent = () => {
             type="date"
             size="small"
             value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
+            onChange={handleDateFilterChange}
             InputLabelProps={{ shrink: true }}
             sx={{ minWidth: 180 }}
           />
 
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             onClick={handleFilterChange}
             sx={{ px: 3 }}
           >
@@ -287,15 +321,11 @@ const BlogManagementContent = () => {
             }}
             sx={{ flexGrow: 1 }}
           />
-          <Button 
-            variant="contained" 
-            onClick={handleSearch}
-            sx={{ px: 3 }}
-          >
+          <Button variant="contained" onClick={handleSearch} sx={{ px: 3 }}>
             Tìm kiếm
           </Button>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             startIcon={<RefreshIcon />}
             onClick={() => {
               setSearchQuery('');
@@ -334,11 +364,15 @@ const BlogManagementContent = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">Đang tải...</TableCell>
+                  <TableCell colSpan={6} align="center">
+                    Đang tải...
+                  </TableCell>
                 </TableRow>
               ) : blogs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">Không có blog nào</TableCell>
+                  <TableCell colSpan={6} align="center">
+                    Không có blog nào
+                  </TableCell>
                 </TableRow>
               ) : (
                 blogs.map((blog) => (
@@ -351,7 +385,7 @@ const BlogManagementContent = () => {
                     <TableCell>{blog.authorName}</TableCell>
                     <TableCell>{blog.categoryName}</TableCell>
                     <TableCell>
-                      <Chip 
+                      <Chip
                         label={getStatusBadge(blog.status).text}
                         color={getStatusBadge(blog.status).color}
                         size="small"
@@ -360,43 +394,61 @@ const BlogManagementContent = () => {
                     <TableCell>{formatDate(blog.createdAt)}</TableCell>
                     <TableCell align="center">
                       <Tooltip title="Xem chi tiết">
-                        <IconButton 
-                          size="small" 
+                        <IconButton
+                          size="small"
                           onClick={() => handleViewBlog(blog)}
                         >
                           <ViewIcon />
                         </IconButton>
                       </Tooltip>
-                      
+
                       {blog.status === 'PROCESSING' && (
                         <>
                           <Tooltip title="Duyệt">
-                            <IconButton 
-                              size="small" 
+                            <IconButton
+                              size="small"
                               color="success"
-                              onClick={() => setStatusDialog({ open: true, blog, action: 'approve' })}
+                              onClick={() =>
+                                setStatusDialog({
+                                  open: true,
+                                  blog,
+                                  action: 'approve',
+                                })
+                              }
                             >
                               <ApproveIcon />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Từ chối">
-                            <IconButton 
-                              size="small" 
+                            <IconButton
+                              size="small"
                               color="error"
-                              onClick={() => setStatusDialog({ open: true, blog, action: 'reject' })}
+                              onClick={() =>
+                                setStatusDialog({
+                                  open: true,
+                                  blog,
+                                  action: 'reject',
+                                })
+                              }
                             >
                               <RejectIcon />
                             </IconButton>
                           </Tooltip>
                         </>
                       )}
-                      
+
                       {blog.status === 'CONFIRMED' && (
                         <Tooltip title="Hủy duyệt">
-                          <IconButton 
-                            size="small" 
+                          <IconButton
+                            size="small"
                             color="warning"
-                            onClick={() => setStatusDialog({ open: true, blog, action: 'reject' })}
+                            onClick={() =>
+                              setStatusDialog({
+                                open: true,
+                                blog,
+                                action: 'reject',
+                              })
+                            }
                           >
                             <RejectIcon />
                           </IconButton>
@@ -404,8 +456,8 @@ const BlogManagementContent = () => {
                       )}
 
                       <Tooltip title="Xóa blog">
-                        <IconButton 
-                          size="small" 
+                        <IconButton
+                          size="small"
                           color="error"
                           onClick={() => handleDeleteBlog(blog)}
                         >
@@ -423,7 +475,7 @@ const BlogManagementContent = () => {
         {/* Pagination */}
         {totalPages > 1 && (
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
-            <Pagination 
+            <Pagination
               count={totalPages}
               page={page}
               onChange={handlePageChange}
@@ -445,9 +497,11 @@ const BlogManagementContent = () => {
       />
 
       {/* Status Update Dialog */}
-      <Dialog 
-        open={statusDialog.open} 
-        onClose={() => setStatusDialog({ open: false, blog: null, action: null })}
+      <Dialog
+        open={statusDialog.open}
+        onClose={() =>
+          setStatusDialog({ open: false, blog: null, action: null })
+        }
         maxWidth="sm"
         fullWidth
       >
@@ -458,15 +512,14 @@ const BlogManagementContent = () => {
           {statusDialog.blog && (
             <Box>
               <Typography variant="body1" sx={{ mb: 2 }}>
-                {statusDialog.action === 'approve' 
-                  ? 'Bạn có chắc chắn muốn duyệt blog này?' 
-                  : 'Bạn có chắc chắn muốn từ chối blog này?'
-                }
+                {statusDialog.action === 'approve'
+                  ? 'Bạn có chắc chắn muốn duyệt blog này?'
+                  : 'Bạn có chắc chắn muốn từ chối blog này?'}
               </Typography>
               <Typography variant="subtitle2" sx={{ mb: 2 }}>
                 "{statusDialog.blog.title}"
               </Typography>
-              
+
               {statusDialog.action === 'reject' && (
                 <TextField
                   fullWidth
@@ -482,16 +535,20 @@ const BlogManagementContent = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button 
-            onClick={() => setStatusDialog({ open: false, blog: null, action: null })}
+          <Button
+            onClick={() =>
+              setStatusDialog({ open: false, blog: null, action: null })
+            }
           >
             Hủy
           </Button>
-          <Button 
+          <Button
             variant="contained"
             color={statusDialog.action === 'approve' ? 'success' : 'error'}
             onClick={() => handleStatusUpdate(statusDialog.action)}
-            disabled={statusDialog.action === 'reject' && !rejectionReason.trim()}
+            disabled={
+              statusDialog.action === 'reject' && !rejectionReason.trim()
+            }
           >
             {statusDialog.action === 'approve' ? 'Duyệt' : 'Từ chối'}
           </Button>

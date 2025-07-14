@@ -4,7 +4,7 @@ import com.healapp.dto.*;
 import com.healapp.model.Question.QuestionStatus;
 import com.healapp.service.QuestionService;
 import com.healapp.service.UserService;
-import com.healapp.model.UserDtls;
+
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;

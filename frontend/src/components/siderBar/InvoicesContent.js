@@ -16,7 +16,7 @@
  * - Historical invoice archive
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -35,7 +35,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Divider,
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -45,12 +44,10 @@ import {
   FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import axios from 'axios';
+
 import apiClient from '@/services/api';
 import { formatDateDisplay } from '@/utils/dateUtils';
 import ExportInvoicePDF from '@/components/modals/ExportInvoicePDF';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)', // Light glass background for medical
@@ -82,87 +79,6 @@ const InvoicesContent = () => {
   const [error, setError] = useState(null);
   const [openExportPDF, setOpenExportPDF] = useState(false);
   const [exportInvoice, setExportInvoice] = useState(null);
-
-  // Ref cho export PDF
-  const pdfRef = useRef();
-
-  // Hàm xuất PDF giống ExportInvoicePDF
-  const handleExportInvoicePDF = async (invoice) => {
-    // Tạo một div ẩn để render nội dung hóa đơn
-    const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.left = '-9999px';
-    document.body.appendChild(container);
-    // Render nội dung hóa đơn vào container
-    const name = 'PHÒNG KHÁM ĐA KHOA ABC';
-    const address = '123 Đường Sức Khỏe, Quận 1, TP.HCM';
-    const phone = '0123 456 789';
-    const tax = 'MST: 0123456789';
-    const serviceDetails = invoice.serviceDetails || [
-      {
-        name: invoice.serviceName || 'Dịch vụ',
-        price: invoice.totalPrice || 0,
-      },
-    ];
-    // Tạo nội dung HTML đơn giản (có thể copy từ ExportInvoicePDF)
-    container.innerHTML = `
-      <div style="background:#fff;padding:32px;border-radius:12px;width:600px;font-family:sans-serif;">
-        <div style="display:flex;align-items:center;margin-bottom:8px;">
-          <div style="width:48px;height:48px;background:#e3f2fd;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-right:12px;">
-            <svg width="32" height="32" fill="#4A90E2"><rect width="32" height="32" rx="6" fill="#4A90E2" opacity="0.15"/></svg>
-          </div>
-          <div>
-            <div style="font-weight:700;color:#1976d2;font-size:20px;">${name}</div>
-            <div style="color:#4A5568;font-size:14px;">${address}</div>
-            <div style="color:#4A5568;font-size:14px;">SĐT: ${phone} &nbsp; ${tax}</div>
-          </div>
-        </div>
-        <div style="border-bottom:1px solid #e3eafc;margin-bottom:16px;"></div>
-        <div style="font-size:24px;font-weight:700;color:#1976d2;text-align:center;margin-bottom:8px;">HÓA ĐƠN DỊCH VỤ Y TẾ</div>
-        <div style="border-bottom:1px solid #e3eafc;margin-bottom:16px;"></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-          <div>
-            <div><b>Số HĐ:</b> HDYT-${String(invoice.testId || invoice.paymentId).padStart(4, '0')}</div>
-            <div><b>Khách hàng:</b> ${invoice.customerName || ''}</div>
-            <div><b>Dịch vụ:</b> ${invoice.serviceName || ''}</div>
-            <div><b>Nhân viên tiếp nhận:</b> ${invoice.staffName || invoice.consultantName || ''}</div>
-          </div>
-          <div>
-            <div><b>Ngày tạo:</b> ${formatDateDisplay(invoice.createdAt)}</div>
-          </div>
-        </div>
-        <div style="font-weight:600;margin-bottom:8px;">CHI TIẾT DỊCH VỤ:</div>
-        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:12px;">
-          <thead><tr><th style="border:1px solid #e3eafc;padding:4px;">STT</th><th style="border:1px solid #e3eafc;padding:4px;">Tên dịch vụ</th><th style="border:1px solid #e3eafc;padding:4px;text-align:right;">Thành tiền</th></tr></thead>
-          <tbody>
-            ${serviceDetails.map((row, idx) => `<tr><td style='border:1px solid #e3eafc;padding:4px;text-align:center;'>${idx + 1}</td><td style='border:1px solid #e3eafc;padding:4px;'>${row.name}</td><td style='border:1px solid #e3eafc;padding:4px;text-align:right;'>${row.price?.toLocaleString('vi-VN')}₫</td></tr>`).join('')}
-          </tbody>
-        </table>
-        <div style="text-align:right;font-weight:700;color:#27ae60;font-size:18px;margin-bottom:8px;">TỔNG CỘNG: ${invoice.totalPrice?.toLocaleString('vi-VN')}₫</div>
-        <div><b>Thanh toán:</b> ${invoice.paymentMethod || '---'} - ${invoice.paymentDisplayText || invoice.paymentStatus}${invoice.paymentStatus === 'COMPLETED' ? ` (${formatDateDisplay(invoice.paidAt)})` : ''}</div>
-        <div style="margin-bottom:8px;"><b>Ghi chú:</b> ${invoice.customerNotes || 'Không có'}</div>
-        <div style="display:flex;justify-content:space-between;margin-top:24px;">
-          <div style="text-align:center;">
-            <div>Người lập hóa đơn:</div>
-            <div style="font-weight:700;color:#1976d2;margin-top:8px;">${invoice.staffName || invoice.consultantName || '---'}</div>
-          </div>
-          <div style="text-align:center;">
-            <div>Khách hàng:</div>
-            <div style="font-weight:700;color:#1976d2;margin-top:8px;">${invoice.customerName || '---'}</div>
-          </div>
-        </div>
-      </div>
-    `;
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Đợi DOM render
-    const canvas = await html2canvas(container, { scale: 2 });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`hoa_don_${invoice.testId || invoice.paymentId}.pdf`);
-    document.body.removeChild(container);
-  };
 
   // Fetch invoices from API
   useEffect(() => {
@@ -259,11 +175,6 @@ const InvoicesContent = () => {
   const handleViewInvoice = (invoice) => {
     setSelectedInvoice(invoice);
     setOpenInvoiceDialog(true);
-  };
-
-  const handleDownloadInvoice = (invoiceId) => {
-    // TODO: Gọi API tải PDF hóa đơn
-    console.log(`Downloading invoice ${invoiceId}`);
   };
 
   const handlePayInvoice = (invoiceId) => {

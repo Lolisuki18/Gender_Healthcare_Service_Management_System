@@ -10,10 +10,6 @@ import {
   Card,
   CardContent,
   Grid,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Button,
   Table,
   TableBody,
@@ -22,7 +18,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  LinearProgress,
   TextField,
   Dialog,
   DialogTitle,
@@ -32,16 +27,12 @@ import {
   TablePagination,
 } from '@mui/material';
 import {
-  Download as DownloadIcon,
   TrendingUp as TrendingUpIcon,
   People as PeopleIcon,
   Assignment as AssignmentIcon,
   AttachMoney as MoneyIcon,
 } from '@mui/icons-material';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import GroupAddIcon from '@mui/icons-material/GroupAdd';
-import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
-import StarIcon from '@mui/icons-material/Star';
+
 import { adminService } from '@/services/adminService';
 import { userService } from '@/services/userService';
 import { formatDateDisplay, formatDateTime } from '@/utils/dateUtils';
@@ -54,38 +45,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { confirmDialog } from '@/utils/confirmDialog';
-
-// Helper: Lấy ngày đầu và cuối quý hiện tại
-function getCurrentQuarterRange() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const quarter = Math.floor(month / 3);
-  const fromDate = new Date(year, quarter * 3, 1);
-  const toDate = new Date(year, quarter * 3 + 3, 0);
-  return {
-    from: fromDate.toISOString().slice(0, 10),
-    to: toDate.toISOString().slice(0, 10),
-  };
-}
-
-// Helper: Lấy ngày đầu và cuối năm hiện tại
-function getCurrentYearRange() {
-  const now = new Date();
-  const year = now.getFullYear();
-  return {
-    from: `${year}-01-01`,
-    to: `${year}-12-31`,
-  };
-}
-
-// Helper: Lấy ngày hôm nay
-function getTodayRange() {
-  const now = new Date();
-  const today = now.toISOString().slice(0, 10);
-  return { from: today, to: today };
-}
 
 const MetricCard = ({ title, value, change, icon: Icon, color }) => (
   <Card
@@ -154,7 +113,6 @@ const MetricCard = ({ title, value, change, icon: Icon, color }) => (
 );
 
 const ReportsContent = () => {
-  const [timeRange, setTimeRange] = useState('thisMonth');
   const [summary, setSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);

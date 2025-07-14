@@ -27,10 +27,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   CircularProgress,
   Alert,
   Divider,
@@ -47,7 +43,6 @@ import {
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Add as AddIcon,
   Visibility as VisibilityIcon,
   QuestionAnswer as QuestionIcon,
   Send as SendIcon,
@@ -55,9 +50,6 @@ import {
   HourglassEmpty as PendingIcon,
   Close as CloseIcon,
   MedicalServices as MedicalIcon,
-  Psychology as PsychologyIcon,
-  Biotech as BiotechIcon,
-  LocalHospital as HospitalIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import questionService from '../../services/questionService';
@@ -156,66 +148,6 @@ const SimpleCategoryChip = styled(Chip)(() => ({
   borderRadius: 8,
 }));
 
-// Thêm styled cho dialog hiện đại
-const ModernDialogTitle = styled(DialogTitle)(({ theme }) => ({
-  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-  color: '#fff',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 14,
-  fontWeight: 700,
-  fontSize: '1.45rem',
-  borderTopLeftRadius: 20,
-  borderTopRightRadius: 20,
-  minHeight: 64,
-  padding: '24px 32px 16px 32px',
-  boxShadow: '0 4px 24px rgba(74,144,226,0.10)',
-}));
-const ModernDialogContent = styled(DialogContent)(({ theme }) => ({
-  padding: '32px 32px 16px 32px',
-  background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)',
-  borderBottomLeftRadius: 20,
-  borderBottomRightRadius: 20,
-}));
-const ModernInfoBox = styled(Box)(({ theme }) => ({
-  background: '#f4f8fb',
-  borderRadius: 14,
-  padding: '18px 20px',
-  marginBottom: 18,
-  boxShadow: '0 2px 8px rgba(74,144,226,0.06)',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-}));
-const ModernTextField = styled(SimpleTextField)(({ theme }) => ({
-  borderRadius: 12,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: 12,
-    fontSize: '1.08rem',
-    background: 'rgba(255,255,255,0.98)',
-    transition: 'box-shadow 0.2s',
-    boxShadow: '0 1px 4px rgba(74,144,226,0.04)',
-    '&.Mui-focused': {
-      boxShadow: '0 0 0 2px #4A90E2',
-      borderColor: '#4A90E2',
-    },
-  },
-}));
-const ModernButton = styled(SimpleButton)(({ theme }) => ({
-  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
-  color: '#fff',
-  fontWeight: 700,
-  borderRadius: 12,
-  fontSize: '1.08rem',
-  boxShadow: '0 2px 8px rgba(74,144,226,0.10)',
-  transition: 'all 0.2s',
-  '&:hover': {
-    background: 'linear-gradient(90deg, #1ABC9C 0%, #4A90E2 100%)',
-    transform: 'translateY(-2px) scale(1.03)',
-    boxShadow: '0 6px 18px rgba(26,188,156,0.12)',
-  },
-}));
-
 const MyQuestionsContent = () => {
   const { user } = useUser();
   const currentUserId = user?.userId;
@@ -229,9 +161,7 @@ const MyQuestionsContent = () => {
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [selectedQuestion, setSelectedQuestion] = useState(null);
-  const [answerDialogOpen, setAnswerDialogOpen] = useState(false);
-  const [answerDialogQuestion, setAnswerDialogQuestion] = useState(null);
+
   const [answerDialogContent, setAnswerDialogContent] = useState('');
   const [answerDialogLoading, setAnswerDialogLoading] = useState(false);
   const [answerDialogError, setAnswerDialogError] = useState('');
@@ -284,19 +214,6 @@ const MyQuestionsContent = () => {
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
     setPage(0);
-  };
-
-  const handleOpenAddDialog = () => {
-    setOpenAddDialog(true);
-  };
-
-  const handleCloseAddDialog = () => {
-    setOpenAddDialog(false);
-  };
-
-  const handleOpenViewDialog = (question) => {
-    setCurrentQuestion(question);
-    setOpenViewDialog(true);
   };
 
   const handleCloseViewDialog = () => {

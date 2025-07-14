@@ -95,17 +95,6 @@ const SampleCollectionModal = ({
     </TableContainer>
   );
 
-  const getCurrentServiceComponents = () => {
-    if (
-      isPackage &&
-      selectedService &&
-      allServiceComponents[selectedService.id]
-    ) {
-      return allServiceComponents[selectedService.id];
-    }
-    return serviceComponents;
-  };
-
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle

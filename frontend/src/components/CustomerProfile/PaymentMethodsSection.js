@@ -121,7 +121,7 @@ const PaymentMethodsSection = () => {
     try {
       setActionLoading(true);
       let response;
-      
+
       if (editingCard) {
         // Cập nhật thẻ
         response = await paymentInfoService.update(editingCard.id, cardData);
@@ -225,9 +225,9 @@ const PaymentMethodsSection = () => {
           <Grid container spacing={2}>
             {paymentMethods.map((card) => (
               <Grid item xs={12} md={6} key={card.id}>
-                <Card 
-                  variant="outlined" 
-                  sx={{ 
+                <Card
+                  variant="outlined"
+                  sx={{
                     position: 'relative',
                     transition: 'all 0.2s ease',
                     '&:hover': {
@@ -242,15 +242,15 @@ const PaymentMethodsSection = () => {
                       label="Mặc định"
                       color="primary"
                       size="small"
-                      sx={{ 
-                        position: 'absolute', 
-                        top: 8, 
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
                         right: 8,
                         zIndex: 1
                       }}
                     />
                   )}
-                  
+
                   <CardContent>
                     <Box display="flex" alignItems="center" mb={2}>
                       <Box sx={{ fontSize: 24, mr: 1 }}>
@@ -264,7 +264,7 @@ const PaymentMethodsSection = () => {
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       Tên chủ thẻ: {card.cardHolderName}
                     </Typography>
-                    
+
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       Hết hạn: {card.expiryMonth}/{card.expiryYear}
                     </Typography>
@@ -284,7 +284,7 @@ const PaymentMethodsSection = () => {
                             </IconButton>
                           </Tooltip>
                         )}
-                        
+
                         <Tooltip title="Chỉnh sửa">
                           <IconButton
                             size="small"
@@ -295,6 +295,7 @@ const PaymentMethodsSection = () => {
                           </IconButton>
                         </Tooltip>
                       </Box>
+
 
                       <Tooltip title="Xóa thẻ">
                         <IconButton
@@ -307,6 +308,7 @@ const PaymentMethodsSection = () => {
                         </IconButton>
                       </Tooltip>
                     </Box>
+
                   </CardContent>
                 </Card>
               </Grid>
@@ -330,9 +332,9 @@ const PaymentMethodsSection = () => {
             <Button onClick={() => setDeleteDialogOpen(false)} disabled={actionLoading}>
               Hủy
             </Button>
-            <Button 
-              onClick={confirmDeleteCard} 
-              color="error" 
+            <Button
+              onClick={confirmDeleteCard}
+              color="error"
               variant="contained"
               disabled={actionLoading}
             >

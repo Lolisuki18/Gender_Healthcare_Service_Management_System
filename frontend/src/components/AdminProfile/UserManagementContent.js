@@ -28,17 +28,7 @@ import {
   Select,
   Grid,
   MenuItem,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
   CircularProgress,
-  Alert,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -46,7 +36,6 @@ import {
   ManageAccounts as ManageAccountsIcon,
   People as PeopleIcon,
   BusinessCenter as BusinessIcon,
-  Security as SecurityIcon,
   Person as PersonIcon,
   Support as SupportIcon,
   Visibility as VisibilityIcon,
@@ -57,7 +46,7 @@ import AddUserModal from '../modals/AddUserModal';
 import ViewUserModal from '../modals/ViewUserModal';
 import EditUserModal from '../modals/EditUserModal';
 import { confirmDialog } from '@/utils/confirmDialog';
-import { userService } from '@/services/userService';
+
 import { adminService } from '@/services/adminService';
 import { getAvatarUrl } from '@/utils/imageUrl';
 
@@ -71,7 +60,7 @@ const UserManagementContent = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [openRoleSelection, setOpenRoleSelection] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
@@ -198,148 +187,6 @@ const UserManagementContent = () => {
     setEditingUser(userToEdit);
     setOpenEditModal(true);
   };
-
-  const handleUpdateBasicInfo = async (formData) => {
-    try {
-      console.log('🔄 Đang cập nhật thông tin cơ bản:', formData);
-
-      const response = await userService.updateBasicInfo(formData.id, {
-        fullName: formData.fullName,
-        username: formData.username,
-        email: formData.email,
-        phone: formData.phone,
-      });
-
-      setUsers((prevUsers) =>
-        prevUsers.map((u) => (u.id === formData.id ? { ...u, ...formData } : u))
-      );
-
-      toast.success(
-        `Đã cập nhật thông tin cơ bản của ${
-          formData.fullName || formData.username
-        }`
-      );
-
-      await fetchUsers();
-    } catch (error) {
-      console.error('❌ Lỗi khi cập nhật thông tin cơ bản:', error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        'Có lỗi xảy ra khi cập nhật thông tin cơ bản';
-
-      toast.error('Lỗi cập nhật', errorMessage);
-    }
-  };
-
-  const handleUpdateRole = async (formData) => {
-    const user = editingUser;
-
-    if (formData.role !== user.role) {
-      const isConfirmed = await confirmDialog.warning(
-        `Bạn đang thay đổi vai trò từ "${getRoleDisplayName(
-          user.role
-        )}" thành "${getRoleDisplayName(
-          formData.role
-        )}". Điều này có thể ảnh hưởng đến quyền truy cập của người dùng.`,
-        {
-          title: '🔄 Thay đổi vai trò',
-          confirmText: 'Xác nhận thay đổi',
-          cancelText: 'Giữ nguyên',
-        }
-      );
-
-      if (!isConfirmed) return;
-    }
-
-    try {
-      console.log('🔐 Đang cập nhật vai trò & trạng thái:', formData);
-
-      const response = await adminService.updateUserStatus(formData.id, {
-        role: formData.role,
-        isActive: formData.isActive,
-      });
-
-      setUsers((prevUsers) =>
-        prevUsers.map((u) =>
-          u.id === formData.id
-            ? { ...u, role: formData.role, isActive: formData.isActive }
-            : u
-        )
-      );
-
-      toast.success(
-        `Đã cập nhật vai trò & trạng thái của ${user.fullName || user.username}`
-      );
-
-      await fetchUsers();
-
-      console.log('✅ Cập nhật vai trò & trạng thái thành công');
-    } catch (error) {
-      console.error('❌ Lỗi khi cập nhật vai trò & trạng thái:', error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        'Có lỗi xảy ra khi cập nhật vai trò & trạng thái';
-
-      toast.error('Lỗi cập nhật', errorMessage);
-    }
-  };
-
-  const handleDelete = async (userId) => {
-    const user = users.find((u) => u.id === userId);
-    if (!user) return;
-
-    const isConfirmed = await confirmDialog.danger(
-      `Bạn có chắc chắn muốn xóa người dùng "${
-        user.fullName || user.username || 'Không có tên'
-      }"?`,
-      {
-        title: 'Xác nhận xóa người dùng',
-        confirmText: 'Xóa',
-        cancelText: 'Hủy',
-      }
-    );
-
-    if (isConfirmed) {
-      try {
-        if (user.role === 'CONSULTANT') {
-          console.log('Đang xóa người dùng ID:', userId);
-          await adminService.deleteConsultant(userId);
-        }
-        if (user.role === 'STAFF') {
-          console.log('Đang xóa nhân viên ID:', userId);
-          await adminService.deleteStaff(userId);
-        }
-        if (user.role === 'CUSTOMER') {
-          console.log('Đang xóa khách hàng ID:', userId);
-          await adminService.deleteCustomer(userId);
-        }
-        if (user.role === 'ADMIN') {
-          console.log('Đang xóa quản trị viên ID:', userId);
-          await adminService.deleteAdmin(userId);
-        }
-
-        await fetchUsers();
-
-        toast.success(
-          `Đã xóa người dùng "${user.fullName || user.username}" thành công!`
-        );
-        console.log('Xóa người dùng thành công');
-      } catch (error) {
-        console.error('Lỗi khi xóa người dùng:', error);
-        const errorMessage =
-          error.response?.data?.message ||
-          error.message ||
-          'Có lỗi xảy ra khi xóa người dùng';
-
-        toast.error('Lỗi xóa người dùng', errorMessage);
-      }
-    }
-  };
-
-  const [loadingConsultantDetails, setLoadingConsultantDetails] =
-    useState(false);
 
   const handleViewUser = async (userId) => {
     try {
@@ -536,21 +383,6 @@ const UserManagementContent = () => {
     }
   };
 
-  const getModalTitle = (userType) => {
-    switch (userType) {
-      case 'ADMIN':
-        return 'Quản trị viên';
-      case 'STAFF':
-        return 'Nhân viên';
-      case 'CUSTOMER':
-        return 'Khách hàng';
-      case 'CONSULTANT':
-        return 'Tư vấn viên';
-      default:
-        return 'Người dùng';
-    }
-  };
-
   const getRoleDisplayName = (role) => {
     switch (role) {
       case 'ADMIN':
@@ -574,30 +406,6 @@ const UserManagementContent = () => {
     setModalType('all');
     setOpenAddUserModal(true); // Mở modal
   };
-
-  const roleOptions = [
-    {
-      value: 'STAFF',
-      label: 'Nhân viên',
-      icon: <BusinessIcon />,
-      description: 'Nhân viên hỗ trợ khách hàng',
-      color: '#3182CE',
-    },
-    {
-      value: 'CONSULTANT',
-      label: 'Tư vấn viên',
-      icon: <SupportIcon />,
-      description: 'Chuyên gia tư vấn sức khỏe',
-      color: '#D69E2E',
-    },
-    {
-      value: 'CUSTOMER',
-      label: 'Khách hàng',
-      icon: <PersonIcon />,
-      description: 'Người dùng sử dụng dịch vụ',
-      color: '#4A90E2',
-    },
-  ];
 
   const getFilteredUsers = () => {
     console.log('=== FILTERING USERS ===');

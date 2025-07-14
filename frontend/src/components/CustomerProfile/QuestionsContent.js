@@ -21,9 +21,7 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
-  Card,
-  CardContent,
+
   Chip,
   TextField,
   Button,
@@ -34,8 +32,6 @@ import {
   Tab,
   Tabs,
   InputAdornment,
-  Avatar,
-  Tooltip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -46,21 +42,15 @@ import {
   TableRow,
   TableCell,
   TableContainer,
-  Collapse,
-  IconButton,
 } from '@mui/material';
 import {
   QuestionAnswer as QuestionIcon,
   Search as SearchIcon,
   Add as AddIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
   FilterAlt as FilterAltIcon,
   CheckCircle as CheckCircleIcon,
   AccessTime as AccessTimeIcon,
   HelpOutline as HelpOutlineIcon,
-  KeyboardArrowDown,
-  KeyboardArrowUp,
   Visibility as VisibilityIcon,
   Cancel as CancelIcon,
   Warning as WarningIcon,
@@ -68,11 +58,7 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import AskQuestionDialog from '../common/AskQuestionDialog';
-import {
-  formatDateDisplay,
-  formatDateTime,
-  formatDateTimeFromArray,
-} from '../../utils/dateUtils';
+import { formatDateTimeFromArray } from '../../utils/dateUtils';
 import Pagination from '@mui/material/Pagination';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -88,20 +74,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.1)',
 }));
 
-const QuestionCard = styled(Card)(({ theme }) => ({
-  background: 'linear-gradient(145deg, #FFFFFF, #F5F7FA)',
-  backdropFilter: 'blur(20px)',
-  borderRadius: '16px',
-  border: '1px solid rgba(74, 144, 226, 0.12)',
-  marginBottom: theme.spacing(3),
-  transition: 'all 0.3s ease',
-  boxShadow: '0 4px 15px 0 rgba(0, 0, 0, 0.05)',
-  '&:hover': {
-    transform: 'translateY(-3px)',
-    boxShadow: '0 10px 25px 0 rgba(74, 144, 226, 0.2)',
-  },
-}));
-
 const StyledTab = styled(Tab)(({ theme }) => ({
   color: '#4A5568',
   '&.Mui-selected': {
@@ -110,69 +82,29 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
-const StatusChip = styled(Chip)(({ status }) => ({
-  fontWeight: 700,
-  fontSize: '1rem',
-  padding: '0 18px',
-  height: '38px',
-  color: '#fff',
-  background:
-    status === 'answered'
-      ? 'linear-gradient(90deg, #4CAF50 60%, #2ECC71 100%)'
-      : 'linear-gradient(90deg, #ff9800 60%, #f57c00 100%)',
-  boxShadow:
-    status === 'answered'
-      ? '0 4px 16px rgba(76, 175, 80, 0.18)'
-      : '0 4px 16px rgba(255, 152, 0, 0.18)',
-  borderRadius: '20px',
-  letterSpacing: '0.5px',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  transition: 'all 0.2s',
-  '& .MuiChip-icon': {
-    fontSize: 22,
-    marginRight: 8,
-  },
-  '&:hover': {
-    filter: 'brightness(1.08)',
-    boxShadow:
-      status === 'answered'
-        ? '0 6px 24px rgba(76, 175, 80, 0.28)'
-        : '0 6px 24px rgba(255, 152, 0, 0.28)',
-  },
-}));
-
 const QuestionsContent = () => {
   const [tabValue, setTabValue] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [expandedQuestions, setExpandedQuestions] = useState({});
+
   const [showNewQuestionForm, setShowNewQuestionForm] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+
   const pageSize = 5;
-  const tabStatusMap = [null, 'ANSWERED', 'PENDING', 'CANCELED'];
+
   const [categories, setCategories] = useState([]);
   // Bỏ questionIdFilter
   // Thêm state cho lọc ngày tạo
   const [createdFrom, setCreatedFrom] = useState('');
   const [createdTo, setCreatedTo] = useState('');
-  const [expandedRow, setExpandedRow] = useState(null);
+
   const [detailQuestion, setDetailQuestion] = useState(null);
 
   // Handle tab change
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
-  };
-  // Toggle question expansion
-  const toggleQuestionExpand = (id) => {
-    setExpandedQuestions((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
   };
 
   // Lấy toàn bộ câu hỏi của khách hàng (không phân trang ở API)
@@ -285,24 +217,6 @@ const QuestionsContent = () => {
     1,
     Math.ceil(filteredQuestions.length / pageSize)
   );
-
-  // Format date
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
-  };
-
-  // Get unique categories for filter
-  const uniqueCategories = [
-    'all',
-    ...new Set(questions.map((q) => q.categoryName)),
-  ];
 
   // Pagination handler
   const handlePageChange = (event, value) => {

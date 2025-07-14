@@ -680,13 +680,7 @@ export const confirmDialog = {
    */
   answer: (options = {}) =>
     new Promise((resolve) => {
-      const {
-        question = {},
-        defaultAnswer = '',
-        title = 'Trả lời câu hỏi',
-        confirmText = 'Gửi trả lời',
-        cancelText = 'Hủy',
-      } = options;
+      const { question = {}, defaultAnswer = '' } = options;
 
       const container = document.createElement('div');
       document.body.appendChild(container);

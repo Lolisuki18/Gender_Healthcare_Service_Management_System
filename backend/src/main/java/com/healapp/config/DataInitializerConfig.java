@@ -1,7 +1,7 @@
 package com.healapp.config;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,13 +28,13 @@ import com.healapp.repository.RoleRepository;
 import com.healapp.model.Category;
 import com.healapp.model.Payment;
 import com.healapp.model.STITest;
-import com.healapp.model.TestResult;
+
 import com.healapp.model.PaymentInfo;
 import com.healapp.model.Role;
 import com.healapp.repository.PaymentRepository;
 import com.healapp.repository.STITestRepository;
 import com.healapp.repository.PaymentInfoRepository;
-import com.healapp.model.MenstrualCycle;
+
 import com.healapp.repository.MenstrualCycleRepository;
 import com.healapp.model.Consultation;
 import com.healapp.model.RatingSummary;
@@ -43,7 +43,7 @@ import com.healapp.repository.RatingSummaryRepository;
 import com.healapp.model.BlogPost;
 import com.healapp.model.BlogPostStatus;
 import com.healapp.repository.BlogPostRepository;
-import java.util.List;
+
 
 @Component
 public class DataInitializerConfig implements CommandLineRunner {

@@ -9,7 +9,7 @@
 
 // ======================= IMPORT CÁC THƯ VIỆN VÀ HÀM API =======================
 // Import các thư viện React, Material UI, các icon, các hàm gọi API, và Toast để hiển thị thông báo
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -49,11 +49,9 @@ import {
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import {
-  getAllSTIPackages,
   createSTIPackage,
   updateSTIPackage,
   deleteSTIPackage,
-  getAllSTIServices,
 } from '@/services/stiService';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -442,21 +440,6 @@ const STIPackageManagementContent = () => {
       formattedText: `${formatPrice(saving)} (${discountPercent}%)`,
     };
   };
-
-  // Chuẩn hóa danh sách dịch vụ gửi lên backend (chỉ lấy id)
-  const prepareServiceIdsForBackend = useCallback((services) => {
-    if (!Array.isArray(services)) return [];
-
-    return services
-      .map((service) => {
-        if (typeof service === 'number') return service;
-        if (typeof service === 'object' && service !== null) {
-          return service.id ?? service.serviceId;
-        }
-        return null;
-      })
-      .filter((id) => typeof id === 'number');
-  }, []);
 
   // Lọc danh sách gói theo tìm kiếm, trạng thái, khoảng giá
   const filteredPackages = Array.isArray(packages)

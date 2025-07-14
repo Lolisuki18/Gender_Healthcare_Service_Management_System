@@ -20,7 +20,7 @@ import {
   Typography,
   Card,
   CardContent,
-  Rating,
+
   Chip,
   Avatar,
   Grid,
@@ -30,8 +30,6 @@ import {
   MenuItem,
   IconButton,
   CircularProgress,
-  Tooltip,
-  Button,
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
@@ -41,7 +39,6 @@ import {
   Science as ScienceIcon,
   Psychology as PsychologyIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
   MedicalServices as MedicalServicesIcon,
   Star as StarIcon,
   Add as AddIcon,

@@ -4,7 +4,7 @@
  * Modal component để thêm mới các loại người dùng trong hệ thống
  */
 import React, { useState, useEffect } from 'react';
-import { adminService } from '../../services/adminService';
+
 import { toast } from 'react-toastify';
 import {
   Dialog,
@@ -17,16 +17,12 @@ import {
   Button,
   IconButton,
   FormControl,
-  FormLabel,
   MenuItem,
   Select,
   InputLabel,
   Box,
-  Card,
-  CardContent,
   InputAdornment,
   Chip,
-  Stack,
   Divider,
   LinearProgress,
 } from '@mui/material';
@@ -80,7 +76,7 @@ const AddUserModal = ({
       });
       setLocalFieldErrors({});
     }
-  }, [open, userType]);
+  }, []);
 
   // Handle form input changes
   const handleInputChange = (e) => {

@@ -27,26 +27,19 @@ import {
   Select,
   MenuItem,
   CircularProgress,
-  Alert,
   Grid,
   Card,
   CardContent,
-  Tabs,
-  Tab,
   Avatar,
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  CheckCircleOutline as CheckCircleOutlineIcon,
   Science as ScienceIcon,
   Visibility as VisibilityIcon,
-  Edit as EditIcon,
   Send as SendIcon,
   Download as DownloadIcon,
   LocalHospital as LocalHospitalIcon,
   Clear as ClearIcon,
-  CalendarToday as CalendarTodayIcon,
-  Settings as SettingsIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import {
@@ -56,10 +49,9 @@ import {
   getSTIServiceById,
   getTestResultsByTestId,
 } from '../../services/stiService';
-import api from '../../services/api';
+
 import ConsultantTestResultDetailModal from './ConsultantTestResultDetailModal';
 import { formatDateDisplay } from '../../utils/dateUtils';
-import confirmDialog from '../../utils/confirmDialog';
 
 // Test Type translation function
 const getTestTypeTranslation = (type) => {
@@ -138,9 +130,6 @@ const STITestsContent = () => {
   const [conclusionFilter, setConclusionFilter] = useState('all'); // 'all' | 'has' | 'none'
   const [loading, setLoading] = useState(false);
   const [dateFilter, setDateFilter] = useState('');
-
-  // Lấy userId consultant hiện tại (giả sử lưu ở localStorage)
-  const userId = Number(localStorage.getItem('userId'));
 
   // Lấy danh sách test từ API khi load component
   const fetchTests = async () => {
@@ -314,12 +303,6 @@ const STITestsContent = () => {
     setDetailSelectedService(null);
     setDetailComponents([]);
     setDetailAllServiceComponents({});
-  };
-
-  const handleOpenRecommendationDialog = (test) => {
-    setSelectedTest(test);
-    setRecommendation(test.recommendations || '');
-    setRecommendationDialogOpen(true);
   };
 
   const handleCloseRecommendationDialog = () => {

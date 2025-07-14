@@ -39,37 +39,33 @@ import {
   FormControl,
   Stack,
   Container,
-  Divider,
   Chip,
   Grid,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
 } from '@mui/material';
 import AvatarUpload from '../common/AvatarUpload';
 import EditIcon from '@mui/icons-material/Edit';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+
 import VerifiedIcon from '@mui/icons-material/Verified';
 import PersonIcon from '@mui/icons-material/Person';
 import CakeIcon from '@mui/icons-material/Cake';
 import WcIcon from '@mui/icons-material/Wc';
-import EmailIcon from '@mui/icons-material/Email';
+
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import LockIcon from '@mui/icons-material/Lock';
+
 import CancelIcon from '@mui/icons-material/Cancel';
-import RefreshIcon from '@mui/icons-material/Refresh';
+
 import SaveIcon from '@mui/icons-material/Save';
 import { styled } from '@mui/material/styles';
 import { userService } from '@/services/userService';
 import { toast } from 'react-toastify';
 import { formatDateForInput, formatDateDisplay } from '@/utils/dateUtils';
-import { EmailChangeDialog, PasswordChangeDialog } from '../modals';
+
 import imageUrl from '../../utils/imageUrl';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateUserProfile } from '@/redux/slices/authSlice';
-
-const TOAST_ID_USER_INFO = 'user-info-loaded';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)',
@@ -326,8 +322,6 @@ const ProfileContent = () => {
   // ====================================================================
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   // Avatar change states
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
@@ -345,26 +339,7 @@ const ProfileContent = () => {
   // ✅ Original data để reset khi cancel
   const [originalData, setOriginalData] = useState({});
 
-  // ✅ Email verification states
-  const [emailVerificationDialog, setEmailVerificationDialog] = useState({
-    open: false,
-    email: '',
-    tempEmail: '',
-  });
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isSendingCode, setIsSendingCode] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
-
-  // ✅ Password change states
-  const [passwordChangeDialog, setPasswordChangeDialog] = useState({
-    open: false,
-  });
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-
-  // ✅ Email change states
-  const [emailChangeDialog, setEmailChangeDialog] = useState({
-    open: false,
-  });
 
   // ====================================================================
   // EFFECTS

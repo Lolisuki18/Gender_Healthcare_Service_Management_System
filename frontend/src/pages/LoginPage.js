@@ -29,7 +29,6 @@ import { notify } from '@/utils/notify';
 
 import LoggedInView from '@/components/common/LoggedInView';
 import GoogleLoginButton from '@/components/common/GoogleLoginButton';
-import { logout } from '@/redux/slices/authSlice';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '@/redux/slices/authSlice';
 import tokenService from '@/services/tokenService';
