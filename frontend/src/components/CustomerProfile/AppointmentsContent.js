@@ -91,7 +91,6 @@ import consultantService from '../../services/consultantService';
 import confirmDialog from '../../utils/confirmDialog';
 import reviewService from '../../services/reviewService';
 import ReviewForm from '../common/ReviewForm.js';
-import { notify } from '../../utils/notify';
 import { useNavigate } from 'react-router-dom';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -476,12 +475,12 @@ const AppointmentsContent = () => {
     if (!reviewingAppointment) return;
 
     if (rating === 0) {
-      notify.warning('Thông báo', 'Vui lòng chọn số sao đánh giá!');
+      toast.warning('Thông báo', 'Vui lòng chọn số sao đánh giá!');
       return;
     }
 
     if (feedback.trim().length < 10) {
-      notify.warning(
+      toast.warning(
         'Thông báo',
         'Vui lòng nhập ít nhất 10 ký tự cho phần đánh giá!'
       );
@@ -501,14 +500,14 @@ const AppointmentsContent = () => {
       if (isEditMode && editingReviewId) {
         // Gọi API cập nhật đánh giá
         await reviewService.updateReview(editingReviewId, reviewData);
-        notify.success('Thành công', 'Đánh giá đã được cập nhật thành công!');
+        toast.success('Đánh giá đã được cập nhật thành công!');
       } else {
         // Gọi API tạo mới đánh giá
         await reviewService.createConsultantReview(
           reviewingAppointment.consultantId,
           reviewData
         );
-        notify.success('Thành công', 'Đánh giá đã được gửi thành công!');
+        toast.success('Đánh giá đã được gửi thành công!');
 
         // Cập nhật ngay lập tức mảng reviewedConsultationIds để hiển thị đúng trạng thái
         if (
@@ -525,7 +524,7 @@ const AppointmentsContent = () => {
       handleCloseReviewDialog();
       await fetchAppointments(); // reload lại danh sách để cập nhật trạng thái
     } catch (err) {
-      notify.error(
+      toast.error(
         'Lỗi',
         'Lỗi khi ' +
           (isEditMode ? 'cập nhật' : 'tạo') +
@@ -894,19 +893,19 @@ const AppointmentsContent = () => {
                       {/* Cột Đánh giá */}
                       <TableCell align="center">
                         {appointment.status?.toUpperCase() === 'COMPLETED' && (() => {
-                          // Tìm review tương ứng trong myRatings
+                          // Tìm review tương ứng trong myRatings bằng consultationId
                           const foundReview = myRatings.find(
                             (r) =>
                               r.targetType === 'CONSULTANT' &&
-                              r.targetId === appointment.consultationId
+                              String(r.consultationId) === String(appointment.consultationId)
                           );
                           if (foundReview) {
-                            // Đã đánh giá, hiện nút Xem đánh giá
+                            // Đã đánh giá, chỉ hiện nút Chỉnh sửa
                             return (
                               <Button
                                 size="small"
-                                variant="outlined"
-                                color="info"
+                                variant="contained"
+                                color="secondary"
                                 sx={{
                                   fontSize: 13,
                                   textTransform: 'none',
@@ -915,10 +914,19 @@ const AppointmentsContent = () => {
                                   height: 32,
                                 }}
                                 onClick={() => {
-                                  navigate(`/review/${foundReview.ratingId}`);
+                                  setReviewingAppointment({
+                                    ...appointment,
+                                    type: 'CONSULTANT',
+                                    isEligible: true,
+                                  });
+                                  setRating(foundReview.rating || 0);
+                                  setFeedback(foundReview.comment || '');
+                                  setIsEditMode(true);
+                                  setEditingReviewId(foundReview.ratingId);
+                                  setOpenReviewDialog(true);
                                 }}
                               >
-                                Xem đánh giá
+                                Chỉnh sửa
                               </Button>
                             );
                           } else {

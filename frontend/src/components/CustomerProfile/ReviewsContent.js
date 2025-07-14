@@ -336,12 +336,14 @@ const ReviewsContent = () => {
   };
 
   // Sử dụng myRatings từ API cho completed reviews, có lọc ngày
-  const filteredMyRatings = myRatings.filter(rating => {
-    if (serviceFilter === 'all') return isWithinDateRange(rating.createdAt);
-    if (serviceFilter === 'sti') return (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI') && isWithinDateRange(rating.createdAt);
-    if (serviceFilter === 'consultation') return (rating.targetType === 'CONSULTANT' || rating.serviceType === 'CONSULTATION') && isWithinDateRange(rating.createdAt);
-    return isWithinDateRange(rating.createdAt);
-  });
+  const filteredMyRatings = useMemo(() => {
+    return myRatings.filter(rating => {
+      if (serviceFilter === 'all') return isWithinDateRange(rating.createdAt);
+      if (serviceFilter === 'sti') return (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI') && isWithinDateRange(rating.createdAt);
+      if (serviceFilter === 'consultation') return (rating.targetType === 'CONSULTANT' || rating.serviceType === 'CONSULTATION') && isWithinDateRange(rating.createdAt);
+      return isWithinDateRange(rating.createdAt);
+    });
+  }, [myRatings, serviceFilter, dateFrom, dateTo]);
 
   // Create unique service counts to avoid duplicates - only count current user's services
   const uniqueSTIServices = new Set();
@@ -361,40 +363,41 @@ const ReviewsContent = () => {
   });
   
   // Add pending services (chỉ những dịch vụ chưa được đánh giá và thuộc về user hiện tại)
-allReviewableServices.forEach(service => {
-  if (service.type === 'STI_SERVICE' && service.status === 'pending') {
-    // So sánh bằng stiTestId (FE truyền testId, BE trả stiTestId)
-    const serviceTestId = service.testId;
-    const hasReview = filteredMyRatings.some(rating =>
-      (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI') &&
-      (
-        (rating.stiTestId && String(rating.stiTestId) === String(serviceTestId)) ||
-        (rating.testId && String(rating.testId) === String(serviceTestId)) // fallback nếu BE trả testId
-      )
-    );
-    if (!hasReview && serviceTestId) {
-      uniqueSTIServices.add(serviceTestId);
+  allReviewableServices.forEach(service => {
+    if (service.type === 'STI_SERVICE' && service.status === 'pending') {
+      // So sánh bằng stiTestId (FE truyền testId, BE trả stiTestId)
+      const serviceTestId = service.testId;
+      const hasReview = filteredMyRatings.some(rating =>
+        (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI') &&
+        (
+          (rating.stiTestId && String(rating.stiTestId) === String(serviceTestId)) ||
+          (rating.testId && String(rating.testId) === String(serviceTestId)) // fallback nếu BE trả testId
+        )
+      );
+      if (!hasReview && serviceTestId) {
+        uniqueSTIServices.add(serviceTestId);
+      }
+    } else if (service.type === 'CONSULTANT' && service.status === 'pending') {
+      // So sánh bằng consultationId
+      const consultationIdentifier = service.consultationId;
+      const hasReview = filteredMyRatings.some(rating =>
+        (rating.targetType === 'CONSULTANT' || rating.serviceType === 'CONSULTATION') &&
+        (
+          (rating.consultationId && String(rating.consultationId) === String(consultationIdentifier))
+        )
+      );
+      if (!hasReview && consultationIdentifier) {
+        const identifier = `consultant_${service.consultantId}_${consultationIdentifier}`;
+        uniqueConsultationServices.add(identifier);
+      }
     }
-  } else if (service.type === 'CONSULTANT' && service.status === 'pending') {
-    // So sánh bằng consultationId
-    const consultationIdentifier = service.consultationId;
-    const hasReview = filteredMyRatings.some(rating =>
-      (rating.targetType === 'CONSULTANT' || rating.serviceType === 'CONSULTATION') &&
-      (
-        (rating.consultationId && String(rating.consultationId) === String(consultationIdentifier))
-      )
-    );
-    if (!hasReview && consultationIdentifier) {
-      const identifier = `consultant_${service.consultantId}_${consultationIdentifier}`;
-      uniqueConsultationServices.add(identifier);
-    }
-  }
-});
+  });
 
   // ...existing code...
 
-  const completedReviews = filteredMyRatings; // Sử dụng API data (đã filter theo user)
+  const completedReviews = filteredMyRatings; // Sử dụng API data (đã filter theo user và ngày)
   // Lọc lại pendingReviews: chỉ lấy những dịch vụ chưa có đánh giá (so sánh consultationId hoặc stiTestId/testId)
+  // Không lọc theo ngày cho pending
   const pendingReviews = filteredServices.filter(service => {
     if (service.type === 'STI_SERVICE') {
       // So sánh với tất cả review đã có bằng stiTestId hoặc testId
@@ -419,10 +422,21 @@ allReviewableServices.forEach(service => {
   
   // ...existing code...
 
-  // Tính toán dữ liệu phân trang cho từng tab
-  const paginatedAllReviews = allReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
-  const paginatedCompletedReviews = completedReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
-  const paginatedPendingReviews = pendingReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
+  // Nếu có lọc ngày, chỉ hiển thị các card có ngày đánh giá (createdAt)
+  const isDateFilterActive = !!dateFrom || !!dateTo;
+  const filterHasReviewDate = (review) => {
+    // Chỉ hiển thị card có ngày đánh giá nếu lọc ngày đang bật
+    if (!isDateFilterActive) return true;
+    return !!review.createdAt;
+  };
+
+  const filteredAllReviews = allReviews.filter(filterHasReviewDate);
+  const filteredCompletedReviews = completedReviews.filter(filterHasReviewDate);
+  const filteredPendingReviews = pendingReviews.filter(filterHasReviewDate);
+
+  const paginatedAllReviews = filteredAllReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
+  const paginatedCompletedReviews = filteredCompletedReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
+  const paginatedPendingReviews = filteredPendingReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -870,7 +884,7 @@ allReviewableServices.forEach(service => {
                     {/* Lấy tên dịch vụ hoặc tên tư vấn viên từ API */}
                     {review.targetType === 'STI_SERVICE' ? (review.targetName || 'Dịch vụ') : review.targetType === 'CONSULTANT' ? (review.targetName || 'Tư vấn viên') : (review.serviceName || review.consultantName || 'Dịch vụ')}
                   </Typography>
-                  {/* Hiển thị ID dịch vụ */}
+                  {/* Hiển thị ID dịch vụ
                   {review.targetType === 'STI_SERVICE' && (
                     <Typography variant="caption" sx={{ color: '#888', ml: 1 }}>
                       (ID: {review.stiTestId || review.testId || review.targetId || 'N/A'})
@@ -880,7 +894,7 @@ allReviewableServices.forEach(service => {
                     <Typography variant="caption" sx={{ color: '#888', ml: 1 }}>
                       (ID: {review.consultationId || review.targetId || 'N/A'})
                     </Typography>
-                  )}
+                  )} */}
                   {review.targetType === 'STI_SERVICE' && (
                     <Chip
                       icon={<ScienceIcon sx={{ fontSize: '12px !important' }} />}
@@ -1181,7 +1195,7 @@ allReviewableServices.forEach(service => {
                   >
                     {review.serviceName}
                   </Typography>
-                  {/* Hiển thị ID dịch vụ */}
+                  {/* Hiển thị ID dịch vụ
                   {review.type === 'STI_SERVICE' && (
                     <Typography variant="caption" sx={{ color: '#888', ml: 1 }}>
                       (ID: {review.testId || review.serviceId || 'N/A'})
@@ -1191,7 +1205,7 @@ allReviewableServices.forEach(service => {
                     <Typography variant="caption" sx={{ color: '#888', ml: 1 }}>
                       (ID: {review.consultationId || review.consultantId || 'N/A'})
                     </Typography>
-                  )}
+                  )} */}
                   {review.type === 'STI_SERVICE' && (
                     <Chip
                       icon={<ScienceIcon sx={{ fontSize: '12px !important' }} />}
@@ -1329,26 +1343,30 @@ allReviewableServices.forEach(service => {
               gap: 1.5,
               mb: 2,
               width: '100%',
-              mr: { xs: 0, md: -1 }
+              pr: 0,
             }}>
               <Box sx={{
                 display: 'flex',
-                justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                justifyContent: 'flex-end',
                 width: '100%',
-                mr: { xs: 0, md: -1 }
+                pr: 0,
               }}>
                 <Chip
-                  icon={<ScheduleIcon sx={{ fontSize: '16px !important' }} />}
-                  label="Chưa đánh giá"
+                  icon={<ScheduleIcon sx={{ fontSize: '18px !important' }} />}
+                  label={<span style={{ display: 'inline-block', minWidth: 110, fontSize: 15, fontWeight: 700, letterSpacing: 0.5 }}>Chưa đánh giá</span>}
                   sx={{
                     background: 'linear-gradient(45deg, #FF9800, #FFB74D)',
                     color: '#fff',
-                    fontWeight: 600,
-                    fontSize: '12px',
-                    height: '32px',
+                    fontWeight: 800,
+                    fontSize: '15px',
+                    height: '36px',
+                    minWidth: '130px',
                     boxShadow: '0 4px 12px rgba(255, 152, 0, 0.3)',
+                    letterSpacing: 0.5,
+                    borderRadius: '18px',
                     '& .MuiChip-icon': {
-                      color: '#fff'
+                      color: '#fff',
+                      fontSize: '18px !important'
                     }
                   }}
                 />

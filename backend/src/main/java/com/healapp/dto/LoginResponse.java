@@ -1,11 +1,10 @@
 package com.healapp.dto;
 
+import java.time.LocalDate;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDate;
-
-import com.healapp.model.Role;
 
 @Data
 @NoArgsConstructor
@@ -19,4 +18,5 @@ public class LoginResponse {
     private String role;
     private LocalDate birthDay;
     private String phone;
-}   
+    private String provider; // Thêm provider để frontend biết user đăng nhập qua Google hay Local
+}

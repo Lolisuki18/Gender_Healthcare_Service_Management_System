@@ -91,6 +91,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useNavigate } from 'react-router-dom';
 import CanceledTestDetailModal from '../StaffProfile/modals/CanceledTestDetailModal';
+import ReviewForm from '../common/ReviewForm';
 
 // Styled Paper Component với hiệu ứng glass morphism hiện đại
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -188,6 +189,59 @@ const MedicalHistoryContent = () => {
   const [dateFrom, setDateFrom] = useState(null);
 
   const navigate = useNavigate();
+
+  // State cho ReviewForm (đảm bảo khai báo đủ)
+  const [openReviewDialog, setOpenReviewDialog] = useState(false);
+  const [reviewingRecord, setReviewingRecord] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [feedback, setFeedback] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+
+  const handleCloseReviewDialog = () => {
+    setOpenReviewDialog(false);
+    setReviewingRecord(null);
+    setRating(0);
+    setFeedback('');
+    setIsEditMode(false);
+    setEditingReviewId(null);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewingRecord) return;
+    if (rating === 0) {
+      toast.warning('Vui lòng chọn số sao đánh giá!');
+      return;
+    }
+    if (feedback.trim().length < 10) {
+      toast.warning('Vui lòng nhập ít nhất 10 ký tự cho phần đánh giá!');
+      return;
+    }
+    try {
+      setReviewLoading(true);
+      const reviewData = {
+        rating: rating,
+        comment: feedback.trim(),
+        sti_test_id: reviewingRecord.testId, // Sử dụng snake_case đúng chuẩn backend
+      };
+      if (isEditMode && editingReviewId) {
+        await import('../../services/reviewService').then(m => m.default.updateReview(editingReviewId, reviewData));
+        toast.success('Đánh giá đã được cập nhật thành công!');
+      } else {
+        await import('../../services/reviewService').then(m => m.default.createSTIServiceReview(reviewingRecord.testId, reviewData));
+        toast.success('Đánh giá đã được gửi thành công!');
+      }
+      handleCloseReviewDialog();
+      // Reload lại đánh giá
+      const data = await import('../../services/reviewService').then(m => m.default.getMyReviews(0, 1000));
+      setMyRatings(data?.content || data?.data || data || []);
+    } catch (err) {
+      toast.error('Lỗi khi gửi đánh giá: ' + (err.message || ''));
+    } finally {
+      setReviewLoading(false);
+    }
+  };
 
   // Define fetchSTITests as a named function to allow calling it from retry button
   const fetchSTITests = () => {
@@ -1041,32 +1095,50 @@ const MedicalHistoryContent = () => {
                             ''
                           ).toUpperCase()
                         ) ? (
-                        record.hasRated ? (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            color="success"
-                            onClick={() =>
-                              navigate('/profile', {
-                                state: { initialTab: 'my-reviews', viewRated: record.testId },
-                              })
-                            }
-                          >
-                            Xem đánh giá
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() =>
-                              navigate('/profile', {
-                                state: { initialTab: 'my-reviews', rateTestId: record.testId },
-                              })
-                            }
-                          >
-                            Đánh giá
-                          </Button>
-                        )
+                        (() => {
+                          // Kiểm tra đã đánh giá chưa bằng stiTestId
+                          const foundReview = myRatings.find(
+                            (r) => r.stiTestId && String(r.stiTestId) === String(record.testId)
+                          );
+                          if (foundReview) {
+                            // Đã đánh giá, hiện nút Chỉnh sửa
+                            return (
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                color="success"
+                                onClick={() => {
+                                  setReviewingRecord(record);
+                                  setRating(foundReview.rating || 0);
+                                  setFeedback(foundReview.comment || '');
+                                  setIsEditMode(true);
+                                  setEditingReviewId(foundReview.ratingId || foundReview.id);
+                                  setOpenReviewDialog(true);
+                                }}
+                              >
+                                Chỉnh sửa
+                              </Button>
+                            );
+                          } else {
+                            // Chưa đánh giá, hiện nút Đánh giá
+                            return (
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => {
+                                  setReviewingRecord(record);
+                                  setRating(0);
+                                  setFeedback('');
+                                  setIsEditMode(false);
+                                  setEditingReviewId(null);
+                                  setOpenReviewDialog(true);
+                                }}
+                              >
+                                Đánh giá
+                              </Button>
+                            );
+                          }
+                        })()
                       ) : (
                         <span style={{ color: '#BDBDBD', fontSize: 13 }}>
                           {['CANCELED', 'PENDING'].includes((record.status || '').toUpperCase()) ? '—' : 'Chỉ đánh giá khi hoàn thành'}
@@ -1234,6 +1306,19 @@ const MedicalHistoryContent = () => {
         onClose={() => setOpenCanceledDetailModal(false)}
         test={selectedCanceledTest}
         formatDateDisplay={formatDateDisplay}
+      />
+      {/* Dialog đánh giá */}
+      <ReviewForm
+        open={openReviewDialog}
+        onClose={handleCloseReviewDialog}
+        review={reviewingRecord}
+        rating={rating}
+        setRating={setRating}
+        feedback={feedback}
+        setFeedback={setFeedback}
+        onSubmit={handleSubmitReview}
+        isEditMode={isEditMode}
+        loading={reviewLoading}
       />
     </Box>
   );
