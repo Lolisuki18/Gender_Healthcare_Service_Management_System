@@ -474,8 +474,7 @@ export const userService = {
   sendDeleteAccountVerificationCode: async (password) => {
     try {
       const response = await apiClient.post(
-        '/users/profile/delete-account/send-verification',
-        { password }
+        `/users/profile/delete-account/send-verification?password=${encodeURIComponent(password)}`
       );
       return {
         success: true,

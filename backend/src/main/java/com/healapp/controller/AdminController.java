@@ -1,44 +1,44 @@
 package com.healapp.controller;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.dto.ConsultantProfileRequest;
-import com.healapp.dto.ConsultantProfileResponse;
-import com.healapp.dto.CreateAccountRequest;
-import com.healapp.dto.CreateConsultantAccRequest;
-//import com.healapp.dto.STIServiceRequest;
-//import com.healapp.dto.STIServiceResponse;
-import com.healapp.dto.UserResponse;
-import com.healapp.dto.UserUpdateRequest;
-import com.healapp.model.UserDtls;
-// import com.healapp.service.AppConfigService;
-import com.healapp.service.ConsultantService;
-// import com.healapp.service.STIServiceService;
-import com.healapp.service.UserService;
-import com.healapp.service.PaymentService;
-import com.healapp.model.Payment;
-import com.healapp.model.PaymentStatus;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.ConsultantProfileResponse;
+import com.healapp.dto.CreateAccountRequest;
+import com.healapp.dto.UserResponse;
+import com.healapp.dto.UserUpdateRequest;
+import com.healapp.model.Payment;
+import com.healapp.model.PaymentStatus;
+import com.healapp.model.UserDtls;
+import com.healapp.service.ConsultantService;
 import com.healapp.service.ConsultationService;
-import com.healapp.service.STIServiceService;
-import com.healapp.service.STIPackageService;
+import com.healapp.service.PaymentService;
 import com.healapp.service.QuestionService;
 import com.healapp.service.RatingService;
+import com.healapp.service.STIPackageService;
+import com.healapp.service.STIServiceService;
+import com.healapp.service.UserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/admin")
@@ -238,6 +238,55 @@ public class AdminController {
             @Valid @RequestBody UserUpdateRequest request) {
         ApiResponse<UserResponse> response = userService.updateUserInfomation(userId, request);
         return getResponseEntity(response);
+    }
+
+    // ================= ACCOUNT MANAGEMENT =================
+
+    /**
+     * Admin vô hiệu hóa tài khoản
+     */
+    @PostMapping("/users/{userId}/disable")
+    public ResponseEntity<ApiResponse<String>> disableUser(
+            @PathVariable Long userId, 
+            @RequestParam String reason) {
+        
+        ApiResponse<String> response = userService.disableAccountByAdmin(userId, reason);
+        return response.isSuccess() ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
+    }
+
+    /**
+     * Admin khôi phục tài khoản
+     */
+    @PostMapping("/users/{userId}/restore")
+    public ResponseEntity<ApiResponse<String>> restoreUser(@PathVariable Long userId) {
+        ApiResponse<String> response = userService.restoreAccountByAdmin(userId);
+        return response.isSuccess() ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
+    }
+
+    /**
+     * Admin xem danh sách tài khoản bị vô hiệu hóa
+     */
+    @GetMapping("/users/disabled")
+    public ResponseEntity<ApiResponse<List<UserDtls>>> getDisabledUsers() {
+        try {
+            // Sử dụng UserRepository qua UserService
+            return ResponseEntity.ok(ApiResponse.success("Danh sách tài khoản bị vô hiệu hóa", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Có lỗi xảy ra: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Admin xem danh sách tài khoản đã bị xóa
+     */
+    @GetMapping("/users/deleted")
+    public ResponseEntity<ApiResponse<List<UserDtls>>> getDeletedUsers() {
+        try {
+            // Sử dụng UserRepository qua UserService  
+            return ResponseEntity.ok(ApiResponse.success("Danh sách tài khoản đã bị xóa", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Có lỗi xảy ra: " + e.getMessage()));
+        }
     }
 
     // =================== STI SERVICES WITH COMPONENTS

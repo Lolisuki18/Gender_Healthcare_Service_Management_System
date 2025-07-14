@@ -254,4 +254,60 @@ export const adminService = {
       throw error.response?.data || error;
     }
   },
+
+  //=================================================Quản lý tài khoản=================================================
+  
+  /**
+   * Admin vô hiệu hóa tài khoản user
+   */
+  disableUser: async (userId, reason) => {
+    try {
+      const response = await apiClient.post(
+        `/admin/users/${userId}/disable?reason=${encodeURIComponent(reason)}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('AdminService.disableUser error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * Admin khôi phục tài khoản user đã bị vô hiệu hóa
+   */
+  restoreUser: async (userId) => {
+    try {
+      const response = await apiClient.post(`/admin/users/${userId}/restore`);
+      return response.data;
+    } catch (error) {
+      console.error('AdminService.restoreUser error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * Admin lấy danh sách user bị vô hiệu hóa
+   */
+  getDisabledUsers: async () => {
+    try {
+      const response = await apiClient.get('/admin/users/disabled');
+      return response.data;
+    } catch (error) {
+      console.error('AdminService.getDisabledUsers error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * Admin lấy danh sách user đã bị xóa
+   */
+  getDeletedUsers: async () => {
+    try {
+      const response = await apiClient.get('/admin/users/deleted');
+      return response.data;
+    } catch (error) {
+      console.error('AdminService.getDeletedUsers error:', error);
+      throw error.response?.data || error;
+    }
+  },
 };

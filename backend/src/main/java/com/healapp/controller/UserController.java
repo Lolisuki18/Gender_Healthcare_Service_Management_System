@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,11 +16,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ChangePasswordRequest;
+import com.healapp.dto.DeleteAccountRequest;
 import com.healapp.dto.ForgotPasswordRequest;
 import com.healapp.dto.PhoneVerificationRequest;
 import com.healapp.dto.RegisterRequest;
@@ -29,12 +30,10 @@ import com.healapp.dto.UpdatePhoneRequest;
 import com.healapp.dto.UpdateProfileRequest;
 import com.healapp.dto.UserResponse;
 import com.healapp.dto.VerificationCodeRequest;
-import com.healapp.dto.DeleteAccountRequest;
-import com.healapp.dto.SendDeleteVerificationRequest;
+import com.healapp.model.UserDtls;
 import com.healapp.service.EmailService;
 import com.healapp.service.EmailVerificationService;
 import com.healapp.service.UserService;
-import com.healapp.service.AccountDeletionService;
 
 import jakarta.validation.Valid;
 
@@ -50,9 +49,6 @@ public class UserController {
 
     @Autowired
     private EmailVerificationService emailVerificationService;
-
-    @Autowired
-    private AccountDeletionService accountDeletionService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> registerUser(@Valid @RequestBody RegisterRequest request) {
@@ -384,45 +380,56 @@ public class UserController {
     // Gửi mã xác thực xóa tài khoản
     @PostMapping("/profile/delete-account/send-verification")
     public ResponseEntity<ApiResponse<String>> sendDeleteAccountVerification(
-            @Valid @RequestBody SendDeleteVerificationRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error("User not authenticated"));
-        }
-        String username = authentication.getName();
-        Long userId = userService.getUserIdFromUsername(username);
-        if (userId == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error("User not found"));
-        }
-        ApiResponse<String> response = accountDeletionService.sendDeleteVerificationCode(userId, request);
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
+            @RequestParam String password) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            
+            UserDtls currentUser = userService.getUserByUsername(username);
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("Không tìm thấy người dùng"));
+            }
+
+            ApiResponse<String> response = userService.sendDeleteVerificationCode(currentUser.getId(), password);
+            
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Có lỗi xảy ra: " + e.getMessage()));
         }
     }
 
     // Xác nhận xóa tài khoản vĩnh viễn
     @DeleteMapping("/profile/delete-account")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<String>> deleteAccount(@Valid @RequestBody DeleteAccountRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error("User not authenticated"));
-        }
-        String username = authentication.getName();
-        Long userId = userService.getUserIdFromUsername(username);
-        if (userId == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error("User not found"));
-        }
-        ApiResponse<String> response = accountDeletionService.deleteAccount(userId, request);
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            
+            UserDtls currentUser = userService.getUserByUsername(username);
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("Không tìm thấy người dùng"));
+            }
+
+            ApiResponse<String> response = userService.deleteAccount(currentUser.getId(), request);
+            
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Có lỗi xảy ra: " + e.getMessage()));
         }
     }
 }

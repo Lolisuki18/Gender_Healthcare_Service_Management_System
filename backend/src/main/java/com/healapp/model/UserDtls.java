@@ -80,6 +80,12 @@ public class UserDtls {
     @Column(name = "created_date", nullable = false)
     private LocalDateTime createdDate = LocalDateTime.now();
 
+    @Column(name = "is_deleted", nullable = false, columnDefinition = "BIT DEFAULT 0")
+    private Boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     public String getRoleName() {
         return role != null ? role.getRoleName() : null;
     }

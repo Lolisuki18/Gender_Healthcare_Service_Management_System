@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ChangePasswordRequest;
 import com.healapp.dto.CreateAccountRequest;
+import com.healapp.dto.DeleteAccountRequest;
 import com.healapp.dto.ForgotPasswordRequest;
 import com.healapp.dto.LoginRequest;
 import com.healapp.dto.LoginResponse;
@@ -82,11 +83,17 @@ public class UserService {
     private String defaultAvatarPath;
 
     public boolean isEmailExists(String email) {
-        return userRepository.existsByEmail(email);
+        // Kiểm tra email có tồn tại trong user active và chưa bị xóa
+        // Repository method đã filter isActive=true và isDeleted=false
+        // Email đã bị xóa sẽ có suffix _D nên không trùng với email gốc
+        return userRepository.existsByEmailAndIsActiveTrueAndIsDeletedFalse(email);
     }
 
     public boolean isUsernameExists(String username) {
-        return userRepository.existsByUsername(username);
+        // Kiểm tra username có tồn tại trong user active và chưa bị xóa
+        // Repository method đã filter isActive=true và isDeleted=false  
+        // Username đã bị xóa sẽ có suffix _D nên không trùng với username gốc
+        return userRepository.existsByUsernameAndIsActiveTrueAndIsDeletedFalse(username);
     }
 
     public ApiResponse<String> sendEmailVerificationCode(VerificationCodeRequest request) {
@@ -116,11 +123,11 @@ public class UserService {
             }
 
             // Kiểm tra username và email đã tồn tại
-            if (userRepository.existsByUsername(request.getUsername())) {
+            if (isUsernameExistsAndActive(request.getUsername())) {
                 return ApiResponse.error("Username đã tồn tại");
             }
 
-            if (userRepository.existsByEmail(request.getEmail())) {
+            if (isEmailExistsAndActive(request.getEmail())) {
                 return ApiResponse.error("Email đã tồn tại");
             } // Tạo user mới
             UserDtls user = new UserDtls();
@@ -180,9 +187,9 @@ public class UserService {
             UserDtls user = null;
 
             if (usernameOrEmail.contains("@")) {
-                user = userRepository.findByEmail(usernameOrEmail).orElse(null);
+                user = findActiveUserByEmail(usernameOrEmail);
             } else {
-                user = userRepository.findByUsername(usernameOrEmail).orElse(null);
+                user = findActiveUserByUsername(usernameOrEmail);
             }
 
             if (user == null) {
@@ -669,6 +676,8 @@ public class UserService {
         response.setRole(user.getRoleName());
         response.setAddress(user.getAddress());
         response.setCreatedDate(user.getCreatedDate());
+        response.setIsDeleted(user.getIsDeleted());
+        response.setDeletedAt(user.getDeletedAt());
         return response;
     }
 
@@ -837,37 +846,53 @@ public class UserService {
     }
 
     /**
-     * Kiểm tra phone number đã tồn tại chưa (không tính suffix _V)
+     * Kiểm tra phone number đã tồn tại chưa (không tính suffix _V và _D)
      */
     public boolean isPhoneExists(String phone) {
         if (phone == null || phone.trim().isEmpty()) {
             return false;
         }
 
-        // Tìm phone bằng cách so sánh phone gốc (bỏ suffix _V)
+        // Chỉ kiểm tra trong user active và chưa bị xóa
         return userRepository.findAll().stream()
+                .filter(user -> user.getIsActive() && !user.getIsDeleted()) // Chỉ check user active
                 .anyMatch(user -> {
                     String userPhone = user.getPhone();
-                    if (userPhone == null)
-                        return false;
+                    if (userPhone == null) return false;
 
-                    // Loại bỏ suffix _V nếu có
-                    String cleanUserPhone = userPhone.endsWith("_V") ? userPhone.substring(0, userPhone.length() - 2)
-                            : userPhone;
+                    // Loại bỏ suffix _V (verified) và _D (deleted) nếu có
+                    String cleanUserPhone = userPhone;
+                    if (userPhone.endsWith("_V")) {
+                        cleanUserPhone = userPhone.substring(0, userPhone.length() - 2);
+                    } else if (userPhone.contains("_D")) {
+                        // Phone đã bị xóa sẽ có suffix _D{digits}, bỏ qua
+                        return false;
+                    }
 
                     return cleanUserPhone.equals(phone);
                 });
     }
 
     /**
-     * Lấy phone number gốc (bỏ suffix _V)
+     * Lấy phone number gốc (bỏ suffix _V và _D)
      */
     public String getCleanPhoneNumber(String phone) {
         if (phone == null || phone.trim().isEmpty()) {
             return phone;
         }
 
-        return phone.endsWith("_V") ? phone.substring(0, phone.length() - 2) : phone;
+        // Loại bỏ suffix _V (verified)
+        if (phone.endsWith("_V")) {
+            return phone.substring(0, phone.length() - 2);
+        }
+        
+        // Loại bỏ suffix _D{digits} (deleted) - pattern: _D + 5 digits
+        if (phone.contains("_D")) {
+            int deleteSuffixIndex = phone.indexOf("_D");
+            return phone.substring(0, deleteSuffixIndex);
+        }
+
+        return phone;
     }
 
     /**
@@ -884,5 +909,217 @@ public class UserService {
 
     public UserDtls saveUser(UserDtls user) {
         return userRepository.save(user);
+    }
+
+    // ================= ACCOUNT DELETION METHODS =================
+
+    /**
+     * Gửi mã xác thực để xóa tài khoản
+     */
+    public ApiResponse<String> sendDeleteVerificationCode(Long userId, String password) {
+        try {
+            // Lấy thông tin user
+            UserDtls user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                return ApiResponse.error("Không tìm thấy người dùng");
+            }
+
+            // Kiểm tra role - chỉ cho phép CUSTOMER xóa tài khoản
+            String userRole = user.getRoleName();
+            if (!"CUSTOMER".equals(userRole)) {
+                return ApiResponse.error("Chỉ tài khoản CUSTOMER mới được phép xóa.");
+            }
+
+            // Kiểm tra mật khẩu
+            if (!passwordEncoder.matches(password, user.getPassword())) {
+                return ApiResponse.error("Mật khẩu không đúng");
+            }
+
+            // Kiểm tra nếu user đăng nhập bằng OAuth (Google)
+            if (user.getProvider() != com.healapp.model.AuthProvider.LOCAL) {
+                return ApiResponse.error("Tài khoản đăng nhập bằng Google không thể xóa qua API này");
+            }
+
+            // Tạo mã xác thực
+            String verificationCode = emailVerificationService.generateVerificationCode(user.getEmail());
+
+            // Gửi email xác thực
+            emailService.sendDeleteAccountVerificationCodeAsync(user.getEmail(), verificationCode);
+
+            return ApiResponse.success("Mã xác thực đã được gửi đến email của bạn", user.getEmail());
+
+        } catch (Exception e) {
+            return ApiResponse.error("Có lỗi xảy ra: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Xóa tài khoản (soft delete) - đánh dấu isDeleted = true
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public ApiResponse<String> deleteAccount(Long userId, DeleteAccountRequest request) {
+        try {
+            // Lấy thông tin user
+            UserDtls user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                return ApiResponse.error("Không tìm thấy người dùng");
+            }
+
+            // Kiểm tra role - chỉ cho phép CUSTOMER xóa tài khoản
+            String userRole = user.getRoleName();
+            if (!"CUSTOMER".equals(userRole)) {
+                return ApiResponse.error("Chỉ tài khoản CUSTOMER mới được phép xóa.");
+            }
+
+            // Kiểm tra mật khẩu
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                return ApiResponse.error("Mật khẩu không đúng");
+            }
+
+            // Kiểm tra mã xác thực
+            boolean isVerified = emailVerificationService.verifyCode(user.getEmail(), request.getVerificationCode());
+            if (!isVerified) {
+                return ApiResponse.error("Mã xác thực không đúng hoặc đã hết hạn");
+            }
+
+            // Kiểm tra nếu user đăng nhập bằng OAuth (Google)
+            if (user.getProvider() != com.healapp.model.AuthProvider.LOCAL) {
+                return ApiResponse.error("Tài khoản đăng nhập bằng Google không thể xóa qua API này");
+            }
+
+            // Lưu email gốc để gửi thông báo
+            String originalEmail = user.getEmail();
+            String originalFullName = user.getFullName();
+
+            // Tạo suffix ngắn để đảm bảo unique và không vượt quá độ dài cột
+            // Dùng random + timestamp cuối để tránh trùng lặp
+            String timestampSuffix = String.valueOf(System.currentTimeMillis()).substring(8); // Lấy 5 chữ số cuối
+            String deletionSuffix = "_D" + timestampSuffix; // Ví dụ: _D12345 (7 ký tự)
+            
+            // Soft delete - thêm suffix để "vô hiệu hóa" và giải phóng email, username, phone gốc
+            if (user.getEmail() != null) {
+                user.setEmail(user.getEmail() + deletionSuffix);
+            }
+            if (user.getUsername() != null) {
+                user.setUsername(user.getUsername() + deletionSuffix);
+            }
+            if (user.getPhone() != null) {
+                // Kiểm tra độ dài phone để tránh vượt quá giới hạn cột (15 ký tự)
+                String originalPhone = user.getPhone();
+                if (originalPhone.length() + deletionSuffix.length() <= 15) {
+                    user.setPhone(originalPhone + deletionSuffix);
+                } else {
+                    // Nếu quá dài, cắt bớt phone gốc để vừa với suffix
+                    int maxOriginalLength = 15 - deletionSuffix.length();
+                    String truncatedPhone = originalPhone.substring(0, Math.min(originalPhone.length(), maxOriginalLength));
+                    user.setPhone(truncatedPhone + deletionSuffix);
+                }
+            }
+            
+            // Xóa thông tin cá nhân khác
+            user.setFullName("Tài khoản đã xóa");
+            user.setAvatar(null);
+            user.setBirthDay(null);
+            user.setAddress(null);
+            
+            // Đánh dấu tài khoản đã bị xóa
+            user.setIsActive(false);
+            user.setIsDeleted(true);
+            user.setDeletedAt(java.time.LocalDateTime.now());
+            
+            // Vô hiệu hóa password bằng cách thêm suffix (không được set null do constraint)
+            user.setPassword("DELETED_ACCOUNT" + deletionSuffix);
+            
+            userRepository.save(user);
+
+            // Gửi email xác nhận xóa tài khoản đến email gốc
+            try {
+                // TODO: Implement sendAccountDeletionConfirmationAsync method in EmailService
+                // emailService.sendAccountDeletionConfirmationAsync(originalEmail, originalFullName);
+            } catch (Exception e) {
+                // Log warning nhưng không throw exception
+            }
+
+            return ApiResponse.success("Tài khoản đã được xóa vĩnh viễn. Email, username và số điện thoại có thể được sử dụng để đăng ký tài khoản mới.");
+
+        } catch (Exception e) {
+            return ApiResponse.error("Có lỗi xảy ra khi xóa tài khoản: " + e.getMessage());
+        }
+    }
+
+    // ================= ADMIN ACCOUNT MANAGEMENT =================
+
+    /**
+     * Admin vô hiệu hóa tài khoản (có thể khôi phục)
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public ApiResponse<String> disableAccountByAdmin(Long userId, String reason) {
+        try {
+            UserDtls user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                return ApiResponse.error("Không tìm thấy người dùng");
+            }
+
+            // Admin disable - không xóa thông tin cá nhân
+            user.setIsActive(false);
+            // Không set isDeleted = true vì đây là admin disable, không phải user delete
+            
+            userRepository.save(user);
+
+            return ApiResponse.success("Tài khoản đã được vô hiệu hóa bởi admin");
+
+        } catch (Exception e) {
+            return ApiResponse.error("Có lỗi xảy ra: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Admin khôi phục tài khoản đã bị vô hiệu hóa
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public ApiResponse<String> restoreAccountByAdmin(Long userId) {
+        try {
+            UserDtls user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                return ApiResponse.error("Không tìm thấy người dùng");
+            }
+
+            // Chỉ có thể khôi phục tài khoản bị admin disable, không thể khôi phục tài khoản đã bị user xóa
+            if (user.getIsDeleted() != null && user.getIsDeleted()) {
+                return ApiResponse.error("Không thể khôi phục tài khoản đã bị xóa bởi người dùng");
+            }
+
+            user.setIsActive(true);
+            userRepository.save(user);
+
+            return ApiResponse.success("Tài khoản đã được khôi phục thành công");
+
+        } catch (Exception e) {
+            return ApiResponse.error("Có lỗi xảy ra: " + e.getMessage());
+        }
+    }
+
+    // ================= UPDATED METHODS FOR SOFT DELETE =================
+
+    /**
+     * Cập nhật method đăng ký để kiểm tra email/username đã bị sử dụng bởi user active
+     */
+    public boolean isEmailExistsAndActive(String email) {
+        return userRepository.existsByEmailAndIsActiveTrueAndIsDeletedFalse(email);
+    }
+
+    public boolean isUsernameExistsAndActive(String username) {
+        return userRepository.existsByUsernameAndIsActiveTrueAndIsDeletedFalse(username);
+    }
+
+    /**
+     * Tìm user active để login
+     */
+    public UserDtls findActiveUserByEmail(String email) {
+        return userRepository.findByEmailAndIsActiveTrueAndIsDeletedFalse(email).orElse(null);
+    }
+
+    public UserDtls findActiveUserByUsername(String username) {
+        return userRepository.findByUsernameAndIsActiveTrueAndIsDeletedFalse(username).orElse(null);
     }
 }

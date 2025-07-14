@@ -59,4 +59,24 @@ public interface UserRepository extends JpaRepository<UserDtls, Long> {
     List<UserDtls> findByRoleNameOrderByCreatedDateDesc(@Param("roleName") String roleName);
 
     Optional<UserDtls> findByEmailAndProvider(String email, AuthProvider provider);
+    
+    // Tìm user active (không bị disable và không bị delete)
+    Optional<UserDtls> findByEmailAndIsActiveTrueAndIsDeletedFalse(String email);
+    Optional<UserDtls> findByUsernameAndIsActiveTrueAndIsDeletedFalse(String username);
+    
+    // Kiểm tra email/username/phone có tồn tại và đang hoạt động không
+    boolean existsByEmailAndIsActiveTrueAndIsDeletedFalse(String email);
+    boolean existsByUsernameAndIsActiveTrueAndIsDeletedFalse(String username);
+    
+    // Tìm tất cả user không bị xóa (cho admin quản lý)
+    @Query("SELECT u FROM UserDtls u WHERE u.isDeleted = false ORDER BY u.createdDate DESC")
+    List<UserDtls> findAllActiveAndDisabled();
+    
+    // Tìm user bị admin disable (có thể khôi phục)
+    @Query("SELECT u FROM UserDtls u WHERE u.isActive = false AND u.isDeleted = false")
+    List<UserDtls> findDisabledByAdmin();
+    
+    // Tìm user đã bị xóa bởi user (không thể khôi phục)
+    @Query("SELECT u FROM UserDtls u WHERE u.isDeleted = true")
+    List<UserDtls> findDeletedByUser();
 }
