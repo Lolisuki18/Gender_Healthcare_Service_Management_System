@@ -243,3 +243,94 @@ export const setupSessionTimeoutChecker = () => {
     clearInterval(intervalId);
   };
 };
+
+/**
+ * Kiểm tra sức khỏe tổng thể của token system
+ * @returns {Object} Health status object
+ */
+export const checkTokenHealth = () => {
+  const token = localStorageUtil.get('token');
+
+  if (!token) {
+    return {
+      status: 'no_token',
+      message: 'Không có token nào được lưu trữ',
+      isValid: false,
+      timeLeft: 0,
+      needsRefresh: false,
+    };
+  }
+
+  const { accessToken, refreshToken } = token;
+
+  // Kiểm tra access token
+  const isAccessValid = !isTokenCompletelyExpired(accessToken);
+  let accessTimeLeft = 0;
+  if (isAccessValid) {
+    try {
+      const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      accessTimeLeft = payload.exp * 1000 - Date.now();
+    } catch (error) {
+      accessTimeLeft = 0;
+    }
+  }
+
+  // Kiểm tra refresh token
+  const isRefreshValid = isRefreshTokenValid(refreshToken);
+
+  // Kiểm tra có cần refresh không (5 phút trước khi hết hạn)
+  const needsRefresh = isAccessValid && accessTimeLeft < 5 * 60 * 1000;
+
+  let status = 'healthy';
+  let message = 'Token hoạt động bình thường';
+
+  if (!isAccessValid) {
+    status = 'access_expired';
+    message = 'Access token đã hết hạn';
+  } else if (!isRefreshValid) {
+    status = 'refresh_expired';
+    message = 'Refresh token đã hết hạn';
+  } else if (needsRefresh) {
+    status = 'needs_refresh';
+    message = 'Token cần được refresh sớm';
+  }
+
+  return {
+    status,
+    message,
+    isValid: isAccessValid && isRefreshValid,
+    timeLeft: accessTimeLeft,
+    needsRefresh,
+    accessTokenValid: isAccessValid,
+    refreshTokenValid: isRefreshValid,
+  };
+};
+
+/**
+ * Lấy thông tin chi tiết về token
+ * @returns {Object} Token details
+ */
+export const getTokenDetails = () => {
+  const token = localStorageUtil.get('token');
+
+  if (!token?.accessToken) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(atob(token.accessToken.split('.')[1]));
+    const currentTime = Date.now() / 1000;
+
+    return {
+      subject: payload.sub,
+      issuer: payload.iss,
+      issuedAt: new Date(payload.iat * 1000),
+      expiresAt: new Date(payload.exp * 1000),
+      roles: payload.roles || [],
+      timeLeft: Math.max(0, payload.exp - currentTime),
+      isExpired: payload.exp <= currentTime,
+    };
+  } catch (error) {
+    return null;
+  }
+};
