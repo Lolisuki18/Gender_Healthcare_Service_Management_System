@@ -39,19 +39,19 @@ export const isImageUrl = (url) => {
 
 export function getBlogImageUrl(path) {
   if (!path) {
-    return '/img/blog/default.svg'; // Sử dụng ảnh SVG có sẵn trong public/img/blog
+    return '/img/blog/default.jpg'; // Sử dụng ảnh JPG có sẵn trong public/img/blog
   }
 
   if (path.startsWith('http')) {
     return path;
   }
 
-  // Nếu path bắt đầu bằng /img/ (blog hoặc sections), sử dụng local images từ public folder
-  if (path.startsWith('/img/blog/') || path.startsWith('/img/sections/')) {
+  // Chỉ sử dụng local cho file default.jpg
+  if (path === '/img/blog/default.jpg') {
     return path; // React sẽ tự động tìm trong public folder
   }
 
-  // Các đường dẫn khác từ backend API
+  // Tất cả các đường dẫn khác từ backend API (bao gồm /img/blog/thumb_xxx.jpg)
   const fullUrl = `${API_BASE_URL}${path}`;
   return fullUrl;
 }
@@ -62,14 +62,14 @@ export function getBlogImageUrl(path) {
  */
 export function getBlogFallbackImages() {
   return [
-    '/img/blog/default.svg',
+    '/img/blog/default.jpg',
     'https://via.placeholder.com/300x200/e0f7fa/546e7a?text=Hình+không+khả+dụng',
   ];
 }
 
 export function getAvatarUrl(path) {
   if (!path) {
-    return '/img/blog/default.svg'; // Sử dụng ảnh SVG có sẵn
+    return `${API_BASE_URL}/img/blog/default.jpg`; // Trả về full URL từ backend
   }
 
   if (path.startsWith('http')) {
@@ -86,7 +86,7 @@ export function getAvatarUrl(path) {
  */
 export function getAvatarFallbackImages() {
   return [
-    '/img/blog/default.svg',
+    '/img/blog/default.jpg',
     'https://via.placeholder.com/100x100/e0f7fa/546e7a?text=User',
   ];
 }

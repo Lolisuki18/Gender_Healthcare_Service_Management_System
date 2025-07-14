@@ -19,18 +19,15 @@ import {
   Button,
   Fab,
   Tooltip,
-  DialogTitle,
-  DialogActions
+  Grid
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import HomeIcon from '@mui/icons-material/Home';
 import AddIcon from '@mui/icons-material/Add';
-import blogService from '@/services/blogService';
-import BlogCard from '@/components/common/BlogCard';
-import BlogForm from '@/components/common/BlogForm';
-import Dialog from '@mui/material/Dialog';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import BlogCard from '@/components/common/BlogCard';
+import blogService from '../services/blogService';
 
 const BlogPage = () => {
   // ===== STATE MANAGEMENT =====
@@ -40,36 +37,11 @@ const BlogPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [openBlogForm, setOpenBlogForm] = useState(false);
-  const [form, setForm] = useState({
-    title: '',
-    content: '',
-    categoryId: '',
-    thumbnail: null,
-    existingThumbnail: '',
-    sections: []
-  });
-  const [categories, setCategories] = useState([]);
-  const [thumbnailFile, setThumbnailFile] = useState(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState('');
-  const [sectionFiles, setSectionFiles] = useState({});
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const cats = await blogService.getCategories();
-        setCategories(cats);
-      } catch (e) {
-        setCategories([]);
-      }
-    };
-    fetchCategories();
-  }, []);
 
   const navigate = useNavigate();
   const blogsPerPage = 6;
 
-  // ===== FETCH DATA FROM REAL API =====
+  // ===== FETCH DATA FROM API =====
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
@@ -100,7 +72,7 @@ const BlogPage = () => {
         
         console.log('📊 API Response:', response);
         
-        if (response.success && response.data) {
+        if (response && response.success && response.data) {
           // Xử lý response có phân trang
           const pageData = response.data;
           console.log('📄 Page data:', pageData);
@@ -110,6 +82,11 @@ const BlogPage = () => {
           const confirmedBlogs = (pageData.content || []).filter(blog => blog.status === 'CONFIRMED');
           console.log('✅ Filtered blogs (CONFIRMED only):', confirmedBlogs.length, 'out of', pageData.content?.length || 0);
           
+          // Debug: Log cấu trúc blog để hiểu field names
+          if (confirmedBlogs.length > 0) {
+            console.log('🔍 Sample blog structure:', JSON.stringify(confirmedBlogs[0], null, 2));
+          }
+          
           setBlogs(confirmedBlogs);
           setTotalPages(pageData.totalPages || 1);
           
@@ -117,28 +94,38 @@ const BlogPage = () => {
         } else {
           console.error('❌ API response not successful:', response);
           
-          // Fallback: Thử hiển thị mock data để test UI
-          console.log('🔄 Trying to use mock data as fallback...');
+          // Fallback: Hiển thị mock data để test UI
+          console.log('🔄 Using mock data as fallback...');
           const mockBlogs = [
             {
               id: 1,
-              title: "Bài viết test 1",
-              excerpt: "Đây là bài viết test để kiểm tra UI",
-              content: "Nội dung test",
+              title: "Hướng dẫn chăm sóc sức khỏe sinh sản",
+              content: "Tìm hiểu những điều cơ bản về chăm sóc sức khỏe sinh sản và các biện pháp phòng ngừa bệnh tật hiệu quả nhất hiện nay.",
               createdAt: new Date().toISOString(),
-              author: { name: "Test Author" },
-              category: { name: "Test Category" },
-              status: "CONFIRMED"
+              authorName: "Dr. Nguyễn Văn A",
+              categoryName: "Sức khỏe sinh sản",
+              status: "CONFIRMED",
+              thumbnailImage: null
             },
             {
               id: 2,
-              title: "Bài viết test 2", 
-              excerpt: "Đây là bài viết test thứ 2",
-              content: "Nội dung test 2",
-              createdAt: new Date().toISOString(),
-              author: { name: "Test Author 2" },
-              category: { name: "Test Category 2" },
-              status: "CONFIRMED"
+              title: "Phòng ngừa bệnh lây truyền qua đường tình dục",
+              content: "Cách phòng ngừa hiệu quả các bệnh lây truyền qua đường tình dục và tầm quan trọng của việc khám sức khỏe định kỳ.",
+              createdAt: new Date(Date.now() - 86400000).toISOString(),
+              authorName: "Dr. Trần Thị B",
+              categoryName: "Phòng ngừa bệnh tật",
+              status: "CONFIRMED",
+              thumbnailImage: null
+            },
+            {
+              id: 3,
+              title: "Tầm quan trọng của xét nghiệm sức khỏe định kỳ",
+              content: "Xét nghiệm sức khỏe định kỳ giúp phát hiện sớm các vấn đề sức khỏe và điều trị kịp thời, góp phần bảo vệ sức khỏe toàn diện.",
+              createdAt: new Date(Date.now() - 172800000).toISOString(),
+              authorName: "Dr. Lê Văn C",
+              categoryName: "Xét nghiệm y khoa",
+              status: "CONFIRMED",
+              thumbnailImage: null
             }
           ];
           
@@ -146,7 +133,7 @@ const BlogPage = () => {
           setTotalPages(1);
           console.log('✅ Using mock data:', mockBlogs.length, 'items');
           
-          setError(`API Error: ${response.message || 'Không thể tải danh sách bài viết'} - Hiển thị dữ liệu test`);
+          setError(`API Error: ${response?.message || 'Không thể tải danh sách bài viết'} - Hiển thị dữ liệu mẫu`);
         }
       } catch (err) {
         console.error('💥 Error fetching blogs:', err);
@@ -162,35 +149,32 @@ const BlogPage = () => {
           {
             id: 1,
             title: "Hướng dẫn chăm sóc sức khỏe sinh sản",
-            excerpt: "Tìm hiểu những điều cơ bản về chăm sóc sức khỏe sinh sản và các biện pháp phòng ngừa bệnh tật.",
-            content: "Nội dung chi tiết về chăm sóc sức khỏe sinh sản...",
+            content: "Tìm hiểu những điều cơ bản về chăm sóc sức khỏe sinh sản và các biện pháp phòng ngừa bệnh tật.",
             createdAt: new Date().toISOString(),
-            author: { name: "Dr. Nguyễn Văn A" },
-            category: { name: "Sức khỏe sinh sản" },
+            authorName: "Dr. Nguyễn Văn A",
+            categoryName: "Sức khỏe sinh sản",
             status: "CONFIRMED",
-            imageUrl: null
+            thumbnailImage: null
           },
           {
             id: 2,
             title: "Phòng ngừa bệnh lây truyền qua đường tình dục",
-            excerpt: "Cách phòng ngừa hiệu quả các bệnh lây truyền qua đường tình dục và tầm quan trọng của việc khám sức khỏe định kỳ.",
-            content: "Nội dung chi tiết về phòng ngừa STIs...",
+            content: "Cách phòng ngừa hiệu quả các bệnh lây truyền qua đường tình dục và tầm quan trọng của việc khám sức khỏe định kỳ.",
             createdAt: new Date(Date.now() - 86400000).toISOString(),
-            author: { name: "Dr. Trần Thị B" },
-            category: { name: "Phòng ngừa bệnh tật" },
+            authorName: "Dr. Trần Thị B",
+            categoryName: "Phòng ngừa bệnh tật",
             status: "CONFIRMED",
-            imageUrl: null
+            thumbnailImage: null
           },
           {
             id: 3,
             title: "Tầm quan trọng của xét nghiệm sức khỏe định kỳ",
-            excerpt: "Xét nghiệm sức khỏe định kỳ giúp phát hiện sớm các vấn đề sức khỏe và điều trị kịp thời.",
-            content: "Nội dung chi tiết về xét nghiệm định kỳ...",
+            content: "Xét nghiệm sức khỏe định kỳ giúp phát hiện sớm các vấn đề sức khỏe và điều trị kịp thời.",
             createdAt: new Date(Date.now() - 172800000).toISOString(),
-            author: { name: "Dr. Lê Văn C" },
-            category: { name: "Xét nghiệm y khoa" },
+            authorName: "Dr. Lê Văn C",
+            categoryName: "Xét nghiệm y khoa",
             status: "CONFIRMED",
-            imageUrl: null
+            thumbnailImage: null
           }
         ];
         
@@ -228,129 +212,7 @@ const BlogPage = () => {
   };
 
   const handleCreateBlog = () => {
-    setOpenBlogForm(true);
-  };
-
-  const handleCloseBlogForm = () => {
-    setOpenBlogForm(false);
-    setForm({
-      title: '',
-      content: '',
-      categoryId: '',
-      thumbnail: null,
-      existingThumbnail: '',
-      sections: []
-    });
-    setThumbnailFile(null);
-    setThumbnailPreview('');
-    setSectionFiles({});
-  };
-
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-  const handleThumbnailChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setThumbnailFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => setThumbnailPreview(e.target.result);
-      reader.readAsDataURL(file);
-    }
-  };
-  const handleSectionChange = (index, field, value) => {
-    setForm((prev) => ({
-      ...prev,
-      sections: prev.sections.map((section, i) =>
-        i === index ? { ...section, [field]: value } : section
-      )
-    }));
-  };
-  const addSection = () => {
-    setForm((prev) => ({
-      ...prev,
-      sections: [...prev.sections, {
-        sectionTitle: '',
-        sectionContent: '',
-        sectionImage: '',
-        existingSectionImage: '',
-        displayOrder: prev.sections.length
-      }]
-    }));
-  };
-  const removeSection = (index) => {
-    setForm((prev) => ({
-      ...prev,
-      sections: prev.sections.filter((_, i) => i !== index)
-    }));
-    setSectionFiles(prev => {
-      const newFiles = { ...prev };
-      delete newFiles[index];
-      return newFiles;
-    });
-  };
-  const handleSectionImageChange = (index, file) => {
-    if (file) {
-      setSectionFiles(prev => ({ ...prev, [index]: file }));
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setForm(prev => ({
-          ...prev,
-          sections: prev.sections.map((section, i) =>
-            i === index ? { ...section, sectionImage: e.target.result } : section
-          )
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-  const handleSubmitBlog = async () => {
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      const requestData = {
-        title: form.title,
-        content: form.content,
-        categoryId: parseInt(form.categoryId),
-        sections: form.sections
-          .filter(section => section.sectionTitle || section.sectionContent)
-          .map((section, index) => ({
-            sectionTitle: section.sectionTitle || '',
-            sectionContent: section.sectionContent || '',
-            sectionImage: section.sectionImage || '',
-            existingSectionImage: section.existingSectionImage || '',
-            displayOrder: index
-          })),
-        status: 'PROCESSING'
-      };
-      formData.append('request', new Blob([JSON.stringify(requestData)], { type: 'application/json' }));
-      if (thumbnailFile) {
-        formData.append('thumbnail', thumbnailFile);
-      }
-      const sectionImages = [];
-      const sectionImageIndexes = [];
-      Object.keys(sectionFiles).forEach(index => {
-        sectionImages.push(sectionFiles[index]);
-        sectionImageIndexes.push(parseInt(index));
-      });
-      if (sectionImages.length > 0) {
-        sectionImages.forEach((file) => {
-          formData.append('sectionImages', file);
-        });
-        sectionImageIndexes.forEach(index => {
-          formData.append('sectionImageIndexes', index);
-        });
-      }
-      await blogService.createBlog(formData);
-      setOpenBlogForm(false);
-      // Reload blogs
-      // fetchBlogs();
-    } catch (e) {
-      // handle error
-    } finally {
-      setLoading(false);
-    }
+    navigate('/blog/create');
   };
 
   // ===== RENDER =====
@@ -621,14 +483,14 @@ const BlogPage = () => {
         {/* Error State */}
         {error && (
           <Alert 
-            severity="error" 
+            severity="warning" 
             sx={{ 
               mb: 6, 
               borderRadius: '20px',
               backgroundColor: 'rgba(255,255,255,0.95)',
               backdropFilter: 'blur(20px)',
-              boxShadow: '0 12px 40px rgba(244, 67, 54, 0.2)',
-              border: '2px solid rgba(244, 67, 54, 0.2)',
+              boxShadow: '0 12px 40px rgba(255, 152, 0, 0.2)',
+              border: '2px solid rgba(255, 152, 0, 0.2)',
               fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
               '& .MuiAlert-message': {
                 fontSize: '1.1rem',
@@ -705,6 +567,11 @@ const BlogPage = () => {
               boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
               background: 'linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)'
             }}>
+              <LibraryBooksIcon sx={{ 
+                fontSize: 80, 
+                color: '#90a4ae', 
+                mb: 3 
+              }} />
               <Typography 
                 variant="h4" 
                 sx={{ 
@@ -723,14 +590,42 @@ const BlogPage = () => {
                   color: '#546e7a',
                   fontWeight: 400,
                   fontSize: '1.2rem',
-                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                  mb: 4
                 }}
               >
                 {searchTerm 
                   ? 'Hãy thử tìm kiếm với từ khóa khác' 
-                  : 'Hãy quay lại sau để xem các bài viết mới nhất'
+                  : 'Hãy tạo bài viết đầu tiên để chia sẻ kiến thức y khoa'
                 }
               </Typography>
+              {!searchTerm && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleCreateBlog}
+                  sx={{
+                    background: 'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
+                    color: '#ffffff',
+                    borderRadius: '50px',
+                    px: 4,
+                    py: 1.5,
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                    boxShadow: '0 8px 25px rgba(38, 198, 218, 0.3)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    textTransform: 'none',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #00acc1 0%, #00838f 100%)',
+                      boxShadow: '0 12px 35px rgba(38, 198, 218, 0.4)',
+                      transform: 'translateY(-3px)',
+                    }
+                  }}
+                >
+                  Tạo bài viết đầu tiên
+                </Button>
+              )}
             </Box>
           ) : (
             // Blog Cards
@@ -739,7 +634,7 @@ const BlogPage = () => {
               return (
                 <BlogCard 
                   key={blog.id}
-                  post={blog} // BlogCard expects 'post' prop, not 'blog'
+                  post={blog}
                   onClick={handleBlogClick}
                 />
               );
@@ -835,94 +730,6 @@ const BlogPage = () => {
           <AddIcon sx={{ fontSize: 28 }} />
         </Fab>
       </Tooltip>
-
-      <Dialog open={openBlogForm} onClose={handleCloseBlogForm} maxWidth="md" fullWidth>
-        <DialogTitle
-          sx={{
-            background: 'linear-gradient(135deg, #20B2AA 0%, #5F9EA0 100%)',
-            color: '#fff',
-            fontWeight: 700,
-            fontSize: '1.5rem',
-            padding: '20px 30px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-          }}
-        >
-          <LibraryBooksIcon sx={{ fontSize: 28 }} />
-          Thêm bài viết mới
-        </DialogTitle>
-        <BlogForm
-          form={form}
-          setForm={setForm}
-          categories={categories}
-          thumbnailFile={thumbnailFile}
-          thumbnailPreview={thumbnailPreview}
-          sectionFiles={sectionFiles}
-          handleFormChange={handleFormChange}
-          handleThumbnailChange={handleThumbnailChange}
-          handleSectionChange={handleSectionChange}
-          addSection={addSection}
-          removeSection={removeSection}
-          handleSectionImageChange={handleSectionImageChange}
-          loading={loading}
-          onSubmit={handleSubmitBlog}
-          onCancel={handleCloseBlogForm}
-          isEdit={false}
-        />
-        <DialogActions
-          sx={{
-            p: 4,
-            backgroundColor: 'rgba(32, 178, 170, 0.02)',
-            borderTop: '1px solid rgba(32, 178, 170, 0.1)',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: 2
-          }}
-        >
-          <Button
-            onClick={handleCloseBlogForm}
-            variant="outlined"
-            sx={{
-              color: '#1976d2',
-              borderColor: '#1976d2',
-              borderRadius: 3,
-              fontWeight: 700,
-              px: 4,
-              fontSize: '1rem',
-              '&:hover': {
-                background: '#e3f0ff',
-                borderColor: '#1565c0',
-              },
-            }}
-          >
-            HỦY BỎ
-          </Button>
-          <Button
-            onClick={handleSubmitBlog}
-            variant="contained"
-            disabled={loading}
-            sx={{
-              borderRadius: 3,
-              fontWeight: 700,
-              px: 4,
-              fontSize: '1rem',
-              background: '#1976d2',
-              boxShadow: '0 2px 8px rgba(74,144,226,0.10)',
-              textTransform: 'uppercase',
-              letterSpacing: 1,
-              '&:hover': { background: '#1565c0' },
-              '&:disabled': {
-                backgroundColor: '#e0e0e0',
-                color: '#bdbdbd',
-                boxShadow: 'none',
-              }
-            }}
-          >
-            TẠO BÀI VIẾT MỚI
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

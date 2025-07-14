@@ -32,8 +32,8 @@ import {
 } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import DynamicSideBar from '@/components/siderBar/DynamicSideBar';
-import localStorageUtil from '@/utils/localStorage';
+import DynamicSideBar from '../siderBar/DynamicSideBar';
+import localStorageUtil from '../../utils/localStorage';
 
 // Import content components
 import QuestionResponseContent from './QuestionResponseContent';
@@ -42,13 +42,13 @@ import STITestManagementContent from './STITestManagementContent';
 import STIPackageManagementContent from './STIPackageManagementContent';
 import BlogManagementContent from './BlogManagementContent';
 import ReviewManagementContent from './ReviewManagementContent';
-import ProfileContent from '@/components/siderBar/ProfileContent';
+import ProfileContent from '../siderBar/ProfileContent';
 import CategoryManagementContent from './CategoryManagementContent';
 import SecurityContent from '../siderBar/SecurityContent';
 import MedicalHistoryContent from '../siderBar/MedicalHistoryContent';
 import InvoicesContent from '../siderBar/InvoicesContent';
 import PaymentMethodsSection from '../CustomerProfile/PaymentMethodsSection';
-import BlogMyContent from '../siderBar/BlogCustomerContent';
+import BlogMyContent from '../CustomerProfile/BlogCustomerContent';
 import PaymentInfoContent from '../siderBar/PaymentInfoContent';
 
 // Styled component cho nội dung chính
