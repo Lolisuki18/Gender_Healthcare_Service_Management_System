@@ -16,19 +16,19 @@
  * - Cập nhật avatar và thông tin user
  */
 
-import { createSlice } from "@reduxjs/toolkit";
-import localStorageUtil from "@/utils/localStorage";
+import { createSlice } from '@reduxjs/toolkit';
+import localStorageUtil from '@/utils/localStorage';
 
 // Kiểm tra và tải userProfile từ localStorage khi khởi tạo
 const getUserFromStorage = () => {
   try {
-    const userProfile = localStorageUtil.get("userProfile");
+    const userProfile = localStorageUtil.get('userProfile');
     if (userProfile && userProfile.data) {
       return userProfile.data;
     }
     return null;
   } catch (e) {
-    console.error("Không thể đọc userProfile từ localStorage:", e);
+    console.error('Không thể đọc userProfile từ localStorage:', e);
     return null;
   }
 };
@@ -36,13 +36,13 @@ const getUserFromStorage = () => {
 // Kiểm tra trạng thái xác thực từ localStorage
 const getAuthStatus = () => {
   try {
-    const token = localStorageUtil.get("token");
-    const userProfile = localStorageUtil.get("userProfile");
-    
+    const token = localStorageUtil.get('token');
+    const userProfile = localStorageUtil.get('userProfile');
+
     // Kiểm tra cả token và userProfile
     return !!(token && token.accessToken && userProfile && userProfile.data);
   } catch (e) {
-    console.error("Không thể kiểm tra auth status:", e);
+    console.error('Không thể kiểm tra auth status:', e);
     return false;
   }
 };
@@ -56,7 +56,7 @@ const initialState = {
 };
 
 const authSlice = createSlice({
-  name: "auth",
+  name: 'auth',
   initialState,
   reducers: {
     loginStart: (state) => {
@@ -66,7 +66,7 @@ const authSlice = createSlice({
     loginSuccess: (state, action) => {
       state.loading = false;
       state.isAuthenticated = true;
-      
+
       // Hỗ trợ cả 2 format: direct user object (login thường) và {user, accessToken} (OAuth)
       const userData = action.payload.user || action.payload;
       state.user = userData;
@@ -74,17 +74,17 @@ const authSlice = createSlice({
       state.error = null;
 
       // Lưu thông tin user vào localStorage
-      localStorageUtil.set("userProfile", {
+      localStorageUtil.set('userProfile', {
         success: true,
-        message: "User profile loaded",
+        message: 'User profile loaded',
         data: userData,
       });
-      
+
       // Lưu tokens nếu có bằng setTokens method
       if (action.payload.accessToken) {
         localStorageUtil.setTokens({
           accessToken: action.payload.accessToken,
-          refreshToken: action.payload.refreshToken
+          refreshToken: action.payload.refreshToken,
         });
       }
     },
@@ -101,7 +101,7 @@ const authSlice = createSlice({
       state.error = null;
 
       // Xóa dữ liệu từ localStorage
-      localStorageUtil.remove("userProfile");
+      localStorageUtil.remove('userProfile');
       localStorageUtil.clearTokens();
     },
     clearError: (state) => {
@@ -109,9 +109,9 @@ const authSlice = createSlice({
     },
     restoreAuthState: (state) => {
       try {
-        const token = localStorageUtil.get("token");
-        const userProfile = localStorageUtil.get("userProfile");
-        
+        const token = localStorageUtil.get('token');
+        const userProfile = localStorageUtil.get('userProfile');
+
         if (token && token.accessToken && userProfile && userProfile.data) {
           state.isAuthenticated = true;
           state.user = userProfile.data;
@@ -123,10 +123,10 @@ const authSlice = createSlice({
           state.user = null;
           state.avatarUrl = null;
           localStorageUtil.clearTokens();
-          localStorageUtil.remove("userProfile");
+          localStorageUtil.remove('userProfile');
         }
       } catch (e) {
-        console.error("Error restoring auth state:", e);
+        console.error('Error restoring auth state:', e);
         state.isAuthenticated = false;
         state.user = null;
         state.avatarUrl = null;
@@ -143,8 +143,8 @@ const authSlice = createSlice({
         localStorageUtil.updateUserProfile({ avatar: newAvatarUrl }, true);
 
         // Lưu vào sessionStorage để hỗ trợ việc đồng bộ
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("last_updated_avatar", newAvatarUrl);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('last_updated_avatar', newAvatarUrl);
         }
       }
     },

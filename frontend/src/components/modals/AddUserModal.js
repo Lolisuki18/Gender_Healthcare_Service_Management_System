@@ -45,7 +45,13 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 
-const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
+const AddUserModal = ({
+  open,
+  onClose,
+  userType = 'all',
+  onSubmit,
+  fieldErrors = {},
+}) => {
   // Initial form state - Updated theo backend requirements
   const initialFormData = {
     role: userType !== 'all' ? userType : '',
@@ -63,6 +69,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
   const [formData, setFormData] = useState(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [localFieldErrors, setLocalFieldErrors] = useState({});
 
   // Reset form khi modal mở
   useEffect(() => {
@@ -71,6 +78,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
         ...initialFormData,
         role: userType !== 'all' ? userType : '',
       });
+      setLocalFieldErrors({});
     }
   }, [open, userType]);
 
@@ -81,6 +89,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
       ...prev,
       [name]: value,
     }));
+    setLocalFieldErrors((prev) => ({ ...prev, [name]: undefined })); // clear lỗi khi nhập lại
   };
 
   // Password visibility toggle
@@ -153,29 +162,45 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
       'gender',
       'username',
       'password',
-      // 'phone' is now optional, removed from required fields
+      'phone', // Thêm phone là bắt buộc
     ];
     const missingFields = requiredFields.filter(
       (field) => !formData[field] || formData[field].trim() === ''
     );
 
     if (missingFields.length > 0) {
+      const newFieldErrors = {};
+      missingFields.forEach((field) => {
+        switch (field) {
+          case 'role':
+            newFieldErrors.role = 'Vui lòng chọn vai trò';
+            break;
+          case 'fullName':
+            newFieldErrors.fullName = 'Vui lòng nhập họ và tên';
+            break;
+          case 'email':
+            newFieldErrors.email = 'Vui lòng nhập email';
+            break;
+          case 'gender':
+            newFieldErrors.gender = 'Vui lòng chọn giới tính';
+            break;
+          case 'username':
+            newFieldErrors.username = 'Vui lòng nhập tên đăng nhập';
+            break;
+          case 'password':
+            newFieldErrors.password = 'Vui lòng nhập mật khẩu';
+            break;
+          case 'phone':
+            newFieldErrors.phone = 'Vui lòng nhập số điện thoại';
+            break;
+          default:
+            newFieldErrors[field] = 'Vui lòng nhập thông tin';
+        }
+      });
+      setLocalFieldErrors(newFieldErrors);
       toast.warning(
         'Thông tin thiếu',
-        `Vui lòng điền đầy đủ các trường bắt buộc: ${missingFields
-          .map((field) => {
-            const fieldLabels = {
-              role: 'Vai trò',
-              fullName: 'Họ và tên',
-              email: 'Email',
-              gender: 'Giới tính',
-              username: 'Tên đăng nhập',
-              password: 'Mật khẩu',
-              phone: 'Số điện thoại', // Added label for phone
-            };
-            return fieldLabels[field] || field;
-          })
-          .join(', ')}`
+        'Vui lòng điền đầy đủ các trường bắt buộc'
       );
       return;
     }
@@ -252,8 +277,7 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
       onSubmit(apiData, formData.role);
     }
 
-    // ✅ Close modal
-    onClose();
+    // KHÔNG đóng modal ở đây, chỉ đóng khi thành công (cha tự đóng)
   };
   // Role options with color & icon mapping - đã loại bỏ ADMIN
   const roleOptions = [
@@ -401,6 +425,8 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
                 ),
               }}
               sx={{ mb: 2 }}
+              error={!!localFieldErrors.fullName || !!fieldErrors.fullName}
+              helperText={localFieldErrors.fullName || fieldErrors.fullName}
             />
 
             {/* Email */}
@@ -420,6 +446,8 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
                 ),
               }}
               sx={{ mb: 2 }}
+              error={!!localFieldErrors.email || !!fieldErrors.email}
+              helperText={localFieldErrors.email || fieldErrors.email}
             />
 
             {/* Gender */}
@@ -648,8 +676,8 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
               <Grid item size={6} md={6}>
                 {' '}
                 <TextField
+                  required
                   fullWidth
-                  // removed required prop - phone is now optional
                   label="Số điện thoại"
                   name="phone"
                   value={formData.phone}
@@ -661,7 +689,12 @@ const AddUserModal = ({ open, onClose, userType = 'all', onSubmit }) => {
                       </InputAdornment>
                     ),
                   }}
-                  helperText="10-11 chữ số (không bắt buộc)" // Updated helper text
+                  error={!!localFieldErrors.phone || !!fieldErrors.phone}
+                  helperText={
+                    localFieldErrors.phone ||
+                    fieldErrors.phone ||
+                    'Bắt buộc, 10-11 chữ số'
+                  }
                 />
               </Grid>
               <Grid item size={12} md={6}>

@@ -61,7 +61,7 @@ import { userService } from '@/services/userService';
 import { adminService } from '@/services/adminService';
 import { getAvatarUrl } from '@/utils/imageUrl';
 
-const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
+const UserManagementContent = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState(0);
   const [roleFilter, setRoleFilter] = useState('all');
@@ -77,6 +77,9 @@ const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
   const [users, setUsers] = useState([]);
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
   const [newUserId, setNewUserId] = useState(null);
+  const [openAddUserModal, setOpenAddUserModal] = useState(false); // Thêm state mới
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [addUserFieldErrors, setAddUserFieldErrors] = useState({}); // Thêm state lưu lỗi từng trường
 
   useEffect(() => {
     fetchUsers();
@@ -84,10 +87,10 @@ const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
 
   // useEffect để tự động mở modal khi openAddModal prop thay đổi
   useEffect(() => {
-    if (openAddModal) {
+    if (openAddUserModal) {
       setModalType('all');
     }
-  }, [openAddModal]);
+  }, [openAddUserModal]);
 
   const fetchUsers = async (newUserId = null) => {
     try {
@@ -491,11 +494,9 @@ const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
     }
   };
 
-  const [isCreatingUser, setIsCreatingUser] = useState(false);
-
   const handleModalSubmit = async (formData, userType) => {
     setIsCreatingUser(true);
-
+    setAddUserFieldErrors({}); // Reset lỗi trước khi submit
     try {
       console.log('Đang tạo người dùng mới:', formData);
       console.log('Loại người dùng:', userType);
@@ -515,9 +516,8 @@ const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
 
         await fetchUsers(newId);
 
-        if (onCloseAddModal) {
-          onCloseAddModal();
-        }
+        setOpenAddUserModal(false); // Đóng modal khi thành công
+        setAddUserFieldErrors({}); // Reset lỗi khi thành công
         setModalType('');
 
         console.log('Tạo người dùng thành công:', result);
@@ -528,7 +528,8 @@ const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
         error.response?.data?.message ||
         error.message ||
         'Có lỗi xảy ra khi tạo người dùng';
-
+      const errorData = error.response?.data?.data || {};
+      setAddUserFieldErrors(errorData); // Lưu lỗi từng trường
       toast.error('Lỗi tạo người dùng', errorMessage);
     } finally {
       setIsCreatingUser(false);
@@ -571,7 +572,7 @@ const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
 
   const handleAddNew = () => {
     setModalType('all');
-    // Không cần setOpenModal(true) vì đã được truyền từ props
+    setOpenAddUserModal(true); // Mở modal
   };
 
   const roleOptions = [
@@ -1051,17 +1052,17 @@ const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
                     <TableCell>
                       <Chip
                         label={
-                          user.isDeleted 
-                            ? 'Đã xóa' 
-                            : user.isActive 
-                              ? 'Hoạt động' 
+                          user.isDeleted
+                            ? 'Đã xóa'
+                            : user.isActive
+                              ? 'Hoạt động'
                               : 'Tạm khóa'
                         }
                         color={
-                          user.isDeleted 
-                            ? 'error' 
-                            : user.isActive 
-                              ? 'success' 
+                          user.isDeleted
+                            ? 'error'
+                            : user.isActive
+                              ? 'success'
                               : 'default'
                         }
                         size="small"
@@ -1161,14 +1162,14 @@ const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
       </Box>
 
       <AddUserModal
-        open={openAddModal}
+        open={openAddUserModal}
         onClose={() => {
-          if (onCloseAddModal) {
-            onCloseAddModal();
-          }
+          setOpenAddUserModal(false);
+          setAddUserFieldErrors({}); // Reset lỗi khi đóng modal
         }}
         userType={modalType}
         onSubmit={handleModalSubmit}
+        fieldErrors={addUserFieldErrors}
       />
 
       <ViewUserModal
