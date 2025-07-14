@@ -28,17 +28,12 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Card,
-  CardContent,
   Divider,
   Tooltip,
   LinearProgress,
-  Skeleton,
   Avatar,
   Alert,
   Stack,
-  Tabs,
-  Tab,
   Select,
   MenuItem,
   FormControl,
@@ -48,11 +43,9 @@ import {
   Search as SearchIcon,
   Reply as ReplyIcon,
   CheckCircle as CheckCircleIcon,
-  QuestionAnswer as QuestionAnswerIcon,
   Refresh as RefreshIcon,
   PersonOutline as PersonOutlineIcon,
   CalendarToday as CalendarTodayIcon,
-  Send as SendIcon,
   HelpOutline as HelpOutlineIcon,
   Close as CloseIcon,
   HourglassEmpty as HourglassEmptyIcon,
@@ -178,24 +171,6 @@ const QuestionResponseContent = () => {
     fetchQuestions();
   };
 
-  // Duyệt hoặc từ chối câu hỏi
-  const handleApprove = async (questionId) => {
-    const result = await confirmDialog.success(
-      'Bạn có chắc chắn muốn duyệt câu hỏi này?'
-    );
-    if (!result) return;
-    setLoading(true);
-    try {
-      await questionService.updateQuestionStatus(questionId, {
-        status: 'CONFIRMED',
-      });
-      fetchQuestions();
-    } catch (err) {
-      setError('Duyệt câu hỏi thất bại.');
-    } finally {
-      setLoading(false);
-    }
-  };
   const handleOpenRejectDialog = async (questionId) => {
     const result = await confirmDialog.cancel(
       'Bạn có chắc chắn muốn từ chối câu hỏi này?'

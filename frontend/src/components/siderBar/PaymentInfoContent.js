@@ -40,7 +40,6 @@ import {
   IconButton,
   Alert,
   Snackbar,
-  Divider,
   FormHelperText,
 } from '@mui/material';
 import {
@@ -50,7 +49,6 @@ import {
   Star as StarIcon,
   StarBorder as StarBorderIcon,
   CreditCard as CreditCardIcon,
-  Security as SecurityIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import {

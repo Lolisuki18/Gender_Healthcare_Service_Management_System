@@ -9,7 +9,6 @@ import {
   ListItemText,
   Paper,
   useMediaQuery,
-  Avatar,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';

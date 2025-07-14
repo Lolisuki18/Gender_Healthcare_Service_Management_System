@@ -158,14 +158,11 @@ const RegisterPage = () => {
     if (
       monthDiff < 0 ||
       (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
-      age--;
-    }
-
-    // Kiểm tra tuổi ít nhất 2 tuổi
-    if (age < 2) {
-      return 'Bạn phải ít nhất 2 tuổi để đăng ký tài khoản';
-    }
+    )
+      if (age < 2) {
+        // Kiểm tra tuổi ít nhất 2 tuổi
+        return 'Bạn phải ít nhất 2 tuổi để đăng ký tài khoản';
+      }
 
     return '';
   };

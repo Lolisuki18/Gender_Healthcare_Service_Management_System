@@ -35,7 +35,7 @@ import {
   Edit as EditIcon,
   Work as WorkIcon,
   Save as SaveIcon,
-  Email as EmailIcon,
+
   Cake as CakeIcon,
   Wc as GenderIcon,
   Home as AddressIcon,
@@ -44,13 +44,13 @@ import {
   Info as BioIcon,
   Verified as VerifiedIcon,
   Cancel as CancelIcon,
-  Refresh as RefreshIcon,
+
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import AvatarUpload from '../common/AvatarUpload';
 import apiClient from '../../services/api';
 import {
-  formatDateTimeFromArray,
+
   formatDateDisplay,
   formatDateForInput,
 } from '../../utils/dateUtils';
@@ -412,7 +412,6 @@ const ConsultantProfileContent = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Messages
   // Modal states
@@ -559,11 +558,7 @@ const ConsultantProfileContent = () => {
   /**
    * Refresh data - reload từ API
    */
-  const handleRefreshData = async () => {
-    setIsRefreshing(true);
-    await loadProfileData();
-    setIsRefreshing(false);
-  }; // ====================================================================
+   // ====================================================================
   // UTILITY FUNCTIONS
   // ====================================================================
 

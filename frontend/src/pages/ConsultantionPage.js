@@ -5,8 +5,6 @@ import {
   Typography,
   Grid,
   Card,
-  CardMedia,
-  CardContent,
   CardActions,
   Button,
   Box,
@@ -24,8 +22,6 @@ import {
   Alert,
   CircularProgress,
   Divider,
-  Stack,
-  Pagination,
   TextField,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
@@ -35,15 +31,12 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { format } from 'date-fns';
 import vi from 'date-fns/locale/vi';
 import { toast } from 'react-toastify';
-import Header from '@components/common/Header';
-import Footer from '@components/common/Footer';
 
 // Icons
 import SchoolIcon from '@mui/icons-material/School';
 import WorkHistoryIcon from '@mui/icons-material/WorkHistory';
 import PersonIcon from '@mui/icons-material/Person';
-import StarIcon from '@mui/icons-material/Star';
-import VerifiedIcon from '@mui/icons-material/Verified';
+
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 
@@ -80,11 +73,6 @@ const HeaderSubtitle = styled(Typography)(({ theme }) => ({
   maxWidth: 800,
   marginLeft: 'auto',
   marginRight: 'auto',
-}));
-
-const CardMediaWrapper = styled(CardMedia)(({ theme }) => ({
-  height: 200,
-  position: 'relative',
 }));
 
 const ConsultantAvatar = styled(Avatar)(({ theme }) => ({
@@ -152,31 +140,11 @@ const LoadingContainer = styled(Box)(({ theme }) => ({
   height: '50vh',
 }));
 
-// Profile Detail Dialog Styles
-const AvatarSection = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  [theme.breakpoints.down('md')]: {
-    marginBottom: theme.spacing(3),
-    width: '100%',
-  },
-  [theme.breakpoints.up('md')]: {
-    marginRight: theme.spacing(4),
-    minWidth: 200,
-  },
-}));
-
 const DetailAvatar = styled(Avatar)(({ theme }) => ({
   width: 150,
   height: 150,
   marginBottom: theme.spacing(2),
   boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-}));
-
-const SectionTitle = styled(Typography)(({ theme }) => ({
-  fontWeight: 600,
-  color: theme.palette.primary.main,
 }));
 
 // Định nghĩa lại timeSlotOptions dùng code gốc làm value
@@ -254,20 +222,11 @@ const RatingWrapper = styled(Box)(({ theme }) => ({
   gap: 4,
 }));
 
-// Map từ giá trị API sang value của timeSlotOptions
-const slotValueMap = {
-  '8-10': '08:00-10:00 sáng',
-  '10-12': '10:00-12:00 trưa',
-  '13-15': '13:00-15:00 chiều',
-  '15-17': '15:00-17:00 chiều',
-};
-
 const ConsultationPage = () => {
   const [consultants, setConsultants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const [profileConsultants, setProfileConsultants] = useState([]);
 
   // Dialog states
   const [detailDialog, setDetailDialog] = useState({
@@ -479,30 +438,48 @@ const ConsultationPage = () => {
       } else {
         // Xử lý thông báo lỗi chi tiết
         let errorMessage = response.message || 'Không thể đặt lịch hẹn';
-        
+
         // Kiểm tra các loại lỗi cụ thể từ backend
         if (errorMessage.includes('đã được đặt bởi khách hàng khác')) {
           // Lỗi trùng lịch - hiển thị thông báo đặc biệt
           setFormError(
             <Box>
-              <Typography variant="body2" color="error" sx={{ mb: 1, fontWeight: 600 }}>
+              <Typography
+                variant="body2"
+                color="error"
+                sx={{ mb: 1, fontWeight: 600 }}
+              >
                 ⚠️ Khung giờ đã được đặt
               </Typography>
               <Typography variant="body2" color="error">
                 {errorMessage}
               </Typography>
-              <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-                💡 Gợi ý: Vui lòng chọn khung giờ khác hoặc liên hệ với tư vấn viên để được hỗ trợ.
+              <Typography
+                variant="body2"
+                sx={{ mt: 1, color: 'text.secondary' }}
+              >
+                💡 Gợi ý: Vui lòng chọn khung giờ khác hoặc liên hệ với tư vấn
+                viên để được hỗ trợ.
               </Typography>
             </Box>
           );
-        } else if (errorMessage.includes('Cannot schedule consultation in the past')) {
-          setFormError('Không thể đặt lịch hẹn trong quá khứ. Vui lòng chọn ngày khác.');
+        } else if (
+          errorMessage.includes('Cannot schedule consultation in the past')
+        ) {
+          setFormError(
+            'Không thể đặt lịch hẹn trong quá khứ. Vui lòng chọn ngày khác.'
+          );
         } else if (errorMessage.includes('Invalid time slot')) {
           setFormError('Khung giờ không hợp lệ. Vui lòng chọn lại.');
-        } else if (errorMessage.includes('consultant is currently unavailable')) {
-          setFormError('Tư vấn viên hiện không khả dụng. Vui lòng chọn tư vấn viên khác.');
-        } else if (errorMessage.includes('You cannot select yourself as a consultant')) {
+        } else if (
+          errorMessage.includes('consultant is currently unavailable')
+        ) {
+          setFormError(
+            'Tư vấn viên hiện không khả dụng. Vui lòng chọn tư vấn viên khác.'
+          );
+        } else if (
+          errorMessage.includes('You cannot select yourself as a consultant')
+        ) {
           setFormError('Bạn không thể đặt lịch với chính mình.');
         } else {
           setFormError(errorMessage);
@@ -510,7 +487,9 @@ const ConsultationPage = () => {
       }
     } catch (err) {
       console.error('Booking error:', err);
-      setFormError('Có lỗi xảy ra khi kết nối đến máy chủ. Vui lòng thử lại sau.');
+      setFormError(
+        'Có lỗi xảy ra khi kết nối đến máy chủ. Vui lòng thử lại sau.'
+      );
       toast.error('Có lỗi xảy ra khi kết nối đến máy chủ');
     } finally {
       setSubmitting(false);

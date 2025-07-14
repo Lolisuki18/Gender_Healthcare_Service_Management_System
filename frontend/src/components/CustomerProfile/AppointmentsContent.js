@@ -30,9 +30,7 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
-  Card,
-  CardContent,
+
   Chip,
   Button,
   Dialog,
@@ -41,10 +39,7 @@ import {
   DialogActions,
   CircularProgress,
   IconButton,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
+
   Table,
   TableBody,
   TableCell,
@@ -63,10 +58,7 @@ import {
 } from '@mui/material';
 import {
   CalendarToday as CalendarIcon,
-  AccessTime as TimeIcon,
-  Person as DoctorIcon,
   Cancel as CancelIcon,
-  MoreVert as MoreVertIcon,
   Visibility as VisibilityIcon,
   Delete as DeleteIcon,
   Clear as ClearIcon,
@@ -78,20 +70,16 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import {
-  formatDateDisplay,
   formatDateTime,
   formatDateTimeFromArray,
 } from '../../utils/dateUtils.js';
-import {
-  mockGetMySTITests,
-  mockCancelSTITest,
-} from '../../dataDemo/mockStiData.js';
+import {} from '../../dataDemo/mockStiData.js';
 import { toast } from 'react-toastify';
 import consultantService from '../../services/consultantService';
-import confirmDialog from '../../utils/confirmDialog';
+
 import reviewService from '../../services/reviewService';
 import ReviewForm from '../common/ReviewForm.js';
-import { useNavigate } from 'react-router-dom';
+
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)',
@@ -102,27 +90,12 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.1)',
 }));
 
-const AppointmentCard = styled(Card)(({ theme }) => ({
-  background: 'linear-gradient(145deg, #FFFFFF, #F5F7FA)',
-  backdropFilter: 'blur(20px)',
-  borderRadius: '16px',
-  border: '1px solid rgba(74, 144, 226, 0.12)',
-  color: '#2D3748',
-  boxShadow: '0 4px 15px 0 rgba(0, 0, 0, 0.05)',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 8px 25px 0 rgba(74, 144, 226, 0.2)',
-  },
-}));
-
 const AppointmentsContent = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
+ 
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -143,8 +116,6 @@ const AppointmentsContent = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingReviewId, setEditingReviewId] = useState(null);
   const [reviewLoading, setReviewLoading] = useState(false);
-
-  const navigate = useNavigate();
 
   const fetchAppointments = async () => {
     try {
@@ -214,22 +185,6 @@ const AppointmentsContent = () => {
     } catch (error) {
       toast.error(error.message || 'Không thể hủy lịch hẹn');
     }
-  };
-
-  const handleMenuClick = (event, appointment) => {
-    setAnchorEl(event.currentTarget);
-    setOpenMenuId(appointment.testId);
-    setSelectedAppointment(appointment);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setOpenMenuId(null);
-  };
-
-  const handleOpenDetailDialog = () => {
-    setOpenDetailDialog(true);
-    handleMenuClose();
   };
 
   const handleCloseDetailDialog = () => {
@@ -379,14 +334,6 @@ const AppointmentsContent = () => {
     return statusMatch && dateMatch;
   });
 
-  // Get unique statuses for filter options
-  const getUniqueStatuses = () => {
-    const statuses = appointments
-      .map((app) => app.status?.toUpperCase())
-      .filter(Boolean);
-    return [...new Set(statuses)];
-  };
-
   const statusOptions = [
     { value: 'ALL', label: 'Tất cả', count: appointments.length },
     {
@@ -535,7 +482,6 @@ const AppointmentsContent = () => {
       setReviewLoading(false);
     }
   };
-
 
   return (
     <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
@@ -892,75 +838,77 @@ const AppointmentsContent = () => {
                       </TableCell>
                       {/* Cột Đánh giá */}
                       <TableCell align="center">
-                        {appointment.status?.toUpperCase() === 'COMPLETED' && (() => {
-                          // Tìm review tương ứng trong myRatings bằng consultationId
-                          const foundReview = myRatings.find(
-                            (r) =>
-                              r.targetType === 'CONSULTANT' &&
-                              String(r.consultationId) === String(appointment.consultationId)
-                          );
-                          if (foundReview) {
-                            // Đã đánh giá, chỉ hiện nút Chỉnh sửa
-                            return (
-                              <Button
-                                size="small"
-                                variant="contained"
-                                color="secondary"
-                                sx={{
-                                  fontSize: 13,
-                                  textTransform: 'none',
-                                  borderRadius: 3,
-                                  px: 1.5,
-                                  height: 32,
-                                }}
-                                onClick={() => {
-                                  setReviewingAppointment({
-                                    ...appointment,
-                                    type: 'CONSULTANT',
-                                    isEligible: true,
-                                  });
-                                  setRating(foundReview.rating || 0);
-                                  setFeedback(foundReview.comment || '');
-                                  setIsEditMode(true);
-                                  setEditingReviewId(foundReview.ratingId);
-                                  setOpenReviewDialog(true);
-                                }}
-                              >
-                                Chỉnh sửa
-                              </Button>
+                        {appointment.status?.toUpperCase() === 'COMPLETED' &&
+                          (() => {
+                            // Tìm review tương ứng trong myRatings bằng consultationId
+                            const foundReview = myRatings.find(
+                              (r) =>
+                                r.targetType === 'CONSULTANT' &&
+                                String(r.consultationId) ===
+                                  String(appointment.consultationId)
                             );
-                          } else {
-                            // Chưa đánh giá, hiện nút Đánh giá như cũ
-                            return (
-                              <Button
-                                size="small"
-                                variant="contained"
-                                color="primary"
-                                sx={{
-                                  fontSize: 13,
-                                  textTransform: 'none',
-                                  borderRadius: 3,
-                                  px: 1.5,
-                                  height: 32,
-                                }}
-                                onClick={() => {
-                                  setReviewingAppointment({
-                                    ...appointment,
-                                    type: 'CONSULTANT',
-                                    isEligible: true,
-                                  });
-                                  setRating(0);
-                                  setFeedback('');
-                                  setIsEditMode(false);
-                                  setEditingReviewId(null);
-                                  setOpenReviewDialog(true);
-                                }}
-                              >
-                                Đánh giá
-                              </Button>
-                            );
-                          }
-                        })()}
+                            if (foundReview) {
+                              // Đã đánh giá, chỉ hiện nút Chỉnh sửa
+                              return (
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color="secondary"
+                                  sx={{
+                                    fontSize: 13,
+                                    textTransform: 'none',
+                                    borderRadius: 3,
+                                    px: 1.5,
+                                    height: 32,
+                                  }}
+                                  onClick={() => {
+                                    setReviewingAppointment({
+                                      ...appointment,
+                                      type: 'CONSULTANT',
+                                      isEligible: true,
+                                    });
+                                    setRating(foundReview.rating || 0);
+                                    setFeedback(foundReview.comment || '');
+                                    setIsEditMode(true);
+                                    setEditingReviewId(foundReview.ratingId);
+                                    setOpenReviewDialog(true);
+                                  }}
+                                >
+                                  Chỉnh sửa
+                                </Button>
+                              );
+                            } else {
+                              // Chưa đánh giá, hiện nút Đánh giá như cũ
+                              return (
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color="primary"
+                                  sx={{
+                                    fontSize: 13,
+                                    textTransform: 'none',
+                                    borderRadius: 3,
+                                    px: 1.5,
+                                    height: 32,
+                                  }}
+                                  onClick={() => {
+                                    setReviewingAppointment({
+                                      ...appointment,
+                                      type: 'CONSULTANT',
+                                      isEligible: true,
+                                    });
+                                    setRating(0);
+                                    setFeedback('');
+                                    setIsEditMode(false);
+                                    setEditingReviewId(null);
+                                    setOpenReviewDialog(true);
+                                  }}
+                                >
+                                  Đánh giá
+                                </Button>
+                              );
+                            }
+                          })()}
                       </TableCell>
                       <TableCell align="center">
                         <Box

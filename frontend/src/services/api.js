@@ -195,8 +195,6 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
-    const originalRequest = error.config;
-
     // Xử lý các lỗi HTTP khác nhau
     if (error.response) {
       const { status, data } = error.response;

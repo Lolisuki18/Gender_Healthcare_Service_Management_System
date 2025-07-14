@@ -27,17 +27,14 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Avatar,
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Edit as EditIcon,
   Info as InfoIcon,
   Link as LinkIcon,
 } from '@mui/icons-material';
 import { adminService } from '@/services/adminService';
 import { formatDateDisplay } from '@/utils/dateUtils';
-import { formatDateTimeFromArray } from '@/utils/dateUtils';
 
 function formatTimeFromArray(arr) {
   if (!Array.isArray(arr) || arr.length < 5) return '';
@@ -118,11 +115,6 @@ const AppointmentManagementContent = () => {
       default:
         return 'default';
     }
-  };
-
-  const handleEditAppointment = (appointment) => {
-    setSelectedAppointment(appointment);
-    setOpenDialog(true);
   };
 
   const handleViewDetail = (appointment) => {

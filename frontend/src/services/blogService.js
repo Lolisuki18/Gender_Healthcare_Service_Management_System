@@ -237,26 +237,6 @@ const blogService = {
   },
 
   /**
-   * Cập nhật trạng thái bài viết (Staff/Admin only)
-   * @param {number} id - ID của bài viết
-   * @param {Object} statusData - Dữ liệu trạng thái {status, reviewNotes}
-   * @returns {Promise} Promise chứa kết quả từ API
-   */
-  updateBlogStatus: async (id, statusData) => {
-    try {
-      const response = await apiClient.put(`/blog/${id}/status`, statusData);
-      if (!response.data.success) {
-        throw new Error(
-          response.data.message || 'Failed to update blog status'
-        );
-      }
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || error.message);
-    }
-  },
-
-  /**
    * Lấy bài viết theo trạng thái
    * @param {string} status - Trạng thái (DRAFT, PENDING, CONFIRMED, REJECTED)
    * @param {Object} params - Tham số query

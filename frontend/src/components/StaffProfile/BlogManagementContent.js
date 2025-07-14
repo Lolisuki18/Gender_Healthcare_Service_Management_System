@@ -24,7 +24,6 @@ import {
   TablePagination,
   IconButton,
   TextField,
-  InputAdornment,
   Chip,
   Dialog,
   DialogActions,
@@ -34,16 +33,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Avatar,
   Tooltip,
   Fade,
-  Zoom,
   CircularProgress,
-  Grid,
-  Card,
-  CardContent,
-  CardMedia,
-  Divider,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -53,8 +45,6 @@ import {
   Visibility as VisibilityIcon,
   FilterList as FilterListIcon,
   LibraryBooks as LibraryBooksIcon,
-  CloudUpload as CloudUploadIcon,
-  Remove as RemoveIcon,
   Check as CheckIcon,
   HourglassEmpty as HourglassEmptyIcon,
   Cancel as CancelIcon,
@@ -87,31 +77,6 @@ const gradientBg = {
   padding: 0,
 };
 
-const headerStyle = {
-  background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
-  color: 'white',
-  padding: '24px 32px',
-  borderRadius: '16px',
-  boxShadow: '0 10px 25px rgba(99, 102, 241, 0.15)',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: 4,
-  position: 'relative',
-  overflow: 'hidden',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: '200px',
-    height: '100%',
-    background:
-      'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 100%)',
-    borderRadius: '16px',
-  },
-};
-
 const cardStyle = {
   backgroundColor: '#fff',
   borderRadius: '18px',
@@ -121,35 +86,6 @@ const cardStyle = {
   transition: 'all 0.2s',
   '&:hover': {
     boxShadow: '0 8px 24px rgba(74, 144, 226, 0.18)',
-  },
-};
-
-const statCardStyle = {
-  backgroundColor: colors.surface,
-  borderRadius: '16px',
-  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
-  color: colors.text,
-  padding: 3,
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  position: 'relative',
-  overflow: 'hidden',
-  border: `1px solid ${colors.border}`,
-  '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.05)',
-  },
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '4px',
-    background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)',
   },
 };
 
@@ -189,22 +125,6 @@ const primaryButtonStyle = {
     background: 'linear-gradient(135deg, #5B5BD6 0%, #7C3AED 100%)',
     boxShadow: '0 8px 25px rgba(99, 102, 241, 0.4)',
     transform: 'translateY(-2px)',
-  },
-};
-
-const secondaryButtonStyle = {
-  backgroundColor: 'rgba(99, 102, 241, 0.1)',
-  color: colors.primary,
-  fontWeight: 600,
-  borderRadius: '12px',
-  padding: '12px 28px',
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  textTransform: 'none',
-  fontSize: '0.875rem',
-  border: `1px solid ${colors.primary}`,
-  '&:hover': {
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
-    transform: 'translateY(-1px)',
   },
 };
 
@@ -542,22 +462,6 @@ const BlogManagementContent = () => {
       setDeleteSuccess(true);
     } catch (err) {
       setError(err.message || 'Xóa bài viết thất bại');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fix handleStatusChange to use updateBlogStatus
-  const handleStatusChange = async (id, newStatus) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await blogService.updateBlogStatus(id, { status: newStatus });
-      setBlogs((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b))
-      );
-    } catch (err) {
-      setError(err.message || 'Cập nhật trạng thái thất bại');
     } finally {
       setLoading(false);
     }

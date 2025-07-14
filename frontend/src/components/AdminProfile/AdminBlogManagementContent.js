@@ -11,10 +11,8 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  IconButton,
   TextField,
   InputAdornment,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -24,7 +22,6 @@ import {
   CardContent,
   CardMedia,
   Fade,
-  Tooltip,
   CircularProgress,
   Select,
   MenuItem,
@@ -32,9 +29,6 @@ import {
   InputLabel,
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Search as SearchIcon,
   LibraryBooks as LibraryBooksIcon,
   GridView as GridViewIcon,
@@ -120,18 +114,6 @@ const AdminBlogManagementContent = () => {
       String(blog.categoryId) === String(categoryFilter);
     return matchSearch && matchCategory;
   });
-
-  // Format date
-  const formatDateVN = (dateStr) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '';
-    return d.toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-  };
 
   // Xem chi tiết
   const handleViewDetail = (blog) => {

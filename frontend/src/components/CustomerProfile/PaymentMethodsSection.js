@@ -5,17 +5,12 @@ import {
   Button,
   List,
   ListItem,
-  ListItemText,
   ListItemSecondaryAction,
   IconButton,
   Chip,
   Divider,
   Alert,
   CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Fab,
   Tooltip,
   Paper,
@@ -198,16 +193,30 @@ const PaymentMethodsSection = () => {
                     },
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      width: '100%',
+                    }}
+                  >
                     <Box sx={{ mr: 2 }}>
-                      <Typography variant="h4" sx={{ color: getCardTypeColor(card.cardType) }}>
+                      <Typography
+                        variant="h4"
+                        sx={{ color: getCardTypeColor(card.cardType) }}
+                      >
                         {getCardTypeIcon(card.cardType)}
                       </Typography>
                     </Box>
-                    
+
                     <Box sx={{ flexGrow: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}
+                      >
+                        <Typography
+                          variant="subtitle1"
+                          sx={{ fontWeight: 600 }}
+                        >
                           {card.nickname || card.cardHolderName}
                         </Typography>
                         {card.isDefault && (
@@ -227,11 +236,11 @@ const PaymentMethodsSection = () => {
                           />
                         )}
                       </Box>
-                      
+
                       <Typography variant="body2" color="text.secondary">
                         {card.maskedCardNumber}
                       </Typography>
-                      
+
                       <Typography variant="caption" color="text.secondary">
                         Hết hạn: {card.expiryDisplay} • {card.cardType}
                       </Typography>
@@ -250,7 +259,7 @@ const PaymentMethodsSection = () => {
                           </IconButton>
                         </Tooltip>
                       )}
-                      
+
                       {card.isDefault && (
                         <Tooltip title="Thẻ mặc định">
                           <IconButton size="small" disabled>
@@ -258,7 +267,7 @@ const PaymentMethodsSection = () => {
                           </IconButton>
                         </Tooltip>
                       )}
-                      
+
                       <Tooltip title="Sửa thẻ">
                         <IconButton
                           size="small"
@@ -267,7 +276,7 @@ const PaymentMethodsSection = () => {
                           <EditIcon />
                         </IconButton>
                       </Tooltip>
-                      
+
                       <Tooltip title="Xóa thẻ">
                         <IconButton
                           size="small"
@@ -280,7 +289,7 @@ const PaymentMethodsSection = () => {
                     </Box>
                   </ListItemSecondaryAction>
                 </ListItem>
-                
+
                 {index < cards.length - 1 && <Divider />}
               </React.Fragment>
             ))}
@@ -318,4 +327,4 @@ const PaymentMethodsSection = () => {
   );
 };
 
-export default PaymentMethodsSection; 
+export default PaymentMethodsSection;

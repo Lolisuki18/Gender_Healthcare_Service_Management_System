@@ -15,7 +15,7 @@
  * - Sử dụng Material UI để tạo giao diện hiện đại và responsive
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -28,7 +28,6 @@ import {
   MenuItem,
   Avatar,
   Container,
-  Badge,
 } from '@mui/material';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { userService } from '@/services/userService';
@@ -36,7 +35,7 @@ import localStorageUtil from '@/utils/localStorage';
 import { toast } from 'react-toastify';
 import imageUrl from '@/utils/imageUrl';
 import '@styles/Header.css';
-import { Notifications as NotificationsIcon } from '@mui/icons-material';
+
 import { useSelector, useDispatch } from 'react-redux';
 import { logout as logoutAction } from '@/redux/slices/authSlice';
 

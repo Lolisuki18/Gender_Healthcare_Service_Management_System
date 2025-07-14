@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -14,20 +14,11 @@ import {
   Chip,
   Fade,
   Zoom,
-  TextField,
   Avatar,
   Rating,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from '@mui/material';
 import { keyframes } from '@mui/system';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -47,10 +38,9 @@ import CountUp from 'react-countup';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '@/services/api';
 import localStorageUtil from '@/utils/localStorage';
-import { toast } from 'react-toastify';
+
 import { servicesData } from '@/data/servicesData';
-import { loginSuccess } from '@/redux/slices/authSlice';
-import useSTIServicesAndPackages from '@/hooks/useSTIServicesAndPackages';
+
 import AskQuestionDialog from '@/components/common/AskQuestionDialog';
 
 // Define animations
@@ -62,11 +52,6 @@ const float = keyframes`
 export const HomePage = () => {
   const navigate = useNavigate();
   const [loaded, setLoaded] = useState(false);
-  const {
-    services,
-    loading: loadingServices,
-    error: errorServices,
-  } = useSTIServicesAndPackages();
 
   // State mở dialog dùng chung
   const [faqDialogOpen, setFaqDialogOpen] = useState(false);

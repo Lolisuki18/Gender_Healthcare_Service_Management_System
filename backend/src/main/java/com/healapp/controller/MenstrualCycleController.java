@@ -1,9 +1,9 @@
 package com.healapp.controller;
 
-import java.time.LocalDate;
+
 import java.util.List;
 
-import org.apache.catalina.connector.Response;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

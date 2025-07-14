@@ -32,7 +32,6 @@ import {
   CircularProgress,
   Alert,
   Divider,
-  TablePagination,
   Table,
   TableHead,
   TableBody,
@@ -68,7 +67,7 @@ import {
   formatDateTime,
   formatDateTimeFromArray,
 } from '@/utils/dateUtils';
-import { toast } from 'react-toastify';
+
 import { userService } from '@/services/userService';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -1036,17 +1035,6 @@ const MyConsultationsContent = () => {
       notify.error('Lỗi', errorMsg);
       setUpdateStatus({ loading: false, success: false, error: '' });
     }
-  };
-
-  // Handle page change
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  // Handle rows per page change
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
   };
 
   // Format date for display

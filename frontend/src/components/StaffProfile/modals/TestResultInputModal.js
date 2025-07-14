@@ -17,8 +17,6 @@ import {
   TextField,
   CircularProgress,
   Alert,
-  Tabs,
-  Tab,
   Card,
   CardActionArea,
   CardContent,
