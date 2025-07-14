@@ -96,18 +96,19 @@ const ReviewForm = ({
   // Gom logic hiển thị thông tin đầu form vào 1 biến duy nhất
   const displayInfo = React.useMemo(() => {
     // Dòng 1: tên dịch vụ hoặc tên tư vấn viên (ưu tiên targetName nếu có)
-    let mainName =
-      review?.serviceName ||
-      review?.consultantName ||
-      review?.targetName ||
-      '';
+    let isConsultant = review?.type === 'CONSULTANT' && !!review?.consultantName;
+    let mainName = '';
+    if (isConsultant) {
+      mainName = `BS ${review?.consultantName || ''}`;
+    } else {
+      mainName = review?.serviceName || review?.targetName || '';
+    }
     // Dòng 2: tên khách hàng (ưu tiên customerName)
     let customerName = review?.customerName || review?.userFullName || review?.maskedUserName || '';
     // Dòng 3: ngày đánh giá
     let reviewedDateRaw = review?.reviewedDate || review?.createdAt || review?.date;
     let reviewedDate = reviewedDateRaw ? convertApiDateToDate(reviewedDateRaw).toLocaleDateString('vi-VN') : '';
     let avatarChar = (mainName || customerName || 'N')[0];
-    let isConsultant = review?.type === 'CONSULTANT' && !!review?.consultantName;
     return { mainName, customerName, reviewedDate, avatarChar, isConsultant };
   }, [review]);
 
@@ -201,7 +202,7 @@ const ReviewForm = ({
                     <Typography variant="h6" sx={{ fontWeight: 600, color: '#2D3748', mb: 0.5 }}>
                       {displayInfo.isConsultant ? (
                         <>
-                          <b>Tư vấn viên</b> {displayInfo.mainName}
+                          {displayInfo.mainName}
                         </>
                       ) : (
                         displayInfo.mainName
