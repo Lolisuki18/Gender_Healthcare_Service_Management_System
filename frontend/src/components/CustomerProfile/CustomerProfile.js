@@ -47,6 +47,7 @@ import ReviewsContent from '@/components/CustomerProfile/ReviewsContent';
 import SecurityContent from '@/components/siderBar/SecurityContent';
 import PaymentMethodsSection from './PaymentMethodsSection';
 import BlogCustomerContent from '../siderBar/BlogCustomerContent';
+import PaymentInfoContent from '../siderBar/PaymentInfoContent';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
@@ -122,6 +123,8 @@ const CustomerProfile = () => {
         return <ReviewsContent />;
       case 'blog-customer':
         return <BlogCustomerContent />;
+      case 'payment-info':
+        return <PaymentInfoContent />;
       default:
         return <ProfileContent />; // Fallback về profile
     }
