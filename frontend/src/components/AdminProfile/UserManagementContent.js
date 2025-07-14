@@ -621,11 +621,17 @@ const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
 
     if (statusFilter !== 'all') {
       if (statusFilter === 'Hoạt động') {
-        filtered = filtered.filter((u) => u.isActive === true);
+        filtered = filtered.filter((u) => u.isActive === true && !u.isDeleted);
       } else if (statusFilter === 'Tạm khóa') {
-        filtered = filtered.filter((u) => u.isActive === false);
+        filtered = filtered.filter((u) => u.isActive === false && !u.isDeleted);
+      } else if (statusFilter === 'Đã xóa') {
+        filtered = filtered.filter((u) => u.isDeleted === true);
       }
       console.log('After status filter:', filtered.length);
+    } else {
+      // Mặc định không hiển thị user đã xóa
+      filtered = filtered.filter((u) => !u.isDeleted);
+      console.log('After default filter (exclude deleted):', filtered.length);
     }
 
     if (searchTerm && searchTerm.trim() !== '') {
@@ -894,6 +900,7 @@ const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
                   <MenuItem value="all">Tất cả</MenuItem>
                   <MenuItem value="Hoạt động">Hoạt động</MenuItem>
                   <MenuItem value="Tạm khóa">Tạm khóa</MenuItem>
+                  <MenuItem value="Đã xóa">Đã xóa</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -1043,8 +1050,20 @@ const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={user.isActive ? 'Hoạt động' : 'Tạm khóa'}
-                        color={user.isActive ? 'success' : 'default'}
+                        label={
+                          user.isDeleted 
+                            ? 'Đã xóa' 
+                            : user.isActive 
+                              ? 'Hoạt động' 
+                              : 'Tạm khóa'
+                        }
+                        color={
+                          user.isDeleted 
+                            ? 'error' 
+                            : user.isActive 
+                              ? 'success' 
+                              : 'default'
+                        }
                         size="small"
                       />
                     </TableCell>
@@ -1081,12 +1100,17 @@ const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
                         <IconButton
                           size="small"
                           onClick={() => handleEdit(user.id)}
+                          disabled={user.isDeleted}
                           sx={{
                             color: '#4A90E2',
                             backgroundColor: 'rgba(74, 144, 226, 0.1)',
                             '&:hover': {
                               backgroundColor: 'rgba(74, 144, 226, 0.2)',
                               transform: 'scale(1.1)',
+                            },
+                            '&:disabled': {
+                              opacity: 0.5,
+                              cursor: 'not-allowed',
                             },
                             transition: 'all 0.2s ease',
                           }}
