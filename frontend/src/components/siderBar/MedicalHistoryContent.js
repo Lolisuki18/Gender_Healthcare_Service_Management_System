@@ -26,8 +26,6 @@ import {
   Typography,
   Paper,
   Grid,
-  Card,
-  CardContent,
   Chip,
   Button,
   CircularProgress,
@@ -35,7 +33,6 @@ import {
   Divider,
   Tooltip,
   IconButton,
-  Fade,
   Zoom,
   Table,
   TableBody,
@@ -50,10 +47,7 @@ import {
   Select,
   MenuItem,
   InputAdornment,
-  Stack,
   Card as MuiCard,
-  CardHeader,
-  CardActions,
 } from '@mui/material';
 import {
   LocalHospital as HospitalIcon,
@@ -159,7 +153,9 @@ const MedicalHistoryContent = () => {
       setIsLoadingRatings(true);
       try {
         // Lấy tối đa 1000 đánh giá, nếu nhiều hơn thì cần phân trang
-        const data = await import('../../services/reviewService').then(m => m.default.getMyReviews(0, 1000));
+        const data = await import('../../services/reviewService').then((m) =>
+          m.default.getMyReviews(0, 1000)
+        );
         setMyRatings(data?.content || data?.data || data || []);
       } catch (err) {
         setMyRatings([]);
@@ -187,8 +183,6 @@ const MedicalHistoryContent = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState(null);
-
-  const navigate = useNavigate();
 
   // State cho ReviewForm (đảm bảo khai báo đủ)
   const [openReviewDialog, setOpenReviewDialog] = useState(false);
@@ -226,15 +220,21 @@ const MedicalHistoryContent = () => {
         sti_test_id: reviewingRecord.testId, // Sử dụng snake_case đúng chuẩn backend
       };
       if (isEditMode && editingReviewId) {
-        await import('../../services/reviewService').then(m => m.default.updateReview(editingReviewId, reviewData));
+        await import('../../services/reviewService').then((m) =>
+          m.default.updateReview(editingReviewId, reviewData)
+        );
         toast.success('Đánh giá đã được cập nhật thành công!');
       } else {
-        await import('../../services/reviewService').then(m => m.default.createSTIServiceReview(reviewingRecord.testId, reviewData));
+        await import('../../services/reviewService').then((m) =>
+          m.default.createSTIServiceReview(reviewingRecord.testId, reviewData)
+        );
         toast.success('Đánh giá đã được gửi thành công!');
       }
       handleCloseReviewDialog();
       // Reload lại đánh giá
-      const data = await import('../../services/reviewService').then(m => m.default.getMyReviews(0, 1000));
+      const data = await import('../../services/reviewService').then((m) =>
+        m.default.getMyReviews(0, 1000)
+      );
       setMyRatings(data?.content || data?.data || data || []);
     } catch (err) {
       toast.error('Lỗi khi gửi đánh giá: ' + (err.message || ''));
@@ -288,7 +288,7 @@ const MedicalHistoryContent = () => {
       // Kiểm tra đã đánh giá chưa bằng myRatings
       let hasRated = false;
       if (myRatings && myRatings.length > 0) {
-        hasRated = myRatings.some(rating => {
+        hasRated = myRatings.some((rating) => {
           // So sánh theo testId hoặc serviceId
           return (
             (rating.stiTestId && rating.stiTestId === test.testId) ||
@@ -449,42 +449,6 @@ const MedicalHistoryContent = () => {
     }
   };
 
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'Khám tổng quát':
-        return '#4A90E2'; // Medical blue
-      case 'Chuyên khoa':
-        return '#9B59B6'; // Medical purple
-      case 'Tư vấn':
-        return '#1ABC9C'; // Medical teal
-      case 'Xét nghiệm':
-      case 'Xét nghiệm STI':
-        return '#F39C12'; // Medical orange
-      default:
-        return '#607D8B'; // Medical gray-blue
-    }
-  };
-
-  const getPaymentMethodName = (method) => {
-    if (!method) return 'Không xác định';
-
-    switch (method) {
-      case 'Cash on Delivery':
-      case 'COD':
-        return 'Tiền mặt';
-      case 'Credit Card':
-      case 'VISA':
-        return 'Thẻ tín dụng';
-      case 'QR Code Transfer':
-      case 'QR_CODE':
-        return 'Chuyển khoản QR';
-      case 'BANK_TRANSFER':
-        return 'Chuyển khoản';
-      default:
-        return method;
-    }
-  };
-
   const getTypeName = (type) => {
     switch (type) {
       case 'Khám tổng quát':
@@ -500,64 +464,6 @@ const MedicalHistoryContent = () => {
       default:
         return type;
     }
-  };
-
-  const getStatusDisplayName = (status) => {
-    switch (status) {
-      case 'Completed':
-      case 'Hoàn thành':
-        return 'Hoàn thành';
-      case 'Results Available':
-      case 'RESULTED':
-        return 'Đã có kết quả';
-      case 'Confirmed':
-      case 'CONFIRMED':
-        return 'Đã xác nhận';
-      case 'Sample Collected':
-      case 'SAMPLED':
-        return 'Đã lấy mẫu';
-      case 'Cancelled':
-      case 'CANCELED':
-      case 'Hủy':
-        return 'Đã hủy';
-      case 'Pending':
-      case 'PENDING':
-      case 'Đang xử lý':
-        return 'Đang xử lý';
-      case 'UNKNOWN':
-        return 'Không xác định';
-      default:
-        return status;
-    }
-  };
-
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    doc.text('Lịch sử khám bệnh', 14, 16);
-
-    const tableColumn = [
-      'Ngày khám',
-      'Bác sĩ',
-      'Dịch vụ',
-      'Trạng thái',
-      'Ghi chú',
-    ];
-    const tableRows = filteredRecords.map((record) => [
-      formatDateDisplay(record.date),
-      record.doctor,
-      record.diagnosis,
-      record.displayStatus || record.status,
-      record.notes || '',
-    ]);
-
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 22,
-      styles: { font: 'helvetica', fontSize: 10 },
-    });
-
-    doc.save('lich_su_kham_benh.pdf');
   };
 
   const clearFilters = () => {
@@ -992,14 +898,16 @@ const MedicalHistoryContent = () => {
                             case 'CANCELED':
                               return 'Đã hủy';
                             default:
-                              if ([
-                                'Hoàn thành',
-                                'Đang xử lý',
-                                'Đã có kết quả',
-                                'Đã xác nhận',
-                                'Đã lấy mẫu',
-                                'Đã hủy',
-                              ].includes(record.status)) {
+                              if (
+                                [
+                                  'Hoàn thành',
+                                  'Đang xử lý',
+                                  'Đã có kết quả',
+                                  'Đã xác nhận',
+                                  'Đã lấy mẫu',
+                                  'Đã hủy',
+                                ].includes(record.status)
+                              ) {
                                 return record.status;
                               }
                               return 'Không xác định';
@@ -1088,17 +996,19 @@ const MedicalHistoryContent = () => {
                       {(record.type === 'Xét nghiệm STI' ||
                         record.type === 'STI' ||
                         record.serviceType === 'STI_SERVICE') &&
-                        ['COMPLETED', 'RESULTED', 'ANALYZED'].includes(
-                          (
-                            record.status ||
-                            record.displayStatus ||
-                            ''
-                          ).toUpperCase()
-                        ) ? (
+                      ['COMPLETED', 'RESULTED', 'ANALYZED'].includes(
+                        (
+                          record.status ||
+                          record.displayStatus ||
+                          ''
+                        ).toUpperCase()
+                      ) ? (
                         (() => {
                           // Kiểm tra đã đánh giá chưa bằng stiTestId
                           const foundReview = myRatings.find(
-                            (r) => r.stiTestId && String(r.stiTestId) === String(record.testId)
+                            (r) =>
+                              r.stiTestId &&
+                              String(r.stiTestId) === String(record.testId)
                           );
                           if (foundReview) {
                             // Đã đánh giá, hiện nút Chỉnh sửa
@@ -1112,7 +1022,9 @@ const MedicalHistoryContent = () => {
                                   setRating(foundReview.rating || 0);
                                   setFeedback(foundReview.comment || '');
                                   setIsEditMode(true);
-                                  setEditingReviewId(foundReview.ratingId || foundReview.id);
+                                  setEditingReviewId(
+                                    foundReview.ratingId || foundReview.id
+                                  );
                                   setOpenReviewDialog(true);
                                 }}
                               >
@@ -1141,7 +1053,11 @@ const MedicalHistoryContent = () => {
                         })()
                       ) : (
                         <span style={{ color: '#BDBDBD', fontSize: 13 }}>
-                          {['CANCELED', 'PENDING'].includes((record.status || '').toUpperCase()) ? '—' : 'Chỉ đánh giá khi hoàn thành'}
+                          {['CANCELED', 'PENDING'].includes(
+                            (record.status || '').toUpperCase()
+                          )
+                            ? '—'
+                            : 'Chỉ đánh giá khi hoàn thành'}
                         </span>
                       )}
                     </TableCell>

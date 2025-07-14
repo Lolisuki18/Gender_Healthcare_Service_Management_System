@@ -9,7 +9,6 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import tokenService from '@/services/tokenService';
 import { notify } from '@/utils/notify';
 import {
   handleConnectionRestore,
@@ -24,7 +23,6 @@ const useConnectionMonitor = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [isInactive, setIsInactive] = useState(false);
-  const activityTimeoutRef = useRef(null);
   const inactivityCheckRef = useRef(null);
 
   // Thời gian không hoạt động để coi là inactive (5 phút)

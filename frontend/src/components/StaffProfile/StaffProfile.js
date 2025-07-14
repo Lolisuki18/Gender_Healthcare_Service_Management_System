@@ -47,7 +47,6 @@ import CategoryManagementContent from './CategoryManagementContent';
 import SecurityContent from '../siderBar/SecurityContent';
 import MedicalHistoryContent from '../siderBar/MedicalHistoryContent';
 import InvoicesContent from '../siderBar/InvoicesContent';
-import PaymentMethodsSection from '../CustomerProfile/PaymentMethodsSection';
 import BlogMyContent from '../CustomerProfile/BlogCustomerContent';
 import PaymentInfoContent from '../siderBar/PaymentInfoContent';
 

@@ -19,7 +19,7 @@ import {
   Skeleton,
   Stack,
   Divider,
-  useTheme,
+
   alpha,
 } from '@mui/material';
 import {
@@ -41,7 +41,7 @@ import {
 import { formatDateDisplay } from '../../utils/dateUtils.js';
 
 const ViewUserModal = ({ open, onClose, user, loadingConsultantDetails }) => {
-  const theme = useTheme();
+
 
   // Medical theme colors
   const medicalColors = {

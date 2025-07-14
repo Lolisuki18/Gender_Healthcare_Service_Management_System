@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getWithExpiry } from "@utils/helpers";
 import {
   selectUser,
   selectAvatar,

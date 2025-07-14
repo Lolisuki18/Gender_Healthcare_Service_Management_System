@@ -1,127 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  Button,
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Alert,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  LinearProgress,
-  styled,
-} from '@mui/material';
-import {
-  Science as ScienceIcon,
-  Check as CheckIcon,
-  ExpandMore as ExpandMoreIcon,
-  PictureAsPdf as PdfIcon,
-} from '@mui/icons-material';
+import { Box, CircularProgress, Alert } from '@mui/material';
+
 import stiService from '../../services/stiService';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+
 import html2canvas from 'html2canvas';
-import ExportTestResultPDF from './ExportTestResultPDF';
-import ConclusionDisplay from '../common/ConclusionDisplay';
+
 import PackageTestResultView from './PackageTestResultView';
 import ServiceTestResultView from './ServiceTestResultView';
-
-// Styled Components
-const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-  border: '1px solid rgba(74, 144, 226, 0.12)',
-  borderRadius: '8px',
-  boxShadow: 'none',
-}));
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  borderBottom: '1px solid rgba(74, 144, 226, 0.12)',
-  padding: '12px 16px',
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:last-child td, &:last-child th': {
-    borderBottom: 0,
-  },
-  '&:nth-of-type(odd)': {
-    backgroundColor: 'rgba(74, 144, 226, 0.03)',
-  },
-  '&:hover': {
-    backgroundColor: 'rgba(74, 144, 226, 0.05)',
-  },
-}));
-
-const ResultBadge = styled(Chip)(({ theme, status }) => {
-  const colors = {
-    positive: {
-      bgcolor: '#e53e3e15',
-      color: '#e53e3e',
-      borderColor: '#e53e3e',
-    },
-    negative: {
-      bgcolor: '#10b98115',
-      color: '#10b981',
-      borderColor: '#10b981',
-    },
-  };
-
-  return {
-    fontWeight: 600,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    ...(colors[status] || {}),
-  };
-});
-
-const StatusChip = styled(Chip)(({ theme, completed }) => ({
-  fontWeight: 600,
-  backgroundColor: completed ? '#10b98115' : '#f59e0b15',
-  color: completed ? '#10b981' : '#f59e0b',
-  border: `1px solid ${completed ? '#10b981' : '#f59e0b'}`,
-}));
-
-const TestInfoCard = styled(Card)(({ theme }) => ({
-  marginBottom: '16px',
-  borderRadius: '12px',
-  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-}));
-
-const TestComponentAccordion = styled(Accordion)(({ theme }) => ({
-  boxShadow: 'none',
-  border: '1px solid rgba(74, 144, 226, 0.12)',
-  borderRadius: '8px !important',
-  '&:before': {
-    display: 'none',
-  },
-  marginBottom: '8px',
-}));
-
-const TestComponentSummary = styled(AccordionSummary)(({ theme }) => ({
-  backgroundColor: 'rgba(74, 144, 226, 0.03)',
-  borderRadius: '8px',
-}));
-
-const ProgressContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  marginBottom: '16px',
-}));
-
-const ProgressText = styled(Typography)(({ theme }) => ({
-  marginLeft: '16px',
-  fontWeight: 600,
-}));
 
 /**
  * TestResultsModalContent - Component hiển thị kết quả xét nghiệm STI trong modal
@@ -148,24 +34,6 @@ const TestResultsModalContent = ({ testId, onClose }) => {
       ...expandedAccordions,
       [panel]: isExpanded,
     });
-  };
-
-  // Function to convert API values to display labels
-  const translateValue = (value, type) => {
-    if (typeof value !== 'string') return value;
-
-    const lowerValue = value.trim().toLowerCase();
-
-    // For result values or normal ranges
-    if (lowerValue === 'negative') return 'Âm tính';
-    if (lowerValue === 'positive') return 'Dương tính';
-    if (lowerValue === 'not detected') return 'Không phát hiện';
-    if (lowerValue === 'detected') return 'Phát hiện';
-    if (lowerValue === 'positive/negative' && type === 'unit')
-      return 'Âm tính/Dương tính';
-    if (lowerValue === 'titer' && type === 'unit') return 'Hiệu giá';
-
-    return value;
   };
 
   // Function to fetch test type (package or service) information
@@ -355,18 +223,6 @@ const TestResultsModalContent = ({ testId, onClose }) => {
       fetchTestResults();
     }
   }, [testId]);
-
-  const handleExportPDF = async () => {
-    const element = printRef.current;
-    if (!element) return;
-    const canvas = await html2canvas(element, { scale: 2 });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save('ket_qua_xet_nghiem.pdf');
-  };
 
   // Chuẩn hóa dữ liệu để truyền sang ExportTestResultPDF
   const getExportData = () => {
