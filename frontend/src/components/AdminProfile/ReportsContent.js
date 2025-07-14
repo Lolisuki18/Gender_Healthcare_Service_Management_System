@@ -29,6 +29,7 @@ import {
   DialogContent,
   DialogActions,
   Avatar,
+  TablePagination,
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -165,6 +166,8 @@ const ReportsContent = () => {
   const [userLoading, setUserLoading] = useState(false);
   const [userError, setUserError] = useState(null);
   const [dashboard, setDashboard] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   // Lấy dữ liệu báo cáo khi load hoặc khi đổi filter
   useEffect(() => {
@@ -217,6 +220,12 @@ const ReportsContent = () => {
     return Object.entries(map).map(([date, value]) => ({ date, value }));
   }, [transactions]);
 
+  // Lấy các giao dịch thuộc trang hiện tại
+  const paginatedTransactions = React.useMemo(() => {
+    const start = page * rowsPerPage;
+    return transactions.slice(start, start + rowsPerPage);
+  }, [transactions, page, rowsPerPage]);
+
   // Hàm mở dialog xem thông tin khách hàng
   const handleViewUser = async (row) => {
     setUserLoading(true);
@@ -236,35 +245,6 @@ const ReportsContent = () => {
     setOpenUserDialog(false);
     setSelectedUser(null);
     setUserError(null);
-  };
-
-  // Hàm xử lý nút tính doanh thu
-  const handleShowRevenue = async (type) => {
-    let params = {};
-    let label = '';
-    if (type === 'today') {
-      params = getTodayRange();
-      label = 'hôm nay';
-    } else if (type === 'quarter') {
-      params = getCurrentQuarterRange();
-      label = 'quý này';
-    } else if (type === 'year') {
-      params = getCurrentYearRange();
-      label = 'năm nay';
-    }
-    try {
-      const summary = await adminService.getRevenueSummary(params);
-      const revenue = summary?.totalRevenue || 0;
-      await confirmDialog.info(
-        `💰 Doanh thu ${label}:\n\n${Number(revenue).toLocaleString()} VNĐ`,
-        { title: `Doanh thu ${label.charAt(0).toUpperCase() + label.slice(1)}` }
-      );
-    } catch (err) {
-      await confirmDialog.danger(
-        `Không thể lấy doanh thu ${label}.\n${err.message || ''}`,
-        { title: 'Lỗi' }
-      );
-    }
   };
 
   // Xử lý loading/error
@@ -296,6 +276,7 @@ const ReportsContent = () => {
           Phân tích hiệu suất và doanh thu hệ thống
         </Typography>
         {/* Các nút tính doanh thu nhanh */}
+        {/*
         <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
           <Button
             variant="contained"
@@ -319,6 +300,7 @@ const ReportsContent = () => {
             Doanh thu năm nay
           </Button>
         </Box>
+        */}
         {/* Bộ lọc thời gian */}
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
           <TextField
@@ -438,10 +420,11 @@ const ReportsContent = () => {
                   <TableCell>Số tiền</TableCell>
                   <TableCell>Ngày thanh toán</TableCell>
                   <TableCell>Phương thức</TableCell>
+                  <TableCell></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {transactions.map((t) => (
+                {paginatedTransactions.map((t) => (
                   <TableRow key={t.paymentId} hover>
                     <TableCell>{t.paymentId}</TableCell>
                     <TableCell>{t.customerName || t.userId}</TableCell>
@@ -465,6 +448,19 @@ const ReportsContent = () => {
                 ))}
               </TableBody>
             </Table>
+            <TablePagination
+              component="div"
+              count={transactions.length}
+              page={page}
+              onPageChange={(e, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(e) => {
+                setRowsPerPage(parseInt(e.target.value, 10));
+                setPage(0);
+              }}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              labelRowsPerPage="Số dòng mỗi trang"
+            />
           </TableContainer>
         </CardContent>
       </Card>
