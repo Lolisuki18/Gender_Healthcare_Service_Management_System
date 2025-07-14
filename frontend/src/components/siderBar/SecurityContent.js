@@ -565,11 +565,17 @@ const ConsultantSecurityContent = () => {
     {
       id: 'email',
       title: 'Email',
-      description: 'Thay đổi địa chỉ email của tài khoản',
+      description: userData.provider === 'GOOGLE' 
+        ? 'Email được quản lý bởi Google (không thể thay đổi)'
+        : 'Thay đổi địa chỉ email của tài khoản',
       icon: <EmailIcon />,
       currentValue: userData.email || 'chưa có email',
-      status: userData.email ? 'Đã xác thực' : 'Chưa xác thực',
-      lastUpdate: 'Cập nhật 15 ngày trước',
+      status: userData.provider === 'GOOGLE' 
+        ? 'Google Account' 
+        : userData.email ? 'Đã xác thực' : 'Chưa xác thực',
+      lastUpdate: userData.provider === 'GOOGLE' 
+        ? 'Được quản lý bởi Google' 
+        : 'Cập nhật 15 ngày trước',
       actionText: 'Đổi email',
       color: '#1ABC9C',
     },
@@ -815,6 +821,22 @@ const ConsultantSecurityContent = () => {
                   >
                     {item.actionText}
                   </Button>
+                ) : item.id === 'email' && userData.provider === 'GOOGLE' ? (
+                  <Box sx={{ textAlign: 'center', p: 2 }}>
+                    <Typography variant="body2" color="#718096" sx={{ mb: 1 }}>
+                      Tài khoản Google không thể thay đổi email
+                    </Typography>
+                    <Chip
+                      icon={<VerifiedIcon />}
+                      label="Đăng nhập bằng Google"
+                      size="small"
+                      sx={{
+                        background: 'linear-gradient(45deg, #DB4437, #C23321)',
+                        color: 'white',
+                        fontWeight: 500,
+                      }}
+                    />
+                  </Box>
                 ) : (
                   <ActionButton
                     fullWidth

@@ -186,10 +186,22 @@ public class UserService {
 
             UserDtls user = null;
 
+            // Tìm user theo email hoặc username
             if (usernameOrEmail.contains("@")) {
+                // Nếu có ký tự @, coi như email
                 user = findActiveUserByEmail(usernameOrEmail);
             } else {
+                // Nếu không có @, coi như username
                 user = findActiveUserByUsername(usernameOrEmail);
+            }
+
+            // Nếu không tìm thấy, thử tìm theo cả 2 cách (fallback)
+            if (user == null && usernameOrEmail.contains("@")) {
+                // Thử tìm theo username nếu email không tìm thấy
+                user = findActiveUserByUsername(usernameOrEmail);
+            } else if (user == null && !usernameOrEmail.contains("@")) {
+                // Thử tìm theo email nếu username không tìm thấy
+                user = findActiveUserByEmail(usernameOrEmail);
             }
 
             if (user == null) {
@@ -204,6 +216,11 @@ public class UserService {
                 return ApiResponse.error("Account is disabled");
             }
 
+            // Kiểm tra nếu tài khoản đã bị xóa
+            if (user.getIsDeleted() != null && user.getIsDeleted()) {
+                return ApiResponse.error("Account has been deleted");
+            }
+
             LoginResponse loginResponse = new LoginResponse();
             loginResponse.setUserId(user.getId());
             loginResponse.setUsername(user.getUsername());
@@ -212,7 +229,10 @@ public class UserService {
             loginResponse.setAvatar(user.getAvatar());
             loginResponse.setRole(user.getRoleName());
             loginResponse.setBirthDay(user.getBirthDay());
-            loginResponse.setPhone(user.getPhone());
+            // Trả về phone số sạch (bỏ suffix _V)
+            loginResponse.setPhone(getCleanPhoneNumber(user.getPhone()));
+            // Thêm provider để frontend biết user đăng nhập qua Google hay Local
+            loginResponse.setProvider(user.getProvider() != null ? user.getProvider().name() : "LOCAL");
 
             return ApiResponse.success("Login successful", loginResponse);
 
@@ -497,6 +517,11 @@ public class UserService {
 
             UserDtls user = userOpt.get();
 
+            // Kiểm tra nếu user đăng nhập bằng Google - không cho phép thay đổi email
+            if (user.getProvider() == com.healapp.model.AuthProvider.GOOGLE) {
+                return ApiResponse.error("Google accounts cannot change email address");
+            }
+
             // Kiểm tra email mới có trùng với email hiện tại
             if (user.getEmail().equals(request.getEmail())) {
                 return ApiResponse.error("New email cannot be the same as current email");
@@ -531,6 +556,11 @@ public class UserService {
             }
 
             UserDtls user = userOpt.get();
+
+            // Kiểm tra nếu user đăng nhập bằng Google - không cho phép thay đổi email
+            if (user.getProvider() == com.healapp.model.AuthProvider.GOOGLE) {
+                return ApiResponse.error("Google accounts cannot change email address");
+            }
 
             // Kiểm tra email mới có trùng với email hiện tại không
             if (user.getEmail().equals(request.getNewEmail())) {
@@ -678,6 +708,8 @@ public class UserService {
         response.setCreatedDate(user.getCreatedDate());
         response.setIsDeleted(user.getIsDeleted());
         response.setDeletedAt(user.getDeletedAt());
+        // Thêm provider để frontend biết user đăng nhập qua Google hay Local
+        response.setProvider(user.getProvider() != null ? user.getProvider().name() : "LOCAL");
         return response;
     }
 
@@ -986,10 +1018,6 @@ public class UserService {
             if (user.getProvider() != com.healapp.model.AuthProvider.LOCAL) {
                 return ApiResponse.error("Tài khoản đăng nhập bằng Google không thể xóa qua API này");
             }
-
-            // Lưu email gốc để gửi thông báo
-            String originalEmail = user.getEmail();
-            String originalFullName = user.getFullName();
 
             // Tạo suffix ngắn để đảm bảo unique và không vượt quá độ dài cột
             // Dùng random + timestamp cuối để tránh trùng lặp

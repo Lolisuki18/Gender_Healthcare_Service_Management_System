@@ -25,4 +25,5 @@ public class UserResponse {
     private LocalDateTime createdDate;
     private Boolean isDeleted;
     private LocalDateTime deletedAt;
+    private String provider; // Thêm provider để frontend biết user đăng nhập qua Google hay Local
 }
