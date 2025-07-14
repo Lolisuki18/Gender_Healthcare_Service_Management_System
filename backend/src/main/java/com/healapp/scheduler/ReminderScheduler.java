@@ -26,7 +26,7 @@ public class ReminderScheduler {
     }
 
     // Lịch trình gửi thông báo nhắc nhở uống thuốc
-    @Scheduled(cron = "0 */1 * * * *") // Để kiểm tra: mỗi 1 phút
+    // @Scheduled(cron = "0 */1 * * * *") // Để kiểm tra: mỗi 1 phút
     public void sendPillReminder() {
         notificationService.sendPillReminder();
     }
