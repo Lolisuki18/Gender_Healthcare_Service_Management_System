@@ -21,7 +21,7 @@
  * AdminProfile → AdminSidebar → Content Components
  */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -70,6 +70,7 @@ const AdminProfile = () => {
   // State management
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Mặc định mở trên desktop, đóng trên mobile
   const [selectedMenuItem, setSelectedMenuItem] = useState('dashboard'); // Tab mặc định
+  const [openAddUserModal, setOpenAddUserModal] = useState(false); // State cho modal thêm người dùng
 
   // Handler functions
   const handleSidebarToggle = () => {
@@ -77,7 +78,14 @@ const AdminProfile = () => {
   };
 
   const handleMenuItemSelect = (itemId) => {
-    setSelectedMenuItem(itemId);
+    if (itemId === 'add-user') {
+      // Chuyển đến trang users và mở modal thêm người dùng
+      setSelectedMenuItem('users');
+      setOpenAddUserModal(true);
+    } else {
+      setSelectedMenuItem(itemId);
+      setOpenAddUserModal(false);
+    }
   };
 
   // Hàm xử lý logout
@@ -99,9 +107,9 @@ const AdminProfile = () => {
   const renderContent = () => {
     switch (selectedMenuItem) {
       case 'dashboard':
-        return <DashboardContent />; // Tổng quan hệ thống
+        return <DashboardContent onNavigate={handleMenuItemSelect} />; // Tổng quan hệ thống
       case 'users':
-        return <UserManagementContent />; // Quản lý người dùng
+        return <UserManagementContent openAddModal={openAddUserModal} onCloseAddModal={() => setOpenAddUserModal(false)} />; // Quản lý người dùng
       case 'services':
         return <ServiceManagementContent />; // Quản lý dịch vụ
       case 'appointments':

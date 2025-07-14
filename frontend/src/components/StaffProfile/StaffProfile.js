@@ -49,6 +49,7 @@ import MedicalHistoryContent from '../siderBar/MedicalHistoryContent';
 import InvoicesContent from '../siderBar/InvoicesContent';
 import PaymentMethodsSection from '../CustomerProfile/PaymentMethodsSection';
 import BlogMyContent from '../siderBar/BlogCustomerContent';
+import PaymentInfoContent from '../siderBar/PaymentInfoContent';
 
 // Styled component cho nội dung chính
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
@@ -105,6 +106,8 @@ const StaffProfile = ({ user = {} }) => {
         return <InvoicesContent />;
       case 'blog-customer':
         return <BlogMyContent />;
+      case 'payment-info':
+        return <PaymentInfoContent />;
 
       default:
         return <ProfileContent />;

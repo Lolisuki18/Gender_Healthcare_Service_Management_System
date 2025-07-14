@@ -75,6 +75,26 @@ const isTokenExpiringSoon = (token) => {
   }
 };
 
+// Hàm refresh token với retry logic
+const refreshTokenWithRetry = async (retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await refreshToken();
+    } catch (error) {
+      console.error(`Refresh token attempt ${i + 1} failed:`, error.message);
+
+      // Nếu là lỗi cuối cùng hoặc không phải network error, throw error
+      if (i === retries - 1 || !error.message.includes('Network Error')) {
+        throw error;
+      }
+
+      // Đợi trước khi retry (exponential backoff)
+      const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+};
+
 // Hàm refresh token
 const refreshToken = async () => {
   const token = localStorageUtil.get('token');
@@ -89,6 +109,7 @@ const refreshToken = async () => {
       headers: {
         'Content-Type': 'application/json',
       },
+      timeout: 10000, // 10 second timeout
     });
 
     const response = await noInterceptorClient.post('/auth/refresh-token', {
@@ -140,7 +161,7 @@ apiClient.interceptors.request.use(
         isRefreshing = true;
 
         try {
-          const newToken = await refreshToken();
+          const newToken = await refreshTokenWithRetry();
           config.headers.Authorization = `Bearer ${newToken.accessToken}`;
           processQueue(null, newToken.accessToken);
         } catch (error) {
@@ -175,20 +196,61 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
-    // Nếu lỗi là do refresh token và message là 'User not found'
-    const errMsg = error?.response?.data?.message;
-    if (
-      errMsg &&
-      typeof errMsg === 'string' &&
-      errMsg.toLowerCase().includes('user not found')
-    ) {
-      await confirmDialog.info(
-        'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
-        { confirmText: 'Đăng nhập lại', cancelText: 'Đóng' }
-      );
-      window.location.href = '/login';
-      return Promise.reject(error);
+
+    // Xử lý các lỗi HTTP khác nhau
+    if (error.response) {
+      const { status, data } = error.response;
+
+      switch (status) {
+        case 401:
+          // Unauthorized - token hết hạn hoặc không hợp lệ
+          const errMsg = data?.message;
+          if (
+            errMsg &&
+            typeof errMsg === 'string' &&
+            errMsg.toLowerCase().includes('user not found')
+          ) {
+            await confirmDialog.info(
+              'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+              { confirmText: 'Đăng nhập lại', cancelText: 'Đóng' }
+            );
+            window.location.href = '/login';
+          }
+          break;
+
+        case 403:
+          // Forbidden - không có quyền truy cập
+          console.error(
+            'Access forbidden:',
+            data?.message || 'Không có quyền truy cập'
+          );
+          break;
+
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          // Server errors
+          console.error(
+            `Server error (${status}):`,
+            data?.message || 'Lỗi server'
+          );
+          break;
+
+        default:
+          console.error(
+            `HTTP error (${status}):`,
+            data?.message || 'Lỗi không xác định'
+          );
+      }
+    } else if (error.request) {
+      // Network error
+      console.error('Network error:', error.message);
+    } else {
+      // Other errors
+      console.error('Request error:', error.message);
     }
+
     return Promise.reject(error);
   }
 );

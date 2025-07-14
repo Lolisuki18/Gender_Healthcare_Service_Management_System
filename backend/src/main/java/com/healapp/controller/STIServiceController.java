@@ -352,6 +352,18 @@ public class STIServiceController {
         return getResponseEntity(response);
     }
 
+    /*
+     * description: Lấy tất cả STI test cho admin
+     * path: /sti-services/admin/all-tests
+     * method: GET
+     */
+    @GetMapping("/admin/all-tests")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<List<STITestResponse>>> getAllSTITestsForAdmin() {
+        ApiResponse<List<STITestResponse>> response = stiTestService.getAllSTITests();
+        return getResponseEntity(response);
+    }
+
     // DTO class for conclusion options
     public static class ConclusionOption {
         private String value;

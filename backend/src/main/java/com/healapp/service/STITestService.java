@@ -1645,4 +1645,19 @@ public class STITestService {
                 .collect(java.util.stream.Collectors.toList());
         return ApiResponse.success("Retrieved tests by status: " + status, responses);
     }
+
+    /**
+     * Lấy tất cả STI tests cho admin
+     */
+    public ApiResponse<List<STITestResponse>> getAllSTITests() {
+        try {
+            List<STITest> tests = stiTestRepository.findAll();
+            List<STITestResponse> responses = tests.stream()
+                    .map(this::convertToResponse)
+                    .collect(java.util.stream.Collectors.toList());
+            return ApiResponse.success("All STI tests retrieved successfully", responses);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to retrieve all STI tests: " + e.getMessage());
+        }
+    }
 }

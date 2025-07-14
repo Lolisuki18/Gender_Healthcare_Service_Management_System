@@ -149,6 +149,11 @@ const ConsultantSecurityContent = () => {
     loadUserData();
   }, []);
 
+  // Helper function để kiểm tra user có được phép xóa tài khoản không
+  const canDeleteAccount = () => {
+    return userData.role === 'CUSTOMER';
+  };
+
   const handleOpenModal = (type) => {
     setModalStates((prev) => ({
       ...prev,
@@ -395,31 +400,36 @@ const ConsultantSecurityContent = () => {
   const handleSendDeleteAccountVerificationCode = async (password) => {
     setIsLoading((prev) => ({ ...prev, deleteAccount: true }));
     try {
-      const response = await apiClient.post(
-        '/users/profile/delete-account/send-verification',
-        {
-          password: password,
-        }
-      );
+      console.log('Password gửi lên:', password);
+      const response =
+        await userService.sendDeleteAccountVerificationCode(password);
 
-      if (response.data.success) {
-        notify.success(
-          'Xóa tài khoản',
-          'Mã xác thực đã được gửi đến email của bạn'
-        );
+      if (response.success) {
+        toast.success('Mã xác thực đã được gửi đến email của bạn', {
+          duration: 4000,
+        });
         return { success: true };
       } else {
+        // Xử lý lỗi role đặc biệt
+        if (response.isRoleError) {
+          toast.error(response.message, {
+            duration: 6000,
+          });
+        } else {
+          toast.error(response.message || 'Có lỗi xảy ra khi gửi mã xác thực', {
+            duration: 4000,
+          });
+        }
         return {
           success: false,
-          message: response.data.message || 'Có lỗi xảy ra khi gửi mã xác thực',
+          message: response.data?.password || response.message,
         };
       }
     } catch (error) {
       console.error('Error sending delete account verification code:', error);
       return {
         success: false,
-        message:
-          error.response?.data?.message || 'Có lỗi xảy ra khi gửi mã xác thực',
+        message: 'Có lỗi xảy ra khi gửi mã xác thực',
       };
     } finally {
       setIsLoading((prev) => ({ ...prev, deleteAccount: false }));
@@ -430,33 +440,92 @@ const ConsultantSecurityContent = () => {
   const handleDeleteAccount = async (password, verificationCode) => {
     setIsLoading((prev) => ({ ...prev, deleteAccount: true }));
     try {
-      const response = await apiClient.delete('/users/profile/delete-account', {
-        data: {
-          password: password,
-          verificationCode: verificationCode,
-        },
+      const response = await userService.deleteAccount({
+        currentPassword: password,
+        verificationCode: verificationCode,
       });
 
-      if (response.data.success) {
-        notify.success('Xóa tài khoản', 'Tài khoản đã được xóa thành công');
+      if (response.success) {
+        toast.success('Tài khoản đã được xóa thành công', {
+          duration: 4000,
+        });
 
-        // Xóa dữ liệu local và chuyển về trang đăng nhập
-        localStorage.clear();
+        // Hiển thị dialog cảm ơn với icon đặc biệt và màu sắc trang trọng
+        await confirmDialog.success(
+          <div style={{ textAlign: 'center', padding: '12px 0' }}>
+            <svg
+              width="80"
+              height="80"
+              viewBox="0 0 80 80"
+              style={{ marginBottom: 12 }}
+            >
+              <circle
+                cx="40"
+                cy="40"
+                r="38"
+                fill="#ECFDF5"
+                stroke="#10B981"
+                strokeWidth="4"
+              />
+              <path
+                d="M25 42l12 12 18-22"
+                fill="none"
+                stroke="#10B981"
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: 700,
+                color: '#10B981',
+                marginBottom: 8,
+              }}
+            >
+              Cảm ơn bạn rất nhiều!
+            </div>
+            <div style={{ fontSize: 16, color: '#374151', marginBottom: 4 }}>
+              Chúng tôi trân trọng sự đồng hành của bạn.
+              <br />
+              Nếu có nhu cầu, hãy quay lại với <b>
+                Gender Healthcare Service
+              </b>{' '}
+              trong tương lai.
+              <br />
+              Chúc bạn nhiều sức khỏe và thành công!
+            </div>
+            <div style={{ fontSize: 15, color: '#6B7280', marginTop: 8 }}>
+              Hẹn gặp lại bạn vào một ngày gần nhất!
+            </div>
+          </div>
+        );
+        // Chuyển về trang đăng nhập sau khi xóa thành công
         window.location.href = '/login';
 
         return { success: true };
       } else {
+        // Xử lý lỗi role đặc biệt
+        if (response.isRoleError) {
+          toast.error(response.message, {
+            duration: 6000,
+          });
+        } else {
+          toast.error(response.message || 'Có lỗi xảy ra khi xóa tài khoản', {
+            duration: 4000,
+          });
+        }
         return {
           success: false,
-          message: response.data.message || 'Có lỗi xảy ra khi xóa tài khoản',
+          message: response.message,
         };
       }
     } catch (error) {
       console.error('Error deleting account:', error);
       return {
         success: false,
-        message:
-          error.response?.data?.message || 'Có lỗi xảy ra khi xóa tài khoản',
+        message: 'Có lỗi xảy ra khi xóa tài khoản',
       };
     } finally {
       setIsLoading((prev) => ({ ...prev, deleteAccount: false }));
@@ -531,18 +600,23 @@ const ConsultantSecurityContent = () => {
         return currentPhone && !isPhoneVerified(currentPhone);
       })(),
     },
-    {
-      id: 'deleteAccount',
-      title: 'Xóa tài khoản',
-      description: 'Xóa vĩnh viễn tài khoản và tất cả dữ liệu',
-      icon: <DeleteIcon />,
-      currentValue: 'Hành động không thể hoàn tác',
-      status: 'Nguy hiểm',
-      lastUpdate: 'Xóa vĩnh viễn',
-      actionText: 'Xóa tài khoản',
-      color: '#DC3545',
-      isDanger: true,
-    },
+    // Chỉ hiển thị delete account cho CUSTOMER
+    ...(canDeleteAccount()
+      ? [
+          {
+            id: 'deleteAccount',
+            title: 'Xóa tài khoản',
+            description: 'Xóa vĩnh viễn tài khoản và tất cả dữ liệu',
+            icon: <DeleteIcon />,
+            currentValue: 'Hành động không thể hoàn tác',
+            status: 'Nguy hiểm',
+            lastUpdate: 'Xóa vĩnh viễn',
+            actionText: 'Xóa tài khoản',
+            color: '#DC3545',
+            isDanger: true,
+          },
+        ]
+      : []),
   ];
 
   return (

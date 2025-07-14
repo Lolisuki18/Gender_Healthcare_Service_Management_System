@@ -25,7 +25,9 @@ export const getDefaultPaymentInfo = async () => {
 // Lấy thẻ theo ID (với CVV để thanh toán)
 export const getPaymentInfoForPayment = async (paymentInfoId) => {
   try {
-    const response = await apiClient.get(`${API_URL}/${paymentInfoId}/for-payment`);
+    const response = await apiClient.get(
+      `${API_URL}/${paymentInfoId}/for-payment`
+    );
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -45,7 +47,10 @@ export const createPaymentInfo = async (paymentInfoData) => {
 // Cập nhật thẻ
 export const updatePaymentInfo = async (paymentInfoId, paymentInfoData) => {
   try {
-    const response = await apiClient.put(`${API_URL}/${paymentInfoId}`, paymentInfoData);
+    const response = await apiClient.put(
+      `${API_URL}/${paymentInfoId}`,
+      paymentInfoData
+    );
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -65,7 +70,9 @@ export const deletePaymentInfo = async (paymentInfoId) => {
 // Đặt thẻ làm mặc định
 export const setDefaultPaymentInfo = async (paymentInfoId) => {
   try {
-    const response = await apiClient.put(`${API_URL}/${paymentInfoId}/set-default`);
+    const response = await apiClient.put(
+      `${API_URL}/${paymentInfoId}/set-default`
+    );
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -87,7 +94,10 @@ export const validateCardInfo = (cardInfo) => {
   }
 
   // Validate tháng hết hạn
-  if (!cardInfo.expiryMonth || !/^(0[1-9]|1[0-2])$/.test(cardInfo.expiryMonth)) {
+  if (
+    !cardInfo.expiryMonth ||
+    !/^(0[1-9]|1[0-2])$/.test(cardInfo.expiryMonth)
+  ) {
     errors.expiryMonth = 'Tháng hết hạn phải từ 01-12';
   }
 
@@ -110,7 +120,10 @@ export const validateCardInfo = (cardInfo) => {
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth() + 1;
 
-      if (year < currentYear || (year === currentYear && month < currentMonth)) {
+      if (
+        year < currentYear ||
+        (year === currentYear && month < currentMonth)
+      ) {
         errors.expiryYear = 'Thẻ đã hết hạn';
       }
     } catch (e) {
@@ -120,7 +133,7 @@ export const validateCardInfo = (cardInfo) => {
 
   return {
     isValid: Object.keys(errors).length === 0,
-    errors
+    errors,
   };
 };
 
@@ -129,9 +142,8 @@ export const formatCardNumber = (cardNumber) => {
   if (!cardNumber) return '';
   return cardNumber.replace(/(\d{4})(?=\d)/g, '$1 ');
 };
-
 // Helper function để mask số thẻ
 export const maskCardNumber = (cardNumber) => {
   if (!cardNumber || cardNumber.length < 4) return '****';
   return '**** **** **** ' + cardNumber.slice(-4);
-}; 
+};

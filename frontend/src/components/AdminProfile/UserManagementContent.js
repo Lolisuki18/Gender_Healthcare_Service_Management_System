@@ -61,12 +61,11 @@ import { userService } from '@/services/userService';
 import { adminService } from '@/services/adminService';
 import { getAvatarUrl } from '@/utils/imageUrl';
 
-const UserManagementContent = () => {
+const UserManagementContent = ({ openAddModal = false, onCloseAddModal }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState(0);
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [openModal, setOpenModal] = useState(false);
   const [modalType, setModalType] = useState('');
   const [openViewModal, setOpenViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -82,6 +81,13 @@ const UserManagementContent = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // useEffect để tự động mở modal khi openAddModal prop thay đổi
+  useEffect(() => {
+    if (openAddModal) {
+      setModalType('all');
+    }
+  }, [openAddModal]);
 
   const fetchUsers = async (newUserId = null) => {
     try {
@@ -509,7 +515,9 @@ const UserManagementContent = () => {
 
         await fetchUsers(newId);
 
-        setOpenModal(false);
+        if (onCloseAddModal) {
+          onCloseAddModal();
+        }
         setModalType('');
 
         console.log('Tạo người dùng thành công:', result);
@@ -563,7 +571,7 @@ const UserManagementContent = () => {
 
   const handleAddNew = () => {
     setModalType('all');
-    setOpenModal(true);
+    // Không cần setOpenModal(true) vì đã được truyền từ props
   };
 
   const roleOptions = [
@@ -613,11 +621,17 @@ const UserManagementContent = () => {
 
     if (statusFilter !== 'all') {
       if (statusFilter === 'Hoạt động') {
-        filtered = filtered.filter((u) => u.isActive === true);
+        filtered = filtered.filter((u) => u.isActive === true && !u.isDeleted);
       } else if (statusFilter === 'Tạm khóa') {
-        filtered = filtered.filter((u) => u.isActive === false);
+        filtered = filtered.filter((u) => u.isActive === false && !u.isDeleted);
+      } else if (statusFilter === 'Đã xóa') {
+        filtered = filtered.filter((u) => u.isDeleted === true);
       }
       console.log('After status filter:', filtered.length);
+    } else {
+      // Mặc định không hiển thị user đã xóa
+      filtered = filtered.filter((u) => !u.isDeleted);
+      console.log('After default filter (exclude deleted):', filtered.length);
     }
 
     if (searchTerm && searchTerm.trim() !== '') {
@@ -886,6 +900,7 @@ const UserManagementContent = () => {
                   <MenuItem value="all">Tất cả</MenuItem>
                   <MenuItem value="Hoạt động">Hoạt động</MenuItem>
                   <MenuItem value="Tạm khóa">Tạm khóa</MenuItem>
+                  <MenuItem value="Đã xóa">Đã xóa</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -1035,8 +1050,20 @@ const UserManagementContent = () => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={user.isActive ? 'Hoạt động' : 'Tạm khóa'}
-                        color={user.isActive ? 'success' : 'default'}
+                        label={
+                          user.isDeleted 
+                            ? 'Đã xóa' 
+                            : user.isActive 
+                              ? 'Hoạt động' 
+                              : 'Tạm khóa'
+                        }
+                        color={
+                          user.isDeleted 
+                            ? 'error' 
+                            : user.isActive 
+                              ? 'success' 
+                              : 'default'
+                        }
                         size="small"
                       />
                     </TableCell>
@@ -1073,12 +1100,17 @@ const UserManagementContent = () => {
                         <IconButton
                           size="small"
                           onClick={() => handleEdit(user.id)}
+                          disabled={user.isDeleted}
                           sx={{
                             color: '#4A90E2',
                             backgroundColor: 'rgba(74, 144, 226, 0.1)',
                             '&:hover': {
                               backgroundColor: 'rgba(74, 144, 226, 0.2)',
                               transform: 'scale(1.1)',
+                            },
+                            '&:disabled': {
+                              opacity: 0.5,
+                              cursor: 'not-allowed',
                             },
                             transition: 'all 0.2s ease',
                           }}
@@ -1129,8 +1161,12 @@ const UserManagementContent = () => {
       </Box>
 
       <AddUserModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
+        open={openAddModal}
+        onClose={() => {
+          if (onCloseAddModal) {
+            onCloseAddModal();
+          }
+        }}
         userType={modalType}
         onSubmit={handleModalSubmit}
       />

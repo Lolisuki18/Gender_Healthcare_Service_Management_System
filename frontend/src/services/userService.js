@@ -465,4 +465,106 @@ export const userService = {
       };
     }
   },
+
+  /**
+   * ✅ Gửi mã xác nhận để xóa tài khoản
+   * @param {string} password - Mật khẩu hiện tại
+   * @returns {Promise<Object>} API response
+   */
+  sendDeleteAccountVerificationCode: async (password) => {
+    try {
+      const response = await apiClient.post(
+        `/users/profile/delete-account/send-verification?password=${encodeURIComponent(password)}`
+      );
+      return {
+        success: true,
+        data: response.data,
+        message: 'Đã gửi mã xác nhận thành công',
+      };
+    } catch (error) {
+      // Xử lý lỗi role không được phép
+      if (
+        error.response?.data?.message?.includes('CUSTOMER') ||
+        error.response?.data?.message?.includes('STAFF') ||
+        error.response?.data?.message?.includes('CONSULTANT')
+      ) {
+        return {
+          success: false,
+          message: error.response.data.message,
+          error: error,
+          isRoleError: true,
+        };
+      }
+
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể gửi mã xác nhận',
+        error: error,
+      };
+    }
+  },
+
+  /**
+   * ✅ Xóa tài khoản vĩnh viễn
+   * @param {Object} data - Dữ liệu xóa tài khoản
+   * @param {string} data.currentPassword - Mật khẩu hiện tại
+   * @param {string} data.verificationCode - Mã xác nhận 6 chữ số
+   * @returns {Promise<Object>} API response
+   */
+  deleteAccount: async (data) => {
+    try {
+      const response = await apiClient.delete('/users/profile/delete-account', {
+        data: {
+          password: data.currentPassword, // Đúng tên field backend yêu cầu
+          verificationCode: data.verificationCode,
+        },
+      });
+
+      // Xóa dữ liệu local sau khi xóa tài khoản thành công
+      localStorageUtil.remove('token');
+      localStorageUtil.remove('user');
+      localStorageUtil.remove('userProfile');
+
+      return {
+        success: true,
+        data: response.data,
+        message: 'Tài khoản đã được xóa thành công',
+      };
+    } catch (error) {
+      let errorMessage = 'Có lỗi xảy ra khi xóa tài khoản';
+
+      // Xử lý lỗi role không được phép
+      if (
+        error.response?.data?.message?.includes('CUSTOMER') ||
+        error.response?.data?.message?.includes('STAFF') ||
+        error.response?.data?.message?.includes('CONSULTANT')
+      ) {
+        return {
+          success: false,
+          message: error.response.data.message,
+          error: error,
+          isRoleError: true,
+        };
+      }
+
+      if (error.response?.status === 401) {
+        errorMessage = 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.message || 'Dữ liệu không hợp lệ';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Mật khẩu không đúng';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Không tìm thấy người dùng';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      return {
+        success: false,
+        message: errorMessage,
+        error: error,
+        statusCode: error.response?.status,
+      };
+    }
+  },
 };

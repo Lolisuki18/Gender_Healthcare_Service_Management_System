@@ -23,4 +23,6 @@ public class UserResponse {
     private String role;
     private String address;
     private LocalDateTime createdDate;
+    private Boolean isDeleted;
+    private LocalDateTime deletedAt;
 }

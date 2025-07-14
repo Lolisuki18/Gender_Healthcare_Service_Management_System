@@ -62,8 +62,9 @@ class TokenService {
       if (tokenParts.length !== 3) return false;
 
       const payload = JSON.parse(atob(tokenParts[1]));
-      // Backend hiện tại chưa có type claim, nên chỉ kiểm tra cấu trúc cơ bản
-      return payload.exp && payload.iat && payload.sub;
+
+      // Kiểm tra cấu trúc cơ bản và roles claim (access token thường có roles)
+      return payload.exp && payload.iat && payload.sub && payload.roles;
     } catch (error) {
       return false;
     }
@@ -82,8 +83,9 @@ class TokenService {
       if (tokenParts.length !== 3) return false;
 
       const payload = JSON.parse(atob(tokenParts[1]));
-      // Backend hiện tại chưa có type claim, nên chỉ kiểm tra cấu trúc cơ bản
-      return payload.exp && payload.iat && payload.sub;
+
+      // Kiểm tra cấu trúc cơ bản và không có roles claim (refresh token không có roles)
+      return payload.exp && payload.iat && payload.sub && !payload.roles;
     } catch (error) {
       return false;
     }
@@ -212,9 +214,10 @@ class TokenService {
     // Kiểm tra nếu token sắp hết hạn
     if (this.isTokenExpiringSoon(token.accessToken)) {
       this.isRefreshing = true;
+      const startTime = Date.now();
 
       try {
-        // Validate refresh token trước khi sử dụng (chỉ kiểm tra cấu trúc cơ bản)
+        // Validate refresh token trước khi sử dụng
         if (!this.isRefreshToken(token.refreshToken)) {
           throw new Error('Invalid refresh token structure');
         }
@@ -230,6 +233,7 @@ class TokenService {
             headers: {
               'Content-Type': 'application/json',
             },
+            timeout: 10000, // 10 second timeout
           }
         );
 
@@ -245,7 +249,7 @@ class TokenService {
           (tokenData.data && tokenData.data.refreshToken) ||
           token.refreshToken;
 
-        // Validate token mới (chỉ kiểm tra cấu trúc cơ bản)
+        // Validate token mới
         if (!this.isAccessToken(newAccessToken)) {
           throw new Error('Invalid access token structure received');
         }
@@ -256,8 +260,20 @@ class TokenService {
         };
 
         this.setToken(newTokenObject);
+
+        // Analytics: Track successful refresh
+        const duration = Date.now() - startTime;
+        console.log(`Token refresh successful in ${duration}ms`);
+
         return newTokenObject;
       } catch (error) {
+        // Analytics: Track failed refresh
+        const duration = Date.now() - startTime;
+        console.error(
+          `Token refresh failed after ${duration}ms:`,
+          error.message
+        );
+
         // Nếu refresh thất bại, xóa token
         this.clearToken();
         throw error;

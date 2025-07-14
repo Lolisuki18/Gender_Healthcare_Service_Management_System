@@ -170,6 +170,12 @@ export const sidebarMenuConfig = [
     roles: ['CUSTOMER', 'STAFF', 'CONSULTANT'],
   },
   {
+    id: 'payment-info',
+    label: 'Thông tin thanh toán',
+    icon: <PaymentIcon />,
+    roles: ['CUSTOMER', 'STAFF', 'CONSULTANT'],
+  },
+  {
     id: 'notifications',
     label: 'Thông báo',
     icon: <NotificationsIcon />,
