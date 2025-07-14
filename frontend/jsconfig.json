@@ -14,7 +14,8 @@
       "@context/*": ["context/*"],
       "@services/*": ["services/*"],
       "@redux/*": ["redux/*"]
-    }
+    },
+    "types": []
   },
   "include": ["src"]
 }

@@ -10,6 +10,7 @@
  */
 
 import localStorageUtil from '@/utils/localStorage';
+import { confirmDialog } from '@/utils/confirmDialog';
 
 class TokenService {
   constructor() {
@@ -274,7 +275,20 @@ class TokenService {
           error.message
         );
 
-        // Nếu refresh thất bại, xóa token
+        // Nếu là lỗi timeout hoặc lỗi 401 (Unauthorized)
+        if (
+          error.code === 'ECONNABORTED' || // timeout
+          (error.response && error.response.status === 401)
+        ) {
+          await confirmDialog.info(
+            'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.'
+          );
+          this.clearToken();
+          window.location.href = '/login';
+          throw error;
+        }
+
+        // Nếu lỗi khác, vẫn clear token như cũ
         this.clearToken();
         throw error;
       } finally {
