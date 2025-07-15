@@ -31,6 +31,7 @@ import BlogDetailModal from '../StaffProfile/modals/BlogDetailModal';
 import { useNavigate } from 'react-router-dom';
 import { getBlogImageUrl } from '../../utils/imageUrl';
 import { formatDateDisplay  } from '../../utils/dateUtils';
+import styles from '../../styles/BlogCard.module.css';
 
 const EditBlogDialog = ({ open, onClose, blog, onSaved }) => {
   const [form, setForm] = useState({
@@ -148,24 +149,35 @@ const EditBlogDialog = ({ open, onClose, blog, onSaved }) => {
     }
   };
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ fontWeight: 700, color: 'primary.main', fontSize: '1.3rem' }}>Chỉnh sửa bài viết</DialogTitle>
-      <DialogContent sx={{ pt: 2, pb: 1, px: 3 }}>
-        <TextField fullWidth label="Tiêu đề *" name="title" value={form.title} onChange={handleFormChange} sx={{ mb: 2 }} required />
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel>Danh mục *</InputLabel>
-          <Select name="categoryId" value={form.categoryId} label="Danh mục *" onChange={handleFormChange} required>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 4,
+          boxShadow: '0 8px 32px rgba(38,198,218,0.15)',
+        }
+      }}
+    >
+      <DialogTitle sx={{ fontWeight: 700, color: 'primary.main', fontSize: '1.3rem', borderTopLeftRadius: 16, borderTopRightRadius: 16, pb: 2 }}>
+        Chỉnh sửa bài viết
+      </DialogTitle>
+      <DialogContent sx={{ pt: 2, pb: 1, px: { xs: 2, md: 5 }, background: '#fafdff', borderBottomLeftRadius: 16, borderBottomRightRadius: 16 }}>
+        <TextField fullWidth label="Tiêu đề *" name="title" value={form.title} onChange={handleFormChange} sx={{ mb: 2, borderRadius: 3, background: '#fff', '& .MuiOutlinedInput-root': { borderRadius: 3 } }} required />
+        <FormControl fullWidth sx={{ mb: 2, borderRadius: 3, background: '#fff' }}>
+          <InputLabel sx={{ fontWeight: 600 }}>Danh mục *</InputLabel>
+          <Select name="categoryId" value={form.categoryId} label="Danh mục *" onChange={handleFormChange} required sx={{ borderRadius: 3, fontWeight: 600 }}>
             {categories.map(c => <MenuItem key={c.categoryId} value={c.categoryId}>{c.name}</MenuItem>)}
           </Select>
         </FormControl>
         <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Hình ảnh đại diện *</Typography>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Hình ảnh đại diện *</Typography>
           <input accept="image/*" style={{ display: 'none' }} id="edit-thumbnail-upload" type="file" onChange={handleThumbnailChange} />
           <label htmlFor="edit-thumbnail-upload">
-            <Button variant="outlined" component="span" startIcon={<CloudUploadIcon />} sx={{ mb: 1 }}>Chọn hình ảnh</Button>
+            <Button variant="outlined" component="span" startIcon={<CloudUploadIcon />} sx={{ mb: 1, borderRadius: 3, fontWeight: 600, px: 2, py: 1 }}>
+              CHỌN HÌNH ẢNH
+            </Button>
           </label>
           {(thumbnailPreview || form.existingThumbnail) && (
-            <Box sx={{ mt: 1, textAlign: 'center' }}>
+            <Box sx={{ mt: 2, textAlign: 'center' }}>
               {(() => {
                 let src;
                 if (thumbnailPreview && typeof thumbnailPreview === 'string' && thumbnailPreview.startsWith('data:')) {
@@ -173,28 +185,32 @@ const EditBlogDialog = ({ open, onClose, blog, onSaved }) => {
                 } else {
                   src = getBlogImageUrl(thumbnailPreview || form.existingThumbnail);
                 }
-                console.log('Thumbnail preview src:', src);
-                return <img src={src} alt="Thumbnail preview" style={{ maxWidth: 180, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />;
+                return <img src={src} alt="Thumbnail preview" style={{ maxWidth: 220, borderRadius: 12, boxShadow: '0 2px 12px rgba(38,198,218,0.10)', minHeight: 120 }} onError={e => {
+                  if (!e.target.src.includes('/img/blog/default.svg')) {
+                    e.target.onerror = null;
+                    e.target.src = '/img/blog/default.svg';
+                  }
+                }} />;
               })()}
             </Box>
           )}
         </Box>
-        <TextField fullWidth label="Nội dung chính *" name="content" value={form.content} onChange={handleFormChange} sx={{ mb: 2 }} multiline minRows={3} required />
+        <TextField fullWidth label="Nội dung chính *" name="content" value={form.content} onChange={handleFormChange} sx={{ mb: 2, borderRadius: 3, background: '#fff', '& .MuiOutlinedInput-root': { borderRadius: 3 } }} multiline minRows={3} required />
         <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Các phần bổ sung</Typography>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Các phần bổ sung</Typography>
           {form.sections.map((section, idx) => (
-            <Card key={idx} sx={{ mb: 2, p: 2, background: '#f8fbff' }}>
+            <Card key={idx} sx={{ mb: 2, p: 2, background: '#f3fafd', borderRadius: 3, boxShadow: '0 2px 8px rgba(38,198,218,0.06)' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography variant="subtitle2">Phần {idx + 1}</Typography>
-                <Button color="error" size="small" onClick={() => removeSection(idx)}>Xoá</Button>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Phần {idx + 1}</Typography>
+                <Button color="error" size="small" onClick={() => removeSection(idx)} sx={{ fontWeight: 700, borderRadius: 2 }}>XOÁ</Button>
               </Box>
-              <TextField fullWidth label="Tiêu đề phần" value={section.sectionTitle} onChange={e => handleSectionChange(idx, 'sectionTitle', e.target.value)} sx={{ mb: 1 }} />
-              <TextField fullWidth label="Nội dung phần" value={section.sectionContent} onChange={e => handleSectionChange(idx, 'sectionContent', e.target.value)} sx={{ mb: 1 }} multiline minRows={2} />
+              <TextField fullWidth label="Tiêu đề phần" value={section.sectionTitle} onChange={e => handleSectionChange(idx, 'sectionTitle', e.target.value)} sx={{ mb: 1, borderRadius: 2, background: '#fff', '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
+              <TextField fullWidth label="Nội dung phần" value={section.sectionContent} onChange={e => handleSectionChange(idx, 'sectionContent', e.target.value)} sx={{ mb: 1, borderRadius: 2, background: '#fff', '& .MuiOutlinedInput-root': { borderRadius: 2 } }} multiline minRows={2} />
               <Box>
                 <input accept="image/*" style={{ display: 'none' }} id={`edit-section-image-${idx}`} type="file" onChange={e => handleSectionImageChange(idx, e.target.files[0])} />
-                <label htmlFor={`edit-section-image-${idx}`}><Button variant="outlined" component="span" startIcon={<CloudUploadIcon />} size="small">Chọn hình ảnh</Button></label>
+                <label htmlFor={`edit-section-image-${idx}`}><Button variant="outlined" component="span" startIcon={<CloudUploadIcon />} size="small" sx={{ borderRadius: 2, fontWeight: 600, px: 2, py: 0.5 }}>CHỌN HÌNH ẢNH</Button></label>
                 {(section.sectionImage || section.existingSectionImage) && (
-                  <Box sx={{ mt: 1 }}>
+                  <Box sx={{ mt: 2, textAlign: 'center' }}>
                     {(() => {
                       let src;
                       if (section.sectionImage && typeof section.sectionImage === 'string' && section.sectionImage.startsWith('data:')) {
@@ -202,8 +218,12 @@ const EditBlogDialog = ({ open, onClose, blog, onSaved }) => {
                       } else {
                         src = getBlogImageUrl(section.sectionImage || section.existingSectionImage);
                       }
-                      console.log('Section preview src:', src);
-                      return <img src={src} alt={`Section ${idx + 1} preview`} style={{ maxWidth: 120, borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />;
+                      return <img src={src} alt={`Section ${idx + 1} preview`} style={{ maxWidth: 140, borderRadius: 8, boxShadow: '0 2px 8px rgba(38,198,218,0.10)', minHeight: 80 }} onError={e => {
+                        if (!e.target.src.includes('/img/blog/default.svg')) {
+                          e.target.onerror = null;
+                          e.target.src = '/img/blog/default.svg';
+                        }
+                      }} />;
                     })()}
                   </Box>
                 )}
@@ -211,13 +231,13 @@ const EditBlogDialog = ({ open, onClose, blog, onSaved }) => {
             </Card>
           ))}
           <Box sx={{ textAlign: 'center', mt: 2 }}>
-            <Button variant="contained" size="small" onClick={addSection}>Thêm phần</Button>
+            <Button variant="contained" size="small" onClick={addSection} sx={{ borderRadius: 2, fontWeight: 700, px: 3, py: 1, background: 'linear-gradient(90deg, #26c6da 0%, #00acc1 100%)', color: '#fff', boxShadow: '0 2px 8px rgba(38,198,218,0.10)', '&:hover': { background: 'linear-gradient(90deg, #00acc1 0%, #00838f 100%)' } }}>Thêm phần</Button>
           </Box>
         </Box>
       </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} variant="outlined">Huỷ</Button>
-        <Button onClick={handleSave} variant="contained" disabled={loading} startIcon={loading && <CircularProgress size={18} color="inherit" />}>Lưu thay đổi</Button>
+      <DialogActions sx={{ px: 5, py: 2, background: '#fafdff', borderBottomLeftRadius: 16, borderBottomRightRadius: 16 }}>
+        <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 3, fontWeight: 700, px: 3, py: 1 }}>HUỶ</Button>
+        <Button onClick={handleSave} variant="contained" disabled={loading} startIcon={loading && <CircularProgress size={18} color="inherit" />} sx={{ borderRadius: 3, fontWeight: 700, px: 3, py: 1, background: 'linear-gradient(90deg, #26c6da 0%, #00acc1 100%)', color: '#fff', boxShadow: '0 2px 8px rgba(38,198,218,0.10)', '&:hover': { background: 'linear-gradient(90deg, #00acc1 0%, #00838f 100%)' } }}>LƯU THAY ĐỔI</Button>
       </DialogActions>
     </Dialog>
   );
@@ -340,50 +360,104 @@ const BlogMyContent = () => {
 
   return (
     <Box sx={{ p: { xs: 1, md: 3 } }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h5" fontWeight={700} color="primary.main">
-          Blog của tôi
-        </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2, justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', flex: 1 }}>
+          <Box sx={{ maxWidth: 400, flex: 1 }}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Tìm kiếm theo tiêu đề..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              InputProps={{
+                startAdornment: <SearchIcon sx={{ color: 'primary.main', mr: 1, fontSize: 22 }} />,
+                sx: {
+                  borderRadius: 3,
+                  background: '#fff',
+                  boxShadow: '0 2px 8px rgba(38,198,218,0.04)',
+                  fontWeight: 500,
+                  fontSize: 15,
+                  py: 0.5,
+                  px: 1.5,
+                  minHeight: 40,
+                  height: 40
+                }
+              }}
+              sx={{
+                borderRadius: 3,
+                background: '#fff',
+                boxShadow: '0 2px 8px rgba(38,198,218,0.04)',
+                '& .MuiOutlinedInput-root': { borderRadius: 3 },
+                '& .MuiInputLabel-root': { fontWeight: 600 },
+                minHeight: 40,
+                height: 40
+              }}
+            />
+          </Box>
+          <TextField
+            select
+            label="Trạng thái"
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            size="small"
+            sx={{
+              minWidth: 150,
+              borderRadius: 3,
+              background: '#fff',
+              boxShadow: '0 2px 8px rgba(38,198,218,0.04)',
+              '& .MuiOutlinedInput-root': { borderRadius: 3 },
+              '& .MuiInputLabel-root': { fontWeight: 600 }
+            }}
+            SelectProps={{ native: true }}
+          >
+            <option value="ALL">Tất cả</option>
+            <option value="CONFIRMED">Đã duyệt</option>
+            <option value="PROCESSING">Chờ duyệt</option>
+            <option value="CANCELED">Đã huỷ</option>
+          </TextField>
+          <TextField
+            label="Ngày tạo"
+            type="date"
+            size="small"
+            value={dateFilter}
+            onChange={e => setDateFilter(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{
+              minWidth: 180,
+              borderRadius: 3,
+              background: '#fff',
+              boxShadow: '0 2px 8px rgba(38,198,218,0.04)',
+              '& .MuiOutlinedInput-root': { borderRadius: 3 },
+              '& .MuiInputLabel-root': { fontWeight: 600 }
+            }}
+          />
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon sx={{ fontSize: 28 }} />}
+          onClick={handleCreate}
+          sx={{
+            background: 'linear-gradient(90deg, #26c6da 0%, #00acc1 100%)',
+            color: '#fff',
+            borderRadius: 3,
+            fontWeight: 700,
+            fontSize: 18,
+            px: 3,
+            py: 1.5,
+            boxShadow: '0 4px 16px rgba(38,198,218,0.10)',
+            textTransform: 'none',
+            whiteSpace: 'nowrap',
+            ml: { xs: 0, md: 2 },
+            mt: { xs: 2, md: 0 },
+            alignSelf: { xs: 'stretch', md: 'flex-start' },
+            '&:hover': {
+              background: 'linear-gradient(90deg, #00acc1 0%, #00838f 100%)',
+              boxShadow: '0 8px 24px rgba(38,198,218,0.18)'
+            }
+          }}
+        >
           Tạo bài viết mới
         </Button>
-      </Box>
-      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <TextField
-          select
-          label="Trạng thái"
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          size="small"
-          sx={{ minWidth: 150 }}
-          SelectProps={{ native: true }}
-        >
-          <option value="ALL">Tất cả</option>
-          <option value="CONFIRMED">Đã duyệt</option>
-          <option value="PROCESSING">Chờ duyệt</option>
-          <option value="CANCELED">Đã huỷ</option>
-        </TextField>
-        <TextField
-          label="Ngày tạo"
-          type="date"
-          size="small"
-          value={dateFilter}
-          onChange={e => setDateFilter(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-          sx={{ minWidth: 180 }}
-        />
-      </Box>
-      <Box sx={{ mb: 3, maxWidth: 400 }}>
-        <TextField
-          fullWidth
-          placeholder="Tìm kiếm theo tiêu đề..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          InputProps={{
-            startAdornment: <SearchIcon sx={{ color: 'primary.main', mr: 1 }} />,
-          }}
-          sx={{ borderRadius: 2, background: '#fff' }}
-        />
       </Box>
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
       {loading ? (
@@ -411,37 +485,85 @@ const BlogMyContent = () => {
           </Button>
         </Box>
       ) : (
-        <Grid container spacing={3}>
+        <Grid container spacing={3} alignItems="stretch">
           {filteredBlogs.map((blog) => (
-            <Grid item xs={12} md={6} key={blog.id}>
-              <Card sx={{ display: 'flex', mb: 2, borderRadius: 3, boxShadow: '0 2px 8px rgba(25,118,210,0.08)' }}>
-                <CardMedia
-                  component="img"
-                  image={getBlogImageUrl(blog.thumbnailImage || blog.existingThumbnail)}
-                  alt={blog.title}
-                  sx={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 3, m: 2 }}
-                  onError={e => { e.target.onerror = null; e.target.src = '/img/blog/default.jpg'; }}
-                />
-                <CardContent sx={{ flex: 1 }}>
-                  <Typography variant="h6" fontWeight={700} sx={{ mb: 1, color: 'primary.main', cursor: 'pointer' }} onClick={() => handleView(blog)}>
-                    {blog.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    {blog.categoryName || 'Chưa phân loại'}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Chip label={blog.status === 'CONFIRMED' ? 'Đã duyệt' : blog.status === 'PROCESSING' ? 'Chờ duyệt' : 'Đã huỷ'} color={blog.status === 'CONFIRMED' ? 'success' : blog.status === 'PROCESSING' ? 'warning' : 'error'} size="small" />
-                    <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                      {formatDateDisplay(blog.createdAt)}
-                    </Typography>
+            <Grid item xs={12} sm={6} md={4} key={blog.id} sx={{ display: 'flex', height: '100%' }}>
+              <Box className={styles.blogCard} sx={{ height: '100%', minHeight: 340, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 6px 24px rgba(38,198,218,0.10)', borderRadius: 4, flex: 1 }}>
+                {/* Image section */}
+                {(blog.thumbnailImage || blog.existingThumbnail) && (
+                  <Box className={styles.blogCardImage} sx={{ height: 200, overflow: 'hidden', borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
+                    <img
+                      src={getBlogImageUrl(blog.thumbnailImage || blog.existingThumbnail)}
+                      alt={blog.title}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
+                      onError={e => {
+                        if (!e.target.src.includes('/img/blog/default.svg')) {
+                          e.target.onerror = null;
+                          e.target.src = '/img/blog/default.svg';
+                        }
+                      }}
+                    />
+                    {blog.status !== 'CONFIRMED' && (
+                      <span className={
+                        styles.statusBadge + ' ' +
+                        (blog.status === 'PROCESSING' ? styles.processing : blog.status === 'CANCELED' ? styles.canceled : styles.confirmed)
+                      } style={{ fontWeight: 700, fontSize: 15, padding: '7px 18px', borderRadius: 20 }}>
+                        {blog.status === 'CONFIRMED' ? 'Đã duyệt' : blog.status === 'PROCESSING' ? 'Chờ duyệt' : 'Đã huỷ'}
+                      </span>
+                    )}
                   </Box>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Tooltip title="Xem chi tiết"><span><IconButton color="info" onClick={() => handleView(blog)}><VisibilityIcon /></IconButton></span></Tooltip>
-                    <Tooltip title="Chỉnh sửa"><span><IconButton color="primary" onClick={() => handleEdit(blog)}><EditIcon /></IconButton></span></Tooltip>
-                    <Tooltip title="Xoá"><span><IconButton color="error" onClick={() => handleDelete(blog.id)} disabled={deleting}><DeleteIcon /></IconButton></span></Tooltip>
+                )}
+                {/* Content section */}
+                <Box className={styles.blogCardContent} sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', p: 3 }}>
+                  <Box className={styles.blogCardMeta} sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <span className={styles.category}><Chip label={blog.categoryName || 'Chưa phân loại'} size="small" color="info" sx={{ fontWeight: 700, borderRadius: 2 }} /></span>
+                    <span className={styles.date} style={{ fontWeight: 500 }}>{formatDateDisplay(blog.createdAt)}</span>
                   </Box>
-                </CardContent>
-              </Card>
+                  <div className={styles.blogCardTitle} style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>{blog.title}</div>
+                  <div className={styles.blogCardExcerpt} style={{ fontSize: 15, color: '#64748b', marginBottom: 16 }}>{blog.content?.replace(/<[^>]*>/g, '').slice(0, 120)}{blog.content?.length > 120 ? '...' : ''}</div>
+                  <Box className={styles.blogCardFooter} sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                    <Tooltip title="Xem chi tiết" arrow>
+                      <IconButton color="info" onClick={() => handleView(blog)}
+                        sx={{
+                          background: '#e3f2fd',
+                          borderRadius: '50%',
+                          p: 1.2,
+                          transition: 'all 0.2s',
+                          '&:hover': { background: '#b3e5fc', color: '#01579b', boxShadow: '0 2px 8px #b3e5fc' }
+                        }}
+                      >
+                        <VisibilityIcon sx={{ fontSize: 22 }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Chỉnh sửa" arrow>
+                      <IconButton color="primary" onClick={() => handleEdit(blog)}
+                        sx={{
+                          background: '#e3f2fd',
+                          borderRadius: '50%',
+                          p: 1.2,
+                          transition: 'all 0.2s',
+                          '&:hover': { background: '#b3e5fc', color: '#01579b', boxShadow: '0 2px 8px #b3e5fc' }
+                        }}
+                      >
+                        <EditIcon sx={{ fontSize: 22 }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Xoá" arrow>
+                      <IconButton color="error" onClick={() => handleDelete(blog.id)} disabled={deleting}
+                        sx={{
+                          background: '#ffebee',
+                          borderRadius: '50%',
+                          p: 1.2,
+                          transition: 'all 0.2s',
+                          '&:hover': { background: '#ffcdd2', color: '#b71c1c', boxShadow: '0 2px 8px #ffcdd2' }
+                        }}
+                      >
+                        <DeleteIcon sx={{ fontSize: 22 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Box>
+              </Box>
             </Grid>
           ))}
         </Grid>

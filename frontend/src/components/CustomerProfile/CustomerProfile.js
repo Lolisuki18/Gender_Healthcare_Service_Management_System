@@ -46,7 +46,7 @@ import QuestionsContent from '@/components/CustomerProfile/QuestionsContent';
 import ReviewsContent from '@/components/CustomerProfile/ReviewsContent';
 import SecurityContent from '@/components/siderBar/SecurityContent';
 import PaymentMethodsSection from './PaymentMethodsSection';
-import BlogCustomerContent from '../siderBar/BlogCustomerContent';
+import BlogCustomerContent from '../CustomerProfile/BlogCustomerContent';
 import PaymentInfoContent from '../siderBar/PaymentInfoContent';
 
 // Styled component cho nội dung chính
@@ -192,8 +192,7 @@ const CustomerProfile = () => {
             >
               {selectedMenuItem === 'profile' && 'Hồ sơ cá nhân'}
               {(selectedMenuItem === 'customer-appointments' ||
-                selectedMenuItem === 'appointments') &&
-                'Lịch hẹn'}
+                selectedMenuItem === 'appointments') &&'Lịch hẹn'}
               {selectedMenuItem === 'medical-history' && 'Lịch sử khám'}
               {selectedMenuItem === 'payment-history' && 'Lịch sử thanh toán'}
               {selectedMenuItem === 'invoices' && 'Hóa đơn'}{' '}
@@ -201,9 +200,9 @@ const CustomerProfile = () => {
               {selectedMenuItem === 'settings' && 'Cài đặt'}
               {selectedMenuItem === 'help' && 'Trợ giúp'}
               {selectedMenuItem === 'questions' && 'Câu hỏi đã đặt'}
-              {selectedMenuItem === 'reviews' && 'Đánh giá dịch vụ'}
+              {selectedMenuItem === 'my-reviews' && 'Đánh giá của tôi'}
               {/* {selectedMenuItem === 'security' && 'Bảo mật'} */}
-              {selectedMenuItem === 'myBlogs' && 'Đánh giá của tôi'}
+              {selectedMenuItem === 'blog-customer' && 'Blog của tôi'}
               {selectedMenuItem === 'invoices' && 'Hóa đơn'}
               {selectedMenuItem === 'security' && 'Bảo mật tài khoản'}
             </Typography>

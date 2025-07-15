@@ -316,7 +316,7 @@ const ServiceDetailDialog = ({
                 </Box>
               </Box>
               
-              {/* Phần giải thích ý nghĩa kết quả xét nghiệm - chỉ hiển thị nếu có dữ liệu */}
+              {/* Phần giải thích Giải thích - chỉ hiển thị nếu có dữ liệu */}
               {detailData.components.some(comp => comp.description || comp.interpretation) && (
                 <Box sx={{ 
                   mt: 3, 
@@ -338,7 +338,7 @@ const ServiceDetailDialog = ({
                   }
                 }}>
                   <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ color: '#2196F3' }}>
-                    Ý nghĩa kết quả xét nghiệm
+                    Giải thích
                   </Typography>
                   <List disablePadding>
                     {/* Danh sách giải thích từng chỉ số */}
@@ -809,11 +809,11 @@ const ServiceDetailDialog = ({
                           </Box>
                         )}
                         
-                        {/* Ý nghĩa kết quả xét nghiệm - chỉ hiển thị khi có dữ liệu */}
+                        {/* Giải thích- chỉ hiển thị khi có dữ liệu */}
                         {service.components && service.components.some(comp => comp.description || comp.interpretation) && (
                           <Box sx={{ mt: 3, p: 2, backgroundColor: 'rgba(74,174,181,0.05)', borderRadius: 2 }}>
                             <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ color: '#4aaeb5' }}>
-                              Ý nghĩa kết quả xét nghiệm
+                              Giải thích
                             </Typography>
                             <List disablePadding>
                               {/* Liệt kê ý nghĩa của từng chỉ số */}

@@ -257,21 +257,10 @@ const BlogDetailModal = ({ open, blog, onClose, onReject }) => {
         <Button 
           onClick={onClose}
           variant="outlined"
-          sx={{ px: 3 }}
+          sx={{ px: 3, py: 1, borderRadius: 3, fontWeight: 700, fontSize: 16, borderColor: '#26c6da', color: '#1976d2', '&:hover': { background: '#e3f2fd', borderColor: '#00acc1', color: '#00acc1' }, mr: 2 }}
         >
           Đóng
         </Button>
-        
-        {onReject && blog.status === 'PROCESSING' && (
-          <Button 
-            onClick={() => onReject(blog)}
-            variant="contained"
-            color="error"
-            sx={{ px: 3 }}
-          >
-            Từ chối
-          </Button>
-        )}
       </DialogActions>
     </Dialog>
   );

@@ -1,8 +1,0 @@
-<svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="300" height="200" fill="#e0f7fa"/>
-  <circle cx="120" cy="80" r="15" fill="#26c6da"/>
-  <circle cx="180" cy="80" r="15" fill="#26c6da"/>
-  <path d="M120 140 Q150 160 180 140" stroke="#26c6da" stroke-width="3" fill="none"/>
-  <text x="150" y="30" text-anchor="middle" fill="#546e7a" font-size="14" font-family="Arial">🏥 Sức khỏe sinh sản</text>
-  <text x="150" y="180" text-anchor="middle" fill="#90a4ae" font-size="12" font-family="Arial">Hình mặc định</text>
-</svg>
