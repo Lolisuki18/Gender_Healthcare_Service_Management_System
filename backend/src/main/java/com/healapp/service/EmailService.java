@@ -121,7 +121,7 @@ public class EmailService {
                 + "<li>Nhập tên của bạn và tham gia cuộc họp</li>"
                 + "</ol>"
                 + "<p>Nếu bạn cần hỗ trợ, vui lòng liên hệ chúng tôi qua email hoặc số điện thoại.</p>"
-                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "<p>Trân trọng,<br/>Gender Heathcare Service Team</p>"
                 + "</div>";
 
         sendEmail(customer.getEmail(), subject, htmlContent);
@@ -151,7 +151,7 @@ public class EmailService {
                 + "border-radius: 5px; font-weight: bold;'>Tham gia cuộc họp</a></p>"
                 + "<p><small>Hoặc copy link sau: " + consultation.getMeetUrl() + "</small></p>"
                 + "<p>Vui lòng chuẩn bị và có mặt đúng giờ để đảm bảo chất lượng dịch vụ.</p>"
-                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "<p>Trân trọng,<br/>Gender Heathcare Service Team</p>"
                 + "</div>";
 
         sendEmail(consultant.getEmail(), subject, htmlContent);
@@ -166,18 +166,18 @@ public class EmailService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         helper.setFrom(from);
         helper.setTo(to);
-        helper.setSubject("Xác thực email - HealApp");
+        helper.setSubject("Xác thực email - Gender Heathcare Service");
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
                 + "<h2 style='color: #4a6ee0;'>Xác thực địa chỉ email</h2>"
-                + "<p>Cảm ơn bạn đã đăng ký tài khoản tại HealApp. Để hoàn tất quá trình đăng ký, vui lòng nhập mã xác thực sau:</p>"
+                + "<p>Cảm ơn bạn đã đăng ký tài khoản tại Gender Heathcare Service. Để hoàn tất quá trình đăng ký, vui lòng nhập mã xác thực sau:</p>"
                 + "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; "
                 + "text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold;'>"
                 + code
                 + "</div>"
                 + "<p>Mã xác thực có hiệu lực trong vòng 10 phút.</p>"
                 + "<p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>"
-                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "<p>Trân trọng,<br/>Gender Heathcare Service Team</p>"
                 + "</div>";
 
         helper.setText(htmlContent, true);
@@ -251,19 +251,19 @@ public class EmailService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         helper.setFrom(from);
         helper.setTo(to);
-        helper.setSubject("Xác thực email mới - HealApp");
+        helper.setSubject("Xác thực email mới - Gender Heathcare Service");
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
                 + "<h2 style='color: #4a6ee0;'>Xác thực địa chỉ email mới</h2>"
                 + "<p>Xin chào " + fullName + ",</p>"
-                + "<p>Bạn đã yêu cầu thay đổi địa chỉ email cho tài khoản HealApp của mình. Để xác nhận địa chỉ email mới, vui lòng nhập mã xác thực sau:</p>"
+                + "<p>Bạn đã yêu cầu thay đổi địa chỉ email cho tài khoản Gender Heathcare Service của mình. Để xác nhận địa chỉ email mới, vui lòng nhập mã xác thực sau:</p>"
                 + "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; "
                 + "text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold;'>"
                 + code
                 + "</div>"
                 + "<p>Mã xác thực có hiệu lực trong vòng 10 phút.</p>"
                 + "<p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này và địa chỉ email của bạn sẽ không thay đổi.</p>"
-                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "<p>Trân trọng,<br/>Gender Heathcare Service Team</p>"
                 + "</div>";
 
         helper.setText(htmlContent, true);
@@ -276,17 +276,17 @@ public class EmailService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         helper.setFrom(from);
         helper.setTo(oldEmail);
-        helper.setSubject("Thông báo thay đổi email - HealApp");
+        helper.setSubject("Thông báo thay đổi email - Gender Heathcare Service");
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
                 + "<h2 style='color: #4a6ee0;'>Thông báo thay đổi email</h2>"
                 + "<p>Xin chào " + fullName + ",</p>"
-                + "<p>Địa chỉ email cho tài khoản HealApp của bạn đã được thay đổi thành công.</p>"
+                + "<p>Địa chỉ email cho tài khoản Gender Heathcare Service của bạn đã được thay đổi thành công.</p>"
                 + "<p><strong>Email cũ:</strong> " + oldEmail + "</p>"
                 + "<p><strong>Email mới:</strong> " + newEmail + "</p>"
                 + "<p>Từ bây giờ, bạn sẽ cần sử dụng email mới để đăng nhập vào tài khoản.</p>"
                 + "<p>Nếu bạn không thực hiện thay đổi này, vui lòng liên hệ với chúng tôi ngay lập tức.</p>"
-                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "<p>Trân trọng,<br/>Gender Heathcare Service Team</p>"
                 + "</div>";
 
         helper.setText(htmlContent, true);
@@ -299,21 +299,21 @@ public class EmailService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         helper.setFrom(from);
         helper.setTo(newEmail);
-        helper.setSubject("Chào mừng đến với HealApp - Email đã được cập nhật");
+        helper.setSubject("Chào mừng đến với Gender Heathcare Service - Email đã được cập nhật");
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
                 + "<h2 style='color: #4a6ee0;'>Email đã được cập nhật thành công</h2>"
                 + "<p>Xin chào " + fullName + ",</p>"
-                + "<p>Địa chỉ email cho tài khoản HealApp của bạn đã được cập nhật thành công sang: <strong>" + newEmail
+                + "<p>Địa chỉ email cho tài khoản Gender Heathcare Service của bạn đã được cập nhật thành công sang: <strong>" + newEmail
                 + "</strong></p>"
                 + "<p>Từ bây giờ, bạn có thể sử dụng địa chỉ email này để:</p>"
                 + "<ul>"
-                + "<li>Đăng nhập vào tài khoản HealApp</li>"
+                + "<li>Đăng nhập vào tài khoản Gender Heathcare Service</li>"
                 + "<li>Nhận các thông báo và cập nhật từ hệ thống</li>"
                 + "<li>Khôi phục mật khẩu nếu cần</li>"
                 + "</ul>"
-                + "<p>Cảm ơn bạn đã sử dụng HealApp!</p>"
-                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "<p>Cảm ơn bạn đã sử dụng Gender Heathcare Service!</p>"
+                + "<p>Trân trọng,<br/>Gender Heathcare Service Team</p>"
                 + "</div>";
 
         helper.setText(htmlContent, true);
@@ -326,12 +326,12 @@ public class EmailService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         helper.setFrom(from);
         helper.setTo(email);
-        helper.setSubject("Thông báo thay đổi mật khẩu - HealApp");
+        helper.setSubject("Thông báo thay đổi mật khẩu - Gender Heathcare Service");
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
                 + "<h2 style='color: #4a6ee0;'>Mật khẩu đã được thay đổi</h2>"
                 + "<p>Xin chào " + fullName + ",</p>"
-                + "<p>Mật khẩu cho tài khoản HealApp của bạn đã được thay đổi thành công vào lúc: <strong>"
+                + "<p>Mật khẩu cho tài khoản Gender Heathcare Service của bạn đã được thay đổi thành công vào lúc: <strong>"
                 + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) + "</strong></p>"
                 + "<p>Nếu bạn không thực hiện thay đổi này, vui lòng:</p>"
                 + "<ol>"
@@ -345,7 +345,7 @@ public class EmailService {
                 + "<li>Không chia sẻ mật khẩu với bất kỳ ai</li>"
                 + "<li>Thay đổi mật khẩu định kỳ</li>"
                 + "</ul>"
-                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "<p>Trân trọng,<br/>Gender Heathcare Service Team</p>"
                 + "</div>";
 
         helper.setText(htmlContent, true);
@@ -359,7 +359,7 @@ public class EmailService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         helper.setFrom(from);
         helper.setTo(mail);
-        helper.setSubject("Nhắc nhở ngày rụng trứng - HealApp");
+        helper.setSubject("Nhắc nhở ngày rụng trứng - Gender Heathcare Service");
 
         String dateFormatted = ovulationDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
@@ -367,14 +367,14 @@ public class EmailService {
                 + "<h2 style='color: #ff69b4;'>Nhắc nhở ngày rụng trứng</h2>"
                 + "<p>Xin chào " + fullName + ",</p>"
                 + "<p>Chúng tôi gửi email này để nhắc bạn rằng <strong>ngày mai (" + dateFormatted
-                + ")</strong> là ngày rụng trứng theo chu kỳ kinh nguyệt bạn đã theo dõi trên HealApp.</p>"
+                + ")</strong> là ngày rụng trứng theo chu kỳ kinh nguyệt bạn đã theo dõi trên Gender Heathcare Service.</p>"
                 + "<div style='background-color: #fff0f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>"
                 + "<p><strong>Thông tin:</strong></p>"
                 + "<p>Ngày rụng trứng: " + dateFormatted + "</p>"
                 + "<p>Đây là thời điểm quan trọng trong chu kỳ kinh nguyệt của bạn, là lúc cơ hội mang thai cao nhất nếu bạn đang có kế hoạch.</p>"
                 + "</div>"
-                + "<p>Để biết thêm thông tin chi tiết về chu kỳ kinh nguyệt và sức khỏe sinh sản, bạn có thể truy cập HealApp hoặc tham khảo ý kiến từ các chuyên gia y tế của chúng tôi.</p>"
-                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "<p>Để biết thêm thông tin chi tiết về chu kỳ kinh nguyệt và sức khỏe sinh sản, bạn có thể truy cập Gender Heathcare Service hoặc tham khảo ý kiến từ các chuyên gia y tế của chúng tôi.</p>"
+                + "<p>Trân trọng,<br/>Gender Heathcare Service Team</p>"
                 + "</div>";
 
         helper.setText(htmlContent, true);
@@ -402,7 +402,7 @@ public class EmailService {
 
         helper.setFrom(from);
         helper.setTo(email);
-        helper.setSubject("Nhắc nhở ngày có tỉ lệ mang thai cao - HealApp");
+        helper.setSubject("Nhắc nhở ngày có tỉ lệ mang thai cao - Gender Heathcare Service");
 
         String dateFormatted = ovulationDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
@@ -412,7 +412,7 @@ public class EmailService {
             htmlContent = String.format(
                     """
                                 <div style="background: linear-gradient(135deg, #ff69b4 0%%, #ff8da1 100%%); padding: 30px; text-align: center; color: white;">
-                                    <h1 style="margin: 0; font-size: 28px; font-weight: 300;">HealApp</h1>
+                                    <h1 style="margin: 0; font-size: 28px; font-weight: 300;">Gender Heathcare Service</h1>
                                     <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Theo dõi sức khỏe sinh sản</p>
                                 </div>
 
@@ -459,7 +459,7 @@ public class EmailService {
             htmlContent = String.format(
                     """
                             <div style="background: linear-gradient(135deg, #ff69b4 0%%, #ff8da1 100%%); padding: 30px; text-align: center; color: white;">
-                                    <h1 style="margin: 0; font-size: 28px; font-weight: 300;">HealApp</h1>
+                                    <h1 style="margin: 0; font-size: 28px; font-weight: 300;">Gender Heathcare Service</h1>
                                     <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Theo dõi sức khỏe sinh sản</p>
                                 </div>
 
@@ -506,7 +506,7 @@ public class EmailService {
             htmlContent = String.format(
                     """
                             <div style="background: linear-gradient(135deg, #ff69b4 0%%, #ff8da1 100%%); padding: 30px; text-align: center; color: white;">
-                                    <h1 style="margin: 0; font-size: 28px; font-weight: 300;">HealApp</h1>
+                                    <h1 style="margin: 0; font-size: 28px; font-weight: 300;">Gender Heathcare Service</h1>
                                     <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Theo dõi sức khỏe sinh sản</p>
                                 </div>
 
@@ -578,15 +578,15 @@ public class EmailService {
 
         helper.setTo(mail);
         helper.setFrom(from);
-        helper.setSubject("⏰ Nhắc nhở uống thuốc tránh thai - HealApp");
+        helper.setSubject("⏰ Nhắc nhở uống thuốc tránh thai - Gender Heathcare Service");
 
         String content = "<div style='font-family:Arial,sans-serif; font-size:14px;'>"
                 + "<p>Chào <strong>" + fullName + "</strong>,</p>"
-                + "<p>Đây là lời nhắc nhở từ <strong>HealApp</strong> để bạn không quên uống thuốc lúc <strong>"
+                + "<p>Đây là lời nhắc nhở từ <strong>Gender Heathcare Service</strong> để bạn không quên uống thuốc lúc <strong>"
                 + remindTime.format(DateTimeFormatter.ofPattern("HH:mm")) + "</strong>.</p>"
                 + "<p>🕒 Vui lòng kiểm tra và <strong>check-in</strong> trong ứng dụng.</p>"
                 + "<br>"
-                + "<p>Chúc bạn luôn khỏe mạnh,<br><strong>Đội ngũ HealApp</strong></p>"
+                + "<p>Chúc bạn luôn khỏe mạnh,<br><strong>Đội ngũ Gender Heathcare Service</strong></p>"
                 + "</div>";
 
         helper.setText(content, true);
@@ -610,7 +610,7 @@ public class EmailService {
     @Async
     public void sendConsultantDeactivatedNotificationAsync(String email, String fullName) {
         try {
-            String subject = "Account Deactivated - HealApp Consultant";
+            String subject = "Account Deactivated - Gender Heathcare Service Consultant";
             String body = String.format("""
                     Dear %s,
 
@@ -619,7 +619,7 @@ public class EmailService {
                     Your account is temporarily disabled. Please contact support if you have any questions.
 
                     Best regards,
-                    HealApp Administration Team
+                    Gender Heathcare Service Administration Team
                     """, fullName);
 
             sendEmail(email, subject, body);
@@ -630,7 +630,7 @@ public class EmailService {
     @Async
     public void sendConsultantActivatedNotificationAsync(String email, String fullName) {
         try {
-            String subject = "Account Reactivated - HealApp Consultant";
+            String subject = "Account Reactivated - Gender Heathcare Service Consultant";
             String body = String.format("""
                     Dear %s,
 
@@ -639,7 +639,7 @@ public class EmailService {
                     You can now log in and resume your consultant activities.
 
                     Best regards,
-                    HealApp Administration Team
+                    Gender Heathcare Service Administration Team
                     """, fullName);
 
             sendEmail(email, subject, body);
@@ -650,7 +650,7 @@ public class EmailService {
     @Async
     public void sendConsultantRoleRemovedNotificationAsync(String email, String fullName) {
         try {
-            String subject = "Consultant Role Removed - HealApp";
+            String subject = "Consultant Role Removed - Gender Heathcare Service";
             String body = String.format("""
                     Dear %s,
 
@@ -659,7 +659,7 @@ public class EmailService {
                     Your account has been converted to a regular customer account.
 
                     Best regards,
-                    HealApp Administration Team
+                    Gender Heathcare Service Administration Team
                     """, fullName);
 
             sendEmail(email, subject, body);
@@ -683,11 +683,11 @@ public class EmailService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         helper.setFrom(from);
         helper.setTo(email);
-        helper.setSubject("Xác thực xóa tài khoản - HealApp");
+        helper.setSubject("Xác thực xóa tài khoản - Gender Heathcare Service");
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
                 + "<h2 style='color: #dc3545;'>⚠️ Xác thực xóa tài khoản</h2>"
-                + "<p>Bạn đã yêu cầu xóa vĩnh viễn tài khoản HealApp của mình.</p>"
+                + "<p>Bạn đã yêu cầu xóa vĩnh viễn tài khoản Gender Heathcare Service của mình.</p>"
                 + "<p><strong>⚠️ Cảnh báo:</strong> Hành động này sẽ xóa vĩnh viễn tất cả dữ liệu của bạn và không thể khôi phục lại.</p>"
                 + "<p>Để xác nhận việc xóa tài khoản, vui lòng nhập mã xác thực sau:</p>"
                 + "<div style='background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; "
@@ -696,7 +696,7 @@ public class EmailService {
                 + "</div>"
                 + "<p><strong>Mã xác thực có hiệu lực trong vòng 10 phút.</strong></p>"
                 + "<p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>"
-                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "<p>Trân trọng,<br/>Gender Heathcare Service Team</p>"
                 + "</div>";
 
         helper.setText(htmlContent, true);
