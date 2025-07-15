@@ -32,7 +32,7 @@ public class STIPackage {
     @Column(name = "package_id")
     private Long packageId;
 
-    @Column(name = "package_name", nullable = false, length = 200,columnDefinition = "NVARCHAR(255)")
+    @Column(name = "package_name", nullable = false, length = 200,columnDefinition = "NVARCHAR(200)")
     private String packageName;
 
     @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
