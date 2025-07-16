@@ -418,6 +418,24 @@ const blogService = {
     }
   },
 
+  /**
+   * Lấy tất cả bài viết có trạng thái CONFIRMED cho dashboard
+   * @returns {Promise} Promise chứa kết quả từ API
+   */
+  getAllConfirmedBlogs: async () => {
+    try {
+      const response = await apiClient.get('/blog/status/CONFIRMED');
+      if (!response.data.success) {
+        throw new Error(
+          response.data.message || 'Failed to fetch confirmed blogs'
+        );
+      }
+      return response.data.data?.content || [];
+    } catch (error) {
+      throw new Error(error.response?.data?.message || error.message);
+    }
+  },
+
   // ===== HELPER FUNCTIONS =====
 
   /**

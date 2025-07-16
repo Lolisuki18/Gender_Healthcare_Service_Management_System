@@ -21,6 +21,10 @@ import {
   Avatar,
   IconButton,
   Tooltip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -35,12 +39,14 @@ import {
   Article as ArticleIcon,
 } from '@mui/icons-material';
 import { adminService } from '@/services/adminService';
+import blogService from '@/services/blogService';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -181,6 +187,14 @@ const DashboardContent = ({ onNavigate }) => {
   const [error, setError] = useState(null);
   const [monthlyData, setMonthlyData] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [availableYears, setAvailableYears] = useState([]);
+  const [allDataCache, setAllDataCache] = useState({
+    users: [],
+    stiTests: [],
+    consultations: [],
+    confirmedBlogs: []
+  });
   const [dashboardData, setDashboardData] = useState({
     totalUsers: 0,
     activeDoctors: 0,
@@ -198,6 +212,9 @@ const DashboardContent = ({ onNavigate }) => {
     serviceGrowthRate: '0%',
     consultationsThisMonth: 0,
     consultationsThisMonthGrowth: '+0%',
+    confirmedBlogs: 0,
+    blogsThisMonth: 0,
+    blogsThisMonthGrowth: '+0%',
   });
 
   // Mock data for tables only (will be replaced with real data)
@@ -247,6 +264,220 @@ const DashboardContent = ({ onNavigate }) => {
     },
   ];
 
+  // Hàm lấy danh sách các năm có sẵn từ dữ liệu
+  const getAvailableYears = (users, stiTests, consultations, confirmedBlogs) => {
+    const years = new Set();
+    
+    // Lấy năm từ dữ liệu users
+    (users || []).forEach((user) => {
+      const dateField = user.createdDate || user.created_date;
+      if (dateField) {
+        try {
+          let year;
+          if (Array.isArray(dateField)) {
+            [year] = dateField;
+          } else {
+            year = new Date(dateField).getFullYear();
+          }
+          if (year && !isNaN(year)) {
+            years.add(year);
+          }
+        } catch (error) {
+          console.error('Error parsing user date for year:', error);
+        }
+      }
+    });
+    
+    // Lấy năm từ dữ liệu STI tests
+    (stiTests || []).forEach((test) => {
+      if (test.createdAt) {
+        try {
+          let year;
+          if (Array.isArray(test.createdAt)) {
+            [year] = test.createdAt;
+          } else {
+            year = new Date(test.createdAt).getFullYear();
+          }
+          if (year && !isNaN(year)) {
+            years.add(year);
+          }
+        } catch (error) {
+          console.error('Error parsing test date for year:', error);
+        }
+      }
+    });
+    
+    // Lấy năm từ dữ liệu consultations
+    (consultations || []).forEach((consultation) => {
+      if (consultation.createdAt) {
+        try {
+          let year;
+          if (Array.isArray(consultation.createdAt)) {
+            [year] = consultation.createdAt;
+          } else {
+            year = new Date(consultation.createdAt).getFullYear();
+          }
+          if (year && !isNaN(year)) {
+            years.add(year);
+          }
+        } catch (error) {
+          console.error('Error parsing consultation date for year:', error);
+        }
+      }
+    });
+    
+    // Lấy năm từ dữ liệu confirmed blogs
+    (confirmedBlogs || []).forEach((blog) => {
+      if (blog.createdAt) {
+        try {
+          let year;
+          if (Array.isArray(blog.createdAt)) {
+            [year] = blog.createdAt;
+          } else {
+            year = new Date(blog.createdAt).getFullYear();
+          }
+          if (year && !isNaN(year)) {
+            years.add(year);
+          }
+        } catch (error) {
+          console.error('Error parsing blog date for year:', error);
+        }
+      }
+    });
+    
+    // Thêm năm hiện tại nếu chưa có
+    years.add(new Date().getFullYear());
+    
+    return Array.from(years).sort((a, b) => b - a); // Sắp xếp giảm dần
+  };
+
+  // Hàm xử lý thay đổi năm
+  const handleYearChange = (event) => {
+    const newYear = parseInt(event.target.value);
+    setSelectedYear(newYear);
+    
+    // Tính toán lại dữ liệu biểu đồ với năm mới
+    const newMonthlyData = calculateMonthlyStats(
+      allDataCache.users,
+      allDataCache.stiTests,
+      allDataCache.consultations,
+      allDataCache.confirmedBlogs,
+      newYear
+    );
+    setMonthlyData(newMonthlyData);
+  };
+
+  // Hàm calculateMonthlyStats sẽ được định nghĩa trong useEffect
+  const calculateMonthlyStats = (users, stiTests, consultations, confirmedBlogs, year = new Date().getFullYear()) => {
+    const monthlyData = [];
+
+    // Tạo dữ liệu cho 12 tháng của năm được chọn
+    for (let month = 0; month < 12; month++) {
+      // Đếm người dùng được tạo trong tháng này
+      const monthUsers = (users || []).filter((user) => {
+        if (!user.createdDate && !user.created_date) return false;
+        
+        const dateField = user.createdDate || user.created_date;
+        
+        try {
+          let createdDate;
+          if (Array.isArray(dateField)) {
+            const [userYear, monthNum, day, hour = 0, minute = 0, second = 0] = dateField;
+            createdDate = new Date(userYear, monthNum - 1, day, hour, minute, second);
+          } else {
+            createdDate = new Date(dateField);
+          }
+          
+          return (
+            createdDate.getMonth() === month &&
+            createdDate.getFullYear() === year
+          );
+        } catch (error) {
+          console.error('Error parsing date in monthly stats:', error);
+          return false;
+        }
+      }).length;
+
+      // Đếm tổng lịch hẹn (STI tests + consultations) trong tháng này
+      const monthSTITests = (stiTests || []).filter((test) => {
+        if (!test.createdAt) return false;
+        try {
+          let createdDate;
+          if (Array.isArray(test.createdAt)) {
+            const [testYear, monthNum, day, hour = 0, minute = 0, second = 0] = test.createdAt;
+            createdDate = new Date(testYear, monthNum - 1, day, hour, minute, second);
+          } else {
+            createdDate = new Date(test.createdAt);
+          }
+          
+          return (
+            createdDate.getMonth() === month &&
+            createdDate.getFullYear() === year
+          );
+        } catch (error) {
+          console.error('Error parsing test date in monthly stats:', error);
+          return false;
+        }
+      }).length;
+
+      const monthConsultations = (consultations || []).filter(
+        (consultation) => {
+          if (!consultation.createdAt) return false;
+          try {
+            let createdDate;
+            if (Array.isArray(consultation.createdAt)) {
+              const [consYear, monthNum, day, hour = 0, minute = 0, second = 0] = consultation.createdAt;
+              createdDate = new Date(consYear, monthNum - 1, day, hour, minute, second);
+            } else {
+              createdDate = new Date(consultation.createdAt);
+            }
+            
+            return (
+              createdDate.getMonth() === month &&
+              createdDate.getFullYear() === year
+            );
+          } catch (error) {
+            console.error('Error parsing consultation date in monthly stats:', error);
+            return false;
+          }
+        }
+      ).length;
+
+      // Đếm blog được xác nhận trong tháng này
+      const monthBlogs = (confirmedBlogs || []).filter((blog) => {
+        if (!blog.createdAt) return false;
+        try {
+          let createdDate;
+          if (Array.isArray(blog.createdAt)) {
+            const [blogYear, monthNum, day, hour = 0, minute = 0, second = 0] = blog.createdAt;
+            createdDate = new Date(blogYear, monthNum - 1, day, hour, minute, second);
+          } else {
+            createdDate = new Date(blog.createdAt);
+          }
+          
+          return (
+            createdDate.getMonth() === month &&
+            createdDate.getFullYear() === year
+          );
+        } catch (error) {
+          console.error('Error parsing blog date in monthly stats:', error);
+          return false;
+        }
+      }).length;
+
+      const totalAppointments = monthSTITests + monthConsultations;
+
+      monthlyData.push({
+        name: `T${month + 1}`,
+        users: monthUsers,
+        appointments: totalAppointments,
+        blogs: monthBlogs,
+      });
+    }
+
+    return monthlyData;
+  };
+
   useEffect(() => {
     const fetchDashboard = async () => {
       setLoading(true);
@@ -278,38 +509,86 @@ const DashboardContent = ({ onNavigate }) => {
           await adminService.getAllConsultations();
         console.log('All consultations data:', allConsultationsResponse);
 
+        // Lấy tất cả blog đã được xác nhận
+        const confirmedBlogsResponse =
+          await blogService.getAllConfirmedBlogs();
+        console.log('Confirmed blogs data:', confirmedBlogsResponse);
+
         // Tính toán tỉ lệ tăng trưởng thực tế
         const calculateUserGrowthRate = (users) => {
           if (!users || !Array.isArray(users)) return '+0%';
 
           const now = new Date();
-          const currentMonth = now.getMonth();
+          const currentMonth = now.getMonth(); // 0-11
           const currentYear = now.getFullYear();
+          
+          console.log('Current month (JS):', currentMonth, 'Current year:', currentYear);
+          console.log('Processing users:', users.length);
 
           // Đếm người dùng tháng hiện tại
           const currentMonthUsers = users.filter((user) => {
-            if (!user.createdDate) return false;
-            const createdDate = new Date(user.createdDate);
-            return (
-              createdDate.getMonth() === currentMonth &&
-              createdDate.getFullYear() === currentYear
-            );
-          }).length;
+            if (!user.createdDate && !user.created_date) return false;
+            
+            // Xử lý cả createdDate và created_date
+            const dateField = user.createdDate || user.created_date;
+            console.log('User date field:', dateField);
+            
+            let createdDate;
+            try {
+              if (Array.isArray(dateField)) {
+                // Trường hợp API trả về array [year, month, day, hour, minute, second]
+                const [year, month, day, hour = 0, minute = 0, second = 0] = dateField;
+                createdDate = new Date(year, month - 1, day, hour, minute, second); // month - 1 vì JS month 0-11
+              } else {
+                // Trường hợp API trả về string
+                createdDate = new Date(dateField);
+              }
+              
+              console.log('Parsed date:', createdDate, 'Month:', createdDate.getMonth(), 'Year:', createdDate.getFullYear());
+              
+              const isCurrentMonth = createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear;
+              console.log('Is current month:', isCurrentMonth);
+              
+              return isCurrentMonth;
+            } catch (error) {
+              console.error('Error parsing date:', error);
+              return false;
+            }
+          });
+          
+          console.log('Current month users:', currentMonthUsers.length);
 
           // Đếm tổng người dùng đến cuối tháng trước (không bao gồm tháng này)
           const usersBeforeThisMonth = users.filter((user) => {
-            if (!user.createdDate) return false;
-            const createdDate = new Date(user.createdDate);
-            return createdDate < new Date(currentYear, currentMonth, 1);
-          }).length;
+            if (!user.createdDate && !user.created_date) return false;
+            
+            const dateField = user.createdDate || user.created_date;
+            
+            let createdDate;
+            try {
+              if (Array.isArray(dateField)) {
+                const [year, month, day, hour = 0, minute = 0, second = 0] = dateField;
+                createdDate = new Date(year, month - 1, day, hour, minute, second);
+              } else {
+                createdDate = new Date(dateField);
+              }
+              
+              return createdDate < new Date(currentYear, currentMonth, 1);
+            } catch (error) {
+              console.error('Error parsing date:', error);
+              return false;
+            }
+          });
+          
+          console.log('Users before this month:', usersBeforeThisMonth.length);
 
           // Tính tỉ lệ tăng trưởng
-          if (usersBeforeThisMonth === 0) {
-            return currentMonthUsers > 0 ? '+100%' : '+0%';
+          if (usersBeforeThisMonth.length === 0) {
+            return currentMonthUsers.length > 0 ? '+100%' : '+0%';
           }
 
           const growthRate = (
-            (currentMonthUsers / usersBeforeThisMonth) *
+            (currentMonthUsers.length / usersBeforeThisMonth.length) *
             100
           ).toFixed(1);
           return growthRate > 0 ? `+${growthRate}%` : `${growthRate}%`;
@@ -326,18 +605,44 @@ const DashboardContent = ({ onNavigate }) => {
           // Đếm dịch vụ tạo trong tháng hiện tại
           const currentMonthServices = services.filter((service) => {
             if (!service.createdAt) return false;
-            const createdDate = new Date(service.createdAt);
-            return (
-              createdDate.getMonth() === currentMonth &&
-              createdDate.getFullYear() === currentYear
-            );
+            
+            try {
+              let createdDate;
+              if (Array.isArray(service.createdAt)) {
+                const [year, month, day, hour = 0, minute = 0, second = 0] = service.createdAt;
+                createdDate = new Date(year, month - 1, day, hour, minute, second);
+              } else {
+                createdDate = new Date(service.createdAt);
+              }
+              
+              return (
+                createdDate.getMonth() === currentMonth &&
+                createdDate.getFullYear() === currentYear
+              );
+            } catch (error) {
+              console.error('Error parsing service date:', error);
+              return false;
+            }
           }).length;
 
           // Đếm tổng dịch vụ đến cuối tháng trước (không bao gồm tháng này)
           const servicesBeforeThisMonth = services.filter((service) => {
             if (!service.createdAt) return false;
-            const createdDate = new Date(service.createdAt);
-            return createdDate < new Date(currentYear, currentMonth, 1);
+            
+            try {
+              let createdDate;
+              if (Array.isArray(service.createdAt)) {
+                const [year, month, day, hour = 0, minute = 0, second = 0] = service.createdAt;
+                createdDate = new Date(year, month - 1, day, hour, minute, second);
+              } else {
+                createdDate = new Date(service.createdAt);
+              }
+              
+              return createdDate < new Date(currentYear, currentMonth, 1);
+            } catch (error) {
+              console.error('Error parsing service date:', error);
+              return false;
+            }
           }).length;
 
           // Tính tỉ lệ tăng trưởng
@@ -383,19 +688,45 @@ const DashboardContent = ({ onNavigate }) => {
           const currentMonthCompleted = [
             ...completedSTITests.filter((test) => {
               if (!test.createdAt) return false;
-              const createdDate = new Date(test.createdAt);
-              return (
-                createdDate.getMonth() === currentMonth &&
-                createdDate.getFullYear() === currentYear
-              );
+              
+              try {
+                let createdDate;
+                if (Array.isArray(test.createdAt)) {
+                  const [year, month, day, hour = 0, minute = 0, second = 0] = test.createdAt;
+                  createdDate = new Date(year, month - 1, day, hour, minute, second);
+                } else {
+                  createdDate = new Date(test.createdAt);
+                }
+                
+                return (
+                  createdDate.getMonth() === currentMonth &&
+                  createdDate.getFullYear() === currentYear
+                );
+              } catch (error) {
+                console.error('Error parsing test date:', error);
+                return false;
+              }
             }),
             ...completedConsultations.filter((consultation) => {
               if (!consultation.createdAt) return false;
-              const createdDate = new Date(consultation.createdAt);
-              return (
-                createdDate.getMonth() === currentMonth &&
-                createdDate.getFullYear() === currentYear
-              );
+              
+              try {
+                let createdDate;
+                if (Array.isArray(consultation.createdAt)) {
+                  const [year, month, day, hour = 0, minute = 0, second = 0] = consultation.createdAt;
+                  createdDate = new Date(year, month - 1, day, hour, minute, second);
+                } else {
+                  createdDate = new Date(consultation.createdAt);
+                }
+                
+                return (
+                  createdDate.getMonth() === currentMonth &&
+                  createdDate.getFullYear() === currentYear
+                );
+              } catch (error) {
+                console.error('Error parsing consultation date:', error);
+                return false;
+              }
             }),
           ].length;
 
@@ -403,13 +734,39 @@ const DashboardContent = ({ onNavigate }) => {
           const appointmentsBeforeThisMonth = [
             ...completedSTITests.filter((test) => {
               if (!test.createdAt) return false;
-              const createdDate = new Date(test.createdAt);
-              return createdDate < new Date(currentYear, currentMonth, 1);
+              
+              try {
+                let createdDate;
+                if (Array.isArray(test.createdAt)) {
+                  const [year, month, day, hour = 0, minute = 0, second = 0] = test.createdAt;
+                  createdDate = new Date(year, month - 1, day, hour, minute, second);
+                } else {
+                  createdDate = new Date(test.createdAt);
+                }
+                
+                return createdDate < new Date(currentYear, currentMonth, 1);
+              } catch (error) {
+                console.error('Error parsing test date:', error);
+                return false;
+              }
             }),
             ...completedConsultations.filter((consultation) => {
               if (!consultation.createdAt) return false;
-              const createdDate = new Date(consultation.createdAt);
-              return createdDate < new Date(currentYear, currentMonth, 1);
+              
+              try {
+                let createdDate;
+                if (Array.isArray(consultation.createdAt)) {
+                  const [year, month, day, hour = 0, minute = 0, second = 0] = consultation.createdAt;
+                  createdDate = new Date(year, month - 1, day, hour, minute, second);
+                } else {
+                  createdDate = new Date(consultation.createdAt);
+                }
+                
+                return createdDate < new Date(currentYear, currentMonth, 1);
+              } catch (error) {
+                console.error('Error parsing consultation date:', error);
+                return false;
+              }
             }),
           ].length;
 
@@ -425,54 +782,56 @@ const DashboardContent = ({ onNavigate }) => {
           return growthRate > 0 ? `+${growthRate}%` : `${growthRate}%`;
         };
 
-        // Tính toán thống kê theo tháng cho biểu đồ
-        const calculateMonthlyStats = (users, stiTests, consultations) => {
-          const monthlyData = [];
-          const currentYear = new Date().getFullYear();
-
-          // Tạo dữ liệu cho 12 tháng của năm hiện tại
-          for (let month = 0; month < 12; month++) {
-            // Đếm người dùng được tạo trong tháng này
-            const monthUsers = (users || []).filter((user) => {
-              if (!user.createdDate) return false;
-              const createdDate = new Date(user.createdDate);
-              return (
-                createdDate.getMonth() === month &&
-                createdDate.getFullYear() === currentYear
-              );
-            }).length;
-
-            // Đếm tổng lịch hẹn (STI tests + consultations) trong tháng này
-            const monthSTITests = (stiTests || []).filter((test) => {
-              if (!test.createdAt) return false;
-              const createdDate = new Date(test.createdAt);
-              return (
-                createdDate.getMonth() === month &&
-                createdDate.getFullYear() === currentYear
-              );
-            }).length;
-
-            const monthConsultations = (consultations || []).filter(
-              (consultation) => {
-                if (!consultation.createdAt) return false;
-                const createdDate = new Date(consultation.createdAt);
-                return (
-                  createdDate.getMonth() === month &&
-                  createdDate.getFullYear() === currentYear
-                );
+        // Hàm tính số lượng blog được xác nhận trong tháng này và tháng trước
+        const getBlogsMonthStats = (blogs) => {
+          if (!blogs || !Array.isArray(blogs))
+            return { thisMonth: 0, lastMonth: 0, growth: '+0%' };
+          
+          const now = new Date();
+          const currentMonth = now.getMonth(); // 0-11
+          const currentYear = now.getFullYear();
+          const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+          const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+          
+          let thisMonthCount = 0;
+          let lastMonthCount = 0;
+          
+          blogs.forEach((blog) => {
+            if (!blog.createdAt) return;
+            
+            try {
+              let createdDate;
+              if (Array.isArray(blog.createdAt)) {
+                const [year, month, day, hour = 0, minute = 0, second = 0] = blog.createdAt;
+                createdDate = new Date(year, month - 1, day, hour, minute, second);
+              } else {
+                createdDate = new Date(blog.createdAt);
               }
-            ).length;
-
-            const totalAppointments = monthSTITests + monthConsultations;
-
-            monthlyData.push({
-              name: `T${month + 1}`,
-              users: monthUsers,
-              appointments: totalAppointments,
-            });
+              
+              const blogMonth = createdDate.getMonth();
+              const blogYear = createdDate.getFullYear();
+              
+              if (blogYear === currentYear && blogMonth === currentMonth) {
+                thisMonthCount++;
+              }
+              if (blogYear === lastMonthYear && blogMonth === lastMonth) {
+                lastMonthCount++;
+              }
+            } catch (error) {
+              console.error('Error parsing blog date in month stats:', error);
+            }
+          });
+          
+          // Tính tỉ lệ tăng trưởng
+          let growth = '+0%';
+          if (lastMonthCount === 0) {
+            growth = thisMonthCount > 0 ? '+100%' : '+0%';
+          } else {
+            const rate = (((thisMonthCount - lastMonthCount) / lastMonthCount) * 100).toFixed(1);
+            growth = rate > 0 ? `+${rate}%` : `${rate}%`;
           }
-
-          return monthlyData;
+          
+          return { thisMonth: thisMonthCount, lastMonth: lastMonthCount, growth };
         };
 
         // Tính toán tỉ lệ tăng giảm cho các metrics khác (mock data vì chưa có API chi tiết)
@@ -533,11 +892,34 @@ const DashboardContent = ({ onNavigate }) => {
           allConsultationsResponse?.data || []
         );
 
+        // Tính thống kê blog
+        const blogsStats = getBlogsMonthStats(
+          confirmedBlogsResponse || []
+        );
+
         // Tính toán dữ liệu thống kê theo tháng cho biểu đồ
         const monthlyStatsData = calculateMonthlyStats(
           usersResponse?.data || [],
           allSTITestsResponse?.data || [],
-          allConsultationsResponse?.data || []
+          allConsultationsResponse?.data || [],
+          confirmedBlogsResponse || [],
+          selectedYear
+        );
+
+        // Lưu cache dữ liệu để sử dụng khi thay đổi năm
+        setAllDataCache({
+          users: usersResponse?.data || [],
+          stiTests: allSTITestsResponse?.data || [],
+          consultations: allConsultationsResponse?.data || [],
+          confirmedBlogs: confirmedBlogsResponse || []
+        });
+
+        // Lấy danh sách các năm có sẵn
+        const yearsAvailable = getAvailableYears(
+          usersResponse?.data || [],
+          allSTITestsResponse?.data || [],
+          allConsultationsResponse?.data || [],
+          confirmedBlogsResponse || []
         );
 
         // Xử lý dữ liệu người dùng gần đây (5 người mới nhất)
@@ -545,10 +927,37 @@ const DashboardContent = ({ onNavigate }) => {
           if (!users || !Array.isArray(users)) return [];
 
           const sortedUsers = users
-            .sort(
-              (a, b) =>
-                new Date(b.createdDate || 0) - new Date(a.createdDate || 0)
-            )
+            .sort((a, b) => {
+              const dateA = a.createdDate || a.created_date;
+              const dateB = b.createdDate || b.created_date;
+              
+              if (!dateA && !dateB) return 0;
+              if (!dateA) return 1;
+              if (!dateB) return -1;
+              
+              try {
+                let parsedDateA, parsedDateB;
+                
+                if (Array.isArray(dateA)) {
+                  const [year, month, day, hour = 0, minute = 0, second = 0] = dateA;
+                  parsedDateA = new Date(year, month - 1, day, hour, minute, second);
+                } else {
+                  parsedDateA = new Date(dateA);
+                }
+                
+                if (Array.isArray(dateB)) {
+                  const [year, month, day, hour = 0, minute = 0, second = 0] = dateB;
+                  parsedDateB = new Date(year, month - 1, day, hour, minute, second);
+                } else {
+                  parsedDateB = new Date(dateB);
+                }
+                
+                return parsedDateB - parsedDateA;
+              } catch (error) {
+                console.error('Error sorting dates:', error);
+                return 0;
+              }
+            })
             .slice(0, 5)
             .map((user) => ({
               id: user.id,
@@ -557,14 +966,12 @@ const DashboardContent = ({ onNavigate }) => {
               role:
                 user.role === 'ADMIN'
                   ? 'Quản lý'
-                  : user.role === 'DOCTOR'
+                  : user.role === 'CONSULTANT'
                     ? 'Tư vấn viên'
                     : user.role === 'STAFF'
                       ? 'Nhân viên'
                       : 'Khách hàng',
-              status:
-                user.status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động',
-              lastAccess: formatTimeAgo(user.lastLoginTime || user.createdDate),
+              registrationTime: formatRegistrationTime(user.createdDate || user.created_date),
               avatar: (user.fullName || user.username || 'U')
                 .charAt(0)
                 .toUpperCase(),
@@ -573,21 +980,43 @@ const DashboardContent = ({ onNavigate }) => {
           return sortedUsers;
         };
 
-        // Hàm format thời gian ago
-        const formatTimeAgo = (dateString) => {
+        // Hàm format thời gian đăng ký
+        const formatRegistrationTime = (dateString) => {
           if (!dateString) return 'Chưa xác định';
 
-          const date = new Date(dateString);
-          const now = new Date();
-          const diffMs = now - date;
-          const diffMins = Math.floor(diffMs / (1000 * 60));
-          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-          const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          try {
+            // Xử lý các định dạng khác nhau từ API
+            let date;
+            
+            if (Array.isArray(dateString)) {
+              // Trường hợp API trả về array [year, month, day, hour, minute, second]
+              const [year, month, day, hour = 0, minute = 0, second = 0] = dateString;
+              date = new Date(year, month - 1, day, hour, minute, second);
+            } else if (typeof dateString === 'string') {
+              // Trường hợp API trả về string ISO hoặc timestamp
+              date = new Date(dateString);
+            } else {
+              // Trường hợp khác, thử parse trực tiếp
+              date = new Date(dateString);
+            }
 
-          if (diffMins < 60) return `${diffMins} phút trước`;
-          if (diffHours < 24) return `${diffHours} giờ trước`;
-          if (diffDays < 7) return `${diffDays} ngày trước`;
-          return `${Math.floor(diffDays / 7)} tuần trước`;
+            // Kiểm tra xem date có valid không
+            if (isNaN(date.getTime())) {
+              return 'Thời gian không hợp lệ';
+            }
+            
+            // Định dạng: DD/MM/YYYY HH:mm
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
+          } catch (error) {
+            console.error('Error formatting registration time:', error);
+            return 'Lỗi định dạng thời gian';
+          }
         };
 
         // Xử lý dữ liệu thực
@@ -599,24 +1028,46 @@ const DashboardContent = ({ onNavigate }) => {
         const getConsultationsMonthStats = (consultations) => {
           if (!consultations || !Array.isArray(consultations))
             return { thisMonth: 0, lastMonth: 0 };
+          
           const now = new Date();
-          const currentMonth = now.getMonth() + 1; // JS: 0-11, API: 1-12
+          const currentMonth = now.getMonth(); // 0-11
           const currentYear = now.getFullYear();
-          const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-          const lastMonthYear =
-            currentMonth === 1 ? currentYear - 1 : currentYear;
+          const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+          const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+          
           let thisMonthCount = 0;
           let lastMonthCount = 0;
+          
           consultations.forEach((c) => {
-            if (!c.createdAt || !Array.isArray(c.createdAt)) return;
-            const [year, month] = c.createdAt;
-            if (year === currentYear && month === currentMonth)
-              thisMonthCount++;
-            if (year === lastMonthYear && month === lastMonth) lastMonthCount++;
+            if (!c.createdAt) return;
+            
+            try {
+              let createdDate;
+              if (Array.isArray(c.createdAt)) {
+                const [year, month, day, hour = 0, minute = 0, second = 0] = c.createdAt;
+                createdDate = new Date(year, month - 1, day, hour, minute, second);
+              } else {
+                createdDate = new Date(c.createdAt);
+              }
+              
+              const month = createdDate.getMonth();
+              const year = createdDate.getFullYear();
+              
+              if (year === currentYear && month === currentMonth) {
+                thisMonthCount++;
+              }
+              if (year === lastMonthYear && month === lastMonth) {
+                lastMonthCount++;
+              }
+            } catch (error) {
+              console.error('Error parsing consultation date in month stats:', error);
+            }
           });
+          
           return { thisMonth: thisMonthCount, lastMonth: lastMonthCount };
         };
 
+        // Xử lý dữ liệu blog
         // Xử lý dữ liệu từ API
         setDashboardData({
           totalUsers: dashboardResponse?.totalUsers || 0,
@@ -650,10 +1101,16 @@ const DashboardContent = ({ onNavigate }) => {
           consultationsThisMonthGrowth: getConsultationsMonthStats(
             allConsultationsResponse?.data || []
           ).thisMonthGrowth,
+          confirmedBlogs: (confirmedBlogsResponse || []).length,
+          blogsThisMonth: blogsStats.thisMonth,
+          blogsThisMonthGrowth: blogsStats.growth,
         });
 
         // Cập nhật dữ liệu thống kê theo tháng
         setMonthlyData(monthlyStatsData);
+        
+        // Cập nhật danh sách các năm có sẵn
+        setAvailableYears(yearsAvailable);
 
         // Cập nhật dữ liệu người dùng gần đây
         setRecentUsers(processedRecentUsers);
@@ -680,22 +1137,25 @@ const DashboardContent = ({ onNavigate }) => {
           serviceGrowthRate: '+2.1%',
           consultationsThisMonth: 18,
           consultationsThisMonthGrowth: '+8.7%',
+          confirmedBlogs: 42,
+          blogsThisMonth: 6,
+          blogsThisMonthGrowth: '+15.4%',
         });
 
         // Fallback monthly data
         setMonthlyData([
-          { name: 'T1', users: 45, appointments: 32 },
-          { name: 'T2', users: 52, appointments: 41 },
-          { name: 'T3', users: 61, appointments: 38 },
-          { name: 'T4', users: 58, appointments: 47 },
-          { name: 'T5', users: 67, appointments: 52 },
-          { name: 'T6', users: 74, appointments: 59 },
-          { name: 'T7', users: 82, appointments: 61 },
-          { name: 'T8', users: 89, appointments: 68 },
-          { name: 'T9', users: 94, appointments: 72 },
-          { name: 'T10', users: 101, appointments: 79 },
-          { name: 'T11', users: 108, appointments: 84 },
-          { name: 'T12', users: 115, appointments: 91 },
+          { name: 'T1', users: 45, appointments: 32, blogs: 2 },
+          { name: 'T2', users: 52, appointments: 41, blogs: 3 },
+          { name: 'T3', users: 61, appointments: 38, blogs: 5 },
+          { name: 'T4', users: 58, appointments: 47, blogs: 4 },
+          { name: 'T5', users: 67, appointments: 52, blogs: 7 },
+          { name: 'T6', users: 74, appointments: 59, blogs: 6 },
+          { name: 'T7', users: 82, appointments: 61, blogs: 8 },
+          { name: 'T8', users: 89, appointments: 68, blogs: 12 },
+          { name: 'T9', users: 94, appointments: 72, blogs: 9 },
+          { name: 'T10', users: 101, appointments: 79, blogs: 11 },
+          { name: 'T11', users: 108, appointments: 84, blogs: 15 },
+          { name: 'T12', users: 115, appointments: 91, blogs: 18 },
         ]);
 
         // Fallback recent users data
@@ -705,8 +1165,7 @@ const DashboardContent = ({ onNavigate }) => {
             name: 'Nguyễn Thị Mai',
             email: 'mai.nguyen@email.com',
             role: 'Khách hàng',
-            status: 'Hoạt động',
-            lastAccess: '2 giờ trước',
+            registrationTime: '14/07/2025 14:30',
             avatar: 'M',
           },
           {
@@ -714,8 +1173,7 @@ const DashboardContent = ({ onNavigate }) => {
             name: 'Trần Văn Nam',
             email: 'nam.tran@email.com',
             role: 'Tư vấn viên',
-            status: 'Hoạt động',
-            lastAccess: '1 ngày trước',
+            registrationTime: '13/07/2025 09:15',
             avatar: 'N',
           },
           {
@@ -723,8 +1181,7 @@ const DashboardContent = ({ onNavigate }) => {
             name: 'Lê Thị Hoa',
             email: 'hoa.le@email.com',
             role: 'Khách hàng',
-            status: 'Không hoạt động',
-            lastAccess: '1 tuần trước',
+            registrationTime: '08/07/2025 16:45',
             avatar: 'H',
           },
         ]);
@@ -733,7 +1190,7 @@ const DashboardContent = ({ onNavigate }) => {
       }
     };
     fetchDashboard();
-  }, []);
+  }, [selectedYear]);
 
   if (loading)
     return (
@@ -859,7 +1316,7 @@ const DashboardContent = ({ onNavigate }) => {
       {/* Stats Cards - Top Row */}
       <Box sx={{ width: '100%', mb: 4 }}>
         <Grid container spacing={2} sx={{ maxWidth: '100%' }}>
-          <Grid item size={3} xs={12} sm={6} lg={3} sx={{ display: 'flex' }}>
+          <Grid item size={4} xs={12} sm={6} lg={4} sx={{ display: 'flex' }}>
             <StatCard
               title="Tổng người dùng"
               value={(dashboardData.totalUsers || 0).toLocaleString()}
@@ -868,16 +1325,7 @@ const DashboardContent = ({ onNavigate }) => {
               color="#4A90E2"
             />
           </Grid>
-          <Grid item size={3} xs={12} sm={6} lg={3} sx={{ display: 'flex' }}>
-            <StatCard
-              title="Tư vấn viên"
-              value={(dashboardData.activeDoctors || 0).toLocaleString()}
-              change={`${dashboardData.doctorGrowthRate || '+0%'} so với tháng trước`}
-              icon={GroupAddIcon}
-              color="#00C9A7"
-            />
-          </Grid>
-          <Grid item size={3} xs={12} sm={6} lg={3} sx={{ display: 'flex' }}>
+          <Grid item size={4} xs={12} sm={6} lg={4} sx={{ display: 'flex' }}>
             <Tooltip
               title="Tổng số lịch hẹn được tạo mới trong tháng này. Tỷ lệ tăng trưởng so với tháng trước."
               arrow
@@ -895,7 +1343,22 @@ const DashboardContent = ({ onNavigate }) => {
               </Box>
             </Tooltip>
           </Grid>
-          <Grid item size={3} xs={12} sm={6} lg={3} sx={{ display: 'flex' }}>
+          <Grid item size={4} xs={12} sm={6} lg={4} sx={{ display: 'flex' }}>
+            <StatCard
+              title="Blog đã xác nhận"
+              value={(dashboardData.confirmedBlogs || 0).toLocaleString()}
+              change={`${dashboardData.blogsThisMonthGrowth || '+0%'} so với tháng trước`}
+              icon={ArticleIcon}
+              color="#7B61FF"
+            />
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* Second Row - Optional additional stats */}
+      <Box sx={{ width: '100%', mb: 4 }}>
+        <Grid container spacing={2} sx={{ maxWidth: '100%' }}>
+          <Grid item size={4} xs={12} sm={6} lg={4} sx={{ display: 'flex' }}>
             <StatCard
               title="Dịch vụ hoạt động"
               value={(dashboardData.activeServices || 0).toLocaleString()}
@@ -906,497 +1369,343 @@ const DashboardContent = ({ onNavigate }) => {
               color="#E91E63"
             />
           </Grid>
+          <Grid item size={4} xs={12} sm={6} lg={4} sx={{ display: 'flex' }}>
+            <StatCard
+              title="Nhân viên hoạt động"
+              value={(dashboardData.activeStaffs || 0).toLocaleString()}
+              change={`${dashboardData.userGrowthRate || '+0%'} so với tháng trước`}
+              icon={PeopleIcon}
+              color="#00C9A7"
+            />
+          </Grid>
+          <Grid item size={4} xs={12} sm={6} lg={4} sx={{ display: 'flex' }}>
+            <StatCard
+              title="Khách hàng hoạt động"
+              value={(dashboardData.activePatients || 0).toLocaleString()}
+              change={`${dashboardData.userGrowthRate || '+0%'} so với tháng trước`}
+              icon={PeopleIcon}
+              color="#4A90E2"
+            />
+          </Grid>
         </Grid>
       </Box>
 
-      {/* Main Content Row */}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 3,
-          mb: 4,
-          flexDirection: { xs: 'column', sm: 'column', md: 'row' },
-        }}
-      >
-        {/* Chart Section */}
-        <Box
-          sx={{
-            flex: { xs: '1', sm: '1', md: '2' }, // 2/3 = 66.67%
-            minWidth: 0, // Prevent overflow
-          }}
-        >
-          <Card
-            sx={{
-              background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-              border: '1px solid #e2e8f0',
-              borderRadius: 4,
-              p: 3,
-              height: '610px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-            }}
-          >
+      {/* Year Filter Section */}
+      <Box sx={{ width: '100%', mb: 4 }}>
+        <Grid container spacing={2} sx={{ maxWidth: '100%' }}>
+          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography
               variant="h5"
-              sx={{ mb: 3, fontWeight: 700, color: '#1a202c' }}
+              sx={{ fontWeight: 700, color: '#1a202c' }}
             >
-              📊 Thống kê theo tháng (Năm {new Date().getFullYear()})
+              📊 Thống kê theo tháng
             </Typography>
-            <Box sx={{ height: '530px', width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyData} width="100%">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" stroke="#64748b" />
-                  <YAxis stroke="#64748b" />
-                  <RechartsTooltip
-                    contentStyle={{
-                      backgroundColor: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    }}
-                  />
-                  <Bar
-                    dataKey="users"
-                    fill="#4A90E2"
-                    name="Người dùng mới"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="appointments"
-                    fill="#E91E63"
-                    name="Lịch hẹn"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
-          </Card>
-        </Box>
+            
+            {/* Bộ lọc năm */}
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Năm</InputLabel>
+              <Select
+                value={selectedYear}
+                label="Năm"
+                onChange={handleYearChange}
+                sx={{
+                  '& .MuiSelect-select': {
+                    fontSize: '0.875rem',
+                  },
+                }}
+              >
+                {availableYears.map((year) => (
+                  <MenuItem key={year} value={year}>
+                    {year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+      </Box>
 
-        {/* Quick Actions Panel */}
-        <Box
-          sx={{
-            flex: { xs: '1', sm: '1', md: '1' }, // 1/3 = 33.33%
-            minWidth: 0, // Prevent overflow
-          }}
-        >
-          <Card
-            sx={{
-              background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-              border: '1px solid #e2e8f0',
-              borderRadius: 4,
-              p: 3,
-              height: '610px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-              width: '100%',
-            }}
-          >
-            <Typography
-              variant="h5"
-              sx={{ mb: 3, fontWeight: 700, color: '#1a202c' }}
+      {/* Bar Chart Section */}
+      <Box sx={{ width: '100%', mb: 4 }}>
+        <Grid container spacing={2} sx={{ maxWidth: '100%' }}>
+          <Grid item size={12} xs={12} sx={{ display: 'flex' }}>
+            <Card
+              sx={{
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                border: '1px solid #e2e8f0',
+                borderRadius: 4,
+                p: 3,
+                minHeight: '500px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                width: '100%',
+              }}
             >
-              ⚡ Thao tác nhanh
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Card
-                  onClick={() => onNavigate && onNavigate(quickActions[0].id)}
-                  sx={{
-                    flex: 1,
-                    p: 3,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    background:
-                      'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 3,
-                    height: '120px',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
-                      borderColor: quickActions[0].color,
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 3,
-                        background: `linear-gradient(135deg, ${quickActions[0].color}15, ${quickActions[0].color}30)`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto',
-                        mb: 1.5,
-                        border: `2px solid ${quickActions[0].color}20`,
+              <Typography
+                variant="h6"
+                sx={{ mb: 2, fontWeight: 600, color: '#1a202c', textAlign: 'center' }}
+              >
+                Tổng quan người dùng và lịch hẹn
+              </Typography>
+              <Box sx={{ height: '420px', width: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#64748b" 
+                      fontSize={12}
+                      angle={0}
+                      textAnchor="middle"
+                      height={60}
+                    />
+                    <YAxis 
+                      stroke="#64748b" 
+                      fontSize={12}
+                      width={60}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                       }}
-                    >
-                      <PersonAddIcon
-                        sx={{ color: quickActions[0].color, fontSize: 24 }}
-                      />
-                    </Box>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: '0.8rem',
-                        color: '#1a202c',
-                        mb: 0.5,
-                      }}
-                    >
-                      {quickActions[0].title}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: '#64748b', fontSize: '0.7rem' }}
-                    >
-                      {quickActions[0].subtitle}
-                    </Typography>
-                  </Box>
-                </Card>
-                <Card
-                  onClick={() => onNavigate && onNavigate(quickActions[1].id)}
-                  sx={{
-                    flex: 1,
-                    p: 3,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    background:
-                      'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 3,
-                    height: '120px',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
-                      borderColor: quickActions[1].color,
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 3,
-                        background: `linear-gradient(135deg, ${quickActions[1].color}15, ${quickActions[1].color}30)`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto',
-                        mb: 1.5,
-                        border: `2px solid ${quickActions[1].color}20`,
-                      }}
-                    >
-                      <MedicalIcon
-                        sx={{ color: quickActions[1].color, fontSize: 24 }}
-                      />
-                    </Box>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: '0.8rem',
-                        color: '#1a202c',
-                        mb: 0.5,
-                      }}
-                    >
-                      {quickActions[1].title}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: '#64748b', fontSize: '0.7rem' }}
-                    >
-                      {quickActions[1].subtitle}
-                    </Typography>
-                  </Box>
-                </Card>
+                    />
+                    <Bar
+                      dataKey="users"
+                      fill="#4A90E2"
+                      name="Người dùng mới"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="appointments"
+                      fill="#E91E63"
+                      name="Lịch hẹn"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               </Box>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Card
-                  onClick={() => onNavigate && onNavigate(quickActions[2].id)}
-                  sx={{
-                    flex: 1,
-                    p: 3,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    background:
-                      'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 3,
-                    height: '120px',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
-                      borderColor: quickActions[2].color,
-                    },
-                  }}
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* Line Chart Section */}
+      <Box sx={{ width: '100%', mb: 4 }}>
+        <Grid container spacing={2} sx={{ maxWidth: '100%' }}>
+          <Grid item size={12} xs={12} sx={{ display: 'flex' }}>
+            <Card
+              sx={{
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                border: '1px solid #e2e8f0',
+                borderRadius: 4,
+                p: 3,
+                minHeight: '500px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                width: '100%',
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 600, color: '#1a202c' }}
                 >
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 3,
-                        background: `linear-gradient(135deg, ${quickActions[2].color}15, ${quickActions[2].color}30)`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto',
-                        mb: 1.5,
-                        border: `2px solid ${quickActions[2].color}20`,
-                      }}
-                    >
-                      <CalendarIcon
-                        sx={{ color: quickActions[2].color, fontSize: 24 }}
-                      />
-                    </Box>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: '0.8rem',
-                        color: '#1a202c',
-                        mb: 0.5,
-                      }}
-                    >
-                      {quickActions[2].title}
+                  Thống kê số lượng bài viết
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                      Cao nhất
                     </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: '#64748b', fontSize: '0.7rem' }}
-                    >
-                      {quickActions[2].subtitle}
+                    <Typography variant="body2" sx={{ color: '#7B61FF', fontWeight: 700 }}>
+                      {Math.max(...monthlyData.map(item => item.blogs))}
                     </Typography>
                   </Box>
-                </Card>
-                <Card
-                  onClick={() => onNavigate && onNavigate(quickActions[3].id)}
-                  sx={{
-                    flex: 1,
-                    p: 3,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    background:
-                      'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 3,
-                    height: '120px',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
-                      borderColor: quickActions[3].color,
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 3,
-                        background: `linear-gradient(135deg, ${quickActions[3].color}15, ${quickActions[3].color}30)`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto',
-                        mb: 1.5,
-                        border: `2px solid ${quickActions[3].color}20`,
-                      }}
-                    >
-                      <AssessmentIcon
-                        sx={{ color: quickActions[3].color, fontSize: 24 }}
-                      />
-                    </Box>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: '0.8rem',
-                        color: '#1a202c',
-                        mb: 0.5,
-                      }}
-                    >
-                      {quickActions[3].title}
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                      Thấp nhất
                     </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: '#64748b', fontSize: '0.7rem' }}
-                    >
-                      {quickActions[3].subtitle}
+                    <Typography variant="body2" sx={{ color: '#7B61FF', fontWeight: 700 }}>
+                      {Math.min(...monthlyData.map(item => item.blogs))}
                     </Typography>
                   </Box>
-                </Card>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                      TB/tháng
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#7B61FF', fontWeight: 700 }}>
+                      {Math.round(monthlyData.reduce((sum, item) => sum + item.blogs, 0) / monthlyData.length)}
+                    </Typography>
+                  </Box>
+                </Box>
               </Box>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Card
-                  onClick={() => onNavigate && onNavigate(quickActions[4].id)}
-                  sx={{
-                    flex: 1,
-                    p: 3,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    background:
-                      'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 3,
-                    height: '120px',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
-                      borderColor: quickActions[4].color,
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 3,
-                        background: `linear-gradient(135deg, ${quickActions[4].color}15, ${quickActions[4].color}30)`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto',
-                        mb: 1.5,
-                        border: `2px solid ${quickActions[4].color}20`,
+              <Box sx={{ height: '420px', width: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="blogGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#7B61FF" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#7B61FF" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#64748b" 
+                      fontSize={12}
+                      angle={0}
+                      textAnchor="middle"
+                      height={60}
+                    />
+                    <YAxis 
+                      stroke="#64748b" 
+                      fontSize={12}
+                      width={60}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                       }}
-                    >
-                      <SettingsIcon
-                        sx={{ color: quickActions[4].color, fontSize: 24 }}
-                      />
-                    </Box>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: '0.8rem',
-                        color: '#1a202c',
-                        mb: 0.5,
-                      }}
-                    >
-                      {quickActions[4].title}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: '#64748b', fontSize: '0.7rem' }}
-                    >
-                      {quickActions[4].subtitle}
-                    </Typography>
-                  </Box>
-                </Card>
-                <Card
-                  onClick={() => onNavigate && onNavigate(quickActions[5].id)}
-                  sx={{
-                    flex: 1,
-                    p: 3,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    background:
-                      'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 3,
-                    height: '120px',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
-                      borderColor: quickActions[5].color,
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 3,
-                        background: `linear-gradient(135deg, ${quickActions[5].color}15, ${quickActions[5].color}30)`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto',
-                        mb: 1.5,
-                        border: `2px solid ${quickActions[5].color}20`,
-                      }}
-                    >
-                      <ArticleIcon
-                        sx={{ color: quickActions[5].color, fontSize: 24 }}
-                      />
-                    </Box>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: '0.8rem',
-                        color: '#1a202c',
-                        mb: 0.5,
-                      }}
-                    >
-                      {quickActions[5].title}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: '#64748b', fontSize: '0.7rem' }}
-                    >
-                      {quickActions[5].subtitle}
-                    </Typography>
-                  </Box>
-                </Card>
+                      formatter={(value, name) => [
+                        `${value} blog${value > 1 ? 's' : ''}`,
+                        'Blog đã xác nhận'
+                      ]}
+                      labelFormatter={(label) => `Tháng ${label.substring(1)}`}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="blogs"
+                      stroke="#7B61FF"
+                      strokeWidth={3}
+                      dot={{ fill: '#7B61FF', strokeWidth: 2, r: 6 }}
+                      activeDot={{ r: 8, fill: '#7B61FF', stroke: '#fff', strokeWidth: 2 }}
+                      name="Blog đã xác nhận"
+                      fill="url(#blogGradient)"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </Box>
-            </Box>
-          </Card>
-        </Box>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* Quick Actions Row */}
+      <Box sx={{ width: '100%', mb: 4 }}>
+        <Grid container spacing={2} sx={{ maxWidth: '100%' }}>
+          <Grid item xs={12} sx={{ display: 'flex' }}>
+            <Card
+              sx={{
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                border: '1px solid #e2e8f0',
+                borderRadius: 4,
+                p: 3,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                width: '100%',
+              }}
+            >
+              <Typography
+                variant="h5"
+                sx={{ mb: 3, fontWeight: 700, color: '#1a202c' }}
+              >
+                ⚡ Thao tác nhanh
+              </Typography>
+              <Grid container spacing={2}>
+                {quickActions.map((action, index) => (
+                  <Grid item size={4} xs={12} sm={6} md={4} lg={2} key={action.id}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={() => onNavigate && onNavigate(action.id)}
+                      startIcon={<action.icon />}
+                      sx={{
+                        py: 2,
+                        px: 3,
+                        backgroundColor: action.color,
+                        color: '#ffffff',
+                        borderRadius: 3,
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        textTransform: 'none',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        minHeight: '120px',
+                        height: '120px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 1,
+                        '&:hover': {
+                          backgroundColor: action.color,
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
+                          filter: 'brightness(1.1)',
+                        },
+                        '&:active': {
+                          transform: 'translateY(0)',
+                        },
+                        '& .MuiButton-startIcon': {
+                          margin: 0,
+                          mb: 0.5,
+                        },
+                      }}
+                    >
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center',
+                        textAlign: 'center',
+                        height: '100%',
+                        justifyContent: 'center'
+                      }}>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: '0.85rem',
+                            color: '#ffffff',
+                            mb: 0.5,
+                            lineHeight: 1.2,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            width: '100%',
+                          }}
+                        >
+                          {action.title}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ 
+                            color: '#ffffff',
+                            fontSize: '0.7rem',
+                            opacity: 0.9,
+                            lineHeight: 1.1,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            width: '100%',
+                          }}
+                        >
+                          {action.subtitle}
+                        </Typography>
+                      </Box>
+                    </Button>
+                  </Grid>
+                ))}
+              </Grid>
+            </Card>
+          </Grid>
+        </Grid>
       </Box>
 
       {/* Users Table - Full Width */}
@@ -1414,7 +1723,7 @@ const DashboardContent = ({ onNavigate }) => {
             variant="h5"
             sx={{ mb: 3, fontWeight: 700, color: '#1a202c' }}
           >
-            👥 Người dùng gần đây
+            👥 Tài khoản đăng kí gần đây
           </Typography>
           <TableContainer>
             <Table size="small">
@@ -1428,7 +1737,7 @@ const DashboardContent = ({ onNavigate }) => {
                       fontSize: '0.75rem',
                     }}
                   >
-                    NGƯỜI DÙNG
+                    TÀI KHOẢN
                   </TableCell>
                   <TableCell
                     sx={{
@@ -1448,27 +1757,7 @@ const DashboardContent = ({ onNavigate }) => {
                       fontSize: '0.75rem',
                     }}
                   >
-                    TRẠNG THÁI
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      fontWeight: 700,
-                      color: '#64748b',
-                      textTransform: 'uppercase',
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    TRUY CẬP
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      fontWeight: 700,
-                      color: '#64748b',
-                      textTransform: 'uppercase',
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    THAO TÁC
+                    THỜI GIAN ĐĂNG KÝ
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -1516,26 +1805,13 @@ const DashboardContent = ({ onNavigate }) => {
                         sx={{
                           backgroundColor:
                             user.role === 'Quản lý'
-                              ? '#4A90E2'
+                              ? '#E91E63'
                               : user.role === 'Tư vấn viên'
                                 ? '#00C9A7'
-                                : '#64748b',
+                                : user.role === 'Nhân viên'
+                                  ? '#4A90E2'
+                                  : '#64748b',
                           color: '#fff',
-                          fontWeight: 600,
-                          fontSize: '0.7rem',
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={user.status}
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          borderColor:
-                            user.status === 'Hoạt động' ? '#10b981' : '#ef4444',
-                          color:
-                            user.status === 'Hoạt động' ? '#10b981' : '#ef4444',
                           fontWeight: 600,
                           fontSize: '0.7rem',
                         }}
@@ -1546,39 +1822,8 @@ const DashboardContent = ({ onNavigate }) => {
                         variant="caption"
                         sx={{ color: '#64748b', fontWeight: 500 }}
                       >
-                        {user.lastAccess}
+                        {user.registrationTime}
                       </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <IconButton
-                          size="small"
-                          sx={{
-                            color: '#4A90E2',
-                            '&:hover': { backgroundColor: '#4A90E215' },
-                          }}
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          sx={{
-                            color: '#00C9A7',
-                            '&:hover': { backgroundColor: '#00C9A715' },
-                          }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          sx={{
-                            color: '#ef4444',
-                            '&:hover': { backgroundColor: '#ef444415' },
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1588,6 +1833,7 @@ const DashboardContent = ({ onNavigate }) => {
           <Button
             fullWidth
             variant="outlined"
+            onClick={() => onNavigate && onNavigate('users')}
             sx={{
               mt: 3,
               borderColor: '#E91E63',
@@ -1601,7 +1847,7 @@ const DashboardContent = ({ onNavigate }) => {
               },
             }}
           >
-            Xem tất cả người dùng
+            Xem tất cả tài khoản đăng kí
           </Button>
         </Card>
       </Box>
