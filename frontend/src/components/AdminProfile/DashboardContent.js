@@ -51,6 +51,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
+  Legend,
 } from 'recharts';
 
 const StatCard = ({ title, value, change, icon: Icon, color }) => (
@@ -257,8 +258,8 @@ const DashboardContent = ({ onNavigate }) => {
     },
     {
       id: 'admin-blog',
-      title: 'Quản lý Blog',
-      subtitle: 'Quản lý nội dung blog',
+      title: 'Quản lý bài viết',
+      subtitle: 'Xem thông tin các bài viết',
       icon: ArticleIcon,
       color: '#E91E63',
     },
@@ -373,8 +374,8 @@ const DashboardContent = ({ onNavigate }) => {
 
     // Tạo dữ liệu cho 12 tháng của năm được chọn
     for (let month = 0; month < 12; month++) {
-      // Đếm người dùng được tạo trong tháng này
-      const monthUsers = (users || []).filter((user) => {
+      // Lọc người dùng được tạo trong tháng này
+      const monthUsersFiltered = (users || []).filter((user) => {
         if (!user.createdDate && !user.created_date) return false;
         
         const dateField = user.createdDate || user.created_date;
@@ -396,51 +397,19 @@ const DashboardContent = ({ onNavigate }) => {
           console.error('Error parsing date in monthly stats:', error);
           return false;
         }
-      }).length;
+      });
 
-      // Đếm tổng lịch hẹn (STI tests + consultations) trong tháng này
-      const monthSTITests = (stiTests || []).filter((test) => {
-        if (!test.createdAt) return false;
-        try {
-          let createdDate;
-          if (Array.isArray(test.createdAt)) {
-            const [testYear, monthNum, day, hour = 0, minute = 0, second = 0] = test.createdAt;
-            createdDate = new Date(testYear, monthNum - 1, day, hour, minute, second);
-          } else {
-            createdDate = new Date(test.createdAt);
-          }
-          
-          return (
-            createdDate.getMonth() === month &&
-            createdDate.getFullYear() === year
-          );
-        } catch (error) {
-          console.error('Error parsing test date in monthly stats:', error);
-          return false;
-        }
-      }).length;
-
-      const monthConsultations = (consultations || []).filter(
-        (consultation) => {
-          if (!consultation.createdAt) return false;
-          try {
-            let createdDate;
-            if (Array.isArray(consultation.createdAt)) {
-              const [consYear, monthNum, day, hour = 0, minute = 0, second = 0] = consultation.createdAt;
-              createdDate = new Date(consYear, monthNum - 1, day, hour, minute, second);
-            } else {
-              createdDate = new Date(consultation.createdAt);
-            }
-            
-            return (
-              createdDate.getMonth() === month &&
-              createdDate.getFullYear() === year
-            );
-          } catch (error) {
-            console.error('Error parsing consultation date in monthly stats:', error);
-            return false;
-          }
-        }
+      // Đếm người dùng theo vai trò
+      const customers = monthUsersFiltered.filter(user => 
+        user.role === 'CUSTOMER' || user.role === 'customer'
+      ).length;
+      
+      const staff = monthUsersFiltered.filter(user => 
+        user.role === 'STAFF' || user.role === 'staff'
+      ).length;
+      
+      const consultants = monthUsersFiltered.filter(user => 
+        user.role === 'CONSULTANT' || user.role === 'consultant'
       ).length;
 
       // Đếm blog được xác nhận trong tháng này
@@ -465,12 +434,11 @@ const DashboardContent = ({ onNavigate }) => {
         }
       }).length;
 
-      const totalAppointments = monthSTITests + monthConsultations;
-
       monthlyData.push({
         name: `T${month + 1}`,
-        users: monthUsers,
-        appointments: totalAppointments,
+        customers: customers,
+        staff: staff,
+        consultants: consultants,
         blogs: monthBlogs,
       });
     }
@@ -1144,18 +1112,18 @@ const DashboardContent = ({ onNavigate }) => {
 
         // Fallback monthly data
         setMonthlyData([
-          { name: 'T1', users: 45, appointments: 32, blogs: 2 },
-          { name: 'T2', users: 52, appointments: 41, blogs: 3 },
-          { name: 'T3', users: 61, appointments: 38, blogs: 5 },
-          { name: 'T4', users: 58, appointments: 47, blogs: 4 },
-          { name: 'T5', users: 67, appointments: 52, blogs: 7 },
-          { name: 'T6', users: 74, appointments: 59, blogs: 6 },
-          { name: 'T7', users: 82, appointments: 61, blogs: 8 },
-          { name: 'T8', users: 89, appointments: 68, blogs: 12 },
-          { name: 'T9', users: 94, appointments: 72, blogs: 9 },
-          { name: 'T10', users: 101, appointments: 79, blogs: 11 },
-          { name: 'T11', users: 108, appointments: 84, blogs: 15 },
-          { name: 'T12', users: 115, appointments: 91, blogs: 18 },
+          { name: 'T1', customers: 38, staff: 4, consultants: 3, blogs: 2 },
+          { name: 'T2', customers: 45, staff: 4, consultants: 3, blogs: 3 },
+          { name: 'T3', customers: 52, staff: 5, consultants: 4, blogs: 5 },
+          { name: 'T4', customers: 49, staff: 5, consultants: 4, blogs: 4 },
+          { name: 'T5', customers: 58, staff: 5, consultants: 4, blogs: 7 },
+          { name: 'T6', customers: 65, staff: 5, consultants: 4, blogs: 6 },
+          { name: 'T7', customers: 72, staff: 6, consultants: 4, blogs: 8 },
+          { name: 'T8', customers: 78, staff: 6, consultants: 5, blogs: 12 },
+          { name: 'T9', customers: 83, staff: 6, consultants: 5, blogs: 9 },
+          { name: 'T10', customers: 89, staff: 7, consultants: 5, blogs: 11 },
+          { name: 'T11', customers: 95, staff: 7, consultants: 6, blogs: 15 },
+          { name: 'T12', customers: 102, staff: 7, consultants: 6, blogs: 18 },
         ]);
 
         // Fallback recent users data
@@ -1345,7 +1313,7 @@ const DashboardContent = ({ onNavigate }) => {
           </Grid>
           <Grid item size={4} xs={12} sm={6} lg={4} sx={{ display: 'flex' }}>
             <StatCard
-              title="Blog đã xác nhận"
+              title="Bài viết đã xác nhận"
               value={(dashboardData.confirmedBlogs || 0).toLocaleString()}
               change={`${dashboardData.blogsThisMonthGrowth || '+0%'} so với tháng trước`}
               icon={ArticleIcon}
@@ -1440,15 +1408,57 @@ const DashboardContent = ({ onNavigate }) => {
                 width: '100%',
               }}
             >
-              <Typography
-                variant="h6"
-                sx={{ mb: 2, fontWeight: 600, color: '#1a202c', textAlign: 'center' }}
-              >
-                Tổng quan người dùng và lịch hẹn
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 600, color: '#1a202c' }}
+                >
+                  Thống kê người dùng theo vai trò
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                      Cao nhất (KH)
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#4A90E2', fontWeight: 700 }}>
+                      {Math.max(...monthlyData.map(item => item.customers))}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                      Cao nhất (NV)
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#00C9A7', fontWeight: 700 }}>
+                      {Math.max(...monthlyData.map(item => item.staff))}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                      Cao nhất (TV)
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#E91E63', fontWeight: 700 }}>
+                      {Math.max(...monthlyData.map(item => item.consultants))}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
               <Box sx={{ height: '420px', width: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <LineChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                    <defs>
+                      <linearGradient id="customersGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4A90E2" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#4A90E2" stopOpacity={0.1}/>
+                      </linearGradient>
+                      <linearGradient id="staffGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#00C9A7" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#00C9A7" stopOpacity={0.1}/>
+                      </linearGradient>
+                      <linearGradient id="consultantsGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#E91E63" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#E91E63" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis 
                       dataKey="name" 
@@ -1470,20 +1480,49 @@ const DashboardContent = ({ onNavigate }) => {
                         borderRadius: '8px',
                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                       }}
+                      formatter={(value, name) => [
+                        `${value} người`,
+                        name
+                      ]}
+                      labelFormatter={(label) => `Tháng ${label.substring(1)}`}
                     />
-                    <Bar
-                      dataKey="users"
-                      fill="#4A90E2"
-                      name="Người dùng mới"
-                      radius={[4, 4, 0, 0]}
+                    <Legend 
+                      wrapperStyle={{
+                        paddingTop: '20px',
+                        fontSize: '14px',
+                      }}
                     />
-                    <Bar
-                      dataKey="appointments"
-                      fill="#E91E63"
-                      name="Lịch hẹn"
-                      radius={[4, 4, 0, 0]}
+                    <Line
+                      type="monotone"
+                      dataKey="customers"
+                      stroke="#4A90E2"
+                      strokeWidth={3}
+                      dot={{ fill: '#4A90E2', strokeWidth: 2, r: 6 }}
+                      activeDot={{ r: 8, fill: '#4A90E2', stroke: '#fff', strokeWidth: 2 }}
+                      name="Khách hàng"
+                      fill="url(#customersGradient)"
                     />
-                  </BarChart>
+                    <Line
+                      type="monotone"
+                      dataKey="staff"
+                      stroke="#00C9A7"
+                      strokeWidth={3}
+                      dot={{ fill: '#00C9A7', strokeWidth: 2, r: 6 }}
+                      activeDot={{ r: 8, fill: '#00C9A7', stroke: '#fff', strokeWidth: 2 }}
+                      name="Nhân viên"
+                      fill="url(#staffGradient)"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="consultants"
+                      stroke="#E91E63"
+                      strokeWidth={3}
+                      dot={{ fill: '#E91E63', strokeWidth: 2, r: 6 }}
+                      activeDot={{ r: 8, fill: '#E91E63', stroke: '#fff', strokeWidth: 2 }}
+                      name="Tư vấn viên"
+                      fill="url(#consultantsGradient)"
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               </Box>
             </Card>
@@ -1542,11 +1581,11 @@ const DashboardContent = ({ onNavigate }) => {
               </Box>
               <Box sx={{ height: '420px', width: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <defs>
-                      <linearGradient id="blogGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#7B61FF" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#7B61FF" stopOpacity={0.1}/>
+                      <linearGradient id="blogBarGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#7B61FF" stopOpacity={0.9}/>
+                        <stop offset="95%" stopColor="#7B61FF" stopOpacity={0.6}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -1571,22 +1610,20 @@ const DashboardContent = ({ onNavigate }) => {
                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                       }}
                       formatter={(value, name) => [
-                        `${value} blog${value > 1 ? 's' : ''}`,
-                        'Blog đã xác nhận'
+                        `${value} bài viết`,
+                        'Bài viết đã xác nhận'
                       ]}
                       labelFormatter={(label) => `Tháng ${label.substring(1)}`}
                     />
-                    <Line
-                      type="monotone"
+                    <Bar
                       dataKey="blogs"
+                      fill="url(#blogBarGradient)"
+                      name="Bài viết đã xác nhận"
+                      radius={[8, 8, 0, 0]}
                       stroke="#7B61FF"
-                      strokeWidth={3}
-                      dot={{ fill: '#7B61FF', strokeWidth: 2, r: 6 }}
-                      activeDot={{ r: 8, fill: '#7B61FF', stroke: '#fff', strokeWidth: 2 }}
-                      name="Blog đã xác nhận"
-                      fill="url(#blogGradient)"
+                      strokeWidth={1}
                     />
-                  </LineChart>
+                  </BarChart>
                 </ResponsiveContainer>
               </Box>
             </Card>
