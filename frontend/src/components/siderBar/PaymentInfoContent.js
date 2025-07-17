@@ -63,6 +63,8 @@ import {
   maskCardNumber,
   formatCardNumber,
 } from '../../services/paymentInfoService';
+import { notify } from '../../utils/notify';
+import { confirmDialog } from '../../utils/confirmDialog';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)',
@@ -132,16 +134,19 @@ const PaymentInfoContent = () => {
     setError(null);
     try {
       const response = await getUserPaymentInfos();
-      
+
       // Handle response structure properly
       if (response.data && response.data.success) {
         const paymentData = response.data.data || [];
         // Debug: Check isDefault values
-        console.log('Payment methods with isDefault status:', paymentData.map(card => ({
-          id: card.paymentInfoId,
-          cardNumber: card.cardNumber.slice(-4),
-          isDefault: card.isDefault
-        })));
+        console.log(
+          'Payment methods with isDefault status:',
+          paymentData.map((card) => ({
+            id: card.paymentInfoId,
+            cardNumber: card.cardNumber.slice(-4),
+            isDefault: card.isDefault,
+          }))
+        );
         setPaymentMethods(paymentData);
       } else {
         setPaymentMethods([]);
@@ -162,7 +167,7 @@ const PaymentInfoContent = () => {
     if (field === 'cvc') {
       value = value.replace(/\D/g, '').slice(0, 4);
     }
-    
+
     setFormData((prev) => ({ ...prev, [field]: value }));
 
     // Clear error when user starts typing
@@ -189,7 +194,7 @@ const PaymentInfoContent = () => {
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       const cardData = {
         cardNumber: formData.cardNumber.replace(/\s/g, ''), // Remove spaces for API
@@ -204,7 +209,7 @@ const PaymentInfoContent = () => {
 
       if (editingCard) {
         const cardId = editingCard.paymentInfoId; // Backend uses paymentInfoId
-        
+
         if (!cardId) {
           throw new Error('Card ID not found for update');
         }
@@ -242,23 +247,60 @@ const PaymentInfoContent = () => {
 
   // Handle delete card
   const handleDeleteCard = async (card) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa thẻ này?')) {
+    const confirmed = await confirmDialog.danger(
+      <>
+        Bạn có chắc chắn muốn xóa thẻ này?
+        <ul
+          style={{
+            margin: '12px 0 0 0',
+            paddingLeft: 20,
+            color: '#EF4444',
+            fontSize: 14,
+          }}
+        >
+          <li>
+            <b>Lưu ý:</b> Không thể xóa thẻ thanh toán duy nhất. Vui lòng thêm
+            thẻ khác trước khi xóa thẻ cuối cùng.
+          </li>
+          <li>Bạn có thể đặt một thẻ làm mặc định để thanh toán nhanh hơn.</li>
+          <li>Thông tin thẻ được bảo mật và chỉ hiển thị 4 số cuối.</li>
+        </ul>
+      </>
+    );
+    if (!confirmed) {
       return;
     }
 
     try {
       const cardId = card.paymentInfoId; // Backend uses paymentInfoId
-      
+
       if (!cardId) {
         throw new Error('Card ID not found');
       }
 
-      await deletePaymentInfo(cardId);
-      showSnackbar('Xóa thẻ thành công!', 'success');
+      const response = await deletePaymentInfo(cardId);
+      if (response.data.success) {
+        showSnackbar('Xóa thẻ thành công!', 'success');
+        fetchPaymentMethods();
+      } else {
+        if (response.data.message === 'Cannot delete the only payment method') {
+          notify.error(
+            'Lỗi xoá thẻ',
+            'Bạn không thể xóa thẻ thanh toán duy nhất. Vui lòng thêm thẻ khác trước khi xóa.'
+          );
+        }
+        showSnackbar('Xóa thẻ thất bại!', 'error');
+      }
       fetchPaymentMethods();
     } catch (err) {
+      let errorMsg =
+        err?.response?.data?.message || err.message || 'Có lỗi xảy ra!';
+      if (errorMsg === 'Cannot delete the only payment method') {
+        errorMsg =
+          'Bạn không thể xóa thẻ thanh toán duy nhất. Vui lòng thêm thẻ khác trước khi xóa.';
+      }
       console.error('Error deleting card:', err);
-      showSnackbar(err.message || 'Có lỗi xảy ra!', 'error');
+      notify.error('', errorMsg);
     }
   };
 
@@ -266,7 +308,7 @@ const PaymentInfoContent = () => {
   const handleSetDefault = async (card) => {
     try {
       const cardId = card.paymentInfoId; // Backend uses paymentInfoId
-      
+
       if (!cardId) {
         throw new Error('Card ID not found');
       }
@@ -424,7 +466,7 @@ const PaymentInfoContent = () => {
           {paymentMethods.map((card) => {
             const cardType = getCardType(card.cardNumber);
             const isCardDefault = Boolean(card.isDefault); // Ensure boolean value
-            
+
             return (
               <Grid item xs={12} sm={6} md={4} key={card.paymentInfoId}>
                 <StyledCard isDefault={isCardDefault}>
@@ -557,7 +599,7 @@ const PaymentInfoContent = () => {
                       Đặt mặc định
                     </Button>
                   )}
-                  
+
                   {/* Default indicator when card is default */}
                   {isCardDefault && (
                     <Box
@@ -788,23 +830,25 @@ const PaymentInfoContent = () => {
                   InputLabelProps={{ sx: { fontWeight: 500 } }}
                 />
               </Grid>
-              
+
               {/* Row 4: Set as Default */}
               <Grid item xs={12}>
                 <FormControlLabel
                   control={
                     <Switch
                       checked={formData.isDefault}
-                      onChange={(e) => handleInputChange('isDefault', e.target.checked)}
+                      onChange={(e) =>
+                        handleInputChange('isDefault', e.target.checked)
+                      }
                       color="primary"
                     />
                   }
                   label="Đặt làm thẻ mặc định"
-                  sx={{ 
-                    '& .MuiFormControlLabel-label': { 
+                  sx={{
+                    '& .MuiFormControlLabel-label': {
                       fontWeight: 500,
-                      color: '#4A90E2'
-                    }
+                      color: '#4A90E2',
+                    },
                   }}
                 />
               </Grid>
