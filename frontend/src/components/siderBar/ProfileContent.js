@@ -44,6 +44,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import AvatarUpload from '../common/AvatarUpload';
 import EditIcon from '@mui/icons-material/Edit';
@@ -52,6 +54,9 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import PersonIcon from '@mui/icons-material/Person';
 import CakeIcon from '@mui/icons-material/Cake';
 import WcIcon from '@mui/icons-material/Wc';
+import MaleIcon from '@mui/icons-material/Male';
+import FemaleIcon from '@mui/icons-material/Female';
+import TransgenderIcon from '@mui/icons-material/Transgender';
 
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 
@@ -138,6 +143,77 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
   },
 }));
 
+const StyledSelect = styled(Select)(({ theme }) => ({
+  '& .MuiOutlinedInput-notchedOutline': {
+    border: 'none',
+  },
+  '& .MuiSelect-select': {
+    padding: '12px 16px',
+    fontSize: '1.1rem',
+    fontWeight: 600,
+    color: '#2D3748',
+    backgroundColor: 'transparent',
+    borderRadius: '8px',
+    '&:focus': {
+      backgroundColor: 'transparent',
+    },
+  },
+  '& .MuiSelect-icon': {
+    color: '#4A90E2',
+    fontSize: '1.5rem',
+  },
+}));
+
+const StyledMenuItem = styled(MenuItem)(({ theme }) => ({
+  fontSize: '1rem',
+  fontWeight: 500,
+  color: '#2D3748',
+  padding: '12px 16px',
+  borderRadius: '8px',
+  margin: '4px 8px',
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    backgroundColor: 'rgba(74, 144, 226, 0.1)',
+    color: '#4A90E2',
+  },
+  '&.Mui-selected': {
+    backgroundColor: 'rgba(26, 188, 156, 0.15)',
+    color: '#1ABC9C',
+    fontWeight: 600,
+    '&:hover': {
+      backgroundColor: 'rgba(26, 188, 156, 0.2)',
+    },
+  },
+}));
+
+// ✅ Function to get appropriate gender icon
+const getGenderIcon = (genderValue) => {
+  switch (genderValue) {
+    case 'Nam':
+      return <MaleIcon sx={{ fontSize: '1.2rem' }} />;
+    case 'Nữ':
+      return <FemaleIcon sx={{ fontSize: '1.2rem' }} />;
+    case 'Khác':
+      return <TransgenderIcon sx={{ fontSize: '1.2rem' }} />;
+    default:
+      return <WcIcon sx={{ fontSize: '1.2rem' }} />;
+  }
+};
+
+// ✅ Function to get appropriate gender icon color
+const getGenderIconColor = (genderValue) => {
+  switch (genderValue) {
+    case 'Nam':
+      return '#4A90E2'; // Blue
+    case 'Nữ':
+      return '#E91E63'; // Pink
+    case 'Khác':
+      return '#9B59B6'; // Purple
+    default:
+      return '#4A90E2';
+  }
+};
+
 // ✅ Updated Field Info Component - Support action button for special fields
 const FieldInfoBox = ({
   icon,
@@ -204,40 +280,75 @@ const FieldInfoBox = ({
       {isEditing && !isEmailField ? (
         // ✅ Edit Mode - Show TextField (exclude email)
         options ? (
-          // Select Field
+          // Select Field - Enhanced Gender Dropdown
           <FormControl fullWidth disabled={disabled}>
-            <StyledTextField
-              select
+            <StyledSelect
               name={name}
               value={value || ''}
               onChange={onChange}
               disabled={disabled}
-              variant="outlined"
+              displayEmpty
               sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: disabled
-                    ? 'rgba(240, 240, 240, 0.6)'
-                    : 'transparent',
-                  '& fieldset': { border: 'none' },
-                },
-                '& .MuiInputBase-input': {
-                  padding: '12px 16px',
-                  fontSize: '1.1rem',
-                  fontWeight: 600,
-                  color: disabled ? '#718096' : '#2D3748',
+                backgroundColor: disabled
+                  ? 'rgba(240, 240, 240, 0.6)'
+                  : 'transparent',
+                borderRadius: '8px',
+                '& .MuiSelect-select': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(74, 144, 226, 0.1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    borderColor: 'rgba(26, 188, 156, 0.3)',
+                  },
+                  '&.Mui-focused': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderColor: '#1ABC9C',
+                    boxShadow: '0 0 0 2px rgba(26, 188, 156, 0.2)',
+                  },
                 },
               }}
-              SelectProps={{
-                native: true,
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+                    border: '1px solid rgba(74, 144, 226, 0.1)',
+                    maxHeight: 200,
+                    '& .MuiList-root': {
+                      padding: '8px',
+                    },
+                  },
+                },
               }}
             >
-              <option value="">Chọn {label.toLowerCase()}</option>
+              <StyledMenuItem value="" disabled>
+                <Typography 
+                  sx={{ 
+                    color: '#9CA3AF', 
+                    fontStyle: 'italic',
+                    fontSize: '1rem'
+                  }}
+                >
+                  Chọn {label.toLowerCase()}
+                </Typography>
+              </StyledMenuItem>
               {options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
+                <StyledMenuItem key={option.value} value={option.value}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    {React.cloneElement(getGenderIcon(option.value), {
+                      sx: { 
+                        color: getGenderIconColor(option.value),
+                        fontSize: '1.2rem' 
+                      }
+                    })}
+                    <Typography sx={{ fontWeight: 500 }}>
+                      {option.label}
+                    </Typography>
+                  </Stack>
+                </StyledMenuItem>
               ))}
-            </StyledTextField>
+            </StyledSelect>
           </FormControl>
         ) : (
           // Regular TextField (excluding email)
@@ -821,12 +932,20 @@ const ProfileContent = () => {
                       >
                         Giới tính
                       </Typography>
-                      <Typography
-                        variant="body1"
-                        sx={{ color: '#2D3748', fontWeight: 600 }}
-                      >
-                        {formatGenderDisplay(formDataUpdate.gender)}
-                      </Typography>
+                      <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+                        {React.cloneElement(getGenderIcon(formDataUpdate.gender), {
+                          sx: { 
+                            color: getGenderIconColor(formDataUpdate.gender),
+                            fontSize: '1.1rem' 
+                          }
+                        })}
+                        <Typography
+                          variant="body1"
+                          sx={{ color: '#2D3748', fontWeight: 600 }}
+                        >
+                          {formatGenderDisplay(formDataUpdate.gender)}
+                        </Typography>
+                      </Stack>
                     </Paper>
                   </Stack>
                 </Stack>
@@ -1069,7 +1188,7 @@ const ProfileContent = () => {
 
                       <Grid item size={12} xs={12} md={6}>
                         <FieldInfoBox
-                          icon={<WcIcon />}
+                          icon={getGenderIcon(formDataUpdate.gender)}
                           label="Giới tính"
                           name="gender"
                           value={
@@ -1086,7 +1205,7 @@ const ProfileContent = () => {
                             { value: 'Khác', label: 'Khác' },
                           ]}
                           backgroundColor="linear-gradient(45deg, rgba(155, 89, 182, 0.08), rgba(142, 68, 173, 0.04))"
-                          iconColor="#9B59B6"
+                          iconColor={getGenderIconColor(formDataUpdate.gender)}
                         />
                       </Grid>
                     </Grid>
