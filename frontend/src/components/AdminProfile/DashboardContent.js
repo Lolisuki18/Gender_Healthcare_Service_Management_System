@@ -434,12 +434,60 @@ const DashboardContent = ({ onNavigate }) => {
         }
       }).length;
 
+      // Đếm STI tests đã hoàn thành trong tháng này
+      const monthStiTests = (stiTests || []).filter((test) => {
+        // Chỉ đếm những test đã hoàn thành
+        if (!test.updatedAt || (test.status !== 'COMPLETED' && test.status !== 'completed')) return false;
+        try {
+          let updatedDate;
+          if (Array.isArray(test.updatedAt)) {
+            const [testYear, monthNum, day, hour = 0, minute = 0, second = 0] = test.updatedAt;
+            updatedDate = new Date(testYear, monthNum - 1, day, hour, minute, second);
+          } else {
+            updatedDate = new Date(test.updatedAt);
+          }
+          
+          return (
+            updatedDate.getMonth() === month &&
+            updatedDate.getFullYear() === year
+          );
+        } catch (error) {
+          console.error('Error parsing STI test date in monthly stats:', error);
+          return false;
+        }
+      }).length;
+
+      // Đếm consultations đã hoàn thành trong tháng này
+      const monthConsultations = (consultations || []).filter((consultation) => {
+        // Chỉ đếm những consultation đã hoàn thành
+        if (!consultation.updatedAt || (consultation.status !== 'COMPLETED' && consultation.status !== 'completed')) return false;
+        try {
+          let updatedDate;
+          if (Array.isArray(consultation.updatedAt)) {
+            const [consultationYear, monthNum, day, hour = 0, minute = 0, second = 0] = consultation.updatedAt;
+            updatedDate = new Date(consultationYear, monthNum - 1, day, hour, minute, second);
+          } else {
+            updatedDate = new Date(consultation.updatedAt);
+          }
+          
+          return (
+            updatedDate.getMonth() === month &&
+            updatedDate.getFullYear() === year
+          );
+        } catch (error) {
+          console.error('Error parsing consultation date in monthly stats:', error);
+          return false;
+        }
+      }).length;
+
       monthlyData.push({
         name: `T${month + 1}`,
         customers: customers,
         staff: staff,
         consultants: consultants,
         blogs: monthBlogs,
+        stiTests: monthStiTests,
+        consultations: monthConsultations,
       });
     }
 
@@ -992,10 +1040,10 @@ const DashboardContent = ({ onNavigate }) => {
           usersResponse?.data || []
         );
 
-        // Hàm tính số lượng lịch hẹn tạo trong tháng này và tháng trước
-        const getConsultationsMonthStats = (consultations) => {
-          if (!consultations || !Array.isArray(consultations))
-            return { thisMonth: 0, lastMonth: 0 };
+        // Hàm tính số lượng lịch hẹn hoàn thành trong tháng này và tháng trước
+        const getCompletedAppointmentsMonthStats = (stiTests, consultations) => {
+          if ((!stiTests || !Array.isArray(stiTests)) && (!consultations || !Array.isArray(consultations)))
+            return { thisMonth: 0, lastMonth: 0, growth: '+0%' };
           
           const now = new Date();
           const currentMonth = now.getMonth(); // 0-11
@@ -1006,25 +1054,55 @@ const DashboardContent = ({ onNavigate }) => {
           let thisMonthCount = 0;
           let lastMonthCount = 0;
           
-          consultations.forEach((c) => {
-            if (!c.createdAt) return;
+          // Đếm STI tests hoàn thành
+          (stiTests || []).forEach((test) => {
+            // Chỉ đếm những test đã hoàn thành
+            if (!test.createdAt || (test.status !== 'COMPLETED' && test.status !== 'completed')) return;
             
             try {
               let createdDate;
-              if (Array.isArray(c.createdAt)) {
-                const [year, month, day, hour = 0, minute = 0, second = 0] = c.createdAt;
+              if (Array.isArray(test.createdAt)) {
+                const [year, month, day, hour = 0, minute = 0, second = 0] = test.createdAt;
                 createdDate = new Date(year, month - 1, day, hour, minute, second);
               } else {
-                createdDate = new Date(c.createdAt);
+                createdDate = new Date(test.createdAt);
               }
               
-              const month = createdDate.getMonth();
-              const year = createdDate.getFullYear();
+              const testMonth = createdDate.getMonth();
+              const testYear = createdDate.getFullYear();
               
-              if (year === currentYear && month === currentMonth) {
+              if (testYear === currentYear && testMonth === currentMonth) {
                 thisMonthCount++;
               }
-              if (year === lastMonthYear && month === lastMonth) {
+              if (testYear === lastMonthYear && testMonth === lastMonth) {
+                lastMonthCount++;
+              }
+            } catch (error) {
+              console.error('Error parsing STI test date in month stats:', error);
+            }
+          });
+          
+          // Đếm consultations hoàn thành
+          (consultations || []).forEach((consultation) => {
+            // Chỉ đếm những consultation đã hoàn thành
+            if (!consultation.createdAt || (consultation.status !== 'COMPLETED' && consultation.status !== 'completed')) return;
+            
+            try {
+              let createdDate;
+              if (Array.isArray(consultation.createdAt)) {
+                const [year, month, day, hour = 0, minute = 0, second = 0] = consultation.createdAt;
+                createdDate = new Date(year, month - 1, day, hour, minute, second);
+              } else {
+                createdDate = new Date(consultation.createdAt);
+              }
+              
+              const consultationMonth = createdDate.getMonth();
+              const consultationYear = createdDate.getFullYear();
+              
+              if (consultationYear === currentYear && consultationMonth === currentMonth) {
+                thisMonthCount++;
+              }
+              if (consultationYear === lastMonthYear && consultationMonth === lastMonth) {
                 lastMonthCount++;
               }
             } catch (error) {
@@ -1032,7 +1110,16 @@ const DashboardContent = ({ onNavigate }) => {
             }
           });
           
-          return { thisMonth: thisMonthCount, lastMonth: lastMonthCount };
+          // Tính tỉ lệ tăng trưởng
+          let growth = '+0%';
+          if (lastMonthCount === 0) {
+            growth = thisMonthCount > 0 ? '+100%' : '+0%';
+          } else {
+            const rate = (((thisMonthCount - lastMonthCount) / lastMonthCount) * 100).toFixed(1);
+            growth = rate > 0 ? `+${rate}%` : `${rate}%`;
+          }
+          
+          return { thisMonth: thisMonthCount, lastMonth: lastMonthCount, growth };
         };
 
         // Xử lý dữ liệu blog
@@ -1063,12 +1150,14 @@ const DashboardContent = ({ onNavigate }) => {
             mockPreviousMonth.totalConsultations
           ),
           serviceGrowthRate: realSTIServiceGrowthRate, // Sử dụng tỉ lệ tăng trưởng dịch vụ STI thực tế
-          consultationsThisMonth: getConsultationsMonthStats(
+          consultationsThisMonth: getCompletedAppointmentsMonthStats(
+            allSTITestsResponse?.data || [],
             allConsultationsResponse?.data || []
           ).thisMonth,
-          consultationsThisMonthGrowth: getConsultationsMonthStats(
+          consultationsThisMonthGrowth: getCompletedAppointmentsMonthStats(
+            allSTITestsResponse?.data || [],
             allConsultationsResponse?.data || []
-          ).thisMonthGrowth,
+          ).growth,
           confirmedBlogs: (confirmedBlogsResponse || []).length,
           blogsThisMonth: blogsStats.thisMonth,
           blogsThisMonthGrowth: blogsStats.growth,
@@ -1085,74 +1174,6 @@ const DashboardContent = ({ onNavigate }) => {
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError(err.message || 'Lỗi khi tải tổng quan hệ thống');
-        // Fallback to demo data if API fails
-        setDashboardData({
-          totalUsers: 2847,
-          activeDoctors: 156,
-          activeStaffs: 89,
-          activePatients: 2602,
-          totalConsultations: 1205,
-          todayConsultations: 24,
-          activeServices: 18,
-          serviceStatusInfo: '18/25 dịch vụ hoạt động',
-          unansweredQuestions: 45,
-          answeredQuestions: 892,
-          totalAppointments: 856, // Mock data cho tổng appointments hoàn thành
-          appointmentsGrowthRate: '+8.7%', // Mock data cho tỉ lệ tăng trưởng appointments
-          userGrowthRate: '+12.5%',
-          doctorGrowthRate: '+8.2%',
-          consultationGrowthRate: '+15.3%',
-          serviceGrowthRate: '+2.1%',
-          consultationsThisMonth: 18,
-          consultationsThisMonthGrowth: '+8.7%',
-          confirmedBlogs: 42,
-          blogsThisMonth: 6,
-          blogsThisMonthGrowth: '+15.4%',
-        });
-
-        // Fallback monthly data
-        setMonthlyData([
-          { name: 'T1', customers: 38, staff: 4, consultants: 3, blogs: 2 },
-          { name: 'T2', customers: 45, staff: 4, consultants: 3, blogs: 3 },
-          { name: 'T3', customers: 52, staff: 5, consultants: 4, blogs: 5 },
-          { name: 'T4', customers: 49, staff: 5, consultants: 4, blogs: 4 },
-          { name: 'T5', customers: 58, staff: 5, consultants: 4, blogs: 7 },
-          { name: 'T6', customers: 65, staff: 5, consultants: 4, blogs: 6 },
-          { name: 'T7', customers: 72, staff: 6, consultants: 4, blogs: 8 },
-          { name: 'T8', customers: 78, staff: 6, consultants: 5, blogs: 12 },
-          { name: 'T9', customers: 83, staff: 6, consultants: 5, blogs: 9 },
-          { name: 'T10', customers: 89, staff: 7, consultants: 5, blogs: 11 },
-          { name: 'T11', customers: 95, staff: 7, consultants: 6, blogs: 15 },
-          { name: 'T12', customers: 102, staff: 7, consultants: 6, blogs: 18 },
-        ]);
-
-        // Fallback recent users data
-        setRecentUsers([
-          {
-            id: 1,
-            name: 'Nguyễn Thị Mai',
-            email: 'mai.nguyen@email.com',
-            role: 'Khách hàng',
-            registrationTime: '14/07/2025 14:30',
-            avatar: 'M',
-          },
-          {
-            id: 2,
-            name: 'Trần Văn Nam',
-            email: 'nam.tran@email.com',
-            role: 'Tư vấn viên',
-            registrationTime: '13/07/2025 09:15',
-            avatar: 'N',
-          },
-          {
-            id: 3,
-            name: 'Lê Thị Hoa',
-            email: 'hoa.le@email.com',
-            role: 'Khách hàng',
-            registrationTime: '08/07/2025 16:45',
-            avatar: 'H',
-          },
-        ]);
       } finally {
         setLoading(false);
       }
@@ -1295,12 +1316,12 @@ const DashboardContent = ({ onNavigate }) => {
           </Grid>
           <Grid item size={4} xs={12} sm={6} lg={4} sx={{ display: 'flex' }}>
             <Tooltip
-              title="Tổng số lịch hẹn được tạo mới trong tháng này. Tỷ lệ tăng trưởng so với tháng trước."
+              title="Tổng số lịch hẹn đã hoàn thành trong tháng này (bao gồm cả xét nghiệm STI và tư vấn). Tỷ lệ tăng trưởng so với tháng trước."
               arrow
             >
               <Box sx={{ width: '100%' }}>
                 <StatCard
-                  title="Lịch hẹn tháng này"
+                  title="Lịch hẹn hoàn thành tháng này"
                   value={(
                     dashboardData.consultationsThisMonth || 0
                   ).toLocaleString()}
@@ -1621,6 +1642,117 @@ const DashboardContent = ({ onNavigate }) => {
                       name="Bài viết đã xác nhận"
                       radius={[8, 8, 0, 0]}
                       stroke="#7B61FF"
+                      strokeWidth={1}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* Appointment Statistics Chart */}
+      <Box sx={{ width: '100%', mb: 4 }}>
+        <Grid container spacing={2} sx={{ maxWidth: '100%' }}>
+          <Grid item size={12} xs={12} sx={{ display: 'flex' }}>
+            <Card
+              sx={{
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                border: '1px solid #e2e8f0',
+                borderRadius: 4,
+                p: 3,
+                minHeight: '500px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                width: '100%',
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 600, color: '#1a202c' }}
+                >
+                  Thống kê lịch hẹn đã hoàn thành theo loại
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                      Tổng xét nghiệm
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#FF6B6B', fontWeight: 700 }}>
+                      {monthlyData.reduce((sum, item) => sum + item.stiTests, 0)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                      Tổng tư vấn
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#4ECDC4', fontWeight: 700 }}>
+                      {monthlyData.reduce((sum, item) => sum + item.consultations, 0)}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+              <Box sx={{ height: '420px', width: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="stiTestGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#FF6B6B" stopOpacity={0.9}/>
+                        <stop offset="95%" stopColor="#FF6B6B" stopOpacity={0.6}/>
+                      </linearGradient>
+                      <linearGradient id="consultationGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4ECDC4" stopOpacity={0.9}/>
+                        <stop offset="95%" stopColor="#4ECDC4" stopOpacity={0.6}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#64748b" 
+                      fontSize={12}
+                      angle={0}
+                      textAnchor="middle"
+                      height={60}
+                    />
+                    <YAxis 
+                      stroke="#64748b" 
+                      fontSize={12}
+                      width={60}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      }}
+                      formatter={(value, name) => [
+                        `${value} lịch hẹn hoàn thành`,
+                        name
+                      ]}
+                      labelFormatter={(label) => `Tháng ${label.substring(1)}`}
+                    />
+                    <Legend 
+                      wrapperStyle={{
+                        paddingTop: '20px',
+                        fontSize: '14px',
+                      }}
+                    />
+                    <Bar
+                      dataKey="stiTests"
+                      fill="url(#stiTestGradient)"
+                      name="Lịch xét nghiệm"
+                      radius={[4, 4, 0, 0]}
+                      stroke="#FF6B6B"
+                      strokeWidth={1}
+                    />
+                    <Bar
+                      dataKey="consultations"
+                      fill="url(#consultationGradient)"
+                      name="Lịch tư vấn"
+                      radius={[4, 4, 0, 0]}
+                      stroke="#4ECDC4"
                       strokeWidth={1}
                     />
                   </BarChart>
