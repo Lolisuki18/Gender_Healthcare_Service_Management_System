@@ -42,6 +42,7 @@ import localStorageUtil from '@/utils/localStorage';
 import { servicesData } from '@/data/servicesData';
 
 import AskQuestionDialog from '@/components/common/AskQuestionDialog';
+import reviewService from '@/services/reviewService';
 
 // Define animations
 const float = keyframes`
@@ -55,6 +56,9 @@ export const HomePage = () => {
 
   // State mở dialog dùng chung
   const [faqDialogOpen, setFaqDialogOpen] = useState(false);
+  const [testimonials, setTestimonials] = useState([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
+  const [testimonialsError, setTestimonialsError] = useState(null);
 
   // --- LIFECYCLE HOOKS ---
   useEffect(() => {
@@ -65,6 +69,31 @@ export const HomePage = () => {
 
     // toast.success('Chào mừng bạn đến với trang chủ');
     console.log('HomePage component mounted');
+
+    // Fetch testimonials from API
+    const fetchTestimonials = async () => {
+      setTestimonialsLoading(true);
+      setTestimonialsError(null);
+      try {
+        const data = await reviewService.getTestimonials(10); // lấy nhiều hơn 3 để ưu tiên 5 sao
+        // Ưu tiên các đánh giá 5 sao, nếu không đủ thì lấy các đánh giá còn lại
+        let filtered = Array.isArray(data) ? data.filter(t => t.rating === 5) : [];
+        if (filtered.length < 3 && Array.isArray(data)) {
+          // Bổ sung thêm các đánh giá khác nếu chưa đủ 3
+          const others = data.filter(t => t.rating !== 5);
+          filtered = [...filtered, ...others].slice(0, 3);
+        } else {
+          filtered = filtered.slice(0, 3);
+        }
+        setTestimonials(filtered);
+      } catch (err) {
+        setTestimonialsError('Không thể tải đánh giá khách hàng');
+        setTestimonials([]);
+      } finally {
+        setTestimonialsLoading(false);
+      }
+    };
+    fetchTestimonials();
 
     return () => clearTimeout(timer);
   }, []); // Chỉ chạy 1 lần khi component mount
@@ -1076,113 +1105,105 @@ export const HomePage = () => {
               Khách hàng nói gì về chúng tôi
             </Typography>
           </Box>{' '}
-          <Grid container spacing={4}>
-            {[
-              {
-                name: 'Nguyễn Minh Anh',
-                role: 'Khách hàng thường xuyên',
-                avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-                comment:
-                  'Tôi vô cùng hài lòng với dịch vụ tại đây. Các bác sĩ không chỉ chuyên nghiệp mà còn rất thấu hiểu và tôn trọng nhu cầu cá nhân của tôi.',
-                rating: 5,
-              },
-              {
-                name: 'Trần Văn Khoa',
-                role: 'Khách hàng mới',
-                avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-                comment:
-                  'Lần đầu tiên đến đây tôi đã cảm thấy thoải mái với cách tiếp đón chuyên nghiệp. Các tư vấn viên giải đáp mọi thắc mắc một cách chi tiết.',
-                rating: 5,
-              },
-              {
-                name: 'Lê Thị Phương',
-                role: 'Khách hàng thân thiết',
-                avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-                comment:
-                  'Đã sử dụng dịch vụ tư vấn sức khỏe định kỳ trong 2 năm qua và luôn hài lòng. Đội ngũ y tế rất tận tâm.',
-                rating: 4,
-              },
-            ].map((testimonial, index) => (
-              <Grid item xs={12} md={4} key={index}>
-                {' '}
-                <Fade
-                  in={loaded}
-                  style={{
-                    transitionDelay:
-                      index !== undefined ? `${300 + index * 150}ms` : '0ms',
-                  }}
-                >
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 4,
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      borderRadius: 4,
-                      bgcolor: '#fff',
-                      position: 'relative',
-                      boxShadow: '0 10px 30px rgba(0,0,0,0.07)',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        boxShadow: '0 15px 35px rgba(0,0,0,0.12)',
-                        transform: 'translateY(-5px)',
-                      },
+          <Grid container spacing={4} justifyContent="center" alignItems="center" sx={{ minHeight: { xs: 400, md: 600 } }}>
+            {testimonialsLoading ? (
+              <Grid item xs={12} style={{ textAlign: 'center' }}>
+                <Typography>Đang tải đánh giá...</Typography>
+              </Grid>
+            ) : testimonialsError ? (
+              <Grid item xs={12} style={{ textAlign: 'center' }}>
+                <Typography color="error">{testimonialsError}</Typography>
+              </Grid>
+            ) : (testimonials.length === 0 ? (
+              <Grid item xs={12} style={{ textAlign: 'center' }}>
+                <Typography>Chưa có đánh giá nào.</Typography>
+              </Grid>
+            ) : (
+              testimonials.map((testimonial, index) => (
+                <Grid item xs={12} key={index} sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Fade
+                    in={loaded}
+                    style={{
+                      transitionDelay:
+                        index !== undefined ? `${300 + index * 150}ms` : '0ms',
                     }}
                   >
-                    <Box
+                    <Paper
+                      elevation={0}
                       sx={{
-                        position: 'absolute',
-                        top: 20,
-                        right: 20,
-                        color: (theme) => theme.palette.secondary.light,
+                        p: 4,
+                        width: { xs: '100%', sm: '95%', md: '1100px' },
+                        maxWidth: 1200,
+                        minWidth: 320,
+                        minHeight: 320,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        borderRadius: 4,
+                        bgcolor: '#fff',
+                        position: 'relative',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.07)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 15px 35px rgba(0,0,0,0.12)',
+                          transform: 'translateY(-5px)',
+                        },
                       }}
                     >
-                      <FormatQuoteIcon fontSize="large" />
-                    </Box>
-
-                    <Typography
-                      sx={{
-                        mb: 4,
-                        color: (theme) => theme.palette.text.secondary,
-                        lineHeight: 1.8,
-                        flex: 1,
-                      }}
-                    >
-                      "{testimonial.comment}"
-                    </Typography>
-
-                    <Divider sx={{ my: 2 }} />
-
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Avatar
-                        src={testimonial.avatar}
-                        alt={testimonial.name}
+                      <Box
                         sx={{
-                          width: 56,
-                          height: 56,
-                          border: '2px solid',
-                          borderColor: (theme) => theme.palette.primary.light,
+                          position: 'absolute',
+                          top: 20,
+                          right: 20,
+                          color: (theme) => theme.palette.secondary.light,
                         }}
-                      />
-                      <Box>
-                        <Typography variant="subtitle1" fontWeight={600}>
-                          {testimonial.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {testimonial.role}
-                        </Typography>
-                        <Rating
-                          value={testimonial.rating}
-                          readOnly
-                          size="small"
-                          sx={{ mt: 0.5 }}
-                        />
+                      >
+                        <FormatQuoteIcon fontSize="large" />
                       </Box>
-                    </Stack>
-                  </Paper>
-                </Fade>
-              </Grid>
+                      <Typography
+                        sx={{
+                          mb: 4,
+                          color: (theme) => theme.palette.text.secondary,
+                          lineHeight: 2.3,
+                          fontSize: '1.25rem',
+                          flex: 1,
+                          minHeight: 120,
+                          maxWidth: '100%',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        "{testimonial.comment}"
+                      </Typography>
+                      <Divider sx={{ my: 2 }} />
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Avatar
+                          src={testimonial.avatar || testimonial.userAvatar || '/img/avatar/default.jpg'}
+                          alt={testimonial.userFullName || testimonial.maskedUserName || testimonial.name || 'Khách hàng'}
+                          sx={{
+                            width: 56,
+                            height: 56,
+                            border: '2px solid',
+                            borderColor: (theme) => theme.palette.primary.light,
+                          }}
+                        />
+                        <Box>
+                          <Typography variant="subtitle1" fontWeight={700} fontSize={20}>
+                            {testimonial.maskedUserName && testimonial.maskedUserName.trim() ? testimonial.maskedUserName : 'Khách hàng'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {testimonial.role || testimonial.userRole || ''}
+                          </Typography>
+                          <Rating
+                            value={testimonial.rating}
+                            readOnly
+                            size="medium"
+                            sx={{ mt: 0.5 }}
+                          />
+                        </Box>
+                      </Stack>
+                    </Paper>
+                  </Fade>
+                </Grid>
+              ))
             ))}
           </Grid>
         </Container>{' '}
