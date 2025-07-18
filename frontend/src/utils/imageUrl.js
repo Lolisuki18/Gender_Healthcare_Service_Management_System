@@ -69,7 +69,7 @@ export function getBlogFallbackImages() {
 
 export function getAvatarUrl(path) {
   if (!path) {
-    return `${API_BASE_URL}/img/blog/default.jpg`; // Trả về full URL từ backend
+    return '/img/avatar/default.jpg';
   }
 
   if (path.startsWith('http')) {
@@ -86,7 +86,7 @@ export function getAvatarUrl(path) {
  */
 export function getAvatarFallbackImages() {
   return [
-    '/img/blog/default.jpg',
+    '/img/avatar/default.jpg', // Sử dụng avatar default thay vì blog default
     'https://via.placeholder.com/100x100/e0f7fa/546e7a?text=User',
   ];
 }

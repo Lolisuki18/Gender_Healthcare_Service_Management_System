@@ -14,8 +14,6 @@ import {
   TextField,
   InputAdornment,
   Pagination,
-  Breadcrumbs,
-  Link,
   Button,
   Fab,
   Tooltip,
@@ -23,7 +21,6 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
-import HomeIcon from '@mui/icons-material/Home';
 import AddIcon from '@mui/icons-material/Add';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import BlogCard from '@/components/common/BlogCard';
@@ -244,7 +241,7 @@ const BlogPage = () => {
       }
     }}>
       <Container maxWidth="lg" sx={{ py: 8, position: 'relative', zIndex: 1 }}>
-        {/* Breadcrumbs */}
+        {/* Breadcrumbs
         <Breadcrumbs 
           aria-label="breadcrumb" 
           sx={{ 
@@ -278,7 +275,7 @@ const BlogPage = () => {
           <Typography color="#26c6da" sx={{ fontWeight: 600, fontSize: '1rem' }}>
             Blog
           </Typography>
-        </Breadcrumbs>
+        </Breadcrumbs> */}
         
         {/* Page Header */}
         <Box sx={{ textAlign: 'center', mb: 10 }}>

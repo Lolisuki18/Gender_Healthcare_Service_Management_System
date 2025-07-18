@@ -45,6 +45,7 @@ import consultantService from '@/services/consultantService';
 import imageUrl from '@/utils/imageUrl';
 import confirmDialog from '@/utils/confirmDialog';
 import localStorageUtil from '@/utils/localStorage';
+import reviewService from '@/services/reviewService';
 
 // Custom styled components
 // Styled Components
@@ -120,7 +121,7 @@ const CardBio = styled(Typography)(({ theme }) => ({
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   display: '-webkit-box',
-  WebkitLineClamp: 2,
+  WebkitLineClamp: 3, // Tăng lên 3 dòng để đều hơn
   WebkitBoxOrient: 'vertical',
 }));
 
@@ -129,7 +130,7 @@ const CardActionsWrapper = styled(CardActions)(({ theme }) => ({
   display: 'flex',
   justifyContent: 'space-between',
   gap: 12,
-  marginTop: theme.spacing(1),
+  marginTop: 'auto', // Đẩy nút xuống dưới cùng
   padding: 0,
 }));
 
@@ -163,7 +164,8 @@ const ConsultantCard = styled(Card)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  minHeight: 420,
+  width: 340, 
+  height: 420, 
   transition: 'transform 0.2s, box-shadow 0.2s',
   '&:hover': {
     transform: 'translateY(-6px) scale(1.03)',
@@ -210,8 +212,8 @@ const StyledButton = styled(Button)(({ theme }) => ({
   borderRadius: 24,
   boxShadow: CARD_SHADOW,
   textTransform: 'none',
-  fontSize: 16,
-  padding: '8px 24px',
+  fontSize: 14,
+  padding: '4px 10px',
 }));
 
 const RatingWrapper = styled(Box)(({ theme }) => ({
@@ -220,6 +222,17 @@ const RatingWrapper = styled(Box)(({ theme }) => ({
   justifyContent: 'center',
   marginBottom: theme.spacing(1),
   gap: 4,
+}));
+
+const BookingDialogHeader = styled(DialogTitle)(({ theme }) => ({
+  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+  color: '#fff',
+  fontWeight: 700,
+  fontSize: 22,
+  borderTopLeftRadius: 24,
+  borderTopRightRadius: 24,
+  padding: '28px 28px 12px 28px',
+  textAlign: 'center',
 }));
 
 const ConsultationPage = () => {
@@ -255,6 +268,8 @@ const ConsultationPage = () => {
 
   // State for available slots
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [consultantRatings, setConsultantRatings] = useState({});
+  const [detailRating, setDetailRating] = useState(null);
 
   // Fetch consultants on component mount
   useEffect(() => {
@@ -311,6 +326,19 @@ const ConsultationPage = () => {
       const consultants = await consultantService.getAllConsultants();
       if (consultants.success) {
         setConsultants(consultants.data);
+        // Gọi API tổng hợp đánh giá cho từng tư vấn viên
+        const ratings = {};
+        await Promise.all(
+          consultants.data.map(async (c) => {
+            try {
+              const summary = await reviewService.getConsultantRatingSummary(c.userId);
+              ratings[c.userId] = summary;
+            } catch (e) {
+              ratings[c.userId] = null;
+            }
+          })
+        );
+        setConsultantRatings(ratings);
       } else {
         setError(consultants.message || 'Không thể tải danh sách tư vấn viên');
       }
@@ -330,12 +358,22 @@ const ConsultationPage = () => {
     setDetailDialog({ open: true, consultant: null });
     setDetailLoading(true);
     setDetailError(null);
+    setDetailRating(null); // reset rating
     try {
       const res = await consultantService.getConsultantDetails(
         consultant.userId || consultant.profileId
       );
       if (res && res.success) {
         setDetailDialog({ open: true, consultant: res.data });
+        // Gọi API tổng hợp đánh giá
+        try {
+          const summary = await reviewService.getConsultantRatingSummary(
+            consultant.userId || consultant.profileId
+          );
+          setDetailRating(summary?.averageRating);
+        } catch {
+          setDetailRating(null);
+        }
       } else {
         setDetailError(res?.message || 'Không thể tải thông tin chi tiết');
       }
@@ -561,7 +599,7 @@ const ConsultationPage = () => {
           {error}
         </Alert>
       ) : (
-        <Grid container spacing={4}>
+        <Grid container spacing={4} alignItems="stretch" justifyContent="center" display="flex" flexWrap="wrap" sx={{ pb: 6 }}> {/* justifyContent và padding dưới */}
           {(consultants.length > 0 ? consultants : mockConsultants).map(
             (consultant) => (
               <Grid
@@ -569,8 +607,10 @@ const ConsultationPage = () => {
                 xs={12}
                 sm={6}
                 md={4}
-                lg={3}
+                lg={4}
+                xl={4}
                 key={consultant.profileId || consultant.userId}
+                style={{ height: '100%' }}
               >
                 <ConsultantCard>
                   <ConsultantAvatar
@@ -586,7 +626,7 @@ const ConsultationPage = () => {
                   <ConsultantName>{consultant.fullName}</ConsultantName>
                   <RatingWrapper>
                     <Rating
-                      value={consultant.rating || 4.5}
+                      value={consultantRatings[consultant.userId]?.averageRating > 0 ? consultantRatings[consultant.userId].averageRating : 5}
                       precision={0.1}
                       readOnly
                       size="small"
@@ -597,7 +637,7 @@ const ConsultationPage = () => {
                       color="#4A90E2"
                       sx={{ ml: 0.5, fontWeight: 600 }}
                     >
-                      ({consultant.rating || 4.5})
+                      ({consultantRatings[consultant.userId]?.averageRating > 0 ? consultantRatings[consultant.userId].averageRating.toFixed(1) : '5.0'})
                     </Typography>
                   </RatingWrapper>
                   <CardInfoRow>
@@ -735,7 +775,7 @@ const ConsultationPage = () => {
                     </Typography>
                     <RatingWrapper sx={{ mb: 1 }}>
                       <Rating
-                        value={detailDialog.consultant.rating || 4.5}
+                        value={detailRating && detailRating > 0 ? detailRating : 5}
                         precision={0.1}
                         readOnly
                         size="small"
@@ -745,7 +785,7 @@ const ConsultationPage = () => {
                         color="#4A90E2"
                         sx={{ ml: 1, fontWeight: 600 }}
                       >
-                        ({detailDialog.consultant.rating || 4.5})
+                        ({detailRating && detailRating > 0 ? detailRating.toFixed(1) : '5.0'})
                       </Typography>
                     </RatingWrapper>
                     <Chip
@@ -833,101 +873,144 @@ const ConsultationPage = () => {
         onClose={submitting ? undefined : handleCloseAppointment}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          style: {
+            borderRadius: 28,
+            boxShadow: '0 8px 32px rgba(74, 144, 226, 0.10)',
+            padding: 0,
+            background: '#f7fafc',
+          },
+        }}
       >
         {appointmentDialog.consultant && (
           <>
-            <DialogTitle>
-              <Typography variant="h6">Đặt lịch hẹn với tư vấn viên</Typography>
-              <Typography variant="subtitle1" color="primary">
+            <BookingDialogHeader>
+              Đặt lịch hẹn với tư vấn viên
+              <Typography variant="subtitle1" sx={{ color: '#fff', fontWeight: 400 }}>
                 {appointmentDialog.consultant.fullName}
               </Typography>
-            </DialogTitle>
-            <DialogContent>
+            </BookingDialogHeader>
+            <DialogContent sx={{ p: 4 }}>
               {formError && (
-                <Alert severity="error" sx={{ mb: 2 }}>
+                <Alert severity="error" sx={{ mb: 2, fontSize: 14, borderRadius: 2 }}>
                   {formError}
                 </Alert>
               )}
-
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Vui lòng chọn ngày và khung giờ phù hợp với bạn:
-                </Typography>
-
-                <LocalizationProvider
-                  dateAdapter={AdapterDateFns}
-                  adapterLocale={vi}
-                >
-                  <DatePicker
-                    label="Chọn ngày hẹn"
-                    value={appointmentForm.date}
-                    onChange={(date) => handleFormChange('date', date)}
-                    sx={{ mb: 2, width: '100%' }}
-                    minDate={new Date()} // Không cho phép chọn ngày trong quá khứ
-                  />
-                </LocalizationProvider>
-
-                {availableSlots.length === 0 && (
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    Không còn khung giờ trống cho ngày này, vui lòng chọn ngày
-                    khác.
-                  </Alert>
-                )}
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>Chọn khung giờ</InputLabel>
-                  <Select
-                    value={appointmentForm.timeSlot}
-                    onChange={(e) =>
-                      handleFormChange('timeSlot', e.target.value)
-                    }
-                    label="Chọn khung giờ"
-                    startAdornment={
-                      <ScheduleIcon sx={{ mr: 1, color: 'primary.main' }} />
-                    }
-                    sx={{ background: '#fff', borderRadius: 2 }}
-                    disabled={availableSlots.length === 0}
-                  >
-                    {timeSlotOptions.map((slot) => (
-                      <MenuItem
-                        key={slot.value}
-                        value={slot.value}
-                        disabled={
-                          availableSlots.length === 0 ||
-                          !availableSlots.includes(slot.value)
-                        }
-                      >
-                        {slot.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <TextField
-                  label="Lý do tư vấn"
-                  value={appointmentForm.reason}
-                  onChange={(e) => handleFormChange('reason', e.target.value)}
-                  fullWidth
-                  multiline
-                  minRows={2}
-                  maxRows={4}
-                  sx={{ mt: 2, background: '#fff', borderRadius: 2 }}
-                  placeholder="Nhập lý do bạn muốn được tư vấn... (không bắt buộc)"
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: 'primary.main' }}>
+                Vui lòng chọn ngày và khung giờ phù hợp với bạn:
+              </Typography>
+              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
+                <DatePicker
+                  label="Chọn ngày hẹn"
+                  value={appointmentForm.date}
+                  onChange={(date) => handleFormChange('date', date)}
+                  sx={{
+                    mb: 2,
+                    width: '100%',
+                    borderRadius: 3,
+                    background: '#fff',
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 3,
+                      fontWeight: 500,
+                      fontSize: 16,
+                      '& fieldset': { borderColor: '#B2EBF2' },
+                      '&:hover fieldset': { borderColor: '#1ABC9C' },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1ABC9C',
+                        boxShadow: '0 0 0 2px #B2EBF2',
+                      },
+                    },
+                  }}
+                  minDate={new Date()}
                 />
-              </Box>
+              </LocalizationProvider>
+              {availableSlots.length === 0 && (
+                <Alert severity="info" sx={{ mb: 2, fontSize: 14, borderRadius: 2 }}>
+                  Không còn khung giờ trống cho ngày này, vui lòng chọn ngày khác.
+                </Alert>
+              )}
+              <FormControl fullWidth margin="normal" sx={{ borderRadius: 3, background: '#fff',
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 3,
+                  fontWeight: 500,
+                  fontSize: 16,
+                  '& fieldset': { borderColor: '#B2EBF2' },
+                  '&:hover fieldset': { borderColor: '#1ABC9C' },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#1ABC9C',
+                    boxShadow: '0 0 0 2px #B2EBF2',
+                  },
+                },
+              }}>
+                <InputLabel>Chọn khung giờ</InputLabel>
+                <Select
+                  value={appointmentForm.timeSlot}
+                  onChange={(e) => handleFormChange('timeSlot', e.target.value)}
+                  label="Chọn khung giờ"
+                  startAdornment={<ScheduleIcon sx={{ mr: 1, color: 'primary.main' }} />}
+                  sx={{ borderRadius: 3, background: '#fff' }}
+                  disabled={availableSlots.length === 0}
+                >
+                  {timeSlotOptions.map((slot) => (
+                    <MenuItem
+                      key={slot.value}
+                      value={slot.value}
+                      disabled={availableSlots.length === 0 || !availableSlots.includes(slot.value)}
+                    >
+                      {slot.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label="Lý do tư vấn"
+                value={appointmentForm.reason}
+                onChange={(e) => handleFormChange('reason', e.target.value)}
+                fullWidth
+                multiline
+                minRows={2}
+                maxRows={4}
+                sx={{
+                  mt: 2,
+                  background: '#fff',
+                  borderRadius: 3,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    fontWeight: 500,
+                    fontSize: 16,
+                    '& fieldset': { borderColor: '#B2EBF2' },
+                    '&:hover fieldset': { borderColor: '#1ABC9C' },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#1ABC9C',
+                      boxShadow: '0 0 0 2px #B2EBF2',
+                    },
+                  },
+                }}
+                placeholder="Nhập lý do bạn muốn được tư vấn... (không bắt buộc)"
+              />
             </DialogContent>
-            <DialogActions
-              sx={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}
-            >
-              <Button onClick={handleCloseAppointment} disabled={submitting}>
+            <DialogActions sx={{ p: 3, pt: 0, justifyContent: 'center', gap: 2 }}>
+              <Button onClick={handleCloseAppointment} disabled={submitting} variant="outlined" color="primary" sx={{ borderRadius: 99, fontWeight: 600, px: 4, py: 1.5 }}>
                 Hủy
               </Button>
               <Button
                 onClick={handleSubmit}
                 variant="contained"
                 disabled={submitting}
-                startIcon={
-                  submitting ? <CircularProgress size={20} /> : undefined
-                }
+                startIcon={submitting ? <CircularProgress size={20} /> : undefined}
+                sx={{
+                  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                  color: '#fff',
+                  borderRadius: 99,
+                  fontWeight: 600,
+                  px: 4,
+                  py: 1.5,
+                  boxShadow: '0 4px 16px rgba(74,144,226,0.10)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                    opacity: 0.92,
+                  },
+                }}
               >
                 {submitting ? 'Đang xử lý...' : 'Đặt lịch'}
               </Button>

@@ -10,8 +10,6 @@ import {
   Typography,
   Card,
   CardMedia,
-  Breadcrumbs,
-  Link,
   Avatar,
   Chip,
   Skeleton,
@@ -19,7 +17,6 @@ import {
   Button,
   Divider
 } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import PersonIcon from '@mui/icons-material/Person';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -107,6 +104,12 @@ const BlogDetailPage = () => {
       e.target.dataset.fallback = 'true';
       e.target.src = '/img/blog/default.jpg';
     }
+  };
+
+  const handleAvatarError = (e) => {
+    console.error('❌ Avatar failed to load:', e.target.src);
+    console.log('🔄 Using default avatar icon');
+    e.target.style.display = 'none';
   };
 
   const getBlogStatusBadge = (status) => {
@@ -255,7 +258,7 @@ const BlogDetailPage = () => {
       py: 8
     }}>
       <Container maxWidth="md">
-        {/* Breadcrumbs */}
+        {/* Breadcrumbs
         <Breadcrumbs 
           aria-label="breadcrumb" 
           sx={{ 
@@ -297,7 +300,7 @@ const BlogDetailPage = () => {
           <Typography color="#26c6da" sx={{ fontWeight: 600 }}>
             {blog.title}
           </Typography>
-        </Breadcrumbs>
+        </Breadcrumbs> */}
 
         {/* Back Button */}
         <Button
@@ -404,6 +407,7 @@ const BlogDetailPage = () => {
               <Avatar
                 src={getAuthorAvatarUrl(blog.authorAvatar)}
                 alt={blog.authorName}
+                onError={handleAvatarError}
                 sx={{ 
                   width: 48, 
                   height: 48,

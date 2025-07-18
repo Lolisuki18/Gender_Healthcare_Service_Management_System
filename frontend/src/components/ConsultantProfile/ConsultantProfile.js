@@ -43,7 +43,7 @@ import MyReviewsContent from './MyReviewsContent';
 import MedicalHistoryContent from '../siderBar/MedicalHistoryContent';
 import InvoicesContent from '../siderBar/InvoicesContent';
 import PaymentMethodsSection from '../CustomerProfile/PaymentMethodsSection';
-import BlogMyContent from '../siderBar/BlogCustomerContent';
+import BlogCustomerContent from '../CustomerProfile/BlogCustomerContent';
 import PaymentInfoContent from '../siderBar/PaymentInfoContent';
 
 const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
@@ -122,7 +122,7 @@ const ConsultantProfile = ({ user = {} }) => {
       case 'payment-methods':
         return <PaymentMethodsSection />;
       case 'blog-customer':
-        return <BlogMyContent />;
+        return <BlogCustomerContent />;
       case 'payment-info':
         return <PaymentInfoContent />;
       default:

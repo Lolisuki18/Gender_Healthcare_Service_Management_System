@@ -73,7 +73,6 @@ import {
   formatDateTime,
   formatDateTimeFromArray,
 } from '../../utils/dateUtils.js';
-import {} from '../../dataDemo/mockStiData.js';
 import { toast } from 'react-toastify';
 import consultantService from '../../services/consultantService';
 

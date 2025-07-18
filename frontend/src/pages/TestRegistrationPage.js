@@ -13,15 +13,10 @@ import {
   Button,           // Nút bấm với nhiều style khác nhau
   Typography,       // Component hiển thị text với typography system
   CircularProgress, // Icon loading hình tròn xoay
-  Container,        // Container có max-width responsive
-  Radio,            // Nút radio để chọn 1 trong nhiều option
-  RadioGroup,       // Nhóm các radio button
-  FormControlLabel, // Label cho form control (radio, checkbox, etc.)
-  Breadcrumbs,      // Component breadcrumb navigation
-  Link,             // Component liên kết
+  Container,        // Container có max-width responsive            // Component liên kết
 } from '@mui/material';
 import { styled } from '@mui/material/styles'; // Utility để tạo styled component
-import HomeIcon from '@mui/icons-material/Home'; // Icon cho breadcrumb
+//import HomeIcon from '@mui/icons-material/Home'; // Icon cho breadcrumb
 
 // ===== IMPORT CÁC SERVICE API =====
 import stiService from '@/services/stiService'; // Service gọi API liên quan đến xét nghiệm STI
@@ -1028,7 +1023,7 @@ function TestRegistrationPage() {
       
       {/* Container chính chứa nội dung */}
       <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1, py: { xs: 6, md: 8 } }}>
-        {/* Breadcrumbs */}
+        {/* Breadcrumbs
         <Breadcrumbs 
           aria-label="breadcrumb" 
           sx={{ 
@@ -1077,7 +1072,7 @@ function TestRegistrationPage() {
           <Typography color="#26c6da" sx={{ fontWeight: 600, fontSize: '1rem' }}>
             Đăng ký xét nghiệm
           </Typography>
-        </Breadcrumbs>
+        </Breadcrumbs> */}
 
         {/* Tiêu đề trang với gradient text và thanh divider */}
         <Box sx={{ textAlign: 'center', mb: 5 }}>

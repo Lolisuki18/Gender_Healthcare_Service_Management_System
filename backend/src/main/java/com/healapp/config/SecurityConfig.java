@@ -158,13 +158,17 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/blog/my-posts").authenticated()
 
                         // ========= RATING AUTHENTICATED ENDPOINTS =========
-                        .requestMatchers(HttpMethod.POST, "/ratings/consultant/{consultantId}").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/ratings/sti-service/{serviceId}").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/ratings/sti-package/{packageId}").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/ratings/consultant/{consultantId}")
+                        .hasAnyRole("CUSTOMER", "STAFF", "CONSULTANT")
+                        .requestMatchers(HttpMethod.POST, "/ratings/sti-service/{serviceId}")
+                        .hasAnyRole("CUSTOMER", "STAFF", "CONSULTANT")
+                        .requestMatchers(HttpMethod.POST, "/ratings/sti-package/{packageId}")
+                        .hasAnyRole("CUSTOMER", "STAFF", "CONSULTANT")
                         .requestMatchers(HttpMethod.PUT, "/ratings/{ratingId}").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/ratings/{ratingId}").authenticated()
                         .requestMatchers(HttpMethod.GET, "/ratings/my-ratings").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/ratings/can-rate/{targetType}/{targetId}").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/ratings/can-rate/{targetType}/{targetId}")
+                        .hasAnyRole("CUSTOMER", "STAFF", "CONSULTANT")
 
                         // ========= QUESTION AUTHENTICATED ENDPOINTS =========
                         .requestMatchers(HttpMethod.POST, "/questions").authenticated()

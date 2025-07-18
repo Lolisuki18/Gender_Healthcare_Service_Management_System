@@ -20,15 +20,12 @@ import {
   Paper,
   Avatar,
   Stack,
-  Breadcrumbs,
-  Link,
   TextField,
   InputAdornment,
 } from '@mui/material';
 // Icon từ MUI
 import CheckIcon from '@mui/icons-material/Check';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import HomeIcon from '@mui/icons-material/Home';
 import SearchIcon from '@mui/icons-material/Search';
 // React Router
 import { useNavigate } from 'react-router-dom';
@@ -275,7 +272,7 @@ export default function StiDetailPage() {
         }}
       />
       <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1, py: { xs: 6, md: 10 } }}>
-        {/* Breadcrumbs */}
+        {/* Breadcrumbs
         <Breadcrumbs 
           aria-label="breadcrumb" 
           sx={{ 
@@ -324,7 +321,7 @@ export default function StiDetailPage() {
           <Typography color="#26c6da" sx={{ fontWeight: 600, fontSize: '1rem' }}>
             Chi tiết
           </Typography>
-        </Breadcrumbs>
+        </Breadcrumbs> */}
 
         {/* --- Nút quay lại --- */}
         <Fade in={loaded} timeout={600}>
