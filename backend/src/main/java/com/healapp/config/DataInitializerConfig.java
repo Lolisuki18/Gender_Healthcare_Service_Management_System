@@ -6,44 +6,42 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import com.healapp.model.CategoryQuestion;
-import com.healapp.model.UserDtls;
-import com.healapp.model.STIPackage;
-import com.healapp.model.STIService;
-import com.healapp.model.Question;
-import com.healapp.model.Rating;
-import com.healapp.model.ConsultantProfile;
-import com.healapp.model.ServiceTestComponent;
-import com.healapp.repository.CategoryQuestionRepository;
-import com.healapp.repository.UserRepository;
-import com.healapp.repository.STIPackageRepository;
-import com.healapp.repository.STIServiceRepository;
-import com.healapp.repository.QuestionRepository;
-import com.healapp.repository.RatingRepository;
-import com.healapp.repository.ConsultantProfileRepository;
-import com.healapp.repository.ServiceTestComponentRepository;
-import com.healapp.repository.CategoryRepository;
-import com.healapp.repository.RoleRepository;
-import com.healapp.model.Category;
-import com.healapp.model.Payment;
-import com.healapp.model.STITest;
-
-import com.healapp.model.PaymentInfo;
-import com.healapp.model.Role;
-import com.healapp.repository.PaymentRepository;
-import com.healapp.repository.STITestRepository;
-import com.healapp.repository.PaymentInfoRepository;
-
-import com.healapp.repository.MenstrualCycleRepository;
-import com.healapp.model.Consultation;
-import com.healapp.model.RatingSummary;
-import com.healapp.repository.ConsultationRepository;
-import com.healapp.repository.RatingSummaryRepository;
 import com.healapp.model.BlogPost;
 import com.healapp.model.BlogPostStatus;
-import com.healapp.repository.BlogPostRepository;
+import com.healapp.model.Category;
+import com.healapp.model.CategoryQuestion;
+import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Consultation;
 import com.healapp.model.PackageService;
+import com.healapp.model.Payment;
+import com.healapp.model.PaymentInfo;
+import com.healapp.model.Question;
+import com.healapp.model.Rating;
+import com.healapp.model.RatingSummary;
+import com.healapp.model.Role;
+import com.healapp.model.STIPackage;
+import com.healapp.model.STIService;
+import com.healapp.model.STITest;
+import com.healapp.model.ServiceTestComponent;
+import com.healapp.model.UserDtls;
+import com.healapp.repository.BlogPostRepository;
+import com.healapp.repository.CategoryQuestionRepository;
+import com.healapp.repository.CategoryRepository;
+import com.healapp.repository.ConsultantProfileRepository;
+import com.healapp.repository.ConsultationRepository;
+import com.healapp.repository.MenstrualCycleRepository;
 import com.healapp.repository.PackageServiceRepository;
+import com.healapp.repository.PaymentInfoRepository;
+import com.healapp.repository.PaymentRepository;
+import com.healapp.repository.QuestionRepository;
+import com.healapp.repository.RatingRepository;
+import com.healapp.repository.RatingSummaryRepository;
+import com.healapp.repository.RoleRepository;
+import com.healapp.repository.STIPackageRepository;
+import com.healapp.repository.STIServiceRepository;
+import com.healapp.repository.STITestRepository;
+import com.healapp.repository.ServiceTestComponentRepository;
+import com.healapp.repository.UserRepository;
 
 @Component
 public class DataInitializerConfig implements CommandLineRunner {
@@ -828,14 +826,6 @@ public class DataInitializerConfig implements CommandLineRunner {
     }
 
     private void createBlogPostsAndSectionsIfNotExists() {
-        // Chỉ giữ lại insert dữ liệu mẫu cho các bảng chính
-        // roles, user, categories, category_questions, blog_posts, consultant_profiles,
-        // payments, sti_services, sti_packages, questions, ratings, notifications,
-        // notification_preference, consultations, payment_info, sti_tests,
-        // test_results, rating_summary
-        // Xoá logic insert cho các bảng phụ
-        // (1) Đã có logic roles, user, categories, category_questions ở đầu hàm run
-        // (2) BLOG_POSTS
         if (blogPostRepository.count() < 5 && userRepository.count() > 0 && categoryRepository.count() > 0) {
             for (int i = (int) blogPostRepository.count(); i < 5; i++) {
                 BlogPost post = new BlogPost();
