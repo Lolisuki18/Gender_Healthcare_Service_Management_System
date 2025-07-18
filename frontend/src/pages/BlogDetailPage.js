@@ -109,6 +109,12 @@ const BlogDetailPage = () => {
     }
   };
 
+  const handleAvatarError = (e) => {
+    console.error('❌ Avatar failed to load:', e.target.src);
+    console.log('🔄 Using default avatar icon');
+    e.target.style.display = 'none';
+  };
+
   const getBlogStatusBadge = (status) => {
     const statusMap = {
       'CONFIRMED': { text: 'Đã duyệt', color: 'success' },
@@ -404,6 +410,7 @@ const BlogDetailPage = () => {
               <Avatar
                 src={getAuthorAvatarUrl(blog.authorAvatar)}
                 alt={blog.authorName}
+                onError={handleAvatarError}
                 sx={{ 
                   width: 48, 
                   height: 48,

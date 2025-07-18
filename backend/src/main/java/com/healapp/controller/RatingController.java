@@ -48,7 +48,7 @@ public class RatingController {
      * Đánh giá consultant
      */
     @PostMapping("/consultant/{consultantId}")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasAnyRole('ROLE_CUSTOMER', 'ROLE_STAFF', 'ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<RatingResponse>> rateConsultant(
             @PathVariable Long consultantId,
             @Valid @RequestBody CreateRatingRequest request) {
@@ -82,7 +82,7 @@ public class RatingController {
      * Đánh giá STI service
      */
     @PostMapping("/sti-service/{serviceId}")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasAnyRole('ROLE_CUSTOMER', 'ROLE_STAFF', 'ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<RatingResponse>> rateSTIService(
             @PathVariable Long serviceId,
             @Valid @RequestBody CreateRatingRequest request) {
@@ -116,7 +116,7 @@ public class RatingController {
      * Đánh giá STI package
      */
     @PostMapping("/sti-package/{packageId}")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasAnyRole('ROLE_CUSTOMER', 'ROLE_STAFF', 'ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<RatingResponse>> rateSTIPackage(
             @PathVariable Long packageId,
             @Valid @RequestBody CreateRatingRequest request) {
@@ -247,7 +247,7 @@ public class RatingController {
      * Kiểm tra có thể đánh giá không
      */
     @GetMapping("/can-rate/{targetType}/{targetId}")
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasAnyRole('ROLE_CUSTOMER', 'ROLE_STAFF', 'ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> canRate(
             @PathVariable String targetType,
             @PathVariable Long targetId) {
