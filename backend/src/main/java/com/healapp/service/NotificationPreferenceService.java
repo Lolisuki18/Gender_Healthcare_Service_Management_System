@@ -31,6 +31,10 @@ public class NotificationPreferenceService {
     @Autowired
     private NotificationPreferenceRepository notificationPreferenceRepo;
 
+    public NotificationPreference save(NotificationPreference notificationPreference) {
+        return notificationPreferenceRepo.save(notificationPreference);
+    }
+
     public ApiResponse<List<NotificationPreference>> getUserNotificationPreferences() {
         try {
             // Kiểm tra người dùng đã đăng nhập

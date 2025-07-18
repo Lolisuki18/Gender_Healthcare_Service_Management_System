@@ -23,9 +23,12 @@ import com.healapp.config.JwtTokenProvider;
 import com.healapp.dto.OAuthUserInfo;
 import com.healapp.model.AuthProvider;
 import com.healapp.model.Gender;
+import com.healapp.model.NotificationPreference;
+import com.healapp.model.NotificationType;
 import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.service.GoogleOAuthService;
+import com.healapp.service.NotificationPreferenceService;
 import com.healapp.service.RoleService;
 import com.healapp.service.UserService;
 
@@ -53,6 +56,9 @@ public class OAuthController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private NotificationPreferenceService notificationPreferenceService;
 
     @PostMapping("/google/login")
     public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> request) {
@@ -113,6 +119,26 @@ public class OAuthController {
                         user.setRole(userRole);
                         
                         user = userService.saveUser(user);
+
+                        // Create notification preference for the user
+                        NotificationPreference ovulationNotification = new NotificationPreference();
+                        ovulationNotification.setUser(user);
+                        ovulationNotification.setType(NotificationType.OVULATION);
+                        ovulationNotification.setEnabled(true);
+                        notificationPreferenceService.save(ovulationNotification);
+
+                        NotificationPreference pregnancyNotification = new NotificationPreference();
+                        pregnancyNotification.setUser(user);
+                        pregnancyNotification.setType(NotificationType.PREGNANCY_PROBABILITY);
+                        pregnancyNotification.setEnabled(true);
+                        notificationPreferenceService.save(pregnancyNotification);
+
+                        NotificationPreference pillReminderNotification = new NotificationPreference();
+                        pillReminderNotification.setUser(user);
+                        pillReminderNotification.setType(NotificationType.PILL_REMINDER);
+                        pillReminderNotification.setEnabled(true);
+                        notificationPreferenceService.save(pillReminderNotification);
+                        
                     } catch (Exception userCreationException) {
                         logger.error("Error creating new OAuth user: {}", userCreationException.getMessage(), userCreationException);
                         throw new RuntimeException("Failed to create OAuth user: " + userCreationException.getMessage(), userCreationException);

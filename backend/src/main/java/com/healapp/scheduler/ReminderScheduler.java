@@ -9,7 +9,7 @@ import com.healapp.service.ControlPillsService;
 
 @Component
 public class ReminderScheduler {
-
+  //
     @Autowired
     private NotificationService notificationService;
 
@@ -18,13 +18,13 @@ public class ReminderScheduler {
 
     // Lịch trình gửi thông báo nhắc nhở ngày rụng trứng
     // @Scheduled(cron = "0 0 7 * * ?") // Chạy lúc 7:00 AM mỗi ngày
-    // @Scheduled(cron = "0 */1 * * * *") // For testing: every 5 minute
+//    @Scheduled(cron = "0 */1 * * * *") // For testing: every 1 minute
     public void sendOvulationReminder() {
         notificationService.sendOvulationNotification();
     }
 
     // @Scheduled(cron = "0 30 7 * * ?") // Chạy lúc 7:30 AM mỗi ngày
-    // @Scheduled(cron = "0 */5 * * * *") // For testing: every 5 minute
+    //  @Scheduled(cron = "0 */1 * * * *") // For testing: every 1 minute
     public void sendPregnancyReminder() {
         notificationService.sendPregnancyProbNotification();
     }
