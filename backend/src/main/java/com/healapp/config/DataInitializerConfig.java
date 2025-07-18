@@ -2,7 +2,6 @@ package com.healapp.config;
 
 import java.time.LocalDateTime;
 
-
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -43,7 +42,6 @@ import com.healapp.repository.RatingSummaryRepository;
 import com.healapp.model.BlogPost;
 import com.healapp.model.BlogPostStatus;
 import com.healapp.repository.BlogPostRepository;
-
 
 @Component
 public class DataInitializerConfig implements CommandLineRunner {
@@ -217,32 +215,32 @@ public class DataInitializerConfig implements CommandLineRunner {
         // CATEGORIES
         createCategoriesIfNotExists();
 
-        // BLOG_POSTS
-        createBlogPostsAndSectionsIfNotExists();
+        // // BLOG_POSTS
+        // createBlogPostsAndSectionsIfNotExists();
 
         // CONSULTANT_PROFILES
         createConsultantProfilesIfNotExists();
 
-        // CONSULTATIONS
-        createConsultationsIfNotExists();
+        // // CONSULTATIONS
+        // createConsultationsIfNotExists();
 
-        // MENSTRUAL_CYCLE
-        createMenstrualCyclesIfNotExists();
+        // // MENSTRUAL_CYCLE
+        // createMenstrualCyclesIfNotExists();
 
         // PAYMENT_INFO
         createPaymentInfosIfNotExists();
 
         // PAYMENTS
-        createPaymentsIfNotExists();
+        // createPaymentsIfNotExists();
 
         // QUESTIONS
-        createQuestionsIfNotExists();
+        // createQuestionsIfNotExists();
 
         // RATING_SUMMARY
-        createRatingSummariesIfNotExists();
+        // createRatingSummariesIfNotExists();
 
         // RATINGS
-        createRatingsIfNotExists();
+        // createRatingsIfNotExists();
 
         // SERVICE_TEST_COMPONENTS
         createServiceTestComponentsIfNotExists();
@@ -254,7 +252,7 @@ public class DataInitializerConfig implements CommandLineRunner {
         createSTIServicesIfNotExists();
 
         // STI_TESTS
-        createSTITestsIfNotExists();
+        // createSTITestsIfNotExists();
 
         System.out.println("Sample data for selected main tables created if not exists.");
     }
@@ -286,53 +284,253 @@ public class DataInitializerConfig implements CommandLineRunner {
 
     private void createSTIServicesIfNotExists() {
         if (stiServiceRepository.count() == 0) {
-            STIService s1 = new STIService();
-            s1.setName("Xét nghiệm HIV");
-            s1.setDescription("Dịch vụ xét nghiệm HIV");
-            s1.setPrice(new java.math.BigDecimal("500000"));
-            s1.setIsActive(true);
-            s1.setCreatedAt(java.time.LocalDateTime.now());
-            s1.setUpdatedAt(java.time.LocalDateTime.now());
-            stiServiceRepository.save(s1);
+            // HIV Testing Service
+            STIService hivService = new STIService();
+            hivService.setName("Xét nghiệm HIV");
+            hivService.setDescription(
+                    "Dịch vụ xét nghiệm HIV bao gồm test nhanh và test ELISA để phát hiện kháng thể HIV trong máu");
+            hivService.setPrice(new java.math.BigDecimal("500000"));
+            hivService.setIsActive(true);
+            hivService.setCreatedAt(java.time.LocalDateTime.now());
+            hivService.setUpdatedAt(java.time.LocalDateTime.now());
+            stiServiceRepository.save(hivService);
 
-            STIService s2 = new STIService();
-            s2.setName("Xét nghiệm HPV");
-            s2.setDescription("Dịch vụ xét nghiệm HPV");
-            s2.setPrice(new java.math.BigDecimal("400000"));
-            s2.setIsActive(true);
-            s2.setCreatedAt(java.time.LocalDateTime.now());
-            s2.setUpdatedAt(java.time.LocalDateTime.now());
-            stiServiceRepository.save(s2);
+            // HPV Testing Service
+            STIService hpvService = new STIService();
+            hpvService.setName("Xét nghiệm HPV");
+            hpvService
+                    .setDescription("Xét nghiệm HPV (Human Papillomavirus) để phát hiện virus gây ung thư cổ tử cung");
+            hpvService.setPrice(new java.math.BigDecimal("400000"));
+            hpvService.setIsActive(true);
+            hpvService.setCreatedAt(java.time.LocalDateTime.now());
+            hpvService.setUpdatedAt(java.time.LocalDateTime.now());
+            stiServiceRepository.save(hpvService);
+
+            // Syphilis Testing Service
+            STIService syphilisService = new STIService();
+            syphilisService.setName("Xét nghiệm giang mai (Syphilis)");
+            syphilisService.setDescription("Xét nghiệm phát hiện vi khuẩn Treponema pallidum gây bệnh giang mai");
+            syphilisService.setPrice(new java.math.BigDecimal("350000"));
+            syphilisService.setIsActive(true);
+            syphilisService.setCreatedAt(java.time.LocalDateTime.now());
+            syphilisService.setUpdatedAt(java.time.LocalDateTime.now());
+            stiServiceRepository.save(syphilisService);
+
+            // Hepatitis B Testing Service
+            STIService hepatitisBService = new STIService();
+            hepatitisBService.setName("Xét nghiệm Viêm gan B");
+            hepatitisBService.setDescription("Xét nghiệm HBsAg và các marker khác để phát hiện virus viêm gan B");
+            hepatitisBService.setPrice(new java.math.BigDecimal("300000"));
+            hepatitisBService.setIsActive(true);
+            hepatitisBService.setCreatedAt(java.time.LocalDateTime.now());
+            hepatitisBService.setUpdatedAt(java.time.LocalDateTime.now());
+            stiServiceRepository.save(hepatitisBService);
+
+            // Gonorrhea Testing Service
+            STIService gonorrheaService = new STIService();
+            gonorrheaService.setName("Xét nghiệm lậu (Gonorrhea)");
+            gonorrheaService.setDescription("Xét nghiệm PCR để phát hiện vi khuẩn Neisseria gonorrhoeae gây bệnh lậu");
+            gonorrheaService.setPrice(new java.math.BigDecimal("450000"));
+            gonorrheaService.setIsActive(true);
+            gonorrheaService.setCreatedAt(java.time.LocalDateTime.now());
+            gonorrheaService.setUpdatedAt(java.time.LocalDateTime.now());
+            stiServiceRepository.save(gonorrheaService);
+
+            // Chlamydia Testing Service
+            STIService chlamydiaService = new STIService();
+            chlamydiaService.setName("Xét nghiệm Chlamydia");
+            chlamydiaService.setDescription("Xét nghiệm PCR để phát hiện vi khuẩn Chlamydia trachomatis");
+            chlamydiaService.setPrice(new java.math.BigDecimal("420000"));
+            chlamydiaService.setIsActive(true);
+            chlamydiaService.setCreatedAt(java.time.LocalDateTime.now());
+            chlamydiaService.setUpdatedAt(java.time.LocalDateTime.now());
+            stiServiceRepository.save(chlamydiaService);
         }
     }
 
     private void createSTIPackagesIfNotExists() {
         if (stiPackageRepository.count() == 0) {
-            STIPackage p1 = new STIPackage();
-            p1.setPackageName("Gói xét nghiệm tổng quát");
-            p1.setDescription("Bao gồm nhiều dịch vụ xét nghiệm tổng quát");
-            p1.setPackagePrice(new java.math.BigDecimal("1200000"));
-            p1.setIsActive(true);
-            p1.setCreatedAt(java.time.LocalDateTime.now());
-            p1.setUpdatedAt(java.time.LocalDateTime.now());
-            stiPackageRepository.save(p1);
+            // Comprehensive STI Package
+            STIPackage comprehensivePackage = new STIPackage();
+            comprehensivePackage.setPackageName("Gói xét nghiệm STI toàn diện");
+            comprehensivePackage.setDescription(
+                    "Gói xét nghiệm bao gồm tất cả các xét nghiệm STI cơ bản: HIV, HPV, Syphilis, Hepatitis B, Gonorrhea, Chlamydia");
+            comprehensivePackage.setPackagePrice(new java.math.BigDecimal("2000000"));
+            comprehensivePackage.setIsActive(true);
+            comprehensivePackage.setCreatedAt(java.time.LocalDateTime.now());
+            comprehensivePackage.setUpdatedAt(java.time.LocalDateTime.now());
+            stiPackageRepository.save(comprehensivePackage);
+
+            // Basic STI Package
+            STIPackage basicPackage = new STIPackage();
+            basicPackage.setPackageName("Gói xét nghiệm STI cơ bản");
+            basicPackage.setDescription("Gói xét nghiệm bao gồm các STI phổ biến: HIV, Syphilis, Hepatitis B");
+            basicPackage.setPackagePrice(new java.math.BigDecimal("1200000"));
+            basicPackage.setIsActive(true);
+            basicPackage.setCreatedAt(java.time.LocalDateTime.now());
+            basicPackage.setUpdatedAt(java.time.LocalDateTime.now());
+            stiPackageRepository.save(basicPackage);
+
+            // Women's STI Package
+            STIPackage womensPackage = new STIPackage();
+            womensPackage.setPackageName("Gói xét nghiệm STI cho phụ nữ");
+            womensPackage.setDescription("Gói xét nghiệm chuyên biệt cho phụ nữ: HPV, Chlamydia, Gonorrhea, HIV");
+            womensPackage.setPackagePrice(new java.math.BigDecimal("1500000"));
+            womensPackage.setIsActive(true);
+            womensPackage.setCreatedAt(java.time.LocalDateTime.now());
+            womensPackage.setUpdatedAt(java.time.LocalDateTime.now());
+            stiPackageRepository.save(womensPackage);
+
+            // Quick STI Package
+            STIPackage quickPackage = new STIPackage();
+            quickPackage.setPackageName("Gói xét nghiệm STI nhanh");
+            quickPackage.setDescription("Gói xét nghiệm nhanh cho những người cần kết quả trong ngày: HIV, Syphilis");
+            quickPackage.setPackagePrice(new java.math.BigDecimal("800000"));
+            quickPackage.setIsActive(true);
+            quickPackage.setCreatedAt(java.time.LocalDateTime.now());
+            quickPackage.setUpdatedAt(java.time.LocalDateTime.now());
+            stiPackageRepository.save(quickPackage);
+
+            // Annual STI Package
+            STIPackage annualPackage = new STIPackage();
+            annualPackage.setPackageName("Gói xét nghiệm STI hàng năm");
+            annualPackage.setDescription("Gói xét nghiệm định kỳ hàng năm bao gồm tất cả các STI và tư vấn sức khỏe");
+            annualPackage.setPackagePrice(new java.math.BigDecimal("2500000"));
+            annualPackage.setIsActive(true);
+            annualPackage.setCreatedAt(java.time.LocalDateTime.now());
+            annualPackage.setUpdatedAt(java.time.LocalDateTime.now());
+            stiPackageRepository.save(annualPackage);
         }
     }
 
     private void createServiceTestComponentsIfNotExists() {
         if (serviceTestComponentRepository.count() == 0 && stiServiceRepository.count() > 0) {
-            STIService service = stiServiceRepository.findAll().get(0);
-            ServiceTestComponent c1 = new ServiceTestComponent();
-            c1.setStiService(service);
-            c1.setTestName("Kháng thể HIV");
-            c1.setUnit("ng/mL");
-            c1.setReferenceRange("0-1");
-            c1.setInterpretation("Âm tính nếu <1");
-            c1.setSampleType("Máu");
-            c1.setIsActive(true);
-            c1.setCreatedAt(java.time.LocalDateTime.now());
-            c1.setUpdatedAt(java.time.LocalDateTime.now());
-            serviceTestComponentRepository.save(c1);
+            // Lấy các STI services đã tạo
+            java.util.List<STIService> services = stiServiceRepository.findAll();
+
+            // Tạo test components cho HIV Service
+            if (services.size() > 0) {
+                STIService hivService = services.get(0); // Service đầu tiên là HIV
+
+                // HIV Antibody Test
+                ServiceTestComponent hivAntibody = new ServiceTestComponent();
+                hivAntibody.setStiService(hivService);
+                hivAntibody.setTestName("Kháng thể HIV (Anti-HIV)");
+                hivAntibody.setUnit("COI");
+                hivAntibody.setReferenceRange("< 1.0");
+                hivAntibody.setInterpretation("Âm tính: < 1.0 COI, Dương tính: ≥ 1.0 COI");
+                hivAntibody.setSampleType("Máu tĩnh mạch");
+                hivAntibody.setIsActive(true);
+                hivAntibody.setCreatedAt(java.time.LocalDateTime.now());
+                hivAntibody.setUpdatedAt(java.time.LocalDateTime.now());
+                serviceTestComponentRepository.save(hivAntibody);
+
+                // HIV Antigen Test
+                ServiceTestComponent hivAntigen = new ServiceTestComponent();
+                hivAntigen.setStiService(hivService);
+                hivAntigen.setTestName("Kháng nguyên HIV p24");
+                hivAntigen.setUnit("pg/mL");
+                hivAntigen.setReferenceRange("< 5.0");
+                hivAntigen.setInterpretation("Âm tính: < 5.0 pg/mL, Dương tính: ≥ 5.0 pg/mL");
+                hivAntigen.setSampleType("Máu tĩnh mạch");
+                hivAntigen.setIsActive(true);
+                hivAntigen.setCreatedAt(java.time.LocalDateTime.now());
+                hivAntigen.setUpdatedAt(java.time.LocalDateTime.now());
+                serviceTestComponentRepository.save(hivAntigen);
+            }
+
+            // Tạo test components cho HPV Service
+            if (services.size() > 1) {
+                STIService hpvService = services.get(1); // Service thứ hai là HPV
+
+                // HPV DNA Test
+                ServiceTestComponent hpvDna = new ServiceTestComponent();
+                hpvDna.setStiService(hpvService);
+                hpvDna.setTestName("HPV DNA (High-risk types)");
+                hpvDna.setUnit("Copies/mL");
+                hpvDna.setReferenceRange("Không phát hiện");
+                hpvDna.setInterpretation("Âm tính: Không phát hiện HPV, Dương tính: Phát hiện HPV");
+                hpvDna.setSampleType("Dịch cổ tử cung");
+                hpvDna.setIsActive(true);
+                hpvDna.setCreatedAt(java.time.LocalDateTime.now());
+                hpvDna.setUpdatedAt(java.time.LocalDateTime.now());
+                serviceTestComponentRepository.save(hpvDna);
+
+                // HPV Genotyping
+                ServiceTestComponent hpvGenotype = new ServiceTestComponent();
+                hpvGenotype.setStiService(hpvService);
+                hpvGenotype.setTestName("HPV Genotyping (16, 18, 31, 33, 45, 52, 58)");
+                hpvGenotype.setUnit("Định tính");
+                hpvGenotype.setReferenceRange("Âm tính");
+                hpvGenotype.setInterpretation("Âm tính: Không phát hiện, Dương tính: Xác định type HPV");
+                hpvGenotype.setSampleType("Dịch cổ tử cung");
+                hpvGenotype.setIsActive(true);
+                hpvGenotype.setCreatedAt(java.time.LocalDateTime.now());
+                hpvGenotype.setUpdatedAt(java.time.LocalDateTime.now());
+                serviceTestComponentRepository.save(hpvGenotype);
+            }
+
+            // Tạo test components cho Syphilis Service
+            if (services.size() > 2) {
+                STIService syphilisService = services.get(2); // Service thứ ba là Syphilis
+
+                // Syphilis VDRL Test
+                ServiceTestComponent syphilisVdrl = new ServiceTestComponent();
+                syphilisVdrl.setStiService(syphilisService);
+                syphilisVdrl.setTestName("VDRL (Venereal Disease Research Laboratory)");
+                syphilisVdrl.setUnit("Titer");
+                syphilisVdrl.setReferenceRange("Non-reactive");
+                syphilisVdrl.setInterpretation("Non-reactive: Âm tính, Reactive: Dương tính (cần xác nhận)");
+                syphilisVdrl.setSampleType("Máu tĩnh mạch");
+                syphilisVdrl.setIsActive(true);
+                syphilisVdrl.setCreatedAt(java.time.LocalDateTime.now());
+                syphilisVdrl.setUpdatedAt(java.time.LocalDateTime.now());
+                serviceTestComponentRepository.save(syphilisVdrl);
+
+                // Syphilis TPHA Test
+                ServiceTestComponent syphilisTpha = new ServiceTestComponent();
+                syphilisTpha.setStiService(syphilisService);
+                syphilisTpha.setTestName("TPHA (Treponema pallidum Hemagglutination)");
+                syphilisTpha.setUnit("Titer");
+                syphilisTpha.setReferenceRange("Non-reactive");
+                syphilisTpha.setInterpretation("Non-reactive: Âm tính, Reactive: Dương tính (xác nhận nhiễm)");
+                syphilisTpha.setSampleType("Máu tĩnh mạch");
+                syphilisTpha.setIsActive(true);
+                syphilisTpha.setCreatedAt(java.time.LocalDateTime.now());
+                syphilisTpha.setUpdatedAt(java.time.LocalDateTime.now());
+                serviceTestComponentRepository.save(syphilisTpha);
+            }
+
+            // Tạo test components cho Hepatitis B Service
+            if (services.size() > 3) {
+                STIService hepatitisBService = services.get(3); // Service thứ tư là Hepatitis B
+
+                // HBsAg Test
+                ServiceTestComponent hbsAg = new ServiceTestComponent();
+                hbsAg.setStiService(hepatitisBService);
+                hbsAg.setTestName("HBsAg (Hepatitis B Surface Antigen)");
+                hbsAg.setUnit("COI");
+                hbsAg.setReferenceRange("< 1.0");
+                hbsAg.setInterpretation("Âm tính: < 1.0 COI, Dương tính: ≥ 1.0 COI");
+                hbsAg.setSampleType("Máu tĩnh mạch");
+                hbsAg.setIsActive(true);
+                hbsAg.setCreatedAt(java.time.LocalDateTime.now());
+                hbsAg.setUpdatedAt(java.time.LocalDateTime.now());
+                serviceTestComponentRepository.save(hbsAg);
+
+                // Anti-HBs Test
+                ServiceTestComponent antiHbs = new ServiceTestComponent();
+                antiHbs.setStiService(hepatitisBService);
+                antiHbs.setTestName("Anti-HBs (Hepatitis B Surface Antibody)");
+                antiHbs.setUnit("mIU/mL");
+                antiHbs.setReferenceRange("≥ 10.0");
+                antiHbs.setInterpretation("< 10.0: Không miễn dịch, ≥ 10.0: Có miễn dịch");
+                antiHbs.setSampleType("Máu tĩnh mạch");
+                antiHbs.setIsActive(true);
+                antiHbs.setCreatedAt(java.time.LocalDateTime.now());
+                antiHbs.setUpdatedAt(java.time.LocalDateTime.now());
+                serviceTestComponentRepository.save(antiHbs);
+            }
         }
     }
 
