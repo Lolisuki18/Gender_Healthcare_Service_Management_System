@@ -46,6 +46,7 @@ public class PillLogs {
     private Boolean status;
     
 
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

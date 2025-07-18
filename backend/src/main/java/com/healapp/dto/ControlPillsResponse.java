@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import com.healapp.model.PillType;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,7 +22,7 @@ public class ControlPillsResponse {
     private int numberDaysOff;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private Boolean placebo;
+    private PillType pillType;
     
       
 

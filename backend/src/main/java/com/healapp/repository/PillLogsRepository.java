@@ -27,6 +27,10 @@ public interface PillLogsRepository extends JpaRepository<PillLogs, Long>{
 
     List<PillLogs> findByControlPills(ControlPills controlPills);
 
+    List<PillLogs> findByControlPillsAndStatus(ControlPills controlPills, Boolean status);
+
+    Optional<PillLogs> findTopByControlPillsOrderByLogDateDesc(ControlPills controlPills);
+
     @Modifying
     @Transactional
     void deleteByControlPills(ControlPills controlPills);

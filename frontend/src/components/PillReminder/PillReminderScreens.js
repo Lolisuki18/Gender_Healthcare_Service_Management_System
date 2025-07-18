@@ -10,7 +10,7 @@ export function PillReminderHomeScreen({ onAddSchedule, isAuthenticated }) {
       <div className={styles.container}>
         {/* Header Section */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 96, height: 96, background: '#1877f2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <div style={{ width: 96, height: 96, background: 'linear-gradient(to right, #44c0c9, #2aa4bc)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <Pill style={{ width: 48, height: 48, color: '#fff' }} />
           </div>
           <h1 style={{ fontSize: 32, fontWeight: 700, color: '#181c32', marginBottom: 8 }}>Lịch Nhắc Nhở</h1>
@@ -25,7 +25,7 @@ export function PillReminderHomeScreen({ onAddSchedule, isAuthenticated }) {
           {isAuthenticated ? (
             <button
               onClick={onAddSchedule}
-              style={{ width: '100%', background: 'linear-gradient(90deg, #e57399, #a259e6)', color: '#fff', padding: '16px 24px', borderRadius: 16, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', fontSize: 18, cursor: 'pointer', boxShadow: '0 2px 8px rgba(162,89,230,0.10)' }}
+              style={{ width: '100%', background: 'linear-gradient(to right, #44c0c9, #2aa4bc)', color: '#fff', padding: '16px 24px', borderRadius: 16, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', fontSize: 18, cursor: 'pointer', boxShadow: '0 2px 8px rgba(162,89,230,0.10)' }}
             >
               <Plus style={{ width: 20, height: 20 }} />
               Thêm lịch uống thuốc
@@ -99,107 +99,129 @@ export function PillReminderHomeScreen({ onAddSchedule, isAuthenticated }) {
 
 export function PillReminderFormScreen({ formData, onFormChange, onFormSubmit, onBackClick, isEditing }) {
   return (
-    <div className={styles.pageBg}>
-      <div className={styles.formCard}>
-        <div className={styles.formHeader}>
-          <div className={styles.formIcon}><Calendar size={28} /></div>
-          <div>
-            <h2 className={styles.formTitle}>{isEditing ? 'Chỉnh sửa lịch uống thuốc' : 'Tạo lịch uống thuốc'}</h2>
-            <p className={styles.formSubtitle}>{isEditing ? 'Cập nhật thông tin chu kỳ của bạn' : 'Điền thông tin chu kỳ của bạn'}</p>
-          </div>
+    <div className={styles.formCard}>
+      <div className={styles.formHeader}>
+        <div className={styles.formIcon}><Calendar size={28} /></div>
+        <div>
+          <h2 className={styles.formTitle}>{isEditing ? 'Chỉnh sửa lịch uống thuốc' : 'Tạo lịch uống thuốc'}</h2>
+          <p className={styles.formSubtitle}>{isEditing ? 'Cập nhật thông tin chu kỳ của bạn' : 'Điền thông tin chu kỳ của bạn'}</p>
         </div>
-        <form onSubmit={onFormSubmit}>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Số ngày uống thuốc</label>
-            <input
-              type="number"
-              value={formData.pillDays}
-              onChange={e => onFormChange('pillDays', parseInt(e.target.value))}
-              className={styles.formInput}
-              min="1"
-              max="30"
-              required
-              aria-label="Số ngày uống thuốc"
-              placeholder="Nhập số ngày uống thuốc"
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Số ngày nghỉ</label>
-            <input
-              type="number"
-              value={formData.breakDays}
-              onChange={e => onFormChange('breakDays', parseInt(e.target.value))}
-              className={styles.formInput}
-              min="1"
-              max="14"
-              required
-              aria-label="Số ngày nghỉ"
-              placeholder="Nhập số ngày nghỉ"
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Ngày bắt đầu uống thuốc</label>
-            <input
-              type="date"
-              value={formData.startDate}
-              onChange={e => onFormChange('startDate', e.target.value)}
-              className={styles.formInput}
-              required
-              aria-label="Ngày bắt đầu uống thuốc"
-              placeholder="Chọn ngày bắt đầu"
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}><Clock size={18} style={{ marginRight: 4, verticalAlign: 'middle' }} /> Thời gian nhắc nhở</label>
-            <input
-              type="time"
-              value={formData.reminderTime}
-              onChange={e => onFormChange('reminderTime', e.target.value)}
-              className={styles.formInput}
-              required
-              aria-label="Thời gian nhắc nhở"
-              placeholder="Chọn thời gian nhắc nhở"
-            />
-          </div>
-          <div className={styles.formGroup} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 12 }}>
-            <input
-              type="checkbox"
-              id="placebo"
-              checked={formData.placebo}
-              onChange={e => onFormChange('placebo', e.target.checked)}
-              className={styles.checkboxInput}
-              aria-label="Uống thuốc giả dược"
-            />
-            <label htmlFor="placebo" className={styles.checkboxLabel}><strong>Uống thuốc giả dược</strong></label>
-          </div>
-          {isEditing && (
-            <div className={styles.importantNote} style={{ marginBottom: 16 }}>
-              <div className={styles.importantIcon}>!</div>
+      </div>
+      <form onSubmit={onFormSubmit}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Ngày bắt đầu uống thuốc</label>
+          <input
+            type="date"
+            value={formData.startDate}
+            onChange={e => onFormChange('startDate', e.target.value)}
+            className={styles.formInput}
+            required
+            aria-label="Ngày bắt đầu uống thuốc"
+            placeholder="Chọn ngày bắt đầu"
+            min={new Date().toISOString().split('T')[0]}
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}><Clock size={18} style={{ marginRight: 4, verticalAlign: 'middle' }} /> Thời gian nhắc nhở</label>
+          <input
+            type="time"
+            value={formData.reminderTime}
+            onChange={e => onFormChange('reminderTime', e.target.value)}
+            className={styles.formInput}
+            required
+            aria-label="Thời gian nhắc nhở"
+            placeholder="Chọn thời gian nhắc nhở"
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Chọn loại thuốc</label>
+          <select
+            value={formData.pillType}
+            onChange={e => {
+              const selectedPillType = e.target.value;
+              onFormChange('pillType', selectedPillType);
+              if (selectedPillType === 'TYPE_21_7') {
+                onFormChange('pillDays', 21);
+                onFormChange('breakDays', 7);
+              } else if (selectedPillType === 'TYPE_28') {
+                onFormChange('pillDays', 28);
+                onFormChange('breakDays', 0);
+              } else {
+                // onFormChange('pillDays', ''); // Reset when 'Khác' is selected
+                // onFormChange('breakDays', ''); // Reset when 'Khác' is selected
+              }
+            }}
+            className={styles.formInput}
+            required
+            aria-label="Chọn loại thuốc"
+          >
+            <option value="">-- Chọn loại thuốc --</option>
+            <option value="TYPE_21_7">Thuốc 21/7 (21 ngày uống, 7 ngày nghỉ)</option>
+            <option value="TYPE_28">Thuốc 28 viên (Uống liên tục)</option>
+            <option value="CUSTOM">Khác</option>
+          </select>
+        </div>
+
+        {formData.pillType === 'CUSTOM' && (
+          <>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Số ngày uống thuốc</label>
+              <input
+                type="number"
+                value={formData.pillDays}
+                onChange={e => onFormChange('pillDays', Number(e.target.value))}
+                className={styles.formInput}
+                min="1"
+                max="30"
+                required
+                aria-label="Số ngày uống thuốc"
+                placeholder="Nhập số ngày uống thuốc"
+              />
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Số ngày nghỉ</label>
+              <input
+                type="number"
+                value={formData.breakDays}
+                onChange={e => onFormChange('breakDays', Number(e.target.value))}
+                className={styles.formInput}
+                min="0"
+                max="14"
+                required
+                aria-label="Số ngày nghỉ"
+                placeholder="Nhập số ngày nghỉ"
+              />
+            </div>
+          </>
+        )}
+        {isEditing && (
+          <div className={styles.importantNote} style={{ marginBottom: 16 }}>
+            <div className={styles.importantIcon}>!</div>
+            <div>
+              <p className={styles.importantText} style={{ marginBottom: 4 }}>Lưu ý quan trọng</p>
               <div>
-                <p className={styles.importantText} style={{ marginBottom: 4 }}>Lưu ý quan trọng</p>
-                <div>
-                  Việc thay đổi lịch sẽ không ảnh hưởng đến các ngày đã check-in trước đó. Tuy nhiên, chu kỳ mới sẽ được áp dụng từ ngày bắt đầu mới.
-                </div>
+                Việc thay đổi lịch sẽ không ảnh hưởng đến các ngày đã check-in trước đó. Tuy nhiên, chu kỳ mới sẽ được áp dụng từ ngày bắt đầu mới.
               </div>
             </div>
-          )}
-          <div className={styles.formActions}>
-            <button
-              type="button"
-              onClick={onBackClick}
-              className={styles.btnGray}
-            >
-              {isEditing ? 'Hủy' : 'Quay lại'}
-            </button>
-            <button
-              type="submit"
-              className={styles.btnGradient}
-            >
-              {isEditing ? 'Cập nhật lịch' : 'Tạo lịch'}
-            </button>
           </div>
-        </form>
-      </div>
+        )}
+        <div className={styles.formActions}>
+          <button
+            type="button"
+            onClick={onBackClick}
+            className={styles.btnGray}
+          >
+            {isEditing ? 'Hủy' : 'Quay lại'}
+          </button>
+          <button
+            type="submit"
+            className={styles.btnGradient}
+            style={{ background: 'linear-gradient(to right, #44c0c9, #2aa4bc)' }}
+          >
+            {isEditing ? 'Cập nhật lịch' : 'Tạo lịch'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
@@ -210,6 +232,7 @@ export function PillReminderCalendarScreen({ schedule, currentMonthIndex, setCur
   const calendarData = generateCalendarData(schedule, currentMonthIndex);
   const canGoPrevious = currentMonthIndex > 0;
   const canGoNext = currentMonthIndex < 11;
+
   return (
     <div className={styles.pageBg}>
       <div className={styles.calendarCard}>
@@ -324,6 +347,9 @@ export function PillReminderConfirmModal({ showConfirmModal, selectedDayInfo, on
   if (!showConfirmModal || !selectedDayInfo) return null;
 
   const isCheckedIn = selectedDayInfo.isCheckedIn;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isFuture = selectedDayInfo.date.getTime() > today.getTime();
 
   return (
     <div className={styles.modalOverlay}>
@@ -335,9 +361,11 @@ export function PillReminderConfirmModal({ showConfirmModal, selectedDayInfo, on
         </p>
         <div className={styles.modalActions}>
           <button onClick={onCancel} className={styles.btnModalCancel}>Hủy</button>
-          <button onClick={onConfirm} className={styles.btnModalConfirm}>
-            {isCheckedIn ? <><X size={20} /> Bỏ check-in</> : <><Check size={20} /> Check-in</>}
-          </button>
+          {!isFuture && (
+            <button onClick={onConfirm} className={styles.btnModalConfirm}>
+              {isCheckedIn ? <><X size={20} /> Bỏ check-in</> : <><Check size={20} /> Check-in</>}
+            </button>
+          )}
         </div>
       </div>
     </div>

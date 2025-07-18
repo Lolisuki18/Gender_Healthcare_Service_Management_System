@@ -164,6 +164,12 @@ export const sidebarMenuConfig = [
     roles: ['CUSTOMER', 'STAFF', 'CONSULTANT'],
   },
   {
+    id: 'pill-history',
+    label: 'Lịch sử uống thuốc',
+    icon: <ScheduleIcon />,
+    roles: ['CUSTOMER'],
+  },
+  {
     id: 'invoices',
     label: 'Hóa đơn',
     icon: <PaymentIcon />,

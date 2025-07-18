@@ -148,6 +148,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/sti-services/packages").permitAll()
                         .requestMatchers(HttpMethod.GET, "/sti-services/packages/{packageId}").permitAll()
 
+                        // Pill Reminder Endpoints
+                        .requestMatchers(HttpMethod.POST,"/contraceptive").hasAnyRole("CUSTOMER", "STAFF", "CONSULTANT")
+
                         // ========= BLOG AUTHENTICATED ENDPOINTS =========
                         .requestMatchers(HttpMethod.POST, "/blog").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/blog/{postId}").authenticated()

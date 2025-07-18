@@ -48,6 +48,7 @@ import SecurityContent from '@/components/siderBar/SecurityContent';
 import PaymentMethodsSection from './PaymentMethodsSection';
 import BlogCustomerContent from '../CustomerProfile/BlogCustomerContent';
 import PaymentInfoContent from '../siderBar/PaymentInfoContent';
+import PillHistoryContent from './PillHistoryContent';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
@@ -125,6 +126,8 @@ const CustomerProfile = () => {
         return <BlogCustomerContent />;
       case 'payment-info':
         return <PaymentInfoContent />;
+      case 'pill-history':
+        return <PillHistoryContent />; // Lịch sử uống thuốc
       default:
         return <ProfileContent />; // Fallback về profile
     }

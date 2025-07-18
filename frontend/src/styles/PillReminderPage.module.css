@@ -208,6 +208,21 @@
   box-shadow: 0 6px 18px rgba(162,89,230,0.18);
 }
 
+.fullScreenFormContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(60,60,80,0.32); /* Nền mờ */
+  z-index: 999; /* Đảm bảo nó nằm trên các thành phần khác */
+  padding: 24px;
+  box-sizing: border-box;
+}
+
 .calendarCard {
   background: #fff;
   border-radius: 20px;
@@ -254,6 +269,10 @@
 .dotRed { background: #ef4444; }
 .dotGreen { background: #22c55e; }
 .dotGray { background: #a3a3a3; }
+
+.dayToday { background-color: #42A5F5; color: #fff; }
+.dayYesterday { background-color: #FFF59D; color: #333; }
+.dayTomorrow { background-color: #CE93D8; color: #fff; }
 
 .monthNavBtn {
   width: 40px;

@@ -9,6 +9,8 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -56,8 +58,9 @@ public class ControlPills {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "placebo")
-    private Boolean placebo = false;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pill_type", nullable = false)
+    private PillType pillType;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
