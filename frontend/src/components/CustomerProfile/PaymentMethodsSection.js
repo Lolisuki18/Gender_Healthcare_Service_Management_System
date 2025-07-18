@@ -122,12 +122,19 @@ const PaymentMethodsSection = () => {
       setActionLoading(true);
       let response;
 
+      // Fix CVV/CVC field mapping: frontend uses 'cvc', backend expects 'cvv'
+      const backendCardData = {
+        ...cardData,
+        cvv: cardData.cvc // Map cvc to cvv for backend
+      };
+      delete backendCardData.cvc; // Remove cvc field to avoid confusion
+
       if (editingCard) {
         // Cập nhật thẻ
-        response = await paymentInfoService.update(editingCard.id, cardData);
+        response = await paymentInfoService.update(editingCard.id, backendCardData);
       } else {
         // Tạo thẻ mới
-        response = await paymentInfoService.create(cardData);
+        response = await paymentInfoService.create(backendCardData);
       }
 
       if (response.data.success) {

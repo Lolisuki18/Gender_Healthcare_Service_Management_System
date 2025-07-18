@@ -122,10 +122,17 @@ const PaymentSection = ({
       setActionLoading(true);
       let response;
       
+      // Fix CVV/CVC field mapping: frontend uses 'cvc', backend expects 'cvv'
+      const backendCardData = {
+        ...cardData,
+        cvv: cardData.cvc // Map cvc to cvv for backend
+      };
+      delete backendCardData.cvc; // Remove cvc field to avoid confusion
+      
       if (editingCard) {
-        response = await paymentInfoService.update(editingCard.paymentInfoId, cardData);
+        response = await paymentInfoService.update(editingCard.paymentInfoId, backendCardData);
       } else {
-        response = await paymentInfoService.create(cardData);
+        response = await paymentInfoService.create(backendCardData);
       }
 
       if (response.data.success) {
@@ -319,12 +326,16 @@ const PaymentSection = ({
                             {getCardTypeIcon(card.cardNumber)}
                           </Box>
                           <Typography variant="body1" fontWeight={500}>
-                            {maskCardNumber(card.cardNumber)}
+                            {card.nickname || card.cardHolderName || 'Thẻ không tên'}
                           </Typography>
                         </Box>
 
                         <Typography variant="body2" color="text.secondary" gutterBottom>
-                          {card.cardHolderName}
+                          {maskCardNumber(card.cardNumber)}
+                        </Typography>
+
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Chủ thẻ: {card.cardHolderName}
                         </Typography>
 
                         <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -384,11 +395,11 @@ const PaymentSection = ({
                           {getCardTypeIcon(cardInfo.cardNumber)}
                         </Box>
                         <Box>
-                          <Typography variant="body2">
-                            {maskCardNumber(cardInfo.cardNumber)}
+                          <Typography variant="body2" fontWeight={500}>
+                            {cardInfo.nickname || cardInfo.cardHolderName || 'Thẻ không tên'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {cardInfo.cardHolderName}
+                            {maskCardNumber(cardInfo.cardNumber)} • {cardInfo.cardHolderName}
                           </Typography>
                         </Box>
                       </Box>

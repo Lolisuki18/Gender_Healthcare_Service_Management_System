@@ -419,6 +419,11 @@ public class STITestService {
             expiryYear = savedCard.getExpiryYear();
             cvc = savedCard.getCvv();
             cardHolderName = savedCard.getCardHolderName();
+
+            // Validate saved card data
+            if (cvc == null || cvc.trim().length() < 3) {
+                return ApiResponse.error("Invalid saved card CVC - must be 3 or 4 digits");
+            }
         } else {
             // Sử dụng thông tin thẻ mới nhập
             // Validate VISA fields

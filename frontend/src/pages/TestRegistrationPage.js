@@ -826,8 +826,9 @@ function TestRegistrationPage() {
           payload.cardNumber = cardData.cardNumber;
           payload.expiryMonth = cardData.expiryMonth;
           payload.expiryYear = cardData.expiryYear;
-          payload.cvc = cardData.cvc;
+          payload.cvc = cardData.cvv; // Fix: use cvv from response, map to cvc for payment
           payload.cardHolderName = cardData.cardHolderName;
+          payload.savedCardId = selectedCard; // Add savedCardId for backend processing
         } else {
           throw new Error('Không thể lấy thông tin thẻ thanh toán');
         }
