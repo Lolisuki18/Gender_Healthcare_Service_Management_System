@@ -194,17 +194,6 @@ export function PillReminderFormScreen({ formData, onFormChange, onFormSubmit, o
             </div>
           </>
         )}
-        {isEditing && (
-          <div className={styles.importantNote} style={{ marginBottom: 16 }}>
-            <div className={styles.importantIcon}>!</div>
-            <div>
-              <p className={styles.importantText} style={{ marginBottom: 4 }}>Lưu ý quan trọng</p>
-              <div>
-                Việc thay đổi lịch sẽ không ảnh hưởng đến các ngày đã check-in trước đó. Tuy nhiên, chu kỳ mới sẽ được áp dụng từ ngày bắt đầu mới.
-              </div>
-            </div>
-          </div>
-        )}
         <div className={styles.formActions}>
           <button
             type="button"
@@ -343,29 +332,35 @@ export function PillReminderCalendarScreen({ schedule, currentMonthIndex, setCur
   );
 }
 
-export function PillReminderConfirmModal({ showConfirmModal, selectedDayInfo, onCancel, onConfirm }) {
-  if (!showConfirmModal || !selectedDayInfo) return null;
+export function PillReminderConfirmModal({ showConfirmModal, selectedDayInfo, onCancel, onConfirm, isLoading }) {
+  if (!showConfirmModal || !selectedDayInfo) {
+    return null;
+  }
 
-  const isCheckedIn = selectedDayInfo.isCheckedIn;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const isFuture = selectedDayInfo.date.getTime() > today.getTime();
+  const { date, isCheckedIn } = selectedDayInfo;
+  const formattedDate = `Ngày ${date.getDate()}/${date.getMonth() + 1}`;
+  const message = isCheckedIn ? 'Bạn có chắc muốn hủy check-in?' : 'Xác nhận uống thuốc cho ngày này?';
+
+  let buttonText = isCheckedIn ? 'Hủy Check-in' : 'Check-in';
+  if (isLoading) {
+    buttonText = isCheckedIn ? 'Đang hủy...' : 'Đang check-in...';
+  }
+  const buttonClass = isCheckedIn ? styles.btnGray : styles.btnGradient;
 
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
-        <div className={styles.modalIcon}><Pill size={48} /></div>
-        <h3 className={styles.modalTitle}>Ngày {selectedDayInfo.date.getDate()}/{selectedDayInfo.date.getMonth() + 1}</h3>
-        <p className={styles.modalMessage}>
-          {isCheckedIn ? 'Bạn đã uống thuốc ngày này' : 'Bạn chưa uống thuốc ngày này'}
-        </p>
+        <div className={styles.modalIcon}><Pill size={36} /></div>
+        <h3 className={styles.modalTitle}>{formattedDate}</h3>
+        <p className={styles.modalMessage}>{message}</p>
         <div className={styles.modalActions}>
-          <button onClick={onCancel} className={styles.btnModalCancel}>Hủy</button>
-          {!isFuture && (
-            <button onClick={onConfirm} className={styles.btnModalConfirm}>
-              {isCheckedIn ? <><X size={20} /> Bỏ check-in</> : <><Check size={20} /> Check-in</>}
-            </button>
-          )}
+          <button onClick={onCancel} className={styles.btnGray} disabled={isLoading}>
+            Hủy
+          </button>
+          <button onClick={onConfirm} className={buttonClass} disabled={isLoading}>
+            {isLoading && <div className={styles.loader}></div>}
+            {buttonText}
+          </button>
         </div>
       </div>
     </div>
@@ -380,7 +375,7 @@ export function PillReminderDeleteConfirmModal({ showDeleteConfirmModal, onCance
       position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(60,60,80,0.32)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center'
     }}>
       <div style={{ background: '#fff', borderRadius: 24, padding: '40px 32px', minWidth: 360, boxShadow: '0 4px 32px rgba(0,0,0,0.10)', textAlign: 'center', position: 'relative' }}>
-        <div style={{ width: 72, height: 72, background: 'linear-gradient(90deg, #e57399, #a259e6)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+        <div style={{ width: 72, height: 72, background: 'linear-gradient(to right, #44c0c9, #2aa4bc)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
           <Pill style={{ width: 36, height: 36, color: '#fff' }} />
         </div>
         <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Xác nhận xóa</div>
@@ -394,9 +389,9 @@ export function PillReminderDeleteConfirmModal({ showDeleteConfirmModal, onCance
           </button>
           <button
             onClick={onConfirmDelete}
-            style={{ padding: '12px 32px', borderRadius: 12, background: 'linear-gradient(90deg, #e57399, #a259e6)', color: '#fff', border: 'none', fontSize: 18, fontWeight: 500, cursor: 'pointer', boxShadow: '0 2px 8px rgba(162,89,230,0.10)' }}
+            style={{ padding: '12px 32px', borderRadius: 12, background: 'linear-gradient(to right, #44c0c9, #2aa4bc)', color: '#fff', border: 'none', fontSize: 18, fontWeight: 500, cursor: 'pointer', boxShadow: '0 2px 8px rgba(162,89,230,0.10)' }}
           >
-            <span style={{ marginRight: 6 }}>✓</span> Xác nhận xóa
+            <span style={{ marginRight: 6 }}></span> Xác nhận xóa
           </button>
         </div>
       </div>

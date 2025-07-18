@@ -148,11 +148,15 @@ public class ControlPillsService {
             controlPills.setRemindTime(request.getRemindTime());
             controlPills.setPillType(request.getPillType());
 
-            //nếu đổi ngày bắt đầu thì xóa ccas log từ ngày đổi trở 
-            if(!newDate.equals(oldDate) ){ // If start date changes
-                pillLogsRepository.deleteLogsAfterToday(controlPillsId);
-                // Generate log for the new start date
-                generatePillLogForSpecificDate(controlPills, newDate);
+            //nếu đổi ngày bắt đầu thì xóa các log cũ và tạo lại từ đầu
+            if(!newDate.equals(oldDate) ){ 
+                pillLogsRepository.deleteByControlPills(controlPills);
+                
+                // Generate lại log cho toàn bộ chu kỳ đầu tiên (tất cả các ngày uống thuốc)
+                for (int i = 0; i < controlPills.getNumberDaysDrinking(); i++) {
+                    LocalDate logDate = controlPills.getStartDate().plusDays(i);
+                    generatePillLogForSpecificDate(controlPills, logDate);
+                }
             }
 
         
