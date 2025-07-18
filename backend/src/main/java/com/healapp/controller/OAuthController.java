@@ -27,6 +27,7 @@ import com.healapp.model.NotificationPreference;
 import com.healapp.model.NotificationType;
 import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
+import com.healapp.service.EmailService;
 import com.healapp.service.GoogleOAuthService;
 import com.healapp.service.NotificationPreferenceService;
 import com.healapp.service.RoleService;
@@ -56,6 +57,9 @@ public class OAuthController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     private NotificationPreferenceService notificationPreferenceService;
@@ -89,7 +93,7 @@ public class OAuthController {
                     // Create completely new user
                     try {
                         user = new UserDtls();
-                        user.setEmail(userInfo.getEmail());
+                        user.setEmail(userInfo.getEmail()); 
                         user.setFullName(userInfo.getName());
                         user.setUsername(userInfo.getEmail()); // Set username as email for OAuth users
                         
