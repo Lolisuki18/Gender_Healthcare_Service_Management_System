@@ -25,6 +25,7 @@ import com.healapp.model.AuthProvider;
 import com.healapp.model.Gender;
 import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
+import com.healapp.service.EmailService;
 import com.healapp.service.GoogleOAuthService;
 import com.healapp.service.RoleService;
 import com.healapp.service.UserService;
@@ -53,6 +54,9 @@ public class OAuthController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private EmailService emailService;
 
     @PostMapping("/google/login")
     public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> request) {
@@ -83,7 +87,7 @@ public class OAuthController {
                     // Create completely new user
                     try {
                         user = new UserDtls();
-                        user.setEmail(userInfo.getEmail());
+                        user.setEmail(userInfo.getEmail()); 
                         user.setFullName(userInfo.getName());
                         user.setUsername(userInfo.getEmail()); // Set username as email for OAuth users
                         
@@ -113,6 +117,21 @@ public class OAuthController {
                         user.setRole(userRole);
                         
                         user = userService.saveUser(user);
+                        
+                        // 🆕 Gửi email thông báo tài khoản đã được tạo với mật khẩu mặc định
+                        try {
+                            emailService.sendOAuthAccountCreatedNotificationAsync(
+                                user.getEmail(), 
+                                user.getFullName(), 
+                                defaultPassword
+                            );
+                            logger.info("OAuth account created notification email sent to: {}", user.getEmail());
+                        } catch (Exception emailException) {
+                            // Log warning nhưng không throw exception để không ảnh hưởng đến luồng đăng nhập
+                            logger.warn("Failed to send OAuth account created notification email to {}: {}", 
+                                user.getEmail(), emailException.getMessage());
+                        }
+                        
                     } catch (Exception userCreationException) {
                         logger.error("Error creating new OAuth user: {}", userCreationException.getMessage(), userCreationException);
                         throw new RuntimeException("Failed to create OAuth user: " + userCreationException.getMessage(), userCreationException);

@@ -714,4 +714,65 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    // Method gửi email thông báo tài khoản OAuth mới được tạo
+    @Async("asyncExecutor")
+    public void sendOAuthAccountCreatedNotificationAsync(String email, String fullName, String defaultPassword) {
+        try {
+            MimeMessage message = createOAuthAccountCreatedMessage(email, fullName, defaultPassword);
+            mailSender.send(message);
+            logger.info("OAuth account created notification sent successfully to {}", email);
+        } catch (MessagingException e) {
+            logger.error("Failed to send OAuth account created notification to {}: {}", email, e.getMessage());
+        }
+    }
+
+    private MimeMessage createOAuthAccountCreatedMessage(String email, String fullName, String defaultPassword) 
+            throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        helper.setFrom(from);
+        helper.setTo(email);
+        helper.setSubject("Chào mừng đến với Gender Heathcare Service - Tài khoản đã được tạo");
+
+        String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
+                + "<h2 style='color: #4a6ee0;'>🎉 Chào mừng đến với Gender Heathcare Service!</h2>"
+                + "<p>Xin chào <strong>" + fullName + "</strong>,</p>"
+                + "<p>Tài khoản của bạn đã được tạo thành công thông qua đăng nhập Google!</p>"
+                + "<div style='background-color: #e8f4fd; border-left: 4px solid #4a6ee0; padding: 15px; margin: 20px 0;'>"
+                + "<h3 style='color: #4a6ee0; margin-top: 0;'>📧 Thông tin tài khoản:</h3>"
+                + "<p><strong>Email:</strong> " + email + "</p>"
+                + "<p><strong>Phương thức đăng nhập:</strong> Google OAuth</p>"
+                + "</div>"
+                + "<div style='background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;'>"
+                + "<h3 style='color: #856404; margin-top: 0;'>🔐 Mật khẩu dự phòng:</h3>"
+                + "<p>Chúng tôi đã tạo một mật khẩu dự phòng cho tài khoản của bạn trong trường hợp cần thiết:</p>"
+                + "<div style='background-color: #f8f9fa; padding: 10px; border-radius: 3px; font-family: monospace; font-size: 16px; font-weight: bold; color: #495057; text-align: center; margin: 10px 0;'>"
+                + defaultPassword
+                + "</div>"
+                + "<p><strong>Lưu ý:</strong> Mật khẩu này chỉ sử dụng khi bạn không thể đăng nhập qua Google. Bạn có thể thay đổi mật khẩu này trong phần cài đặt tài khoản.</p>"
+                + "</div>"
+                + "<div style='background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 20px 0;'>"
+                + "<h3 style='color: #155724; margin-top: 0;'>✨ Tính năng nổi bật:</h3>"
+                + "<ul style='margin: 10px 0; padding-left: 20px;'>"
+                + "<li>Tư vấn sức khỏe sinh sản với các chuyên gia</li>"
+                + "<li>Theo dõi chu kỳ kinh nguyệt thông minh</li>"
+                + "<li>Nhắc nhở uống thuốc tránh thai</li>"
+                + "<li>Đặt lịch xét nghiệm STI</li>"
+                + "<li>Thông tin y tế cập nhật và đáng tin cậy</li>"
+                + "</ul>"
+                + "</div>"
+                + "<div style='background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;'>"
+                + "<h3 style='color: #6c757d; margin-top: 0;'>🔒 Bảo mật và riêng tư:</h3>"
+                + "<p>• Thông tin của bạn được bảo mật tuyệt đối</p>"
+                + "<p>• Dữ liệu sức khỏe được mã hóa</p>"
+                + "<p>• Tuân thủ các tiêu chuẩn bảo mật quốc tế</p>"
+                + "</div>"
+                + "<p style='color: #6c757d; font-size: 14px;'>Nếu bạn có bất kỳ câu hỏi nào, đừng ngần ngại liên hệ với chúng tôi qua email này hoặc trung tâm hỗ trợ.</p>"
+                + "<p>Trân trọng,<br/><strong>Gender Heathcare Service Team</strong></p>"
+                + "</div>";
+
+        helper.setText(htmlContent, true);
+        return message;
+    }
 }
