@@ -4,10 +4,10 @@ import { Pill, X } from 'lucide-react';
 function PillIcon({ status }) {
   const getPillColor = (s) => {
     switch (s) {
-      case 'pill': return '#2ecc40';
-      case 'missed': return '#e53935';
-      case 'future': return '#2979ff';
-      case 'break': return '#a0a4ad';
+      case 'pill': return '#66BB8A';
+      case 'missed': return '#EF5350';
+      case 'future': return '#42A5F5';
+      case 'break': return '#BDBDBD';
       default: return '#a0a4ad';
     }
   };

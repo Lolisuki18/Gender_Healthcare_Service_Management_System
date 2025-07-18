@@ -273,70 +273,61 @@ function PillReminderPage() {
       let logId = log ? log.logId : null;
       let dayClass = '';
 
-      // So sánh ngày bằng yyyy-mm-dd để tránh lệch múi giờ
-      if (date.getTime() === today.getTime()) {
-        // Hôm nay: phân biệt theo giờ nhắc
-        const reminderHour = parseInt(schedule.reminderTime.split(':')[0], 10);
-        const reminderMinute = parseInt(schedule.reminderTime.split(':')[1], 10);
-        const now = new Date();
-        const reminderDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), reminderHour, reminderMinute, 0);
-        if (now.getTime() < reminderDateTime.getTime()) {
-          // Chưa đến giờ nhắc, dù log.status là false vẫn là 'future'
-          status = (log && log.status) ? 'pill' : 'future';
-        } else {
-          // Đã qua giờ nhắc, status false mới là 'missed'
-          status = (log && log.status) ? 'pill' : 'missed';
-        }
-        isClickable = true;
+      // Sửa đoạn này: Các ngày trước ngày bắt đầu luôn là break, không hiển thị missed/future/pill
+      if (dateString < startDateString) {
+        status = 'break';
+        isClickable = false;
         data.push({
           date,
           status,
-          isCheckedIn: log ? log.status : true,
+          isCheckedIn: false,
           isClickable,
           logId,
           dayClass
         });
         continue;
       }
-      if (dateString === startDateString) {
-        // Ngày bắt đầu luôn là ngày uống thuốc
-        if (log) {
-          isClickable = true;
-          status = log.status ? 'pill' : 'missed';
-        } else {
-          status = date.getTime() < today.getTime() ? 'missed' : 'future';
-          isClickable = false;
-        }
-      } else if (dateString < startDateString) {
-        // Các ngày trước ngày bắt đầu luôn là break
+
+      // Tính số ngày từ ngày bắt đầu
+      const daysSinceStart = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      const dayInCycle = daysSinceStart % cycleLength;
+
+      // Kiểm tra xem ngày có phải là ngày uống thuốc hay không
+      const isPillDay = dayInCycle < pillDays;
+
+      if (!isPillDay) {
+        // Ngày nghỉ
         status = 'break';
         isClickable = false;
-      } else {
-        // Tính số ngày từ ngày bắt đầu
-        const daysSinceStart = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        const dayInCycle = daysSinceStart % cycleLength;
-        if (dayInCycle < pillDays) {
-          // Ngày uống thuốc
-          if (date.getTime() > today.getTime()) {
-            // Ngày tương lai luôn xanh dương
-            status = 'future';
-            isClickable = false;
-          } else {
-            // Ngày quá khứ
-            status = (log && log.status) ? 'pill' : 'missed';
-            isClickable = !!log;
-          }
+      } else if (date.getTime() === today.getTime()) {
+        // Hôm nay: phân biệt theo giờ nhắc
+        const reminderHour = parseInt(schedule.reminderTime.split(':')[0], 10);
+        const reminderMinute = parseInt(schedule.reminderTime.split(':')[1], 10);
+        const now = new Date();
+        const reminderDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), reminderHour, reminderMinute, 0);
+        
+        if (now.getTime() < reminderDateTime.getTime()) {
+          // Chưa đến giờ nhắc
+          status = (log && log.status) ? 'pill' : 'future';
         } else {
-          // Ngày nghỉ
-          status = 'break';
-          isClickable = false;
+          // Đã qua giờ nhắc
+          status = (log && log.status) ? 'pill' : 'missed';
         }
+        isClickable = true;
+      } else if (date.getTime() > today.getTime()) {
+        // Ngày tương lai
+        status = 'future';
+        isClickable = false;
+      } else {
+        // Ngày quá khứ
+        status = (log && log.status) ? 'pill' : 'missed';
+        isClickable = !!log;
       }
 
       data.push({
         date,
         status,
-        isCheckedIn: log ? log.status : true,
+        isCheckedIn: status === 'pill',
         isClickable,
         logId,
         dayClass
@@ -364,17 +355,9 @@ function PillReminderPage() {
       if (response.success) {
         const newSchedule = response.data;
         localStorage.setItem('pillScheduleId', newSchedule.pillsId);
-        setSchedule({
-          id: newSchedule.pillsId,
-          startDate: new Date(newSchedule.startDate),
-          pillDays: Number(newSchedule.numberDaysDrinking),
-          breakDays: Number(newSchedule.numberDaysOff),
-          reminderTime: `${String(newSchedule.remindTime[0]).padStart(2, '0')}:${String(newSchedule.remindTime[1]).padStart(2, '0')}`,
-          pillType: newSchedule.pillType,
-          checkedInDates: new Set(),
-          pillLogDataMap: new Map()
-        });
-        setShowFormModal(false); // Đóng modal sau khi tạo thành công
+        // Gọi fetchScheduleAndLogs để lấy toàn bộ dữ liệu, bao gồm cả logs
+        await fetchScheduleAndLogs(newSchedule.pillsId);
+        setShowFormModal(false); // Đóng modal sau khi tạo và fetch thành công
         toast.success('Lịch uống thuốc đã được tạo thành công!');
       } else {
         const errorMessage = (response.message || 'Lỗi khi tạo lịch uống thuốc.').trim();
@@ -406,18 +389,15 @@ function PillReminderPage() {
         pillType: formData.pillType,
       };
       console.log("Debug: Đang gửi yêu cầu cập nhật lịch cho ID:", schedule.id, "với dữ liệu:", requestData);
-      const response = await pillReminderService.updateControlPills(schedule.id, requestData);
+      const response = await pillReminderService.updatePillSchedule(schedule.id, requestData);
       if (response.success) {
         const updatedBackendSchedule = response.data;
-        setSchedule({
-          ...schedule,
-          startDate: new Date(updatedBackendSchedule.startDate),
-          pillDays: Number(updatedBackendSchedule.numberDaysDrinking),
-          breakDays: Number(updatedBackendSchedule.numberDaysOff),
-          reminderTime: `${String(updatedBackendSchedule.remindTime[0]).padStart(2, '0')}:${String(updatedBackendSchedule.remindTime[1]).padStart(2, '0')}`,
-          pillType: updatedBackendSchedule.pillType,
-        });
-        setShowFormModal(false); // Đóng modal sau khi cập nhật thành công
+        // Fetch lại logs mới nhất sau khi cập nhật lịch và cập nhật schedule từ backend
+        await fetchScheduleAndLogs(updatedBackendSchedule.pillsId);
+        // Đảm bảo schedule đã được cập nhật xong mới đóng modal
+        setTimeout(() => {
+          setShowFormModal(false); // Đóng modal sau khi cập nhật thành công
+        }, 100); // Đợi 1 chút để state cập nhật xong
         toast.success('Lịch uống thuốc đã được cập nhật thành công!');
       } else {
         const errorMessage = (response.message || 'Failed to update schedule.').trim();
@@ -565,9 +545,10 @@ function PillReminderPage() {
           currentMonthIndex={currentMonthIndex}
           setCurrentMonthIndex={setCurrentMonthIndex}
           generateCalendarData={generateCalendarData}
-          handleDateClick={handleDateClick}
-          handleEditClick={handleEditClick}
-          onDeleteSchedule={handleDeleteSchedule}
+          handleDateClick={isLoading ? () => {} : handleDateClick} // Disable check-in khi loading
+          handleEditClick={isLoading ? () => {} : handleEditClick} // Disable edit khi loading
+          onDeleteSchedule={isLoading ? () => {} : handleDeleteSchedule} // Disable delete khi loading
+          isLoading={isLoading} // Truyền prop này xuống
         />
       ) : (
         <PillReminderHomeScreen onAddSchedule={handleAddScheduleClick} isAuthenticated={isAuthenticated} />
