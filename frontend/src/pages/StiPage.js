@@ -19,13 +19,13 @@ import {
   Avatar,
   Paper,
   Stack,
-  Breadcrumbs,
-  Link,
+  // Breadcrumbs, // XÓA
+  // Link,        // XÓA
 } from '@mui/material';
 // Icon từ MUI
 import CheckIcon from '@mui/icons-material/Check';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import HomeIcon from '@mui/icons-material/Home';
+// import HomeIcon from '@mui/icons-material/Home'; // XÓA
 // React Router
 import { useNavigate } from 'react-router-dom';
 import { servicesData } from '../data/servicesData';
@@ -81,7 +81,7 @@ export default function StiPage() {
         maxWidth="lg"
         sx={{ position: 'relative', zIndex: 1, py: { xs: 6, md: 10 } }}
       >
-        {/* Breadcrumbs */}
+        {/* Breadcrumbs
         <Breadcrumbs 
           aria-label="breadcrumb" 
           sx={{ 
@@ -115,7 +115,7 @@ export default function StiPage() {
           <Typography color="#4A90E2" sx={{ fontWeight: 600, fontSize: '1rem' }}>
             Dịch vụ STI
           </Typography>
-        </Breadcrumbs>
+        </Breadcrumbs> */}
         
         {/* --- Header: Tiêu đề, mô tả, underline --- */}
         <Fade in={loaded} timeout={800}>

@@ -213,7 +213,7 @@ const Header = () => {
           >
             {[
               { to: '/', label: 'Trang chủ' },
-              { to: '/sti-services', label: 'Xét nghiệm STIs' },
+              { to: '/sti-services', label: 'Dịch vụ' },
               { to: '/consultation', label: 'Đặt lịch tư vấn' },
               { to: '/pill-reminder', label: 'Nhắc uống thuốc' },
               { to: '/blog', label: 'Blogs' },
