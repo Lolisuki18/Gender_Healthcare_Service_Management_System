@@ -48,7 +48,7 @@ public class ServiceTestComponent {
     @Column(name = "interpretation", length = 200)
     private String interpretation;
 
-    @Column(name = "sample_type", length = 100)
+    @Column(name = "sample_type", length = 100,columnDefinition="NVARCHAR(100)")
     private String sampleType;
 
     @Column(name = "is_active", nullable = false)
