@@ -406,7 +406,7 @@ function PillReminderPage() {
         pillType: formData.pillType,
       };
       console.log("Debug: Đang gửi yêu cầu cập nhật lịch cho ID:", schedule.id, "với dữ liệu:", requestData);
-      const response = await pillReminderService.updateControlPills(schedule.id, requestData);
+      const response = await pillReminderService.updatePillSchedule(schedule.id, requestData);
       if (response.success) {
         const updatedBackendSchedule = response.data;
         setSchedule({
