@@ -45,6 +45,7 @@ import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { getBlogImageUrl, getFullImageUrl } from '@/utils/imageUrl';
 
 // Define animations
 const float = keyframes`
@@ -140,31 +141,31 @@ export const AboutPage = () => {
       name: 'Nguyễn Thị Tường Vy',
       mssv: 'SE181801',
       email: 'vynttse181801@fpt.edu.vn',
-      image: '',
+      image: 'img/avatar/default.jpg',
     },
     {
       name: 'Nguyễn Ly Vi',
       mssv: 'SE181814',
       email: 'vinlse181814@fpt.edu.vn',
-      image: '',
+      image: 'img/avatar/default.jpg',
     },
     {
       name: 'Nguyễn Đình Duy',
       mssv: 'SE181803',
       email: 'duyndse181803@fpt.edu.vn',
-      image: '',
+      image: 'img/avatar/default.jpg',
     },
     {
       name: 'Lê Nguyễn An Ninh',
       mssv: 'SE181799',
       email: 'ninhlnase181799@fpt.edu.vn',
-      image: '',
+      image: 'img/avatar/default.jpg',
     },
     {
       name: 'Nguyễn Văn Cường',
       mssv: 'SE183645',
       email: 'cuongnvse183645@fpt.edu.vn',
-      image: '',
+      image: 'img/avatar/default.jpg',
     },
   ];
   return (
@@ -1129,7 +1130,7 @@ export const AboutPage = () => {
                     >
                       <Avatar
                         alt={member.name}
-                        src={member.image || undefined}
+                        src={getFullImageUrl(member.image) || undefined}
                         sx={{
                           width: 90,
                           height: 90,
@@ -1342,7 +1343,7 @@ export const AboutPage = () => {
                     </ListItemIcon>
                     <ListItemText
                       primary="Địa chỉ"
-                      secondary="123 Nguyễn Trãi, Quận 1, TP. Hồ Chí Minh"
+                      secondary="Đại học FPT Hồ Chí Minh"
                     />
                   </ListItem>
                   <ListItem sx={{ px: 0 }}>
@@ -1430,7 +1431,7 @@ export const AboutPage = () => {
                   <Grid item xs={12} sm={3}>
                     <TextField
                       fullWidth
-                      label="Họ và tên *"
+                      label="Họ và tên "
                       variant="outlined"
                       required
                       sx={{ bgcolor: '#f7fafd', borderRadius: 2 }}
@@ -1439,7 +1440,7 @@ export const AboutPage = () => {
                   <Grid item xs={12} sm={3}>
                     <TextField
                       fullWidth
-                      label="Số điện thoại *"
+                      label="Số điện thoại "
                       variant="outlined"
                       required
                       sx={{ bgcolor: '#f7fafd', borderRadius: 2 }}
@@ -1448,7 +1449,7 @@ export const AboutPage = () => {
                   <Grid item xs={12} sm={3}>
                     <TextField
                       fullWidth
-                      label="Email *"
+                      label="Email "
                       variant="outlined"
                       type="email"
                       required
@@ -1458,7 +1459,7 @@ export const AboutPage = () => {
                   <Grid item xs={12} sm={3}>
                     <TextField
                       fullWidth
-                      label="Nội dung yêu cầu *"
+                      label="Nội dung yêu cầu "
                       variant="outlined"
                       multiline
                       minRows={1}
