@@ -10,8 +10,6 @@ import {
   Typography,
   Card,
   CardMedia,
-  Breadcrumbs,
-  Link,
   Avatar,
   Chip,
   Skeleton,
@@ -19,7 +17,6 @@ import {
   Button,
   Divider
 } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import PersonIcon from '@mui/icons-material/Person';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -261,7 +258,7 @@ const BlogDetailPage = () => {
       py: 8
     }}>
       <Container maxWidth="md">
-        {/* Breadcrumbs */}
+        {/* Breadcrumbs
         <Breadcrumbs 
           aria-label="breadcrumb" 
           sx={{ 
@@ -303,7 +300,7 @@ const BlogDetailPage = () => {
           <Typography color="#26c6da" sx={{ fontWeight: 600 }}>
             {blog.title}
           </Typography>
-        </Breadcrumbs>
+        </Breadcrumbs> */}
 
         {/* Back Button */}
         <Button
