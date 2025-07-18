@@ -45,6 +45,7 @@ import consultantService from '@/services/consultantService';
 import imageUrl from '@/utils/imageUrl';
 import confirmDialog from '@/utils/confirmDialog';
 import localStorageUtil from '@/utils/localStorage';
+import reviewService from '@/services/reviewService';
 
 // Custom styled components
 // Styled Components
@@ -120,7 +121,7 @@ const CardBio = styled(Typography)(({ theme }) => ({
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   display: '-webkit-box',
-  WebkitLineClamp: 2,
+  WebkitLineClamp: 3, // Tăng lên 3 dòng để đều hơn
   WebkitBoxOrient: 'vertical',
 }));
 
@@ -129,7 +130,7 @@ const CardActionsWrapper = styled(CardActions)(({ theme }) => ({
   display: 'flex',
   justifyContent: 'space-between',
   gap: 12,
-  marginTop: theme.spacing(1),
+  marginTop: 'auto', // Đẩy nút xuống dưới cùng
   padding: 0,
 }));
 
@@ -163,7 +164,8 @@ const ConsultantCard = styled(Card)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  minHeight: 420,
+  width: 340, 
+  height: 420, 
   transition: 'transform 0.2s, box-shadow 0.2s',
   '&:hover': {
     transform: 'translateY(-6px) scale(1.03)',
@@ -210,8 +212,8 @@ const StyledButton = styled(Button)(({ theme }) => ({
   borderRadius: 24,
   boxShadow: CARD_SHADOW,
   textTransform: 'none',
-  fontSize: 16,
-  padding: '8px 24px',
+  fontSize: 14,
+  padding: '4px 10px',
 }));
 
 const RatingWrapper = styled(Box)(({ theme }) => ({
@@ -255,6 +257,7 @@ const ConsultationPage = () => {
 
   // State for available slots
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [consultantRatings, setConsultantRatings] = useState({});
 
   // Fetch consultants on component mount
   useEffect(() => {
@@ -311,6 +314,19 @@ const ConsultationPage = () => {
       const consultants = await consultantService.getAllConsultants();
       if (consultants.success) {
         setConsultants(consultants.data);
+        // Gọi API tổng hợp đánh giá cho từng tư vấn viên
+        const ratings = {};
+        await Promise.all(
+          consultants.data.map(async (c) => {
+            try {
+              const summary = await reviewService.getConsultantRatingSummary(c.userId);
+              ratings[c.userId] = summary;
+            } catch (e) {
+              ratings[c.userId] = null;
+            }
+          })
+        );
+        setConsultantRatings(ratings);
       } else {
         setError(consultants.message || 'Không thể tải danh sách tư vấn viên');
       }
@@ -561,7 +577,7 @@ const ConsultationPage = () => {
           {error}
         </Alert>
       ) : (
-        <Grid container spacing={4}>
+        <Grid container spacing={4} alignItems="stretch" justifyContent="center" display="flex" flexWrap="wrap" sx={{ pb: 6 }}> {/* justifyContent và padding dưới */}
           {(consultants.length > 0 ? consultants : mockConsultants).map(
             (consultant) => (
               <Grid
@@ -569,8 +585,10 @@ const ConsultationPage = () => {
                 xs={12}
                 sm={6}
                 md={4}
-                lg={3}
+                lg={4}
+                xl={4}
                 key={consultant.profileId || consultant.userId}
+                style={{ height: '100%' }}
               >
                 <ConsultantCard>
                   <ConsultantAvatar
@@ -586,7 +604,7 @@ const ConsultationPage = () => {
                   <ConsultantName>{consultant.fullName}</ConsultantName>
                   <RatingWrapper>
                     <Rating
-                      value={consultant.rating || 4.5}
+                      value={consultantRatings[consultant.userId]?.averageRating > 0 ? consultantRatings[consultant.userId].averageRating : 5}
                       precision={0.1}
                       readOnly
                       size="small"
@@ -597,7 +615,7 @@ const ConsultationPage = () => {
                       color="#4A90E2"
                       sx={{ ml: 0.5, fontWeight: 600 }}
                     >
-                      ({consultant.rating || 4.5})
+                      ({consultantRatings[consultant.userId]?.averageRating > 0 ? consultantRatings[consultant.userId].averageRating.toFixed(1) : '5.0'})
                     </Typography>
                   </RatingWrapper>
                   <CardInfoRow>
