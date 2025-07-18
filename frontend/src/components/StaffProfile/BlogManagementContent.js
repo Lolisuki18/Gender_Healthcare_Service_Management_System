@@ -358,7 +358,7 @@ const BlogManagementContent = () => {
                 <TableCell>Danh mục</TableCell>
                 <TableCell>Trạng thái</TableCell>
                 <TableCell>Ngày tạo</TableCell>
-                <TableCell align="center">Thao tác</TableCell>
+                <TableCell align="right">Thao tác</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -392,7 +392,7 @@ const BlogManagementContent = () => {
                       />
                     </TableCell>
                     <TableCell>{formatDate(blog.createdAt)}</TableCell>
-                    <TableCell align="center">
+                    <TableCell align="right">
                       <Tooltip title="Xem chi tiết">
                         <IconButton
                           size="small"

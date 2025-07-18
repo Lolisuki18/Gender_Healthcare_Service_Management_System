@@ -47,7 +47,7 @@ import CategoryManagementContent from './CategoryManagementContent';
 import SecurityContent from '../siderBar/SecurityContent';
 import MedicalHistoryContent from '../siderBar/MedicalHistoryContent';
 import InvoicesContent from '../siderBar/InvoicesContent';
-import BlogMyContent from '../CustomerProfile/BlogCustomerContent';
+import BlogCustomerContent from '../CustomerProfile/BlogCustomerContent';
 import PaymentInfoContent from '../siderBar/PaymentInfoContent';
 import ReviewsContent from '../CustomerProfile/ReviewsContent';
 
@@ -105,7 +105,7 @@ const StaffProfile = ({ user = {} }) => {
       case 'invoices':
         return <InvoicesContent />;
       case 'blog-customer':
-        return <BlogMyContent />;
+        return <BlogCustomerContent />;
       case 'payment-info':
         return <PaymentInfoContent />;
       case 'my-reviews':
