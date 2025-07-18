@@ -43,6 +43,8 @@ import { servicesData } from '@/data/servicesData';
 
 import AskQuestionDialog from '@/components/common/AskQuestionDialog';
 import reviewService from '@/services/reviewService';
+import blogService from '@/services/blogService';
+import imageUrl from '@/utils/imageUrl';
 
 // Define animations
 const float = keyframes`
@@ -59,6 +61,9 @@ export const HomePage = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [testimonialsLoading, setTestimonialsLoading] = useState(true);
   const [testimonialsError, setTestimonialsError] = useState(null);
+  const [blogs, setBlogs] = useState([]);
+  const [blogsLoading, setBlogsLoading] = useState(true);
+  const [blogsError, setBlogsError] = useState(null);
 
   // --- LIFECYCLE HOOKS ---
   useEffect(() => {
@@ -94,6 +99,30 @@ export const HomePage = () => {
       }
     };
     fetchTestimonials();
+
+    // Fetch blogs from API
+    const fetchBlogs = async () => {
+      setBlogsLoading(true);
+      setBlogsError(null);
+      try {
+        // Lấy 3 bài viết mới nhất, có thể đổi sang getAllBlogs nếu muốn lấy tất cả
+        const res = await blogService.getLatestBlogs(3);
+        let data = res?.data || res?.content || res || [];
+        if (Array.isArray(data)) {
+          setBlogs(data);
+        } else if (Array.isArray(res)) {
+          setBlogs(res);
+        } else {
+          setBlogs([]);
+        }
+      } catch (err) {
+        setBlogsError('Không thể tải bài viết');
+        setBlogs([]);
+      } finally {
+        setBlogsLoading(false);
+      }
+    };
+    fetchBlogs();
 
     return () => clearTimeout(timer);
   }, []); // Chỉ chạy 1 lần khi component mount
@@ -1280,161 +1309,146 @@ export const HomePage = () => {
               Tin tức & Bài viết
             </Typography>
           </Box>
-          <Grid container spacing={4}>
-            {[
-              {
-                id: 1,
-                title: 'Bảo vệ sức khỏe giới tính an toàn và hiệu quả',
-                summary:
-                  'Tìm hiểu về các biện pháp bảo vệ sức khỏe giới tính an toàn và hiệu quả nhất hiện nay.',
-                image:
-                  'https://images.unsplash.com/photo-1579684453607-4f6ed3affcb9?q=80&w=2091',
-                date: '12/05/2025',
-              },
-              {
-                id: 2,
-                title: 'Những dấu hiệu cảnh báo không nên bỏ qua',
-                summary:
-                  'Những dấu hiệu sức khỏe quan trọng mà mọi người nên chú ý và tìm kiếm tư vấn y tế kịp thời.',
-                image:
-                  'https://images.unsplash.com/photo-1624727828489-a1e03b79bba8?q=80&w=2071',
-                date: '05/05/2025',
-              },
-              {
-                id: 3,
-                title: 'Tầm quan trọng của việc khám sức khỏe định kỳ',
-                summary:
-                  'Tại sao việc kiểm tra sức khỏe định kỳ lại quan trọng và nên thực hiện với tần suất như thế nào?',
-                image:
-                  'https://images.unsplash.com/photo-1579165466741-7f35e4755186?q=80&w=2070',
-                date: '28/04/2025',
-              },
-            ].map((blog, index) => (
-              <Grid item xs={12} md={4} key={index}>
-                {' '}
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'all 0.4s ease',
-                    borderRadius: '20px',
-                    overflow: 'hidden',
-                    boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
-                    border: '1px solid rgba(0,0,0,0.03)',
-                    backgroundColor: 'rgba(255,255,255,0.95)',
-                    backdropFilter: 'blur(10px)',
-                    '&:hover': {
-                      transform: 'translateY(-10px)',
-                      boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                      '& .MuiCardMedia-root': {
-                        transform: 'scale(1.08)',
-                      },
-                      '& .card-overlay': {
-                        opacity: 0.3,
-                      },
-                    },
-                  }}
-                >
-                  {' '}
-                  <Box sx={{ position: 'relative', overflow: 'hidden' }}>
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={blog.image}
-                      alt={blog.title}
-                      sx={{
-                        transition: 'transform 0.8s ease',
-                        filter: 'brightness(0.95)',
-                      }}
-                    />
-                    <Box
-                      className="card-overlay"
-                      sx={{
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        width: '100%',
-                        height: '100%',
-                        background: (theme) =>
-                          `linear-gradient(180deg, transparent 50%, ${theme.palette.primary.main}40 100%)`,
-                        opacity: 0.2,
-                        transition: 'opacity 0.4s ease',
-                      }}
-                    />
-                  </Box>
-                  <CardContent sx={{ p: 3, flexGrow: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <NewspaperIcon
-                        sx={{
-                          color: (theme) => theme.palette.text.secondary,
-                          fontSize: '0.9rem',
-                          mr: 1,
-                        }}
-                      />
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: 'flex', alignItems: 'center' }}
-                      >
-                        Tin tức
-                      </Typography>
-                      <Box
-                        sx={{
-                          mx: 1,
-                          width: 4,
-                          height: 4,
-                          borderRadius: '50%',
-                          bgcolor: 'text.disabled',
-                        }}
-                      />
-                      <AccessTimeIcon
-                        sx={{
-                          color: (theme) => theme.palette.text.secondary,
-                          fontSize: '0.9rem',
-                          mr: 1,
-                        }}
-                      />
-                      <Typography variant="caption" color="text.secondary">
-                        {blog.date}
-                      </Typography>
-                    </Box>
-                    <Typography
-                      variant="h5"
-                      component="h3"
-                      gutterBottom
-                      fontWeight={700}
-                    >
-                      {blog.title}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      paragraph
-                    >
-                      {blog.summary}
-                    </Typography>{' '}
-                    <Button
-                      size="small"
-                      endIcon={<ArrowForwardIcon />}
-                      sx={{
-                        mt: 1,
-                        fontWeight: 600,
-                        color: '#4A90E2',
-                        '&:hover': {
-                          background: 'rgba(74, 144, 226, 0.1)',
-                          transform: 'translateX(3px)',
-                        },
-                        transition: 'all 0.3s ease',
-                        textTransform: 'none',
-                      }}
-                    >
-                      Đọc thêm
-                    </Button>
-                  </CardContent>
-                </Card>
+          <Grid container spacing={4} justifyContent="center">
+            {blogsLoading ? (
+              <Grid item xs={12} style={{ textAlign: 'center' }}>
+                <Typography>Đang tải bài viết...</Typography>
               </Grid>
-            ))}
+            ) : blogsError ? (
+              <Grid item xs={12} style={{ textAlign: 'center' }}>
+                <Typography color="error">{blogsError}</Typography>
+              </Grid>
+            ) : blogs.length === 0 ? (
+              <Grid item xs={12} style={{ textAlign: 'center' }}>
+                <Typography>Chưa có bài viết nào.</Typography>
+              </Grid>
+            ) : (
+              blogs.map((blog, index) => (
+                <Grid item xs={12} md={4} key={index} sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Card
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'all 0.4s ease',
+                      borderRadius: '20px',
+                      overflow: 'hidden',
+                      boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
+                      border: '1px solid rgba(0,0,0,0.03)',
+                      backgroundColor: 'rgba(255,255,255,0.95)',
+                      backdropFilter: 'blur(10px)',
+                      '&:hover': {
+                        transform: 'translateY(-10px)',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                        '& .MuiCardMedia-root': {
+                          transform: 'scale(1.08)',
+                        },
+                        '& .card-overlay': {
+                          opacity: 0.3,
+                        },
+                      },
+                    }}
+                  >
+                    <Box sx={{ position: 'relative', overflow: 'hidden' }}>
+                      <CardMedia
+                        component="img"
+                        height="200"
+                        image={imageUrl.getBlogImageUrl(blog.thumbnailImage || blog.existingThumbnail || blog.displayThumbnail || blog.imageUrl || blog.thumbnail || blog.image)}
+                        alt={blog.title}
+                        sx={{
+                          transition: 'transform 0.8s ease',
+                          filter: 'brightness(0.95)',
+                        }}
+                      />
+                      <Box
+                        className="card-overlay"
+                        sx={{
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          width: '100%',
+                          height: '100%',
+                          background: (theme) =>
+                            `linear-gradient(180deg, transparent 50%, ${theme.palette.primary.main}40 100%)`,
+                          opacity: 0.2,
+                          transition: 'opacity 0.4s ease',
+                        }}
+                      />
+                    </Box>
+                    <CardContent sx={{ p: 3, flexGrow: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <NewspaperIcon
+                          sx={{
+                            color: (theme) => theme.palette.text.secondary,
+                            fontSize: '0.9rem',
+                            mr: 1,
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: 'flex', alignItems: 'center' }}
+                        >
+                          Tin tức
+                        </Typography>
+                        <Box
+                          sx={{
+                            mx: 1,
+                            width: 4,
+                            height: 4,
+                            borderRadius: '50%',
+                            bgcolor: 'text.disabled',
+                          }}
+                        />
+                        <AccessTimeIcon
+                          sx={{
+                            color: (theme) => theme.palette.text.secondary,
+                            fontSize: '0.9rem',
+                            mr: 1,
+                          }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          {blog.createdAt ? (typeof blog.createdAt === 'string' ? blog.createdAt.slice(0, 10).split('-').reverse().join('/') : Array.isArray(blog.createdAt) ? `${blog.createdAt[2]}/${blog.createdAt[1]}/${blog.createdAt[0]}` : '') : ''}
+                        </Typography>
+                      </Box>
+                      <Typography
+                        variant="h5"
+                        component="h3"
+                        gutterBottom
+                        fontWeight={700}
+                      >
+                        {blog.title}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        paragraph
+                      >
+                        {blog.description || blog.summary || ''}
+                      </Typography>{' '}
+                      <Button
+                        size="small"
+                        endIcon={<ArrowForwardIcon />}
+                        sx={{
+                          mt: 1,
+                          fontWeight: 600,
+                          color: '#4A90E2',
+                          '&:hover': {
+                            background: 'rgba(74, 144, 226, 0.1)',
+                            transform: 'translateX(3px)',
+                          },
+                          transition: 'all 0.3s ease',
+                          textTransform: 'none',
+                        }}
+                        onClick={() => navigate(`/blog/${blog.id || blog.blogId}`)}
+                      >
+                        Đọc thêm
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))
+            )}
           </Grid>
           <Box sx={{ textAlign: 'center', mt: 6 }}>
             {' '}
