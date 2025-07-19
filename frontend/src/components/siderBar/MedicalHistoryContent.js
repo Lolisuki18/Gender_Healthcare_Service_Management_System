@@ -69,6 +69,7 @@ import {
   Download as DownloadIcon,
   Sort as SortIcon,
   Cancel as CancelIcon,
+  Info as InfoIcon,
 } from '@mui/icons-material';
 import TestResults from '../modals/TestResults';
 import { styled } from '@mui/material/styles';
@@ -89,6 +90,11 @@ import CanceledTestDetailModal from '../StaffProfile/modals/CanceledTestDetailMo
 import ReviewForm from '../common/ReviewForm';
 import MedicalHistoryDetailModal from '../modals/MedicalHistoryDetailModal';
 import { notify } from '@/utils/notify';
+import ServiceDetailDialog from '../TestRegistration/ServiceDetailDialog';
+import {
+  getSTIServiceById,
+  getSTIPackageById,
+} from '../../services/stiService';
 
 // Styled Paper Component với hiệu ứng glass morphism hiện đại
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -199,6 +205,12 @@ const MedicalHistoryContent = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingReviewId, setEditingReviewId] = useState(null);
   const [reviewLoading, setReviewLoading] = useState(false);
+
+  // State cho ServiceDetailDialog
+  const [serviceDetailOpen, setServiceDetailOpen] = useState(false);
+  const [serviceDetailData, setServiceDetailData] = useState(null);
+  const [serviceDetailType, setServiceDetailType] = useState('single');
+  const [loadingServiceDetail, setLoadingServiceDetail] = useState(false);
 
   const handleCloseReviewDialog = () => {
     setOpenReviewDialog(false);
@@ -575,6 +587,63 @@ const MedicalHistoryContent = () => {
   const handleOpenDetailModal = (record) => {
     setSelectedRecord(record);
     setOpenDetailModal(true);
+  };
+
+  // Hàm xử lý click vào tên dịch vụ
+  const handleServiceNameClick = async (record) => {
+    if (!record) return;
+
+    // Kiểm tra xem có packageId hay serviceId không
+    if (!record.packageId && !record.serviceId) {
+      toast.warning('Không có thông tin chi tiết cho dịch vụ này');
+      return;
+    }
+
+    setLoadingServiceDetail(true);
+    setServiceDetailOpen(true);
+
+    try {
+      let detailData = null;
+      let detailType = 'single';
+
+      // Kiểm tra xem có packageId hay serviceId
+      if (record.packageId) {
+        // Đây là package
+        const response = await getSTIPackageById(record.packageId);
+        if (response && response.success && response.data) {
+          detailData = response.data;
+          detailType = 'package';
+        } else {
+          throw new Error('Không thể tải thông tin gói dịch vụ');
+        }
+      } else if (record.serviceId) {
+        // Đây là service
+        const response = await getSTIServiceById(record.serviceId);
+        if (response && response.success && response.data) {
+          detailData = response.data;
+          detailType = 'single';
+        } else {
+          throw new Error('Không thể tải thông tin dịch vụ');
+        }
+      }
+
+      setServiceDetailData(detailData);
+      setServiceDetailType(detailType);
+    } catch (error) {
+      console.error('Error loading service detail:', error);
+      toast.error(error.message || 'Lỗi khi tải thông tin chi tiết dịch vụ');
+      setServiceDetailOpen(false);
+    } finally {
+      setLoadingServiceDetail(false);
+    }
+  };
+
+  // Hàm đóng ServiceDetailDialog
+  const handleCloseServiceDetail = () => {
+    setServiceDetailOpen(false);
+    setServiceDetailData(null);
+    setServiceDetailType('single');
+    setLoadingServiceDetail(false);
   };
 
   return (
@@ -957,9 +1026,8 @@ const MedicalHistoryContent = () => {
                     <TableCell>
                       {record.consultantName || 'Chưa xác định'}
                     </TableCell>
-                    <TableCell>{formatDateDisplay(record.date)}</TableCell>
                     <TableCell>
-                      <Tooltip title="Click để xem chi tiết" arrow>
+                      <Tooltip title="Click để xem chi tiết lịch khám" arrow>
                         <Box
                           onClick={() => handleOpenDetailModal(record)}
                           sx={{
@@ -998,10 +1066,96 @@ const MedicalHistoryContent = () => {
                               },
                             }}
                           >
-                            {record.serviceName || getTypeName(record.type)}
+                            {formatDateDisplay(record.date)}
                           </Typography>
                         </Box>
                       </Tooltip>
+                    </TableCell>
+                    <TableCell>
+                      {record.packageId || record.serviceId ? (
+                        <Tooltip title="Click để xem chi tiết dịch vụ" arrow>
+                          <Box
+                            onClick={() => handleServiceNameClick(record)}
+                            sx={{
+                              cursor: 'pointer',
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              transition: 'all 0.2s ease-in-out',
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              '&:hover': {
+                                backgroundColor: 'rgba(102, 126, 234, 0.08)',
+                                transform: 'translateX(2px)',
+                              },
+                              '&:active': {
+                                backgroundColor: 'rgba(102, 126, 234, 0.12)',
+                                transform: 'translateX(0px)',
+                              },
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <OpenInNewIcon
+                                sx={{ fontSize: 16, color: '#1976d2' }}
+                              />
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: '#1976d2',
+                                  fontWeight: 500,
+                                  textDecoration: 'underline',
+                                  textDecorationColor: 'transparent',
+                                  transition:
+                                    'text-decoration-color 0.2s ease-in-out',
+                                  wordWrap: 'break-word',
+                                  wordBreak: 'break-word',
+                                  whiteSpace: 'normal',
+                                  lineHeight: 1.4,
+                                  '&:hover': {
+                                    textDecorationColor: '#1976d2',
+                                  },
+                                }}
+                              >
+                                {record.serviceName || getTypeName(record.type)}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip
+                          title="Không có thông tin chi tiết cho dịch vụ này"
+                          arrow
+                        >
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <InfoIcon sx={{ fontSize: 16, color: '#9CA3AF' }} />
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: '#2D3748',
+                                fontWeight: 500,
+                                wordWrap: 'break-word',
+                                wordBreak: 'break-word',
+                                whiteSpace: 'normal',
+                                lineHeight: 1.4,
+                              }}
+                            >
+                              {record.serviceName || getTypeName(record.type)}
+                            </Typography>
+                          </Box>
+                        </Tooltip>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -1555,6 +1709,14 @@ const MedicalHistoryContent = () => {
         onSubmit={handleSubmitReview}
         isEditMode={isEditMode}
         loading={reviewLoading}
+      />
+      {/* Service Detail Dialog */}
+      <ServiceDetailDialog
+        open={serviceDetailOpen}
+        onClose={handleCloseServiceDetail}
+        detailData={serviceDetailData}
+        detailType={serviceDetailType}
+        loadingDetail={loadingServiceDetail}
       />
     </Box>
   );
