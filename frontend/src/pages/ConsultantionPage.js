@@ -49,6 +49,7 @@ import imageUrl from '@/utils/imageUrl';
 import confirmDialog from '@/utils/confirmDialog';
 import localStorageUtil from '@/utils/localStorage';
 import reviewService from '@/services/reviewService';
+import { notify } from '@/utils/notify';
 
 // Custom styled components
 // Styled Components
@@ -504,7 +505,7 @@ const ConsultationPage = () => {
       const response =
         await consultantService.bookConsultation(appointmentData);
       if (response.success) {
-        toast.success('Đặt lịch hẹn thành công!');
+        notify.success('Đặt lịch hẹn thành công!');
         handleCloseAppointment();
         // Refresh available slots sau khi đặt thành công
         if (appointmentForm.date && appointmentForm.consultantId) {
@@ -1096,18 +1097,40 @@ const ConsultationPage = () => {
                   sx={{ borderRadius: 3, background: '#fff' }}
                   disabled={availableSlots.length === 0}
                 >
-                  {timeSlotOptions.map((slot) => (
-                    <MenuItem
-                      key={slot.value}
-                      value={slot.value}
-                      disabled={
-                        availableSlots.length === 0 ||
-                        !availableSlots.includes(slot.value)
-                      }
-                    >
-                      {slot.label}
-                    </MenuItem>
-                  ))}
+                  {timeSlotOptions.map((slot) => {
+                    // Lấy ngày được chọn
+                    const selectedDate = appointmentForm.date;
+                    const now = new Date();
+
+                    // Kiểm tra nếu là hôm nay
+                    let isToday = false;
+                    if (selectedDate) {
+                      isToday =
+                        selectedDate.getDate() === now.getDate() &&
+                        selectedDate.getMonth() === now.getMonth() &&
+                        selectedDate.getFullYear() === now.getFullYear();
+                    }
+
+                    // Lấy giờ kết thúc của khung giờ (ví dụ: '8-10' => 10)
+                    const endHour = parseInt(slot.value.split('-')[1], 10);
+
+                    // Nếu là hôm nay và đã qua giờ kết thúc thì disable
+                    const isPast = isToday && now.getHours() >= endHour;
+
+                    return (
+                      <MenuItem
+                        key={slot.value}
+                        value={slot.value}
+                        disabled={
+                          availableSlots.length === 0 ||
+                          !availableSlots.includes(slot.value) ||
+                          isPast
+                        }
+                      >
+                        {slot.label}
+                      </MenuItem>
+                    );
+                  })}
                 </Select>
               </FormControl>
               <TextField
