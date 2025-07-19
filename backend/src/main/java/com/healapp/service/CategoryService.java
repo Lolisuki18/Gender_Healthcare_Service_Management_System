@@ -106,7 +106,7 @@ public class CategoryService {
 
     public ApiResponse<List<Category>> getAllCategories() {
         try {
-            List<Category> categories = categoryRepository.findAll();
+            List<Category> categories = categoryRepository.findAllByIsActiveTrue();
             return ApiResponse.success("Categories retrieved successfully", categories);
         } catch (Exception e) {
             return ApiResponse.error("Failed to retrieve categories: " + e.getMessage());
@@ -116,7 +116,7 @@ public class CategoryService {
     // Thêm method mới để trả về categories với số lượng bài viết
     public ApiResponse<List<CategoryResponse>> getAllCategoriesWithPostCount() {
         try {
-            List<Category> categories = categoryRepository.findAll();
+            List<Category> categories = categoryRepository.findAllByIsActiveTrue();
             List<CategoryResponse> categoryResponses = categories.stream()
                     .map(CategoryResponse::new)
                     .collect(Collectors.toList());

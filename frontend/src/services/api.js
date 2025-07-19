@@ -28,7 +28,8 @@ import localStorageUtil from '@/utils/localStorage';
 import axios from 'axios';
 import { confirmDialog } from '@/utils/confirmDialog';
 
-// Lấy baseURL từ biến môi trường, ưu tiên cloud nếu có
+
+  // Lấy baseURL từ biến môi trường, ưu tiên cloud nếu có
 const config = {
   baseURL: 'http://localhost:8080' || process.env.REACT_APP_API_URL,
   //baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
@@ -36,7 +37,6 @@ const config = {
   //   'Content-Type': 'application/json', // Đã xóa để axios tự động nhận diện
   // },
 };
-
 const apiClient = axios.create(config);
 
 // Biến để theo dõi trạng thái refresh token

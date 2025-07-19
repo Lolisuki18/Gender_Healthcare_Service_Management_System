@@ -42,38 +42,7 @@ import { notify } from '../utils/notify';
 
 const OvulationPage = ({ stats }) => {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-
-  React.useEffect(() => {
-    const checkLogin = async () => {
-      try {
-        // Tạo timeout promise
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout')), 10000) // 10 giây timeout
-        );
-
-        // Chạy getCurrentUser với timeout
-        const userData = await Promise.race([
-          ovulationService.getCurrentUser(),
-          timeoutPromise
-        ]);
-
-        if (userData) {
-          setIsLoggedIn(true);
-        } else {
-          setIsLoggedIn(false);
-        }
-      } catch (error) {
-        console.warn('Check login failed:', error.message);
-        setIsLoggedIn(false); // Mặc định là chưa đăng nhập nếu có lỗi
-      }
-    };
-
-    checkLogin();
-    window.addEventListener('storage', checkLogin);
-    return () => {
-      window.removeEventListener('storage', checkLogin);
-    };
-  }, []);
+  const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
 
   // Tất cả chu kỳ kinh nguyệt
   const [menstrualCycles, setMenstrualCycles] = useState([]);
@@ -147,11 +116,48 @@ const OvulationPage = ({ stats }) => {
     }
   };
 
+  // Kiểm tra trạng thái đăng nhập khi component mount
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchMenstrualCycles();
-    }
-  }, [isLoggedIn]);
+    const checkAuthStatus = async () => {
+      try {
+        setIsCheckingAuth(true);
+        const loggedIn = await ovulationService.isLoggedIn();
+        setIsLoggedIn(loggedIn);
+
+        if (loggedIn) {
+          await fetchMenstrualCycles();
+        }
+      } catch (error) {
+        console.error('❌ Lỗi khi kiểm tra trạng thái đăng nhập:', error);
+        setIsLoggedIn(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuthStatus();
+
+    // Thêm event listener để refresh khi focus lại trang
+    const handleFocus = () => {
+      if (!isCheckingAuth) {
+        refreshAuthStatus();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    // Thêm interval để kiểm tra trạng thái đăng nhập định kỳ (mỗi 30 giây)
+    const authCheckInterval = setInterval(() => {
+      if (!isCheckingAuth && !isLoggedIn) {
+        refreshAuthStatus();
+      }
+    }, 30000); // 30 giây
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(authCheckInterval);
+    };
+  }, []);
 
   // Tỉ lệ mang thai
   // const [pregnancyProb, setPregnancyProb] = useState([]);
@@ -340,8 +346,6 @@ const OvulationPage = ({ stats }) => {
       const result = maxDifference <= 7 ? 'regular' : 'irregular';
       console.log('✅ [getConsistency] Kết quả cuối cùng:', result);
 
-
-
       return result;
     } catch (error) {
       console.error('💥 [getConsistency] Lỗi khi tính consistency:', error);
@@ -360,6 +364,43 @@ const OvulationPage = ({ stats }) => {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // Hàm refresh trạng thái đăng nhập
+  const refreshAuthStatus = async () => {
+    try {
+      setIsCheckingAuth(true);
+      const loggedIn = await ovulationService.isLoggedIn();
+
+      // Nếu trước đó chưa đăng nhập nhưng bây giờ đã đăng nhập
+      if (!isLoggedIn && loggedIn) {
+        notify.success(
+          'Chào mừng!',
+          'Đăng nhập thành công. Đang tải dữ liệu của bạn...'
+        );
+      }
+
+      // Nếu trước đó đã đăng nhập nhưng bây giờ đã đăng xuất
+      if (isLoggedIn && !loggedIn) {
+        notify.info('Đã đăng xuất', 'Bạn đã đăng xuất khỏi hệ thống.');
+        setMenstrualCycles([]);
+        setCalculationResult(null);
+        setShowForm(false);
+        setShowEditForm(false);
+        setEditingCycle(null);
+      }
+
+      setIsLoggedIn(loggedIn);
+
+      if (loggedIn) {
+        await fetchMenstrualCycles();
+      }
+    } catch (error) {
+      console.error('❌ Lỗi khi refresh trạng thái đăng nhập:', error);
+      setIsLoggedIn(false);
+    } finally {
+      setIsCheckingAuth(false);
+    }
+  };
 
   // Edit cycle states
   const [editingCycle, setEditingCycle] = useState(null);
@@ -746,7 +787,8 @@ const OvulationPage = ({ stats }) => {
         title: 'Cập nhật chu kỳ kinh nguyệt',
         confirmText: 'Cập nhật',
         cancelText: 'Hủy',
-        message: 'Thông tin chu kỳ sẽ được cập nhật và có thể ảnh hưởng đến các dự đoán chu kỳ tiếp theo.'
+        message:
+          'Thông tin chu kỳ sẽ được cập nhật và có thể ảnh hưởng đến các dự đoán chu kỳ tiếp theo.',
       }
     );
 
@@ -774,14 +816,14 @@ const OvulationPage = ({ stats }) => {
   // Hàm xử lý xóa chu kỳ
   const handleDeleteCycle = async (cycle) => {
     const cycleNumber = menstrualCycles.length - menstrualCycles.indexOf(cycle);
-    
+
     const result = await confirmDialog.danger(
       `Bạn có chắc chắn muốn xóa chu kỳ #${cycleNumber} không?`,
       {
         title: 'Xóa chu kỳ kinh nguyệt',
         confirmText: 'Xóa',
         cancelText: 'Hủy bỏ',
-        message: `Hành động này sẽ xóa vĩnh viễn chu kỳ #${cycleNumber} khỏi hệ thống và không thể hoàn tác.`
+        message: `Hành động này sẽ xóa vĩnh viễn chu kỳ #${cycleNumber} khỏi hệ thống và không thể hoàn tác.`,
       }
     );
 
@@ -792,13 +834,13 @@ const OvulationPage = ({ stats }) => {
         // Refetch dữ liệu để cập nhật UI
         await fetchMenstrualCycles(true);
 
-          // Adjust current page if necessary
-          const newTotalPages = Math.ceil(
-            (menstrualCycles.length - 1) / itemsPerPage
-          );
-          if (currentPage > newTotalPages && newTotalPages > 0) {
-            setCurrentPage(newTotalPages);
-          }
+        // Adjust current page if necessary
+        const newTotalPages = Math.ceil(
+          (menstrualCycles.length - 1) / itemsPerPage
+        );
+        if (currentPage > newTotalPages && newTotalPages > 0) {
+          setCurrentPage(newTotalPages);
+        }
 
         notify.success('Thành công', 'Xóa chu kỳ thành công!');
       } catch (error) {
@@ -816,7 +858,7 @@ const OvulationPage = ({ stats }) => {
         title: 'Hủy chỉnh sửa',
         confirmText: 'Hủy chỉnh sửa',
         cancelText: 'Tiếp tục chỉnh sửa',
-        message: 'Mọi thay đổi chưa được lưu sẽ bị mất.'
+        message: 'Mọi thay đổi chưa được lưu sẽ bị mất.',
       }
     );
 
@@ -834,7 +876,7 @@ const OvulationPage = ({ stats }) => {
         title: 'Hủy thêm chu kỳ',
         confirmText: 'Hủy',
         cancelText: 'Tiếp tục nhập',
-        message: 'Mọi thông tin đã nhập sẽ bị mất.'
+        message: 'Mọi thông tin đã nhập sẽ bị mất.',
       }
     );
 
@@ -843,8 +885,6 @@ const OvulationPage = ({ stats }) => {
       setCalculationResult(null);
     }
   };
-
-
 
   // Hàm xử lý lưu chu kỳ đã tính toán vào database
   const handleSaveCycleToDatabase = async () => {
@@ -856,7 +896,8 @@ const OvulationPage = ({ stats }) => {
         title: 'Lưu chu kỳ kinh nguyệt',
         confirmText: 'Lưu',
         cancelText: 'Hủy',
-        message: 'Chu kỳ sẽ được lưu vào dữ liệu cá nhân của bạn và có thể được sử dụng để theo dõi và dự đoán các chu kỳ tiếp theo.'
+        message:
+          'Chu kỳ sẽ được lưu vào dữ liệu cá nhân của bạn và có thể được sử dụng để theo dõi và dự đoán các chu kỳ tiếp theo.',
       }
     );
 
@@ -881,7 +922,7 @@ const OvulationPage = ({ stats }) => {
 
       notify.success('Thành công', 'Lưu chu kỳ thành công!');
       setCalculationResult(null); // Clear calculation result
-      
+
       // Scroll to top để người dùng thấy dữ liệu mới
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
@@ -898,7 +939,8 @@ const OvulationPage = ({ stats }) => {
         title: 'Đóng kết quả',
         confirmText: 'Đóng',
         cancelText: 'Hủy',
-        message: 'Kết quả tính toán sẽ bị mất và bạn cần phải tính toán lại nếu muốn.'
+        message:
+          'Kết quả tính toán sẽ bị mất và bạn cần phải tính toán lại nếu muốn.',
       }
     );
 
@@ -910,20 +952,67 @@ const OvulationPage = ({ stats }) => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
       <Container maxWidth="lg" className={styles.container}>
-        {isLoggedIn ? (
+        {isCheckingAuth ? (
+          <Box
+            sx={{
+              textAlign: 'center',
+              padding: '60px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 3,
+            }}
+          >
+            <Box
+              sx={{
+                width: '50px',
+                height: '50px',
+                border: '4px solid #f3f4f6',
+                borderTop: '4px solid #43a6ef',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                '@keyframes spin': {
+                  '0%': { transform: 'rotate(0deg)' },
+                  '100%': { transform: 'rotate(360deg)' },
+                },
+              }}
+            />
+            <Typography
+              variant="h6"
+              sx={{
+                color: '#6b7280',
+                fontWeight: 500,
+                fontSize: '1.1rem',
+                letterSpacing: '0.5px',
+              }}
+            >
+              Đang kiểm tra trạng thái đăng nhập...
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: '#9ca3af',
+                fontStyle: 'italic',
+                fontSize: '0.9rem',
+              }}
+            >
+              Vui lòng đợi trong giây lát
+            </Typography>
+          </Box>
+        ) : isLoggedIn ? (
           <>
             {isLoading ? (
-              <Box 
-                sx={{ 
-                  textAlign: 'center', 
+              <Box
+                sx={{
+                  textAlign: 'center',
                   padding: '60px 20px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: 3
+                  gap: 3,
                 }}
               >
-                <Box 
+                <Box
                   sx={{
                     width: '50px',
                     height: '50px',
@@ -933,27 +1022,27 @@ const OvulationPage = ({ stats }) => {
                     animation: 'spin 1s linear infinite',
                     '@keyframes spin': {
                       '0%': { transform: 'rotate(0deg)' },
-                      '100%': { transform: 'rotate(360deg)' }
-                    }
+                      '100%': { transform: 'rotate(360deg)' },
+                    },
                   }}
                 />
-                <Typography 
+                <Typography
                   variant="h6"
                   sx={{
                     color: '#6b7280',
                     fontWeight: 500,
                     fontSize: '1.1rem',
-                    letterSpacing: '0.5px'
+                    letterSpacing: '0.5px',
                   }}
                 >
                   Đang tải dữ liệu...
                 </Typography>
-                <Typography 
+                <Typography
                   variant="body2"
                   sx={{
                     color: '#9ca3af',
                     fontStyle: 'italic',
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
                   }}
                 >
                   Vui lòng đợi trong giây lát
@@ -1368,7 +1457,15 @@ const OvulationPage = ({ stats }) => {
 
                       {/* Button actions */}
                       <Box sx={{ textAlign: 'center', marginTop: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', gap: '12px', flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            marginBottom: '12px',
+                            gap: '12px',
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                          }}
+                        >
                           <button
                             className={styles.addCycleButton}
                             onClick={() => {
@@ -1376,7 +1473,18 @@ const OvulationPage = ({ stats }) => {
                               setShowForm(true);
                             }}
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              style={{ marginRight: '8px' }}
+                            >
                               <path d="M21 12a9 9 0 01-9 9"></path>
                               <path d="M3 12a9 9 0 009-9"></path>
                               <path d="M12 7l-3-3 3-3"></path>
@@ -1389,7 +1497,18 @@ const OvulationPage = ({ stats }) => {
                               className={styles.saveButton}
                               onClick={handleSaveCycleToDatabase}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{ marginRight: '8px' }}
+                              >
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
                                 <polyline points="7 3 7 8 15 8"></polyline>
@@ -1411,10 +1530,17 @@ const OvulationPage = ({ stats }) => {
                         <b>Lưu ý:</b> Đây chỉ là kết quả tính toán dự đoán. Kết
                         quả thực tế có thể khác do nhiều yếu tố ảnh hưởng.
                         {isLoggedIn && (
-                          <span> Bạn có thể lưu kết quả tính toán này vào hồ sơ bằng cách bấm nút "Lưu chu kỳ vào hồ sơ".</span>
+                          <span>
+                            {' '}
+                            Bạn có thể lưu kết quả tính toán này vào hồ sơ bằng
+                            cách bấm nút "Lưu chu kỳ vào hồ sơ".
+                          </span>
                         )}
                         {!isLoggedIn && (
-                          <span> Đăng nhập để lưu chu kỳ vào hồ sơ cá nhân của bạn.</span>
+                          <span>
+                            {' '}
+                            Đăng nhập để lưu chu kỳ vào hồ sơ cá nhân của bạn.
+                          </span>
                         )}
                       </Box>
                     </Card>
@@ -1454,10 +1580,14 @@ const OvulationPage = ({ stats }) => {
                               {item.icon}
                             </Box>
                             <Box>
-                              <Typography className={styles.adviceCardTitleRegular}>
+                              <Typography
+                                className={styles.adviceCardTitleRegular}
+                              >
                                 {item.title}
                               </Typography>
-                              <Typography className={styles.adviceCardTextRegular}>
+                              <Typography
+                                className={styles.adviceCardTextRegular}
+                              >
                                 {item.description}
                               </Typography>
                             </Box>
@@ -1626,13 +1756,26 @@ const OvulationPage = ({ stats }) => {
                 )}
               </div>
 
-              {/* Button chuyển đến trang đăng nhập */}
-              <button
-                className={styles.loginButton}
-                onClick={() => (window.location.href = '/#/login')}
-              >
-                Đăng nhập để sử dụng đầy đủ tính năng
-              </button>
+              {/* Buttons */}
+              <div className={styles.authButtons}>
+                <button
+                  className={styles.loginButton}
+                  onClick={() => {
+                    window.location.href = '/#/login';
+                  }}
+                >
+                  Đăng nhập để sử dụng đầy đủ tính năng
+                </button>
+                <button
+                  className={styles.refreshButton}
+                  onClick={refreshAuthStatus}
+                  disabled={isCheckingAuth}
+                >
+                  {isCheckingAuth
+                    ? 'Đang kiểm tra...'
+                    : 'Kiểm tra lại trạng thái đăng nhập'}
+                </button>
+              </div>
             </div>
           </div>
         )}
