@@ -259,7 +259,88 @@ const MedicalHistoryDetailModal = ({
                 </Box>
 
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
+                  {/* Dịch vụ */}
+                  <Grid item size={12} xs={12} md={6}>
+                    <Box
+                      sx={{
+                        p: 2,
+                        borderRadius: '12px',
+                        background: 'rgba(102, 126, 234, 0.05)',
+                        border: '1px solid rgba(102, 126, 234, 0.1)',
+                        mb: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
+                      >
+                        <HospitalIcon
+                          sx={{ mr: 1.5, color: '#667eea', fontSize: 20 }}
+                        />
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 600, color: '#64748b' }}
+                        >
+                          Dịch vụ
+                        </Typography>
+                      </Box>
+                      <Typography
+                        variant="body1"
+                        sx={{ fontWeight: 500, color: '#1e293b', ml: 3.5 }}
+                      >
+                        {record.serviceName || record.diagnosis}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  {/* Mô tả dịch vụ */}
+                  {record.serviceDescription && (
+                    <Grid item size={12} xs={12}>
+                      <Box
+                        sx={{
+                          p: 2,
+                          borderRadius: '12px',
+                          background: 'rgba(102, 126, 234, 0.05)',
+                          border: '1px solid rgba(102, 126, 234, 0.1)',
+                          mb: 2,
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                          whiteSpace: 'pre-wrap',
+                          wordWrap: 'break-word',
+                          maxWidth: '100%',
+                          textAlign: 'left',
+                          textOverflow: 'ellipsis',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
+                        >
+                          <DescriptionIcon
+                            sx={{ mr: 1.5, color: '#667eea', fontSize: 20 }}
+                          />
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 600, color: '#64748b' }}
+                          >
+                            Mô tả dịch vụ
+                          </Typography>
+                        </Box>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            fontWeight: 500,
+                            color: '#1e293b',
+                            ml: 3.5,
+                            fontStyle: 'italic',
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          {record.serviceDescription}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
+                  {/* Tên bác sĩ */}
+                  <Grid item size={12} xs={12} md={6}>
                     <Box
                       sx={{
                         p: 2,
@@ -292,8 +373,8 @@ const MedicalHistoryDetailModal = ({
                       </Typography>
                     </Box>
                   </Grid>
-
-                  <Grid item xs={12} md={6}>
+                  {/* Ngày khám */}
+                  <Grid item size={6} xs={12} md={6}>
                     <Box
                       sx={{
                         p: 2,
@@ -325,39 +406,8 @@ const MedicalHistoryDetailModal = ({
                     </Box>
                   </Grid>
 
-                  <Grid item xs={12} md={6}>
-                    <Box
-                      sx={{
-                        p: 2,
-                        borderRadius: '12px',
-                        background: 'rgba(102, 126, 234, 0.05)',
-                        border: '1px solid rgba(102, 126, 234, 0.1)',
-                        mb: 2,
-                      }}
-                    >
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
-                      >
-                        <HospitalIcon
-                          sx={{ mr: 1.5, color: '#667eea', fontSize: 20 }}
-                        />
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 600, color: '#64748b' }}
-                        >
-                          Dịch vụ
-                        </Typography>
-                      </Box>
-                      <Typography
-                        variant="body1"
-                        sx={{ fontWeight: 500, color: '#1e293b', ml: 3.5 }}
-                      >
-                        {record.serviceName || record.diagnosis}
-                      </Typography>
-                    </Box>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
+                  {/* Trạng thái */}
+                  <Grid item size={6} xs={12} md={6}>
                     <Box
                       sx={{
                         p: 2,
@@ -409,148 +459,6 @@ const MedicalHistoryDetailModal = ({
                       />
                     </Box>
                   </Grid>
-
-                  {record.customerName && (
-                    <Grid item xs={12} md={6}>
-                      <Box
-                        sx={{
-                          p: 2,
-                          borderRadius: '12px',
-                          background: 'rgba(102, 126, 234, 0.05)',
-                          border: '1px solid rgba(102, 126, 234, 0.1)',
-                          mb: 2,
-                        }}
-                      >
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
-                        >
-                          <PersonIcon
-                            sx={{ mr: 1.5, color: '#667eea', fontSize: 20 }}
-                          />
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: '#64748b' }}
-                          >
-                            Khách hàng
-                          </Typography>
-                        </Box>
-                        <Typography
-                          variant="body1"
-                          sx={{ fontWeight: 500, color: '#1e293b', ml: 3.5 }}
-                        >
-                          {record.customerName}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  )}
-
-                  {record.customerEmail && (
-                    <Grid item xs={12} md={6}>
-                      <Box
-                        sx={{
-                          p: 2,
-                          borderRadius: '12px',
-                          background: 'rgba(102, 126, 234, 0.05)',
-                          border: '1px solid rgba(102, 126, 234, 0.1)',
-                          mb: 2,
-                        }}
-                      >
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
-                        >
-                          <PersonIcon
-                            sx={{ mr: 1.5, color: '#667eea', fontSize: 20 }}
-                          />
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: '#64748b' }}
-                          >
-                            Email
-                          </Typography>
-                        </Box>
-                        <Typography
-                          variant="body1"
-                          sx={{ fontWeight: 500, color: '#1e293b', ml: 3.5 }}
-                        >
-                          {record.customerEmail}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  )}
-
-                  {record.customerPhone && (
-                    <Grid item xs={12} md={6}>
-                      <Box
-                        sx={{
-                          p: 2,
-                          borderRadius: '12px',
-                          background: 'rgba(102, 126, 234, 0.05)',
-                          border: '1px solid rgba(102, 126, 234, 0.1)',
-                          mb: 2,
-                        }}
-                      >
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
-                        >
-                          <PersonIcon
-                            sx={{ mr: 1.5, color: '#667eea', fontSize: 20 }}
-                          />
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: '#64748b' }}
-                          >
-                            Số điện thoại
-                          </Typography>
-                        </Box>
-                        <Typography
-                          variant="body1"
-                          sx={{ fontWeight: 500, color: '#1e293b', ml: 3.5 }}
-                        >
-                          {record.customerPhone}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  )}
-
-                  {record.serviceDescription && (
-                    <Grid item xs={12}>
-                      <Box
-                        sx={{
-                          p: 2,
-                          borderRadius: '12px',
-                          background: 'rgba(102, 126, 234, 0.05)',
-                          border: '1px solid rgba(102, 126, 234, 0.1)',
-                          mb: 2,
-                        }}
-                      >
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
-                        >
-                          <DescriptionIcon
-                            sx={{ mr: 1.5, color: '#667eea', fontSize: 20 }}
-                          />
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: '#64748b' }}
-                          >
-                            Mô tả dịch vụ
-                          </Typography>
-                        </Box>
-                        <Typography
-                          variant="body1"
-                          sx={{
-                            fontWeight: 500,
-                            color: '#1e293b',
-                            ml: 3.5,
-                            fontStyle: 'italic',
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {record.serviceDescription}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  )}
                 </Grid>
               </CardContent>
             </Card>
@@ -596,7 +504,7 @@ const MedicalHistoryDetailModal = ({
                 </Box>
 
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
+                  <Grid item size={6} xs={12} md={6}>
                     <Box
                       sx={{
                         p: 2,
@@ -633,7 +541,7 @@ const MedicalHistoryDetailModal = ({
                     </Box>
                   </Grid>
 
-                  <Grid item xs={12} md={6}>
+                  <Grid item size={6} xs={12} md={6}>
                     <Box
                       sx={{
                         p: 2,
@@ -672,41 +580,7 @@ const MedicalHistoryDetailModal = ({
                     </Box>
                   </Grid>
 
-                  <Grid item xs={12} md={6}>
-                    <Box
-                      sx={{
-                        p: 2,
-                        borderRadius: '12px',
-                        background: 'rgba(76, 175, 80, 0.05)',
-                        border: '1px solid rgba(76, 175, 80, 0.1)',
-                        mb: 2,
-                      }}
-                    >
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
-                      >
-                        <EventIcon
-                          sx={{ mr: 1.5, color: '#4CAF50', fontSize: 20 }}
-                        />
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 600, color: '#64748b' }}
-                        >
-                          Ngày thanh toán
-                        </Typography>
-                      </Box>
-                      <Typography
-                        variant="body1"
-                        sx={{ ml: 3.5, fontWeight: 500, color: '#1e293b' }}
-                      >
-                        {record.paidAt
-                          ? formatDateDisplay(record.paidAt)
-                          : 'Chưa thanh toán'}
-                      </Typography>
-                    </Box>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
+                  <Grid item size={6} xs={12} md={6}>
                     <Box
                       sx={{
                         p: 2,
@@ -749,7 +623,39 @@ const MedicalHistoryDetailModal = ({
                       />
                     </Box>
                   </Grid>
-
+                  <Grid item size={6} xs={12} md={6}>
+                    <Box
+                      sx={{
+                        p: 2,
+                        borderRadius: '12px',
+                        background: 'rgba(76, 175, 80, 0.05)',
+                        border: '1px solid rgba(76, 175, 80, 0.1)',
+                        mb: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
+                      >
+                        <EventIcon
+                          sx={{ mr: 1.5, color: '#4CAF50', fontSize: 20 }}
+                        />
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 600, color: '#64748b' }}
+                        >
+                          Ngày thanh toán
+                        </Typography>
+                      </Box>
+                      <Typography
+                        variant="body1"
+                        sx={{ ml: 3.5, fontWeight: 500, color: '#1e293b' }}
+                      >
+                        {record.paidAt
+                          ? formatDateDisplay(record.paidAt)
+                          : 'Chưa thanh toán'}
+                      </Typography>
+                    </Box>
+                  </Grid>
                   {record.paymentTransactionId && (
                     <Grid item xs={12} md={6}>
                       <Box
@@ -1204,7 +1110,7 @@ const MedicalHistoryDetailModal = ({
                 </Box>
 
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
+                  <Grid item size={6} xs={12} md={6}>
                     <Box
                       sx={{
                         p: 2,
@@ -1231,7 +1137,7 @@ const MedicalHistoryDetailModal = ({
                     </Box>
                   </Grid>
 
-                  <Grid item xs={12} md={6}>
+                  <Grid item size={6} xs={12} md={6}>
                     <Box
                       sx={{
                         p: 2,
@@ -1259,7 +1165,7 @@ const MedicalHistoryDetailModal = ({
                   </Grid>
 
                   {record.resultDate && (
-                    <Grid item xs={12} md={6}>
+                    <Grid item size={12} xs={12} md={6}>
                       <Box
                         sx={{
                           p: 2,
@@ -1285,7 +1191,7 @@ const MedicalHistoryDetailModal = ({
                     </Grid>
                   )}
 
-                  {record.serviceId && (
+                  {/* {record.serviceId && (
                     <Grid item xs={12} md={6}>
                       <Box
                         sx={{
@@ -1337,7 +1243,7 @@ const MedicalHistoryDetailModal = ({
                         </Typography>
                       </Box>
                     </Grid>
-                  )}
+                  )} */}
                 </Grid>
               </CardContent>
             </Card>
