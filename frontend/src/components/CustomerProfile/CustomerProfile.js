@@ -75,12 +75,37 @@ const CustomerProfile = () => {
   const [selectedMenuItem, setSelectedMenuItem] = useState('profile'); // Tab mặc định
   const user = localStorageUtil.get('userProfile')?.data || {};
 
-  // Effect để xử lý initial tab selection từ navigation state
+  // Effect để xử lý initial tab selection từ navigation state và URL params
   useEffect(() => {
-    if (location.state?.initialTab) {
+    // Kiểm tra URL search params trước
+    const urlParams = new URLSearchParams(location.search);
+    const tabParam = urlParams.get('tab');
+
+    if (tabParam) {
+      // Map URL parameter to menu item
+      const tabMapping = {
+        appointments: 'appointments',
+        profile: 'profile',
+        'medical-history': 'medical-history',
+        'payment-history': 'payment-history',
+        invoices: 'invoices',
+        notifications: 'notifications',
+        questions: 'questions',
+        reviews: 'reviews',
+        security: 'security',
+        'payment-methods': 'payment-methods',
+        'blog-customer': 'blog-customer',
+        'payment-info': 'payment-info',
+        'pill-history': 'pill-history',
+      };
+
+      if (tabMapping[tabParam]) {
+        setSelectedMenuItem(tabMapping[tabParam]);
+      }
+    } else if (location.state?.initialTab) {
       setSelectedMenuItem(location.state.initialTab);
     }
-  }, [location.state]);
+  }, [location.state, location.search]);
 
   // Handler functions
   const handleSidebarToggle = () => {

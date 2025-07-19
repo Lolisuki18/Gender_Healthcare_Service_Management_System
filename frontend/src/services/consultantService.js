@@ -41,7 +41,7 @@ const consultantService = {
     try {
       const response = await apiClient.post('/consultations', appointmentData);
       return {
-        success: response.success,
+        success: response.data.success,
         data: response.data.data,
         message: response.data.message,
       };
