@@ -125,7 +125,7 @@ public class DataInitializerConfig implements CommandLineRunner {
             // Tạo 2 tài khoản CUSTOMER
             if (userRepository.count() < 1) {
                 UserDtls customer1 = new UserDtls();
-                customer1.setFullName("Nguyễn Văn A");
+                customer1.setFullName("Nguyễn Văn An");
                 customer1.setUsername("customer1");
                 customer1.setPassword(passwordEncoder.encode("Aa12345@"));
                 customer1.setEmail("customer1@healapp.com");
@@ -142,7 +142,7 @@ public class DataInitializerConfig implements CommandLineRunner {
 
             if (userRepository.count() < 2) {
                 UserDtls customer2 = new UserDtls();
-                customer2.setFullName("Trần Thị B");
+                customer2.setFullName("Trần Thị Bình");
                 customer2.setUsername("customer2");
                 customer2.setPassword(passwordEncoder.encode("Aa12345@"));
                 customer2.setEmail("customer2@healapp.com");
@@ -160,7 +160,7 @@ public class DataInitializerConfig implements CommandLineRunner {
             // Tạo 1 tài khoản STAFF
             if (userRepository.count() < 3) {
                 UserDtls staff = new UserDtls();
-                staff.setFullName("Lê Văn C");
+                staff.setFullName("Lê Văn Cao");
                 staff.setUsername("staff1");
                 staff.setPassword(passwordEncoder.encode("Aa12345@"));
                 staff.setEmail("staff1@healapp.com");
@@ -178,7 +178,7 @@ public class DataInitializerConfig implements CommandLineRunner {
             // Tạo 6 tài khoản CONSULTANT
             if (userRepository.count() < 4) {
                 UserDtls consultant1 = new UserDtls();
-                consultant1.setFullName("Dr. Phạm Thị D");
+                consultant1.setFullName("Dr. Phạm Thị Diệu Linh");
                 consultant1.setUsername("consultant1");
                 consultant1.setPassword(passwordEncoder.encode("Aa12345@"));
                 consultant1.setEmail("consultant1@healapp.com");
@@ -195,7 +195,7 @@ public class DataInitializerConfig implements CommandLineRunner {
 
             if (userRepository.count() < 5) {
                 UserDtls consultant2 = new UserDtls();
-                consultant2.setFullName("Dr. Nguyễn Minh F");
+                consultant2.setFullName("Dr. Nguyễn Minh Phương");
                 consultant2.setUsername("consultant2");
                 consultant2.setPassword(passwordEncoder.encode("Aa12345@"));
                 consultant2.setEmail("consultant2@healapp.com");
@@ -212,7 +212,7 @@ public class DataInitializerConfig implements CommandLineRunner {
 
             if (userRepository.count() < 6) {
                 UserDtls consultant3 = new UserDtls();
-                consultant3.setFullName("Dr. Lê Thị G");
+                consultant3.setFullName("Dr. Lê Thị Gấm");
                 consultant3.setUsername("consultant3");
                 consultant3.setPassword(passwordEncoder.encode("Aa12345@"));
                 consultant3.setEmail("consultant3@healapp.com");
@@ -229,7 +229,7 @@ public class DataInitializerConfig implements CommandLineRunner {
 
             if (userRepository.count() < 7) {
                 UserDtls consultant4 = new UserDtls();
-                consultant4.setFullName("Dr. Trần Văn H");
+                consultant4.setFullName("Dr. Trần Văn Hoàng");
                 consultant4.setUsername("consultant4");
                 consultant4.setPassword(passwordEncoder.encode("Aa12345@"));
                 consultant4.setEmail("consultant4@healapp.com");
@@ -246,7 +246,7 @@ public class DataInitializerConfig implements CommandLineRunner {
 
             if (userRepository.count() < 8) {
                 UserDtls consultant5 = new UserDtls();
-                consultant5.setFullName("Dr. Võ Thị I");
+                consultant5.setFullName("Dr. Võ Thị Sáu");
                 consultant5.setUsername("consultant5");
                 consultant5.setPassword(passwordEncoder.encode("Aa12345@"));
                 consultant5.setEmail("consultant5@healapp.com");
@@ -263,7 +263,7 @@ public class DataInitializerConfig implements CommandLineRunner {
 
             if (userRepository.count() < 9) {
                 UserDtls consultant6 = new UserDtls();
-                consultant6.setFullName("Dr. Đặng Minh J");
+                consultant6.setFullName("Dr. Đặng Minh Tâm");
                 consultant6.setUsername("consultant6");
                 consultant6.setPassword(passwordEncoder.encode("Aa12345@"));
                 consultant6.setEmail("consultant6@healapp.com");

@@ -40,6 +40,11 @@ import {
   Tabs,
   Tab,
   Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -50,8 +55,14 @@ import {
   HourglassEmpty as PendingIcon,
   Close as CloseIcon,
   MedicalServices as MedicalIcon,
+  FilterList as FilterIcon,
+  Clear as ClearIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { vi } from 'date-fns/locale';
 import questionService from '../../services/questionService';
 import { formatDateTimeFromArray } from '../../utils/dateUtils';
 import { confirmDialog } from '../../utils/confirmDialog';
@@ -173,6 +184,26 @@ const MyQuestionsContent = () => {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailDialogQuestion, setDetailDialogQuestion] = useState(null);
 
+  // Thêm state cho filters
+  const [categories, setCategories] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [dateFromFilter, setDateFromFilter] = useState(null);
+  const [dateToFilter, setDateToFilter] = useState(null);
+  const [customerNameFilter, setCustomerNameFilter] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Lấy danh sách danh mục câu hỏi
+  const fetchCategories = async () => {
+    try {
+      const response = await questionService.getCategories();
+      const categoriesData = response.data.data || [];
+      setCategories(categoriesData);
+      console.log('Categories loaded:', categoriesData); // Debug
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
   // Lấy danh sách câu hỏi được phân công cho consultant hiện tại từ backend
   const fetchQuestions = async () => {
     setLoading(true);
@@ -187,6 +218,12 @@ const MyQuestionsContent = () => {
       const content = res.data.data?.content || [];
       setQuestions(content);
       setTotalElements(res.data.data?.totalElements || content.length);
+
+      // Debug log
+      console.log('Questions loaded:', content);
+      if (content.length > 0) {
+        console.log('Sample question structure:', content[0]);
+      }
     } catch (err) {
       setError('Không thể tải danh sách câu hỏi.');
       setQuestions([]);
@@ -198,6 +235,7 @@ const MyQuestionsContent = () => {
 
   useEffect(() => {
     fetchQuestions();
+    fetchCategories();
     // eslint-disable-next-line
   }, []);
 
@@ -337,21 +375,90 @@ const MyQuestionsContent = () => {
     }
   };
 
-  // Filter chỉ còn search và status:
-  const filteredQuestions = questions.filter(
-    (question) =>
-      question.status === tabStatus &&
-      ((question.title &&
+  // Hàm kiểm tra ngày có nằm trong khoảng filter không
+  const isDateInRange = (questionDate) => {
+    if (!dateFromFilter && !dateToFilter) return true;
+
+    const questionDateTime = Array.isArray(questionDate)
+      ? new Date(
+          questionDate[0],
+          questionDate[1] - 1,
+          questionDate[2],
+          questionDate[3],
+          questionDate[4]
+        )
+      : new Date(questionDate);
+
+    if (dateFromFilter && questionDateTime < dateFromFilter) return false;
+    if (dateToFilter && questionDateTime > dateToFilter) return false;
+
+    return true;
+  };
+
+  // Filter câu hỏi với tất cả các điều kiện
+  const filteredQuestions = questions.filter((question) => {
+    // Debug log
+    if (categoryFilter) {
+      console.log('Filtering question:', {
+        questionId: question.id,
+        questionCategoryId: question.categoryId,
+        categoryFilter: categoryFilter,
+        categoryFilterType: typeof categoryFilter,
+        questionCategoryIdType: typeof question.categoryId,
+        match: question.categoryId === parseInt(categoryFilter),
+      });
+    }
+
+    // Filter theo status
+    if (question.status !== tabStatus) return false;
+
+    // Filter theo search term
+    const searchMatch =
+      !searchTerm ||
+      (question.title &&
         question.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (question.category &&
-          question.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (question.customerName &&
-          question.customerName
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())) ||
-        (question.customerId &&
-          question.customerId.toLowerCase().includes(searchTerm.toLowerCase())))
-  );
+      (question.category &&
+        question.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (question.categoryName &&
+        question.categoryName
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())) ||
+      (question.customerName &&
+        question.customerName
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())) ||
+      (question.customerId &&
+        question.customerId.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    if (!searchMatch) return false;
+
+    // Filter theo danh mục
+    if (categoryFilter && question.categoryId !== parseInt(categoryFilter))
+      return false;
+
+    // Filter theo ngày
+    if (!isDateInRange(question.createdAt)) return false;
+
+    // Filter theo tên khách hàng
+    if (
+      customerNameFilter &&
+      !question.customerName
+        ?.toLowerCase()
+        .includes(customerNameFilter.toLowerCase())
+    )
+      return false;
+
+    return true;
+  });
+
+  // Clear tất cả filters
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setCategoryFilter('');
+    setDateFromFilter(null);
+    setDateToFilter(null);
+    setCustomerNameFilter('');
+  };
 
   const handleOpenDetailDialog = (question) => {
     setDetailDialogQuestion(question);
@@ -378,32 +485,137 @@ const MyQuestionsContent = () => {
               </Typography>
             </Box>
           </Box>
-        </SimpleCard>{' '}
+        </SimpleCard>
+
         {/* Toolbar */}
         <SimplePaper sx={{ p: 3, mb: 3 }}>
-          <Stack
-            direction={{ xs: 'column', md: 'row' }}
-            spacing={2}
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            {' '}
-            <SimpleTextField
-              size="medium"
-              placeholder="Tìm kiếm theo tiêu đề, danh mục, tên khách hàng, ID..."
-              value={searchTerm}
-              onChange={handleSearch}
-              sx={{ minWidth: { xs: '100%', md: '400px' } }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon color="primary" />
-                  </InputAdornment>
-                ),
-              }}
-            />{' '}
+          <Stack spacing={3}>
+            {/* Search Bar */}
+            <Stack
+              direction={{ xs: 'column', md: 'row' }}
+              spacing={2}
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <SimpleTextField
+                size="medium"
+                placeholder="Tìm kiếm theo tiêu đề, danh mục, tên khách hàng, ID..."
+                value={searchTerm}
+                onChange={handleSearch}
+                sx={{ minWidth: { xs: '100%', md: '400px' } }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon color="primary" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="outlined"
+                  startIcon={<FilterIcon />}
+                  onClick={() => setShowFilters(!showFilters)}
+                  sx={{ borderRadius: 2 }}
+                >
+                  {showFilters ? 'Ẩn bộ lọc' : 'Hiện bộ lọc'}
+                </Button>
+                {(searchTerm ||
+                  categoryFilter ||
+                  dateFromFilter ||
+                  dateToFilter ||
+                  customerNameFilter) && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<ClearIcon />}
+                    onClick={clearAllFilters}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Xóa lọc
+                  </Button>
+                )}
+              </Stack>
+            </Stack>
+
+            {/* Advanced Filters */}
+            {showFilters && (
+              <LocalizationProvider
+                dateAdapter={AdapterDateFns}
+                adapterLocale={vi}
+              >
+                <Grid container spacing={2}>
+                  {/* Filter theo danh mục */}
+                  <Grid item size={3} xs={12} md={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Danh mục</InputLabel>
+                      <Select
+                        value={categoryFilter}
+                        onChange={(e) => setCategoryFilter(e.target.value)}
+                        label="Danh mục"
+                      >
+                        <MenuItem value="">
+                          <em>Tất cả danh mục</em>
+                        </MenuItem>
+                        {categories.map((category) => (
+                          <MenuItem
+                            key={category.categoryQuestionId}
+                            value={category.categoryQuestionId}
+                          >
+                            {category.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  {/* Filter theo tên khách hàng */}
+                  <Grid item xs={12} md={3}>
+                    <SimpleTextField
+                      fullWidth
+                      size="small"
+                      label="Tên khách hàng"
+                      placeholder="Nhập tên khách hàng..."
+                      value={customerNameFilter}
+                      onChange={(e) => setCustomerNameFilter(e.target.value)}
+                    />
+                  </Grid>
+
+                  {/* Filter theo ngày từ */}
+                  <Grid item xs={12} md={3}>
+                    <DatePicker
+                      label="Từ ngày"
+                      value={dateFromFilter}
+                      onChange={setDateFromFilter}
+                      slotProps={{
+                        textField: {
+                          size: 'small',
+                          fullWidth: true,
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  {/* Filter theo ngày đến */}
+                  <Grid item xs={12} md={3}>
+                    <DatePicker
+                      label="Đến ngày"
+                      value={dateToFilter}
+                      onChange={setDateToFilter}
+                      slotProps={{
+                        textField: {
+                          size: 'small',
+                          fullWidth: true,
+                        },
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </LocalizationProvider>
+            )}
           </Stack>
         </SimplePaper>
+
         {/* Tabs */}
         <Box sx={{ mb: 2 }}>
           <Tabs
@@ -417,11 +629,11 @@ const MyQuestionsContent = () => {
             <Tab label="Đã trả lời" value="ANSWERED" />
           </Tabs>
         </Box>
+
         {/* Questions Table */}
         <SimplePaper>
           <TableContainer>
             <Table sx={{ minWidth: 650 }}>
-              {' '}
               <TableHead>
                 <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
                   <TableCell>ID</TableCell>
@@ -449,7 +661,6 @@ const MyQuestionsContent = () => {
                             : 'transparent',
                       }}
                     >
-                      {' '}
                       <TableCell>
                         <Typography
                           variant="body2"
@@ -562,9 +773,10 @@ const MyQuestionsContent = () => {
                 backgroundColor: 'rgba(248, 250, 252, 0.5)',
               }}
             />
-          </TableContainer>{' '}
+          </TableContainer>
         </SimplePaper>
       </Container>
+
       {/* View Question Dialog */}
       <Dialog
         open={openViewDialog}
@@ -712,7 +924,7 @@ const MyQuestionsContent = () => {
             Đóng
           </Button>
         </DialogActions>
-      </Dialog>{' '}
+      </Dialog>
       {/* Dialog xem chi tiết câu hỏi đã trả lời */}
       <Dialog
         open={detailDialogOpen}

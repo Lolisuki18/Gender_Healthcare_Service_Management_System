@@ -43,16 +43,26 @@ const ConsultantTestResultDetailModal = ({
 
   const handleSave = async () => {
     // Hiện dialog xác nhận
+    const action =
+      test?.consultantNotes && test.consultantNotes.trim() ? 'cập nhật' : 'lưu';
     const ok = await confirmDialog.info(
-      `Bạn có chắc chắn muốn lưu kết luận này cho bệnh nhân ${test?.customerName || ''}?`
+      `Bạn có chắc chắn muốn ${action} kết luận này cho bệnh nhân ${test?.customerName || ''}?`
     );
     if (!ok) return;
     setSaving(true);
     try {
       await onSaveNote(consultantNote);
-      notify.success('Thành công', 'Lưu kết luận thành công!');
+      const action =
+        test?.consultantNotes && test.consultantNotes.trim()
+          ? 'Cập nhật'
+          : 'Lưu';
+      notify.success('Thành công', `${action} kết luận thành công!`);
     } catch (e) {
-      notify.error('Lỗi', 'Lưu kết luận thất bại!');
+      const action =
+        test?.consultantNotes && test.consultantNotes.trim()
+          ? 'Cập nhật'
+          : 'Lưu';
+      notify.error('Lỗi', `${action} kết luận thất bại!`);
     } finally {
       setSaving(false);
     }
@@ -235,16 +245,83 @@ const ConsultantTestResultDetailModal = ({
           >
             Kết luận từ consultant
           </Typography>
+
+          {/* Hiển thị kết luận đã có */}
+          {test?.consultantNotes && test.consultantNotes.trim() ? (
+            <Box sx={{ mb: 2 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontSize: '0.875rem',
+                  lineHeight: 1.6,
+                  color: '#2e7d32',
+                  fontWeight: 500,
+                  backgroundColor: '#e8f5e8',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid #c8e6c9',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {test.consultantNotes}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: '#2e7d32',
+                  mt: 1,
+                  display: 'block',
+                  fontStyle: 'italic',
+                }}
+              >
+                Kết luận đã được lưu
+              </Typography>
+            </Box>
+          ) : (
+            <Typography
+              variant="body2"
+              sx={{
+                color: '#f57c00',
+                fontStyle: 'italic',
+                mb: 2,
+                padding: '8px 12px',
+                backgroundColor: '#fff3e0',
+                borderRadius: '4px',
+                border: '1px solid #ffcc02',
+              }}
+            >
+              Chưa có kết luận từ consultant
+            </Typography>
+          )}
+
+          {/* TextField để chỉnh sửa/thêm kết luận */}
           <TextField
-            label="Nhập kết luận/chú thích cho bệnh nhân"
+            label={
+              test?.consultantNotes && test.consultantNotes.trim()
+                ? 'Chỉnh sửa kết luận/chú thích cho bệnh nhân'
+                : 'Nhập kết luận/chú thích cho bệnh nhân'
+            }
             value={consultantNote}
             onChange={(e) => setConsultantNote(e.target.value)}
-            placeholder="Nhập kết luận/chú thích cho bệnh nhân..."
+            placeholder={
+              test?.consultantNotes && test.consultantNotes.trim()
+                ? 'Chỉnh sửa kết luận hiện tại...'
+                : 'Nhập kết luận/chú thích cho bệnh nhân...'
+            }
             multiline
             minRows={3}
             maxRows={6}
             fullWidth
             disabled={saving}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor:
+                  test?.consultantNotes && test.consultantNotes.trim()
+                    ? '#f8f9fa'
+                    : '#fff',
+              },
+            }}
           />
         </Box>
       </DialogContent>
@@ -263,7 +340,11 @@ const ConsultantTestResultDetailModal = ({
             boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
           }}
         >
-          {saving ? 'Đang lưu...' : 'Lưu kết luận'}
+          {saving
+            ? 'Đang lưu...'
+            : test?.consultantNotes && test.consultantNotes.trim()
+              ? 'Cập nhật kết luận'
+              : 'Lưu kết luận'}
         </Button>
       </DialogActions>
     </Dialog>

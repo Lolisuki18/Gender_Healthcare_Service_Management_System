@@ -93,6 +93,8 @@ const QuestionResponseContent = () => {
   const [consultants, setConsultants] = useState([]);
   const [approveError, setApproveError] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [openContentDialog, setOpenContentDialog] = useState(false);
+  const [hoveredContent, setHoveredContent] = useState('');
 
   // Lấy danh sách câu hỏi từ backend (gộp nhiều trạng thái)
   const fetchQuestions = async (
@@ -609,13 +611,46 @@ const QuestionResponseContent = () => {
                             </Box>
                           </TableCell>
                           <TableCell>
-                            <Tooltip title={question.content} placement="top">
+                            <Tooltip
+                              title="Click để xem chi tiết"
+                              placement="top"
+                              arrow
+                              sx={{
+                                '& .MuiTooltip-tooltip': {
+                                  backgroundColor: theme.primary,
+                                  color: '#fff',
+                                  fontSize: '0.875rem',
+                                  fontWeight: 500,
+                                  borderRadius: 2,
+                                  boxShadow:
+                                    '0 4px 12px rgba(74, 144, 226, 0.3)',
+                                },
+                                '& .MuiTooltip-arrow': {
+                                  color: theme.primary,
+                                },
+                              }}
+                            >
                               <Typography
                                 variant="body2"
+                                onClick={() => {
+                                  setHoveredContent(question.content);
+                                  setOpenContentDialog(true);
+                                }}
                                 sx={{
                                   maxWidth: 400,
-                                  overflowWrap: 'break-word',
                                   color: theme.text,
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  lineHeight: 1.4,
+                                  maxHeight: '2.8em',
+                                  cursor: 'pointer',
+                                  '&:hover': {
+                                    color: theme.primary,
+                                    textDecoration: 'underline',
+                                  },
                                 }}
                               >
                                 {question.content}
@@ -1127,6 +1162,71 @@ const QuestionResponseContent = () => {
             sx={{ fontWeight: 700 }}
           >
             DUYỆT
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog hiển thị nội dung câu hỏi */}
+      <Dialog
+        open={openContentDialog}
+        onClose={() => setOpenContentDialog(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 10px 40px #4A90E230',
+            border: '1px solid #e3f2fd',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+            color: '#fff',
+            fontWeight: 700,
+            fontSize: 20,
+            letterSpacing: 0.5,
+            py: 2,
+            borderTopLeftRadius: 12,
+            borderTopRightRadius: 12,
+          }}
+        >
+          Nội dung câu hỏi
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3, px: 3, pb: 2 }}>
+          <Typography
+            variant="body1"
+            sx={{
+              fontSize: '1.1rem',
+              lineHeight: 1.8,
+              color: theme.text,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              p: 2,
+              backgroundColor: '#f8fafc',
+              borderRadius: 2,
+              border: `1px solid ${theme.primary}20`,
+            }}
+          >
+            {hoveredContent}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button
+            onClick={() => setOpenContentDialog(false)}
+            variant="contained"
+            sx={{
+              borderRadius: 2,
+              background: theme.gradient,
+              color: '#fff',
+              fontWeight: 600,
+              px: 3,
+              '&:hover': {
+                background: 'linear-gradient(90deg, #357ABD, #16A085)',
+              },
+            }}
+          >
+            Đóng
           </Button>
         </DialogActions>
       </Dialog>

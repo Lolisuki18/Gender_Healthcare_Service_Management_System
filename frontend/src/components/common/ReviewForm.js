@@ -184,18 +184,6 @@ const ReviewForm = ({
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Avatar 
-                  sx={{ 
-                    width: 56, 
-                    height: 56, 
-                    mr: 3,
-                    background: 'linear-gradient(135deg, #4A90E2, #1ABC9C)',
-                    fontSize: '24px',
-                    fontWeight: 600,
-                  }}
-                >
-                  {displayInfo.avatarChar}
-                </Avatar>
                 <Box>
                   {/* Dòng 1: Tên dịch vụ hoặc tư vấn viên */}
                   {displayInfo.mainName && (
