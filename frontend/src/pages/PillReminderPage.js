@@ -536,7 +536,7 @@ function PillReminderPage() {
 
   return (
     <div className="font-sans">
-      {isLoading && <div className={styles.loadingOverlay}>Đang tải...</div>}
+      {isLoading && <div className={styles.loadingOverlay}></div>}
       {error && !isSilentError(error) && <div className={styles.errorOverlay}>Lỗi: {error}</div>}
 
       {schedule ? (
