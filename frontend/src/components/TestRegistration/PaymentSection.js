@@ -62,10 +62,10 @@ const PaymentSection = ({
     if (paymentMethods.length > 0 && selectedPaymentMethod === 'card' && !selectedCard) {
       const defaultCard = paymentMethods.find(card => card.isDefault);
       if (defaultCard) {
-        onCardChange(defaultCard.paymentInfoId);
+        onCardChange(defaultCard.paymentInfoId, paymentMethods);
       } else {
         // Nếu không có thẻ mặc định, chọn thẻ đầu tiên
-        onCardChange(paymentMethods[0].paymentInfoId);
+        onCardChange(paymentMethods[0].paymentInfoId, paymentMethods);
       }
     }
   }, [paymentMethods, selectedPaymentMethod, selectedCard, onCardChange]);
@@ -91,20 +91,19 @@ const PaymentSection = ({
   const handlePaymentMethodChange = (event) => {
     const method = event.target.value;
     onPaymentMethodChange(method);
-    
     // Reset selected card khi đổi sang cash
     if (method === 'cash') {
-      onCardChange(null);
+      onCardChange(null, paymentMethods);
     } else if (method === 'card' && paymentMethods.length > 0) {
       // Auto-select thẻ mặc định hoặc thẻ đầu tiên
       const defaultCard = paymentMethods.find(card => card.isDefault);
       const cardToSelect = defaultCard || paymentMethods[0];
-      onCardChange(cardToSelect.paymentInfoId); // Sử dụng paymentInfoId
+      onCardChange(cardToSelect.paymentInfoId, paymentMethods);
     }
   };
 
   const handleCardSelect = (cardId) => {
-    onCardChange(cardId);
+    onCardChange(cardId, paymentMethods);
   };
 
   const handleAddCard = () => {
@@ -144,7 +143,7 @@ const PaymentSection = ({
         // Auto-select thẻ mới thêm nếu đang ở mode card
         if (!editingCard && selectedPaymentMethod === 'card') {
           const newCard = response.data.data;
-          onCardChange(newCard.paymentInfoId); // Sử dụng paymentInfoId
+          onCardChange(newCard.paymentInfoId, paymentMethods);
         }
       } else {
         throw new Error(response.data.message || 'Không thể lưu thông tin thẻ');

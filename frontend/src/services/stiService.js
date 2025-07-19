@@ -1,4 +1,15 @@
+
 import apiClient from '@services/api';
+
+// Retry payment for a failed test payment
+export const retryPayment = async (testId, retryData) => {
+  try {
+    const response = await apiClient.post(`/sti-services/tests/${testId}/retry-payment`, retryData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
 
 const API_URL = '/sti-services';
 
@@ -704,6 +715,8 @@ const stiService = {
   updateConsultantNotes,
   getConsultantSTITests,
   getCanceledTests,
+
+  retryPayment,
 
   // New function to get services within a package
   // getServicesInPackage: async (packageId) => {
