@@ -148,7 +148,7 @@ public class CategoryQuestionService {
 
     public ApiResponse<List<CategoryQuestionResponse>> getAllCategories() {
         try {
-            List<CategoryQuestion> categories = categoryQuestionRepository.findAll();
+            List<CategoryQuestion> categories = categoryQuestionRepository.findAllByIsActiveTrue();
             List<CategoryQuestionResponse> response = categories.stream()
                     .map(this::mapToCategoryResponse)
                     .collect(Collectors.toList());

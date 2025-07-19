@@ -45,6 +45,7 @@ import AskQuestionDialog from '@/components/common/AskQuestionDialog';
 import reviewService from '@/services/reviewService';
 import blogService from '@/services/blogService';
 import imageUrl from '@/utils/imageUrl';
+import confirmDialog from '@/utils/confirmDialog';
 
 // Define animations
 const float = keyframes`
@@ -82,10 +83,12 @@ export const HomePage = () => {
       try {
         const data = await reviewService.getTestimonials(10); // lấy nhiều hơn 3 để ưu tiên 5 sao
         // Ưu tiên các đánh giá 5 sao, nếu không đủ thì lấy các đánh giá còn lại
-        let filtered = Array.isArray(data) ? data.filter(t => t.rating === 5) : [];
+        let filtered = Array.isArray(data)
+          ? data.filter((t) => t.rating === 5)
+          : [];
         if (filtered.length < 3 && Array.isArray(data)) {
           // Bổ sung thêm các đánh giá khác nếu chưa đủ 3
-          const others = data.filter(t => t.rating !== 5);
+          const others = data.filter((t) => t.rating !== 5);
           filtered = [...filtered, ...others].slice(0, 3);
         } else {
           filtered = filtered.slice(0, 3);
@@ -128,31 +131,31 @@ export const HomePage = () => {
   }, []); // Chỉ chạy 1 lần khi component mount
 
   // Function xử lý đăng ký xét nghiệm với check đăng nhập
-  const handleTestRegistration = async () => {
-    try {
-      // Gọi API để check authentication status - sử dụng endpoint có sẵn
-      const response = await apiClient.get('/users/profile', {
-        skipAutoRedirect: true, // Tránh auto redirect trong interceptor
-      });
+  const handleConsultation = () => {
+    navigate('/consultation');
+  };
 
-      // Nếu API thành công (200) => đã đăng nhập
-      if (response.status === 200) {
-        navigate('/test-registration');
-      }
-    } catch (error) {
-      // Nếu lỗi 401 hoặc 403 => chưa đăng nhập
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        // Lưu đường dẫn để redirect sau khi đăng nhập
-        localStorageUtil.set('redirectAfterLogin', {
-          path: '/test-registration',
-        });
+  const handleTestRegistration = () => {
+    navigate('/sti-services');
+  };
+
+  const handleAskQuestion = async () => {
+    const userProfile = localStorageUtil.get('userProfile');
+    if (!userProfile) {
+      const result = await confirmDialog.info(
+        'Bạn cần đăng nhập để đặt câu hỏi. Bạn có muốn chuyển đến trang đăng nhập không?',
+        {
+          confirmText: 'Đăng nhập',
+          cancelText: 'Hủy',
+          title: 'Yêu cầu đăng nhập',
+        }
+      );
+      if (result) {
         navigate('/login');
-      } else {
-        // Lỗi khác (network, server) => vẫn cho phép truy cập
-        console.error('Error checking auth:', error);
-        navigate('/test-registration');
       }
+      return;
     }
+    setFaqDialogOpen(true);
   };
 
   return (
@@ -253,7 +256,7 @@ export const HomePage = () => {
                   variant="contained"
                   size="large"
                   startIcon={<CalendarMonthIcon />}
-                  onClick={() => navigate('/consultation')}
+                  onClick={handleConsultation}
                   sx={{
                     background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
                     color: '#fff',
@@ -1134,7 +1137,13 @@ export const HomePage = () => {
               Khách hàng nói gì về chúng tôi
             </Typography>
           </Box>{' '}
-          <Grid container spacing={4} justifyContent="center" alignItems="center" sx={{ minHeight: { xs: 400, md: 600 } }}>
+          <Grid
+            container
+            spacing={4}
+            justifyContent="center"
+            alignItems="center"
+            sx={{ minHeight: { xs: 400, md: 600 } }}
+          >
             {testimonialsLoading ? (
               <Grid item xs={12} style={{ textAlign: 'center' }}>
                 <Typography>Đang tải đánh giá...</Typography>
@@ -1143,13 +1152,18 @@ export const HomePage = () => {
               <Grid item xs={12} style={{ textAlign: 'center' }}>
                 <Typography color="error">{testimonialsError}</Typography>
               </Grid>
-            ) : (testimonials.length === 0 ? (
+            ) : testimonials.length === 0 ? (
               <Grid item xs={12} style={{ textAlign: 'center' }}>
                 <Typography>Chưa có đánh giá nào.</Typography>
               </Grid>
             ) : (
               testimonials.map((testimonial, index) => (
-                <Grid item xs={12} key={index} sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Grid
+                  item
+                  xs={12}
+                  key={index}
+                  sx={{ display: 'flex', justifyContent: 'center' }}
+                >
                   <Fade
                     in={loaded}
                     style={{
@@ -1205,8 +1219,17 @@ export const HomePage = () => {
                       <Divider sx={{ my: 2 }} />
                       <Stack direction="row" spacing={2} alignItems="center">
                         <Avatar
-                          src={testimonial.avatar || testimonial.userAvatar || '/img/avatar/default.jpg'}
-                          alt={testimonial.userFullName || testimonial.maskedUserName || testimonial.name || 'Khách hàng'}
+                          src={
+                            testimonial.avatar ||
+                            testimonial.userAvatar ||
+                            '/img/avatar/default.jpg'
+                          }
+                          alt={
+                            testimonial.userFullName ||
+                            testimonial.maskedUserName ||
+                            testimonial.name ||
+                            'Khách hàng'
+                          }
                           sx={{
                             width: 56,
                             height: 56,
@@ -1215,8 +1238,15 @@ export const HomePage = () => {
                           }}
                         />
                         <Box>
-                          <Typography variant="subtitle1" fontWeight={700} fontSize={20}>
-                            {testimonial.maskedUserName && testimonial.maskedUserName.trim() ? testimonial.maskedUserName : 'Khách hàng'}
+                          <Typography
+                            variant="subtitle1"
+                            fontWeight={700}
+                            fontSize={20}
+                          >
+                            {testimonial.maskedUserName &&
+                            testimonial.maskedUserName.trim()
+                              ? testimonial.maskedUserName
+                              : 'Khách hàng'}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             {testimonial.role || testimonial.userRole || ''}
@@ -1233,7 +1263,7 @@ export const HomePage = () => {
                   </Fade>
                 </Grid>
               ))
-            ))}
+            )}
           </Grid>
         </Container>{' '}
       </Box>{' '}
@@ -1324,7 +1354,13 @@ export const HomePage = () => {
               </Grid>
             ) : (
               blogs.map((blog, index) => (
-                <Grid item xs={12} md={4} key={index} sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Grid
+                  item
+                  xs={12}
+                  md={4}
+                  key={index}
+                  sx={{ display: 'flex', justifyContent: 'center' }}
+                >
                   <Card
                     sx={{
                       height: '100%',
@@ -1353,7 +1389,14 @@ export const HomePage = () => {
                       <CardMedia
                         component="img"
                         height="200"
-                        image={imageUrl.getBlogImageUrl(blog.thumbnailImage || blog.existingThumbnail || blog.displayThumbnail || blog.imageUrl || blog.thumbnail || blog.image)}
+                        image={imageUrl.getBlogImageUrl(
+                          blog.thumbnailImage ||
+                            blog.existingThumbnail ||
+                            blog.displayThumbnail ||
+                            blog.imageUrl ||
+                            blog.thumbnail ||
+                            blog.image
+                        )}
                         alt={blog.title}
                         sx={{
                           transition: 'transform 0.8s ease',
@@ -1376,7 +1419,9 @@ export const HomePage = () => {
                       />
                     </Box>
                     <CardContent sx={{ p: 3, flexGrow: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', mb: 2 }}
+                      >
                         <NewspaperIcon
                           sx={{
                             color: (theme) => theme.palette.text.secondary,
@@ -1408,7 +1453,17 @@ export const HomePage = () => {
                           }}
                         />
                         <Typography variant="caption" color="text.secondary">
-                          {blog.createdAt ? (typeof blog.createdAt === 'string' ? blog.createdAt.slice(0, 10).split('-').reverse().join('/') : Array.isArray(blog.createdAt) ? `${blog.createdAt[2]}/${blog.createdAt[1]}/${blog.createdAt[0]}` : '') : ''}
+                          {blog.createdAt
+                            ? typeof blog.createdAt === 'string'
+                              ? blog.createdAt
+                                  .slice(0, 10)
+                                  .split('-')
+                                  .reverse()
+                                  .join('/')
+                              : Array.isArray(blog.createdAt)
+                                ? `${blog.createdAt[2]}/${blog.createdAt[1]}/${blog.createdAt[0]}`
+                                : ''
+                            : ''}
                         </Typography>
                       </Box>
                       <Typography
@@ -1440,7 +1495,9 @@ export const HomePage = () => {
                           transition: 'all 0.3s ease',
                           textTransform: 'none',
                         }}
-                        onClick={() => navigate(`/blog/${blog.id || blog.blogId}`)}
+                        onClick={() =>
+                          navigate(`/blog/${blog.id || blog.blogId}`)
+                        }
                       >
                         Đọc thêm
                       </Button>
@@ -1529,7 +1586,7 @@ export const HomePage = () => {
             <Button
               variant="contained"
               color="primary"
-              onClick={() => setFaqDialogOpen(true)}
+              onClick={handleAskQuestion}
               sx={{
                 mt: 2,
                 borderRadius: 8,

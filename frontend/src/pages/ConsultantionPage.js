@@ -31,6 +31,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { format } from 'date-fns';
 import vi from 'date-fns/locale/vi';
 import { toast } from 'react-toastify';
+import Pagination from '@mui/material/Pagination';
 
 // Icons
 import SchoolIcon from '@mui/icons-material/School';
@@ -39,6 +40,8 @@ import PersonIcon from '@mui/icons-material/Person';
 
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import ScheduleIcon from '@mui/icons-material/Schedule';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 // Services and Utils
 import consultantService from '@/services/consultantService';
@@ -112,25 +115,34 @@ const CardInfoRow = styled(Box)(({ theme }) => ({
 }));
 
 const CardBio = styled(Typography)(({ theme }) => ({
-  color: '#757575',
+  background: '#f5fafd',
+  border: '1px solid #e0f2f1',
+  borderRadius: 14,
+  color: '#1976d2',
   fontSize: 15,
-  fontWeight: 400,
-  margin: theme.spacing(1, 0, 2, 0),
+  fontWeight: 500,
+  fontStyle: 'italic',
+  margin: theme.spacing(2, 0, 2, 0),
+  padding: theme.spacing(1.5, 2),
   textAlign: 'left',
   width: '100%',
+  minHeight: 48,
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: 8,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
-  display: '-webkit-box',
-  WebkitLineClamp: 3, // Tăng lên 3 dòng để đều hơn
+  WebkitLineClamp: 2,
   WebkitBoxOrient: 'vertical',
+  display: '-webkit-box',
 }));
 
 const CardActionsWrapper = styled(CardActions)(({ theme }) => ({
   width: '100%',
   display: 'flex',
   justifyContent: 'space-between',
-  gap: 12,
-  marginTop: 'auto', // Đẩy nút xuống dưới cùng
+  gap: 16,
+  marginTop: 'auto',
   padding: 0,
 }));
 
@@ -164,13 +176,27 @@ const ConsultantCard = styled(Card)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  width: 340, 
-  height: 420, 
+  width: 340,
+  height: 420,
   transition: 'transform 0.2s, box-shadow 0.2s',
   '&:hover': {
     transform: 'translateY(-6px) scale(1.03)',
     boxShadow: '0 16px 40px rgba(74, 144, 226, 0.18)',
+    border: '1.5px solid #1ABC9C',
   },
+}));
+
+// Thêm box cho thông tin chuyên môn/kinh nghiệm
+const InfoBox = styled(Box)(({ theme }) => ({
+  background: '#f5fafd',
+  border: '1px solid #e0f2f1',
+  borderRadius: 14,
+  padding: theme.spacing(1.5, 2),
+  marginBottom: theme.spacing(1.5),
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
 }));
 
 // Thêm style cho label gradient
@@ -213,7 +239,13 @@ const StyledButton = styled(Button)(({ theme }) => ({
   boxShadow: CARD_SHADOW,
   textTransform: 'none',
   fontSize: 14,
-  padding: '4px 10px',
+  padding: '4px 16px',
+  minWidth: 120,
+  transition: 'background 0.2s, box-shadow 0.2s',
+  '&:hover': {
+    boxShadow: '0 8px 24px rgba(26,188,156,0.12)',
+    opacity: 0.95,
+  },
 }));
 
 const RatingWrapper = styled(Box)(({ theme }) => ({
@@ -250,6 +282,8 @@ const ConsultationPage = () => {
     open: false,
     consultant: null,
   });
+  const [openBioDialog, setOpenBioDialog] = useState(false);
+  const [selectedBio, setSelectedBio] = useState('');
 
   // Appointment form
   const [appointmentForm, setAppointmentForm] = useState({
@@ -271,10 +305,19 @@ const ConsultationPage = () => {
   const [consultantRatings, setConsultantRatings] = useState({});
   const [detailRating, setDetailRating] = useState(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const consultantsPerPage = 6;
+
   // Fetch consultants on component mount
   useEffect(() => {
     fetchConsultants();
   }, []);
+
+  // Reset về trang 1 khi danh sách consultants thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [consultants]);
 
   // Fetch available slots khi mở dialog hoặc đổi ngày/consultant
   useEffect(() => {
@@ -331,7 +374,9 @@ const ConsultationPage = () => {
         await Promise.all(
           consultants.data.map(async (c) => {
             try {
-              const summary = await reviewService.getConsultantRatingSummary(c.userId);
+              const summary = await reviewService.getConsultantRatingSummary(
+                c.userId
+              );
               ratings[c.userId] = summary;
             } catch (e) {
               ratings[c.userId] = null;
@@ -580,6 +625,16 @@ const ConsultationPage = () => {
       rating: 4.9,
     },
   ];
+
+  // Tính toán dữ liệu hiển thị cho trang hiện tại
+  const allConsultants = consultants.length > 0 ? consultants : mockConsultants;
+  const totalConsultants = allConsultants.length;
+  const totalPages = Math.ceil(totalConsultants / consultantsPerPage);
+  const displayedConsultants = allConsultants.slice(
+    (currentPage - 1) * consultantsPerPage,
+    currentPage * consultantsPerPage
+  );
+
   return (
     <StyledContainer maxWidth="lg">
       <PageHeader>
@@ -599,9 +654,19 @@ const ConsultationPage = () => {
           {error}
         </Alert>
       ) : (
-        <Grid container spacing={4} alignItems="stretch" justifyContent="center" display="flex" flexWrap="wrap" sx={{ pb: 6 }}> {/* justifyContent và padding dưới */}
-          {(consultants.length > 0 ? consultants : mockConsultants).map(
-            (consultant) => (
+        <>
+          <Grid
+            container
+            spacing={4}
+            alignItems="stretch"
+            justifyContent="center"
+            display="flex"
+            flexWrap="wrap"
+            sx={{ pb: 6 }}
+          >
+            {' '}
+            {/* justifyContent và padding dưới */}
+            {displayedConsultants.map((consultant) => (
               <Grid
                 item
                 xs={12}
@@ -620,13 +685,18 @@ const ConsultationPage = () => {
                         : null
                     }
                     alt={consultant.fullName}
+                    sx={{ mb: 2 }}
                   >
                     {consultant.fullName[0]}
                   </ConsultantAvatar>
                   <ConsultantName>{consultant.fullName}</ConsultantName>
                   <RatingWrapper>
                     <Rating
-                      value={consultantRatings[consultant.userId]?.averageRating > 0 ? consultantRatings[consultant.userId].averageRating : 5}
+                      value={
+                        consultantRatings[consultant.userId]?.averageRating > 0
+                          ? consultantRatings[consultant.userId].averageRating
+                          : 5
+                      }
                       precision={0.1}
                       readOnly
                       size="small"
@@ -637,21 +707,54 @@ const ConsultationPage = () => {
                       color="#4A90E2"
                       sx={{ ml: 0.5, fontWeight: 600 }}
                     >
-                      ({consultantRatings[consultant.userId]?.averageRating > 0 ? consultantRatings[consultant.userId].averageRating.toFixed(1) : '5.0'})
+                      (
+                      {consultantRatings[consultant.userId]?.averageRating > 0
+                        ? consultantRatings[
+                            consultant.userId
+                          ].averageRating.toFixed(1)
+                        : '5.0'}
+                      )
                     </Typography>
                   </RatingWrapper>
-                  <CardInfoRow>
-                    <SchoolIcon fontSize="small" />
-                    <span>{consultant.qualifications}</span>
-                  </CardInfoRow>
-                  <CardInfoRow>
-                    <WorkHistoryIcon fontSize="small" />
-                    <span>
-                      {consultant.experience ? consultant.experience : '—'} kinh
-                      nghiệm
+
+                  <CardBio>
+                    <InfoOutlinedIcon
+                      sx={{ fontSize: 20, color: '#1abc9c', mt: '2px' }}
+                    />
+                    <span
+                      style={{
+                        flex: 1,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
+                      {consultant.bio}
                     </span>
-                  </CardInfoRow>
-                  <CardBio>{consultant.bio}</CardBio>
+                  </CardBio>
+                  {consultant.bio && consultant.bio.length > 90 && (
+                    <Button
+                      size="small"
+                      variant="text"
+                      sx={{
+                        color: '#1976d2',
+                        fontSize: 13,
+                        fontWeight: 500,
+                        ml: 4,
+                        mb: 1,
+                        textTransform: 'none',
+                      }}
+                      startIcon={<VisibilityIcon sx={{ fontSize: 18 }} />}
+                      onClick={() => {
+                        setSelectedBio(consultant.bio);
+                        setOpenBioDialog(true);
+                      }}
+                    >
+                      Xem chi tiết
+                    </Button>
+                  )}
                   <CardActionsWrapper>
                     <StyledButton
                       variant="outlined"
@@ -682,9 +785,21 @@ const ConsultationPage = () => {
                   </CardActionsWrapper>
                 </ConsultantCard>
               </Grid>
-            )
+            ))}
+          </Grid>
+          {totalPages > 1 && (
+            <Box display="flex" justifyContent="center" mt={4}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={(_, value) => setCurrentPage(value)}
+                color="primary"
+                shape="rounded"
+                size="large"
+              />
+            </Box>
           )}
-        </Grid>
+        </>
       )}{' '}
       {/* Consultant Detail Dialog */}
       <Dialog
@@ -775,7 +890,9 @@ const ConsultationPage = () => {
                     </Typography>
                     <RatingWrapper sx={{ mb: 1 }}>
                       <Rating
-                        value={detailRating && detailRating > 0 ? detailRating : 5}
+                        value={
+                          detailRating && detailRating > 0 ? detailRating : 5
+                        }
                         precision={0.1}
                         readOnly
                         size="small"
@@ -785,7 +902,11 @@ const ConsultationPage = () => {
                         color="#4A90E2"
                         sx={{ ml: 1, fontWeight: 600 }}
                       >
-                        ({detailRating && detailRating > 0 ? detailRating.toFixed(1) : '5.0'})
+                        (
+                        {detailRating && detailRating > 0
+                          ? detailRating.toFixed(1)
+                          : '5.0'}
+                        )
                       </Typography>
                     </RatingWrapper>
                     <Chip
@@ -886,20 +1007,32 @@ const ConsultationPage = () => {
           <>
             <BookingDialogHeader>
               Đặt lịch hẹn với tư vấn viên
-              <Typography variant="subtitle1" sx={{ color: '#fff', fontWeight: 400 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ color: '#fff', fontWeight: 400 }}
+              >
                 {appointmentDialog.consultant.fullName}
               </Typography>
             </BookingDialogHeader>
             <DialogContent sx={{ p: 4 }}>
               {formError && (
-                <Alert severity="error" sx={{ mb: 2, fontSize: 14, borderRadius: 2 }}>
+                <Alert
+                  severity="error"
+                  sx={{ mb: 2, fontSize: 14, borderRadius: 2 }}
+                >
                   {formError}
                 </Alert>
               )}
-              <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: 'primary.main' }}>
+              <Typography
+                variant="body2"
+                sx={{ mb: 1, fontWeight: 600, color: 'primary.main' }}
+              >
                 Vui lòng chọn ngày và khung giờ phù hợp với bạn:
               </Typography>
-              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
+              <LocalizationProvider
+                dateAdapter={AdapterDateFns}
+                adapterLocale={vi}
+              >
                 <DatePicker
                   label="Chọn ngày hẹn"
                   value={appointmentForm.date}
@@ -925,29 +1058,41 @@ const ConsultationPage = () => {
                 />
               </LocalizationProvider>
               {availableSlots.length === 0 && (
-                <Alert severity="info" sx={{ mb: 2, fontSize: 14, borderRadius: 2 }}>
-                  Không còn khung giờ trống cho ngày này, vui lòng chọn ngày khác.
+                <Alert
+                  severity="info"
+                  sx={{ mb: 2, fontSize: 14, borderRadius: 2 }}
+                >
+                  Không còn khung giờ trống cho ngày này, vui lòng chọn ngày
+                  khác.
                 </Alert>
               )}
-              <FormControl fullWidth margin="normal" sx={{ borderRadius: 3, background: '#fff',
-                '& .MuiOutlinedInput-root': {
+              <FormControl
+                fullWidth
+                margin="normal"
+                sx={{
                   borderRadius: 3,
-                  fontWeight: 500,
-                  fontSize: 16,
-                  '& fieldset': { borderColor: '#B2EBF2' },
-                  '&:hover fieldset': { borderColor: '#1ABC9C' },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#1ABC9C',
-                    boxShadow: '0 0 0 2px #B2EBF2',
+                  background: '#fff',
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    fontWeight: 500,
+                    fontSize: 16,
+                    '& fieldset': { borderColor: '#B2EBF2' },
+                    '&:hover fieldset': { borderColor: '#1ABC9C' },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#1ABC9C',
+                      boxShadow: '0 0 0 2px #B2EBF2',
+                    },
                   },
-                },
-              }}>
+                }}
+              >
                 <InputLabel>Chọn khung giờ</InputLabel>
                 <Select
                   value={appointmentForm.timeSlot}
                   onChange={(e) => handleFormChange('timeSlot', e.target.value)}
                   label="Chọn khung giờ"
-                  startAdornment={<ScheduleIcon sx={{ mr: 1, color: 'primary.main' }} />}
+                  startAdornment={
+                    <ScheduleIcon sx={{ mr: 1, color: 'primary.main' }} />
+                  }
                   sx={{ borderRadius: 3, background: '#fff' }}
                   disabled={availableSlots.length === 0}
                 >
@@ -955,7 +1100,10 @@ const ConsultationPage = () => {
                     <MenuItem
                       key={slot.value}
                       value={slot.value}
-                      disabled={availableSlots.length === 0 || !availableSlots.includes(slot.value)}
+                      disabled={
+                        availableSlots.length === 0 ||
+                        !availableSlots.includes(slot.value)
+                      }
                     >
                       {slot.label}
                     </MenuItem>
@@ -989,15 +1137,25 @@ const ConsultationPage = () => {
                 placeholder="Nhập lý do bạn muốn được tư vấn... (không bắt buộc)"
               />
             </DialogContent>
-            <DialogActions sx={{ p: 3, pt: 0, justifyContent: 'center', gap: 2 }}>
-              <Button onClick={handleCloseAppointment} disabled={submitting} variant="outlined" color="primary" sx={{ borderRadius: 99, fontWeight: 600, px: 4, py: 1.5 }}>
+            <DialogActions
+              sx={{ p: 3, pt: 0, justifyContent: 'center', gap: 2 }}
+            >
+              <Button
+                onClick={handleCloseAppointment}
+                disabled={submitting}
+                variant="outlined"
+                color="primary"
+                sx={{ borderRadius: 99, fontWeight: 600, px: 4, py: 1.5 }}
+              >
                 Hủy
               </Button>
               <Button
                 onClick={handleSubmit}
                 variant="contained"
                 disabled={submitting}
-                startIcon={submitting ? <CircularProgress size={20} /> : undefined}
+                startIcon={
+                  submitting ? <CircularProgress size={20} /> : undefined
+                }
                 sx={{
                   background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
                   color: '#fff',
@@ -1017,6 +1175,82 @@ const ConsultationPage = () => {
             </DialogActions>
           </>
         )}
+      </Dialog>
+      <Dialog
+        open={openBioDialog}
+        onClose={() => setOpenBioDialog(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          style: {
+            borderRadius: 24,
+            boxShadow: '0 8px 32px rgba(74, 144, 226, 0.18)',
+            padding: 0,
+            background: '#fff',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+            color: '#fff',
+            fontWeight: 700,
+            fontSize: 20,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            textAlign: 'center',
+            py: 2,
+            letterSpacing: 0.5,
+          }}
+        >
+          Giới thiệu chi tiết
+        </DialogTitle>
+        <DialogContent
+          sx={{
+            p: 4,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 2,
+            background: '#f5fafd',
+            borderBottomLeftRadius: 24,
+            borderBottomRightRadius: 24,
+          }}
+        >
+          <InfoOutlinedIcon sx={{ fontSize: 32, color: '#1abc9c', mt: 0.5 }} />
+          <Typography
+            sx={{
+              fontSize: 16,
+              color: '#1976d2',
+              fontStyle: 'italic',
+              fontWeight: 500,
+              whiteSpace: 'pre-line',
+              lineHeight: 1.7,
+            }}
+          >
+            {selectedBio}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+          <Button
+            onClick={() => setOpenBioDialog(false)}
+            variant="contained"
+            sx={{
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+              color: '#fff',
+              borderRadius: 99,
+              fontWeight: 600,
+              px: 4,
+              py: 1,
+              boxShadow: '0 4px 16px rgba(74,144,226,0.10)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                opacity: 0.92,
+              },
+            }}
+          >
+            ĐÓNG
+          </Button>
+        </DialogActions>
       </Dialog>
     </StyledContainer>
   );

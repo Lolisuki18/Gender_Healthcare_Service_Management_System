@@ -86,6 +86,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useNavigate } from 'react-router-dom';
 import CanceledTestDetailModal from '../StaffProfile/modals/CanceledTestDetailModal';
 import ReviewForm from '../common/ReviewForm';
+import { notify } from '@/utils/notify';
 
 // Styled Paper Component với hiệu ứng glass morphism hiện đại
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -482,9 +483,23 @@ const MedicalHistoryContent = () => {
     if (!reason) return;
     setCancellingTestId(testId);
     try {
-      await cancelSTITest(testId, reason);
-      toast.success('Huỷ xét nghiệm thành công!');
-      fetchSTITests();
+      const response = await cancelSTITest(testId, reason);
+      if (response.success === true) {
+        toast.success('Huỷ xét nghiệm thành công!');
+        fetchSTITests();
+      } else {
+        if (
+          response.message ==
+          'Cannot cancel test within 24 hours of appointment'
+        ) {
+          notify.error(
+            'Lỗi',
+            'Không thể huỷ xét nghiệm trong vòng 24 giờ sau lịch hẹn! Vui lòng liên hệ với bác sĩ để được hỗ trợ.'
+          );
+        } else {
+          notify.error('Lỗi', 'Huỷ xét nghiệm thất bại!');
+        }
+      }
     } catch (err) {
       toast.error('Huỷ xét nghiệm thất bại!');
     } finally {
@@ -866,7 +881,6 @@ const MedicalHistoryContent = () => {
                 <TableCell>Ngày khám</TableCell>
                 <TableCell>Dịch vụ</TableCell>
                 <TableCell>Trạng thái</TableCell>
-                <TableCell>Ghi chú</TableCell>
                 <TableCell>Hành động</TableCell>
                 <TableCell>Đánh giá</TableCell>
               </TableRow>
@@ -880,7 +894,9 @@ const MedicalHistoryContent = () => {
                       {record.consultantName || 'Chưa xác định'}
                     </TableCell>
                     <TableCell>{formatDateDisplay(record.date)}</TableCell>
-                    <TableCell>{getTypeName(record.type)}</TableCell>
+                    <TableCell>
+                      {record.serviceName || getTypeName(record.type)}
+                    </TableCell>
                     <TableCell>
                       <Chip
                         label={(() => {
@@ -924,23 +940,7 @@ const MedicalHistoryContent = () => {
                         }}
                       />
                     </TableCell>
-                    <TableCell>
-                      <Tooltip
-                        title={record.consultantNotes || 'Không có ghi chú'}
-                      >
-                        <span
-                          style={{
-                            display: 'block',
-                            whiteSpace: 'pre-line',
-                            wordBreak: 'break-word',
-                            maxWidth: 250,
-                            lineHeight: 1.5,
-                          }}
-                        >
-                          {record.consultantNotes || 'Không có ghi chú'}
-                        </span>
-                      </Tooltip>
-                    </TableCell>
+
                     {/* Cột Hành động */}
                     <TableCell>
                       {/* Nếu đã huỷ thì chỉ hiển thị nút xem chi tiết huỷ */}
@@ -996,7 +996,7 @@ const MedicalHistoryContent = () => {
                       {(record.type === 'Xét nghiệm STI' ||
                         record.type === 'STI' ||
                         record.serviceType === 'STI_SERVICE') &&
-                      ['COMPLETED', 'RESULTED', 'ANALYZED'].includes(
+                      ['COMPLETED'].includes(
                         (
                           record.status ||
                           record.displayStatus ||
@@ -1057,7 +1057,10 @@ const MedicalHistoryContent = () => {
                             (record.status || '').toUpperCase()
                           )
                             ? '—'
-                            : 'Chỉ đánh giá khi hoàn thành'}
+                            : record.status === 'RESULTED' ||
+                                record.displayStatus === 'Đã có kết quả'
+                              ? 'Chỉ đánh giá khi hoàn thành'
+                              : 'Chỉ đánh giá khi hoàn thành'}
                         </span>
                       )}
                     </TableCell>
@@ -1065,7 +1068,7 @@ const MedicalHistoryContent = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7}>
+                  <TableCell colSpan={6}>
                     <Alert severity="info" sx={{ p: 2 }}>
                       Không có dữ liệu lịch sử khám bệnh nào.
                     </Alert>

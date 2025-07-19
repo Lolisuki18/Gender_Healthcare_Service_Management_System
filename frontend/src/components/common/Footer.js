@@ -176,12 +176,12 @@ const Footer = () => {
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {[
-                { href: '/', label: 'Trang chủ' },
-                { href: '/sti-services', label: 'Xét nghiệm STIs' },
-                { href: '/blog', label: 'Blogs' },
-                { href: '/about', label: 'Giới thiệu' },
-                { href: '/ovulation', label: 'Chu kì rụng trứng' },
-                { href: '/pill-reminder', label: 'Nhắc uống thuốc' },
+                { href: '#/', label: 'Trang chủ' },
+                { href: '#/sti-services', label: 'Xét nghiệm STIs' },
+                { href: '#/blog', label: 'Blogs' },
+                { href: '#/about', label: 'Giới thiệu' },
+                { href: '#/ovulation', label: 'Chu kì rụng trứng' },
+                { href: '#/pill-reminder', label: 'Nhắc uống thuốc' },
               ].map((link) => (
                 <Link
                   key={link.href}
@@ -271,7 +271,7 @@ const Footer = () => {
             }}
           >
             <Link
-              href="/privacy"
+              href="#/privacy"
               sx={{
                 color: 'rgba(255, 255, 255, 0.8)',
                 textDecoration: 'none',
@@ -286,7 +286,7 @@ const Footer = () => {
             </Link>
             <Typography sx={{ opacity: 0.6 }}>|</Typography>
             <Link
-              href="/terms"
+              href="#/terms"
               sx={{
                 color: 'rgba(255, 255, 255, 0.8)',
                 textDecoration: 'none',

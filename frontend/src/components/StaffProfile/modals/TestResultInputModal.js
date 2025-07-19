@@ -267,7 +267,7 @@ const TestResultInputModal = ({
       // Cập nhật lại test trong modal để phản ánh consultant mới
       test.consultantId = selectedConsultantId;
       setSelectedConsultantId(selectedConsultantId);
-      setAssignSuccess('Đã chọn consultant thành công!');
+      setAssignSuccess('Đã chọn Tư Vấn Viên thành công!');
       setTimeout(() => setAssignSuccess(''), 2500);
     } catch (err) {
       alert('Gán consultant thất bại!');
@@ -606,7 +606,7 @@ const TestResultInputModal = ({
               <Grid item size={12} xs={12} md={6}>
                 <FormControl fullWidth size="small" sx={{ mb: 2 }}>
                   <InputLabel id="consultant-select-label">
-                    Chọn consultant
+                    Chọn Tư Vấn Viên
                   </InputLabel>
                   <Select
                     labelId="consultant-select-label"
@@ -640,9 +640,9 @@ const TestResultInputModal = ({
               </Grid>
               <Grid item size={12} xs={12} md={6}>
                 <TextField
-                  label="Kết luận từ consultant"
+                  label="Kết luận từ Tư Vấn Viên"
                   value={test?.consultantNotes || ''}
-                  placeholder="Chưa có kết luận từ consultant"
+                  placeholder="Chưa có kết luận từ Tư Vấn Viên"
                   multiline
                   minRows={3}
                   maxRows={6}

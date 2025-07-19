@@ -6,42 +6,42 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import com.healapp.model.CategoryQuestion;
-import com.healapp.model.UserDtls;
-import com.healapp.model.STIPackage;
-import com.healapp.model.STIService;
-import com.healapp.model.Question;
-import com.healapp.model.Rating;
-import com.healapp.model.ConsultantProfile;
-import com.healapp.model.ServiceTestComponent;
-import com.healapp.repository.CategoryQuestionRepository;
-import com.healapp.repository.UserRepository;
-import com.healapp.repository.STIPackageRepository;
-import com.healapp.repository.STIServiceRepository;
-import com.healapp.repository.QuestionRepository;
-import com.healapp.repository.RatingRepository;
-import com.healapp.repository.ConsultantProfileRepository;
-import com.healapp.repository.ServiceTestComponentRepository;
-import com.healapp.repository.CategoryRepository;
-import com.healapp.repository.RoleRepository;
-import com.healapp.model.Category;
-import com.healapp.model.Payment;
-import com.healapp.model.STITest;
-
-import com.healapp.model.PaymentInfo;
-import com.healapp.model.Role;
-import com.healapp.repository.PaymentRepository;
-import com.healapp.repository.STITestRepository;
-import com.healapp.repository.PaymentInfoRepository;
-
-import com.healapp.repository.MenstrualCycleRepository;
-import com.healapp.model.Consultation;
-import com.healapp.model.RatingSummary;
-import com.healapp.repository.ConsultationRepository;
-import com.healapp.repository.RatingSummaryRepository;
 import com.healapp.model.BlogPost;
 import com.healapp.model.BlogPostStatus;
+import com.healapp.model.Category;
+import com.healapp.model.CategoryQuestion;
+import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Consultation;
+import com.healapp.model.PackageService;
+import com.healapp.model.Payment;
+import com.healapp.model.PaymentInfo;
+import com.healapp.model.Question;
+import com.healapp.model.Rating;
+import com.healapp.model.RatingSummary;
+import com.healapp.model.Role;
+import com.healapp.model.STIPackage;
+import com.healapp.model.STIService;
+import com.healapp.model.STITest;
+import com.healapp.model.ServiceTestComponent;
+import com.healapp.model.UserDtls;
 import com.healapp.repository.BlogPostRepository;
+import com.healapp.repository.CategoryQuestionRepository;
+import com.healapp.repository.CategoryRepository;
+import com.healapp.repository.ConsultantProfileRepository;
+import com.healapp.repository.ConsultationRepository;
+import com.healapp.repository.MenstrualCycleRepository;
+import com.healapp.repository.PackageServiceRepository;
+import com.healapp.repository.PaymentInfoRepository;
+import com.healapp.repository.PaymentRepository;
+import com.healapp.repository.QuestionRepository;
+import com.healapp.repository.RatingRepository;
+import com.healapp.repository.RatingSummaryRepository;
+import com.healapp.repository.RoleRepository;
+import com.healapp.repository.STIPackageRepository;
+import com.healapp.repository.STIServiceRepository;
+import com.healapp.repository.STITestRepository;
+import com.healapp.repository.ServiceTestComponentRepository;
+import com.healapp.repository.UserRepository;
 
 @Component
 public class DataInitializerConfig implements CommandLineRunner {
@@ -64,6 +64,7 @@ public class DataInitializerConfig implements CommandLineRunner {
     private final RatingSummaryRepository ratingSummaryRepository;
     private final BlogPostRepository blogPostRepository;
     private final RoleRepository roleRepository;
+    private final PackageServiceRepository packageServiceRepository;
 
     public DataInitializerConfig(UserRepository userRepository,
             PasswordEncoder passwordEncoder, CategoryQuestionRepository categoryQuestionRepository,
@@ -79,7 +80,8 @@ public class DataInitializerConfig implements CommandLineRunner {
             ConsultationRepository consultationRepository,
             RatingSummaryRepository ratingSummaryRepository,
             BlogPostRepository blogPostRepository,
-            RoleRepository roleRepository) {
+            RoleRepository roleRepository,
+            PackageServiceRepository packageServiceRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.categoryQuestionRepository = categoryQuestionRepository;
@@ -98,6 +100,7 @@ public class DataInitializerConfig implements CommandLineRunner {
         this.ratingSummaryRepository = ratingSummaryRepository;
         this.blogPostRepository = blogPostRepository;
         this.roleRepository = roleRepository;
+        this.packageServiceRepository = packageServiceRepository;
     }
 
     @Override
@@ -108,7 +111,7 @@ public class DataInitializerConfig implements CommandLineRunner {
 
         // USER
         // Tạo user mặc định cho từng role
-        if (userRepository.count() < 5) {
+        if (userRepository.count() < 10) {
             // Lấy các roles
             Role customerRole = roleRepository.findByRoleName("CUSTOMER")
                     .orElseThrow(() -> new RuntimeException("CUSTOMER role not found"));
@@ -172,32 +175,117 @@ public class DataInitializerConfig implements CommandLineRunner {
                 userRepository.save(staff);
             }
 
-            // Tạo 1 tài khoản CONSULTANT
+            // Tạo 6 tài khoản CONSULTANT
             if (userRepository.count() < 4) {
-                UserDtls consultant = new UserDtls();
-                consultant.setFullName("Dr. Phạm Thị D");
-                consultant.setUsername("consultant1");
-                consultant.setPassword(passwordEncoder.encode("Aa12345@"));
-                consultant.setEmail("consultant1@healapp.com");
-                consultant.setPhone("0900000004");
-                consultant.setIsActive(true);
-                consultant.setGender(com.healapp.model.Gender.FEMALE);
-                consultant.setBirthDay(java.time.LocalDate.of(1985, 8, 25));
-                consultant.setAddress("321 Đường JKL, Quận 4, TP.HCM");
-                consultant.setProvider(com.healapp.model.AuthProvider.LOCAL);
-                consultant.setCreatedDate(LocalDateTime.now());
-                consultant.setRole(consultantRole);
-                userRepository.save(consultant);
+                UserDtls consultant1 = new UserDtls();
+                consultant1.setFullName("Dr. Phạm Thị D");
+                consultant1.setUsername("consultant1");
+                consultant1.setPassword(passwordEncoder.encode("Aa12345@"));
+                consultant1.setEmail("consultant1@healapp.com");
+                consultant1.setPhone("0900000004");
+                consultant1.setIsActive(true);
+                consultant1.setGender(com.healapp.model.Gender.FEMALE);
+                consultant1.setBirthDay(java.time.LocalDate.of(1985, 8, 25));
+                consultant1.setAddress("321 Đường JKL, Quận 4, TP.HCM");
+                consultant1.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                consultant1.setCreatedDate(LocalDateTime.now());
+                consultant1.setRole(consultantRole);
+                userRepository.save(consultant1);
+            }
+
+            if (userRepository.count() < 5) {
+                UserDtls consultant2 = new UserDtls();
+                consultant2.setFullName("Dr. Nguyễn Minh F");
+                consultant2.setUsername("consultant2");
+                consultant2.setPassword(passwordEncoder.encode("Aa12345@"));
+                consultant2.setEmail("consultant2@healapp.com");
+                consultant2.setPhone("0900000005");
+                consultant2.setIsActive(true);
+                consultant2.setGender(com.healapp.model.Gender.MALE);
+                consultant2.setBirthDay(java.time.LocalDate.of(1980, 3, 15));
+                consultant2.setAddress("789 Đường PQR, Quận 7, TP.HCM");
+                consultant2.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                consultant2.setCreatedDate(LocalDateTime.now());
+                consultant2.setRole(consultantRole);
+                userRepository.save(consultant2);
+            }
+
+            if (userRepository.count() < 6) {
+                UserDtls consultant3 = new UserDtls();
+                consultant3.setFullName("Dr. Lê Thị G");
+                consultant3.setUsername("consultant3");
+                consultant3.setPassword(passwordEncoder.encode("Aa12345@"));
+                consultant3.setEmail("consultant3@healapp.com");
+                consultant3.setPhone("0900000006");
+                consultant3.setIsActive(true);
+                consultant3.setGender(com.healapp.model.Gender.FEMALE);
+                consultant3.setBirthDay(java.time.LocalDate.of(1987, 11, 10));
+                consultant3.setAddress("456 Đường STU, Quận 8, TP.HCM");
+                consultant3.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                consultant3.setCreatedDate(LocalDateTime.now());
+                consultant3.setRole(consultantRole);
+                userRepository.save(consultant3);
+            }
+
+            if (userRepository.count() < 7) {
+                UserDtls consultant4 = new UserDtls();
+                consultant4.setFullName("Dr. Trần Văn H");
+                consultant4.setUsername("consultant4");
+                consultant4.setPassword(passwordEncoder.encode("Aa12345@"));
+                consultant4.setEmail("consultant4@healapp.com");
+                consultant4.setPhone("0900000007");
+                consultant4.setIsActive(true);
+                consultant4.setGender(com.healapp.model.Gender.MALE);
+                consultant4.setBirthDay(java.time.LocalDate.of(1983, 6, 28));
+                consultant4.setAddress("123 Đường VWX, Quận 9, TP.HCM");
+                consultant4.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                consultant4.setCreatedDate(LocalDateTime.now());
+                consultant4.setRole(consultantRole);
+                userRepository.save(consultant4);
+            }
+
+            if (userRepository.count() < 8) {
+                UserDtls consultant5 = new UserDtls();
+                consultant5.setFullName("Dr. Võ Thị I");
+                consultant5.setUsername("consultant5");
+                consultant5.setPassword(passwordEncoder.encode("Aa12345@"));
+                consultant5.setEmail("consultant5@healapp.com");
+                consultant5.setPhone("0900000008");
+                consultant5.setIsActive(true);
+                consultant5.setGender(com.healapp.model.Gender.FEMALE);
+                consultant5.setBirthDay(java.time.LocalDate.of(1989, 9, 18));
+                consultant5.setAddress("987 Đường YZ, Quận 10, TP.HCM");
+                consultant5.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                consultant5.setCreatedDate(LocalDateTime.now());
+                consultant5.setRole(consultantRole);
+                userRepository.save(consultant5);
+            }
+
+            if (userRepository.count() < 9) {
+                UserDtls consultant6 = new UserDtls();
+                consultant6.setFullName("Dr. Đặng Minh J");
+                consultant6.setUsername("consultant6");
+                consultant6.setPassword(passwordEncoder.encode("Aa12345@"));
+                consultant6.setEmail("consultant6@healapp.com");
+                consultant6.setPhone("0900000009");
+                consultant6.setIsActive(true);
+                consultant6.setGender(com.healapp.model.Gender.MALE);
+                consultant6.setBirthDay(java.time.LocalDate.of(1982, 12, 3));
+                consultant6.setAddress("654 Đường ABC, Quận 11, TP.HCM");
+                consultant6.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                consultant6.setCreatedDate(LocalDateTime.now());
+                consultant6.setRole(consultantRole);
+                userRepository.save(consultant6);
             }
 
             // Tạo 1 tài khoản ADMIN
-            if (userRepository.count() < 5) {
+            if (userRepository.count() < 10) {
                 UserDtls admin = new UserDtls();
-                admin.setFullName("Hoàng Văn E");
+                admin.setFullName("Admin System Management");
                 admin.setUsername("admin1");
                 admin.setPassword(passwordEncoder.encode("Aa12345@"));
                 admin.setEmail("admin1@healapp.com");
-                admin.setPhone("0900000005");
+                admin.setPhone("0900000010");
                 admin.setIsActive(true);
                 admin.setGender(com.healapp.model.Gender.MALE);
                 admin.setBirthDay(java.time.LocalDate.of(1983, 12, 5));
@@ -250,6 +338,9 @@ public class DataInitializerConfig implements CommandLineRunner {
 
         // STI_SERVICES
         createSTIServicesIfNotExists();
+
+        // PACKAGE_SERVICES
+        createPackageServicesIfNotExists();
 
         // STI_TESTS
         // createSTITestsIfNotExists();
@@ -565,14 +656,58 @@ public class DataInitializerConfig implements CommandLineRunner {
 
     private void createConsultantProfilesIfNotExists() {
         if (consultantProfileRepository.count() == 0 && userRepository.count() > 0) {
-            ConsultantProfile cp = new ConsultantProfile();
-            cp.setUser(userRepository.findAll().get(0));
-            cp.setQualifications("Bác sĩ chuyên khoa I");
-            cp.setExperience("10 năm tư vấn sức khỏe");
-            cp.setBio("Tận tâm với nghề");
-            cp.setCreatedAt(java.time.LocalDateTime.now());
-            cp.setUpdatedAt(java.time.LocalDateTime.now());
-            consultantProfileRepository.save(cp);
+            // Lấy tất cả users có role CONSULTANT
+            java.util.List<UserDtls> consultants = userRepository.findByRoleName("CONSULTANT");
+
+            for (int i = 0; i < consultants.size(); i++) {
+                UserDtls consultant = consultants.get(i);
+                ConsultantProfile cp = new ConsultantProfile();
+                cp.setUser(consultant);
+
+                // Tạo profile chi tiết cho từng consultant
+                switch (i) {
+                    case 0: // Dr. Phạm Thị D
+                        cp.setQualifications("Bác sĩ Chuyên khoa II Sản phụ khoa, Thạc sĩ Y học");
+                        cp.setExperience("15 năm kinh nghiệm trong lĩnh vực sức khỏe sinh sản phụ nữ");
+                        cp.setBio(
+                                "Chuyên gia hàng đầu về sức khỏe phụ nữ, tư vấn về các vấn đề sinh sản và nội tiết tố");
+                        break;
+                    case 1: // Dr. Nguyễn Minh F
+                        cp.setQualifications("Bác sĩ Chuyên khoa I Da liễu, Chứng chỉ STI/HIV");
+                        cp.setExperience("12 năm kinh nghiệm điều trị các bệnh lây truyền qua đường tình dục");
+                        cp.setBio("Chuyên gia về STI, HIV và các bệnh da liễu, tư vấn phòng chống bệnh lây nhiễm");
+                        break;
+                    case 2: // Dr. Lê Thị G
+                        cp.setQualifications("Bác sĩ Chuyên khoa I Tâm lý lâm sàng, Tiến sĩ Tâm lý học");
+                        cp.setExperience("10 năm kinh nghiệm tư vấn tâm lý về giới tính và sức khỏe tinh thần");
+                        cp.setBio("Chuyên gia tâm lý, tư vấn về các vấn đề giới tính, tình dục và sức khỏe tinh thần");
+                        break;
+                    case 3: // Dr. Trần Văn H
+                        cp.setQualifications("Bác sĩ Chuyên khoa I Tiết niệu, Chứng chỉ Andrologia");
+                        cp.setExperience("14 năm kinh nghiệm điều trị các bệnh nam khoa và tiết niệu");
+                        cp.setBio("Chuyên gia nam khoa, tư vấn về sức khỏe sinh sản nam giới và rối loạn tình dục");
+                        break;
+                    case 4: // Dr. Võ Thị I
+                        cp.setQualifications("Bác sĩ Chuyên khoa I Nội tiết, Thạc sĩ Dinh dưỡng");
+                        cp.setExperience("8 năm kinh nghiệm về nội tiết sinh sản và dinh dưỡng sức khỏe");
+                        cp.setBio("Chuyên gia nội tiết, tư vấn về hormone, chu kỳ kinh nguyệt và dinh dưỡng");
+                        break;
+                    case 5: // Dr. Đặng Minh J
+                        cp.setQualifications("Bác sĩ Chuyên khoa I Nhiễm khuẩn, Chứng chỉ HIV/AIDS");
+                        cp.setExperience("11 năm kinh nghiệm điều trị các bệnh nhiễm khuẩn và HIV");
+                        cp.setBio("Chuyên gia nhiễm khuẩn, tư vấn điều trị HIV, STI và các bệnh nhiễm trùng");
+                        break;
+                    default:
+                        cp.setQualifications("Bác sĩ Chuyên khoa I");
+                        cp.setExperience("5+ năm kinh nghiệm tư vấn sức khỏe");
+                        cp.setBio("Bác sĩ chuyên nghiệp, tận tâm với bệnh nhân");
+                        break;
+                }
+
+                cp.setCreatedAt(java.time.LocalDateTime.now());
+                cp.setUpdatedAt(java.time.LocalDateTime.now());
+                consultantProfileRepository.save(cp);
+            }
         }
     }
 
@@ -593,9 +728,14 @@ public class DataInitializerConfig implements CommandLineRunner {
             c3.setDescription("Các bài viết về dinh dưỡng và lối sống lành mạnh");
             c3.setIsActive(true);
 
+            Category c4 = new Category();
+            c4.setName("Khác");
+            c4.setDescription("Các bài viết về các vấn đề khác liên quan đến sức khỏe");
+            c4.setIsActive(true);
             categoryRepository.save(c1);
             categoryRepository.save(c2);
             categoryRepository.save(c3);
+            categoryRepository.save(c4);
         }
     }
 
@@ -686,14 +826,6 @@ public class DataInitializerConfig implements CommandLineRunner {
     }
 
     private void createBlogPostsAndSectionsIfNotExists() {
-        // Chỉ giữ lại insert dữ liệu mẫu cho các bảng chính
-        // roles, user, categories, category_questions, blog_posts, consultant_profiles,
-        // payments, sti_services, sti_packages, questions, ratings, notifications,
-        // notification_preference, consultations, payment_info, sti_tests,
-        // test_results, rating_summary
-        // Xoá logic insert cho các bảng phụ
-        // (1) Đã có logic roles, user, categories, category_questions ở đầu hàm run
-        // (2) BLOG_POSTS
         if (blogPostRepository.count() < 5 && userRepository.count() > 0 && categoryRepository.count() > 0) {
             for (int i = (int) blogPostRepository.count(); i < 5; i++) {
                 BlogPost post = new BlogPost();
@@ -884,6 +1016,76 @@ public class DataInitializerConfig implements CommandLineRunner {
         if (!roleRepository.existsByRoleName("ADMIN")) {
             Role adminRole = new Role("ADMIN", "Administrator role with full access");
             roleRepository.save(adminRole);
+        }
+    }
+
+    private void createPackageServicesIfNotExists() {
+        if (packageServiceRepository.count() == 0 && stiPackageRepository.count() > 0
+                && stiServiceRepository.count() > 0) {
+            // Lấy danh sách packages và services
+            java.util.List<STIPackage> packages = stiPackageRepository.findAll();
+            java.util.List<STIService> services = stiServiceRepository.findAll();
+
+            if (packages.size() >= 5 && services.size() >= 6) {
+                // Gói toàn diện - Package 1 (index 0)
+                STIPackage comprehensivePackage = packages.get(0);
+                // Bao gồm tất cả services: HIV, HPV, Syphilis, Hepatitis B, Gonorrhea,
+                // Chlamydia
+                for (int i = 0; i < 6; i++) {
+                    PackageService ps = new PackageService();
+                    ps.setStiPackage(comprehensivePackage);
+                    ps.setStiService(services.get(i));
+                    ps.setCreatedAt(java.time.LocalDateTime.now());
+                    packageServiceRepository.save(ps);
+                }
+
+                // Gói cơ bản - Package 2 (index 1)
+                STIPackage basicPackage = packages.get(1);
+                // Bao gồm: HIV (0), Syphilis (2), Hepatitis B (3)
+                int[] basicServices = { 0, 2, 3 };
+                for (int serviceIndex : basicServices) {
+                    PackageService ps = new PackageService();
+                    ps.setStiPackage(basicPackage);
+                    ps.setStiService(services.get(serviceIndex));
+                    ps.setCreatedAt(java.time.LocalDateTime.now());
+                    packageServiceRepository.save(ps);
+                }
+
+                // Gói cho phụ nữ - Package 3 (index 2)
+                STIPackage womensPackage = packages.get(2);
+                // Bao gồm: HPV (1), Chlamydia (5), Gonorrhea (4), HIV (0)
+                int[] womensServices = { 0, 1, 4, 5 };
+                for (int serviceIndex : womensServices) {
+                    PackageService ps = new PackageService();
+                    ps.setStiPackage(womensPackage);
+                    ps.setStiService(services.get(serviceIndex));
+                    ps.setCreatedAt(java.time.LocalDateTime.now());
+                    packageServiceRepository.save(ps);
+                }
+
+                // Gói nhanh - Package 4 (index 3)
+                STIPackage quickPackage = packages.get(3);
+                // Bao gồm: HIV (0), Syphilis (2)
+                int[] quickServices = { 0, 2 };
+                for (int serviceIndex : quickServices) {
+                    PackageService ps = new PackageService();
+                    ps.setStiPackage(quickPackage);
+                    ps.setStiService(services.get(serviceIndex));
+                    ps.setCreatedAt(java.time.LocalDateTime.now());
+                    packageServiceRepository.save(ps);
+                }
+
+                // Gói hàng năm - Package 5 (index 4)
+                STIPackage annualPackage = packages.get(4);
+                // Bao gồm tất cả services như gói toàn diện
+                for (int i = 0; i < 6; i++) {
+                    PackageService ps = new PackageService();
+                    ps.setStiPackage(annualPackage);
+                    ps.setStiService(services.get(i));
+                    ps.setCreatedAt(java.time.LocalDateTime.now());
+                    packageServiceRepository.save(ps);
+                }
+            }
         }
     }
 }

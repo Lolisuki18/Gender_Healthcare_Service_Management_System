@@ -41,8 +41,8 @@ class TokenService {
       // Kiểm tra thời gian hết hạn
       if (payload.exp <= currentTime) return false;
 
-      // Kiểm tra issuer (tùy chọn - backend có thể chưa có)
-      if (payload.iss && payload.iss !== 'HealApp') return false;
+      // // Kiểm tra issuer (tùy chọn - backend có thể chưa có)
+      // if (payload.iss && payload.iss !== 'HealApp') return false;
 
       return true;
     } catch (error) {

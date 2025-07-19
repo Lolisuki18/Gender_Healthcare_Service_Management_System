@@ -21,7 +21,6 @@ import {
   Link,
   Divider,
   IconButton,
-
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -34,21 +33,21 @@ import categoryService from '../services/categoryService';
 
 const BlogCreatePage = () => {
   const navigate = useNavigate();
-  
+
   // ===== STATE MANAGEMENT =====
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  
+
   // Form data
   const [formData, setFormData] = useState({
     title: '',
     content: '',
     categoryId: '',
-    sections: []
+    sections: [],
   });
-  
+
   // File handling
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState('');
@@ -68,16 +67,16 @@ const BlogCreatePage = () => {
         setCategories([]);
       }
     };
-    
+
     fetchCategories();
   }, []);
 
   // ===== EVENT HANDLERS =====
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -89,15 +88,15 @@ const BlogCreatePage = () => {
         setError('Vui lòng chọn file hình ảnh (jpg, png, gif...)');
         return;
       }
-      
+
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('Kích thước file không được vượt quá 5MB');
         return;
       }
-      
+
       setThumbnailFile(file);
-      
+
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -108,24 +107,27 @@ const BlogCreatePage = () => {
   };
 
   const addSection = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      sections: [...prev.sections, {
-        sectionTitle: '',
-        sectionContent: '',
-        displayOrder: prev.sections.length
-      }]
+      sections: [
+        ...prev.sections,
+        {
+          sectionTitle: '',
+          sectionContent: '',
+          displayOrder: prev.sections.length,
+        },
+      ],
     }));
   };
 
   const removeSection = (index) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      sections: prev.sections.filter((_, i) => i !== index)
+      sections: prev.sections.filter((_, i) => i !== index),
     }));
-    
+
     // Remove associated file
-    setSectionFiles(prev => {
+    setSectionFiles((prev) => {
       const newFiles = { ...prev };
       delete newFiles[index];
       return newFiles;
@@ -133,11 +135,11 @@ const BlogCreatePage = () => {
   };
 
   const handleSectionChange = (index, field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       sections: prev.sections.map((section, i) =>
         i === index ? { ...section, [field]: value } : section
-      )
+      ),
     }));
   };
 
@@ -149,34 +151,34 @@ const BlogCreatePage = () => {
         setError('Vui lòng chọn file hình ảnh (jpg, png, gif...)');
         return;
       }
-      
+
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('Kích thước file không được vượt quá 5MB');
         return;
       }
-      
-      setSectionFiles(prev => ({
+
+      setSectionFiles((prev) => ({
         ...prev,
-        [index]: file
+        [index]: file,
       }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.title.trim()) {
       setError('Vui lòng nhập tiêu đề bài viết');
       return;
     }
-    
+
     if (!formData.content.trim()) {
       setError('Vui lòng nhập nội dung bài viết');
       return;
     }
-    
+
     if (!formData.categoryId) {
       setError('Vui lòng chọn danh mục');
       return;
@@ -186,103 +188,123 @@ const BlogCreatePage = () => {
       setLoading(true);
       setError(null);
       setSuccess(null);
-      
+
       console.log('🚀 Submitting blog post...');
-      
+
       // Prepare form data for submission
       const submitFormData = new FormData();
-      
+
       // Prepare request data
       const requestData = {
         title: formData.title.trim(),
         content: formData.content.trim(),
         categoryId: parseInt(formData.categoryId, 10), // Parse as integer explicitly
         sections: formData.sections
-          .filter(section => section.sectionTitle.trim() || section.sectionContent.trim())
+          .filter(
+            (section) =>
+              section.sectionTitle.trim() || section.sectionContent.trim()
+          )
           .map((section, index) => ({
             sectionTitle: section.sectionTitle.trim(),
             sectionContent: section.sectionContent.trim(),
-            displayOrder: index // Use plain index without Number() conversion
+            displayOrder: index, // Use plain index without Number() conversion
           })),
-        status: 'PROCESSING' // Default status for new posts
+        status: 'PROCESSING', // Default status for new posts
       };
-      
+
       console.log('📝 Request data before JSON stringify:', requestData);
-      console.log('📊 CategoryId type:', typeof requestData.categoryId, requestData.categoryId);
-      console.log('📊 Sections:', requestData.sections.map(s => ({ 
-        title: s.sectionTitle, 
-        displayOrder: s.displayOrder, 
-        displayOrderType: typeof s.displayOrder 
-      })));
-      
+      console.log(
+        '📊 CategoryId type:',
+        typeof requestData.categoryId,
+        requestData.categoryId
+      );
+      console.log(
+        '📊 Sections:',
+        requestData.sections.map((s) => ({
+          title: s.sectionTitle,
+          displayOrder: s.displayOrder,
+          displayOrderType: typeof s.displayOrder,
+        }))
+      );
+
       console.log('📝 Request data:', requestData);
-      
+
       // Add request data as JSON blob
-      submitFormData.append('request', new Blob([JSON.stringify(requestData)], { 
-        type: 'application/json' 
-      }));
-      
+      submitFormData.append(
+        'request',
+        new Blob([JSON.stringify(requestData)], {
+          type: 'application/json',
+        })
+      );
+
       // Add thumbnail file if selected
       if (thumbnailFile) {
         submitFormData.append('thumbnail', thumbnailFile);
         console.log('🖼️ Added thumbnail file:', thumbnailFile.name);
       }
-      
+
       // Add section images
       const sectionImages = [];
       const sectionImageIndexes = [];
-      
-      Object.keys(sectionFiles).forEach(index => {
+
+      Object.keys(sectionFiles).forEach((index) => {
         const file = sectionFiles[index];
         if (file) {
           sectionImages.push(file);
           sectionImageIndexes.push(parseInt(index));
         }
       });
-      
+
       // Add section images only if they exist
       if (sectionImages.length > 0 && sectionImageIndexes.length > 0) {
         console.log('🖼️ Processing section images...');
-        
-        sectionImages.forEach(file => {
+
+        sectionImages.forEach((file) => {
           submitFormData.append('sectionImages', file);
         });
-        
+
         // Send sectionImageIndexes as JSON blob like request data
-        submitFormData.append('sectionImageIndexes', new Blob([JSON.stringify(sectionImageIndexes)], { 
-          type: 'application/json' 
-        }));
-        
+        submitFormData.append(
+          'sectionImageIndexes',
+          new Blob([JSON.stringify(sectionImageIndexes)], {
+            type: 'application/json',
+          })
+        );
+
         console.log('🖼️ Added section images:', sectionImages.length, 'files');
-        console.log('📊 Section image indexes as JSON:', JSON.stringify(sectionImageIndexes));
+        console.log(
+          '📊 Section image indexes as JSON:',
+          JSON.stringify(sectionImageIndexes)
+        );
       } else {
-        console.log('📷 No section images to process - skipping sectionImageIndexes');
+        console.log(
+          '📷 No section images to process - skipping sectionImageIndexes'
+        );
       }
       // Note: Don't add empty sectionImageIndexes - Spring Boot handles optional @RequestPart
-      
+
       // Submit to API
       const response = await blogService.createBlog(submitFormData);
-      
+
       console.log('✅ Blog created successfully:', response);
-      
+
       setSuccess('Bài viết đã được tạo thành công và đang chờ duyệt!');
-      
+
       // Reset form
       setFormData({
         title: '',
         content: '',
         categoryId: '',
-        sections: []
+        sections: [],
       });
       setThumbnailFile(null);
       setThumbnailPreview('');
       setSectionFiles({});
-      
+
       // Redirect after a delay
       setTimeout(() => {
         navigate('/blog');
       }, 2000);
-      
     } catch (error) {
       console.error('💥 Error creating blog:', error);
       setError(`Lỗi khi tạo bài viết: ${error.message}`);
@@ -292,20 +314,20 @@ const BlogCreatePage = () => {
   };
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f0fdff 0%, #e0f7fa 50%, #ffffff 100%)',
-      py: 8
-    }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background:
+          'linear-gradient(135deg, #f0fdff 0%, #e0f7fa 50%, #ffffff 100%)',
+        py: 8,
+      }}
+    >
       <Container maxWidth="md">
-        {/* Breadcrumbs */}
-        <Breadcrumbs 
-          aria-label="breadcrumb" 
-          sx={{ mb: 6 }}
-        >
-          <Link 
-            underline="hover" 
-            color="inherit" 
+        {/* Breadcrumbs
+        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 6 }}>
+          <Link
+            underline="hover"
+            color="inherit"
             onClick={() => navigate('/')}
             sx={{
               display: 'flex',
@@ -313,20 +335,20 @@ const BlogCreatePage = () => {
               color: '#546e7a',
               fontWeight: 500,
               cursor: 'pointer',
-              '&:hover': { color: '#1976d2' }
+              '&:hover': { color: '#1976d2' },
             }}
           >
             <HomeIcon sx={{ mr: 0.5, fontSize: 18 }} /> Trang chủ
           </Link>
-          <Link 
-            underline="hover" 
-            color="inherit" 
+          <Link
+            underline="hover"
+            color="inherit"
             onClick={() => navigate('/blog')}
             sx={{
               color: '#546e7a',
               fontWeight: 500,
               cursor: 'pointer',
-              '&:hover': { color: '#1976d2' }
+              '&:hover': { color: '#1976d2' },
             }}
           >
             Blog
@@ -334,8 +356,7 @@ const BlogCreatePage = () => {
           <Typography color="#26c6da" sx={{ fontWeight: 600 }}>
             Tạo bài viết mới
           </Typography>
-        </Breadcrumbs>
-
+        </Breadcrumbs> */}
         {/* Back Button */}
         <Button
           variant="outlined"
@@ -353,86 +374,84 @@ const BlogCreatePage = () => {
             '&:hover': {
               background: '#e3f0ff',
               borderColor: '#1565c0',
-            }
+            },
           }}
         >
           Quay lại danh sách
         </Button>
-
         {/* Page Header */}
-        <Typography 
-          variant="h3" 
-          component="h1" 
-          sx={{ 
+        <Typography
+          variant="h3"
+          component="h1"
+          sx={{
             fontWeight: 800,
             color: '#1a237e',
             mb: 2,
             fontSize: { xs: '1.8rem', md: '2.5rem' },
-            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
           }}
         >
           Tạo bài viết mới
         </Typography>
-        
-        <Typography 
-          variant="h6" 
-          sx={{ 
+        <Typography
+          variant="h6"
+          sx={{
             color: '#546e7a',
             mb: 6,
             fontSize: '1.125rem',
-            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
           }}
         >
           Chia sẻ kiến thức y khoa với cộng đồng
         </Typography>
-
         {/* Success Message */}
         {success && (
-          <Alert 
-            severity="success" 
-            sx={{ 
-              mb: 4, 
+          <Alert
+            severity="success"
+            sx={{
+              mb: 4,
               borderRadius: '12px',
               fontSize: '1rem',
-              fontWeight: 500
+              fontWeight: 500,
             }}
           >
             {success}
           </Alert>
         )}
-
         {/* Error Message */}
         {error && (
-          <Alert 
-            severity="error" 
-            sx={{ 
-              mb: 4, 
+          <Alert
+            severity="error"
+            sx={{
+              mb: 4,
               borderRadius: '12px',
               fontSize: '1rem',
-              fontWeight: 500
+              fontWeight: 500,
             }}
           >
             {error}
           </Alert>
         )}
-
         {/* Main Form Card */}
-        <Card sx={{ 
-          borderRadius: '24px',
-          backgroundColor: '#ffffff',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          border: '1px solid #e3f2fd',
-          p: 6
-        }}>
+        <Card
+          sx={{
+            borderRadius: '24px',
+            backgroundColor: '#ffffff',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            border: '1px solid #e3f2fd',
+            p: 6,
+          }}
+        >
           <form onSubmit={handleSubmit}>
             {/* Basic Information */}
-            <Typography 
-              variant="h5" 
-              sx={{ 
+            <Typography
+              variant="h5"
+              sx={{
                 fontWeight: 700,
                 color: '#1a237e',
                 mb: 4,
-                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+                fontFamily:
+                  '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
               }}
             >
               Thông tin cơ bản
@@ -460,8 +479,11 @@ const BlogCreatePage = () => {
                 label="Danh mục"
                 required
               >
-                {categories.map(category => (
-                  <MenuItem key={category.categoryId} value={category.categoryId}>
+                {categories.map((category) => (
+                  <MenuItem
+                    key={category.categoryId}
+                    value={category.categoryId}
+                  >
                     {category.name}
                   </MenuItem>
                 ))}
@@ -485,13 +507,14 @@ const BlogCreatePage = () => {
             <Divider sx={{ my: 4 }} />
 
             {/* Thumbnail Upload */}
-            <Typography 
-              variant="h5" 
-              sx={{ 
+            <Typography
+              variant="h5"
+              sx={{
                 fontWeight: 700,
                 color: '#1a237e',
                 mb: 4,
-                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+                fontFamily:
+                  '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
               }}
             >
               Hình ảnh đại diện
@@ -506,7 +529,7 @@ const BlogCreatePage = () => {
                   mb: 2,
                   borderRadius: '12px',
                   textTransform: 'none',
-                  fontWeight: 600
+                  fontWeight: 600,
                 }}
               >
                 Chọn hình ảnh đại diện
@@ -517,7 +540,7 @@ const BlogCreatePage = () => {
                   onChange={handleThumbnailChange}
                 />
               </Button>
-              
+
               {thumbnailPreview && (
                 <Box sx={{ mt: 2 }}>
                   <img
@@ -530,7 +553,7 @@ const BlogCreatePage = () => {
                       height: 'auto',
                       objectFit: 'cover',
                       borderRadius: '12px',
-                      border: '1px solid #e3f2fd'
+                      border: '1px solid #e3f2fd',
                     }}
                   />
                 </Box>
@@ -542,12 +565,13 @@ const BlogCreatePage = () => {
             {/* Sections */}
             <Box sx={{ mb: 4 }}>
               <Box sx={{ mb: 3 }}>
-                <Typography 
-                  variant="h5" 
-                  sx={{ 
+                <Typography
+                  variant="h5"
+                  sx={{
                     fontWeight: 700,
                     color: '#1a237e',
-                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+                    fontFamily:
+                      '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                   }}
                 >
                   Phần nội dung chi tiết
@@ -555,17 +579,30 @@ const BlogCreatePage = () => {
               </Box>
 
               {formData.sections.map((section, index) => (
-                <Card key={index} sx={{ 
-                  mb: 3, 
-                  p: 3, 
-                  border: '1px solid #e3f2fd',
-                  borderRadius: '16px'
-                }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a237e' }}>
+                <Card
+                  key={index}
+                  sx={{
+                    mb: 3,
+                    p: 3,
+                    border: '1px solid #e3f2fd',
+                    borderRadius: '16px',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      mb: 2,
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: 600, color: '#1a237e' }}
+                    >
                       Phần {index + 1}
                     </Typography>
-                    
+
                     <IconButton
                       color="error"
                       onClick={() => removeSection(index)}
@@ -579,7 +616,9 @@ const BlogCreatePage = () => {
                     fullWidth
                     label="Tiêu đề phần"
                     value={section.sectionTitle}
-                    onChange={(e) => handleSectionChange(index, 'sectionTitle', e.target.value)}
+                    onChange={(e) =>
+                      handleSectionChange(index, 'sectionTitle', e.target.value)
+                    }
                     sx={{ mb: 2 }}
                     placeholder="Nhập tiêu đề cho phần này..."
                   />
@@ -588,7 +627,13 @@ const BlogCreatePage = () => {
                     fullWidth
                     label="Nội dung phần"
                     value={section.sectionContent}
-                    onChange={(e) => handleSectionChange(index, 'sectionContent', e.target.value)}
+                    onChange={(e) =>
+                      handleSectionChange(
+                        index,
+                        'sectionContent',
+                        e.target.value
+                      )
+                    }
                     multiline
                     rows={4}
                     sx={{ mb: 2 }}
@@ -603,7 +648,7 @@ const BlogCreatePage = () => {
                     sx={{
                       borderRadius: '8px',
                       textTransform: 'none',
-                      fontWeight: 600
+                      fontWeight: 600,
                     }}
                   >
                     Chọn hình ảnh cho phần này
@@ -626,17 +671,23 @@ const BlogCreatePage = () => {
               ))}
 
               {formData.sections.length === 0 ? (
-                <Box sx={{ 
-                  textAlign: 'center', 
-                  py: 4,
-                  backgroundColor: '#f8fbff',
-                  borderRadius: '16px',
-                  border: '1px dashed #e3f2fd'
-                }}>
-                  <Typography 
-                    variant="body1" 
+                <Box
+                  sx={{
+                    textAlign: 'center',
+                    py: 4,
+                    backgroundColor: '#f8fbff',
+                    borderRadius: '16px',
+                    border: '1px dashed #e3f2fd',
+                  }}
+                >
+                  <Typography
+                    variant="body1"
                     color="text.secondary"
-                    sx={{ mb: 2, fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif' }}
+                    sx={{
+                      mb: 2,
+                      fontFamily:
+                        '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                    }}
                   >
                     Chưa có phần nội dung chi tiết nào
                   </Typography>
@@ -647,7 +698,7 @@ const BlogCreatePage = () => {
                     sx={{
                       borderRadius: '12px',
                       textTransform: 'none',
-                      fontWeight: 600
+                      fontWeight: 600,
                     }}
                   >
                     Thêm phần đầu tiên
@@ -660,10 +711,11 @@ const BlogCreatePage = () => {
                     startIcon={<AddIcon />}
                     onClick={addSection}
                     sx={{
-                      background: 'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
+                      background:
+                        'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
                       borderRadius: '12px',
                       textTransform: 'none',
-                      fontWeight: 600
+                      fontWeight: 600,
                     }}
                   >
                     Thêm phần
@@ -685,31 +737,35 @@ const BlogCreatePage = () => {
                   px: 4,
                   py: 1.5,
                   fontWeight: 600,
-                  textTransform: 'none'
+                  textTransform: 'none',
                 }}
               >
                 Hủy bỏ
               </Button>
-              
+
               <Button
                 type="submit"
                 variant="contained"
                 disabled={loading}
-                startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+                startIcon={
+                  loading ? <CircularProgress size={20} /> : <SaveIcon />
+                }
                 sx={{
-                  background: 'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
+                  background:
+                    'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
                   borderRadius: '12px',
                   px: 4,
                   py: 1.5,
                   fontWeight: 600,
                   textTransform: 'none',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #00acc1 0%, #00838f 100%)',
+                    background:
+                      'linear-gradient(135deg, #00acc1 0%, #00838f 100%)',
                   },
                   '&:disabled': {
                     background: '#e0e0e0',
-                    color: '#bdbdbd'
-                  }
+                    color: '#bdbdbd',
+                  },
                 }}
               >
                 {loading ? 'Đang tạo...' : 'Tạo bài viết'}

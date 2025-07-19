@@ -23,8 +23,6 @@ const TokenStatus = ({ showDetails = false }) => {
     isTokenExpiringSoon,
     tokenTimeLeft,
     isLoading,
-    isAccessToken,
-    isRefreshToken,
   } = useTokenService();
 
   const formatTimeLeft = (seconds) => {

@@ -41,6 +41,7 @@ const AddEditCardDialog = ({
     expiryYear: '',
     cvc: '',
     cardHolderName: '',
+    nickname: '',  // Thêm trường tên gợi nhớ
     isDefault: false
   });
   const [errors, setErrors] = useState({});
@@ -57,6 +58,7 @@ const AddEditCardDialog = ({
           expiryYear: cardData.expiryYear || '',
           cvc: '', // Không hiển thị CVC cũ vì lý do bảo mật
           cardHolderName: cardData.cardHolderName || '',
+          nickname: cardData.nickname || '',  // Thêm nickname từ cardData
           isDefault: cardData.isDefault || false
         });
       } else {
@@ -67,6 +69,7 @@ const AddEditCardDialog = ({
           expiryYear: '',
           cvc: '',
           cardHolderName: '',
+          nickname: '',  // Reset nickname
           isDefault: false
         });
       }
@@ -93,6 +96,9 @@ const AddEditCardDialog = ({
     } else if (field === 'cardHolderName') {
       // Chỉ cho phép chữ cái và khoảng trắng, viết hoa
       formattedValue = value.replace(/[^a-zA-Z\s]/g, '').toUpperCase();
+    } else if (field === 'nickname') {
+      // Cho phép tất cả ký tự cho tên gợi nhớ, giới hạn độ dài
+      formattedValue = value.slice(0, 50);
     }
 
     setFormData(prev => ({
@@ -158,6 +164,11 @@ const AddEditCardDialog = ({
       newErrors.cardHolderName = 'Vui lòng nhập tên chủ thẻ';
     } else if (formData.cardHolderName.trim().length < 2) {
       newErrors.cardHolderName = 'Tên chủ thẻ quá ngắn';
+    }
+
+    // Validate nickname (optional nhưng nếu có thì phải >= 2 ký tự)
+    if (formData.nickname.trim() && formData.nickname.trim().length < 2) {
+      newErrors.nickname = 'Tên gợi nhớ phải có ít nhất 2 ký tự';
     }
 
     setErrors(newErrors);
@@ -375,6 +386,20 @@ const AddEditCardDialog = ({
                 )
               }}
               inputProps={{ maxLength: 4 }}
+            />
+          </Grid>
+
+          {/* Nickname */}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Tên gợi nhớ (tùy chọn)"
+              value={formData.nickname}
+              onChange={handleInputChange('nickname')}
+              error={!!errors.nickname}
+              helperText={errors.nickname || 'Ví dụ: "Thẻ chính", "Thẻ mua sắm", v.v.'}
+              placeholder="Thẻ chính"
+              inputProps={{ maxLength: 50 }}
             />
           </Grid>
 

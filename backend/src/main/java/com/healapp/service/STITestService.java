@@ -419,6 +419,11 @@ public class STITestService {
             expiryYear = savedCard.getExpiryYear();
             cvc = savedCard.getCvv();
             cardHolderName = savedCard.getCardHolderName();
+
+            // Validate saved card data
+            if (cvc == null || cvc.trim().length() < 3) {
+                return ApiResponse.error("Invalid saved card CVC - must be 3 or 4 digits");
+            }
         } else {
             // Sử dụng thông tin thẻ mới nhập
             // Validate VISA fields
@@ -995,17 +1000,33 @@ public class STITestService {
 
             STITest stiTest = testOpt.get();
 
-            if (!stiTest.getCustomer().getId().equals(userId)) {
-                return ApiResponse.error("You can only cancel your own tests");
+            // Lấy role của user
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
             }
+            UserDtls user = userOpt.get();
+            String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
 
-            if (!STITestStatus.PENDING.equals(stiTest.getStatus())
-                    && !STITestStatus.CONFIRMED.equals(stiTest.getStatus())) {
-                return ApiResponse.error("Cannot cancel test in current status: " + stiTest.getStatus());
-            }
+            boolean isStaffOrAdmin = "STAFF".equals(roleName) || "ADMIN".equals(roleName);
 
-            if (stiTest.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(24))) {
-                return ApiResponse.error("Cannot cancel test within 24 hours of appointment");
+            // Nếu không phải staff/admin thì chỉ cho phép customer tự huỷ test của mình và kiểm tra 24h
+            if (!isStaffOrAdmin) {
+                if (!stiTest.getCustomer().getId().equals(userId)) {
+                    return ApiResponse.error("You can only cancel your own tests");
+                }
+                if (!STITestStatus.PENDING.equals(stiTest.getStatus())
+                        && !STITestStatus.CONFIRMED.equals(stiTest.getStatus())) {
+                    return ApiResponse.error("Cannot cancel test in current status: " + stiTest.getStatus());
+                }
+                if (stiTest.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(24))) {
+                    return ApiResponse.error("Cannot cancel test within 24 hours of appointment");
+                }
+            } else {
+                // Staff/Admin có thể huỷ bất kỳ test nào, chỉ cần test chưa COMPLETED/CANCELED
+                if (STITestStatus.CANCELED.equals(stiTest.getStatus()) || STITestStatus.COMPLETED.equals(stiTest.getStatus())) {
+                    return ApiResponse.error("Cannot cancel test in current status: " + stiTest.getStatus());
+                }
             }
 
             String refundMessage = "";
@@ -1036,11 +1057,9 @@ public class STITestService {
                         log.info(" QR Code refund marked for cancelled test - Test ID: {}, Payment ID: {}, QR Ref: {}",
                                 testId, payment.getPaymentId(), payment.getQrPaymentReference());
                     }
-                } // COD không cần refund - không có message
-                else if (payment.getPaymentMethod() == PaymentMethod.COD) {
+                } else if (payment.getPaymentMethod() == PaymentMethod.COD) {
                     log.info("📦 COD test cancelled - No refund needed - Test ID: {}", testId);
-                } // Payment chưa completed - không refund
-                else if (payment.getPaymentStatus() != PaymentStatus.COMPLETED) {
+                } else if (payment.getPaymentStatus() != PaymentStatus.COMPLETED) {
                     log.info("⏳ Payment not completed - No refund needed - Test ID: {}, Status: {}",
                             testId, payment.getPaymentStatus());
                 }
