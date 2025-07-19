@@ -894,7 +894,9 @@ const MedicalHistoryContent = () => {
                       {record.consultantName || 'Chưa xác định'}
                     </TableCell>
                     <TableCell>{formatDateDisplay(record.date)}</TableCell>
-                    <TableCell>{getTypeName(record.type)}</TableCell>
+                    <TableCell>
+                      {record.serviceName || getTypeName(record.type)}
+                    </TableCell>
                     <TableCell>
                       <Chip
                         label={(() => {
