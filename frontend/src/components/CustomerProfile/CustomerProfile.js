@@ -41,7 +41,6 @@ import MedicalHistoryContent from '@/components/siderBar/MedicalHistoryContent';
 import PaymentHistoryContent from '@/components/CustomerProfile/PaymentHistoryContent';
 import InvoicesContent from '@/components/siderBar/InvoicesContent';
 import NotificationsContent from '@/components/CustomerProfile/NotificationsContent';
-import HelpContent from '@/components/CustomerProfile/HelpContent';
 import QuestionsContent from '@/components/CustomerProfile/QuestionsContent';
 import ReviewsContent from '@/components/CustomerProfile/ReviewsContent';
 import SecurityContent from '@/components/siderBar/SecurityContent';
@@ -110,8 +109,6 @@ const CustomerProfile = () => {
         return <InvoicesContent />; // Hóa đơn
       case 'notifications':
         return <NotificationsContent />; // Thông báo
-      case 'help':
-        return <HelpContent />; // Hỗ trợ, FAQ
       case 'questions':
         return <QuestionsContent />; // Câu hỏi đã đặt
       case 'reviews':
@@ -195,7 +192,8 @@ const CustomerProfile = () => {
             >
               {selectedMenuItem === 'profile' && 'Hồ sơ cá nhân'}
               {(selectedMenuItem === 'customer-appointments' ||
-                selectedMenuItem === 'appointments') &&'Lịch hẹn'}
+                selectedMenuItem === 'appointments') &&
+                'Lịch hẹn'}
               {selectedMenuItem === 'medical-history' && 'Lịch sử khám'}
               {selectedMenuItem === 'payment-history' && 'Lịch sử thanh toán'}
               {selectedMenuItem === 'invoices' && 'Hóa đơn'}{' '}

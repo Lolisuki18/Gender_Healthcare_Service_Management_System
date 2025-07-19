@@ -68,6 +68,7 @@ import {
   Visibility as ViewIcon,
   Download as DownloadIcon,
   Sort as SortIcon,
+  Cancel as CancelIcon,
 } from '@mui/icons-material';
 import TestResults from '../modals/TestResults';
 import { styled } from '@mui/material/styles';
@@ -86,6 +87,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useNavigate } from 'react-router-dom';
 import CanceledTestDetailModal from '../StaffProfile/modals/CanceledTestDetailModal';
 import ReviewForm from '../common/ReviewForm';
+import MedicalHistoryDetailModal from '../modals/MedicalHistoryDetailModal';
 import { notify } from '@/utils/notify';
 
 // Styled Paper Component với hiệu ứng glass morphism hiện đại
@@ -175,6 +177,10 @@ const MedicalHistoryContent = () => {
   // State cho modal chi tiết huỷ
   const [openCanceledDetailModal, setOpenCanceledDetailModal] = useState(false);
   const [selectedCanceledTest, setSelectedCanceledTest] = useState(null);
+
+  // State cho modal chi tiết lịch khám
+  const [openDetailModal, setOpenDetailModal] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
   // Table pagination states
   const [page, setPage] = useState(0);
@@ -277,74 +283,126 @@ const MedicalHistoryContent = () => {
   }, []); // Convert STI tests to medical record format
 
   const getStiTestsAsMedicalRecords = () => {
-    if (!stiTests || stiTests.length === 0) {
+    if (!stiTests || !Array.isArray(stiTests) || stiTests.length === 0) {
       return [];
     }
-    return stiTests.map((test) => {
-      let dateToUse = test.appointmentDate || test.createdAt;
-      if (Array.isArray(dateToUse) && dateToUse.length >= 3) {
-        const [y, m, d, h = 0, min = 0, s = 0] = dateToUse;
-        dateToUse = new Date(y, m - 1, d, h, min, s);
-      }
-      // Kiểm tra đã đánh giá chưa bằng myRatings
-      let hasRated = false;
-      if (myRatings && myRatings.length > 0) {
-        hasRated = myRatings.some((rating) => {
-          // So sánh theo testId hoặc serviceId
-          return (
-            (rating.stiTestId && rating.stiTestId === test.testId) ||
-            (rating.targetId && rating.targetId === test.serviceId) ||
-            (rating.serviceId && rating.serviceId === test.serviceId)
-          );
-        });
-      }
-      return {
-        id: `sti-${test.testId}`,
-        date: dateToUse,
-        doctor: test.staffName || test.consultantName || 'Chưa xác định',
-        consultantName: test.consultantName,
-        diagnosis: test.serviceName || 'Xét nghiệm STI',
-        serviceName: test.serviceName,
-        status: test.status,
-        displayStatus: test.getStatusDisplayText
-          ? test.getStatusDisplayText()
-          : test.status === 'RESULTED'
-            ? 'Results Available'
-            : test.status === 'COMPLETED'
-              ? 'Completed'
-              : test.status === 'CONFIRMED'
-                ? 'Confirmed'
-                : test.status === 'SAMPLED'
-                  ? 'Sample Collected'
-                  : test.status === 'CANCELED'
-                    ? 'Cancelled'
-                    : test.status === 'PENDING'
-                      ? 'Pending'
-                      : test.status,
-        type: 'Xét nghiệm STI',
-        notes: test.customerNotes || 'Không có ghi chú',
-        consultantNotes: test.consultantNotes || 'Không có ghi chú',
-        testId: test.testId,
-        hasTestResults:
-          test.status === 'RESULTED' || test.status === 'COMPLETED',
-        payment: test.paymentStatus,
-        paymentMethod: test.getPaymentDisplayText
-          ? test.getPaymentDisplayText()
-          : test.paymentMethod === 'COD'
-            ? 'Cash on Delivery'
-            : test.paymentMethod === 'VISA'
-              ? 'Credit Card'
-              : test.paymentMethod === 'QR_CODE'
-                ? 'QR Code Transfer'
-                : test.paymentMethod,
-        appointmentDate: test.appointmentDate,
-        isApiData: true,
-        cancelReason: test.cancelReason,
-        createdAt: test.createdAt,
-        updatedAt: test.updatedAt,
-        hasRated,
-      };
-    });
+    return stiTests
+      .map((test) => {
+        // Safety check cho test object
+        if (!test || typeof test !== 'object') {
+          return null;
+        }
+
+        let dateToUse = test.appointmentDate || test.createdAt;
+        if (Array.isArray(dateToUse) && dateToUse.length >= 3) {
+          const [y, m, d, h = 0, min = 0, s = 0] = dateToUse;
+          dateToUse = new Date(y, m - 1, d, h, min, s);
+        }
+        // Kiểm tra đã đánh giá chưa bằng myRatings
+        let hasRated = false;
+        if (myRatings && Array.isArray(myRatings) && myRatings.length > 0) {
+          hasRated = myRatings.some((rating) => {
+            // So sánh theo testId hoặc serviceId
+            return (
+              (rating.stiTestId && rating.stiTestId === test.testId) ||
+              (rating.targetId && rating.targetId === test.serviceId) ||
+              (rating.serviceId && rating.serviceId === test.serviceId)
+            );
+          });
+        }
+        return {
+          id: `sti-${test.testId || 'unknown'}`,
+          date: dateToUse,
+          doctor: test.staffName || test.consultantName || 'Chưa xác định',
+          consultantName: test.consultantName || null,
+          diagnosis: test.serviceName || 'Xét nghiệm STI',
+          serviceName: test.serviceName || 'Xét nghiệm STI',
+          serviceDescription: test.serviceDescription || null,
+          status: test.status,
+          displayStatus: (() => {
+            // Ưu tiên statusDisplayText từ API
+            if (test.statusDisplayText) {
+              return test.statusDisplayText;
+            }
+            // Fallback về logic cũ nếu không có
+            switch (test.status) {
+              case 'RESULTED':
+                return 'Results Available';
+              case 'COMPLETED':
+                return 'Completed';
+              case 'CONFIRMED':
+                return 'Confirmed';
+              case 'SAMPLED':
+                return 'Sample Collected';
+              case 'CANCELED':
+                return 'Cancelled';
+              case 'PENDING':
+                return 'Pending';
+              default:
+                return test.status || 'Unknown';
+            }
+          })(),
+          type: 'Xét nghiệm STI',
+          notes: test.customerNotes || 'Không có ghi chú',
+          consultantNotes: test.consultantNotes || null,
+          testId: test.testId || null,
+          hasTestResults:
+            test.status === 'RESULTED' || test.status === 'COMPLETED',
+          payment: test.paymentStatus || null,
+          paymentMethod: test.paymentMethod || null,
+          paymentDisplayText: (() => {
+            // Ưu tiên paymentDisplayText từ API
+            if (test.paymentDisplayText) {
+              return test.paymentDisplayText;
+            }
+            // Fallback về logic cũ nếu không có
+            switch (test.paymentMethod) {
+              case 'COD':
+                return 'Cash on Delivery';
+              case 'VISA':
+                return 'Credit Card';
+              case 'QR_CODE':
+                return 'QR Code Transfer';
+              default:
+                return test.paymentMethod || 'Unknown';
+            }
+          })(),
+          totalPrice: test.totalPrice || null,
+          paidAt: test.paidAt || null,
+          paymentTransactionId: test.paymentTransactionId || null,
+          stripePaymentIntentId: test.stripePaymentIntentId || null,
+          qrPaymentReference: test.qrPaymentReference || null,
+          qrExpiresAt: test.qrExpiresAt || null,
+          qrCodeUrl: test.qrCodeUrl || null,
+          paymentFailureReason: test.paymentFailureReason || null,
+          canRetryPayment: test.canRetryPayment || false,
+          paymentCompleted: test.paymentCompleted || false,
+          codpayment: test.codpayment || false,
+          stripePayment: test.stripePayment || false,
+          qrpayment: test.qrpayment || false,
+          qrexpired: test.qrexpired || false,
+          appointmentDate: test.appointmentDate || null,
+          resultDate: test.resultDate || null,
+          isApiData: true,
+          cancelReason: test.cancelReason || null,
+          createdAt: test.createdAt || null,
+          updatedAt: test.updatedAt || null,
+          hasRated,
+          // Thêm thông tin khách hàng
+          customerId: test.customerId || null,
+          customerName: test.customerName || null,
+          customerEmail: test.customerEmail || null,
+          customerPhone: test.customerPhone || null,
+          // Thông tin staff và consultant
+          staffId: test.staffId || null,
+          staffName: test.staffName || null,
+          consultantId: test.consultantId || null,
+          // Thông tin service/package
+          serviceId: test.serviceId || null,
+          packageId: test.packageId || null,
+        };
+      })
+      .filter((record) => record !== null); // Loại bỏ null records
   };
 
   // Combine STI tests with static medical records
@@ -511,6 +569,12 @@ const MedicalHistoryContent = () => {
   const handleOpenCanceledDetailModal = (test) => {
     setSelectedCanceledTest(test);
     setOpenCanceledDetailModal(true);
+  };
+
+  // Hàm mở modal chi tiết lịch khám
+  const handleOpenDetailModal = (record) => {
+    setSelectedRecord(record);
+    setOpenDetailModal(true);
   };
 
   return (
@@ -895,7 +959,49 @@ const MedicalHistoryContent = () => {
                     </TableCell>
                     <TableCell>{formatDateDisplay(record.date)}</TableCell>
                     <TableCell>
-                      {record.serviceName || getTypeName(record.type)}
+                      <Tooltip title="Click để xem chi tiết" arrow>
+                        <Box
+                          onClick={() => handleOpenDetailModal(record)}
+                          sx={{
+                            cursor: 'pointer',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease-in-out',
+                            minHeight: '40px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            '&:hover': {
+                              backgroundColor: 'rgba(102, 126, 234, 0.08)',
+                              transform: 'translateX(2px)',
+                            },
+                            '&:active': {
+                              backgroundColor: 'rgba(102, 126, 234, 0.12)',
+                              transform: 'translateX(0px)',
+                            },
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: '#1976d2',
+                              fontWeight: 500,
+                              textDecoration: 'underline',
+                              textDecorationColor: 'transparent',
+                              transition:
+                                'text-decoration-color 0.2s ease-in-out',
+                              wordWrap: 'break-word',
+                              wordBreak: 'break-word',
+                              whiteSpace: 'normal',
+                              lineHeight: 1.4,
+                              '&:hover': {
+                                textDecorationColor: '#1976d2',
+                              },
+                            }}
+                          >
+                            {record.serviceName || getTypeName(record.type)}
+                          </Typography>
+                        </Box>
+                      </Tooltip>
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -943,53 +1049,202 @@ const MedicalHistoryContent = () => {
 
                     {/* Cột Hành động */}
                     <TableCell>
-                      {/* Nếu đã huỷ thì chỉ hiển thị nút xem chi tiết huỷ */}
-                      {record.status === 'CANCELED' ? (
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          size="small"
-                          onClick={() => handleOpenCanceledDetailModal(record)}
-                          sx={{ mr: 1, mb: 0.5 }}
-                        >
-                          Xem chi tiết huỷ
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="contained"
-                          size="small"
-                          startIcon={<ScienceIcon />}
-                          onClick={() =>
-                            (record.status === 'COMPLETED' ||
-                              record.displayStatus === 'Hoàn thành') &&
-                            handleViewTestResults(record.testId)
-                          }
-                          disabled={
-                            !(
-                              record.status === 'COMPLETED' ||
-                              record.displayStatus === 'Hoàn thành'
-                            )
-                          }
-                          sx={{ mr: 1, mb: 0.5 }}
-                        >
-                          Xem kết quả
-                        </Button>
-                      )}
-                      {/* Nút Huỷ cho trạng thái Đang xử lý */}
-                      {record.status === 'PENDING' && (
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          size="small"
-                          onClick={() => handleCancelTest(record.testId)}
-                          disabled={cancellingTestId === record.testId}
-                          sx={{ mr: 1, mb: 0.5 }}
-                        >
-                          {cancellingTestId === record.testId
-                            ? 'Đang huỷ...'
-                            : 'Huỷ'}
-                        </Button>
-                      )}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'row',
+                          gap: 1,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {/* Nếu đã huỷ thì chỉ hiển thị nút xem chi tiết huỷ */}
+                        {record.status === 'CANCELED' ? (
+                          <Tooltip title="Xem chi tiết huỷ" arrow>
+                            <IconButton
+                              color="error"
+                              size="medium"
+                              onClick={() =>
+                                handleOpenCanceledDetailModal(record)
+                              }
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                background:
+                                  'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
+                                color: 'white',
+                                border: '2px solid transparent',
+                                boxShadow:
+                                  '0 4px 15px rgba(255, 107, 107, 0.3)',
+                                transition:
+                                  'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                '&:hover': {
+                                  background:
+                                    'linear-gradient(135deg, #ff5252 0%, #d32f2f 100%)',
+                                  transform: 'translateY(-2px)',
+                                  boxShadow:
+                                    '0 8px 25px rgba(255, 107, 107, 0.4)',
+                                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                                },
+                                '&:active': {
+                                  transform: 'translateY(0px)',
+                                  boxShadow:
+                                    '0 4px 15px rgba(255, 107, 107, 0.3)',
+                                },
+                              }}
+                            >
+                              <CancelIcon sx={{ fontSize: 20 }} />
+                            </IconButton>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip title="Xem kết quả xét nghiệm" arrow>
+                            <IconButton
+                              color="primary"
+                              size="medium"
+                              onClick={() =>
+                                (record.status === 'COMPLETED' ||
+                                  record.displayStatus === 'Hoàn thành') &&
+                                handleViewTestResults(record.testId)
+                              }
+                              disabled={
+                                !(
+                                  record.status === 'COMPLETED' ||
+                                  record.displayStatus === 'Hoàn thành'
+                                )
+                              }
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                background:
+                                  record.status === 'COMPLETED' ||
+                                  record.displayStatus === 'Hoàn thành'
+                                    ? 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)'
+                                    : 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
+                                color:
+                                  record.status === 'COMPLETED' ||
+                                  record.displayStatus === 'Hoàn thành'
+                                    ? 'white'
+                                    : '#757575',
+                                border: '2px solid transparent',
+                                boxShadow:
+                                  record.status === 'COMPLETED' ||
+                                  record.displayStatus === 'Hoàn thành'
+                                    ? '0 4px 15px rgba(76, 175, 80, 0.3)'
+                                    : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                transition:
+                                  'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                '&:hover': {
+                                  background:
+                                    record.status === 'COMPLETED' ||
+                                    record.displayStatus === 'Hoàn thành'
+                                      ? 'linear-gradient(135deg, #45a049 0%, #388e3c 100%)'
+                                      : 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
+                                  transform:
+                                    record.status === 'COMPLETED' ||
+                                    record.displayStatus === 'Hoàn thành'
+                                      ? 'translateY(-2px)'
+                                      : 'none',
+                                  boxShadow:
+                                    record.status === 'COMPLETED' ||
+                                    record.displayStatus === 'Hoàn thành'
+                                      ? '0 8px 25px rgba(76, 175, 80, 0.4)'
+                                      : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                  border:
+                                    record.status === 'COMPLETED' ||
+                                    record.displayStatus === 'Hoàn thành'
+                                      ? '2px solid rgba(255, 255, 255, 0.3)'
+                                      : '2px solid transparent',
+                                },
+                                '&:active': {
+                                  transform:
+                                    record.status === 'COMPLETED' ||
+                                    record.displayStatus === 'Hoàn thành'
+                                      ? 'translateY(0px)'
+                                      : 'none',
+                                  boxShadow:
+                                    record.status === 'COMPLETED' ||
+                                    record.displayStatus === 'Hoàn thành'
+                                      ? '0 4px 15px rgba(76, 175, 80, 0.3)'
+                                      : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                },
+                                '&.Mui-disabled': {
+                                  background:
+                                    'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)',
+                                  color: '#bdbdbd',
+                                  boxShadow: 'none',
+                                  transform: 'none',
+                                  '&:hover': {
+                                    background:
+                                      'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)',
+                                    transform: 'none',
+                                    boxShadow: 'none',
+                                  },
+                                },
+                              }}
+                            >
+                              <ScienceIcon sx={{ fontSize: 20 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
+                        {/* Nút Huỷ cho trạng thái Đang xử lý */}
+                        {record.status === 'PENDING' && (
+                          <Tooltip title="Huỷ xét nghiệm" arrow>
+                            <IconButton
+                              color="error"
+                              size="medium"
+                              onClick={() => handleCancelTest(record.testId)}
+                              disabled={cancellingTestId === record.testId}
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                background:
+                                  'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
+                                color: 'white',
+                                border: '2px solid transparent',
+                                boxShadow: '0 4px 15px rgba(244, 67, 54, 0.3)',
+                                transition:
+                                  'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                '&:hover': {
+                                  background:
+                                    'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)',
+                                  transform: 'translateY(-2px)',
+                                  boxShadow:
+                                    '0 8px 25px rgba(244, 67, 54, 0.4)',
+                                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                                },
+                                '&:active': {
+                                  transform: 'translateY(0px)',
+                                  boxShadow:
+                                    '0 4px 15px rgba(244, 67, 54, 0.3)',
+                                },
+                                '&.Mui-disabled': {
+                                  background:
+                                    'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)',
+                                  color: '#bdbdbd',
+                                  boxShadow: 'none',
+                                  transform: 'none',
+                                  '&:hover': {
+                                    background:
+                                      'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)',
+                                    transform: 'none',
+                                    boxShadow: 'none',
+                                  },
+                                },
+                              }}
+                            >
+                              {cancellingTestId === record.testId ? (
+                                <CircularProgress
+                                  size={18}
+                                  sx={{ color: 'white' }}
+                                />
+                              ) : (
+                                <CancelIcon sx={{ fontSize: 20 }} />
+                              )}
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
                     </TableCell>
                     {/* Cột Đánh giá */}
                     <TableCell>
@@ -1013,41 +1268,96 @@ const MedicalHistoryContent = () => {
                           if (foundReview) {
                             // Đã đánh giá, hiện nút Chỉnh sửa
                             return (
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                color="success"
-                                onClick={() => {
-                                  setReviewingRecord(record);
-                                  setRating(foundReview.rating || 0);
-                                  setFeedback(foundReview.comment || '');
-                                  setIsEditMode(true);
-                                  setEditingReviewId(
-                                    foundReview.ratingId || foundReview.id
-                                  );
-                                  setOpenReviewDialog(true);
-                                }}
-                              >
-                                Chỉnh sửa
-                              </Button>
+                              <Tooltip title="Chỉnh sửa đánh giá" arrow>
+                                <IconButton
+                                  color="success"
+                                  size="medium"
+                                  onClick={() => {
+                                    setReviewingRecord(record);
+                                    setRating(foundReview.rating || 0);
+                                    setFeedback(foundReview.comment || '');
+                                    setIsEditMode(true);
+                                    setEditingReviewId(
+                                      foundReview.ratingId || foundReview.id
+                                    );
+                                    setOpenReviewDialog(true);
+                                  }}
+                                  sx={{
+                                    width: 40,
+                                    height: 40,
+                                    background:
+                                      'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+                                    color: 'white',
+                                    border: '2px solid transparent',
+                                    boxShadow:
+                                      '0 4px 15px rgba(76, 175, 80, 0.3)',
+                                    transition:
+                                      'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    '&:hover': {
+                                      background:
+                                        'linear-gradient(135deg, #45a049 0%, #388e3c 100%)',
+                                      transform: 'translateY(-2px)',
+                                      boxShadow:
+                                        '0 8px 25px rgba(76, 175, 80, 0.4)',
+                                      border:
+                                        '2px solid rgba(255, 255, 255, 0.3)',
+                                    },
+                                    '&:active': {
+                                      transform: 'translateY(0px)',
+                                      boxShadow:
+                                        '0 4px 15px rgba(76, 175, 80, 0.3)',
+                                    },
+                                  }}
+                                >
+                                  <NoteIcon sx={{ fontSize: 20 }} />
+                                </IconButton>
+                              </Tooltip>
                             );
                           } else {
                             // Chưa đánh giá, hiện nút Đánh giá
                             return (
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                onClick={() => {
-                                  setReviewingRecord(record);
-                                  setRating(0);
-                                  setFeedback('');
-                                  setIsEditMode(false);
-                                  setEditingReviewId(null);
-                                  setOpenReviewDialog(true);
-                                }}
-                              >
-                                Đánh giá
-                              </Button>
+                              <Tooltip title="Đánh giá dịch vụ" arrow>
+                                <IconButton
+                                  color="primary"
+                                  size="medium"
+                                  onClick={() => {
+                                    setReviewingRecord(record);
+                                    setRating(0);
+                                    setFeedback('');
+                                    setIsEditMode(false);
+                                    setEditingReviewId(null);
+                                    setOpenReviewDialog(true);
+                                  }}
+                                  sx={{
+                                    width: 40,
+                                    height: 40,
+                                    background:
+                                      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white',
+                                    border: '2px solid transparent',
+                                    boxShadow:
+                                      '0 4px 15px rgba(102, 126, 234, 0.3)',
+                                    transition:
+                                      'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    '&:hover': {
+                                      background:
+                                        'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                                      transform: 'translateY(-2px)',
+                                      boxShadow:
+                                        '0 8px 25px rgba(102, 126, 234, 0.4)',
+                                      border:
+                                        '2px solid rgba(255, 255, 255, 0.3)',
+                                    },
+                                    '&:active': {
+                                      transform: 'translateY(0px)',
+                                      boxShadow:
+                                        '0 4px 15px rgba(102, 126, 234, 0.3)',
+                                    },
+                                  }}
+                                >
+                                  <NoteIcon sx={{ fontSize: 20 }} />
+                                </IconButton>
+                              </Tooltip>
                             );
                           }
                         })()
@@ -1219,6 +1529,13 @@ const MedicalHistoryContent = () => {
           onClose={() => setSelectedTestId(null)}
         />
       )}
+      {/* Modal chi tiết lịch khám */}
+      <MedicalHistoryDetailModal
+        open={openDetailModal}
+        onClose={() => setOpenDetailModal(false)}
+        record={selectedRecord}
+        formatDateDisplay={formatDateDisplay}
+      />
       {/* Modal chi tiết huỷ */}
       <CanceledTestDetailModal
         open={openCanceledDetailModal}
