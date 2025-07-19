@@ -54,6 +54,9 @@ import {
   getCanceledTests,
 } from '../../services/stiService';
 import { formatDateDisplay } from '../../utils/dateUtils';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 // Import icons
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -122,7 +125,6 @@ const STITestManagementContent = () => {
     () => ({
       COD: 'Tiền mặt',
       VISA: 'Thẻ tín dụng',
-      QR_CODE: 'Chuyển khoản QR',
     }),
     []
   ); // State variables
@@ -138,7 +140,7 @@ const STITestManagementContent = () => {
   const [paymentFilter, setPaymentFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTest, setSelectedTest] = useState(null);
-  const [dateFilter, setDateFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState(null);
   const [pendingCount, setPendingCount] = useState(0);
 
   // Modals state
@@ -295,20 +297,68 @@ const STITestManagementContent = () => {
       console.log('Sau khi lọc theo từ khóa:', result.length);
     }
 
-    // Filter by date
+    // Filter by date - from selected date onwards
     if (dateFilter) {
+      console.log('Đang lọc từ ngày hẹn trở đi:', dateFilter);
+
+      // dateFilter is now a Date object from DatePicker
       const filterDate = new Date(dateFilter);
-      filterDate.setHours(0, 0, 0, 0); // Đầu ngày
+      if (isNaN(filterDate.getTime())) {
+        console.log('Ngày filter không hợp lệ:', dateFilter);
+        return;
+      }
+      filterDate.setHours(0, 0, 0, 0);
 
       result = result.filter((test) => {
-        if (!test.appointmentDate) return false;
+        if (!test.appointmentDate) {
+          console.log('Test không có appointmentDate:', test.testId);
+          return false;
+        }
 
-        const testDate = new Date(test.appointmentDate);
+        // Convert test date to Date object safely
+        let testDate;
+
+        // Xử lý các trường hợp khác nhau của appointmentDate
+        if (Array.isArray(test.appointmentDate)) {
+          // Nếu appointmentDate là array [year, month, day, hour, minute, second]
+          const [year, month, day, hour = 0, minute = 0, second = 0] =
+            test.appointmentDate;
+          testDate = new Date(year, month - 1, day, hour, minute, second);
+        } else if (typeof test.appointmentDate === 'string') {
+          // Nếu appointmentDate là string
+          testDate = new Date(test.appointmentDate);
+        } else if (test.appointmentDate instanceof Date) {
+          // Nếu appointmentDate đã là Date object
+          testDate = new Date(test.appointmentDate);
+        } else {
+          console.log(
+            'Format appointmentDate không xác định:',
+            test.testId,
+            test.appointmentDate
+          );
+          return false;
+        }
+
+        if (isNaN(testDate.getTime())) {
+          console.log(
+            'Test có appointmentDate không hợp lệ:',
+            test.testId,
+            test.appointmentDate
+          );
+          return false;
+        }
+
         testDate.setHours(0, 0, 0, 0); // Start of day
 
-        return testDate.getTime() === filterDate.getTime();
+        // Lọc từ ngày được chọn trở đi (>=)
+        const isMatch = testDate.getTime() >= filterDate.getTime();
+        console.log(
+          `Test ${test.testId}: ${JSON.stringify(test.appointmentDate)} -> ${testDate.toISOString()} >= ${filterDate.toISOString()} = ${isMatch}`
+        );
+
+        return isMatch;
       });
-      console.log('Sau khi lọc theo ngày:', result.length);
+      console.log('Sau khi lọc từ ngày hẹn trở đi:', result.length);
     }
 
     console.log('Kết quả lọc cuối cùng:', result.length, result);
@@ -587,8 +637,27 @@ const STITestManagementContent = () => {
 
         return true;
       } else {
-        setError(response?.message || 'Không thể xác nhận xét nghiệm');
-        setTimeout(() => setError(null), 3000);
+        // Kiểm tra xem có phải lỗi thanh toán không
+        if (
+          response?.message &&
+          response.message.includes('payment not completed')
+        ) {
+          const errorMessage =
+            'Không thể xác nhận xét nghiệm do thanh toán thất bại hoặc chưa hoàn tất';
+          setError(errorMessage);
+          notify.error('Lỗi thanh toán', errorMessage);
+        } else if (
+          response?.message &&
+          response.message.includes('Cannot confirm test')
+        ) {
+          const errorMessage =
+            'Không thể xác nhận xét nghiệm - vui lòng kiểm tra lại thông tin thanh toán';
+          setError(errorMessage);
+          notify.error('Lỗi xác nhận', errorMessage);
+        } else {
+          setError(response?.message || 'Không thể xác nhận xét nghiệm');
+        }
+        setTimeout(() => setError(null), 5000);
         return false;
       }
     } catch (err) {
@@ -762,12 +831,37 @@ const STITestManagementContent = () => {
     setSuccess(`Cập nhật xét nghiệm #${updatedTest.testId} thành công`);
     setTimeout(() => setSuccess(null), 3000);
   };
+
+  // Helper function để format ngày hiển thị
+  const formatAppointmentDate = (appointmentDate) => {
+    if (!appointmentDate) return 'Không có ngày hẹn';
+
+    let date;
+    if (Array.isArray(appointmentDate)) {
+      const [year, month, day, hour = 0, minute = 0, second = 0] =
+        appointmentDate;
+      date = new Date(year, month - 1, day, hour, minute, second);
+    } else if (typeof appointmentDate === 'string') {
+      date = new Date(appointmentDate);
+    } else if (appointmentDate instanceof Date) {
+      date = new Date(appointmentDate);
+    } else {
+      return 'Ngày không hợp lệ';
+    }
+
+    if (isNaN(date.getTime())) {
+      return 'Ngày không hợp lệ';
+    }
+
+    return formatDateDisplay(date);
+  };
+
   // Reset filters
   const handleResetFilters = () => {
     setStatusFilter('ALL');
     setPaymentFilter('ALL');
     setSearchTerm('');
-    setDateFilter('');
+    setDateFilter(null);
   };
 
   // Render status chip
@@ -790,13 +884,30 @@ const STITestManagementContent = () => {
     const method = test.paymentMethod;
     const status = test.paymentStatus;
 
+    // Xác định màu sắc và variant dựa trên trạng thái thanh toán
+    let chipColor = 'default';
+    let chipVariant = 'outlined';
+    let chipLabel = PAYMENT_LABELS[method] || method;
+
+    if (status === 'COMPLETED') {
+      chipColor = 'success';
+      chipVariant = 'default';
+    } else if (status === 'FAILED') {
+      chipColor = 'error';
+      chipVariant = 'default';
+      chipLabel = 'Thanh toán thất bại';
+    } else if (status === 'PENDING') {
+      chipColor = 'warning';
+      chipVariant = 'outlined';
+    }
+
     return (
       <Chip
         icon={<PaymentIcon />}
-        label={PAYMENT_LABELS[method] || method}
+        label={chipLabel}
         size="small"
-        color={status === 'COMPLETED' ? 'success' : 'default'}
-        variant={status === 'COMPLETED' ? 'default' : 'outlined'}
+        color={chipColor}
+        variant={chipVariant}
       />
     );
   };
@@ -805,70 +916,103 @@ const STITestManagementContent = () => {
   const getActionButton = (test) => {
     switch (test.status) {
       case 'PENDING':
+        // Kiểm tra trạng thái thanh toán để quyết định có disable nút xác nhận không
+        const isPaymentFailed = test.paymentStatus === 'FAILED';
+        const isPaymentPending = test.paymentStatus === 'PENDING';
+        const isPaymentIncomplete =
+          !test.paymentStatus || test.paymentStatus === 'PENDING';
+
+        // Disable nút xác nhận nếu thanh toán thất bại hoặc chưa hoàn tất
+        const shouldDisableConfirm = isPaymentFailed || isPaymentIncomplete;
+
+        // Xác định tooltip và text cho nút
+        let confirmTooltip = 'Xác nhận';
+        let confirmText = 'Xác nhận';
+
+        if (isPaymentFailed) {
+          confirmTooltip = 'Không thể xác nhận do thanh toán thất bại';
+          confirmText = 'Thanh toán thất bại';
+        } else if (isPaymentPending) {
+          confirmTooltip = 'Không thể xác nhận do thanh toán chưa hoàn tất';
+          confirmText = 'Chờ thanh toán';
+        }
+
         return (
           <>
             {' '}
-            <Tooltip title="Xác nhận">
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<CheckCircleIcon />}
-                onClick={async () => {
-                  // Lưu ID để có thể cập nhật UI trước khi API hoàn tất
-                  const testIdToUpdate = test.testId;
+            <Tooltip title={confirmTooltip}>
+              <span>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<CheckCircleIcon />}
+                  disabled={shouldDisableConfirm}
+                  onClick={async () => {
+                    // Lưu ID để có thể cập nhật UI trước khi API hoàn tất
+                    const testIdToUpdate = test.testId;
 
-                  // Trực tiếp cập nhật UI ngay lập tức (optimistic update)
-                  const optimisticUpdatedTests = tests.map((t) =>
-                    t.testId === testIdToUpdate
-                      ? { ...t, status: 'CONFIRMED' }
-                      : t
-                  );
-                  setTests(optimisticUpdatedTests);
-
-                  // Cập nhật filteredTests dựa theo tab hiện tại
-                  if (tabValue === 1) {
-                    // Nếu đang ở tab "Chờ xử lý"
-                    // Xóa test đã được xác nhận khỏi danh sách filteredTests
-                    const newFilteredTests = filteredTests.filter(
-                      (t) => t.testId !== testIdToUpdate
-                    );
-                    setFilteredTests(newFilteredTests);
-                  }
-
-                  // Giảm số lượng pending
-                  setPendingCount((prev) => Math.max(0, prev - 1));
-
-                  // Hiển thị thông báo thành công
-                  setSuccess(`Đang xác nhận xét nghiệm #${testIdToUpdate}...`);
-
-                  // Vẫn gọi API để xác nhận trên server
-                  const success = await handleConfirmTestAction(testIdToUpdate);
-
-                  // Nếu thành công, cập nhật lại dữ liệu từ server để đồng bộ
-                  if (success) {
-                    setTimeout(() => fetchTests(), 500);
-                  } else {
-                    // Nếu thất bại, hoàn tác UI về trạng thái cũ
-                    const revertedTests = tests.map((t) =>
+                    // Trực tiếp cập nhật UI ngay lập tức (optimistic update)
+                    const optimisticUpdatedTests = tests.map((t) =>
                       t.testId === testIdToUpdate
-                        ? { ...t, status: 'PENDING' }
+                        ? { ...t, status: 'CONFIRMED' }
                         : t
                     );
-                    setTests(revertedTests);
+                    setTests(optimisticUpdatedTests);
 
-                    // Cập nhật lại filteredTests
-                    fetchTests();
-                  }
-                }}
-                sx={{
-                  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                  color: '#fff',
-                  fontWeight: 600,
-                  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-                }}
-              >
-                Xác nhận
-              </Button>
+                    // Cập nhật filteredTests dựa theo tab hiện tại
+                    if (tabValue === 1) {
+                      // Nếu đang ở tab "Chờ xử lý"
+                      // Xóa test đã được xác nhận khỏi danh sách filteredTests
+                      const newFilteredTests = filteredTests.filter(
+                        (t) => t.testId !== testIdToUpdate
+                      );
+                      setFilteredTests(newFilteredTests);
+                    }
+
+                    // Giảm số lượng pending
+                    setPendingCount((prev) => Math.max(0, prev - 1));
+
+                    // Hiển thị thông báo thành công
+                    setSuccess(
+                      `Đang xác nhận xét nghiệm #${testIdToUpdate}...`
+                    );
+
+                    // Vẫn gọi API để xác nhận trên server
+                    const success =
+                      await handleConfirmTestAction(testIdToUpdate);
+
+                    // Nếu thành công, cập nhật lại dữ liệu từ server để đồng bộ
+                    if (success) {
+                      setTimeout(() => fetchTests(), 500);
+                    } else {
+                      // Nếu thất bại, hoàn tác UI về trạng thái cũ
+                      const revertedTests = tests.map((t) =>
+                        t.testId === testIdToUpdate
+                          ? { ...t, status: 'PENDING' }
+                          : t
+                      );
+                      setTests(revertedTests);
+
+                      // Cập nhật lại filteredTests
+                      fetchTests();
+                    }
+                  }}
+                  sx={{
+                    background: shouldDisableConfirm
+                      ? 'linear-gradient(45deg, #ccc, #999)'
+                      : 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                    color: '#fff',
+                    fontWeight: 600,
+                    boxShadow: shouldDisableConfirm
+                      ? 'none'
+                      : '0 2px 8px rgba(74, 144, 226, 0.25)',
+                    opacity: shouldDisableConfirm ? 0.6 : 1,
+                    cursor: shouldDisableConfirm ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {confirmText}
+                </Button>
+              </span>
             </Tooltip>
             <Tooltip title="Hủy xét nghiệm">
               <Button
@@ -1221,6 +1365,11 @@ const STITestManagementContent = () => {
             {error}
           </Alert>
         )} */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
         {success && (
           <Alert severity="success" sx={{ mb: 3 }}>
             {success}
@@ -1285,17 +1434,22 @@ const STITestManagementContent = () => {
             />{' '}
           </Grid>
           <Grid item xs={12} md={2}>
-            <TextField
-              label="Lọc theo ngày"
-              variant="outlined"
-              type="date"
-              fullWidth
-              value={dateFilter}
-              InputLabelProps={{
-                shrink: true,
-              }}
-              onChange={(e) => setDateFilter(e.target.value)}
-            />
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DatePicker
+                label="Từ ngày hẹn"
+                value={dateFilter}
+                onChange={(newValue) => setDateFilter(newValue)}
+                renderInput={(params) => <TextField fullWidth {...params} />}
+                format="dd/MM/yyyy"
+                slotProps={{
+                  textField: {
+                    variant: 'outlined',
+                    fullWidth: true,
+                    placeholder: 'Chọn ngày bắt đầu',
+                  },
+                }}
+              />
+            </LocalizationProvider>
           </Grid>
           <Grid item xs={12} md={2}>
             <FormControl fullWidth>
@@ -1329,7 +1483,6 @@ const STITestManagementContent = () => {
                 <MenuItem value="ALL">Tất cả</MenuItem>
                 <MenuItem value="COD">Tiền mặt</MenuItem>
                 <MenuItem value="VISA">Thẻ tín dụng</MenuItem>
-                <MenuItem value="QR_CODE">Chuyển khoản QR</MenuItem>
               </Select>{' '}
             </FormControl>
           </Grid>
@@ -1467,6 +1620,11 @@ const STITestManagementContent = () => {
               ? `Có ${testsData.length} xét nghiệm trước khi lọc.`
               : 'Không có dữ liệu từ máy chủ.'}
           </Typography>
+          {dateFilter && (
+            <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+              Đang lọc từ ngày hẹn {formatDateDisplay(dateFilter)} trở đi
+            </Typography>
+          )}
         </Box>
       );
     }
@@ -1524,13 +1682,7 @@ const STITestManagementContent = () => {
                     </Typography>
                   </TableCell>{' '}
                   <TableCell>
-                    {test.appointmentDate ? (
-                      formatDateDisplay(test.appointmentDate)
-                    ) : (
-                      <Typography variant="caption" color="text.secondary">
-                        Không có ngày hẹn
-                      </Typography>
-                    )}
+                    {formatAppointmentDate(test.appointmentDate)}
                   </TableCell>
                   <TableCell>
                     {tabValue === 4 || tabValue === 5 ? (

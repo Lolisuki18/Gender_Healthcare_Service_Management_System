@@ -285,7 +285,7 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
                     <TableCell>{comp.unit || '-'}</TableCell>
                     <TableCell>{comp.normalRange || '-'}</TableCell>
                     <TableCell>
-                      <ConclusionDisplay 
+                      <ConclusionDisplay
                         conclusion={comp.conclusion}
                         conclusionDisplayName={comp.conclusionDisplayName}
                       />
@@ -406,6 +406,41 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
           Chi tiết kết quả
         </Typography>
         {renderContent()}
+
+        {/* Kết luận từ consultant */}
+        {fullTestDetails.consultantNotes && (
+          <Box sx={{ mt: 4 }}>
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: 600, color: '#1e293b', mb: 2 }}
+            >
+              Kết luận
+            </Typography>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: 2,
+                border: '1px solid #e2e8f0',
+                backgroundColor: '#f8fafc',
+                borderLeft: '4px solid #4A90E2',
+              }}
+            >
+              <Typography
+                variant="body1"
+                sx={{
+                  fontWeight: 500,
+                  fontSize: '1.05rem',
+                  lineHeight: 1.6,
+                  color: '#374151',
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+                {fullTestDetails.consultantNotes}
+              </Typography>
+            </Paper>
+          </Box>
+        )}
       </DialogContent>
       <DialogActions
         sx={{
