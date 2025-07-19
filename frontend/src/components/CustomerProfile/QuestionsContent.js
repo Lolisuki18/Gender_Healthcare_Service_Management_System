@@ -21,7 +21,6 @@ import {
   Box,
   Typography,
   Paper,
-
   Chip,
   TextField,
   Button,
@@ -42,6 +41,7 @@ import {
   TableRow,
   TableCell,
   TableContainer,
+  Tooltip,
 } from '@mui/material';
 import {
   QuestionAnswer as QuestionIcon,
@@ -101,6 +101,8 @@ const QuestionsContent = () => {
   const [createdTo, setCreatedTo] = useState('');
 
   const [detailQuestion, setDetailQuestion] = useState(null);
+  const [openContentDialog, setOpenContentDialog] = useState(false);
+  const [hoveredContent, setHoveredContent] = useState('');
 
   // Handle tab change
   const handleTabChange = (event, newValue) => {
@@ -595,13 +597,52 @@ const QuestionsContent = () => {
                     <TableCell
                       sx={{
                         maxWidth: 220,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
                         fontSize: '1rem',
                       }}
                     >
-                      {question.content}
+                      <Tooltip
+                        title="Click để xem chi tiết"
+                        placement="top"
+                        arrow
+                        sx={{
+                          '& .MuiTooltip-tooltip': {
+                            backgroundColor: '#4A90E2',
+                            color: '#fff',
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            borderRadius: 2,
+                            boxShadow: '0 4px 12px rgba(74, 144, 226, 0.3)',
+                          },
+                          '& .MuiTooltip-arrow': {
+                            color: '#4A90E2',
+                          },
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          onClick={() => {
+                            setHoveredContent(question.content);
+                            setOpenContentDialog(true);
+                          }}
+                          sx={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            lineHeight: 1.4,
+                            maxHeight: '2.8em',
+                            cursor: 'pointer',
+                            fontSize: '1rem',
+                            '&:hover': {
+                              color: '#4A90E2',
+                              textDecoration: 'underline',
+                            },
+                          }}
+                        >
+                          {question.content}
+                        </Typography>
+                      </Tooltip>
                     </TableCell>
                     <TableCell sx={{ minWidth: 120, fontSize: '1rem' }}>
                       {question.categoryName}
@@ -985,6 +1026,88 @@ const QuestionsContent = () => {
               fontWeight: 600,
               px: 4,
               boxShadow: '0 2px 8px 0 rgba(74, 144, 226, 0.10)',
+            }}
+          >
+            Đóng
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog hiển thị nội dung câu hỏi */}
+      <Dialog
+        open={openContentDialog}
+        onClose={() => setOpenContentDialog(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '24px',
+            boxShadow: '0 8px 32px 0 rgba(74, 144, 226, 0.18)',
+            border: '1px solid #e3f2fd',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            fontSize: '1.35rem',
+            color: '#1976d2',
+            letterSpacing: 0.5,
+            background: '#fafdff',
+            borderTopLeftRadius: '24px',
+            borderTopRightRadius: '24px',
+            borderBottom: '1px solid #e3f2fd',
+          }}
+        >
+          Nội dung câu hỏi
+        </DialogTitle>
+        <DialogContent
+          sx={{
+            background: '#fafdff',
+            pt: 3,
+            px: 3,
+            pb: 2,
+          }}
+        >
+          <Typography
+            variant="body1"
+            sx={{
+              fontSize: '1.1rem',
+              lineHeight: 1.8,
+              color: '#2D3748',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              p: 2.5,
+              backgroundColor: '#fff',
+              borderRadius: '16px',
+              border: '1.5px solid #e3f2fd',
+              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.1)',
+            }}
+          >
+            {hoveredContent}
+          </Typography>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            background: '#fafdff',
+            borderBottomLeftRadius: '24px',
+            borderBottomRightRadius: '24px',
+            px: 3,
+            pb: 2.5,
+          }}
+        >
+          <Button
+            onClick={() => setOpenContentDialog(false)}
+            variant="contained"
+            sx={{
+              borderRadius: '20px',
+              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+              color: '#fff',
+              fontWeight: 600,
+              px: 4,
+              boxShadow: '0 2px 8px 0 rgba(74, 144, 226, 0.10)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #357ABD, #16A085)',
+              },
             }}
           >
             Đóng
