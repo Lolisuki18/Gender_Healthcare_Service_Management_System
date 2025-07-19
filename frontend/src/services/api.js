@@ -30,13 +30,12 @@ import { confirmDialog } from '@/utils/confirmDialog';
 
 // Lấy baseURL từ biến môi trường, ưu tiên cloud nếu có
 const config = {
-  // baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
+  // baseURL: 'http://localhost:8080' || process.env.REACT_APP_API_URL,
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
   // headers: {
   //   'Content-Type': 'application/json', // Đã xóa để axios tự động nhận diện
   // },
 };
-
 const apiClient = axios.create(config);
 
 // Biến để theo dõi trạng thái refresh token

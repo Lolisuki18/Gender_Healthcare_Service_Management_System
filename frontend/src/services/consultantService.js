@@ -41,7 +41,7 @@ const consultantService = {
     try {
       const response = await apiClient.post('/consultations', appointmentData);
       return {
-        success: response.data.success,
+        success: response.success,
         data: response.data.data,
         message: response.data.message,
       };
@@ -87,7 +87,8 @@ const consultantService = {
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Không thể cập nhật trạng thái',
+        message:
+          error.response?.data?.message || 'Không thể cập nhật trạng thái',
         error,
       };
     }
