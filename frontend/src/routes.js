@@ -35,7 +35,7 @@ const AppRoutes = () => {
   // Sử dụng Redux state thay vì localStorage để reactive
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const tokenData = localStorageUtil.get('token');
-  
+
   // Component để redirect đến trang phù hợp khi truy cập "/"
   const AutoRedirectToProfile = () => {
     // Kiểm tra auth state từ Redux
@@ -85,14 +85,12 @@ const AppRoutes = () => {
           path="/Gender_Healthcare_Service_Management_System"
           element={<HomePage />}
         />{' '}
+        <Route path="/" element={<HomePage />} />{' '}
         {/* Profile Page chung - sẽ render component phù hợp với role */}
         <Route
           path="profile"
           element={
-            isAuthenticated &&
-            user &&
-            user.role !== 'ADMIN' &&
-            tokenData ? (
+            isAuthenticated && user && user.role !== 'ADMIN' && tokenData ? (
               <ProfilePage />
             ) : (
               <Navigate to="/login" replace />
