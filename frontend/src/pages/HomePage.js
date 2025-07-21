@@ -702,370 +702,20 @@ export const HomePage = () => {
           </Box>
         </Container>
       </Box>{' '}
-      {/* Why Choose Us Section */}
-      <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#FFFFFF' }}>
-        <Container maxWidth="lg">
-          <Grid container spacing={8} alignItems="center">
-            <Grid item xs={12} md={6}>
-              <Fade in={loaded} timeout={1000}>
-                <Box>
-                  <Chip
-                    label="TẠI SAO CHỌN CHÚNG TÔI"
-                    sx={{
-                      mb: 2,
-                      bgcolor: (theme) => theme.palette.secondary.light + '30',
-                      color: (theme) => theme.palette.secondary.main,
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                      borderRadius: '16px',
-                      px: 1.5,
-                    }}
-                  />
-
-                  <Typography
-                    variant="h3"
-                    component="h2"
-                    sx={{
-                      mb: 4,
-                      color: (theme) => theme.palette.text.primary,
-                      fontWeight: 800,
-                      fontSize: { xs: '1.8rem', sm: '2.25rem', md: '2.5rem' },
-                      position: 'relative',
-                      '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        width: '80px',
-                        height: '5px',
-                        bottom: '-15px',
-                        left: 0,
-                        background:
-                          'linear-gradient(to right, #1ABC9C, #4A90E2)',
-                        borderRadius: '10px',
-                      },
-                    }}
-                  >
-                    Cam kết về chất lượng và sự riêng tư
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      color: (theme) => theme.palette.text.secondary,
-                      mt: 5,
-                      mb: 4,
-                      fontSize: '1.1rem',
-                      lineHeight: 1.8,
-                    }}
-                  >
-                    Chúng tôi tin rằng mọi người đều xứng đáng nhận được dịch vụ
-                    chăm sóc sức khỏe chất lượng cao, tôn trọng và phù hợp với
-                    nhu cầu cá nhân. Đội ngũ chuyên gia của chúng tôi cam kết:
-                  </Typography>
-
-                  <Stack spacing={3}>
-                    {[
-                      {
-                        title: 'Chuyên môn cao',
-                        description:
-                          'Đội ngũ y bác sĩ được đào tạo chuyên sâu về sức khỏe giới tính',
-                      },
-                      {
-                        title: 'Bảo mật thông tin',
-                        description:
-                          'Đảm bảo tuyệt đối về bảo mật thông tin cá nhân của khách hàng',
-                      },
-                      {
-                        title: 'Thiết bị hiện đại',
-                        description:
-                          'Trang thiết bị và công nghệ y tế tiên tiến nhất hiện nay',
-                      },
-                    ].map((item, index) => (
-                      <Paper
-                        key={index}
-                        elevation={0}
-                        sx={{
-                          p: 2.5,
-                          borderRadius: 3,
-                          bgcolor: (theme) => theme.palette.background.paper,
-                          border: '1px solid rgba(0,0,0,0.05)',
-                          boxShadow: '0 5px 20px rgba(0,0,0,0.05)',
-                          transition: 'all 0.3s ease',
-                          '&:hover': {
-                            transform: 'translateY(-5px)',
-                            boxShadow: '0 10px 30px rgba(74, 144, 226, 0.15)',
-                            borderColor: '#4A90E2',
-                          },
-                        }}
-                      >
-                        <Stack direction="row" spacing={2} alignItems="center">
-                          <Box
-                            sx={{
-                              width: 50,
-                              height: 50,
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              bgcolor: 'rgba(74, 144, 226, 0.15)',
-                              color: '#4A90E2',
-                            }}
-                          >
-                            <FavoriteIcon />
-                          </Box>
-                          <Box>
-                            <Typography fontWeight={700} gutterBottom>
-                              {item.title}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {item.description}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </Paper>
-                    ))}
-                  </Stack>
-                </Box>
-              </Fade>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Box
-                sx={{
-                  position: 'relative',
-                  height: { xs: 300, md: 500 },
-                  borderRadius: 4,
-                  overflow: 'hidden',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background:
-                      'linear-gradient(to bottom, transparent 70%, rgba(0,0,0,0.7))',
-                  },
-                }}
-              >
-                <img
-                  src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070"
-                  alt="Healthcare professionals"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                />
-              </Box>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>{' '}
-      {/* Stats Section */}
-      <Box
-        sx={{
-          py: { xs: 6, md: 10 },
-          background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-          color: '#fff',
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            background:
-              'url(\'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Cpath fill="%23ffffff" fill-opacity="0.05" d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z"%3E%3C/path%3E%3C/svg%3E\')',
-            opacity: 0.15,
-            zIndex: 0,
-          },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background:
-              'radial-gradient(circle at center, transparent 50%, rgba(0,0,0,0.15) 100%)',
-            zIndex: 0,
-          },
-        }}
-      >
-        {/* Decorative elements */}
-        <Box
-          sx={{
-            position: 'absolute',
-            width: { xs: 150, md: 300 },
-            height: { xs: 150, md: 300 },
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
-            top: { xs: -50, md: -100 },
-            left: { xs: -50, md: -100 },
-            zIndex: 0,
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            width: { xs: 200, md: 400 },
-            height: { xs: 200, md: 400 },
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 70%)',
-            bottom: { xs: -100, md: -200 },
-            right: { xs: -100, md: -200 },
-            zIndex: 0,
-          }}
-        />
-        <Container maxWidth="lg">
-          <Grid container spacing={4} justifyContent="center">
-            <Grid item xs={6} md={3}>
-              <Zoom in={loaded} timeout={1000}>
-                <Box
-                  sx={{
-                    textAlign: 'center',
-                    p: 3,
-                    borderRadius: 4,
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(10px)',
-                    transition: 'all 0.3s ease',
-                    height: '100%',
-                    '&:hover': {
-                      transform: 'translateY(-5px)',
-                      boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-                    },
-                  }}
-                >
-                  <Typography
-                    variant="h3"
-                    fontWeight={800}
-                    gutterBottom
-                    sx={{ height: '3rem' }}
-                  >
-                    {loaded && (
-                      <CountUp
-                        start={0}
-                        end={5000}
-                        duration={2.5}
-                        separator=","
-                        suffix="+"
-                      />
-                    )}
-                  </Typography>
-                  <Typography variant="body1" fontWeight={500}>
-                    Khách hàng tin tưởng
-                  </Typography>
-                </Box>
-              </Zoom>
-            </Grid>
-
-            <Grid item xs={6} md={3}>
-              <Zoom in={loaded} timeout={1100}>
-                <Box
-                  sx={{
-                    textAlign: 'center',
-                    p: 3,
-                    borderRadius: 4,
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(10px)',
-                    transition: 'all 0.3s ease',
-                    height: '100%',
-                    '&:hover': {
-                      transform: 'translateY(-5px)',
-                      boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-                    },
-                  }}
-                >
-                  <Typography
-                    variant="h3"
-                    fontWeight={800}
-                    gutterBottom
-                    sx={{ height: '3rem' }}
-                  >
-                    {loaded && (
-                      <CountUp start={0} end={25} duration={2.5} suffix="+" />
-                    )}
-                  </Typography>
-                  <Typography variant="body1" fontWeight={500}>
-                    Chuyên gia y tế
-                  </Typography>
-                </Box>
-              </Zoom>
-            </Grid>
-
-            <Grid item xs={6} md={3}>
-              <Zoom in={loaded} timeout={1200}>
-                <Box
-                  sx={{
-                    textAlign: 'center',
-                    p: 3,
-                    borderRadius: 4,
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(10px)',
-                    transition: 'all 0.3s ease',
-                    height: '100%',
-                    '&:hover': {
-                      transform: 'translateY(-5px)',
-                      boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-                    },
-                  }}
-                >
-                  <Typography
-                    variant="h3"
-                    fontWeight={800}
-                    gutterBottom
-                    sx={{ height: '3rem' }}
-                  >
-                    {loaded && (
-                      <CountUp start={0} end={98} duration={2.5} suffix="%" />
-                    )}
-                  </Typography>
-                  <Typography variant="body1" fontWeight={500}>
-                    Khách hàng hài lòng
-                  </Typography>
-                </Box>
-              </Zoom>
-            </Grid>
-
-            <Grid item xs={6} md={3}>
-              <Zoom in={loaded} timeout={1300}>
-                <Box
-                  sx={{
-                    textAlign: 'center',
-                    p: 3,
-                    borderRadius: 4,
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(10px)',
-                    transition: 'all 0.3s ease',
-                    height: '100%',
-                    '&:hover': {
-                      transform: 'translateY(-5px)',
-                      boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-                    },
-                  }}
-                >
-                  <Typography
-                    variant="h3"
-                    fontWeight={800}
-                    gutterBottom
-                    sx={{ height: '3rem' }}
-                  >
-                    {loaded && (
-                      <CountUp start={0} end={15} duration={2.5} suffix="+" />
-                    )}
-                  </Typography>
-                  <Typography variant="body1" fontWeight={500}>
-                    Dịch vụ chuyên biệt
-                  </Typography>
-                </Box>
-              </Zoom>
-            </Grid>
-          </Grid>
-        </Container>
+      {/* SVG Wave Transition: Featured Services -> Testimonials */}
+      <Box sx={{ lineHeight: 0, position: 'relative', top: '-1px' }}>
+        <svg viewBox="0 0 1440 100" width="100%" height="100" preserveAspectRatio="none" style={{ display: 'block' }}>
+          <defs>
+            <linearGradient id="wave1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#fff" />
+              <stop offset="100%" stopColor="#F7FAFC" />
+            </linearGradient>
+          </defs>
+          <path fill="url(#wave1)" fillOpacity="1" d="M0,40 C360,120 1080,-20 1440,60 L1440,100 L0,100 Z" />
+          <path fill="#F7FAFC" fillOpacity="0.3" d="M0,60 C400,100 1040,0 1440,80 L1440,100 L0,100 Z" />
+        </svg>
       </Box>
-      {/* Testimonials Section */}
+      {/* ĐÁNH GIÁ TỪ KHÁCH HÀNG */}
       <Box
         sx={{
           py: { xs: 8, md: 12 },
@@ -1267,6 +917,19 @@ export const HomePage = () => {
           </Grid>
         </Container>{' '}
       </Box>{' '}
+      {/* SVG Wave Transition: Testimonials -> Blog/News */}
+      <Box sx={{ lineHeight: 0, position: 'relative', top: '-1px' }}>
+        <svg viewBox="0 0 1440 100" width="100%" height="100" preserveAspectRatio="none" style={{ display: 'block' }}>
+          <defs>
+            <linearGradient id="wave2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#F7FAFC" />
+              <stop offset="100%" stopColor="#fff" />
+            </linearGradient>
+          </defs>
+          <path fill="url(#wave2)" fillOpacity="1" d="M0,60 C400,0 1040,120 1440,40 L1440,100 L0,100 Z" />
+          <path fill="#4A90E2" fillOpacity="0.08" d="M0,80 C400,120 1040,20 1440,90 L1440,100 L0,100 Z" />
+        </svg>
+      </Box>
       {/* Blog/News Section */}
       <Box
         sx={{
@@ -1536,6 +1199,19 @@ export const HomePage = () => {
             </Button>
           </Box>
         </Container>
+      </Box>
+      {/* SVG Wave Transition: Blog/News -> FAQ */}
+      <Box sx={{ lineHeight: 0, position: 'relative', top: '-1px' }}>
+        <svg viewBox="0 0 1440 100" width="100%" height="100" preserveAspectRatio="none" style={{ display: 'block' }}>
+          <defs>
+            <linearGradient id="wave3" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#fff" />
+              <stop offset="100%" stopColor="#F7FAFC" />
+            </linearGradient>
+          </defs>
+          <path fill="url(#wave3)" fillOpacity="1" d="M0,40 C360,120 1080,-20 1440,60 L1440,100 L0,100 Z" />
+          <path fill="#1ABC9C" fillOpacity="0.07" d="M0,70 C400,100 1040,0 1440,80 L1440,100 L0,100 Z" />
+        </svg>
       </Box>
       {/* FAQ Section */}
       <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F7FAFC' }}>

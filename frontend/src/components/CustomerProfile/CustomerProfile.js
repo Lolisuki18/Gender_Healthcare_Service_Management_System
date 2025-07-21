@@ -41,7 +41,6 @@ import MedicalHistoryContent from '@/components/siderBar/MedicalHistoryContent';
 import PaymentHistoryContent from '@/components/CustomerProfile/PaymentHistoryContent';
 import InvoicesContent from '@/components/siderBar/InvoicesContent';
 import NotificationsContent from '@/components/CustomerProfile/NotificationsContent';
-import HelpContent from '@/components/CustomerProfile/HelpContent';
 import QuestionsContent from '@/components/CustomerProfile/QuestionsContent';
 import ReviewsContent from '@/components/CustomerProfile/ReviewsContent';
 import SecurityContent from '@/components/siderBar/SecurityContent';
@@ -76,12 +75,37 @@ const CustomerProfile = () => {
   const [selectedMenuItem, setSelectedMenuItem] = useState('profile'); // Tab mặc định
   const user = localStorageUtil.get('userProfile')?.data || {};
 
-  // Effect để xử lý initial tab selection từ navigation state
+  // Effect để xử lý initial tab selection từ navigation state và URL params
   useEffect(() => {
-    if (location.state?.initialTab) {
+    // Kiểm tra URL search params trước
+    const urlParams = new URLSearchParams(location.search);
+    const tabParam = urlParams.get('tab');
+
+    if (tabParam) {
+      // Map URL parameter to menu item
+      const tabMapping = {
+        appointments: 'appointments',
+        profile: 'profile',
+        'medical-history': 'medical-history',
+        'payment-history': 'payment-history',
+        invoices: 'invoices',
+        notifications: 'notifications',
+        questions: 'questions',
+        reviews: 'reviews',
+        security: 'security',
+        'payment-methods': 'payment-methods',
+        'blog-customer': 'blog-customer',
+        'payment-info': 'payment-info',
+        'pill-history': 'pill-history',
+      };
+
+      if (tabMapping[tabParam]) {
+        setSelectedMenuItem(tabMapping[tabParam]);
+      }
+    } else if (location.state?.initialTab) {
       setSelectedMenuItem(location.state.initialTab);
     }
-  }, [location.state]);
+  }, [location.state, location.search]);
 
   // Handler functions
   const handleSidebarToggle = () => {
@@ -110,8 +134,6 @@ const CustomerProfile = () => {
         return <InvoicesContent />; // Hóa đơn
       case 'notifications':
         return <NotificationsContent />; // Thông báo
-      case 'help':
-        return <HelpContent />; // Hỗ trợ, FAQ
       case 'questions':
         return <QuestionsContent />; // Câu hỏi đã đặt
       case 'reviews':
@@ -195,7 +217,8 @@ const CustomerProfile = () => {
             >
               {selectedMenuItem === 'profile' && 'Hồ sơ cá nhân'}
               {(selectedMenuItem === 'customer-appointments' ||
-                selectedMenuItem === 'appointments') &&'Lịch hẹn'}
+                selectedMenuItem === 'appointments') &&
+                'Lịch hẹn'}
               {selectedMenuItem === 'medical-history' && 'Lịch sử khám'}
               {selectedMenuItem === 'payment-history' && 'Lịch sử thanh toán'}
               {selectedMenuItem === 'invoices' && 'Hóa đơn'}{' '}

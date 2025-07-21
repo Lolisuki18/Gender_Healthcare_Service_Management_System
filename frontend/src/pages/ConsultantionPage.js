@@ -23,6 +23,7 @@ import {
   CircularProgress,
   Divider,
   TextField,
+  IconButton,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -30,7 +31,6 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { format } from 'date-fns';
 import vi from 'date-fns/locale/vi';
-import { toast } from 'react-toastify';
 import Pagination from '@mui/material/Pagination';
 
 // Icons
@@ -42,6 +42,7 @@ import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import CloseIcon from '@mui/icons-material/Close';
 
 // Services and Utils
 import consultantService from '@/services/consultantService';
@@ -295,7 +296,6 @@ const ConsultationPage = () => {
   });
 
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState(null);
 
   // State cho loading và error khi fetch profile chi tiết
   const [detailLoading, setDetailLoading] = useState(false);
@@ -363,6 +363,29 @@ const ConsultationPage = () => {
     }
   }, [availableSlots]);
 
+  // Hàm kiểm tra xem có khung giờ nào có thể chọn được không
+  const hasAvailableTimeSlots = () => {
+    if (!appointmentForm.date) return false;
+
+    const now = new Date();
+    const selectedDate = appointmentForm.date;
+    const isToday =
+      selectedDate.getDate() === now.getDate() &&
+      selectedDate.getMonth() === now.getMonth() &&
+      selectedDate.getFullYear() === now.getFullYear();
+
+    return timeSlotOptions.some((slot) => {
+      // Kiểm tra xem slot có trong availableSlots không
+      const isAvailable = availableSlots.includes(slot.value);
+
+      // Kiểm tra xem có phải hôm nay và đã qua giờ không
+      const endHour = parseInt(slot.value.split('-')[1], 10);
+      const isPast = isToday && now.getHours() >= endHour;
+
+      return isAvailable && !isPast;
+    });
+  };
+
   const fetchConsultants = async () => {
     setLoading(true);
     try {
@@ -391,10 +414,18 @@ const ConsultationPage = () => {
     } catch (err) {
       setLoading(false);
       setError('Không thể tải danh sách chuyên gia. Vui lòng thử lại sau.');
-      toast.error(
-        'Lỗi',
-        'Không thể tải danh sách chuyên gia. Vui lòng thử lại sau.'
-      );
+      // Hiển thị dialog lỗi thay vì toast
+      confirmDialog
+        .danger('Không thể tải danh sách chuyên gia. Vui lòng thử lại sau.', {
+          title: 'Lỗi tải dữ liệu',
+          confirmText: 'Thử lại',
+          cancelText: 'Đóng',
+        })
+        .then((result) => {
+          if (result) {
+            fetchConsultants(); // Thử lại nếu user chọn
+          }
+        });
     } finally {
       setLoading(false);
     }
@@ -469,7 +500,6 @@ const ConsultationPage = () => {
 
   const handleCloseAppointment = () => {
     setAppointmentDialog({ open: false, consultant: null });
-    setFormError(null);
   };
 
   const handleFormChange = (field, value) => {
@@ -482,16 +512,16 @@ const ConsultationPage = () => {
   const handleSubmit = async () => {
     // Validate form
     if (!appointmentForm.date) {
-      setFormError('Vui lòng chọn ngày hẹn');
+      notify.error('Lỗi', 'Vui lòng chọn ngày hẹn');
       return;
     }
     if (!appointmentForm.timeSlot) {
-      setFormError('Vui lòng chọn khung giờ');
+      notify.error('Lỗi', 'Vui lòng chọn khung giờ');
       return;
     }
     // Không còn validate lý do tư vấn
     setSubmitting(true);
-    setFormError(null);
+
     try {
       // Format date to yyyy-MM-dd
       const formattedDate = format(appointmentForm.date, 'yyyy-MM-dd');
@@ -504,20 +534,40 @@ const ConsultationPage = () => {
       // Gửi request đặt lịch
       const response =
         await consultantService.bookConsultation(appointmentData);
-      if (response.success) {
-        notify.success('Đặt lịch hẹn thành công!');
-        handleCloseAppointment();
-        // Refresh available slots sau khi đặt thành công
-        if (appointmentForm.date && appointmentForm.consultantId) {
-          const res = await consultantService.getAvailableTimeSlots(
-            appointmentForm.consultantId,
-            formattedDate
-          );
-          if (res.success && Array.isArray(res.data)) {
-            setAvailableSlots(
-              res.data.filter((slot) => slot.available).map((slot) => slot.slot)
-            );
+      // console.log(
+      //   'Response của đặt lịch tư vấn là :' +
+      //     response.data +
+      //     ' ' +
+      //     response.message +
+      //     ' ' +
+      //     response.success
+      // );
+      if (response.success === true) {
+        // Set success message và hiển thị dialog
+        notify.success('Thành công', 'Đặt lịch tư vấn thành công!');
+
+        // Hiển thị dialog thành công với tùy chọn chuyển hướng
+        const result = await confirmDialog.success(
+          'Đặt lịch tư vấn thành công! Bạn có muốn xem danh sách lịch hẹn của mình không?',
+          {
+            title: 'Đặt lịch thành công',
+            confirmText: 'Xem lịch hẹn',
+            cancelText: 'Đóng',
           }
+        );
+
+        // Nếu user chọn xem lịch hẹn, chuyển hướng đến trang profile với tab appointments
+        if (result) {
+          navigate('/profile?tab=appointments');
+        } else {
+          // Nếu user chọn đóng, reset form và đóng modal đặt lịch hẹn
+          setAppointmentForm({
+            date: null,
+            timeSlot: '',
+            consultantId: null,
+            reason: '',
+          });
+          setAppointmentDialog({ open: false, consultant: null });
         }
       } else {
         // Xử lý thông báo lỗi chi tiết
@@ -526,55 +576,47 @@ const ConsultationPage = () => {
         // Kiểm tra các loại lỗi cụ thể từ backend
         if (errorMessage.includes('đã được đặt bởi khách hàng khác')) {
           // Lỗi trùng lịch - hiển thị thông báo đặc biệt
-          setFormError(
-            <Box>
-              <Typography
-                variant="body2"
-                color="error"
-                sx={{ mb: 1, fontWeight: 600 }}
-              >
-                ⚠️ Khung giờ đã được đặt
-              </Typography>
-              <Typography variant="body2" color="error">
-                {errorMessage}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ mt: 1, color: 'text.secondary' }}
-              >
-                💡 Gợi ý: Vui lòng chọn khung giờ khác hoặc liên hệ với tư vấn
-                viên để được hỗ trợ.
-              </Typography>
-            </Box>
-          );
+          notify.error('Lỗi', errorMessage);
         } else if (
           errorMessage.includes('Cannot schedule consultation in the past')
         ) {
-          setFormError(
+          notify.error(
+            'Lỗi',
             'Không thể đặt lịch hẹn trong quá khứ. Vui lòng chọn ngày khác.'
           );
         } else if (errorMessage.includes('Invalid time slot')) {
-          setFormError('Khung giờ không hợp lệ. Vui lòng chọn lại.');
+          notify.error('Lỗi', 'Khung giờ không hợp lệ. Vui lòng chọn lại.');
         } else if (
           errorMessage.includes('consultant is currently unavailable')
         ) {
-          setFormError(
+          notify.error(
+            'Lỗi',
             'Tư vấn viên hiện không khả dụng. Vui lòng chọn tư vấn viên khác.'
           );
         } else if (
           errorMessage.includes('You cannot select yourself as a consultant')
         ) {
-          setFormError('Bạn không thể đặt lịch với chính mình.');
+          notify.error('Lỗi', 'Bạn không thể đặt lịch với chính mình.');
         } else {
-          setFormError(errorMessage);
+          notify.error('Lỗi', errorMessage);
         }
       }
     } catch (err) {
       console.error('Booking error:', err);
-      setFormError(
+      // Hiển thị dialog lỗi thay vì toast
+      await confirmDialog.danger(
+        'Có lỗi xảy ra khi kết nối đến máy chủ. Vui lòng thử lại sau.',
+        {
+          title: 'Lỗi kết nối',
+          confirmText: 'Thử lại',
+          cancelText: 'Đóng',
+        }
+      );
+      // Set error message để user biết có lỗi xảy ra
+      notify.error(
+        'Lỗi',
         'Có lỗi xảy ra khi kết nối đến máy chủ. Vui lòng thử lại sau.'
       );
-      toast.error('Có lỗi xảy ra khi kết nối đến máy chủ');
     } finally {
       setSubmitting(false);
     }
@@ -841,8 +883,23 @@ const ConsultationPage = () => {
                   borderTopRightRadius: 32,
                   fontSize: 24,
                   padding: '32px 32px 16px 32px',
+                  position: 'relative',
                 }}
               >
+                <IconButton
+                  onClick={handleCloseDetails}
+                  sx={{
+                    position: 'absolute',
+                    right: 16,
+                    top: 16,
+                    color: '#fff',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    },
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
                 Thông tin chi tiết tư vấn viên
               </DialogHeader>
               <DialogSection
@@ -1006,7 +1063,22 @@ const ConsultationPage = () => {
       >
         {appointmentDialog.consultant && (
           <>
-            <BookingDialogHeader>
+            <BookingDialogHeader sx={{ position: 'relative' }}>
+              <IconButton
+                onClick={handleCloseAppointment}
+                disabled={submitting}
+                sx={{
+                  position: 'absolute',
+                  right: 8,
+                  top: 8,
+                  color: '#fff',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  },
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
               Đặt lịch hẹn với tư vấn viên
               <Typography
                 variant="subtitle1"
@@ -1016,14 +1088,6 @@ const ConsultationPage = () => {
               </Typography>
             </BookingDialogHeader>
             <DialogContent sx={{ p: 4 }}>
-              {formError && (
-                <Alert
-                  severity="error"
-                  sx={{ mb: 2, fontSize: 14, borderRadius: 2 }}
-                >
-                  {formError}
-                </Alert>
-              )}
               <Typography
                 variant="body2"
                 sx={{ mb: 1, fontWeight: 600, color: 'primary.main' }}
@@ -1058,12 +1122,12 @@ const ConsultationPage = () => {
                   minDate={new Date()}
                 />
               </LocalizationProvider>
-              {availableSlots.length === 0 && (
+              {appointmentForm.date && !hasAvailableTimeSlots() && (
                 <Alert
                   severity="info"
                   sx={{ mb: 2, fontSize: 14, borderRadius: 2 }}
                 >
-                  Không còn khung giờ trống cho ngày này, vui lòng chọn ngày
+                  Không còn khung giờ phù hợp trong ngày này, vui lòng chọn ngày
                   khác.
                 </Alert>
               )}

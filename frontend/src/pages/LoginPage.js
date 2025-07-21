@@ -213,7 +213,8 @@ const LoginPage = () => {
                   }
                 } else {
                   // Chuyển hướng về trang chủ
-                  window.location.href = '/';
+                  window.location.href =
+                    '/Gender_Healthcare_Service_Management_System/#/';
                 }
               }
             })
@@ -252,7 +253,8 @@ const LoginPage = () => {
                   }
                 } else {
                   // Chuyển hướng về trang chủ
-                  window.location.href = '/';
+                  window.location.href =
+                    '/Gender_Healthcare_Service_Management_System/#/';
                 }
               }
             });
