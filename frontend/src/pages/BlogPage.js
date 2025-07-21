@@ -39,6 +39,12 @@ const BlogPage = () => {
   const navigate = useNavigate();
   const blogsPerPage = 6;
 
+  // Lấy user role từ localStorage
+  const userProfile = localStorageUtil.get('userProfile');
+  const userRole = userProfile?.role || userProfile?.data?.role || null;
+  const token = localStorageUtil.get('token');
+  const isLoggedIn = !!userProfile && !!token;
+
   // ===== FETCH DATA FROM API =====
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -466,44 +472,46 @@ const BlogPage = () => {
         </Box>
 
         {/* Create Blog Button */}
-        <Box
-          sx={{
-            mb: 6,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: 2,
-          }}
-        >
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreateBlog}
+        {isLoggedIn && userRole !== 'CUSTOMER' && (
+          <Box
             sx={{
-              background: 'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
-              color: '#ffffff',
-              borderRadius: '50px',
-              px: 4,
-              py: 1.5,
-              fontSize: '1.1rem',
-              fontWeight: 600,
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-              boxShadow: '0 8px 25px rgba(38, 198, 218, 0.3)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              textTransform: 'none',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #00acc1 0%, #00838f 100%)',
-                boxShadow: '0 12px 35px rgba(38, 198, 218, 0.4)',
-                transform: 'translateY(-3px)',
-              },
-              '&:active': {
-                transform: 'translateY(-1px)',
-              },
+              mb: 6,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 2,
             }}
           >
-            ✍️ Tạo bài viết mới
-          </Button>
-        </Box>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreateBlog}
+              sx={{
+                background: 'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
+                color: '#ffffff',
+                borderRadius: '50px',
+                px: 4,
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                boxShadow: '0 8px 25px rgba(38, 198, 218, 0.3)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                textTransform: 'none',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #00acc1 0%, #00838f 100%)',
+                  boxShadow: '0 12px 35px rgba(38, 198, 218, 0.4)',
+                  transform: 'translateY(-3px)',
+                },
+                '&:active': {
+                  transform: 'translateY(-1px)',
+                },
+              }}
+            >
+              ✍️ Tạo bài viết mới
+            </Button>
+          </Box>
+        )}
 
         {/* Search Results Info */}
         {searchTerm && !loading && (
@@ -820,39 +828,41 @@ const BlogPage = () => {
       </Container>
 
       {/* Floating Action Button for Create Blog */}
-      <Tooltip title="Tạo bài viết mới" placement="left">
-        <Fab
-          color="primary"
-          aria-label="Tạo bài viết mới"
-          onClick={handleCreateBlog}
-          sx={{
-            position: 'fixed',
-            bottom: 32,
-            right: 32,
-            background: 'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
-            boxShadow: '0 8px 25px rgba(38, 198, 218, 0.4)',
-            width: 64,
-            height: 64,
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #00acc1 0%, #00838f 100%)',
-              boxShadow: '0 12px 35px rgba(38, 198, 218, 0.6)',
-              transform: 'scale(1.1)',
-            },
-            '&:active': {
-              transform: 'scale(0.95)',
-            },
-            '@media (max-width: 600px)': {
-              bottom: 16,
-              right: 16,
-              width: 56,
-              height: 56,
-            },
-          }}
-        >
-          <AddIcon sx={{ fontSize: 28 }} />
-        </Fab>
-      </Tooltip>
+      {isLoggedIn && userRole !== 'CUSTOMER' && (
+        <Tooltip title="Tạo bài viết mới" placement="left">
+          <Fab
+            color="primary"
+            aria-label="Tạo bài viết mới"
+            onClick={handleCreateBlog}
+            sx={{
+              position: 'fixed',
+              bottom: 32,
+              right: 32,
+              background: 'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
+              boxShadow: '0 8px 25px rgba(38, 198, 218, 0.4)',
+              width: 64,
+              height: 64,
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #00acc1 0%, #00838f 100%)',
+                boxShadow: '0 12px 35px rgba(38, 198, 218, 0.6)',
+                transform: 'scale(1.1)',
+              },
+              '&:active': {
+                transform: 'scale(0.95)',
+              },
+              '@media (max-width: 600px)': {
+                bottom: 16,
+                right: 16,
+                width: 56,
+                height: 56,
+              },
+            }}
+          >
+            <AddIcon sx={{ fontSize: 28 }} />
+          </Fab>
+        </Tooltip>
+      )}
     </Box>
   );
 };

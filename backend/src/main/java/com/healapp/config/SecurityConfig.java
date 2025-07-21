@@ -271,7 +271,7 @@ public class SecurityConfig {
 
                         // ========= BLOG ADMIN/STAFF ENDPOINTS =========
                         .requestMatchers(HttpMethod.GET, "/blog").hasAnyRole("STAFF", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/blog").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/blog").hasAnyRole("STAFF", "CONSULTANT", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/blog/{postId}").hasAnyRole("STAFF", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/blog/{postId}").hasAnyRole("STAFF", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/blog/{postId}/status").hasAnyRole("STAFF", "ADMIN")

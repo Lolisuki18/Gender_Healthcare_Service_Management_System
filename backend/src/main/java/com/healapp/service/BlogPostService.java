@@ -54,8 +54,8 @@ public class BlogPostService {
             // Kiểm tra vai trò tác giả
             UserDtls authorUser = author.get();
             String authorRole = authorUser.getRoleName();
-            if (!"CUSTOMER".equals(authorRole)
-                    && !"CONSULTANT".equals(authorRole)
+            // Chỉ cho phép CONSULTANT và STAFF tạo blog
+            if (!"CONSULTANT".equals(authorRole)
                     && !"STAFF".equals(authorRole)
                     && !"ADMIN".equals(authorRole)) {
                 return ApiResponse.error("You do not have permission to create blog posts");
