@@ -2,6 +2,7 @@ package com.healapp.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,6 +39,8 @@ public class STITestResponse {
     private String paymentTransactionId;
 
     private String stripePaymentIntentId;
+    private String stripeReceiptUrl;
+    private List<TestServiceConsultantNoteDTO> testServiceConsultantNotes;
 
     private String qrPaymentReference;
     private LocalDateTime qrExpiresAt;
@@ -117,5 +120,17 @@ public class STITestResponse {
             default:
                 return status;
         }
+    }
+
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class TestServiceConsultantNoteDTO {
+        private Long id;
+        private Long serviceId;
+        private String serviceName;
+        private String note;
+        private Long consultantId;
+        private String consultantName;
     }
 }

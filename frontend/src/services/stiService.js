@@ -662,6 +662,19 @@ export const updateConsultantNotes = async (testId, consultantNotes) => {
   }
 };
 
+// Update consultant note for a specific service in a package test
+export const updateConsultantNoteForService = async (testId, serviceId, consultantId, note) => {
+  try {
+    const response = await apiClient.put(
+      `/sti-tests/${testId}/service-note`,
+      { serviceId, consultantId, note }
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
 // Get all tests assigned to current consultant
 export const getConsultantSTITests = async () => {
   try {

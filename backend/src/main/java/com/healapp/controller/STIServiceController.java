@@ -25,7 +25,6 @@ import com.healapp.dto.STITestRequest;
 import com.healapp.dto.STITestResponse;
 import com.healapp.dto.STITestStatusUpdateRequest;
 import com.healapp.dto.TestResultRequest;
-import com.healapp.dto.TestResultResponse;
 import com.healapp.model.TestConclusion;
 import com.healapp.service.STIServiceService;
 import com.healapp.service.STITestService;
@@ -294,12 +293,11 @@ public class STIServiceController {
         ApiResponse<STITestResponse> response = stiTestService.retryPayment(testId, request, userId);
         return getResponseEntity(response);
     }
-
     @GetMapping("/tests/{testId}/results")
     @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
-    public ResponseEntity<ApiResponse<List<TestResultResponse>>> getTestResults(@PathVariable Long testId) {
+    public ResponseEntity<?> getTestResults(@PathVariable Long testId) {
         Long userId = getCurrentUserId();
-        ApiResponse<List<TestResultResponse>> response = stiTestService.getTestResults(testId, userId);
+        ApiResponse<?> response = stiTestService.getTestResults(testId, userId);
         return getResponseEntity(response);
     }
 

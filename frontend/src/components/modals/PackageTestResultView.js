@@ -72,6 +72,23 @@ const PackageTestResultView = ({
       100
     : 100;
 
+  const getAutoConclusion = (service) => {
+    const conclusions = service.components.map(
+      (c) => c.conclusion
+    );
+    const hasInfected = conclusions.includes('INFECTED');
+    const hasAbnormal = conclusions.includes('ABNORMAL');
+    const allNotInfected = conclusions.every(
+      (c) => c === 'NOT_INFECTED'
+    );
+    if (hasInfected && hasAbnormal)
+      return 'Bị nhiễm, Bất thường';
+    if (hasInfected) return 'Bị nhiễm';
+    if (hasAbnormal) return 'Bất thường';
+    if (allNotInfected) return 'Không bị nhiễm';
+    return '';
+  };
+
   return (
     <>
       <Box sx={{ mt: isMobile ? 1 : 3 }}>
@@ -251,149 +268,126 @@ const PackageTestResultView = ({
             <Box sx={{ mb: 2, color: '#e53935', fontWeight: 600 }}>{error}</Box>
           )}
           {testPackageInfo.services &&
-            testPackageInfo.services.map((service, index) => (
-              <Paper
-                key={`panel-${index}`}
-                sx={{
-                  mb: 3,
-                  borderRadius: 2,
-                  p: isMobile ? 1 : 2,
-                  boxShadow: '0 1px 4px #e3f2fd',
-                  background: '#fff',
-                }}
-              >
-                <Typography
+            testPackageInfo.services.map((service, index) => {
+              // Xoá log debug
+              const consultantNoteObj = Array.isArray(testPackageInfo.testServiceConsultantNotes)
+                ? testPackageInfo.testServiceConsultantNotes.find(n => String(n.serviceId) === String(service.serviceId))
+                : null;
+              const consultantNote = consultantNoteObj?.note;
+
+              return (
+                <Paper
+                  key={`panel-${index}`}
                   sx={{
-                    fontWeight: 700,
-                    mb: 2,
-                    color: '#1976d2',
-                    fontSize: isMobile ? '1.1rem' : '1.15rem',
+                    mb: 3,
+                    borderRadius: 2,
+                    p: isMobile ? 1 : 2,
+                    boxShadow: '0 1px 4px #e3f2fd',
+                    background: '#fff',
                   }}
                 >
-                  {service.serviceName || `Dịch vụ ${index + 1}`}
-                </Typography>
-                <TableContainer>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <StyledTableCell header>Thành phần</StyledTableCell>
-                        <StyledTableCell header>Đơn vị</StyledTableCell>
-                        <StyledTableCell header>
-                          Giới hạn bình thường
-                        </StyledTableCell>
-                        <StyledTableCell header>Kết quả</StyledTableCell>
-                        <StyledTableCell header>Kết luận</StyledTableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {service.components.map((row, idx) => (
-                        <StyledTableRow key={idx}>
-                          <StyledTableCell>{row.componentName}</StyledTableCell>
-                          <StyledTableCell>{row.unit}</StyledTableCell>
-                          <StyledTableCell>{row.normalRange}</StyledTableCell>
-                          <StyledTableCell
-                            sx={{
-                              color:
-                                row.resultValue?.toLowerCase() === 'negative'
-                                  ? '#43a047'
-                                  : '#e53935',
-                              fontWeight: 600,
-                            }}
-                          >
-                            {row.resultValue}
+                  <Typography
+                    sx={{
+                      fontWeight: 700,
+                      mb: 2,
+                      color: '#1976d2',
+                      fontSize: isMobile ? '1.1rem' : '1.15rem',
+                    }}
+                  >
+                    {service.serviceName || `Dịch vụ ${index + 1}`}
+                  </Typography>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <StyledTableCell header>Thành phần</StyledTableCell>
+                          <StyledTableCell header>Đơn vị</StyledTableCell>
+                          <StyledTableCell header>
+                            Giới hạn bình thường
                           </StyledTableCell>
-                          <StyledTableCell
-                            sx={{
-                              fontSize: '1rem',
-                              color: row.conclusion ? '#374151' : '#9ca3af',
-                              fontStyle: row.conclusion ? 'normal' : 'italic',
-                              fontWeight: row.conclusion ? 'bold' : 'normal',
-                            }}
-                          >
-                            {row.conclusionDisplayName ||
-                              row.conclusion ||
-                              'Chưa có kết luận'}
-                          </StyledTableCell>
-                        </StyledTableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                {/* Kết luận dịch vụ */}
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: 600,
-                    color: (() => {
-                      const conclusions = service.components.map(
-                        (c) => c.conclusion
-                      );
-                      const hasInfected = conclusions.includes('INFECTED');
-                      const hasAbnormal = conclusions.includes('ABNORMAL');
-                      if (hasInfected && hasAbnormal) return '#e53935';
-                      if (hasInfected) return '#e53935';
-                      if (hasAbnormal) return '#fb8c00';
-                      return '#43a047';
-                    })(),
-                    mt: 2,
-                  }}
-                >
-                  Kết luận:{' '}
-                  {(() => {
-                    const conclusions = service.components.map(
-                      (c) => c.conclusion
-                    );
-                    const hasInfected = conclusions.includes('INFECTED');
-                    const hasAbnormal = conclusions.includes('ABNORMAL');
-                    const allNotInfected = conclusions.every(
-                      (c) => c === 'NOT_INFECTED'
-                    );
-                    if (hasInfected && hasAbnormal)
-                      return 'Bị nhiễm, Bất thường';
-                    if (hasInfected) return 'Bị nhiễm';
-                    if (hasAbnormal) return 'Bất thường';
-                    if (allNotInfected) return 'Không bị nhiễm';
-                    return '';
-                  })()}
-                </Typography>
-              </Paper>
-            ))}
+                          <StyledTableCell header>Kết quả</StyledTableCell>
+                          <StyledTableCell header>Kết luận</StyledTableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {service.components.map((row, idx) => (
+                          <StyledTableRow key={idx}>
+                            <StyledTableCell>{row.componentName}</StyledTableCell>
+                            <StyledTableCell>{row.unit}</StyledTableCell>
+                            <StyledTableCell>{row.normalRange}</StyledTableCell>
+                            <StyledTableCell
+                              sx={{
+                                color:
+                                  row.resultValue?.toLowerCase() === 'negative'
+                                    ? '#43a047'
+                                    : '#e53935',
+                                fontWeight: 600,
+                              }}
+                            >
+                              {row.resultValue}
+                            </StyledTableCell>
+                            <StyledTableCell
+                              sx={{
+                                fontSize: '1rem',
+                                color: row.conclusion ? '#374151' : '#9ca3af',
+                                fontStyle: row.conclusion ? 'normal' : 'italic',
+                                fontWeight: row.conclusion ? 'bold' : 'normal',
+                              }}
+                            >
+                              {row.conclusionDisplayName ||
+                                row.conclusion ||
+                                'Chưa có kết luận'}
+                            </StyledTableCell>
+                          </StyledTableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                  {/* Kết luận dịch vụ */}
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 600,
+                      color: '#1976d2',
+                      mt: 1,
+                    }}
+                  >
+                    Kết luận: {consultantNote && consultantNote.trim() !== '' ? consultantNote : getAutoConclusion(service)}
+                  </Typography>
+                </Paper>
+              );
+            })}
         </Box>
         {/* Tổng kết luận gói */}
-        <Box
-          sx={{
-            mt: 4,
-            mb: 3,
-            p: isMobile ? 2 : 3,
-            bgcolor: '#e3f2fd',
-            borderRadius: 2,
-            border: '1px solid #90caf9',
-          }}
-        >
-          <Typography
-            variant={isMobile ? 'h6' : 'h5'}
-            sx={{ mb: 2, color: '#1976d2', fontWeight: 700, letterSpacing: 1 }}
-          >
-            Kết luận xét nghiệm
-          </Typography>
-          <Typography
-            variant="body1"
+        {testPackageInfo?.consultantNotes && testPackageInfo.consultantNotes.trim() !== '' && (
+          <Box
             sx={{
-              fontWeight: 600,
-              fontSize: isMobile ? '1rem' : '1.08rem',
-              color: '#222',
+              mt: 4,
+              mb: 3,
+              p: isMobile ? 2 : 3,
+              bgcolor: '#e3f2fd',
+              borderRadius: 2,
+              border: '1px solid #90caf9',
             }}
           >
-            {testPackageInfo?.consultantNotes ||
-              results[0]?.consultantNotes ||
-              consultantNoteFromApi ||
-              (results.some(
-                (result) => result.resultValue?.toLowerCase() !== 'negative'
-              )
-                ? 'Đã phát hiện dấu hiệu dương tính trong xét nghiệm. Vui lòng tham khảo ý kiến bác sĩ để được tư vấn chi tiết.'
-                : 'Tất cả các chỉ số đều trong giới hạn bình thường. Kết quả xét nghiệm âm tính.')}
-          </Typography>
-        </Box>
+            <Typography
+              variant={isMobile ? 'h6' : 'h5'}
+              sx={{ mb: 2, color: '#1976d2', fontWeight: 700, letterSpacing: 1 }}
+            >
+              Kết luận xét nghiệm
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                fontWeight: 600,
+                fontSize: isMobile ? '1rem' : '1.08rem',
+                color: '#222',
+              }}
+            >
+              {testPackageInfo.consultantNotes}
+            </Typography>
+          </Box>
+        )}
       </Box>
       <Box
         sx={{

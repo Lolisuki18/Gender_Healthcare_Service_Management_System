@@ -52,6 +52,7 @@ import {
 
 import ConsultantTestResultDetailModal from './ConsultantTestResultDetailModal';
 import { formatDateDisplay } from '../../utils/dateUtils';
+import { useUser } from '@/context/UserContext';
 
 // Test Type translation function
 const getTestTypeTranslation = (type) => {
@@ -130,6 +131,7 @@ const STITestsContent = () => {
   const [conclusionFilter, setConclusionFilter] = useState('all'); // 'all' | 'has' | 'none'
   const [loading, setLoading] = useState(false);
   const [dateFilter, setDateFilter] = useState('');
+  const { user } = useUser();
 
   // Lấy danh sách test từ API khi load component
   const fetchTests = async () => {
@@ -892,6 +894,7 @@ const STITestsContent = () => {
         selectedService={detailSelectedService}
         onSelectService={handleSelectServiceInDetailModal}
         components={detailComponents}
+        consultantId={user?.id}
       />
     </Box>
   );

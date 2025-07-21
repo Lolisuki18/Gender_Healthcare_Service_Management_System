@@ -71,20 +71,20 @@ const TestResultsModalContent = ({ testId, onClose }) => {
         const response = await stiService.getTestResults(testId);
         console.log('Test results response:', response);
 
-        // Check for the new response format with success property
         if (
           response &&
           response.success === true &&
-          Array.isArray(response.data)
+          response.data &&
+          response.data.results &&
+          Array.isArray(response.data.results)
         ) {
-          console.log('Using new API response format');
-          const data = response.data;
+          // API trả về object {results, testServiceConsultantNotes}
+          const data = response.data.results;
+          const testServiceConsultantNotes = response.data.testServiceConsultantNotes || [];
 
-          // Determine view mode based on whether this is a package or service test
           setViewMode(testTypeInfo.isPackage ? 'package' : 'component');
           setResults(data);
 
-          // Sau khi fetch kết quả và xác định là package:
           if (testTypeInfo.isPackage) {
             // Group components by serviceId
             const grouped = {};
@@ -100,7 +100,6 @@ const TestResultsModalContent = ({ testId, onClose }) => {
               grouped[sid].components.push(result);
             });
             const services = Object.values(grouped);
-            // Gọi API lấy tên dịch vụ cho từng serviceId (nếu có)
             await Promise.all(
               services.map(async (svc) => {
                 if (svc.serviceId !== 'unknown') {
@@ -128,66 +127,52 @@ const TestResultsModalContent = ({ testId, onClose }) => {
                 'Khách hàng',
               reviewedAt: data[0]?.reviewedAt,
               services,
+              testServiceConsultantNotes,
             });
-          } else {
-            // For single service tests, use standard component view
-            if (data.length > 0) {
-              setTestPackageInfo({
-                ...testTypeInfo,
-                testId: data[0].testId,
-                packageName:
-                  testTypeInfo.serviceName ||
-                  data[0].testName ||
-                  `Xét nghiệm ${data[0].componentName}`,
-                customerName: data[0].customerName || 'Khách hàng',
-                reviewedAt: data[0].reviewedAt,
-                completedComponents: data.length,
-                totalComponents: data.length,
+          }
+          return;
+        }
+
+        // Handle legacy/alternative format
+        const data = response && response.data ? response.data : response;
+        console.log('Test results data:', data);
+
+        if (
+          !data ||
+          (Array.isArray(data) && data.length === 0) ||
+          (data.data && Array.isArray(data.data) && data.data.length === 0)
+        ) {
+          setError('Không có dữ liệu kết quả xét nghiệm cho lần khám này.');
+          setResults([]);
+        } else {
+          // Determine if this is package data or component data
+          const isPackage =
+            data.packageName ||
+            (data.components && Array.isArray(data.components));
+          setViewMode(isPackage ? 'package' : 'component');
+
+          if (isPackage) {
+            setTestPackageInfo(data);
+
+            // Initialize all accordions as expanded
+            if (data.components && Array.isArray(data.components)) {
+              const accordionState = {};
+              data.components.forEach((comp, index) => {
+                accordionState[`panel-${index}`] = true;
               });
+              setExpandedAccordions(accordionState);
             }
           }
-        } else {
-          // Handle legacy/alternative format
-          const data = response && response.data ? response.data : response;
-          console.log('Test results data:', data);
 
-          if (
-            !data ||
-            (Array.isArray(data) && data.length === 0) ||
-            (data.data && Array.isArray(data.data) && data.data.length === 0)
-          ) {
-            setError('Không có dữ liệu kết quả xét nghiệm cho lần khám này.');
-            setResults([]);
+          // Set results based on data structure
+          if (data.data && Array.isArray(data.data)) {
+            setResults(data.data);
+          } else if (Array.isArray(data)) {
+            setResults(data);
+          } else if (data.components && Array.isArray(data.components)) {
+            setResults(data.components);
           } else {
-            // Determine if this is package data or component data
-            const isPackage =
-              data.packageName ||
-              (data.components && Array.isArray(data.components));
-            setViewMode(isPackage ? 'package' : 'component');
-
-            if (isPackage) {
-              setTestPackageInfo(data);
-
-              // Initialize all accordions as expanded
-              if (data.components && Array.isArray(data.components)) {
-                const accordionState = {};
-                data.components.forEach((comp, index) => {
-                  accordionState[`panel-${index}`] = true;
-                });
-                setExpandedAccordions(accordionState);
-              }
-            }
-
-            // Set results based on data structure
-            if (data.data && Array.isArray(data.data)) {
-              setResults(data.data);
-            } else if (Array.isArray(data)) {
-              setResults(data);
-            } else if (data.components && Array.isArray(data.components)) {
-              setResults(data.components);
-            } else {
-              setResults([data]); // Single result
-            }
+            setResults([data]); // Single result
           }
         }
 

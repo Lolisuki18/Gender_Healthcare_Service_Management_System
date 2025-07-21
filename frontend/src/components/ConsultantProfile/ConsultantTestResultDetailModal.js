@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import confirmDialog from '../../utils/confirmDialog';
 import { notify } from '../../utils/notify';
+import { updateConsultantNoteForService } from '../../services/stiService';
 
 const MEDICAL_GRADIENT = 'linear-gradient(45deg, #4A90E2, #1ABC9C)';
 const FONT_FAMILY = '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
@@ -35,11 +36,43 @@ const ConsultantTestResultDetailModal = ({
   selectedService = null,
   onSelectService = () => {},
   components = [],
+  consultantId = null,
 }) => {
   const [consultantNote, setConsultantNote] = useState(
     test?.consultantNotes || ''
   );
   const [saving, setSaving] = useState(false);
+  // State cho note từng service nếu là package
+  const [serviceNotes, setServiceNotes] = useState({});
+  const [savingServiceNote, setSavingServiceNote] = useState({});
+
+  // Khi mở modal, load note từng service nếu là package
+  React.useEffect(() => {
+    if (isPackage && packageServices.length > 0 && test?.testId) {
+      // Đồng bộ lại note từng service từ testServiceConsultantNotes
+      const notesMap = {};
+      if (test?.testServiceConsultantNotes && Array.isArray(test.testServiceConsultantNotes)) {
+        test.testServiceConsultantNotes.forEach(n => {
+          notesMap[n.serviceId] = n.note || '';
+        });
+      }
+      setServiceNotes(notesMap);
+    }
+  }, [isPackage, packageServices, test?.testId, test?.testServiceConsultantNotes]);
+
+  // Hàm lưu note cho từng service
+  const handleSaveServiceNote = async (serviceId) => {
+    if (!test?.testId || !serviceId) return;
+    setSavingServiceNote(prev => ({ ...prev, [serviceId]: true }));
+    try {
+      await updateConsultantNoteForService(test.testId, serviceId, consultantId, serviceNotes[serviceId] || '');
+      notify.success('Thành công', 'Đã lưu kết luận cho dịch vụ!');
+    } catch (e) {
+      notify.error('Lỗi', 'Lưu kết luận thất bại!');
+    } finally {
+      setSavingServiceNote(prev => ({ ...prev, [serviceId]: false }));
+    }
+  };
 
   const handleSave = async () => {
     // Hiện dialog xác nhận
@@ -184,6 +217,7 @@ const ConsultantTestResultDetailModal = ({
     );
   };
 
+  // Thay thế phần render kết luận consultant:
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle
@@ -245,107 +279,140 @@ const ConsultantTestResultDetailModal = ({
           >
             Kết luận từ consultant
           </Typography>
-
-          {/* Hiển thị kết luận đã có */}
-          {test?.consultantNotes && test.consultantNotes.trim() ? (
-            <Box sx={{ mb: 2 }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontSize: '0.875rem',
-                  lineHeight: 1.6,
-                  color: '#2e7d32',
-                  fontWeight: 500,
-                  backgroundColor: '#e8f5e8',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid #c8e6c9',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {test.consultantNotes}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: '#2e7d32',
-                  mt: 1,
-                  display: 'block',
-                  fontStyle: 'italic',
-                }}
-              >
-                Kết luận đã được lưu
-              </Typography>
+          {isPackage && packageServices.length > 0 ? (
+            <Box>
+              {packageServices.map((svc) => (
+                <Box key={svc.id} sx={{ mb: 3, p: 2, background: '#fff', borderRadius: 2, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                    {svc.name || svc.serviceName}
+                  </Typography>
+                  <TextField
+                    label="Kết luận/ghi chú cho dịch vụ này"
+                    value={serviceNotes[svc.id] || ''}
+                    onChange={e => setServiceNotes(prev => ({ ...prev, [svc.id]: e.target.value }))}
+                    placeholder="Nhập kết luận/ghi chú cho dịch vụ..."
+                    multiline
+                    minRows={2}
+                    maxRows={5}
+                    fullWidth
+                    disabled={savingServiceNote[svc.id]}
+                    sx={{ mb: 1 }}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={() => handleSaveServiceNote(svc.id)}
+                    disabled={savingServiceNote[svc.id] || !(serviceNotes[svc.id] && serviceNotes[svc.id].trim())}
+                    sx={{ background: MEDICAL_GRADIENT, color: '#fff', fontWeight: 600 }}
+                  >
+                    {savingServiceNote[svc.id] ? 'Đang lưu...' : 'Lưu kết luận'}
+                  </Button>
+                </Box>
+              ))}
             </Box>
           ) : (
-            <Typography
-              variant="body2"
-              sx={{
-                color: '#f57c00',
-                fontStyle: 'italic',
-                mb: 2,
-                padding: '8px 12px',
-                backgroundColor: '#fff3e0',
-                borderRadius: '4px',
-                border: '1px solid #ffcc02',
-              }}
-            >
-              Chưa có kết luận từ consultant
-            </Typography>
-          )}
-
-          {/* TextField để chỉnh sửa/thêm kết luận */}
-          <TextField
-            label={
-              test?.consultantNotes && test.consultantNotes.trim()
-                ? 'Chỉnh sửa kết luận/chú thích cho bệnh nhân'
-                : 'Nhập kết luận/chú thích cho bệnh nhân'
-            }
-            value={consultantNote}
-            onChange={(e) => setConsultantNote(e.target.value)}
-            placeholder={
-              test?.consultantNotes && test.consultantNotes.trim()
-                ? 'Chỉnh sửa kết luận hiện tại...'
-                : 'Nhập kết luận/chú thích cho bệnh nhân...'
-            }
-            multiline
-            minRows={3}
-            maxRows={6}
-            fullWidth
-            disabled={saving}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                backgroundColor:
+            <>
+              {/* Logic cũ cho test lẻ */}
+              {test?.consultantNotes && test.consultantNotes.trim() ? (
+                <Box sx={{ mb: 2 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: '0.875rem',
+                      lineHeight: 1.6,
+                      color: '#2e7d32',
+                      fontWeight: 500,
+                      backgroundColor: '#e8f5e8',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid #c8e6c9',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {test.consultantNotes}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#2e7d32',
+                      mt: 1,
+                      display: 'block',
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    Kết luận đã được lưu
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#f57c00',
+                    fontStyle: 'italic',
+                    mb: 2,
+                    padding: '8px 12px',
+                    backgroundColor: '#fff3e0',
+                    borderRadius: '4px',
+                    border: '1px solid #ffcc02',
+                  }}
+                >
+                  Chưa có kết luận từ consultant
+                </Typography>
+              )}
+              <TextField
+                label={
                   test?.consultantNotes && test.consultantNotes.trim()
-                    ? '#f8f9fa'
-                    : '#fff',
-              },
-            }}
-          />
+                    ? 'Chỉnh sửa kết luận/chú thích cho bệnh nhân'
+                    : 'Nhập kết luận/chú thích cho bệnh nhân'
+                }
+                value={consultantNote}
+                onChange={(e) => setConsultantNote(e.target.value)}
+                placeholder={
+                  test?.consultantNotes && test.consultantNotes.trim()
+                    ? 'Chỉnh sửa kết luận hiện tại...'
+                    : 'Nhập kết luận/chú thích cho bệnh nhân...'
+                }
+                multiline
+                minRows={3}
+                maxRows={6}
+                fullWidth
+                disabled={saving}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor:
+                      test?.consultantNotes && test.consultantNotes.trim()
+                        ? '#f8f9fa'
+                        : '#fff',
+                  },
+                }}
+              />
+            </>
+          )}
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
         <Button onClick={onClose} color="secondary">
           Đóng
         </Button>
-        <Button
-          onClick={handleSave}
-          variant="contained"
-          disabled={saving || !consultantNote.trim()}
-          sx={{
-            background: MEDICAL_GRADIENT,
-            color: '#fff',
-            fontWeight: 600,
-            boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-          }}
-        >
-          {saving
-            ? 'Đang lưu...'
-            : test?.consultantNotes && test.consultantNotes.trim()
-              ? 'Cập nhật kết luận'
-              : 'Lưu kết luận'}
-        </Button>
+        {!isPackage && (
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            disabled={saving || !consultantNote.trim()}
+            sx={{
+              background: MEDICAL_GRADIENT,
+              color: '#fff',
+              fontWeight: 600,
+              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+            }}
+          >
+            {saving
+              ? 'Đang lưu...'
+              : test?.consultantNotes && test.consultantNotes.trim()
+                ? 'Cập nhật kết luận'
+                : 'Lưu kết luận'}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

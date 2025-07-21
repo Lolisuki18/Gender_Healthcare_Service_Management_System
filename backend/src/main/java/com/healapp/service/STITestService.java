@@ -31,6 +31,7 @@ import com.healapp.model.STITest;
 import com.healapp.model.STITestStatus;
 import com.healapp.model.ServiceTestComponent;
 import com.healapp.model.TestResult;
+import com.healapp.model.TestServiceConsultantNote;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.PackageServiceRepository;
 import com.healapp.repository.PaymentRepository;
@@ -39,6 +40,7 @@ import com.healapp.repository.STIServiceRepository;
 import com.healapp.repository.STITestRepository;
 import com.healapp.repository.ServiceTestComponentRepository;
 import com.healapp.repository.TestResultRepository;
+import com.healapp.repository.TestServiceConsultantNoteRepository;
 import com.healapp.repository.UserRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -79,6 +81,9 @@ public class STITestService {
 
     @Autowired
     private PaymentInfoService paymentInfoService;
+
+    @Autowired
+    private TestServiceConsultantNoteRepository testServiceConsultantNoteRepository;
 
     @Transactional
     public ApiResponse<STITestResponse> bookTest(STITestRequest request, Long customerId) {
@@ -229,6 +234,17 @@ public class STITestService {
             try {
                 if (request.isPackageBooking()) {
                     createTestResultsForPackage(savedTest);
+                    // Tạo note rỗng cho từng service trong package
+                    List<PackageService> packageServices = packageServiceRepository.findByStiPackage_PackageId(savedTest.getStiPackage().getPackageId());
+                    for (PackageService ps : packageServices) {
+                        if (ps.getStiService() != null && Boolean.TRUE.equals(ps.getStiService().getIsActive())) {
+                            TestServiceConsultantNote note = new TestServiceConsultantNote();
+                            note.setStiTest(savedTest);
+                            note.setService(ps.getStiService());
+                            note.setNote("");
+                            testServiceConsultantNoteRepository.save(note);
+                        }
+                    }
                 } else {
                     createTestResultsForService(savedTest);
                 }
@@ -947,7 +963,7 @@ public class STITestService {
         }
     }
 
-    public ApiResponse<List<TestResultResponse>> getTestResults(Long testId, Long userId) {
+    public ApiResponse<?> getTestResults(Long testId, Long userId) {
         try {
             Optional<STITest> testOpt = stiTestRepository.findById(testId);
             if (testOpt.isEmpty()) {
@@ -983,10 +999,29 @@ public class STITestService {
                     .map(this::convertToTestResultResponse)
                     .collect(Collectors.toList());
 
+            // Nếu là package, trả về thêm note từng service
+            if (stiTest.getStiPackage() != null) {
+                List<TestServiceConsultantNote> notes = testServiceConsultantNoteRepository.findByStiTest(stiTest);
+                List<STITestResponse.TestServiceConsultantNoteDTO> noteDTOs = notes.stream().map(n -> {
+                    STITestResponse.TestServiceConsultantNoteDTO dto = new STITestResponse.TestServiceConsultantNoteDTO();
+                    dto.setId(n.getId());
+                    dto.setServiceId(n.getService() != null ? n.getService().getId() : null);
+                    dto.setServiceName(n.getService() != null ? n.getService().getName() : null);
+                    dto.setNote(n.getNote());
+                    dto.setConsultantId(n.getConsultant() != null ? n.getConsultant().getId() : null);
+                    dto.setConsultantName(n.getConsultant() != null ? n.getConsultant().getFullName() : null);
+                    return dto;
+                }).collect(Collectors.toList());
+                java.util.Map<String, Object> data = new java.util.HashMap<>();
+                data.put("results", responseList);
+                data.put("testServiceConsultantNotes", noteDTOs);
+                return ApiResponse.success("Retrieved " + responseList.size() + " test results", data);
+            }
+
             return ApiResponse.success("Retrieved " + responseList.size() + " test results", responseList);
         } catch (Exception e) {
             log.error("Error retrieving test results: {}", e.getMessage(), e);
-            return ApiResponse.error("Error retrieving test results: " + e.getMessage());
+            return ApiResponse.error("Failed to retrieve test results: " + e.getMessage());
         }
     }
 
@@ -1215,6 +1250,7 @@ public class STITestService {
                 // Stripe payment specific
                 if (payment.getPaymentMethod() == PaymentMethod.VISA) {
                     response.setStripePaymentIntentId(payment.getStripePaymentIntentId());
+                    response.setStripeReceiptUrl(payment.getStripeReceiptUrl());
                 }
 
                 // QR payment specific
@@ -1250,6 +1286,22 @@ public class STITestService {
 
         // Bổ sung lý do huỷ nếu có
         response.setCancelReason(stiTest.getCancelReason());
+
+        // Bổ sung note từng service nếu là package
+        if (stiTest.getStiPackage() != null) {
+            List<TestServiceConsultantNote> notes = testServiceConsultantNoteRepository.findByStiTest(stiTest);
+            List<STITestResponse.TestServiceConsultantNoteDTO> noteDTOs = notes.stream().map(n -> {
+                STITestResponse.TestServiceConsultantNoteDTO dto = new STITestResponse.TestServiceConsultantNoteDTO();
+                dto.setId(n.getId());
+                dto.setServiceId(n.getService() != null ? n.getService().getId() : null);
+                dto.setServiceName(n.getService() != null ? n.getService().getName() : null);
+                dto.setNote(n.getNote());
+                dto.setConsultantId(n.getConsultant() != null ? n.getConsultant().getId() : null);
+                dto.setConsultantName(n.getConsultant() != null ? n.getConsultant().getFullName() : null);
+                return dto;
+            }).collect(Collectors.toList());
+            response.setTestServiceConsultantNotes(noteDTOs);
+        }
 
         return response;
     }
@@ -1678,5 +1730,18 @@ public class STITestService {
         } catch (Exception e) {
             return ApiResponse.error("Failed to retrieve all STI tests: " + e.getMessage());
         }
+    }
+
+    public void updateConsultantNoteForService(Long stiTestId, Long serviceId, Long consultantId, String note) {
+        STITest stiTest = stiTestRepository.findById(stiTestId).orElseThrow(() -> new RuntimeException("STI Test not found"));
+        STIService service = stiServiceRepository.findById(serviceId).orElseThrow(() -> new RuntimeException("Service not found"));
+        TestServiceConsultantNote consultantNote = testServiceConsultantNoteRepository.findByStiTestAndService(stiTest, service)
+            .stream().findFirst().orElseThrow(() -> new RuntimeException("Consultant note not found"));
+        if (consultantId != null) {
+            UserDtls consultant = userRepository.findById(consultantId).orElse(null);
+            consultantNote.setConsultant(consultant);
+        }
+        consultantNote.setNote(note);
+        testServiceConsultantNoteRepository.save(consultantNote);
     }
 }

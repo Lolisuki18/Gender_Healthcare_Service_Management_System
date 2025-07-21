@@ -639,24 +639,55 @@ const TestResultInputModal = ({
                 </Button>
               </Grid>
               <Grid item size={12} xs={12} md={6}>
-                <TextField
-                  label="Kết luận từ Tư Vấn Viên"
-                  value={test?.consultantNotes || ''}
-                  placeholder="Chưa có kết luận từ Tư Vấn Viên"
-                  multiline
-                  minRows={3}
-                  maxRows={6}
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                  sx={{
-                    background: '#fff',
-                    borderRadius: 1,
-                    '& .MuiInputBase-input': {
-                      fontStyle: test?.consultantNotes ? 'normal' : 'italic',
-                      color: test?.consultantNotes ? '#222' : 'red',
-                    },
-                  }}
-                />
+                {/* Nếu là package, hiển thị note từng service */}
+                {isPackage && Array.isArray(test?.testServiceConsultantNotes) ? (
+                  <Box>
+                    {test.testServiceConsultantNotes.map((n) => (
+                      <Box key={n.serviceId} sx={{ mb: 2 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          {n.serviceName || `Dịch vụ #${n.serviceId}`}
+                        </Typography>
+                        <TextField
+                          label="Kết luận từ Tư Vấn Viên"
+                          value={n.note || ''}
+                          placeholder="Chưa có kết luận từ Tư Vấn Viên"
+                          multiline
+                          minRows={2}
+                          maxRows={4}
+                          fullWidth
+                          InputProps={{ readOnly: true }}
+                          sx={{
+                            background: '#fff',
+                            borderRadius: 1,
+                            '& .MuiInputBase-input': {
+                              fontStyle: n.note ? 'normal' : 'italic',
+                              color: n.note ? '#222' : 'red',
+                            },
+                          }}
+                        />
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <TextField
+                    label="Kết luận từ Tư Vấn Viên"
+                    value={test?.consultantNotes || ''}
+                    placeholder="Chưa có kết luận từ Tư Vấn Viên"
+                    multiline
+                    minRows={3}
+                    maxRows={6}
+                    fullWidth
+                    InputProps={{ readOnly: true }}
+                    sx={{
+                      background: '#fff',
+                      borderRadius: 1,
+                      '& .MuiInputBase-input': {
+                        fontStyle: test?.consultantNotes ? 'normal' : 'italic',
+                        color: test?.consultantNotes ? '#222' : 'red',
+                      },
+                    }}
+                  />
+                )}
               </Grid>
             </Grid>
           </Box>
@@ -688,8 +719,15 @@ const TestResultInputModal = ({
             variant="contained"
             disabled={
               loading ||
-              !test?.consultantNotes ||
-              test.consultantNotes.trim() === ''
+              (
+                isPackage
+                  ? !(
+                      Array.isArray(test?.testServiceConsultantNotes) &&
+                      test.testServiceConsultantNotes.length > 0 &&
+                      test.testServiceConsultantNotes.every(n => n.note && n.note.trim() !== '')
+                    )
+                  : !test?.consultantNotes || test.consultantNotes.trim() === ''
+              )
             }
             sx={{
               background: MEDICAL_GRADIENT,

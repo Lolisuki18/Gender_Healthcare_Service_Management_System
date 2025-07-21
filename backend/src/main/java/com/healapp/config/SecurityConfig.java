@@ -276,6 +276,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/blog/{postId}").hasAnyRole("STAFF", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/blog/{postId}/status").hasAnyRole("STAFF", "ADMIN")
 
+                        // ========= STI TEST SERVICE CONSULTANT NOTE =========
+                        .requestMatchers(HttpMethod.PUT, "/sti-tests/{testId}/service-note").hasAnyRole("CONSULTANT", "STAFF", "ADMIN")
+
                         .anyRequest().authenticated())
 
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
