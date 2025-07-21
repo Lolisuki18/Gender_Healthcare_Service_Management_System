@@ -447,6 +447,8 @@ function TestRegistrationPage() {
   const [isBooking, setIsBooking] = useState(false);                     // Trạng thái đang xử lý đặt lịch
   const [paymentFailed, setPaymentFailed] = useState(false);             // Trạng thái thanh toán thất bại
   const [paymentFailedMessage, setPaymentFailedMessage] = useState('');  // Thông báo thanh toán thất bại
+  const [stripePaymentIntentId, setStripePaymentIntentId] = useState(null);
+  const [stripeReceiptUrl, setStripeReceiptUrl] = useState(null);
   
   // ===== STATE QUẢN LÝ DIALOG CHI TIẾT =====
   const [detailOpen, setDetailOpen] = useState(false);                   // Hiển thị dialog chi tiết
@@ -886,6 +888,8 @@ function TestRegistrationPage() {
         // Hiển thị thông báo thanh toán thất bại trong form
         setPaymentFailed(true);
         setPaymentFailedMessage(paymentMessage);
+        setStripePaymentIntentId(res.data.stripePaymentIntentId || res.data.data?.stripePaymentIntentId || null);
+        setStripeReceiptUrl(res.data.stripeReceiptUrl || res.data.data?.stripeReceiptUrl || null);
       } else if (res.data.success === true && res.data.data && res.data.data.testId) {
         // Trường hợp đặt lịch thành công hoàn toàn
         setBookingSuccess(true);
@@ -905,6 +909,8 @@ function TestRegistrationPage() {
         
         // Hiển thị toast thành công
         toast.success('Đặt lịch thành công!', res.data.message || detailedMessage);
+        setStripePaymentIntentId(res.data.data.stripePaymentIntentId || null);
+        setStripeReceiptUrl(res.data.data.stripeReceiptUrl || null);
       } else if (res.data.testId && res.data.paymentStatus !== 'FAILED') {
         // Trường hợp đặt lịch thành công với format cũ
         setBookingSuccess(true);
@@ -923,6 +929,8 @@ function TestRegistrationPage() {
         
         // Hiển thị toast thành công
         toast.success('Đặt lịch thành công!', res.data.message || detailedMessage);
+        setStripePaymentIntentId(res.data.stripePaymentIntentId || res.data.data?.stripePaymentIntentId || null);
+        setStripeReceiptUrl(res.data.stripeReceiptUrl || res.data.data?.stripeReceiptUrl || null);
       } else {
         // Xử lý trường hợp đặt lịch thất bại hoàn toàn
         const errorMessage = res.data.message || 'Đăng ký thất bại';
@@ -934,6 +942,8 @@ function TestRegistrationPage() {
         }
         
         toast.error('Đặt lịch thất bại', detailedError);
+        setStripePaymentIntentId(null);
+        setStripeReceiptUrl(null);
       }
     } catch (err) {
       // Xử lý lỗi khi gọi API
@@ -955,6 +965,8 @@ function TestRegistrationPage() {
       }
       
       toast.error('Lỗi đặt lịch', errorMessage);
+      setStripePaymentIntentId(null);
+      setStripeReceiptUrl(null);
     } finally {
       setIsBooking(false);
     }
@@ -1650,6 +1662,8 @@ function TestRegistrationPage() {
           paymentFailed={paymentFailed}
           paymentFailedMessage={paymentFailedMessage}
           onViewBookings={() => navigate('/profile', { state: { initialTab: 'medical-history' } })}
+          paymentIntentId={stripePaymentIntentId}
+          receiptUrl={stripeReceiptUrl}
         />
       </Container>
     </Box>

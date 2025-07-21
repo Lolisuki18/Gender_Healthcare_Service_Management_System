@@ -1,22 +1,23 @@
 package com.healapp.service;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.model.STITest;
-import com.stripe.Stripe;
-import com.stripe.exception.StripeException;
-import com.stripe.model.PaymentIntent;
-import com.stripe.model.Refund;
-import com.stripe.param.PaymentIntentCreateParams;
-import com.stripe.param.RefundCreateParams;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.healapp.dto.ApiResponse;
+import com.healapp.model.STITest;
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Charge;
+import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
+import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.RefundCreateParams;
+
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -33,7 +34,7 @@ public class StripeService {
 
 
     // HYBRID - Xử lý thanh toán STI Test (Test cards + Real cards)
-    public ApiResponse<String> processPaymentForSTITest(STITest stiTest, String cardNumber,
+    public ApiResponse<Map<String, String>> processPaymentForSTITest(STITest stiTest, String cardNumber,
             String expMonth, String expYear, String cvc, String cardholderName) {
 
         // Kiểm tra xem có phải test card không
@@ -49,12 +50,12 @@ public class StripeService {
     }
 
     // Xử lý thanh toán với Test Cards (sử dụng predefined payment methods)
-    private ApiResponse<String> processPaymentWithTestCard(STITest stiTest, String paymentMethodId) {
+    private ApiResponse<Map<String, String>> processPaymentWithTestCard(STITest stiTest, String paymentMethodId) {
         try {
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setCurrency("vnd")
                     .setAmount(stiTest.getTotalPrice().longValue())
-                    .setDescription("TEST - STI Test #" + stiTest.getTestId())
+                    .setDescription("Gender Health - STI Test #" + stiTest.getTestId())
                     .setReceiptEmail(stiTest.getCustomer().getEmail())
                     .setPaymentMethod(paymentMethodId)
                     .setConfirm(true)
@@ -68,7 +69,16 @@ public class StripeService {
 
             if ("succeeded".equals(paymentIntent.getStatus())) {
                 log.info("Test payment successful - PaymentIntent: {}", paymentIntent.getId());
-                return ApiResponse.success("Test payment processed successfully", paymentIntent.getId());
+                Map<String, String> data = new HashMap<>();
+                data.put("paymentIntentId", paymentIntent.getId());
+                String chargeId = paymentIntent.getLatestCharge();
+                String receiptUrl = null;
+                if (chargeId != null) {
+                    Charge charge = Charge.retrieve(chargeId);
+                    receiptUrl = charge.getReceiptUrl();
+                }
+                data.put("receiptUrl", receiptUrl);
+                return ApiResponse.success("Test payment processed successfully", data);
             } else if ("requires_action".equals(paymentIntent.getStatus())) {
                 return ApiResponse.error("Payment requires additional authentication");
             } else {
@@ -85,7 +95,7 @@ public class StripeService {
     }
 
     // Xử lý thanh toán với Real Cards (tạo payment method từ card data)
-    private ApiResponse<String> processPaymentWithRealCard(STITest stiTest, String cardNumber,
+    private ApiResponse<Map<String, String>> processPaymentWithRealCard(STITest stiTest, String cardNumber,
             String expMonth, String expYear, String cvc, String cardholderName) {
         try {
             // Chỉ hoạt động khi Stripe account được enable raw card data
@@ -94,7 +104,7 @@ public class StripeService {
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setCurrency("vnd")
                     .setAmount(stiTest.getTotalPrice().longValue())
-                    .setDescription("💳 REAL - STI Test #" + stiTest.getTestId())
+                    .setDescription("Gender Health - STI Test #" + stiTest.getTestId())
                     .setReceiptEmail(stiTest.getCustomer().getEmail())
                     .setPaymentMethod(paymentMethodId)
                     .setConfirm(true)
@@ -108,7 +118,16 @@ public class StripeService {
 
             if ("succeeded".equals(paymentIntent.getStatus())) {
                 log.info("💳 Real payment successful - PaymentIntent: {}", paymentIntent.getId());
-                return ApiResponse.success("Real payment processed successfully", paymentIntent.getId());
+                Map<String, String> data = new HashMap<>();
+                data.put("paymentIntentId", paymentIntent.getId());
+                String chargeId = paymentIntent.getLatestCharge();
+                String receiptUrl = null;
+                if (chargeId != null) {
+                    Charge charge = Charge.retrieve(chargeId);
+                    receiptUrl = charge.getReceiptUrl();
+                }
+                data.put("receiptUrl", receiptUrl);
+                return ApiResponse.success("Real payment processed successfully", data);
             } else if ("requires_action".equals(paymentIntent.getStatus())) {
                 return ApiResponse.error("Payment requires additional authentication");
             } else {

@@ -3,6 +3,7 @@ package com.healapp.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,14 +105,18 @@ public class PaymentService {
             STITest tempSTITest = createTempSTITestForPayment(processingPayment, serviceType, serviceId);
 
             // Process with Stripe
-            ApiResponse<String> stripeResponse = stripeService.processPaymentForSTITest(
+            ApiResponse<Map<String, String>> stripeResponse = stripeService.processPaymentForSTITest(
                     tempSTITest, cardNumber, expMonth, expYear, cvc, cardHolderName);
 
             if (stripeResponse.isSuccess()) {
                 // Payment successful
                 processingPayment.setPaymentStatus(PaymentStatus.COMPLETED);
-                processingPayment.setStripePaymentIntentId(stripeResponse.getData());
-                processingPayment.setTransactionId(stripeResponse.getData());
+                Map<String, String> stripeData = stripeResponse.getData();
+                if (stripeData != null) {
+                    processingPayment.setStripePaymentIntentId(stripeData.get("paymentIntentId"));
+                    processingPayment.setTransactionId(stripeData.get("paymentIntentId"));
+                    processingPayment.setStripeReceiptUrl(stripeData.get("receiptUrl"));
+                }
                 processingPayment.setPaidAt(LocalDateTime.now());
 
                 Payment completedPayment = paymentRepository.save(processingPayment);

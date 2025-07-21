@@ -132,7 +132,7 @@ const GradientButton = styled(Button)(({ theme }) => ({
 
 // ===== COMPONENT CHÍNH =====
 // Component dialog thông báo đặt lịch thành công với giao diện đẹp mắt và nhiều hiệu ứng
-const BookingSuccessDialog = ({ open, message, onClose, paymentFailed, paymentFailedMessage, onViewBookings }) => {
+const BookingSuccessDialog = ({ open, message, onClose, paymentFailed, paymentFailedMessage, onViewBookings, paymentIntentId, receiptUrl }) => {
   return (
     <StyledDialog 
       open={open} 
@@ -412,6 +412,30 @@ const BookingSuccessDialog = ({ open, message, onClose, paymentFailed, paymentFa
           </Box>
         )}
 
+        {/* Thông tin Stripe nếu có */}
+        {(paymentIntentId || receiptUrl) && (
+          <Box sx={{ mt: 2, mb: 2, textAlign: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
+              <img src="https://stripe.com/img/v3/home/twitter.png" alt="Stripe Logo" style={{ height: 28, marginRight: 8 }} />
+              <Typography variant="subtitle2" sx={{ color: '#635bff', fontWeight: 700 }}>
+                Thanh toán an toàn qua Stripe
+              </Typography>
+            </Box>
+            {paymentIntentId && (
+              <Typography variant="body2" sx={{ color: '#333', fontSize: '0.98rem' }}>
+                Mã giao dịch: <b>{paymentIntentId}</b>
+              </Typography>
+            )}
+            {receiptUrl && (
+              <Typography variant="body2" sx={{ color: '#1976d2', fontSize: '0.98rem', mt: 0.5 }}>
+                <a href={receiptUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', fontWeight: 600, textDecoration: 'none' }}>
+                  Xem biên lai từ Gender Health
+                </a>
+              </Typography>
+            )}
+          </Box>
+        )}
+
         {/* Lời cảm ơn cuối */}
         <Typography 
           variant="body2" 
@@ -477,6 +501,8 @@ BookingSuccessDialog.propTypes = {
   paymentFailed: PropTypes.bool, // Tùy chọn: trạng thái thanh toán thất bại
   paymentFailedMessage: PropTypes.string, // Tùy chọn: thông báo lỗi thanh toán
   onViewBookings: PropTypes.func, // Tùy chọn: hàm callback khi xem lịch đã đặt
+  paymentIntentId: PropTypes.string,
+  receiptUrl: PropTypes.string,
 };
 
 // Export component để sử dụng ở nơi khác

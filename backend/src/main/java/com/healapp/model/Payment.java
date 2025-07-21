@@ -57,6 +57,9 @@ public class Payment {
     @Column(name = "transaction_id", length = 100)
     private String transactionId; // Universal transaction ID
 
+    @Column(name = "stripe_receipt_url", length = 500)
+    private String stripeReceiptUrl;
+
     // Timestamps
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
