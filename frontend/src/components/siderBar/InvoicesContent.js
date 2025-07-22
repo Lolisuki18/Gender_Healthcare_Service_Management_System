@@ -883,6 +883,35 @@ const InvoicesContent = () => {
                   </>
                 )}
               </Box>
+
+              {/* ===== Thông tin biên lai Stripe nếu có ===== */}
+              {/* Hiển thị nếu thanh toán qua VISA/Stripe và có biên lai hoặc mã giao dịch */}
+              {selectedInvoice.paymentMethod === 'VISA' && (selectedInvoice.stripeReceiptUrl || selectedInvoice.stripePaymentIntentId) && (
+                <Box sx={{ mt: 2, mb: 1, p: 2, background: 'rgba(99,91,255,0.04)', borderRadius: 2, border: '1px solid #e0e7ff', width: '100%' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <img src="https://stripe.com/img/v3/home/twitter.png" alt="Stripe Logo" style={{ height: 24, marginRight: 8 }} />
+                    <Typography variant="subtitle2" sx={{ color: '#635bff', fontWeight: 700 }}>
+                      Thanh toán an toàn qua Stripe
+                    </Typography>
+                  </Box>
+                  {selectedInvoice.stripePaymentIntentId && (
+                    <Typography variant="body2" sx={{ color: '#333', fontSize: '0.98rem' }}>
+                      Mã giao dịch: <b>{selectedInvoice.stripePaymentIntentId}</b>
+                    </Typography>
+                  )}
+                  {selectedInvoice.stripeReceiptUrl && (
+                    <Typography variant="body2" sx={{ color: '#1976d2', fontSize: '0.98rem', mt: 0.5 }}>
+                      <a href={selectedInvoice.stripeReceiptUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', fontWeight: 600, textDecoration: 'none' }}>
+                        Xem biên lai từ Gender Health
+                      </a>
+                    </Typography>
+                  )}
+                  {/* Chú thích tiếng Việt */}
+                  <Typography variant="caption" sx={{ color: '#888', mt: 1, display: 'block', fontStyle: 'italic' }}>
+                    Biên lai và mã giao dịch chỉ hiển thị nếu bạn đã thanh toán thành công qua Stripe.
+                  </Typography>
+                </Box>
+              )}
             </Box>
           )}
         </DialogContent>{' '}

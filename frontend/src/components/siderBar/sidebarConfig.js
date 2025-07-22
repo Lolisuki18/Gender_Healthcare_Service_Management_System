@@ -187,12 +187,12 @@ export const sidebarMenuConfig = [
     icon: <NotificationsIcon />,
     roles: ['CUSTOMER'],
   },
-  {
-    id: 'help',
-    label: 'Trợ giúp',
-    icon: <HelpIcon />,
-    roles: ['CUSTOMER'],
-  },
+  // {
+  //   id: 'help',
+  //   label: 'Trợ giúp',
+  //   icon: <HelpIcon />,
+  //   roles: ['CUSTOMER'],
+  // },
   {
     id: 'questions',
     label: 'Câu hỏi đã đặt',
