@@ -21,8 +21,9 @@ public class Payment {
     @Column(name = "payment_id")
     private Long paymentId;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserDtls user;
 
     @Column(name = "service_type", nullable = false, length = 20)
     private String serviceType;

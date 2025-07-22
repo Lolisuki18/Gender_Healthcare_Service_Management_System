@@ -235,7 +235,7 @@ class STITestServiceTest {
         // Setup Payment
         payment = new Payment();
         payment.setPaymentId(1L);
-        payment.setUserId(1L);
+        payment.setUser(customer); // Sửa: truyền UserDtls thay vì id
         payment.setServiceType("STI");
         payment.setServiceId(1L);
         payment.setAmount(new BigDecimal("500000"));

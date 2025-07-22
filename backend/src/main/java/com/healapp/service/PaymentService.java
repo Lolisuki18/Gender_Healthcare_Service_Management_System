@@ -55,7 +55,7 @@ public class PaymentService {
             PaymentMethod paymentMethod, BigDecimal amount, String description) {
 
         Payment payment = Payment.builder()
-                .userId(userId)
+                .user(userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"))) // Sửa: truyền UserDtls thay vì id
                 .serviceType(serviceType)
                 .serviceId(serviceId)
                 .paymentMethod(paymentMethod)
@@ -145,9 +145,9 @@ public class PaymentService {
     }
 
     private STITest createTempSTITestForPayment(Payment payment, String serviceType, Long serviceId) {
-        // Get user info from repositories
-        Optional<UserDtls> userOpt = userRepository.findById(payment.getUserId());
-        if (userOpt.isEmpty()) {
+        // Get user info from payment
+        UserDtls user = payment.getUser();
+        if (user == null) {
             throw new RuntimeException("User not found for payment");
         }
 
@@ -163,7 +163,7 @@ public class PaymentService {
             // Create temporary STITest object with existing test data
             STITest tempTest = STITest.builder()
                     .testId(existingTest.getTestId())
-                    .customer(userOpt.get())
+                    .customer(user) // Sửa: truyền UserDtls thay vì userOpt.get()
                     .stiService(existingTest.getStiService()) // Get service from existing test
                     .totalPrice(payment.getAmount())
                     .build();
@@ -241,7 +241,7 @@ public class PaymentService {
             String newQrReference = generateQRReference(
                     payment.getServiceType(),
                     payment.getServiceId(),
-                    payment.getUserId());
+                    payment.getUser().getId()); // Sửa: lấy id từ đối tượng user
 
             // Update payment với QR mới và reset status về PENDING
             payment.setQrPaymentReference(newQrReference);
@@ -356,7 +356,7 @@ public class PaymentService {
                     if (result.isSuccess() && result.getData().getPaymentStatus() == PaymentStatus.COMPLETED) {
                         confirmedCount++;
                         log.info(" Payment auto-confirmed for user {} - Amount: {}",
-                                payment.getUserId(), payment.getAmount());
+                                payment.getUser().getId(), payment.getAmount()); // Sửa: lấy id từ đối tượng user
                     }
                 } catch (Exception e) {
                     log.error("Error checking individual payment {}: {}", payment.getPaymentId(), e.getMessage());
@@ -578,7 +578,7 @@ public class PaymentService {
             Payment payment = paymentOpt.get();
 
             // Check ownership
-            if (!payment.getUserId().equals(userId)) {
+            if (!payment.getUser().getId().equals(userId)) {
                 return ApiResponse.error("Unauthorized to view this payment");
             }
 

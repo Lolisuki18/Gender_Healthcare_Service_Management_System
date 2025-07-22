@@ -120,7 +120,7 @@ public class PaymentInfoService {
 
             // Tạo thẻ mới
             PaymentInfo paymentInfo = PaymentInfo.builder()
-                    .userId(userId)
+                    .user(userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")))
                     .cardNumber(request.getCardNumber())
                     .cardHolderName(request.getCardHolderName().toUpperCase())
                     .expiryMonth(request.getExpiryMonth())

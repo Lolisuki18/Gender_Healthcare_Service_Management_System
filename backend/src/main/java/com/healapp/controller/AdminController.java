@@ -485,7 +485,7 @@ public class AdminController {
                 : BigDecimal.ZERO;
         HashSet<Long> customerIds = new HashSet<>();
         for (Payment p : payments)
-            customerIds.add(p.getUserId());
+            customerIds.add(p.getUser().getId()); // Sửa: lấy id từ đối tượng user
         int totalCustomers = customerIds.size();
         Map<String, Object> result = Map.of(
                 "totalRevenue", totalRevenue,
@@ -511,11 +511,11 @@ public class AdminController {
         List<Map<String, Object>> result = payments.stream().map(payment -> {
             Map<String, Object> map = new java.util.HashMap<>();
             map.put("paymentId", payment.getPaymentId());
-            map.put("userId", payment.getUserId());
+            map.put("userId", payment.getUser().getId()); // Sửa: lấy id từ đối tượng user
             // Lấy tên khách hàng
             String customerName = null;
             try {
-                UserDtls user = paymentService.getUserById(payment.getUserId());
+                UserDtls user = payment.getUser(); // Sửa: lấy trực tiếp từ payment
                 customerName = user != null ? user.getFullName() : null;
             } catch (Exception e) {
                 customerName = null;
