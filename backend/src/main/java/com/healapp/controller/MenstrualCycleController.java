@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.MenstrualCycleRequest;
 import com.healapp.dto.MenstrualCycleResponse;
+import com.healapp.dto.PregnancyProbabilityResponse;
 import com.healapp.model.MenstrualCycle;
 import com.healapp.service.MenstrualCycleService;
 import com.healapp.service.NotificationService;
@@ -146,6 +147,32 @@ public class MenstrualCycleController {
     public ResponseEntity<ApiResponse<Double>> getAverageMenstrualCycle() {
         Long userId = getCurrentUserId();
         ApiResponse<Double> response = menstrualCycleService.calculateAverageCycleLength(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    /*
+     * description: Lấy tỉ lệ mang thai cho một chu kỳ cụ thể
+     * method: GET
+     * path: /menstrual-cycle/{id}/pregnancy-prob
+     */
+    @GetMapping("/{id}/pregnancy-prob")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
+    public ResponseEntity<ApiResponse<List<PregnancyProbabilityResponse>>> getPregnancyProbabilityByCycle(@PathVariable Long id) {
+        ApiResponse<List<PregnancyProbabilityResponse>> response = menstrualCycleService.getPregnancyProbabilityByCycle(id);
+        return ResponseEntity.ok(response);
+    }
+
+    /*
+     * description: Lấy tỉ lệ mang thai cho một ngày cụ thể trong chu kỳ
+     * method: GET
+     * path: /menstrual-cycle/{id}/pregnancy-prob/{date}
+     */
+    @GetMapping("/{id}/pregnancy-prob/{date}")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
+    public ResponseEntity<ApiResponse<PregnancyProbabilityResponse>> getPregnancyProbabilityByDate(
+            @PathVariable Long id, 
+            @PathVariable String date) {
+        ApiResponse<PregnancyProbabilityResponse> response = menstrualCycleService.getPregnancyProbabilityByDate(id, date);
         return ResponseEntity.ok(response);
     }
 

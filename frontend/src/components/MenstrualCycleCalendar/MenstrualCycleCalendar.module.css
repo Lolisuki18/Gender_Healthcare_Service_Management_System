@@ -1,0 +1,312 @@
+/* Loading states */
+.loadingDay {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.dataSource {
+  font-size: 10px;
+  color: #6b7280;
+  margin-top: 2px;
+  text-align: center;
+}
+
+/* Modal và container chính */
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.navButton {
+  background: none;
+  border: 1px solid #e5e7eb;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #374151;
+}
+
+.navButton:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+/* Lịch */
+.calendar {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
+
+.weekHeader {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dayHeader {
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.week:last-child {
+  border-bottom: none;
+}
+
+/* Ngày */
+.day {
+  position: relative;
+  min-height: 60px;
+  padding: 8px;
+  border-right: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  border-radius: 4px;
+}
+
+.day:last-child {
+  border-right: none;
+}
+
+.day:hover {
+  background-color: #f8fafc;
+  transform: scale(1.05);
+  z-index: 10;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.dayNumber {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.dayIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+/* Loại ngày khác nhau */
+.currentMonth {
+  color: #1f2937;
+}
+
+.otherMonth {
+  color: #ffffff;
+  background-color: #1f2937;
+  opacity: 0.8;
+}
+
+.otherMonth .dayNumber {
+  color: #ffffff;
+  font-weight: 400;
+}
+
+.otherMonth:hover {
+  background-color: #374151;
+  opacity: 1;
+}
+
+.period {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.period .dayNumber {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.period .dayIndicator {
+  color: #dc2626;
+}
+
+.fertility {
+  background-color: #fdf2f8;
+  border: 1px solid #fbcfe8;
+}
+
+.fertility .dayNumber {
+  color: #be185d;
+  font-weight: 600;
+}
+
+.fertility .dayIndicator {
+  color: #be185d;
+}
+
+.ovulation {
+  background-color: #fffbeb;
+  border: 1px solid #fed7aa;
+  position: relative;
+}
+
+.ovulation .dayNumber {
+  color: #d97706;
+  font-weight: 700;
+}
+
+.ovulationDot {
+  width: 8px;
+  height: 8px;
+  background-color: #f59e0b;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px #d97706;
+}
+
+.normal {
+  background-color: #ffffff;
+}
+
+.normal .dayNumber {
+  color: #374151;
+}
+
+/* Hover effects cho các loại ngày */
+.period:hover {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+  box-shadow: 0 8px 16px -4px rgba(220, 38, 38, 0.2);
+}
+
+.fertility:hover {
+  background-color: #fce7f3;
+  border-color: #f9a8d4;
+  box-shadow: 0 8px 16px -4px rgba(190, 24, 93, 0.2);
+}
+
+.ovulation:hover {
+  background-color: #fef3c7;
+  border-color: #fbbf24;
+  box-shadow: 0 8px 16px -4px rgba(217, 119, 6, 0.2);
+}
+
+.normal:hover {
+  background-color: #f8fafc;
+  box-shadow: 0 8px 16px -4px rgba(107, 114, 128, 0.15);
+}
+
+/* Chú thích */
+.legendItem {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+}
+
+.legendItem.period {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+}
+
+.legendItem.fertility {
+  background-color: #fdf2f8;
+  border-color: #fbcfe8;
+}
+
+.legendItem.ovulation {
+  background-color: #fffbeb;
+  border-color: #fed7aa;
+  position: relative;
+}
+
+.legendItem.ovulation::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  background-color: #f59e0b;
+  border-radius: 50%;
+}
+
+.legendItem.normal {
+  background-color: #ffffff;
+  border-color: #e5e7eb;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .day {
+    min-height: 50px;
+    padding: 6px 4px;
+  }
+  
+  .dayNumber {
+    font-size: 12px;
+  }
+  
+  .dayHeader {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+  
+  .dayIndicator {
+    scale: 0.8;
+  }
+}
+
+@media (max-width: 480px) {
+  .day {
+    min-height: 40px;
+    padding: 4px 2px;
+  }
+  
+  .dayNumber {
+    font-size: 11px;
+  }
+  
+  .dayHeader {
+    padding: 6px 2px;
+    font-size: 11px;
+  }
+}

@@ -20,8 +20,9 @@ public class PaymentInfo {
     @Column(name = "payment_info_id")
     private Long paymentInfoId;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserDtls user;
 
     @Column(name = "card_number", nullable = false, length = 16)
     private String cardNumber;

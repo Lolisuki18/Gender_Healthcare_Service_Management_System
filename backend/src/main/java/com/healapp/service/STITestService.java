@@ -395,7 +395,7 @@ public class STITestService {
     private Payment createFailedPayment(STITest stiTest, PaymentMethod paymentMethod, String description,
             String failureReason) {
         Payment failedPayment = Payment.builder()
-                .userId(stiTest.getCustomer().getId())
+                .user(stiTest.getCustomer()) // Sửa: truyền UserDtls thay vì id
                 .serviceType("STI")
                 .serviceId(stiTest.getTestId())
                 .paymentMethod(paymentMethod)

@@ -35,7 +35,7 @@ public class PaymentInfoService {
                 return ApiResponse.error("User not found");
             }
 
-            List<PaymentInfo> paymentInfos = paymentInfoRepository.findByUserIdAndIsActiveTrueOrderByIsDefaultDescCreatedAtDesc(userId);
+            List<PaymentInfo> paymentInfos = paymentInfoRepository.findByUser_IdAndIsActiveTrueOrderByIsDefaultDescCreatedAtDesc(userId);
             List<PaymentInfoResponse> responses = paymentInfos.stream()
                     .map(PaymentInfoResponse::fromEntity)
                     .collect(Collectors.toList());
@@ -50,7 +50,7 @@ public class PaymentInfoService {
     // Lấy thẻ mặc định của user
     public ApiResponse<PaymentInfoResponse> getDefaultPaymentInfo(Long userId) {
         try {
-            Optional<PaymentInfo> defaultCard = paymentInfoRepository.findByUserIdAndIsDefaultTrueAndIsActiveTrue(userId);
+            Optional<PaymentInfo> defaultCard = paymentInfoRepository.findByUser_IdAndIsDefaultTrueAndIsActiveTrue(userId);
             
             if (defaultCard.isPresent()) {
                 return ApiResponse.success("Default payment method found", 
@@ -67,7 +67,7 @@ public class PaymentInfoService {
     // Lấy thẻ theo ID (với CVV để thanh toán)
     public ApiResponse<PaymentInfoResponse> getPaymentInfoForPayment(Long paymentInfoId, Long userId) {
         try {
-            Optional<PaymentInfo> paymentInfo = paymentInfoRepository.findByPaymentInfoIdAndUserIdAndIsActiveTrue(paymentInfoId, userId);
+            Optional<PaymentInfo> paymentInfo = paymentInfoRepository.findByPaymentInfoIdAndUser_IdAndIsActiveTrue(paymentInfoId, userId);
             
             if (paymentInfo.isPresent()) {
                 PaymentInfo card = paymentInfo.get();
@@ -103,12 +103,12 @@ public class PaymentInfoService {
             }
 
             // Kiểm tra số thẻ đã tồn tại chưa
-            if (paymentInfoRepository.existsByUserIdAndCardNumberAndIsActiveTrue(userId, request.getCardNumber())) {
+            if (paymentInfoRepository.existsByUser_IdAndCardNumberAndIsActiveTrue(userId, request.getCardNumber())) {
                 return ApiResponse.error("Card number already exists");
             }
 
             // Kiểm tra giới hạn số thẻ (tối đa 5 thẻ)
-            long cardCount = paymentInfoRepository.countByUserIdAndIsActiveTrue(userId);
+            long cardCount = paymentInfoRepository.countByUser_IdAndIsActiveTrue(userId);
             if (cardCount >= 5) {
                 return ApiResponse.error("Maximum 5 payment methods allowed");
             }
@@ -120,7 +120,7 @@ public class PaymentInfoService {
 
             // Tạo thẻ mới
             PaymentInfo paymentInfo = PaymentInfo.builder()
-                    .userId(userId)
+                    .user(userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")))
                     .cardNumber(request.getCardNumber())
                     .cardHolderName(request.getCardHolderName().toUpperCase())
                     .expiryMonth(request.getExpiryMonth())
@@ -148,7 +148,7 @@ public class PaymentInfoService {
     public ApiResponse<PaymentInfoResponse> updatePaymentInfo(Long paymentInfoId, PaymentInfoRequest request, Long userId) {
         try {
             // Kiểm tra thẻ có tồn tại và thuộc về user không
-            Optional<PaymentInfo> existingCard = paymentInfoRepository.findByPaymentInfoIdAndUserIdAndIsActiveTrue(paymentInfoId, userId);
+            Optional<PaymentInfo> existingCard = paymentInfoRepository.findByPaymentInfoIdAndUser_IdAndIsActiveTrue(paymentInfoId, userId);
             if (existingCard.isEmpty()) {
                 return ApiResponse.error("Payment method not found");
             }
@@ -167,7 +167,7 @@ public class PaymentInfoService {
 
             // Kiểm tra số thẻ đã tồn tại chưa (trừ thẻ hiện tại)
             if (!request.getCardNumber().equals(paymentInfo.getCardNumber()) &&
-                paymentInfoRepository.existsByUserIdAndCardNumberAndIsActiveTrue(userId, request.getCardNumber())) {
+                paymentInfoRepository.existsByUser_IdAndCardNumberAndIsActiveTrue(userId, request.getCardNumber())) {
                 return ApiResponse.error("Card number already exists");
             }
 
@@ -202,7 +202,7 @@ public class PaymentInfoService {
     public ApiResponse<String> deletePaymentInfo(Long paymentInfoId, Long userId) {
         try {
             // Kiểm tra thẻ có tồn tại và thuộc về user không
-            Optional<PaymentInfo> paymentInfo = paymentInfoRepository.findByPaymentInfoIdAndUserIdAndIsActiveTrue(paymentInfoId, userId);
+            Optional<PaymentInfo> paymentInfo = paymentInfoRepository.findByPaymentInfoIdAndUser_IdAndIsActiveTrue(paymentInfoId, userId);
             if (paymentInfo.isEmpty()) {
                 return ApiResponse.error("Payment method not found");
             }
@@ -211,7 +211,7 @@ public class PaymentInfoService {
 
             // Không cho phép xóa thẻ mặc định nếu chỉ có 1 thẻ
             if (Boolean.TRUE.equals(card.getIsDefault())) {
-                long cardCount = paymentInfoRepository.countByUserIdAndIsActiveTrue(userId);
+                long cardCount = paymentInfoRepository.countByUser_IdAndIsActiveTrue(userId);
                 if (cardCount <= 1) {
                     return ApiResponse.error("Cannot delete the only payment method");
                 }
@@ -234,7 +234,7 @@ public class PaymentInfoService {
     public ApiResponse<PaymentInfoResponse> setDefaultPaymentInfo(Long paymentInfoId, Long userId) {
         try {
             // Kiểm tra thẻ có tồn tại và thuộc về user không
-            Optional<PaymentInfo> paymentInfo = paymentInfoRepository.findByPaymentInfoIdAndUserIdAndIsActiveTrue(paymentInfoId, userId);
+            Optional<PaymentInfo> paymentInfo = paymentInfoRepository.findByPaymentInfoIdAndUser_IdAndIsActiveTrue(paymentInfoId, userId);
             if (paymentInfo.isEmpty()) {
                 return ApiResponse.error("Payment method not found");
             }

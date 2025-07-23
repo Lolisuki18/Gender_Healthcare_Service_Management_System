@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.MenstrualCycleRequest;
 import com.healapp.dto.MenstrualCycleResponse;
+import com.healapp.dto.PregnancyProbabilityResponse;
 import com.healapp.model.MenstrualCycle;
 import com.healapp.model.PregnancyProbLog;
 import com.healapp.model.UserDtls;
@@ -498,6 +499,113 @@ public class MenstrualCycleService {
         response.setCycleLength(menstrualCycle.getCycleLength());
         response.setPregnancyProbLogs(pregnancyProbLogs);
         return response;
+    }
+
+    /*
+     * Lấy tỉ lệ mang thai cho một chu kỳ cụ thể
+     */
+    public ApiResponse<List<PregnancyProbabilityResponse>> getPregnancyProbabilityByCycle(Long cycleId) {
+        try {
+            // Kiểm tra chu kỳ có tồn tại và thuộc về user hiện tại không
+            Optional<MenstrualCycle> cycleOpt = menstrualCycleRepository.findById(cycleId);
+            if (!cycleOpt.isPresent()) {
+                return ApiResponse.error("Không tìm thấy chu kỳ");
+            }
+
+            MenstrualCycle cycle = cycleOpt.get();
+            Long currentUserId = getCurrentUserId();
+            
+            if (!cycle.getUser().getId().equals(currentUserId)) {
+                return ApiResponse.error("Bạn không có quyền truy cập chu kỳ này");
+            }
+
+            // Lấy dữ liệu tỉ lệ mang thai cho chu kỳ này
+            List<PregnancyProbLog> probLogs = pregnancyProbLogRepository.findByMenstrualCycleOrderByDateAsc(cycle);
+            
+            // Chuyển đổi sang format phù hợp cho frontend
+            List<PregnancyProbabilityResponse> result = probLogs.stream().map(log -> {
+                PregnancyProbabilityResponse response = new PregnancyProbabilityResponse();
+                response.setDate(log.getDate());
+                response.setPregnancyProbability(log.getProbability());
+                response.setDayType(determineDayType(log.getDate(), cycle));
+                response.setDayOfCycle((int) ChronoUnit.DAYS.between(cycle.getStartDate(), log.getDate()) + 1);
+                return response;
+            }).collect(Collectors.toList());
+
+            return ApiResponse.success("Lấy dữ liệu tỉ lệ mang thai thành công", result);
+            
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy tỉ lệ mang thai cho chu kỳ {}: {}", cycleId, e.getMessage());
+            return ApiResponse.error("Lỗi server: " + e.getMessage());
+        }
+    }
+
+    /*
+     * Lấy tỉ lệ mang thai cho một ngày cụ thể trong chu kỳ
+     */
+    public ApiResponse<PregnancyProbabilityResponse> getPregnancyProbabilityByDate(Long cycleId, String dateStr) {
+        try {
+            // Parse date
+            LocalDate date = LocalDate.parse(dateStr);
+            
+            // Kiểm tra chu kỳ có tồn tại và thuộc về user hiện tại không
+            Optional<MenstrualCycle> cycleOpt = menstrualCycleRepository.findById(cycleId);
+            if (!cycleOpt.isPresent()) {
+                return ApiResponse.error("Không tìm thấy chu kỳ");
+            }
+
+            MenstrualCycle cycle = cycleOpt.get();
+            Long currentUserId = getCurrentUserId();
+            
+            if (!cycle.getUser().getId().equals(currentUserId)) {
+                return ApiResponse.error("Bạn không có quyền truy cập chu kỳ này");
+            }
+
+            // Tìm dữ liệu cho ngày cụ thể
+            Optional<PregnancyProbLog> probLogOpt = pregnancyProbLogRepository
+                .findByMenstrualCycleAndDate(cycle, date);
+            
+            if (!probLogOpt.isPresent()) {
+                return ApiResponse.error("Không có dữ liệu cho ngày " + dateStr);
+            }
+
+            PregnancyProbLog probLog = probLogOpt.get();
+            
+            // Tạo response object
+            PregnancyProbabilityResponse result = new PregnancyProbabilityResponse();
+            result.setDate(probLog.getDate());
+            result.setPregnancyProbability(probLog.getProbability());
+            result.setDayType(determineDayType(probLog.getDate(), cycle));
+            result.setDayOfCycle((int) ChronoUnit.DAYS.between(cycle.getStartDate(), probLog.getDate()) + 1);
+
+            return ApiResponse.success("Lấy dữ liệu tỉ lệ mang thai thành công", result);
+            
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy tỉ lệ mang thai cho ngày {} của chu kỳ {}: {}", 
+                dateStr, cycleId, e.getMessage());
+            return ApiResponse.error("Lỗi server: " + e.getMessage());
+        }
+    }
+
+    /*
+     * Xác định loại ngày trong chu kỳ
+     */
+    private String determineDayType(LocalDate date, MenstrualCycle cycle) {
+        LocalDate startDate = cycle.getStartDate();
+        LocalDate endPeriodDate = startDate.plusDays(cycle.getNumberOfDays() - 1);
+        LocalDate ovulationDate = cycle.getOvulationDate();
+        LocalDate fertilityStart = ovulationDate.minusDays(5);
+        LocalDate fertilityEnd = ovulationDate.plusDays(1);
+
+        if (!date.isBefore(startDate) && !date.isAfter(endPeriodDate)) {
+            return "period";
+        } else if (date.equals(ovulationDate)) {
+            return "ovulation";
+        } else if (!date.isBefore(fertilityStart) && !date.isAfter(fertilityEnd)) {
+            return "fertility";
+        } else {
+            return "normal";
+        }
     }
 
 

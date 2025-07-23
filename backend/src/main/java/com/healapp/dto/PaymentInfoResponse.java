@@ -37,7 +37,7 @@ public class PaymentInfoResponse {
     public static PaymentInfoResponse fromEntity(com.healapp.model.PaymentInfo entity) {
         return PaymentInfoResponse.builder()
                 .paymentInfoId(entity.getPaymentInfoId())
-                .userId(entity.getUserId())
+                .userId(entity.getUser().getId())
                 .cardNumber(entity.getCardNumber())
                 .cardHolderName(entity.getCardHolderName())
                 .expiryMonth(entity.getExpiryMonth())

@@ -1,16 +1,17 @@
 package com.healapp.repository;
 
-import com.healapp.model.Payment;
-import com.healapp.model.PaymentMethod;
-import com.healapp.model.PaymentStatus;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import com.healapp.model.Payment;
+import com.healapp.model.PaymentMethod;
+import com.healapp.model.PaymentStatus;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
@@ -21,9 +22,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         List<Payment> findByServiceTypeAndServiceIdOrderByCreatedAtDesc(String serviceType, Long serviceId);
 
         // Find by user
-        List<Payment> findByUserIdOrderByCreatedAtDesc(Long userId);
+        List<Payment> findByUser_IdOrderByCreatedAtDesc(Long userId);
 
-        List<Payment> findByUserIdAndPaymentStatusOrderByCreatedAtDesc(Long userId, PaymentStatus status);
+        List<Payment> findByUser_IdAndPaymentStatusOrderByCreatedAtDesc(Long userId, PaymentStatus status);
 
         // Find by payment method
         List<Payment> findByPaymentMethodAndPaymentStatus(PaymentMethod paymentMethod, PaymentStatus status);
@@ -53,7 +54,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
                         @Param("fromDate") LocalDateTime fromDate);
 
         // Find pending payments for specific user and service
-        @Query("SELECT p FROM Payment p WHERE p.userId = :userId AND p.serviceType = :serviceType AND p.serviceId = :serviceId AND p.paymentStatus = 'PENDING'")
+        @Query("SELECT p FROM Payment p WHERE p.user.id = :userId AND p.serviceType = :serviceType AND p.serviceId = :serviceId AND p.paymentStatus = 'PENDING'")
         List<Payment> findPendingPaymentsByUserAndService(@Param("userId") Long userId,
                         @Param("serviceType") String serviceType,
                         @Param("serviceId") Long serviceId);

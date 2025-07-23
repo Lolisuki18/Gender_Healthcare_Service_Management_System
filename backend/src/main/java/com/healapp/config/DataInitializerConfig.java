@@ -742,7 +742,7 @@ public class DataInitializerConfig implements CommandLineRunner {
     private void createPaymentsIfNotExists() {
         if (paymentRepository.count() == 0 && userRepository.count() > 0) {
             Payment p1 = new Payment();
-            p1.setUserId(userRepository.findAll().get(0).getId());
+            p1.setUser(userRepository.findAll().get(0)); // Sửa: truyền UserDtls thay vì id
             p1.setServiceType("STI_SERVICE");
             p1.setServiceId(1L);
             p1.setPaymentMethod(com.healapp.model.PaymentMethod.VISA);
@@ -771,7 +771,6 @@ public class DataInitializerConfig implements CommandLineRunner {
     private void createPaymentInfosIfNotExists() {
         if (paymentInfoRepository.count() == 0 && userRepository.count() > 0) {
             com.healapp.model.PaymentInfo pi1 = new com.healapp.model.PaymentInfo();
-            pi1.setUserId(userRepository.findAll().get(0).getId());
             pi1.setCardNumber("4111111111111111");
             pi1.setCardHolderName("Nguyễn Văn A");
             pi1.setExpiryMonth("12");
@@ -782,6 +781,7 @@ public class DataInitializerConfig implements CommandLineRunner {
             pi1.setIsActive(true);
             pi1.setCreatedAt(java.time.LocalDateTime.now());
             pi1.setUpdatedAt(java.time.LocalDateTime.now());
+            pi1.setUser(userRepository.findAll().get(0)); // Sửa: truyền UserDtls thay vì id
             paymentInfoRepository.save(pi1);
         }
     }
@@ -856,7 +856,7 @@ public class DataInitializerConfig implements CommandLineRunner {
         if (paymentRepository.count() < 5 && userRepository.count() > 0) {
             for (int i = (int) paymentRepository.count(); i < 5; i++) {
                 Payment p = new Payment();
-                p.setUserId(userRepository.findAll().get(i % (int) userRepository.count()).getId());
+                p.setUser(userRepository.findAll().get(i % (int) userRepository.count())); // Sửa: truyền UserDtls thay vì id
                 p.setServiceType(i % 2 == 0 ? "STI_SERVICE" : "STI_PACKAGE");
                 p.setServiceId((long) ((i % 2) + 1));
                 p.setPaymentMethod(i % 3 == 0 ? com.healapp.model.PaymentMethod.VISA
@@ -949,7 +949,6 @@ public class DataInitializerConfig implements CommandLineRunner {
         if (paymentInfoRepository.count() < 5 && userRepository.count() > 0) {
             for (int i = (int) paymentInfoRepository.count(); i < 5; i++) {
                 PaymentInfo pi = new PaymentInfo();
-                pi.setUserId(userRepository.findAll().get(i % (int) userRepository.count()).getId());
                 pi.setCardNumber("411111111111111" + i); // 15 ký tự + 1 ký tự = 16 ký tự
                 pi.setCardHolderName("Holder " + (i + 1));
                 pi.setExpiryMonth(String.format("%02d", (i % 12) + 1));
@@ -960,6 +959,7 @@ public class DataInitializerConfig implements CommandLineRunner {
                 pi.setIsActive(true);
                 pi.setCreatedAt(java.time.LocalDateTime.now());
                 pi.setUpdatedAt(java.time.LocalDateTime.now());
+                pi.setUser(userRepository.findAll().get(i % (int) userRepository.count())); // Sửa: truyền UserDtls thay vì id
                 paymentInfoRepository.save(pi);
             }
         }
