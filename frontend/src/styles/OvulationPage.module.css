@@ -834,7 +834,7 @@ body, #root {
 }
 
 .adviceCardRegular:hover {
-  transform: translateY(-6px);
+  transform: translateY(-1px);
   box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
   border-color: rgba(99, 102, 241, 0.2);
 }
@@ -2113,7 +2113,8 @@ body, #root {
 }
 
 .editButton,
-.deleteButton {
+.deleteButton,
+.viewButton {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2125,6 +2126,22 @@ body, #root {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+}
+
+.viewButton {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.viewButton:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.viewButton:active {
+  transform: translateY(0px) scale(0.95);
 }
 
 .editButton {
@@ -2174,6 +2191,10 @@ body, #root {
   transform: rotate(-5deg);
 }
 
+.viewButton:hover .actionIcon {
+  transform: scale(1.1);
+}
+
 /* Responsive design for action buttons */
 @media (max-width: 768px) {
   .cycleItemActions {
@@ -2181,7 +2202,8 @@ body, #root {
   }
   
   .editButton,
-  .deleteButton {
+  .deleteButton,
+  .viewButton {
     width: 36px;
     height: 36px;
   }

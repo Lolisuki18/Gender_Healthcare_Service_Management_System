@@ -58,6 +58,35 @@ const ovulationService = {
     }
   },
 
+  // Lấy tỉ lệ mang thai cho một chu kỳ cụ thể
+  getPregnancyProbabilityByCycle: async (cycleId) => {
+    try {
+      const response = await apiClient.get(`${API_URL}/${cycleId}/pregnancy-prob`, {
+        skipAutoRedirect: true,
+      });
+      console.log('🔍 [getPregnancyProbabilityByCycle] Response:', response);
+      return response.data;
+    } catch (error) {
+      console.error('❌ [getPregnancyProbabilityByCycle] Error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Lấy tỉ lệ mang thai cho một ngày cụ thể trong chu kỳ
+  getPregnancyProbabilityByDate: async (cycleId, date) => {
+    try {
+      const formattedDate = date instanceof Date ? date.toISOString().split('T')[0] : date;
+      const response = await apiClient.get(`${API_URL}/${cycleId}/pregnancy-prob/${formattedDate}`, {
+        skipAutoRedirect: true,
+      });
+      console.log('🔍 [getPregnancyProbabilityByDate] Response:', response);
+      return response.data;
+    } catch (error) {
+      console.error('❌ [getPregnancyProbabilityByDate] Error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
   // ===================================== Xử lí thông tin =====================================
   // Khai báo chu kỳ kinh nguyệt
   createMenstrualCycle: async (cycleData) => {
