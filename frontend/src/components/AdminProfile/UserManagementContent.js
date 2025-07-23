@@ -3,7 +3,7 @@
  *
  * Trang quản lý người dùng cho Admin
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -29,6 +29,7 @@ import {
   Grid,
   MenuItem,
   CircularProgress,
+  TablePagination,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -70,6 +71,9 @@ const UserManagementContent = () => {
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [addUserFieldErrors, setAddUserFieldErrors] = useState({}); // Thêm state lưu lỗi từng trường
 
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -86,9 +90,7 @@ const UserManagementContent = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Đang tải danh sách người dùng...');
       const response = await adminService.getAllUsers();
-      console.log('Response từ API:', response);
 
       if (response && response.data) {
         let userData = response.data;
@@ -102,7 +104,6 @@ const UserManagementContent = () => {
         }
 
         setUsers(userData);
-        console.log('Đã tải thành công:', userData.length, 'người dùng');
       } else if (Array.isArray(response)) {
         let userData = response;
 
@@ -115,7 +116,6 @@ const UserManagementContent = () => {
         }
 
         setUsers(userData);
-        console.log('Đã tải thành công:', userData.length, 'người dùng');
       } else {
         console.warn('Format response không như mong đợi:', response);
         setUsers([]);
@@ -155,10 +155,17 @@ const UserManagementContent = () => {
     },
   ];
 
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   const handleEdit = async (userId) => {
     const user = users.find((u) => u.id === userId);
-    console.log('🔍 User found for edit:', user);
-    console.log('🔍 User role:', user?.role);
 
     if (!user) return;
 
@@ -182,8 +189,6 @@ const UserManagementContent = () => {
       role: user.role || user.Role || '',
     };
 
-    console.log('🔍 User to edit prepared:', userToEdit);
-
     setEditingUser(userToEdit);
     setOpenEditModal(true);
   };
@@ -198,20 +203,13 @@ const UserManagementContent = () => {
         return;
       }
 
-      console.log('🔍 User từ state:', user);
-
       setSelectedUser(user);
       setOpenViewModal(true);
 
       if (user.role === 'CONSULTANT') {
-        console.log('📞 Đang gọi API getConsultantDetails cho userId:', userId);
-
         const response = await adminService.getConsultantDetails(userId);
 
-        console.log('📋 Raw response từ API:', response);
-
         const consultantDetails = response.data || response;
-        console.log('📋 Consultant details:', consultantDetails);
 
         const mappedUser = {
           id: user.id,
@@ -244,10 +242,8 @@ const UserManagementContent = () => {
           _hasDetailedInfo: true,
         };
 
-        console.log('🔄 Mapped user data:', mappedUser);
         setSelectedUser(mappedUser);
       } else {
-        console.log('ℹ️ Không phải consultant, chỉ hiển thị thông tin cơ bản');
       }
     } catch (error) {
       console.error('❌ Lỗi khi lấy thông tin chi tiết:', error);
@@ -275,14 +271,6 @@ const UserManagementContent = () => {
   const handleEditSubmit = async (formData) => {
     const user = editingUser;
 
-    console.log('🔍 Edit submit - Original user:', user);
-    console.log('🔍 Edit submit - Form data:', formData);
-    console.log('🔍 Edit submit - Role comparison:', {
-      originalRole: user?.role,
-      newRole: formData?.role,
-      isRoleChanged: formData?.role !== user?.role,
-    });
-
     if (formData.role && user.role && formData.role !== user.role) {
       const isConfirmed = await confirmDialog.warning(
         `Bạn đang thay đổi vai trò từ "${getRoleDisplayName(
@@ -301,8 +289,6 @@ const UserManagementContent = () => {
     }
 
     try {
-      console.log('🔄 Đang cập nhật thông tin người dùng:', formData);
-
       const response = await adminService.updateUser(formData.id, user.role, {
         fullName: formData.fullName,
         username: formData.username,
@@ -328,8 +314,6 @@ const UserManagementContent = () => {
 
       setOpenEditModal(false);
       setEditingUser(null);
-
-      console.log('✅ Cập nhật người dùng thành công');
     } catch (error) {
       console.error('❌ Lỗi khi cập nhật người dùng:', error);
       const errorMessage =
@@ -345,9 +329,6 @@ const UserManagementContent = () => {
     setIsCreatingUser(true);
     setAddUserFieldErrors({}); // Reset lỗi trước khi submit
     try {
-      console.log('Đang tạo người dùng mới:', formData);
-      console.log('Loại người dùng:', userType);
-
       const result = await adminService.addNewUserAccount(formData);
 
       if (result && result.success) {
@@ -366,8 +347,6 @@ const UserManagementContent = () => {
         setOpenAddUserModal(false); // Đóng modal khi thành công
         setAddUserFieldErrors({}); // Reset lỗi khi thành công
         setModalType('');
-
-        console.log('Tạo người dùng thành công:', result);
       }
     } catch (error) {
       console.error('Lỗi khi tạo người dùng:', error);
@@ -407,25 +386,16 @@ const UserManagementContent = () => {
     setOpenAddUserModal(true); // Mở modal
   };
 
-  const getFilteredUsers = () => {
-    console.log('=== FILTERING USERS ===');
-    console.log('Original users count:', users.length);
-    console.log('Search term:', searchTerm);
-    console.log('Selected tab:', userCategories[selectedTab]?.value);
-    console.log('Role filter:', roleFilter);
-    console.log('Status filter:', statusFilter);
-
+  const filteredUsers = useMemo(() => {
     let filtered = users.filter((user) => user.role !== 'ADMIN');
 
     const currentTab = userCategories[selectedTab]?.value;
     if (currentTab && currentTab !== 'all') {
       filtered = filtered.filter((u) => u.role === currentTab);
-      console.log('After tab filter:', filtered.length);
     }
 
     if (currentTab === 'all' && roleFilter !== 'all') {
       filtered = filtered.filter((u) => u.role === roleFilter);
-      console.log('After role filter:', filtered.length);
     }
 
     if (statusFilter !== 'all') {
@@ -436,11 +406,9 @@ const UserManagementContent = () => {
       } else if (statusFilter === 'Đã xóa') {
         filtered = filtered.filter((u) => u.isDeleted === true);
       }
-      console.log('After status filter:', filtered.length);
     } else {
       // Mặc định không hiển thị user đã xóa
       filtered = filtered.filter((u) => !u.isDeleted);
-      console.log('After default filter (exclude deleted):', filtered.length);
     }
 
     if (searchTerm && searchTerm.trim() !== '') {
@@ -457,29 +425,33 @@ const UserManagementContent = () => {
 
         return nameMatch || usernameMatch || emailMatch || phoneMatch;
       });
-      console.log('After search filter:', filtered.length);
     }
 
-    console.log('Final filtered users:', filtered.length);
     return filtered;
-  };
+  }, [users, searchTerm, selectedTab, roleFilter, statusFilter]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
-    console.log('Search input changed to:', value);
     setSearchTerm(value);
+    setPage(0);
   };
-
-  useEffect(() => {
-    console.log('Search term changed:', searchTerm);
-    console.log('Filtered users:', getFilteredUsers());
-  }, [searchTerm, selectedTab, roleFilter, statusFilter]);
 
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
     if (userCategories[newValue]?.value !== 'all') {
       setRoleFilter('all');
     }
+    setPage(0);
+  };
+
+  const handleRoleFilterChange = (e) => {
+    setRoleFilter(e.target.value);
+    setPage(0);
+  };
+
+  const handleStatusFilterChange = (e) => {
+    setStatusFilter(e.target.value);
+    setPage(0);
   };
 
   const getRoleColor = (role) => {
@@ -496,8 +468,6 @@ const UserManagementContent = () => {
         return 'default';
     }
   };
-
-  const filteredUsers = getFilteredUsers();
 
   if (loading) {
     return (
@@ -670,8 +640,8 @@ const UserManagementContent = () => {
                     display: 'block',
                   }}
                 >
-                  Đang tìm: "{searchTerm}" - Kết quả:{' '}
-                  {getFilteredUsers().length} người dùng
+                  Đang tìm: "{searchTerm}" - Kết quả: {filteredUsers.length}{' '}
+                  người dùng
                 </Typography>
               )}
             </Grid>
@@ -683,7 +653,7 @@ const UserManagementContent = () => {
                   <Select
                     value={roleFilter}
                     label="Vai trò"
-                    onChange={(e) => setRoleFilter(e.target.value)}
+                    onChange={handleRoleFilterChange}
                   >
                     <MenuItem value="all">Tất cả</MenuItem>
                     <MenuItem value="CONSULTANT">Tư vấn viên</MenuItem>
@@ -704,7 +674,7 @@ const UserManagementContent = () => {
                 <Select
                   value={statusFilter}
                   label="Trạng thái"
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={handleStatusFilterChange}
                 >
                   <MenuItem value="all">Tất cả</MenuItem>
                   <MenuItem value="Hoạt động">Hoạt động</MenuItem>
@@ -720,7 +690,7 @@ const UserManagementContent = () => {
       <Box sx={{ mb: 2 }}>
         <Typography variant="body2" sx={{ color: '#4A5568' }}>
           {' '}
-          Hiển thị {getFilteredUsers().length} /{' '}
+          Hiển thị {filteredUsers.length} /{' '}
           {users.filter((user) => user.role !== 'ADMIN').length} người dùng
           {userCategories[selectedTab]?.label !== 'Tất cả' &&
             ` trong danh mục "${userCategories[selectedTab]?.label}"`}
@@ -762,7 +732,13 @@ const UserManagementContent = () => {
             </TableHead>
             <TableBody>
               {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
+                (rowsPerPage > 0
+                  ? filteredUsers.slice(
+                      page * rowsPerPage,
+                      page * rowsPerPage + rowsPerPage
+                    )
+                  : filteredUsers
+                ).map((user) => (
                   <TableRow
                     key={user.id}
                     hover
@@ -942,6 +918,19 @@ const UserManagementContent = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 20]}
+          component="div"
+          count={filteredUsers.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Người dùng mỗi trang:"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}–${to} / ${count}`
+          }
+        />
       </Card>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>

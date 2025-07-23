@@ -45,6 +45,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const MetricCard = ({ title, value, change, icon: Icon, color }) => (
   <Card
@@ -205,6 +207,50 @@ const ReportsContent = () => {
     setUserError(null);
   };
 
+  // Hàm xuất PDF
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('BÁO CÁO DOANH THU', 14, 18);
+    doc.setFontSize(12);
+    doc.text(
+      `Tổng doanh thu: ${summary ? Number(summary.totalRevenue).toLocaleString() + ' VNĐ' : '-'}`,
+      14,
+      30
+    );
+    doc.text(
+      `Số giao dịch thành công: ${summary ? summary.totalTransactions : '-'}`,
+      14,
+      38
+    );
+    doc.text(
+      `Doanh thu trung bình: ${summary ? Number(summary.averageRevenue).toLocaleString() + ' VNĐ' : '-'}`,
+      14,
+      46
+    );
+    doc.text(
+      `Số khách hàng thanh toán: ${summary ? summary.totalCustomers : '-'}`,
+      14,
+      54
+    );
+    doc.autoTable({
+      startY: 62,
+      head: [
+        ['Mã GD', 'Khách hàng', 'Số tiền', 'Ngày thanh toán', 'Phương thức'],
+      ],
+      body: transactions.map((t) => [
+        t.paymentId,
+        t.customerName || t.userId,
+        Number(t.amount).toLocaleString() + ' VNĐ',
+        t.paidAt ? formatDateTime(t.paidAt) : '-',
+        t.paymentMethod,
+      ]),
+      styles: { font: 'helvetica', fontSize: 10 },
+      headStyles: { fillColor: [74, 144, 226] },
+    });
+    doc.save('bao_cao_doanh_thu.pdf');
+  };
+
   // Xử lý loading/error
   if (loading) return <Typography>Đang tải báo cáo...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
@@ -226,6 +272,15 @@ const ReportsContent = () => {
         >
           <TrendingUpIcon sx={{ mr: 2, color: '#4A90E2', fontSize: 32 }} />
           Báo cáo & Doanh thu
+          {/* Nút xuất PDF */}
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{ ml: 2 }}
+            onClick={handleExportPDF}
+          >
+            Xuất PDF
+          </Button>
         </Typography>
         <Typography
           variant="body1"
