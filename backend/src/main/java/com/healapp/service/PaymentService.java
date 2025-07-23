@@ -554,7 +554,7 @@ public class PaymentService {
     public ApiResponse<List<Payment>> getPaymentsByUser(String username) {
         try {
             Long userId = userService.getUserIdFromUsername(username);
-            List<Payment> payments = paymentRepository.findByUserIdOrderByCreatedAtDesc(userId);
+            List<Payment> payments = paymentRepository.findByUser_IdOrderByCreatedAtDesc(userId);
 
             log.info("Retrieved {} payments for user: {}", payments.size(), username);
             return ApiResponse.success("User payments retrieved", payments);
