@@ -883,7 +883,7 @@ const QuestionsContent = () => {
                   ? 'Đã trả lời'
                   : detailQuestion.status === 'CANCELED'
                     ? 'Đã huỷ'
-                    : 'Đang chờ'}
+                    : 'Đã xác nhận'}
               </Typography>
               {detailQuestion.status === 'ANSWERED' && (
                 <Box sx={{ display: 'flex', gap: 3, mb: 2 }}>
