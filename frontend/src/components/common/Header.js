@@ -393,7 +393,7 @@ const Header = () => {
                     },
                   }}
                 >
-                  Hồ sơ
+                  Bảng điều khiển
                 </MenuItem>
 
                 {/* Đăng xuất khỏi hệ thống */}

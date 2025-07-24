@@ -73,6 +73,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import SampleCollectionModal from './modals/SampleCollectionModal';
 import TestResultInputModal from './modals/TestResultInputModal';
 import FinalTestResultModal from './modals/FinalTestResultModal';
+import TestConfirmationModal from './modals/TestConfirmationModal';
 import { confirmDialog } from '../../utils/confirmDialog';
 import { notify } from '@/utils/notify';
 import CanceledTestDetailModal from './modals/CanceledTestDetailModal';
@@ -177,6 +178,11 @@ const STITestManagementContent = () => {
   const [openFinalResultModal, setOpenFinalResultModal] = useState(false);
   const [openCanceledDetailModal, setOpenCanceledDetailModal] = useState(false);
   const [selectedCanceledTest, setSelectedCanceledTest] = useState(null);
+
+  // State cho modal xác nhận xét nghiệm
+  const [openConfirmModal, setOpenConfirmModal] = useState(false);
+  const [testToConfirm, setTestToConfirm] = useState(null);
+  const [confirmModalLoading, setConfirmModalLoading] = useState(false);
 
   const fetchTests = useCallback(async () => {
     setLoading(true);
@@ -947,56 +953,7 @@ const STITestManagementContent = () => {
                   size="small"
                   startIcon={<CheckCircleIcon />}
                   disabled={shouldDisableConfirm}
-                  onClick={async () => {
-                    // Lưu ID để có thể cập nhật UI trước khi API hoàn tất
-                    const testIdToUpdate = test.testId;
-
-                    // Trực tiếp cập nhật UI ngay lập tức (optimistic update)
-                    const optimisticUpdatedTests = tests.map((t) =>
-                      t.testId === testIdToUpdate
-                        ? { ...t, status: 'CONFIRMED' }
-                        : t
-                    );
-                    setTests(optimisticUpdatedTests);
-
-                    // Cập nhật filteredTests dựa theo tab hiện tại
-                    if (tabValue === 1) {
-                      // Nếu đang ở tab "Chờ xử lý"
-                      // Xóa test đã được xác nhận khỏi danh sách filteredTests
-                      const newFilteredTests = filteredTests.filter(
-                        (t) => t.testId !== testIdToUpdate
-                      );
-                      setFilteredTests(newFilteredTests);
-                    }
-
-                    // Giảm số lượng pending
-                    setPendingCount((prev) => Math.max(0, prev - 1));
-
-                    // Hiển thị thông báo thành công
-                    setSuccess(
-                      `Đang xác nhận xét nghiệm #${testIdToUpdate}...`
-                    );
-
-                    // Vẫn gọi API để xác nhận trên server
-                    const success =
-                      await handleConfirmTestAction(testIdToUpdate);
-
-                    // Nếu thành công, cập nhật lại dữ liệu từ server để đồng bộ
-                    if (success) {
-                      setTimeout(() => fetchTests(), 500);
-                    } else {
-                      // Nếu thất bại, hoàn tác UI về trạng thái cũ
-                      const revertedTests = tests.map((t) =>
-                        t.testId === testIdToUpdate
-                          ? { ...t, status: 'PENDING' }
-                          : t
-                      );
-                      setTests(revertedTests);
-
-                      // Cập nhật lại filteredTests
-                      fetchTests();
-                    }
-                  }}
+                  onClick={() => handleOpenConfirmModal(test)}
                   sx={{
                     background: shouldDisableConfirm
                       ? 'linear-gradient(45deg, #ccc, #999)'
@@ -1343,6 +1300,70 @@ const STITestManagementContent = () => {
     setOpenCanceledDetailModal(true);
   };
 
+  // Hàm mở modal xác nhận xét nghiệm
+  const handleOpenConfirmModal = (test) => {
+    setTestToConfirm(test);
+    setOpenConfirmModal(true);
+  };
+
+  // Hàm xác nhận xét nghiệm từ modal
+  const handleConfirmFromModal = async () => {
+    if (!testToConfirm) return;
+
+    setConfirmModalLoading(true);
+    try {
+      // Lưu ID để có thể cập nhật UI trước khi API hoàn tất
+      const testIdToUpdate = testToConfirm.testId;
+
+      // Trực tiếp cập nhật UI ngay lập tức (optimistic update)
+      const optimisticUpdatedTests = tests.map((t) =>
+        t.testId === testIdToUpdate ? { ...t, status: 'CONFIRMED' } : t
+      );
+      setTests(optimisticUpdatedTests);
+
+      // Cập nhật filteredTests dựa theo tab hiện tại
+      if (tabValue === 1) {
+        // Nếu đang ở tab "Chờ xử lý"
+        // Xóa test đã được xác nhận khỏi danh sách filteredTests
+        const newFilteredTests = filteredTests.filter(
+          (t) => t.testId !== testIdToUpdate
+        );
+        setFilteredTests(newFilteredTests);
+      }
+
+      // Giảm số lượng pending
+      setPendingCount((prev) => Math.max(0, prev - 1));
+
+      // Hiển thị thông báo thành công
+      setSuccess(`Đang xác nhận xét nghiệm #${testIdToUpdate}...`);
+
+      // Vẫn gọi API để xác nhận trên server
+      const success = await handleConfirmTestAction(testIdToUpdate);
+
+      if (success) {
+        // Đóng modal khi thành công
+        setOpenConfirmModal(false);
+        setTestToConfirm(null);
+        setTimeout(() => fetchTests(), 500);
+      } else {
+        // Nếu thất bại, hoàn tác UI về trạng thái cũ
+        const revertedTests = tests.map((t) =>
+          t.testId === testIdToUpdate ? { ...t, status: 'PENDING' } : t
+        );
+        setTests(revertedTests);
+
+        // Cập nhật lại filteredTests
+        fetchTests();
+      }
+    } catch (error) {
+      console.error('Error confirming test:', error);
+      // Nếu có lỗi, hoàn tác UI
+      fetchTests();
+    } finally {
+      setConfirmModalLoading(false);
+    }
+  };
+
   return (
     <Container maxWidth="xl" sx={{ mt: 3, mb: 4 }}>
       <Paper
@@ -1580,6 +1601,17 @@ const STITestManagementContent = () => {
           onClose={() => setOpenCanceledDetailModal(false)}
           test={selectedCanceledTest}
           formatDateDisplay={formatDateDisplay}
+        />
+        {/* Modal xác nhận xét nghiệm */}
+        <TestConfirmationModal
+          open={openConfirmModal}
+          onClose={() => setOpenConfirmModal(false)}
+          test={testToConfirm}
+          onConfirm={handleConfirmFromModal}
+          loading={confirmModalLoading}
+          formatAppointmentDate={formatAppointmentDate}
+          renderStatusChip={renderStatusChip}
+          PAYMENT_LABELS={PAYMENT_LABELS}
         />
       </Paper>
     </Container>
