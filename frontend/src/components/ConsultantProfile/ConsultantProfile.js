@@ -86,7 +86,7 @@ const ConsultantProfile = ({ user = {} }) => {
       case 'my-consultations':
         return 'Lịch tư vấn của tôi';
       case 'sti-tests':
-        return 'Quản lý STI Tests';
+        return 'Quản lý dịch vụ xét nghiệm STI';
       case 'my-reviews':
         return 'Đánh giá của tôi';
       case 'blog-customer':

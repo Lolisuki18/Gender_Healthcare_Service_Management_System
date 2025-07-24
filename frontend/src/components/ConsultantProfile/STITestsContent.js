@@ -400,11 +400,11 @@ const STITestsContent = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <LocalHospitalIcon sx={{ fontSize: 36, mr: 2 }} />
           <Box>
-            <Typography variant="h4" fontWeight="bold">
+            {/* <Typography variant="h4" fontWeight="bold">
               Quản lý Xét nghiệm STI
-            </Typography>
-            <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-              Hệ thống quản lý xét nghiệm bệnh lây truyền qua đường tình dục
+            </Typography> */}
+            <Typography variant="h4" fontWeight="bold" sx={{ opacity: 0.9 }}>
+              Kết luận xét nghiệm bệnh lây truyền qua đường tình dục
             </Typography>
           </Box>
         </Box>

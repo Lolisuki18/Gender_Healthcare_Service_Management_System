@@ -439,14 +439,6 @@ const PaymentInfoContent = () => {
           alignItems="center"
           mb={3}
         >
-          <Typography
-            variant="h4"
-            component="h1"
-            color="primary"
-            fontWeight="bold"
-          >
-            Thông tin thanh toán
-          </Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}

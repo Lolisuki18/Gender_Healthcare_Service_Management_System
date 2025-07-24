@@ -1077,35 +1077,7 @@ const MyConsultationsContent = () => {
   return (
     <GradientBackground>
       <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: '1400px', mx: 'auto' }}>
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography
-            variant="h3"
-            sx={{
-              background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              color: 'transparent',
-              fontWeight: 700,
-              mb: 2,
-              textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            }}
-          >
-            Lịch tư vấn của tôi
-          </Typography>
-          <Typography
-            variant="h6"
-            sx={{
-              color: 'text.secondary',
-              fontWeight: 400,
-              maxWidth: '600px',
-              mx: 'auto',
-              lineHeight: 1.6,
-            }}
-          >
-            Quản lý và theo dõi lịch tư vấn chuyên nghiệp - Chăm sóc sức khỏe
-            tận tâm
-          </Typography>
-        </Box>{' '}
+        {' '}
         <StyledPaper elevation={0} sx={{ p: 3, mb: 4 }}>
           <Box
             sx={{

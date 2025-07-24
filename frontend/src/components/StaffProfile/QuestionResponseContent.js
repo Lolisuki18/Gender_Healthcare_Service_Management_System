@@ -336,7 +336,7 @@ const QuestionResponseContent = () => {
         </Avatar>
         <Box>
           <Typography variant="h4" fontWeight={700} mb={1} letterSpacing={0.5}>
-            Trả lời câu hỏi
+            Câu hỏi từ khách hàng
           </Typography>
           <Typography variant="body1" sx={{ opacity: 0.92, fontWeight: 400 }}>
             Quản lý và phản hồi các câu hỏi từ khách hàng

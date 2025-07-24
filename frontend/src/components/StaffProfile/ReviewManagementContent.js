@@ -320,7 +320,7 @@ const ReviewManagementContent = () => {
       {/* Header with gradient */}
       <Box sx={pageStyles.gradientBackground}>
         <Typography variant="h4" sx={pageStyles.pageTitle}>
-          Quản lý đánh giá
+          Đánh giá từ khách hàng
         </Typography>
         <Typography variant="body1" sx={pageStyles.pageSubtitle}>
           Xem và phản hồi đánh giá từ khách hàng
