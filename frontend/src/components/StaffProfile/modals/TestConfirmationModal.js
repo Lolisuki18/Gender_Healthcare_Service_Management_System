@@ -188,7 +188,7 @@ const TestConfirmationModal = ({
 
             {/* Hiển thị thông tin các xét nghiệm trong gói */}
             {test.packageId && test.testServiceConsultantNotes && (
-              <Grid item xs={12}>
+              <Grid item size={12} xs={12}>
                 <Paper
                   elevation={1}
                   sx={{ p: 2, backgroundColor: '#f0f9ff', borderRadius: 2 }}
@@ -262,9 +262,16 @@ const TestConfirmationModal = ({
               )}
             </Paper>
           </Grid>
+
           <Box
             sx={{ mt: 4, p: 2, backgroundColor: '#e8f5e8', borderRadius: 2 }}
           >
+            <Typography
+              variant="h6"
+              sx={{ mb: 3, color: '#FF9800', fontWeight: 600 }}
+            >
+              Lưu ý⚠️
+            </Typography>
             <Typography variant="body1" color="success.main" fontWeight={500}>
               ✓ Xác nhận xét nghiệm này sẽ chuyển trạng thái từ "Chờ xử lý" sang
               "Đã xác nhận"

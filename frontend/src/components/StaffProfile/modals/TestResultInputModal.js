@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import { getConclusionOptions } from '../../../services/stiService';
 import api from '../../../services/api';
+import { notify } from '../../../utils/notify';
 
 const MEDICAL_GRADIENT = 'linear-gradient(45deg, #4A90E2, #1ABC9C)';
 const FONT_FAMILY = '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
@@ -57,6 +58,7 @@ const TestResultInputModal = ({
   const [selectedConsultantId, setSelectedConsultantId] = useState('');
   const [assigningConsultant, setAssigningConsultant] = useState(false);
   const [assignSuccess, setAssignSuccess] = useState('');
+  const [validationErrors, setValidationErrors] = useState([]);
 
   // Load conclusion options
   useEffect(() => {
@@ -149,6 +151,11 @@ const TestResultInputModal = ({
   }, [open, test]);
 
   const handleChange = (idx, field, value) => {
+    // Clear validation errors khi user thay đổi dữ liệu
+    if (validationErrors.length > 0) {
+      setValidationErrors([]);
+    }
+
     if (isPackage && selectedService && selectedService.id) {
       const svcId = selectedService.id;
       setResultsMap((prev) => ({
@@ -169,7 +176,98 @@ const TestResultInputModal = ({
     }
   };
 
+  // Hàm kiểm tra xem đã nhập đầy đủ kết quả chưa
+  const isAllResultsCompleted = () => {
+    if (isPackage) {
+      // Với package, kiểm tra tất cả service trong package
+      if (!packageServices || packageServices.length === 0) return false;
+
+      return packageServices.every((service) => {
+        const serviceResults = resultsMap[service.id];
+        if (!serviceResults || serviceResults.length === 0) return false;
+
+        return serviceResults.every(
+          (result) =>
+            result.resultValue &&
+            result.resultValue.trim() !== '' &&
+            result.conclusion &&
+            result.conclusion.trim() !== ''
+        );
+      });
+    } else {
+      // Với single test, kiểm tra tất cả components
+      if (!results || results.length === 0) return false;
+
+      return results.every(
+        (result) =>
+          result.resultValue &&
+          result.resultValue.trim() !== '' &&
+          result.conclusion &&
+          result.conclusion.trim() !== ''
+      );
+    }
+  };
+
+  // Hàm kiểm tra và trả về thông báo lỗi cụ thể
+  const validateResultsForSaving = () => {
+    const errors = [];
+
+    if (isPackage) {
+      packageServices.forEach((service) => {
+        const serviceResults = resultsMap[service.id];
+        if (!serviceResults || serviceResults.length === 0) return;
+
+        serviceResults.forEach((result, resultIndex) => {
+          const hasResult =
+            result.resultValue && result.resultValue.trim() !== '';
+          const hasConclusion =
+            result.conclusion && result.conclusion.trim() !== '';
+
+          if (hasResult && !hasConclusion) {
+            const componentName =
+              components[resultIndex]?.componentName ||
+              components[resultIndex]?.testName ||
+              `Thành phần ${resultIndex + 1}`;
+            errors.push(
+              `${service.name || service.serviceName} - ${componentName}: Đã nhập kết quả nhưng chưa chọn kết luận`
+            );
+          }
+        });
+      });
+    } else {
+      results.forEach((result, index) => {
+        const hasResult =
+          result.resultValue && result.resultValue.trim() !== '';
+        const hasConclusion =
+          result.conclusion && result.conclusion.trim() !== '';
+
+        if (hasResult && !hasConclusion) {
+          const componentName =
+            components[index]?.componentName ||
+            components[index]?.testName ||
+            `Thành phần ${index + 1}`;
+          errors.push(
+            `${componentName}: Đã nhập kết quả nhưng chưa chọn kết luận`
+          );
+        }
+      });
+    }
+
+    return errors;
+  };
+
   const handleSaveAll = () => {
+    // Kiểm tra validation trước khi lưu
+    const errors = validateResultsForSaving();
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      notify.error('Lỗi lưu kết quả', 'Vui lòng kiểm tra các lỗi bên dưới');
+      return;
+    }
+
+    // Clear validation errors nếu không có lỗi
+    setValidationErrors([]);
+
     if (onSaveAll) {
       let finalResults = [];
       if (isPackage) {
@@ -204,10 +302,24 @@ const TestResultInputModal = ({
         status: 'RESULTED',
         results: uniqueResults,
       });
+
+      // Hiển thị thông báo thành công
+      notify.success('Thành công', 'Lưu kết quả xét nghiệm thành công!');
     }
   };
 
   const handleComplete = () => {
+    // Kiểm tra validation trước khi hoàn tất
+    const errors = validateResultsForSaving();
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      notify.error('Lỗi lưu kết quả', 'Vui lòng kiểm tra các lỗi bên dưới');
+      return;
+    }
+
+    // Clear validation errors nếu không có lỗi
+    setValidationErrors([]);
+
     if (onComplete) {
       let finalResults = [];
       if (isPackage) {
@@ -237,6 +349,9 @@ const TestResultInputModal = ({
           results: uniqueResults,
         });
       }
+
+      // Hiển thị thông báo thành công
+      notify.success('Thành công', 'Hoàn tất xét nghiệm thành công!');
     }
   };
 
@@ -269,8 +384,12 @@ const TestResultInputModal = ({
       setSelectedConsultantId(selectedConsultantId);
       setAssignSuccess('Đã chọn Tư Vấn Viên thành công!');
       setTimeout(() => setAssignSuccess(''), 2500);
+
+      // Hiển thị thông báo thành công
+      notify.success('Thành công', 'Gán tư vấn viên thành công!');
     } catch (err) {
       alert('Gán consultant thất bại!');
+      notify.error('Lỗi', 'Gán tư vấn viên thất bại!');
     } finally {
       setAssigningConsultant(false);
     }
@@ -447,11 +566,23 @@ const TestResultInputModal = ({
                           onChange={(e) =>
                             handleChange(idx, 'conclusion', e.target.value)
                           }
-                          disabled={loading}
+                          disabled={
+                            loading ||
+                            !resultsMap[selectedService.id][idx]?.resultValue ||
+                            resultsMap[selectedService.id][
+                              idx
+                            ]?.resultValue.trim() === ''
+                          }
                           displayEmpty
                         >
                           <MenuItem value="" disabled>
-                            Chọn kết luận
+                            {!resultsMap[selectedService.id][idx]
+                              ?.resultValue ||
+                            resultsMap[selectedService.id][
+                              idx
+                            ]?.resultValue.trim() === ''
+                              ? 'Vui lòng nhập kết quả trước'
+                              : 'Chọn kết luận'}
                           </MenuItem>
                           {conclusionOptions.map((option) => (
                             <MenuItem key={option.value} value={option.value}>
@@ -498,11 +629,18 @@ const TestResultInputModal = ({
                           onChange={(e) =>
                             handleChange(idx, 'conclusion', e.target.value)
                           }
-                          disabled={loading}
+                          disabled={
+                            loading ||
+                            !results[idx]?.resultValue ||
+                            results[idx]?.resultValue.trim() === ''
+                          }
                           displayEmpty
                         >
                           <MenuItem value="" disabled>
-                            Chọn kết luận
+                            {!results[idx]?.resultValue ||
+                            results[idx]?.resultValue.trim() === ''
+                              ? 'Vui lòng nhập kết quả trước'
+                              : 'Chọn kết luận'}
                           </MenuItem>
                           {conclusionOptions.map((option) => (
                             <MenuItem key={option.value} value={option.value}>
@@ -591,6 +729,20 @@ const TestResultInputModal = ({
             {success}
           </Alert>
         )}
+        {validationErrors.length > 0 && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Lỗi lưu kết quả:
+            </Typography>
+            <ul style={{ margin: 0, paddingLeft: '20px' }}>
+              {validationErrors.map((error, index) => (
+                <li key={index} style={{ marginBottom: '4px' }}>
+                  {error}
+                </li>
+              ))}
+            </ul>
+          </Alert>
+        )}
 
         {renderContent()}
 
@@ -602,18 +754,38 @@ const TestResultInputModal = ({
                 {assignSuccess}
               </Alert>
             )}
+
+            {/* Hiển thị cảnh báo nếu chưa nhập đầy đủ kết quả */}
+            {!isAllResultsCompleted() && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                Vui lòng nhập đầy đủ kết quả và kết luận cho tất cả các thành
+                phần trước khi chọn tư vấn viên.
+              </Alert>
+            )}
+
             <Grid container spacing={2} alignItems="center">
               <Grid item size={12} xs={12} md={6}>
                 <FormControl fullWidth size="small" sx={{ mb: 2 }}>
                   <InputLabel id="consultant-select-label">
-                    Chọn Tư Vấn Viên
+                    {isAllResultsCompleted()
+                      ? 'Chọn Tư Vấn Viên'
+                      : 'Hoàn tất kết quả trước khi chọn tư vấn viên'}
                   </InputLabel>
                   <Select
                     labelId="consultant-select-label"
                     value={selectedConsultantId}
                     onChange={(e) => setSelectedConsultantId(e.target.value)}
-                    label="Chọn consultant"
-                    sx={{ background: '#fff', borderRadius: 1 }}
+                    label={
+                      isAllResultsCompleted()
+                        ? 'Chọn consultant'
+                        : 'Hoàn tất kết quả trước khi chọn tư vấn viên'
+                    }
+                    sx={{
+                      background: '#fff',
+                      borderRadius: 1,
+                      opacity: isAllResultsCompleted() ? 1 : 0.6,
+                    }}
+                    disabled={!isAllResultsCompleted()}
                   >
                     {consultants.map((c) => (
                       <MenuItem key={c.userId || c.id} value={c.userId || c.id}>
@@ -626,25 +798,39 @@ const TestResultInputModal = ({
                   variant="contained"
                   sx={{
                     mt: 1,
-                    background: MEDICAL_GRADIENT,
+                    background: isAllResultsCompleted()
+                      ? MEDICAL_GRADIENT
+                      : '#9e9e9e',
                     color: '#fff',
                     fontWeight: 600,
                     boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
                   }}
                   onClick={handleAssignConsultant}
-                  disabled={!selectedConsultantId || assigningConsultant}
+                  disabled={
+                    !selectedConsultantId ||
+                    assigningConsultant ||
+                    !isAllResultsCompleted()
+                  }
                   fullWidth
                 >
-                  {assigningConsultant ? 'Đang gán...' : 'Chọn consultant này'}
+                  {assigningConsultant
+                    ? 'Đang gán...'
+                    : !isAllResultsCompleted()
+                      ? 'Hoàn tất kết quả trước'
+                      : 'Chọn consultant này'}
                 </Button>
               </Grid>
               <Grid item size={12} xs={12} md={6}>
                 {/* Nếu là package, hiển thị note từng service */}
-                {isPackage && Array.isArray(test?.testServiceConsultantNotes) ? (
+                {isPackage &&
+                Array.isArray(test?.testServiceConsultantNotes) ? (
                   <Box>
                     {test.testServiceConsultantNotes.map((n) => (
                       <Box key={n.serviceId} sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 600, mb: 0.5 }}
+                        >
                           {n.serviceName || `Dịch vụ #${n.serviceId}`}
                         </Typography>
                         <TextField
@@ -719,15 +905,16 @@ const TestResultInputModal = ({
             variant="contained"
             disabled={
               loading ||
-              (
-                isPackage
-                  ? !(
-                      Array.isArray(test?.testServiceConsultantNotes) &&
-                      test.testServiceConsultantNotes.length > 0 &&
-                      test.testServiceConsultantNotes.every(n => n.note && n.note.trim() !== '')
+              !isAllResultsCompleted() ||
+              (isPackage
+                ? !(
+                    Array.isArray(test?.testServiceConsultantNotes) &&
+                    test.testServiceConsultantNotes.length > 0 &&
+                    test.testServiceConsultantNotes.every(
+                      (n) => n.note && n.note.trim() !== ''
                     )
-                  : !test?.consultantNotes || test.consultantNotes.trim() === ''
-              )
+                  )
+                : !test?.consultantNotes || test.consultantNotes.trim() === '')
             }
             sx={{
               background: MEDICAL_GRADIENT,
