@@ -146,9 +146,17 @@ public class QuestionService {
                 return ApiResponse.error("Only STAFF or CONSULTANT can answer questions");
             }
 
-            // Check if question is in CONFIRMED status
-            if (question.getStatus() != QuestionStatus.CONFIRMED) {
-                return ApiResponse.error("Only questions in CONFIRMED status can be answered");
+            // Check if question is in CONFIRMED status (for first-time answer) or ANSWERED
+            // status (for update)
+            if (question.getStatus() != QuestionStatus.CONFIRMED && question.getStatus() != QuestionStatus.ANSWERED) {
+                return ApiResponse.error("Only questions in CONFIRMED or ANSWERED status can be answered/updated");
+            }
+
+            // Check if user is the original replier for updates
+            if (question.getStatus() == QuestionStatus.ANSWERED && question.getReplier() != null) {
+                if (!question.getReplier().getId().equals(userId)) {
+                    return ApiResponse.error("Only the original replier can update the answer");
+                }
             }
 
             // Update question with answer
@@ -160,7 +168,11 @@ public class QuestionService {
             Question answeredQuestion = questionRepository.save(question);
             QuestionResponse response = mapToQuestionResponse(answeredQuestion);
 
-            return ApiResponse.success("Question answered successfully", response);
+            String successMessage = question.getAnswer() != null && !question.getAnswer().equals(request.getAnswer())
+                    ? "Answer updated successfully"
+                    : "Question answered successfully";
+
+            return ApiResponse.success(successMessage, response);
         } catch (Exception e) {
             return ApiResponse.error("Failed to answer question: " + e.getMessage());
         }
