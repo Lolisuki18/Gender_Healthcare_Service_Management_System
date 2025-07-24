@@ -46,31 +46,100 @@ const ConsultantTestResultDetailModal = ({
   const [serviceNotes, setServiceNotes] = useState({});
   const [savingServiceNote, setSavingServiceNote] = useState({});
 
+  // Đồng bộ consultantNote với test.consultantNotes khi test thay đổi
+  React.useEffect(() => {
+    setConsultantNote(test?.consultantNotes || '');
+  }, [test?.consultantNotes]);
+
   // Khi mở modal, load note từng service nếu là package
   React.useEffect(() => {
     if (isPackage && packageServices.length > 0 && test?.testId) {
       // Đồng bộ lại note từng service từ testServiceConsultantNotes
       const notesMap = {};
-      if (test?.testServiceConsultantNotes && Array.isArray(test.testServiceConsultantNotes)) {
-        test.testServiceConsultantNotes.forEach(n => {
+      if (
+        test?.testServiceConsultantNotes &&
+        Array.isArray(test.testServiceConsultantNotes)
+      ) {
+        test.testServiceConsultantNotes.forEach((n) => {
           notesMap[n.serviceId] = n.note || '';
         });
       }
       setServiceNotes(notesMap);
     }
-  }, [isPackage, packageServices, test?.testId, test?.testServiceConsultantNotes]);
+  }, [
+    isPackage,
+    packageServices,
+    test?.testId,
+    test?.testServiceConsultantNotes,
+  ]);
+
+  // Khi selectedService thay đổi, load note cho service đó vào TextField
+  React.useEffect(() => {
+    if (selectedService && test?.testServiceConsultantNotes) {
+      const savedNote = test.testServiceConsultantNotes.find(
+        (note) => note.serviceId === selectedService.id
+      );
+      if (savedNote && savedNote.note) {
+        setServiceNotes((prev) => ({
+          ...prev,
+          [selectedService.id]: savedNote.note,
+        }));
+      }
+    }
+  }, [selectedService, test?.testServiceConsultantNotes]);
+
+  // Debug effect để kiểm tra dữ liệu
+  React.useEffect(() => {
+    if (open) {
+      console.log('=== ConsultantTestResultDetailModal Debug ===');
+      console.log('isPackage:', isPackage);
+      console.log('packageServices:', packageServices);
+      console.log('selectedService:', selectedService);
+      console.log('components:', components);
+      console.log('test:', test);
+    }
+  }, [open, isPackage, packageServices, selectedService, components, test]);
 
   // Hàm lưu note cho từng service
   const handleSaveServiceNote = async (serviceId) => {
     if (!test?.testId || !serviceId) return;
-    setSavingServiceNote(prev => ({ ...prev, [serviceId]: true }));
+    setSavingServiceNote((prev) => ({ ...prev, [serviceId]: true }));
     try {
-      await updateConsultantNoteForService(test.testId, serviceId, consultantId, serviceNotes[serviceId] || '');
+      await updateConsultantNoteForService(
+        test.testId,
+        serviceId,
+        consultantId,
+        serviceNotes[serviceId] || ''
+      );
+
+      // Cập nhật lại dữ liệu note trong test object để hiển thị ngay lập tức
+      if (test && test.testServiceConsultantNotes) {
+        const noteIndex = test.testServiceConsultantNotes.findIndex(
+          (note) => note.serviceId === serviceId
+        );
+
+        if (noteIndex >= 0) {
+          // Cập nhật note đã có
+          test.testServiceConsultantNotes[noteIndex].note =
+            serviceNotes[serviceId] || '';
+          test.testServiceConsultantNotes[noteIndex].consultantId =
+            consultantId;
+        } else {
+          // Thêm note mới nếu chưa có
+          test.testServiceConsultantNotes.push({
+            serviceId: serviceId,
+            note: serviceNotes[serviceId] || '',
+            consultantId: consultantId,
+            consultantName: null, // Có thể cập nhật sau nếu cần
+          });
+        }
+      }
+
       notify.success('Thành công', 'Đã lưu kết luận cho dịch vụ!');
     } catch (e) {
       notify.error('Lỗi', 'Lưu kết luận thất bại!');
     } finally {
-      setSavingServiceNote(prev => ({ ...prev, [serviceId]: false }));
+      setSavingServiceNote((prev) => ({ ...prev, [serviceId]: false }));
     }
   };
 
@@ -101,19 +170,19 @@ const ConsultantTestResultDetailModal = ({
     }
   };
 
-  // Helper: Việt hóa kết luận
+  // Helper: Việt hóa kết luận và trả về màu sắc
   const getConclusionLabel = (conclusion) => {
     switch (conclusion) {
       case 'INFECTED':
-        return 'Bị nhiễm';
+        return { text: 'Bị nhiễm', color: '#d32f2f' }; // Màu đỏ
       case 'NOT_INFECTED':
-        return 'Không bị nhiễm';
+        return { text: 'Không bị nhiễm', color: '#2e7d32' }; // Màu xanh lá
       case 'ABNORMAL':
-        return 'Bất thường';
+        return { text: 'Bất thường', color: '#f57c00' }; // Màu vàng cam
       case 'INCONCLUSIVE':
-        return 'Không xác định';
+        return { text: 'Không xác định', color: '#757575' }; // Màu xám
       default:
-        return conclusion || '';
+        return { text: conclusion || '', color: '#757575' };
     }
   };
 
@@ -149,12 +218,39 @@ const ConsultantTestResultDetailModal = ({
         </TableHead>
         <TableBody>
           {comps.map((comp, idx) => (
-            <TableRow key={comp.componentId || comp.id || idx}>
+            <TableRow key={comp.componentId || comp.resultId || comp.id || idx}>
               <TableCell>{comp.componentName || comp.testName}</TableCell>
-              <TableCell>{comp.resultValue}</TableCell>
-              <TableCell>{comp.unit}</TableCell>
-              <TableCell>{comp.normalRange || comp.referenceRange}</TableCell>
-              <TableCell>{getConclusionLabel(comp.conclusion)}</TableCell>
+              <TableCell>{comp.resultValue || 'Chưa có'}</TableCell>
+              <TableCell>{comp.unit || ''}</TableCell>
+              <TableCell>
+                {comp.normalRange || comp.referenceRange || ''}
+              </TableCell>
+              <TableCell>
+                {comp.conclusion ? (
+                  (() => {
+                    const conclusionData = getConclusionLabel(comp.conclusion);
+                    return (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: conclusionData.color,
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                        }}
+                      >
+                        {conclusionData.text}
+                      </Typography>
+                    );
+                  })()
+                ) : (
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#757575', fontStyle: 'italic' }}
+                  >
+                    Chưa có kết luận
+                  </Typography>
+                )}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -165,13 +261,46 @@ const ConsultantTestResultDetailModal = ({
   // Render bảng kết quả cho package hoặc service đơn
   const renderResults = () => {
     if (isPackage && packageServices.length > 0) {
+      // Xác định service nào được chọn
+      const currentService = selectedService || packageServices[0];
+
+      // Lấy components cho service hiện tại
+      const getComponentsForService = (serviceId) => {
+        // Kiểm tra cấu trúc dữ liệu từ API
+        let resultsArray = [];
+
+        if (
+          test?.testResults?.results &&
+          Array.isArray(test.testResults.results)
+        ) {
+          // API structure: { results: [...] } - NEW FORMAT
+          resultsArray = test.testResults.results;
+        } else if (
+          test?.testResults?.data?.results &&
+          Array.isArray(test.testResults.data.results)
+        ) {
+          // API structure: { data: { results: [...] } } - OLD FORMAT
+          resultsArray = test.testResults.data.results;
+        } else if (test?.testResults && Array.isArray(test.testResults)) {
+          // Direct array structure
+          resultsArray = test.testResults;
+        } else {
+          return [];
+        }
+
+        // Lọc components theo serviceId
+        return resultsArray.filter((result) => result.serviceId === serviceId);
+      };
+
+      const currentComponents = currentService
+        ? getComponentsForService(currentService.id)
+        : [];
+
       return (
         <Box>
           <Box sx={{ mb: 2 }}>
             <Tabs
-              value={
-                selectedService ? selectedService.id : packageServices[0].id
-              }
+              value={currentService ? currentService.id : packageServices[0].id}
               onChange={(e, val) => {
                 const svc = packageServices.find((s) => s.id === val);
                 if (svc) onSelectService(svc);
@@ -188,17 +317,59 @@ const ConsultantTestResultDetailModal = ({
               ))}
             </Tabs>
           </Box>
-          {selectedService && components && components.length > 0 ? (
+
+          {/* Debug: Hiển thị thông tin để debug
+          {process.env.NODE_ENV === 'development' && (
+            <Box
+              sx={{ mb: 2, p: 1, backgroundColor: '#f0f0f0', fontSize: '12px' }}
+            >
+              <div>
+                Selected Service: {currentService ? currentService.id : 'None'}
+              </div>
+              <div>Current Components Length: {currentComponents.length}</div>
+              <div>
+                Test Results Structure:{' '}
+                {test?.testResults
+                  ? JSON.stringify(Object.keys(test.testResults))
+                  : 'undefined'}
+              </div>
+              <div>Package Services: {packageServices.length}</div>
+              <div>Test ID: {test?.testId}</div>
+              {currentComponents.length > 0 && (
+                <div>
+                  Component Service IDs:{' '}
+                  {currentComponents.map((c) => c.serviceId).join(', ')}
+                </div>
+              )}
+              {test?.testResults?.data?.results && (
+                <div>Total Results: {test.testResults.data.results.length}</div>
+              )}
+            </Box>
+          )} */}
+
+          {currentService && (
             <>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                {selectedService.name || selectedService.serviceName}
+                {currentService.name || currentService.serviceName}
               </Typography>
-              {renderComponentTable(components)}
+              {currentComponents && currentComponents.length > 0 ? (
+                renderComponentTable(currentComponents)
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 3 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Không có kết quả xét nghiệm cho dịch vụ này.
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: 'block' }}
+                  >
+                    Có thể kết quả chưa được cập nhật hoặc dịch vụ chưa được
+                    thực hiện.
+                  </Typography>
+                </Box>
+              )}
             </>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              Không có thành phần xét nghiệm cho dịch vụ này.
-            </Typography>
           )}
         </Box>
       );
@@ -209,9 +380,18 @@ const ConsultantTestResultDetailModal = ({
         {components && components.length > 0 ? (
           renderComponentTable(components)
         ) : (
-          <Typography variant="body2" color="text.secondary">
-            Không có thành phần xét nghiệm.
-          </Typography>
+          <Box sx={{ textAlign: 'center', py: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              Không có kết quả xét nghiệm.
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 1, display: 'block' }}
+            >
+              Kết quả có thể chưa được cập nhật.
+            </Typography>
+          </Box>
         )}
       </Box>
     );
@@ -281,33 +461,138 @@ const ConsultantTestResultDetailModal = ({
           </Typography>
           {isPackage && packageServices.length > 0 ? (
             <Box>
-              {packageServices.map((svc) => (
-                <Box key={svc.id} sx={{ mb: 3, p: 2, background: '#fff', borderRadius: 2, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                    {svc.name || svc.serviceName}
+              {/* Chỉ hiển thị ô nhập kết luận cho service đang được chọn */}
+              {selectedService && (
+                <Box
+                  sx={{
+                    mb: 3,
+                    p: 2,
+                    background: '#fff',
+                    borderRadius: 2,
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 600, mb: 1 }}
+                  >
+                    Kết luận cho:{' '}
+                    {selectedService.name || selectedService.serviceName}
                   </Typography>
+
+                  {/* Hiển thị kết luận đã lưu nếu có */}
+                  {test?.testServiceConsultantNotes &&
+                    (() => {
+                      const savedNote = test.testServiceConsultantNotes.find(
+                        (note) => note.serviceId === selectedService.id
+                      );
+
+                      return savedNote &&
+                        savedNote.note &&
+                        savedNote.note.trim() ? (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            Kết luận đã lưu:
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              mt: 1,
+                              p: 2,
+                              backgroundColor: '#e8f5e8',
+                              borderRadius: 1,
+                              border: '1px solid #c8e6c9',
+                              whiteSpace: 'pre-wrap',
+                              color: '#2e7d32',
+                              fontWeight: 500,
+                            }}
+                          >
+                            {savedNote.note}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ mt: 1, display: 'block' }}
+                          >
+                            Bạn có thể chỉnh sửa kết luận này bên dưới
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            Chưa có kết luận cho dịch vụ này
+                          </Typography>
+                        </Box>
+                      );
+                    })()}
+
                   <TextField
-                    label="Kết luận/ghi chú cho dịch vụ này"
-                    value={serviceNotes[svc.id] || ''}
-                    onChange={e => setServiceNotes(prev => ({ ...prev, [svc.id]: e.target.value }))}
-                    placeholder="Nhập kết luận/ghi chú cho dịch vụ..."
+                    label={(() => {
+                      const savedNote = test?.testServiceConsultantNotes?.find(
+                        (note) => note.serviceId === selectedService.id
+                      );
+                      return savedNote &&
+                        savedNote.note &&
+                        savedNote.note.trim()
+                        ? 'Chỉnh sửa kết luận/ghi chú cho dịch vụ này'
+                        : 'Kết luận/ghi chú cho dịch vụ này';
+                    })()}
+                    value={serviceNotes[selectedService.id] || ''}
+                    onChange={(e) =>
+                      setServiceNotes((prev) => ({
+                        ...prev,
+                        [selectedService.id]: e.target.value,
+                      }))
+                    }
+                    placeholder={(() => {
+                      const savedNote = test?.testServiceConsultantNotes?.find(
+                        (note) => note.serviceId === selectedService.id
+                      );
+                      return savedNote &&
+                        savedNote.note &&
+                        savedNote.note.trim()
+                        ? 'Chỉnh sửa kết luận hiện tại...'
+                        : 'Nhập kết luận/ghi chú cho dịch vụ...';
+                    })()}
                     multiline
                     minRows={2}
                     maxRows={5}
                     fullWidth
-                    disabled={savingServiceNote[svc.id]}
+                    disabled={savingServiceNote[selectedService.id]}
                     sx={{ mb: 1 }}
                   />
                   <Button
                     variant="contained"
-                    onClick={() => handleSaveServiceNote(svc.id)}
-                    disabled={savingServiceNote[svc.id] || !(serviceNotes[svc.id] && serviceNotes[svc.id].trim())}
-                    sx={{ background: MEDICAL_GRADIENT, color: '#fff', fontWeight: 600 }}
+                    onClick={() => handleSaveServiceNote(selectedService.id)}
+                    disabled={
+                      savingServiceNote[selectedService.id] ||
+                      !(
+                        serviceNotes[selectedService.id] &&
+                        serviceNotes[selectedService.id].trim()
+                      )
+                    }
+                    sx={{
+                      background: MEDICAL_GRADIENT,
+                      color: '#fff',
+                      fontWeight: 600,
+                    }}
                   >
-                    {savingServiceNote[svc.id] ? 'Đang lưu...' : 'Lưu kết luận'}
+                    {savingServiceNote[selectedService.id]
+                      ? 'Đang lưu...'
+                      : (() => {
+                          const savedNote =
+                            test?.testServiceConsultantNotes?.find(
+                              (note) => note.serviceId === selectedService.id
+                            );
+                          return savedNote &&
+                            savedNote.note &&
+                            savedNote.note.trim()
+                            ? 'Cập nhật kết luận'
+                            : 'Lưu kết luận';
+                        })()}
                   </Button>
                 </Box>
-              ))}
+              )}
             </Box>
           ) : (
             <>

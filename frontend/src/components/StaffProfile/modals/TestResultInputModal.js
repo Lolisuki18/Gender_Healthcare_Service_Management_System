@@ -27,8 +27,8 @@ import {
   InputLabel,
 } from '@mui/material';
 import { getConclusionOptions } from '../../../services/stiService';
-import api from '../../../services/api';
 import { notify } from '../../../utils/notify';
+import api from '../../../services/api';
 
 const MEDICAL_GRADIENT = 'linear-gradient(45deg, #4A90E2, #1ABC9C)';
 const FONT_FAMILY = '"Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
@@ -53,18 +53,55 @@ const TestResultInputModal = ({
   const [results, setResults] = useState([]);
   const [touched, setTouched] = useState({});
   const [conclusionOptions, setConclusionOptions] = useState([]);
-  const [loadingOptions, setLoadingOptions] = useState(false);
   const [consultants, setConsultants] = useState([]);
   const [selectedConsultantId, setSelectedConsultantId] = useState('');
   const [assigningConsultant, setAssigningConsultant] = useState(false);
   const [assignSuccess, setAssignSuccess] = useState('');
   const [validationErrors, setValidationErrors] = useState([]);
 
+  // Debug log when modal opens
+  useEffect(() => {
+    if (open) {
+      console.group('=== TestResultInputModal Debug ===');
+      console.log('Modal opened with test:', test);
+      console.log('Test results raw:', test?.testResults);
+
+      // Handle different data structures for debugging
+      let testResultsArray = [];
+      if (test?.testResults) {
+        if (Array.isArray(test.testResults)) {
+          testResultsArray = test.testResults;
+          console.log('Test results format: Direct array');
+        } else if (
+          test.testResults.data &&
+          Array.isArray(test.testResults.data.results)
+        ) {
+          testResultsArray = test.testResults.data.results;
+          console.log(
+            'Test results format: API response { data: { results: [...] } }'
+          );
+        } else if (
+          test.testResults.results &&
+          Array.isArray(test.testResults.results)
+        ) {
+          testResultsArray = test.testResults.results;
+          console.log('Test results format: Alternative { results: [...] }');
+        }
+      }
+      console.log('Processed test results array:', testResultsArray);
+
+      console.log('Components:', components);
+      console.log('Is package:', isPackage);
+      console.log('Package services:', packageServices);
+      console.log('Selected service:', selectedService);
+      console.groupEnd();
+    }
+  }, [open, test, components, isPackage, packageServices, selectedService]);
+
   // Load conclusion options
   useEffect(() => {
     const loadConclusionOptions = async () => {
       try {
-        setLoadingOptions(true);
         const response = await getConclusionOptions();
         if (response.success && response.data) {
           setConclusionOptions(response.data);
@@ -77,8 +114,6 @@ const TestResultInputModal = ({
           { value: 'NOT_INFECTED', label: 'Không bị nhiễm' },
           { value: 'ABNORMAL', label: 'Bất thường' },
         ]);
-      } finally {
-        setLoadingOptions(false);
       }
     };
 
@@ -91,41 +126,132 @@ const TestResultInputModal = ({
     const initializeState = (serviceId, componentsToMap) => {
       // Create a map of existing results by componentId for quick lookup
       const existingResultsMap = new Map();
-      if (test?.testResults && Array.isArray(test.testResults)) {
-        test.testResults.forEach((res) => {
-          if (res.componentId != null) {
-            existingResultsMap.set(res.componentId, res);
-          }
-        });
+
+      // Handle different data structures for test results
+      let testResultsArray = [];
+      if (test?.testResults) {
+        if (Array.isArray(test.testResults)) {
+          // Direct array format
+          testResultsArray = test.testResults;
+        } else if (
+          test.testResults.data &&
+          Array.isArray(test.testResults.data.results)
+        ) {
+          // API response format: { data: { results: [...] } }
+          testResultsArray = test.testResults.data.results;
+        } else if (
+          test.testResults.results &&
+          Array.isArray(test.testResults.results)
+        ) {
+          // Alternative format: { results: [...] }
+          testResultsArray = test.testResults.results;
+        }
       }
+
+      // Build map for quick lookup (for single tests)
+      testResultsArray.forEach((res) => {
+        if (res.componentId != null) {
+          existingResultsMap.set(res.componentId, res);
+        }
+      });
 
       let newResults;
       if (isPackage && serviceId && resultsMap[serviceId]) {
         // Nếu đã có dữ liệu nhập tạm thời thì ưu tiên lấy lại
         newResults = resultsMap[serviceId];
+        console.log(
+          'Using existing results from resultsMap for serviceId:',
+          serviceId,
+          newResults
+        );
       } else {
         newResults = componentsToMap.map((comp) => {
           const componentId = comp.componentId || comp.id;
-          const existingResult = existingResultsMap.get(componentId);
-          return {
+
+          // For package tests, find existing result matching both componentId and serviceId
+          let existingResult = null;
+          if (isPackage && serviceId) {
+            existingResult = testResultsArray.find(
+              (res) =>
+                res.componentId === componentId && res.serviceId === serviceId
+            );
+          } else {
+            existingResult = existingResultsMap.get(componentId);
+          }
+
+          // Log để debug - detailed logging
+          console.log('Processing component:', {
+            componentIndex: componentsToMap.indexOf(comp),
+            component: comp,
+            componentId,
+            componentName: comp.componentName || comp.testName,
+            serviceId,
+            existingResult,
+            testResultsArrayLength: testResultsArray.length,
+            // Check if we're finding the right results
+            matchingResults: testResultsArray.filter(
+              (res) => res.serviceId === serviceId
+            ),
+            allComponentIds: testResultsArray.map((res) => res.componentId),
+            allServiceIds: testResultsArray.map((res) => res.serviceId),
+          });
+
+          const newResult = {
             componentId: componentId,
             resultValue: existingResult?.resultValue || comp.resultValue || '',
-            unit: comp.unit || '',
-            normalRange: comp.normalRange || comp.referenceRange || '',
-            conclusion:
-              existingResult && typeof existingResult.conclusion === 'string'
-                ? existingResult.conclusion
-                : '',
+            unit: existingResult?.unit || comp.unit || '',
+            normalRange:
+              existingResult?.normalRange ||
+              comp.normalRange ||
+              comp.referenceRange ||
+              '',
+            conclusion: existingResult?.conclusion || '',
           };
+
+          console.log(
+            'Created result for component',
+            componentId,
+            ':',
+            newResult
+          );
+          return newResult;
         });
+
+        console.log(
+          'Created new results for serviceId:',
+          serviceId,
+          'results:',
+          newResults
+        );
+        console.log('Components used for mapping:', componentsToMap);
+        console.log('Existing API test results:', testResultsArray);
       }
 
       if (isPackage) {
-        setResultsMap((prev) => ({ ...prev, [serviceId]: newResults }));
+        setResultsMap((prev) => {
+          const updated = { ...prev, [serviceId]: newResults };
+          console.log('Updating resultsMap - Previous:', prev);
+          console.log(
+            'Updating resultsMap - New entry for serviceId',
+            serviceId,
+            ':',
+            newResults
+          );
+          console.log('Updating resultsMap - Updated map:', updated);
+          return updated;
+        });
         setTouchedMap((prev) => ({ ...prev, [serviceId]: {} }));
+
+        // Log the results map for debugging
+        console.log('Package - Setting results map for serviceId:', serviceId);
+        console.log('Package - New results:', newResults);
       } else {
         setResults(newResults);
         setTouched({});
+
+        // Log the results for debugging
+        console.log('Single test - Setting results:', newResults);
+        console.log('Single test - Existing test results:', test?.testResults);
       }
     };
 
@@ -135,7 +261,7 @@ const TestResultInputModal = ({
       initializeState(null, components);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [components, open, isPackage, selectedService, test?.testResults]);
+  }, [components, open, isPackage, selectedService, test]);
 
   // Lấy danh sách consultant khi mở modal nếu cần
   useEffect(() => {
@@ -158,12 +284,50 @@ const TestResultInputModal = ({
 
     if (isPackage && selectedService && selectedService.id) {
       const svcId = selectedService.id;
-      setResultsMap((prev) => ({
-        ...prev,
-        [svcId]: prev[svcId].map((r, i) =>
-          i === idx ? { ...r, [field]: value } : r
-        ),
-      }));
+      setResultsMap((prev) => {
+        // Initialize array for this service if it doesn't exist
+        if (!prev[svcId] || prev[svcId].length === 0) {
+          // Get test results array directly from API data
+          let testResultsArray = [];
+          if (test?.testResults?.data?.results) {
+            testResultsArray = test.testResults.data.results;
+          } else if (test?.testResults?.results) {
+            testResultsArray = test.testResults.results;
+          } else if (Array.isArray(test?.testResults)) {
+            testResultsArray = test.testResults;
+          }
+
+          // Create initial array based on components
+          const initialResults = components.map((comp, compIdx) => {
+            const componentId = comp.componentId || comp.id;
+            const existingResult = testResultsArray.find(
+              (res) =>
+                res.componentId === componentId && res.serviceId === svcId
+            );
+
+            return {
+              componentId: componentId,
+              resultValue: existingResult?.resultValue || '',
+              unit: existingResult?.unit || comp.unit || '',
+              normalRange:
+                existingResult?.normalRange ||
+                comp.normalRange ||
+                comp.referenceRange ||
+                '',
+              conclusion: existingResult?.conclusion || '',
+            };
+          });
+
+          prev[svcId] = initialResults;
+        }
+
+        return {
+          ...prev,
+          [svcId]: prev[svcId].map((r, i) =>
+            i === idx ? { ...r, [field]: value } : r
+          ),
+        };
+      });
       setTouchedMap((prev) => ({
         ...prev,
         [svcId]: { ...prev[svcId], [idx]: true },
@@ -205,6 +369,27 @@ const TestResultInputModal = ({
           result.conclusion &&
           result.conclusion.trim() !== ''
       );
+    }
+  };
+
+  // Hàm kiểm tra xem đã có đầy đủ consultant notes chưa
+  const isAllConsultantNotesCompleted = () => {
+    if (isPackage) {
+      // Với package, kiểm tra tất cả service trong package có notes chưa
+      if (!packageServices || packageServices.length === 0) return false;
+      if (!Array.isArray(test?.testServiceConsultantNotes)) return false;
+
+      return packageServices.every((service) => {
+        const serviceNote = test.testServiceConsultantNotes.find(
+          (n) => n.serviceId === service.id
+        );
+        return (
+          serviceNote && serviceNote.note && serviceNote.note.trim() !== ''
+        );
+      });
+    } else {
+      // Với single test, kiểm tra consultant notes
+      return test?.consultantNotes && test.consultantNotes.trim() !== '';
     }
   };
 
@@ -272,8 +457,16 @@ const TestResultInputModal = ({
       let finalResults = [];
       if (isPackage) {
         // Gộp toàn bộ kết quả của mọi service trong package
-        Object.values(resultsMap).forEach((serviceResults) => {
-          finalResults = finalResults.concat(serviceResults);
+        packageServices.forEach((service) => {
+          const serviceResults = resultsMap[service.id] || [];
+          serviceResults.forEach((result) => {
+            if (result.componentId) {
+              finalResults.push({
+                ...result,
+                serviceId: service.id,
+              });
+            }
+          });
         });
       } else {
         finalResults = results;
@@ -282,22 +475,17 @@ const TestResultInputModal = ({
       // Safeguard: Đảm bảo không có componentId trùng lặp được gửi đi
       const uniqueResults = Array.from(
         finalResults
-          .reduce((map, item) => map.set(item.componentId, item), new Map())
+          .reduce((map, item) => {
+            const key = isPackage
+              ? `${item.componentId}-${item.serviceId}`
+              : item.componentId;
+            return map.set(key, item);
+          }, new Map())
           .values()
       );
 
-      // if (isPackage && selectedService && selectedService.id) {
-      //   onSaveAll({
-      //     status: 'RESULTED',
-      //     results: uniqueResults,
-      //     serviceId: selectedService.id,
-      //   });
-      // } else {
-      //   onSaveAll({
-      //     status: 'RESULTED',
-      //     results: uniqueResults,
-      //   });
-      // }
+      console.log('Saving all results:', uniqueResults);
+
       onSaveAll({
         status: 'RESULTED',
         results: uniqueResults,
@@ -324,31 +512,42 @@ const TestResultInputModal = ({
       let finalResults = [];
       if (isPackage) {
         // Tổng hợp tất cả kết quả của mọi service trong package
-        Object.values(resultsMap).forEach((serviceResults) => {
-          finalResults = finalResults.concat(serviceResults);
+        packageServices.forEach((service) => {
+          const serviceResults = resultsMap[service.id] || [];
+          serviceResults.forEach((result) => {
+            if (result.componentId && result.resultValue && result.conclusion) {
+              finalResults.push({
+                ...result,
+                serviceId: service.id,
+              });
+            }
+          });
         });
       } else {
-        finalResults = results;
+        finalResults = results.filter(
+          (result) =>
+            result.componentId && result.resultValue && result.conclusion
+        );
       }
 
       // Safeguard: Đảm bảo không có componentId trùng lặp được gửi đi
       const uniqueResults = Array.from(
         finalResults
-          .reduce((map, item) => map.set(item.componentId, item), new Map())
+          .reduce((map, item) => {
+            const key = isPackage
+              ? `${item.componentId}-${item.serviceId}`
+              : item.componentId;
+            return map.set(key, item);
+          }, new Map())
           .values()
       );
 
-      if (isPackage) {
-        onComplete({
-          status: 'COMPLETED',
-          results: uniqueResults,
-        });
-      } else {
-        onComplete({
-          status: 'COMPLETED',
-          results: uniqueResults,
-        });
-      }
+      console.log('Completing test with results:', uniqueResults);
+
+      onComplete({
+        status: 'COMPLETED',
+        results: uniqueResults,
+      });
 
       // Hiển thị thông báo thành công
       notify.success('Thành công', 'Hoàn tất xét nghiệm thành công!');
@@ -358,10 +557,20 @@ const TestResultInputModal = ({
   const handleSelectService = (svc) => {
     if (isPackage && selectedService && selectedService.id) {
       // Lưu lại kết quả đang nhập cho service hiện tại vào resultsMap
+      // Sử dụng current resultsMap values thay vì results cũ
+      const currentResults = resultsMap[selectedService.id] || [];
       setResultsMap((prev) => ({
         ...prev,
-        [selectedService.id]: resultsMap[selectedService.id] || results,
+        [selectedService.id]: currentResults,
       }));
+
+      console.log('Switching service from', selectedService.id, 'to', svc.id);
+      console.log(
+        'Saving current results for service',
+        selectedService.id,
+        ':',
+        currentResults
+      );
     }
     onSelectService(svc);
   };
@@ -519,81 +728,154 @@ const TestResultInputModal = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {isPackage &&
-            selectedService &&
-            resultsMap[selectedService.id] &&
-            components.length > 0
-              ? components.map((comp, idx) => (
-                  <TableRow key={comp.componentId || comp.id}>
-                    <TableCell sx={{ fontWeight: 600 }}>
-                      {comp.componentName || comp.testName}
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        variant="outlined"
-                        size="small"
-                        value={
-                          resultsMap[selectedService.id][idx]?.resultValue || ''
-                        }
-                        onChange={(e) =>
-                          handleChange(idx, 'resultValue', e.target.value)
-                        }
-                        error={
-                          touchedMap[selectedService.id]?.[idx] &&
-                          !resultsMap[selectedService.id][idx]?.resultValue
-                        }
-                        helperText={
-                          touchedMap[selectedService.id]?.[idx] &&
-                          !resultsMap[selectedService.id][idx]?.resultValue
-                            ? 'Không được để trống'
-                            : ''
-                        }
-                        fullWidth
-                        disabled={loading}
-                      />
-                    </TableCell>
-                    <TableCell>{comp.unit}</TableCell>
-                    <TableCell>
-                      {comp.normalRange || comp.referenceRange}
-                    </TableCell>
-                    <TableCell>
-                      <FormControl fullWidth size="small">
-                        <Select
-                          value={
-                            resultsMap[selectedService.id][idx]?.conclusion ||
-                            ''
-                          }
+            {isPackage && selectedService && components.length > 0
+              ? components.map((comp, idx) => {
+                  // Hàm helper để lấy dữ liệu API test results
+                  const getApiTestResults = () => {
+                    if (test?.testResults?.data?.results) {
+                      return test.testResults.data.results;
+                    }
+                    if (test?.testResults?.results) {
+                      return test.testResults.results;
+                    }
+                    if (Array.isArray(test?.testResults)) {
+                      return test.testResults;
+                    }
+                    return [];
+                  };
+
+                  // Lấy componentId và serviceId
+                  const componentId = comp.componentId || comp.id;
+                  const serviceId = selectedService.id;
+
+                  // Tìm kết quả từ API cho component và service này
+                  const apiResults = getApiTestResults();
+                  const existingApiResult = apiResults.find(
+                    (res) =>
+                      res.componentId === componentId &&
+                      res.serviceId === serviceId
+                  );
+
+                  // Hàm helper để lấy giá trị hiện tại để hiển thị
+                  const getCurrentDisplayValue = (field) => {
+                    // 1. Ưu tiên: Nếu user đã thay đổi trong resultsMap, dùng giá trị đó
+                    const currentServiceResults = resultsMap[serviceId] || [];
+                    const currentResult = currentServiceResults[idx];
+                    if (
+                      currentResult &&
+                      currentResult[field] !== undefined &&
+                      currentResult[field] !== ''
+                    ) {
+                      return currentResult[field];
+                    }
+
+                    // 2. Fallback: Dùng dữ liệu từ API nếu có
+                    if (
+                      existingApiResult &&
+                      existingApiResult[field] !== undefined
+                    ) {
+                      return existingApiResult[field];
+                    }
+
+                    // 3. Default: Trả về empty string hoặc giá trị mặc định từ component
+                    if (field === 'unit') {
+                      return comp.unit || '';
+                    }
+                    if (field === 'normalRange') {
+                      return comp.normalRange || comp.referenceRange || '';
+                    }
+                    return '';
+                  };
+
+                  // Log debug cho component đầu tiên của mỗi service
+                  if (idx === 0) {
+                    console.log(
+                      `🔍 Package Service ${serviceId} - Component ${componentId}:`,
+                      {
+                        componentName: comp.componentName || comp.testName,
+                        existingApiResult,
+                        currentResultValue:
+                          getCurrentDisplayValue('resultValue'),
+                        currentConclusion: getCurrentDisplayValue('conclusion'),
+                        resultsMapForService: resultsMap[serviceId],
+                        totalApiResults: apiResults.length,
+                        componentsLength: components.length,
+                        isPackageFlag: isPackage,
+                        selectedServiceId: selectedService?.id,
+                      }
+                    );
+                  }
+
+                  return (
+                    <TableRow key={componentId}>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        {comp.componentName || comp.testName}
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          variant="outlined"
+                          size="small"
+                          value={getCurrentDisplayValue('resultValue')}
                           onChange={(e) =>
-                            handleChange(idx, 'conclusion', e.target.value)
+                            handleChange(idx, 'resultValue', e.target.value)
                           }
-                          disabled={
-                            loading ||
-                            !resultsMap[selectedService.id][idx]?.resultValue ||
-                            resultsMap[selectedService.id][
-                              idx
-                            ]?.resultValue.trim() === ''
+                          error={
+                            touchedMap[serviceId]?.[idx] &&
+                            !getCurrentDisplayValue('resultValue')
                           }
-                          displayEmpty
-                        >
-                          <MenuItem value="" disabled>
-                            {!resultsMap[selectedService.id][idx]
-                              ?.resultValue ||
-                            resultsMap[selectedService.id][
-                              idx
-                            ]?.resultValue.trim() === ''
-                              ? 'Vui lòng nhập kết quả trước'
-                              : 'Chọn kết luận'}
-                          </MenuItem>
-                          {conclusionOptions.map((option) => (
-                            <MenuItem key={option.value} value={option.value}>
-                              {option.label}
+                          helperText={
+                            touchedMap[serviceId]?.[idx] &&
+                            !getCurrentDisplayValue('resultValue')
+                              ? 'Không được để trống'
+                              : ''
+                          }
+                          fullWidth
+                          disabled={loading}
+                          placeholder="Nhập kết quả xét nghiệm"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {comp.unit || existingApiResult?.unit || ''}
+                      </TableCell>
+                      <TableCell>
+                        {comp.normalRange ||
+                          comp.referenceRange ||
+                          existingApiResult?.normalRange ||
+                          ''}
+                      </TableCell>
+                      <TableCell>
+                        <FormControl fullWidth size="small">
+                          <Select
+                            value={getCurrentDisplayValue('conclusion')}
+                            onChange={(e) =>
+                              handleChange(idx, 'conclusion', e.target.value)
+                            }
+                            disabled={
+                              loading ||
+                              !getCurrentDisplayValue('resultValue') ||
+                              getCurrentDisplayValue('resultValue').trim() ===
+                                ''
+                            }
+                            displayEmpty
+                          >
+                            <MenuItem value="" disabled>
+                              {!getCurrentDisplayValue('resultValue') ||
+                              getCurrentDisplayValue('resultValue').trim() ===
+                                ''
+                                ? 'Vui lòng nhập kết quả trước'
+                                : 'Chọn kết luận'}
                             </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </TableCell>
-                  </TableRow>
-                ))
+                            {conclusionOptions.map((option) => (
+                              <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               : !isPackage &&
                 components.map((comp, idx) => (
                   <TableRow key={comp.componentId || comp.id}>
@@ -763,8 +1045,117 @@ const TestResultInputModal = ({
               </Alert>
             )}
 
+            {/* Hiển thị cảnh báo nếu chưa có đầy đủ consultant notes */}
+            {test?.status === 'RESULTED' &&
+              isAllResultsCompleted() &&
+              !isAllConsultantNotesCompleted() && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  {isPackage
+                    ? 'Cần có kết luận từ Tư Vấn Viên cho tất cả các dịch vụ trong gói trước khi hoàn tất.'
+                    : 'Cần có kết luận từ Tư Vấn Viên trước khi hoàn tất.'}
+                </Alert>
+              )}
+
             <Grid container spacing={2} alignItems="center">
-              <Grid item size={12} xs={12} md={6}>
+              <Grid item size={12} xs={12} md={12}>
+                {/* Nếu là package, hiển thị note của service được chọn */}
+                {isPackage &&
+                selectedService &&
+                Array.isArray(test?.testServiceConsultantNotes) ? (
+                  <Box>
+                    {test.testServiceConsultantNotes
+                      .filter((n) => n.serviceId === selectedService.id)
+                      .map((n) => (
+                        <Box key={n.serviceId} sx={{ mb: 2 }}>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: 600, mb: 0.5 }}
+                          >
+                            {n.serviceName ||
+                              selectedService.name ||
+                              selectedService.serviceName ||
+                              `Dịch vụ #${n.serviceId}`}
+                          </Typography>
+                          <TextField
+                            label="Kết luận từ Tư Vấn Viên"
+                            value={n.note || ''}
+                            placeholder="Chưa có kết luận từ Tư Vấn Viên"
+                            multiline
+                            minRows={3}
+                            maxRows={6}
+                            fullWidth
+                            InputProps={{ readOnly: true }}
+                            sx={{
+                              background: '#fff',
+                              borderRadius: 1,
+                              '& .MuiInputBase-input': {
+                                fontStyle: n.note ? 'normal' : 'italic',
+                                color: n.note ? '#222' : 'red',
+                              },
+                            }}
+                          />
+                        </Box>
+                      ))}
+                    {/* Nếu không tìm thấy note cho service được chọn */}
+                    {test.testServiceConsultantNotes.filter(
+                      (n) => n.serviceId === selectedService.id
+                    ).length === 0 && (
+                      <Box sx={{ mb: 2 }}>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 600, mb: 0.5 }}
+                        >
+                          {selectedService.name || selectedService.serviceName}
+                        </Typography>
+                        <TextField
+                          label="Kết luận từ Tư Vấn Viên"
+                          value=""
+                          placeholder="Chưa có kết luận từ Tư Vấn Viên cho service này"
+                          multiline
+                          minRows={3}
+                          maxRows={6}
+                          fullWidth
+                          InputProps={{ readOnly: true }}
+                          sx={{
+                            background: '#fff',
+                            borderRadius: 1,
+                            '& .MuiInputBase-input': {
+                              fontStyle: 'italic',
+                              color: 'red',
+                            },
+                          }}
+                        />
+                      </Box>
+                    )}
+                  </Box>
+                ) : isPackage && !selectedService ? (
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    Vui lòng chọn một dịch vụ để xem kết luận từ Tư Vấn Viên.
+                  </Alert>
+                ) : (
+                  <TextField
+                    label="Kết luận từ Tư Vấn Viên"
+                    value={test?.consultantNotes || ''}
+                    placeholder="Chưa có kết luận từ Tư Vấn Viên"
+                    multiline
+                    minRows={3}
+                    maxRows={6}
+                    fullWidth
+                    InputProps={{ readOnly: true }}
+                    sx={{
+                      background: '#fff',
+                      borderRadius: 1,
+                      '& .MuiInputBase-input': {
+                        fontStyle: test?.consultantNotes ? 'normal' : 'italic',
+                        color: test?.consultantNotes ? '#222' : 'red',
+                      },
+                    }}
+                  />
+                )}
+              </Grid>
+
+              {/* Phần chọn tư vấn viên được di chuyển xuống dưới */}
+              <Grid item size={12} xs={12} md={12}>
                 <FormControl fullWidth size="small" sx={{ mb: 2 }}>
                   <InputLabel id="consultant-select-label">
                     {isAllResultsCompleted()
@@ -820,61 +1211,6 @@ const TestResultInputModal = ({
                       : 'Chọn consultant này'}
                 </Button>
               </Grid>
-              <Grid item size={12} xs={12} md={6}>
-                {/* Nếu là package, hiển thị note từng service */}
-                {isPackage &&
-                Array.isArray(test?.testServiceConsultantNotes) ? (
-                  <Box>
-                    {test.testServiceConsultantNotes.map((n) => (
-                      <Box key={n.serviceId} sx={{ mb: 2 }}>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{ fontWeight: 600, mb: 0.5 }}
-                        >
-                          {n.serviceName || `Dịch vụ #${n.serviceId}`}
-                        </Typography>
-                        <TextField
-                          label="Kết luận từ Tư Vấn Viên"
-                          value={n.note || ''}
-                          placeholder="Chưa có kết luận từ Tư Vấn Viên"
-                          multiline
-                          minRows={2}
-                          maxRows={4}
-                          fullWidth
-                          InputProps={{ readOnly: true }}
-                          sx={{
-                            background: '#fff',
-                            borderRadius: 1,
-                            '& .MuiInputBase-input': {
-                              fontStyle: n.note ? 'normal' : 'italic',
-                              color: n.note ? '#222' : 'red',
-                            },
-                          }}
-                        />
-                      </Box>
-                    ))}
-                  </Box>
-                ) : (
-                  <TextField
-                    label="Kết luận từ Tư Vấn Viên"
-                    value={test?.consultantNotes || ''}
-                    placeholder="Chưa có kết luận từ Tư Vấn Viên"
-                    multiline
-                    minRows={3}
-                    maxRows={6}
-                    fullWidth
-                    InputProps={{ readOnly: true }}
-                    sx={{
-                      background: '#fff',
-                      borderRadius: 1,
-                      '& .MuiInputBase-input': {
-                        fontStyle: test?.consultantNotes ? 'normal' : 'italic',
-                        color: test?.consultantNotes ? '#222' : 'red',
-                      },
-                    }}
-                  />
-                )}
-              </Grid>
             </Grid>
           </Box>
         )}
@@ -906,15 +1242,7 @@ const TestResultInputModal = ({
             disabled={
               loading ||
               !isAllResultsCompleted() ||
-              (isPackage
-                ? !(
-                    Array.isArray(test?.testServiceConsultantNotes) &&
-                    test.testServiceConsultantNotes.length > 0 &&
-                    test.testServiceConsultantNotes.every(
-                      (n) => n.note && n.note.trim() !== ''
-                    )
-                  )
-                : !test?.consultantNotes || test.consultantNotes.trim() === '')
+              !isAllConsultantNotesCompleted()
             }
             sx={{
               background: MEDICAL_GRADIENT,
