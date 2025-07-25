@@ -1,3 +1,4 @@
+
 import apiClient from '@/services/api';
 
 const notificationService = {
@@ -15,6 +16,17 @@ const notificationService = {
   updateNotificationPreference: async (type, enabled) => {
     try {
       const response = await apiClient.put(`/notification-preferences/${type}?enabled=${enabled}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+    // Cập nhật thời gian gửi thông báo cho từng loại
+  updateNotificationTime: async (type, time) => {
+    try {
+      // time: string 'HH:mm'
+      const response = await apiClient.put(`/notification-preferences/${type}/time?time=${time}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;

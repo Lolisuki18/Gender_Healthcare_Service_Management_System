@@ -1,6 +1,7 @@
 package com.healapp.controller;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -128,18 +129,21 @@ public class OAuthController {
                         NotificationPreference ovulationNotification = new NotificationPreference();
                         ovulationNotification.setUser(user);
                         ovulationNotification.setType(NotificationType.OVULATION);
+                        ovulationNotification.setRemindTime(LocalTime.of(7, 0)); // Default reminder time at 7 AM
                         ovulationNotification.setEnabled(true);
                         notificationPreferenceService.save(ovulationNotification);
 
                         NotificationPreference pregnancyNotification = new NotificationPreference();
                         pregnancyNotification.setUser(user);
                         pregnancyNotification.setType(NotificationType.PREGNANCY_PROBABILITY);
+                        pregnancyNotification.setRemindTime(LocalTime.of(7, 0)); // Default reminder time at 7 AM
                         pregnancyNotification.setEnabled(true);
                         notificationPreferenceService.save(pregnancyNotification);
 
                         NotificationPreference pillReminderNotification = new NotificationPreference();
                         pillReminderNotification.setUser(user);
                         pillReminderNotification.setType(NotificationType.PILL_REMINDER);
+                        pillReminderNotification.setRemindTime(LocalTime.of(7, 0)); // Default reminder time at 7 AM
                         pillReminderNotification.setEnabled(true);
                         notificationPreferenceService.save(pillReminderNotification);
                         

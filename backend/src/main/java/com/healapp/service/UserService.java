@@ -1,5 +1,6 @@
 package com.healapp.service;
 
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -156,18 +157,21 @@ public class UserService {
             NotificationPreference ovulationNoti = new NotificationPreference();
             ovulationNoti.setUser(savedUser);
             ovulationNoti.setType(NotificationType.OVULATION);
+            ovulationNoti.setRemindTime(LocalTime.of(7, 0)); // Mặc định nhắc nhở lúc 7 giờ sáng
             ovulationNoti.setEnabled(true);
             notificationPreferenceRepo.save(ovulationNoti);
 
             NotificationPreference pregnancyNoti = new NotificationPreference();
             pregnancyNoti.setUser(savedUser);
             pregnancyNoti.setType(NotificationType.PREGNANCY_PROBABILITY);
+            pregnancyNoti.setRemindTime(LocalTime.of(7, 0)); // Mặc định nhắc nhở lúc 7 giờ sáng
             pregnancyNoti.setEnabled(true);
             notificationPreferenceRepo.save(pregnancyNoti);
 
             NotificationPreference pillNoti = new NotificationPreference();
             pillNoti.setUser(savedUser);
             pillNoti.setType(NotificationType.PILL_REMINDER);
+            pillNoti.setRemindTime(LocalTime.of(7, 0)); // Mặc định nhắc nhở lúc 7 giờ sáng
             pillNoti.setEnabled(true);
             notificationPreferenceRepo.save(pillNoti);
 

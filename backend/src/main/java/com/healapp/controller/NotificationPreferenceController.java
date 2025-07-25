@@ -1,5 +1,6 @@
 package com.healapp.controller;
 
+import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,4 +41,14 @@ public class NotificationPreferenceController {
         ApiResponse<Void> response = notificationPreferenceService.updateNotificationPreferences(type, enabled);
         return ResponseEntity.ok(response);
     }
+
+    // description: Cập nhật thời gian gửi thông báo
+    // method: PUT
+    @PutMapping("/{type}/time")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_STAFF') or hasRole('ROLE_CONSULTANT')")
+    public ResponseEntity<ApiResponse<Void>> updateNotificationTime(@PathVariable String type, @RequestParam LocalTime time) {
+        ApiResponse<Void> response = notificationPreferenceService.updateNotificationTime(type, time);
+        return ResponseEntity.ok(response);
+    }
+
 }

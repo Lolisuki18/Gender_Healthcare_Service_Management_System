@@ -13,6 +13,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
 import {
   Box,
   Typography,
@@ -86,6 +91,44 @@ const NotificationsContent = () => {
   });
 
   const [loading, setLoading] = useState(true);
+  const [notificationTimes, setNotificationTimes] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogTimes, setDialogTimes] = useState(null);
+  const [dialogLoading, setDialogLoading] = useState(false);
+  // Mở dialog chỉnh thời gian gửi mail cho tất cả loại
+  const openAllTimeDialog = () => {
+    if (notificationTimes && Object.keys(notificationTimes).length > 0) {
+      setDialogTimes({
+        ovulationReminder: notificationTimes.ovulationReminder || '',
+        pregnancyProbability: notificationTimes.pregnancyProbability || '',
+        medicationReminder: notificationTimes.medicationReminder || '',
+      });
+      setDialogOpen(true);
+    }
+  };
+
+  const closeAllTimeDialog = () => {
+    setDialogOpen(false);
+  };
+
+  // Lưu thời gian gửi mail cho tất cả loại
+  const saveAllTimeDialog = async () => {
+    if (!dialogTimes) return;
+    setDialogLoading(true);
+    try {
+      for (const setting of ['ovulationReminder', 'pregnancyProbability', 'medicationReminder']) {
+        const apiType = notificationService.mapSettingToApiType(setting);
+        await notificationService.updateNotificationTime(apiType, dialogTimes[setting]);
+      }
+      setNotificationTimes({ ...dialogTimes });
+      notify.success('Thành công', 'Đã cập nhật thời gian gửi mail cho tất cả loại thông báo');
+      closeAllTimeDialog();
+    } catch (error) {
+      notify.error('Lỗi', 'Không thể cập nhật thời gian gửi mail.');
+    } finally {
+      setDialogLoading(false);
+    }
+  };
 
   // Tải cài đặt thông báo từ API khi component mount
   useEffect(() => {
@@ -95,33 +138,48 @@ const NotificationsContent = () => {
   const fetchNotificationPreferences = async () => {
     try {
       setLoading(true);
-
       const response = await notificationService.getNotificationPreferences();
-
-      if (response.success && response.data) {
-        // Convert API data to UI state
+      // Nếu response là mảng (Spring Boot trả về array), hoặc response.data là mảng
+      const data = Array.isArray(response) ? response : response.data;
+      if (Array.isArray(data)) {
+        console.log('Notification API data:', data);
         const preferences = {};
-        response.data.forEach((pref) => {
+        const times = {};
+        data.forEach((pref) => {
           const settingKey = notificationService.mapApiTypeToSetting(pref.type);
           if (settingKey) {
             preferences[settingKey] = pref.enabled;
+            if (pref.remindTime) {
+              let timeStr = '';
+              if (Array.isArray(pref.remindTime) && pref.remindTime.length >= 2) {
+                // Nếu là mảng [hh, mm]
+                const [hh, mm] = pref.remindTime;
+                timeStr = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+              } else if (typeof pref.remindTime === 'string') {
+                // Nếu là chuỗi "hh:mm"
+                const parts = pref.remindTime.split(":");
+                if (parts.length >= 2) {
+                  const hh = parts[0].padStart(2, '0');
+                  const mm = parts[1].padStart(2, '0');
+                  timeStr = `${hh}:${mm}`;
+                }
+              }
+              times[settingKey] = timeStr;
+            }
           }
         });
-
-        setNotificationSettings((prev) => ({
-          ...prev,
-          ...preferences,
-        }));
+        setNotificationSettings((prev) => ({ ...prev, ...preferences }));
+        setNotificationTimes({
+          ovulationReminder: times.ovulationReminder || '',
+          pregnancyProbability: times.pregnancyProbability || '',
+          medicationReminder: times.medicationReminder || '',
+        });
       } else {
-        notify.error(
-          'Lỗi',
-          response.message || 'Không thể tải cài đặt thông báo'
-        );
+        notify.error('Lỗi', response.message || 'Không thể tải cài đặt thông báo');
       }
     } catch (error) {
       console.error('Error fetching notification preferences:', error);
-      const errorMessage = 'Không thể tải cài đặt thông báo. Vui lòng thử lại.';
-      notify.error('Lỗi', errorMessage);
+      notify.error('Lỗi', 'Không thể tải cài đặt thông báo. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -273,8 +331,17 @@ const NotificationsContent = () => {
                       },
                     }}
                   >
-                    Thông báo qua email
-                  </Typography>
+                  Thông báo qua email
+                </Typography>
+                <Button
+                  variant="contained"
+                  size="small"
+                  sx={{ mt: 1, mb: 2 }}
+                  onClick={openAllTimeDialog}
+                  disabled={!notificationTimes || Object.keys(notificationTimes).length === 0}
+                >
+                  Điều chỉnh thời gian gửi mail
+                </Button>
                   <Box
                     sx={{
                       display: 'flex',
@@ -571,7 +638,55 @@ const NotificationsContent = () => {
           </StyledPaper>
         </Grid>
       </Grid>
-    </Box>
+    {/* Dialog chỉnh thời gian gửi mail cho tất cả loại */}
+    <Dialog open={dialogOpen} onClose={closeAllTimeDialog} maxWidth="xs" fullWidth>
+      <DialogTitle>Điều chỉnh thời gian gửi mail</DialogTitle>
+      <DialogContent>
+        {dialogTimes ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, py: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography sx={{ minWidth: 120 }}>Nhắc rụng trứng:</Typography>
+              <input
+                type="time"
+                value={dialogTimes.ovulationReminder || ''}
+                onChange={e => setDialogTimes(t => ({ ...t, ovulationReminder: e.target.value }))}
+                disabled={dialogLoading}
+                style={{ border: '1px solid #e0e0e0', borderRadius: 4, padding: '2px 8px', fontSize: '1em' }}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography sx={{ minWidth: 120 }}>Tỉ lệ mang thai:</Typography>
+              <input
+                type="time"
+                value={dialogTimes.pregnancyProbability || ''}
+                onChange={e => setDialogTimes(t => ({ ...t, pregnancyProbability: e.target.value }))}
+                disabled={dialogLoading}
+                style={{ border: '1px solid #e0e0e0', borderRadius: 4, padding: '2px 8px', fontSize: '1em' }}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography sx={{ minWidth: 120 }}>Nhắc uống thuốc:</Typography>
+              <input
+                type="time"
+                value={dialogTimes.medicationReminder || ''}
+                onChange={e => setDialogTimes(t => ({ ...t, medicationReminder: e.target.value }))}
+                disabled={dialogLoading}
+                style={{ border: '1px solid #e0e0e0', borderRadius: 4, padding: '2px 8px', fontSize: '1em' }}
+              />
+            </Box>
+          </Box>
+        ) : (
+          <Box sx={{ py: 3, textAlign: 'center' }}>
+            <CircularProgress size={32} />
+          </Box>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={closeAllTimeDialog} color="inherit" disabled={dialogLoading}>Hủy</Button>
+        <Button onClick={saveAllTimeDialog} variant="contained" disabled={dialogLoading || !dialogTimes}>Lưu</Button>
+      </DialogActions>
+    </Dialog>
+  </Box>
   );
 };
 

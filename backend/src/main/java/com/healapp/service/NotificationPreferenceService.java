@@ -1,5 +1,6 @@
 package com.healapp.service;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -122,7 +123,7 @@ public class NotificationPreferenceService {
      * Tạo default notification preferences cho user mới
      * Default: tất cả notifications đều enabled = true
      */
-    private void createDefaultNotificationPreferences(Long userId) {
+    public void createDefaultNotificationPreferences(Long userId) {
         Optional<UserDtls> userOpt = userRepository.findById(userId);
         if (!userOpt.isPresent()) {
             throw new RuntimeException("User not found with id: " + userId);
@@ -135,9 +136,38 @@ public class NotificationPreferenceService {
             NotificationPreference preference = new NotificationPreference();
             preference.setUser(user);
             preference.setType(type);
+            preference.setRemindTime(LocalTime.of(7, 0)); // Set default time to 7:00 AM
             preference.setEnabled(true); // Default enabled
             
             notificationPreferenceRepo.save(preference);
+        }
+    }
+
+    public ApiResponse<Void> updateNotificationTime(String type, LocalTime time) {
+        try {
+            // Kiểm tra người dùng đã đăng nhập
+            Long userId = getCurrentUserId();
+            if (userId == null) {
+                return ApiResponse.error("User not authenticated");
+            }
+
+            // Convert String to NotificationType enum
+            NotificationType notificationType;
+            try {
+                notificationType = NotificationType.valueOf(type.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error("Invalid notification type: " + type);
+            }
+
+            // Cập nhật thời gian gửi thông báo
+            int updatedRows = notificationPreferenceRepo.updateNotificationPreference(userId, notificationType, time);
+            if (updatedRows == 0) {
+                return ApiResponse.error("No rows updated. Preference might not exist.");
+            }
+
+            return ApiResponse.success("Notification time updated successfully");
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to update notification time: " + e.getMessage());
         }
     }
 

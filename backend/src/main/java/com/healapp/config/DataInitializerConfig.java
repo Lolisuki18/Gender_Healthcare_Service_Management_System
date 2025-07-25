@@ -42,6 +42,7 @@ import com.healapp.repository.STIServiceRepository;
 import com.healapp.repository.STITestRepository;
 import com.healapp.repository.ServiceTestComponentRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.service.NotificationPreferenceService;
 
 @Component
 public class DataInitializerConfig implements CommandLineRunner {
@@ -65,6 +66,7 @@ public class DataInitializerConfig implements CommandLineRunner {
     private final BlogPostRepository blogPostRepository;
     private final RoleRepository roleRepository;
     private final PackageServiceRepository packageServiceRepository;
+    private final NotificationPreferenceService notificationPreferenceService;
 
     public DataInitializerConfig(UserRepository userRepository,
             PasswordEncoder passwordEncoder, CategoryQuestionRepository categoryQuestionRepository,
@@ -81,7 +83,8 @@ public class DataInitializerConfig implements CommandLineRunner {
             RatingSummaryRepository ratingSummaryRepository,
             BlogPostRepository blogPostRepository,
             RoleRepository roleRepository,
-            PackageServiceRepository packageServiceRepository) {
+            PackageServiceRepository packageServiceRepository,
+            NotificationPreferenceService notificationPreferenceService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.categoryQuestionRepository = categoryQuestionRepository;
@@ -101,6 +104,7 @@ public class DataInitializerConfig implements CommandLineRunner {
         this.blogPostRepository = blogPostRepository;
         this.roleRepository = roleRepository;
         this.packageServiceRepository = packageServiceRepository;
+        this.notificationPreferenceService = notificationPreferenceService;
     }
 
     @Override
@@ -138,6 +142,9 @@ public class DataInitializerConfig implements CommandLineRunner {
                 customer1.setCreatedDate(LocalDateTime.now());
                 customer1.setRole(customerRole);
                 userRepository.save(customer1);
+
+                // Tạo cài đặt thông báo cho customer1
+                notificationPreferenceService.createDefaultNotificationPreferences(customer1.getId());
             }
 
             if (userRepository.count() < 2) {
@@ -155,6 +162,9 @@ public class DataInitializerConfig implements CommandLineRunner {
                 customer2.setCreatedDate(LocalDateTime.now());
                 customer2.setRole(customerRole);
                 userRepository.save(customer2);
+
+                // Tạo cài đặt thông báo cho customer2
+                notificationPreferenceService.createDefaultNotificationPreferences(customer2.getId());
             }
 
             // Tạo 1 tài khoản STAFF
@@ -173,6 +183,9 @@ public class DataInitializerConfig implements CommandLineRunner {
                 staff.setCreatedDate(LocalDateTime.now());
                 staff.setRole(staffRole);
                 userRepository.save(staff);
+
+                // Tạo cài đặt thông báo cho staff
+                notificationPreferenceService.createDefaultNotificationPreferences(staff.getId());
             }
 
             // Tạo 6 tài khoản CONSULTANT
@@ -191,6 +204,9 @@ public class DataInitializerConfig implements CommandLineRunner {
                 consultant1.setCreatedDate(LocalDateTime.now());
                 consultant1.setRole(consultantRole);
                 userRepository.save(consultant1);
+
+                // Tạo cài đặt thông báo cho consultant1
+                notificationPreferenceService.createDefaultNotificationPreferences(consultant1.getId());
             }
 
             if (userRepository.count() < 5) {
@@ -208,6 +224,9 @@ public class DataInitializerConfig implements CommandLineRunner {
                 consultant2.setCreatedDate(LocalDateTime.now());
                 consultant2.setRole(consultantRole);
                 userRepository.save(consultant2);
+
+                // Tạo cài đặt thông báo cho consultant2
+                notificationPreferenceService.createDefaultNotificationPreferences(consultant2.getId());
             }
 
             if (userRepository.count() < 6) {
@@ -225,6 +244,9 @@ public class DataInitializerConfig implements CommandLineRunner {
                 consultant3.setCreatedDate(LocalDateTime.now());
                 consultant3.setRole(consultantRole);
                 userRepository.save(consultant3);
+
+                // Tạo cài đặt thông báo cho consultant3
+                notificationPreferenceService.createDefaultNotificationPreferences(consultant3.getId());
             }
 
             if (userRepository.count() < 7) {
@@ -242,6 +264,8 @@ public class DataInitializerConfig implements CommandLineRunner {
                 consultant4.setCreatedDate(LocalDateTime.now());
                 consultant4.setRole(consultantRole);
                 userRepository.save(consultant4);
+                // Tạo cài đặt thông báo cho consultant4
+                notificationPreferenceService.createDefaultNotificationPreferences(consultant4.getId());
             }
 
             if (userRepository.count() < 8) {
@@ -259,6 +283,8 @@ public class DataInitializerConfig implements CommandLineRunner {
                 consultant5.setCreatedDate(LocalDateTime.now());
                 consultant5.setRole(consultantRole);
                 userRepository.save(consultant5);
+                // Tạo cài đặt thông báo cho consultant5
+                notificationPreferenceService.createDefaultNotificationPreferences(consultant5.getId());
             }
 
             if (userRepository.count() < 9) {
@@ -276,6 +302,8 @@ public class DataInitializerConfig implements CommandLineRunner {
                 consultant6.setCreatedDate(LocalDateTime.now());
                 consultant6.setRole(consultantRole);
                 userRepository.save(consultant6);
+                // Tạo cài đặt thông báo cho consultant6
+                notificationPreferenceService.createDefaultNotificationPreferences(consultant6.getId());
             }
 
             // Tạo 1 tài khoản ADMIN
