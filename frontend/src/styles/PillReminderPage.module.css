@@ -128,7 +128,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(90deg, #e57399, #a259e6);
+  background: linear-gradient(to right, #1C9695, #35B4A6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -192,7 +192,7 @@
 }
 .btnGradient {
   flex: 1;
-  background: linear-gradient(90deg, #e57399, #a259e6);
+  background: linear-gradient(to right, #1C9695, #35B4A6);
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -204,7 +204,7 @@
   transition: background 0.2s, box-shadow 0.2s;
 }
 .btnGradient:hover {
-  background: linear-gradient(90deg, #a259e6, #e57399);
+  background: linear-gradient(to right, #1C9695, #35B4A6);
   box-shadow: 0 6px 18px rgba(162,89,230,0.18);
 }
 
