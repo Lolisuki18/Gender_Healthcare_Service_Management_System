@@ -366,62 +366,6 @@ export const AboutPage = () => {
                   vực chăm sóc sức khỏe giới tính với phương châm "Thấu hiểu -
                   Tôn trọng - Chất lượng"
                 </Typography>
-                {/* Stats */}
-                <Grid
-                  container
-                  spacing={2}
-                  justifyContent={{ xs: 'center', md: 'flex-start' }}
-                  mb={3}
-                >
-                  {[
-                    {
-                      icon: <PeopleIcon sx={{ color: '#4A90E2' }} />,
-                      value: '10+',
-                      label: 'Chuyên gia y tế',
-                    },
-                    {
-                      icon: <FavoriteIcon sx={{ color: '#E91E63' }} />,
-                      value: '5000+',
-                      label: 'Khách hàng tin tưởng',
-                    },
-                    {
-                      icon: <VerifiedIcon sx={{ color: '#1ABC9C' }} />,
-                      value: '98%',
-                      label: 'Đánh giá tích cực',
-                    },
-                  ].map((stat, idx) => (
-                    <Grid item key={idx}>
-                      <Paper
-                        elevation={3}
-                        sx={{
-                          px: 3,
-                          py: 2,
-                          borderRadius: 3,
-                          minWidth: 110,
-                          textAlign: 'center',
-                          bgcolor: 'rgba(255,255,255,0.85)',
-                          boxShadow: '0 2px 8px rgba(74,144,226,0.10)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: 0.5,
-                        }}
-                      >
-                        {stat.icon}
-                        <Typography
-                          variant="h5"
-                          fontWeight={700}
-                          color="#4A90E2"
-                        >
-                          {stat.value}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {stat.label}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
                 {/* Actions */}
                 <Box
                   sx={{

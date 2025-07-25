@@ -473,64 +473,6 @@ export default function StiDetailPage() {
               đường tình dục với kết quả nhanh chóng, chính xác và hỗ trợ chuyên
               nghiệp từ đội ngũ y bác sĩ giàu kinh nghiệm.
             </Typography>
-
-            {/* Statistics Cards */}
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={3}
-              justifyContent="center"
-              alignItems="center"
-              sx={{ mt: 4 }}
-            >
-              {[
-                { number: '15+', label: 'Loại xét nghiệm', color: '#2196F3' },
-                { number: '98%', label: 'Độ chính xác', color: '#00BFA5' },
-                { number: '2-5 ngày', label: 'Có kết quả', color: '#2196F3' },
-              ].map((stat, index) => (
-                <Paper
-                  key={index}
-                  elevation={0}
-                  sx={{
-                    p: 3,
-                    textAlign: 'center',
-                    background:
-                      'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248,250,255,0.9))',
-                    border: `1px solid ${stat.color}20`,
-                    borderRadius: 3,
-                    backdropFilter: 'blur(10px)',
-                    minWidth: 160,
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-5px)',
-                      boxShadow: `0 10px 30px ${stat.color}25`,
-                      border: `1px solid ${stat.color}40`,
-                    },
-                  }}
-                >
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      fontWeight: 900,
-                      color: stat.color,
-                      mb: 1,
-                      fontSize: '2rem',
-                    }}
-                  >
-                    {stat.number}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'text.secondary',
-                      fontWeight: 500,
-                      fontSize: '0.9rem',
-                    }}
-                  >
-                    {stat.label}
-                  </Typography>
-                </Paper>
-              ))}
-            </Stack>
           </Box>
         </Fade>
         {/* --- Phần mô tả dịch vụ --- */}

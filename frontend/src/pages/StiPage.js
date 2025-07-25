@@ -186,63 +186,6 @@ export default function StiPage() {
               Khám phá các dịch vụ chăm sóc sức khỏe giới tính toàn diện, bảo mật và chuyên nghiệp. 
               Chúng tôi cam kết mang đến trải nghiệm tốt nhất cho bạn.
             </Typography>
-
-            {/* Statistics Cards */}
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              spacing={3} 
-              justifyContent="center"
-              alignItems="center"
-              sx={{ mt: 4 }}
-            >
-              {[
-                { number: '10,000+', label: 'Khách hàng tin tưởng' },
-                { number: '99%', label: 'Độ hài lòng' },
-                { number: '24/7', label: 'Hỗ trợ khách hàng' },
-              ].map((stat, index) => (
-                <Paper
-                  key={index}
-                  elevation={0}
-                  sx={{
-                    p: 3,
-                    textAlign: 'center',
-                    background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248,250,255,0.9))',
-                    border: '1px solid rgba(74,144,226,0.1)',
-                    borderRadius: 3,
-                    backdropFilter: 'blur(10px)',
-                    minWidth: 160,
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-5px)',
-                      boxShadow: '0 10px 30px rgba(74, 144, 226, 0.15)',
-                      border: '1px solid rgba(74,144,226,0.2)',
-                    }
-                  }}
-                >
-                  <Typography 
-                    variant="h4" 
-                    sx={{ 
-                      fontWeight: 900, 
-                      color: '#4A90E2',
-                      mb: 1,
-                      fontSize: '2rem'
-                    }}
-                  >
-                    {stat.number}
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: 'text.secondary',
-                      fontWeight: 500,
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    {stat.label}
-                  </Typography>
-                </Paper>
-              ))}
-            </Stack>
           </Box>
         </Fade>
         {/* --- Grid danh sách dịch vụ --- */}
