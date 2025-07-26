@@ -24,7 +24,7 @@ public class ReminderScheduler {
     }
 
     // @Scheduled(cron = "0 30 7 * * ?") // Chạy lúc 7:30 AM mỗi ngày
-    //  @Scheduled(cron = "0 */1 * * * *") // For testing: every 1 minute
+    // @Scheduled(cron = "0 */1 * * * *") // For testing: every 1 minute
     public void sendPregnancyReminder() {
         notificationService.sendPregnancyProbNotification();
     }
