@@ -66,6 +66,12 @@ export const sidebarMenuConfig = [
     icon: <BlogIcon />, // Blog icon from @mui/icons-material
     roles: ['ADMIN'],
   },
+  {
+    id: 'admin-ratings',
+    label: 'Quản lý đánh giá',
+    icon: <StarIcon />, // Star icon from @mui/icons-material
+    roles: ['ADMIN'],
+  },
   // ... existing code ...
   // STAFF
   {
