@@ -99,17 +99,18 @@ export function PillReminderHomeScreen({ onAddSchedule, isAuthenticated }) {
 
 export function PillReminderFormScreen({ formData, onFormChange, onFormSubmit, onBackClick, isEditing }) {
   return (
-    <div className={styles.formCard}>
-      <div className={styles.formHeader}>
-        <div className={styles.formIcon}><Calendar size={28} /></div>
+    <div className={styles.formCard} style={{ borderRadius: '16px', padding: 0, overflow: 'hidden' }}>
+      <div className={styles.formHeader} style={{ background: 'linear-gradient(to right, #44c0c9, #2aa4bc)', borderRadius: '16px 16px 0 0', padding: '24px', margin: 0, position: 'relative', zIndex: 1 }}>
+        <div className={styles.formIcon} style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', padding: '8px' }}><Calendar size={28} color="#fff" /></div>
         <div>
-          <h2 className={styles.formTitle}>{isEditing ? 'Chỉnh sửa lịch uống thuốc' : 'Tạo lịch uống thuốc'}</h2>
-          <p className={styles.formSubtitle}>{isEditing ? 'Cập nhật thông tin chu kỳ của bạn' : 'Điền thông tin chu kỳ của bạn'}</p>
+          <h2 className={styles.formTitle} style={{ color: '#fff', margin: '8px 0 4px 0' }}>{isEditing ? 'Chỉnh sửa lịch uống thuốc' : 'Tạo lịch uống thuốc'}</h2>
+          <p className={styles.formSubtitle} style={{ color: 'rgba(255, 255, 255, 0.8)', margin: 0 }}>{isEditing ? 'Cập nhật thông tin chu kỳ của bạn' : 'Điền thông tin chu kỳ của bạn'}</p>
         </div>
       </div>
-      <form onSubmit={onFormSubmit}>
+      <form onSubmit={onFormSubmit} style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Ngày bắt đầu uống thuốc</label>
+          <label className={styles.formLabel}><Calendar size={18} style={{ marginRight: 4, verticalAlign: 'middle', color: '#44c0c9' }} /> Ngày bắt đầu uống thuốc</label>
           <input
             type="date"
             value={formData.startDate}
@@ -117,12 +118,32 @@ export function PillReminderFormScreen({ formData, onFormChange, onFormSubmit, o
             className={styles.formInput}
             required
             aria-label="Ngày bắt đầu uống thuốc"
-            placeholder="Chọn ngày bắt đầu"
+            placeholder="mm/dd/yyyy"
             min={new Date().toISOString().split('T')[0]}
+            style={{
+              padding: '12px 16px',
+              fontSize: '14px',
+              borderRadius: '8px',
+              border: '1px solid #ffe2ec',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              backgroundColor: '#fff',
+              color: '#333',
+              width: '100%',
+              outline: 'none',
+              transition: 'all 0.2s ease'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#44c0c9';
+              e.target.style.boxShadow = '0 4px 12px rgba(68, 192, 201, 0.15)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#ffe2ec';
+              e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+            }}
           />
         </div>
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}><Clock size={18} style={{ marginRight: 4, verticalAlign: 'middle' }} /> Thời gian nhắc nhở</label>
+          <label className={styles.formLabel}><Clock size={18} style={{ marginRight: 4, verticalAlign: 'middle', color: '#44c0c9' }} /> Thời gian nhắc nhở</label>
           <input
             type="time"
             value={formData.reminderTime}
@@ -134,7 +155,7 @@ export function PillReminderFormScreen({ formData, onFormChange, onFormSubmit, o
           />
         </div>
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Chọn loại thuốc</label>
+          <label className={styles.formLabel}><Pill size={18} style={{ marginRight: 4, verticalAlign: 'middle', color: '#44c0c9' }} /> Chọn loại thuốc</label>
           <select
             value={formData.pillType}
             onChange={e => {
@@ -154,6 +175,27 @@ export function PillReminderFormScreen({ formData, onFormChange, onFormSubmit, o
             className={styles.formInput}
             required
             aria-label="Chọn loại thuốc"
+            style={{
+              padding: '12px 16px',
+              fontSize: '14px',
+              borderRadius: '8px',
+              border: '1px solid #ffe2ec',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              backgroundColor: '#fff',
+              color: '#333',
+              width: '100%',
+              outline: 'none',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#44c0c9';
+              e.target.style.boxShadow = '0 4px 12px rgba(68, 192, 201, 0.15)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#ffe2ec';
+              e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+            }}
           >
             <option value="">-- Chọn loại thuốc --</option>
             <option value="TYPE_21_7">Thuốc 21/7 (21 ngày uống, 7 ngày nghỉ)</option>
@@ -175,7 +217,27 @@ export function PillReminderFormScreen({ formData, onFormChange, onFormSubmit, o
                 max="30"
                 required
                 aria-label="Số ngày uống thuốc"
-                placeholder="Nhập số ngày uống thuốc"
+                placeholder="Nhập số ngày"
+                style={{
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  borderRadius: '8px',
+                  border: '1px solid #e1e5e9',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  backgroundColor: '#fff',
+                  color: '#333',
+                  width: '100%',
+                  outline: 'none',
+                  transition: 'all 0.2s ease'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#44c0c9';
+                  e.target.style.boxShadow = '0 4px 12px rgba(68, 192, 201, 0.15)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e1e5e9';
+                  e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                }}
               />
             </div>
             <div className={styles.formGroup}>
@@ -189,7 +251,27 @@ export function PillReminderFormScreen({ formData, onFormChange, onFormSubmit, o
                 max="14"
                 required
                 aria-label="Số ngày nghỉ"
-                placeholder="Nhập số ngày nghỉ"
+                placeholder="Nhập số ngày"
+                style={{
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  borderRadius: '8px',
+                  border: '1px solid #e1e5e9',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  backgroundColor: '#fff',
+                  color: '#333',
+                  width: '100%',
+                  outline: 'none',
+                  transition: 'all 0.2s ease'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#44c0c9';
+                  e.target.style.boxShadow = '0 4px 12px rgba(68, 192, 201, 0.15)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e1e5e9';
+                  e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                }}
               />
             </div>
           </>
@@ -205,10 +287,20 @@ export function PillReminderFormScreen({ formData, onFormChange, onFormSubmit, o
           <button
             type="submit"
             className={styles.btnGradient}
-            style={{ background: 'linear-gradient(to right, #44c0c9, #2aa4bc)' }}
+            style={{ 
+              background: 'linear-gradient(to right, #44c0c9, #2aa4bc)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '12px 24px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
           >
             {isEditing ? 'Cập nhật lịch' : 'Tạo lịch'}
           </button>
+        </div>
         </div>
       </form>
     </div>
@@ -309,19 +401,19 @@ export function PillReminderCalendarScreen({ schedule, currentMonthIndex, setCur
       <div className={styles.settingsCard}>
         <div className={styles.settingsTitle}>Cài đặt lịch</div>
         <div className={styles.settingsText}>Chu kỳ hiện tại: {schedule.pillDays} ngày uống, {schedule.breakDays} ngày nghỉ</div>
-        <div className={styles.settingsText} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Clock size={18} style={{ marginRight: 4, verticalAlign: 'middle' }} /> Thời gian nhắc nhở: {schedule.reminderTime}</div>
+        <div className={styles.settingsText} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Clock size={18} style={{ marginRight: 4, verticalAlign: 'middle' , color: '#44c0c9'}} /> Thời gian nhắc nhở: {schedule.reminderTime}</div>
         <div className={styles.settingsText}>Ngày bắt đầu: {schedule.startDate ? new Date(schedule.startDate).toLocaleDateString('vi-VN') : ''}</div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px', alignItems: 'stretch' }}>
           <button
             onClick={handleEditClick}
-            style={{ flex: 1, background: 'linear-gradient(to right, #1C9695, #35B4A6)', color: '#fff', padding: '14px 20px', borderRadius: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', fontSize: 16, cursor: 'pointer', boxShadow: '0 2px 8px rgba(28,150,149,0.15)' }}
+            className={styles.btnEditSchedule}
           >
             <Edit style={{ width: 20, height: 20 }} />
             Chỉnh sửa lịch
           </button>
           <button
             onClick={onDeleteSchedule}
-            style={{ flex: 1, background: 'linear-gradient(to right, #1C9695, #35B4A6)', color: '#fff', padding: '14px 20px', borderRadius: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', fontSize: 16, cursor: 'pointer', boxShadow: '0 2px 8px rgba(28,150,149,0.15)' }}
+            className={styles.btnDeleteSchedule}
           >
             <Trash style={{ width: 20, height: 20 }} />
             Xóa lịch
@@ -354,10 +446,10 @@ export function PillReminderConfirmModal({ showConfirmModal, selectedDayInfo, on
         <h3 className={styles.modalTitle}>{formattedDate}</h3>
         <p className={styles.modalMessage}>{message}</p>
         <div className={styles.modalActions}>
-          <button onClick={onCancel} className={styles.btnGray} disabled={isLoading}>
+          <button onClick={onCancel} className={styles.btnModalCancel} disabled={isLoading}>
             Hủy
           </button>
-          <button onClick={onConfirm} className={buttonClass} disabled={isLoading}>
+          <button onClick={onConfirm} className={styles.btnModalConfirm} disabled={isLoading}>
             {isLoading && <div className={styles.loader}></div>}
             {buttonText}
           </button>
@@ -383,13 +475,13 @@ export function PillReminderDeleteConfirmModal({ showDeleteConfirmModal, onCance
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
           <button
             onClick={onCancelDelete}
-            style={{ padding: '12px 32px', borderRadius: 12, background: '#f3f4f6', color: '#222', border: 'none', fontSize: 18, fontWeight: 500, cursor: 'pointer' }}
+            className={styles.btnModalCancel}
           >
             Hủy
           </button>
           <button
             onClick={onConfirmDelete}
-            style={{ padding: '12px 32px', borderRadius: 12, background: 'linear-gradient(to right, #44c0c9, #2aa4bc)', color: '#fff', border: 'none', fontSize: 18, fontWeight: 500, cursor: 'pointer', boxShadow: '0 2px 8px rgba(162,89,230,0.10)' }}
+            className={styles.btnModalConfirmDelete}
           >
             <span style={{ marginRight: 6 }}></span> Xác nhận xóa
           </button>
