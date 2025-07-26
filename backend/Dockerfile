@@ -2,4 +2,6 @@ FROM eclipse-temurin:24-jre
 WORKDIR /app
 COPY target/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "-Dspring.config.name=application,application-cloud", "-Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-default}", "app.jar"]
+
+# Force cloud profile and debug logging
+ENTRYPOINT ["java", "-Xmx512m", "-Xms256m", "-Dspring.profiles.active=cloud", "-Dlogging.level.root=DEBUG", "-jar", "app.jar"]
