@@ -235,6 +235,7 @@ public class STIPackageService {
                                 cr.setId(c.getComponentId());
                                 cr.setTestName(c.getTestName());
                                 cr.setUnit(c.getUnit());
+                                cr.setSampleType(c.getSampleType());
                                 cr.setReferenceRange(c.getReferenceRange());
                                 cr.setInterpretation(c.getInterpretation());
                                 cr.setActive(Boolean.TRUE.equals(c.getIsActive()));

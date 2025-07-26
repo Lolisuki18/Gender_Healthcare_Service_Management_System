@@ -606,23 +606,23 @@ const ConsultantSecurityContent = () => {
         return currentPhone && !isPhoneVerified(currentPhone);
       })(),
     },
-    // Chỉ hiển thị delete account cho CUSTOMER
-    ...(canDeleteAccount()
-      ? [
-          {
-            id: 'deleteAccount',
-            title: 'Xóa tài khoản',
-            description: 'Xóa vĩnh viễn tài khoản và tất cả dữ liệu',
-            icon: <DeleteIcon />,
-            currentValue: 'Hành động không thể hoàn tác',
-            status: 'Nguy hiểm',
-            lastUpdate: 'Xóa vĩnh viễn',
-            actionText: 'Xóa tài khoản',
-            color: '#DC3545',
-            isDanger: true,
-          },
-        ]
-      : []),
+    // // Chỉ hiển thị delete account cho CUSTOMER
+    // ...(canDeleteAccount()
+    //   ? [
+    //       {
+    //         id: 'deleteAccount',
+    //         title: 'Xóa tài khoản',
+    //         description: 'Xóa vĩnh viễn tài khoản và tất cả dữ liệu',
+    //         icon: <DeleteIcon />,
+    //         currentValue: 'Hành động không thể hoàn tác',
+    //         status: 'Nguy hiểm',
+    //         lastUpdate: 'Xóa vĩnh viễn',
+    //         actionText: 'Xóa tài khoản',
+    //         color: '#DC3545',
+    //         isDanger: true,
+    //       },
+    //     ]
+    //   : []),
   ];
 
   return (
