@@ -44,6 +44,7 @@ public class STIPackageResponse {
           private String testName;
           private String unit;
           private String referenceRange;
+          private String sampleType;
           private String interpretation;
           private boolean isActive;
       }
