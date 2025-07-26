@@ -18,7 +18,7 @@
  * =============================
  * 🔑 Để sử dụng backend Cloud (production):
  *   - Tạo file .env ở thư mục gốc frontend với nội dung:
- *       REACT_APP_API_URL=https://gender-heath-backend-720346160754.asia-southeast1.run.app
+ *       REACT_APP_API_URL=https://gender-heath-backend-x5uqfjtz5q-de.a.run.app
  *   - Khi chạy local, có thể bỏ dòng này hoặc để http://localhost:8080
  *
  * =============================

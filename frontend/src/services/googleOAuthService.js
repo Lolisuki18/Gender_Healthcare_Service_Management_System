@@ -13,7 +13,8 @@ class GoogleOAuthService {
   constructor() {
     this.isGoogleLoaded = false;
     this.initPromise = null;
-    this.clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '720346160754-01sporrebme0idvj7u55nbjepiq279in.apps.googleusercontent.com';
+    this.clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '758852416545-i5q6maa9b4kkum6ni9apb1e1qku0i0hs.apps.googleusercontent.com';
+    console.log('Google OAuth Client ID:', this.clientId);
   }
 
   /**
