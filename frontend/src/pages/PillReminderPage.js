@@ -86,8 +86,13 @@ function PillReminderPage() {
               console.log("[DEBUG] startDate từ backend:", fetchedSchedule.startDate);
               const scheduleObj = {
                 id: fetchedSchedule.pillsId,
-                // Đảm bảo set về 0h00 để so sánh chính xác
-                startDate: (() => { const d = new Date(fetchedSchedule.startDate); d.setHours(0,0,0,0); return d; })(),
+                // Xử lý ngày bắt đầu để tránh lỗi timezone
+                startDate: (() => { 
+                  const d = new Date(fetchedSchedule.startDate);
+                  // Đảm bảo ngày được xử lý theo local time
+                  d.setHours(0, 0, 0, 0);
+                  return d;
+                })(),
                 pillDays: fetchedSchedule.numberDaysDrinking,
                 breakDays: fetchedSchedule.numberDaysOff,
                 reminderTime: `${String(fetchedSchedule.remindTime[0]).padStart(2, '0')}:${String(fetchedSchedule.remindTime[1]).padStart(2, '0')}`,
@@ -344,8 +349,8 @@ function PillReminderPage() {
       const requestData = {
         numberDaysDrinking: Number(formData.pillDays),
         numberDaysOff: Number(formData.breakDays),
-        // Đảm bảo gửi đúng format YYYY-MM-DD, không có giờ/phút/giây
-        startDate: formData.startDate ? new Date(formData.startDate).toISOString().slice(0, 10) : '',
+        // Sử dụng trực tiếp formData.startDate vì nó đã ở format YYYY-MM-DD
+        startDate: formData.startDate || '',
         remindTime: formData.reminderTime,
         isActive: true, // Luôn đúng theo yêu cầu
         pillType: formData.pillType,
@@ -428,11 +433,22 @@ function PillReminderPage() {
 
   const handleEditClick = () => {
     if (!schedule) return;
+    
+    // Xử lý ngày bắt đầu để tránh lỗi timezone
+    let formattedStartDate = '';
+    if (schedule.startDate) {
+      const startDate = new Date(schedule.startDate);
+      // Sử dụng local time để tránh lỗi timezone
+      const year = startDate.getFullYear();
+      const month = String(startDate.getMonth() + 1).padStart(2, '0');
+      const day = String(startDate.getDate()).padStart(2, '0');
+      formattedStartDate = `${year}-${month}-${day}`;
+    }
+    
     setFormData({
       pillDays: schedule.pillDays || 21,
       breakDays: schedule.breakDays || 7,
-      // Đảm bảo format YYYY-MM-DD
-      startDate: schedule.startDate ? new Date(schedule.startDate).toISOString().slice(0, 10) : '',
+      startDate: formattedStartDate,
       reminderTime: schedule.reminderTime || '09:00',
       pillType: schedule.pillType || '',
     });
