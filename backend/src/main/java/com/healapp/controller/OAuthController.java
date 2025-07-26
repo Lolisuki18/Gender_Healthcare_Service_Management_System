@@ -36,7 +36,7 @@ import com.healapp.service.UserService;
 
 @RestController
 @RequestMapping("/auth/oauth")
-@CrossOrigin(origins = {"http://localhost:3000", "https://alicealicek2304.github.io"})
+@CrossOrigin(origins = {"http://localhost:3000", "https://lolisuki18.github.io"})
 public class OAuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(OAuthController.class);
