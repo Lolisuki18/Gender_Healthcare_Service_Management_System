@@ -12,9 +12,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.healapp.dto.ApiResponse;
+import com.healapp.model.ControlPills;
 import com.healapp.model.NotificationPreference;
 import com.healapp.model.NotificationType;
 import com.healapp.model.UserDtls;
+import com.healapp.repository.ControlPillsRepository;
 import com.healapp.repository.NotificationPreferenceRepository;
 import com.healapp.repository.UserRepository;
 
@@ -28,6 +30,9 @@ public class NotificationPreferenceService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ControlPillsRepository controlPillsRepository;
 
     @Autowired
     private NotificationPreferenceRepository notificationPreferenceRepo;
@@ -147,9 +152,14 @@ public class NotificationPreferenceService {
         try {
             // Kiểm tra người dùng đã đăng nhập
             Long userId = getCurrentUserId();
-            if (userId == null) {
-                return ApiResponse.error("User not authenticated");
+
+            // Kiểm tra người dùng tồn tại
+            Optional<UserDtls> user = userRepository.findById(userId);
+            if(!user.isPresent()) {
+                return ApiResponse.error("User not found");
             }
+
+            UserDtls userDtls = user.get();
 
             // Convert String to NotificationType enum
             NotificationType notificationType;
@@ -164,6 +174,18 @@ public class NotificationPreferenceService {
             if (updatedRows == 0) {
                 return ApiResponse.error("No rows updated. Preference might not exist.");
             }
+
+            // Thay đổi thời gian của controlPills
+            Optional<List<ControlPills>> controlPillsOpt = controlPillsRepository.findByUserIdAndIsActive(userDtls,
+                    true);
+            
+            if (!controlPillsOpt.isPresent()) {
+                return ApiResponse.error("No active control pills found for user");
+            } 
+
+            ControlPills controlPills = controlPillsOpt.get().get(0);
+            controlPills.setRemindTime(time);
+            controlPillsRepository.save(controlPills);  
 
             return ApiResponse.success("Notification time updated successfully");
         } catch (Exception e) {

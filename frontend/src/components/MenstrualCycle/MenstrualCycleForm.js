@@ -333,10 +333,16 @@ const MenstrualCycleForm = ({ open, onSubmit, onCancel, initialData = null, isEd
     if (isEditMode && initialData) {
       // Format date for input field (YYYY-MM-DD)
       const formatDateForInput = (date) => {
-        if (date instanceof Date) {
-          return date.toISOString().split('T')[0];
+        if (!date) return "";
+        if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          // Đã là chuỗi yyyy-mm-dd
+          return date;
         }
-        return "";
+        // Nếu là ISO string hoặc Date object
+        const d = new Date(date);
+        const offset = d.getTimezoneOffset();
+        d.setMinutes(d.getMinutes() - offset); // Chuyển về local date
+        return d.toISOString().split('T')[0];
       };
 
       setForm({

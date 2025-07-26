@@ -76,7 +76,14 @@ public class NotificationService {
         
         for (NotificationPreference preference : ovulationPreferences) {
             try {
-                sendOvulationNotificationToUser(preference.getUser().getId());
+                if(preference.getRemindTime().equals(LocalTime.of(LocalTime.now().getHour(), LocalTime.now().getMinute()))) {
+                    sendOvulationNotificationToUser(preference.getUser().getId());
+                    logger.info("Sending ovulation notification to user ID: {}", preference.getUser().getId());
+                } else {
+                    logger.info("Skipping ovulation notification for user ID {}: Not the right time", 
+                               preference.getUser().getId());
+                    continue;
+                }
             } catch (Exception e) {
                 logger.error("Error sending ovulation notification to user ID {}: {}", 
                            preference.getUser().getId(), e.getMessage(), e);
@@ -170,7 +177,14 @@ public class NotificationService {
         
         for (NotificationPreference preference : pregnancyPreferences) {
             try {
-                sendPregnancyProbNotificationToUser(preference.getUser().getId());
+                if(preference.getRemindTime().equals(LocalTime.of(LocalTime.now().getHour(), LocalTime.now().getMinute()))) {
+                    logger.info("Sending pregnancy probability notification to user ID: {}", preference.getUser().getId());
+                    sendPregnancyProbNotificationToUser(preference.getUser().getId());
+                } else {
+                    logger.info("Skipping pregnancy probability notification for user ID {}: Not the right time", 
+                               preference.getUser().getId());
+                    continue;
+                }
             } catch (Exception e) {
                 logger.error("Error sending pregnancy probability notification to user ID {}: {}", 
                            preference.getUser().getId(), e.getMessage(), e);
