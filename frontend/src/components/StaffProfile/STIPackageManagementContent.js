@@ -520,20 +520,7 @@ const STIPackageManagementContent = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
         }}
-      >
-        <Typography
-          variant="h4"
-          fontWeight="600"
-          sx={{
-            background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            letterSpacing: '0.5px',
-          }}
-        >
-          Quản lý Gói STI
-        </Typography>
-      </Box>
+      ></Box>
       <Box
         sx={{
           display: 'flex',

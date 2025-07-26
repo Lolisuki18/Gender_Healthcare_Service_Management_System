@@ -1,5 +1,6 @@
 package com.healapp.service;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,9 +12,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.healapp.dto.ApiResponse;
+import com.healapp.model.ControlPills;
 import com.healapp.model.NotificationPreference;
 import com.healapp.model.NotificationType;
 import com.healapp.model.UserDtls;
+import com.healapp.repository.ControlPillsRepository;
 import com.healapp.repository.NotificationPreferenceRepository;
 import com.healapp.repository.UserRepository;
 
@@ -27,6 +30,9 @@ public class NotificationPreferenceService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ControlPillsRepository controlPillsRepository;
 
     @Autowired
     private NotificationPreferenceRepository notificationPreferenceRepo;
@@ -122,7 +128,7 @@ public class NotificationPreferenceService {
      * Tạo default notification preferences cho user mới
      * Default: tất cả notifications đều enabled = true
      */
-    private void createDefaultNotificationPreferences(Long userId) {
+    public void createDefaultNotificationPreferences(Long userId) {
         Optional<UserDtls> userOpt = userRepository.findById(userId);
         if (!userOpt.isPresent()) {
             throw new RuntimeException("User not found with id: " + userId);
@@ -135,9 +141,55 @@ public class NotificationPreferenceService {
             NotificationPreference preference = new NotificationPreference();
             preference.setUser(user);
             preference.setType(type);
+            preference.setRemindTime(LocalTime.of(7, 0)); // Set default time to 7:00 AM
             preference.setEnabled(true); // Default enabled
             
             notificationPreferenceRepo.save(preference);
+        }
+    }
+
+    public ApiResponse<Void> updateNotificationTime(String type, LocalTime time) {
+        try {
+            // Kiểm tra người dùng đã đăng nhập
+            Long userId = getCurrentUserId();
+
+            // Kiểm tra người dùng tồn tại
+            Optional<UserDtls> user = userRepository.findById(userId);
+            if(!user.isPresent()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls userDtls = user.get();
+
+            // Convert String to NotificationType enum
+            NotificationType notificationType;
+            try {
+                notificationType = NotificationType.valueOf(type.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error("Invalid notification type: " + type);
+            }
+
+            // Cập nhật thời gian gửi thông báo
+            int updatedRows = notificationPreferenceRepo.updateNotificationPreference(userId, notificationType, time);
+            if (updatedRows == 0) {
+                return ApiResponse.error("No rows updated. Preference might not exist.");
+            }
+
+            // Thay đổi thời gian của controlPills
+            Optional<List<ControlPills>> controlPillsOpt = controlPillsRepository.findByUserIdAndIsActive(userDtls,
+                    true);
+            
+            if (!controlPillsOpt.isPresent()) {
+                return ApiResponse.error("No active control pills found for user");
+            } 
+
+            ControlPills controlPills = controlPillsOpt.get().get(0);
+            controlPills.setRemindTime(time);
+            controlPillsRepository.save(controlPills);  
+
+            return ApiResponse.success("Notification time updated successfully");
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to update notification time: " + e.getMessage());
         }
     }
 

@@ -31,6 +31,7 @@ import {
   People as PeopleIcon,
   Assignment as AssignmentIcon,
   AttachMoney as MoneyIcon,
+  FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 
 import { adminService } from '@/services/adminService';
@@ -45,6 +46,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const MetricCard = ({ title, value, change, icon: Icon, color }) => (
   <Card
@@ -205,6 +209,90 @@ const ReportsContent = () => {
     setUserError(null);
   };
 
+  // Hàm xuất PDF
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('BÁO CÁO DOANH THU', 14, 18);
+    doc.setFontSize(12);
+    doc.text(
+      `Tổng doanh thu: ${summary ? Number(summary.totalRevenue).toLocaleString() + ' VNĐ' : '-'}`,
+      14,
+      30
+    );
+    doc.text(
+      `Số giao dịch thành công: ${summary ? summary.totalTransactions : '-'}`,
+      14,
+      38
+    );
+    doc.text(
+      `Doanh thu trung bình: ${summary ? Number(summary.averageRevenue).toLocaleString() + ' VNĐ' : '-'}`,
+      14,
+      46
+    );
+    doc.text(
+      `Số khách hàng thanh toán: ${summary ? summary.totalCustomers : '-'}`,
+      14,
+      54
+    );
+    doc.autoTable({
+      startY: 62,
+      head: [
+        ['Mã GD', 'Khách hàng', 'Số tiền', 'Ngày thanh toán', 'Phương thức'],
+      ],
+      body: transactions.map((t) => [
+        t.paymentId,
+        t.customerName || t.userId,
+        Number(t.amount).toLocaleString() + ' VNĐ',
+        t.paidAt ? formatDateTime(t.paidAt) : '-',
+        t.paymentMethod,
+      ]),
+      styles: { font: 'helvetica', fontSize: 10 },
+      headStyles: { fillColor: [74, 144, 226] },
+    });
+    doc.save('bao_cao_doanh_thu.pdf');
+  };
+
+  // Hàm xuất Excel cho danh sách giao dịch
+  const handleExportExcel = () => {
+    // Chuẩn bị dữ liệu cho Excel
+    const excelData = transactions.map((t, index) => ({
+      STT: index + 1,
+      'Mã giao dịch': t.paymentId || '',
+      'Khách hàng': t.customerName || t.userId || '',
+      'Số tiền (VNĐ)': Number(t.amount || 0),
+      'Ngày thanh toán': t.paidAt ? formatDateTime(t.paidAt) : '',
+      'Phương thức thanh toán': t.paymentMethod || '',
+      'Trạng thái': 'Đã thanh toán',
+    }));
+
+    // Tạo workbook và worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Điều chỉnh độ rộng cột
+    const colWidths = [
+      { wch: 5 }, // STT
+      { wch: 15 }, // Mã giao dịch
+      { wch: 20 }, // Khách hàng
+      { wch: 15 }, // Số tiền
+      { wch: 20 }, // Ngày thanh toán
+      { wch: 20 }, // Phương thức
+      { wch: 15 }, // Trạng thái
+    ];
+    ws['!cols'] = colWidths;
+
+    // Thêm worksheet vào workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Danh sách giao dịch');
+
+    // Tạo tên file với ngày hiện tại
+    const currentDate = new Date().toISOString().split('T')[0];
+    const fileName = `danh_sach_giao_dich_${currentDate}.xlsx`;
+
+    // Xuất file
+    XLSX.writeFile(wb, fileName);
+  };
+
   // Xử lý loading/error
   if (loading) return <Typography>Đang tải báo cáo...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
@@ -224,8 +312,15 @@ const ReportsContent = () => {
             fontSize: { xs: '1.5rem', md: '2rem' },
           }}
         >
-          <TrendingUpIcon sx={{ mr: 2, color: '#4A90E2', fontSize: 32 }} />
-          Báo cáo & Doanh thu
+          {/* Nút xuất PDF */}
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{ ml: 2 }}
+            onClick={handleExportPDF}
+          >
+            Xuất PDF
+          </Button>
         </Typography>
         <Typography
           variant="body1"
@@ -363,12 +458,33 @@ const ReportsContent = () => {
       {/* Bảng chi tiết giao dịch */}
       <Card>
         <CardContent>
-          <Typography
-            variant="h6"
-            sx={{ mb: 2, color: '#2D3748', fontWeight: 600 }}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+            }}
           >
-            Danh sách giao dịch đã thanh toán
-          </Typography>
+            <Typography variant="h6" sx={{ color: '#2D3748', fontWeight: 600 }}>
+              Danh sách giao dịch đã thanh toán
+            </Typography>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleExportExcel}
+              startIcon={<FileDownloadIcon />}
+              sx={{
+                backgroundColor: '#4CAF50',
+                '&:hover': {
+                  backgroundColor: '#45a049',
+                },
+                fontWeight: 600,
+              }}
+            >
+              Xuất Excel
+            </Button>
+          </Box>
           <TableContainer component={Paper} sx={{ background: 'transparent' }}>
             <Table>
               <TableHead>

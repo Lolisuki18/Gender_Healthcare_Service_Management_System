@@ -543,7 +543,18 @@ const ConsultationPage = () => {
       //     response.success
       // );
       if (response.success === true) {
-        // Set success message và hiển thị dialog
+        // Đóng modal đăng ký lịch hẹn ngay lập tức
+        setAppointmentDialog({ open: false, consultant: null });
+
+        // Reset form
+        setAppointmentForm({
+          date: null,
+          timeSlot: '',
+          consultantId: null,
+          reason: '',
+        });
+
+        // Set success message
         notify.success('Thành công', 'Đặt lịch tư vấn thành công!');
 
         // Hiển thị dialog thành công với tùy chọn chuyển hướng
@@ -559,15 +570,6 @@ const ConsultationPage = () => {
         // Nếu user chọn xem lịch hẹn, chuyển hướng đến trang profile với tab appointments
         if (result) {
           navigate('/profile?tab=appointments');
-        } else {
-          // Nếu user chọn đóng, reset form và đóng modal đặt lịch hẹn
-          setAppointmentForm({
-            date: null,
-            timeSlot: '',
-            consultantId: null,
-            reason: '',
-          });
-          setAppointmentDialog({ open: false, consultant: null });
         }
       } else {
         // Xử lý thông báo lỗi chi tiết

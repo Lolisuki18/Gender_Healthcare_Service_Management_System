@@ -682,7 +682,7 @@ const MedicalHistoryContent = () => {
                 <CalendarIcon sx={{ color: '#3b82f6', fontSize: 32 }} />
               </Box>
               <Box>
-                <Typography
+                {/* <Typography
                   variant="h4"
                   sx={{
                     fontWeight: 700,
@@ -691,8 +691,15 @@ const MedicalHistoryContent = () => {
                   }}
                 >
                   Lịch sử khám bệnh
-                </Typography>
-                <Typography variant="body1" sx={{ color: '#4A5568', mt: 0.5 }}>
+                </Typography> */}
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 700,
+                    color: '#2D3748',
+                    fontSize: { xs: '1.5rem', md: '2rem' },
+                  }}
+                >
                   Quản lý và theo dõi các lần khám bệnh của bạn.
                 </Typography>
               </Box>

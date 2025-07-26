@@ -32,6 +32,11 @@ const questionService = {
     return apiClient.put(`/questions/${questionId}/answer`, data);
   },
 
+  // Cập nhật câu trả lời (sử dụng lại endpoint answer)
+  updateAnswer(questionId, data) {
+    return apiClient.put(`/questions/${questionId}/answer`, data);
+  },
+
   // Cập nhật trạng thái câu hỏi
   updateQuestionStatus(questionId, data) {
     return apiClient.put(`/questions/${questionId}/status`, data);

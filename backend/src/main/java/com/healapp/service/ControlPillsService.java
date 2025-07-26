@@ -23,9 +23,12 @@ import com.healapp.dto.PillLogsRespone;
 import com.healapp.dto.PillReminderDetailsResponse;
 import com.healapp.model.UserDtls;
 import com.healapp.model.ControlPills;
+import com.healapp.model.NotificationPreference;
+import com.healapp.model.NotificationType;
 import com.healapp.model.PillLogs;
 import com.healapp.model.PillType;
 import com.healapp.repository.ControlPillsRepository;
+import com.healapp.repository.NotificationPreferenceRepository;
 import com.healapp.repository.PillLogsRepository;
 import com.healapp.repository.UserRepository;
 
@@ -44,6 +47,9 @@ public class ControlPillsService {
 
     @Autowired
     private PillLogsRepository pillLogsRepository;
+
+    @Autowired
+    private NotificationPreferenceRepository notificationPreferenceRepository;
 
 
     //Thêm lịch uống thuốc
@@ -77,6 +83,24 @@ public class ControlPillsService {
           con.setPillType(request.getPillType());
   
           controlPillsRepository.save(con);
+
+          // Lưu thời gian remind cho lịch uống thuốc
+          // Lấy notificationPreference của người dùng này
+          Optional<NotificationPreference> notificationPreference = notificationPreferenceRepository.findByUserIdAndType(userId, NotificationType.PILL_REMINDER);
+            if (notificationPreference.isPresent()) {
+                NotificationPreference preference = notificationPreference.get();
+                preference.setRemindTime(request.getRemindTime());
+                preference.setEnabled(true);
+                notificationPreferenceRepository.save(preference);
+            } else {
+                // Nếu không có preference, tạo mới
+                NotificationPreference newPreference = new NotificationPreference();
+                newPreference.setUser(user.get());
+                newPreference.setType(NotificationType.PILL_REMINDER);
+                newPreference.setRemindTime(request.getRemindTime());
+                newPreference.setEnabled(true);
+                notificationPreferenceRepository.save(newPreference);
+            }
 
           // Generate log cho toàn bộ chu kỳ đầu tiên (tất cả các ngày uống thuốc)
           for (int i = 0; i < con.getNumberDaysDrinking(); i++) {
@@ -161,6 +185,30 @@ public class ControlPillsService {
 
         
             ControlPillsResponse response = convertResponse(controlPills);
+
+            // Lưu thời gian remind cho lịch uống thuốc
+          // Lấy notificationPreference của người dùng này
+          Optional<NotificationPreference> notificationPreference = notificationPreferenceRepository.findByUserIdAndType(controlPills.getUserId().getId(), NotificationType.PILL_REMINDER);
+            if (notificationPreference.isPresent()) {
+                NotificationPreference preference = notificationPreference.get();
+                preference.setRemindTime(request.getRemindTime());
+                preference.setEnabled(true);
+                notificationPreferenceRepository.save(preference);
+            } else {
+                // Nếu không có preference, tạo mới
+                NotificationPreference newPreference = new NotificationPreference();
+                newPreference.setUser(controlPills.getUserId());
+                newPreference.setType(NotificationType.PILL_REMINDER);
+                newPreference.setRemindTime(request.getRemindTime());
+                newPreference.setEnabled(true);
+                notificationPreferenceRepository.save(newPreference);
+            }
+
+          // Generate log cho toàn bộ chu kỳ đầu tiên (tất cả các ngày uống thuốc)
+          for (int i = 0; i < controlPills.getNumberDaysDrinking(); i++) {
+              LocalDate logDate = controlPills.getStartDate().plusDays(i);
+              generatePillLogForSpecificDate(controlPills, logDate);
+          }
             return ApiResponse.success("Đã cập nhật lịch uống thuốc thành công", response);
         } catch (Exception e) {
           e.printStackTrace();

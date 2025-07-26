@@ -138,7 +138,37 @@ const STITestsContent = () => {
     setLoading(true);
     try {
       const res = await getConsultantSTITests();
-      setTests(res.data || []);
+      const testsData = res.data || [];
+
+      // Load thêm thông tin cho package tests để có thể đếm số service
+      const enrichedTests = await Promise.all(
+        testsData.map(async (test) => {
+          if (test.packageId) {
+            try {
+              // Load package services và test results để có đủ thông tin
+              const [packageRes, resultsRes] = await Promise.all([
+                getSTIPackageById(test.packageId),
+                getTestResultsByTestId(test.testId),
+              ]);
+
+              return {
+                ...test,
+                packageServices: packageRes?.data?.services || [],
+                testServiceConsultantNotes:
+                  resultsRes?.testServiceConsultantNotes ||
+                  resultsRes?.data?.testServiceConsultantNotes ||
+                  [],
+              };
+            } catch (err) {
+              // Nếu có lỗi, trả về test gốc
+              return test;
+            }
+          }
+          return test;
+        })
+      );
+
+      setTests(enrichedTests);
     } finally {
       setLoading(false);
     }
@@ -157,11 +187,26 @@ const STITestsContent = () => {
     const matchesSearch = matchesName || matchesTestId;
     let matchesConclusion = true;
     if (conclusionFilter === 'has') {
-      matchesConclusion = !!(
-        test.consultantNotes && test.consultantNotes.trim()
-      );
+      if (test.packageId) {
+        // Cho package: kiểm tra xem có service nào đã có kết luận
+        const conclusionStatus = getPackageConclusionStatus(test);
+        matchesConclusion = conclusionStatus.hasConclusion;
+      } else {
+        // Cho service đơn lẻ: kiểm tra consultantNotes
+        matchesConclusion = !!(
+          test.consultantNotes && test.consultantNotes.trim()
+        );
+      }
     } else if (conclusionFilter === 'none') {
-      matchesConclusion = !test.consultantNotes || !test.consultantNotes.trim();
+      if (test.packageId) {
+        // Cho package: kiểm tra xem có service nào đã có kết luận
+        const conclusionStatus = getPackageConclusionStatus(test);
+        matchesConclusion = !conclusionStatus.hasConclusion;
+      } else {
+        // Cho service đơn lẻ: kiểm tra consultantNotes
+        matchesConclusion =
+          !test.consultantNotes || !test.consultantNotes.trim();
+      }
     }
     let matchesDate = true;
     const filterYMD = getYMD(dateFilter);
@@ -198,6 +243,15 @@ const STITestsContent = () => {
     setDetailComponents([]);
     setDetailAllServiceComponents({});
 
+    // Lấy kết quả test trước để sử dụng trong cả package và service đơn
+    let testResults = null;
+    try {
+      const resultRes = await getTestResultsByTestId(test.testId);
+      testResults = resultRes; // Giữ nguyên structure từ API
+    } catch (err) {
+      console.error('Error fetching test results:', err);
+    }
+
     if (test.packageId) {
       // Nếu là package, lấy danh sách service con và thành phần từng service
       try {
@@ -208,10 +262,7 @@ const STITestsContent = () => {
           // Lấy thành phần từng service
           const promises = services.map((svc) => getSTIServiceById(svc.id));
           const results = await Promise.all(promises);
-          // Lấy kết quả thực tế
-          const resultRes = await getTestResultsByTestId(test.testId);
-          const testResults =
-            (resultRes && (resultRes.data || resultRes)) || [];
+
           const allComponents = {};
           results.forEach((result, idx) => {
             const svcId = services[idx].id;
@@ -225,9 +276,15 @@ const STITestsContent = () => {
             } else if (result && Array.isArray(result.components)) {
               comps = result.components;
             }
-            // Map result vào component
+            // Map result vào component từ API results
+            const serviceResults =
+              testResults?.results?.filter((r) => r.serviceId === svcId) ||
+              testResults?.data?.results?.filter(
+                (r) => r.serviceId === svcId
+              ) ||
+              [];
             comps = comps.map((comp) => {
-              const found = testResults.find(
+              const found = serviceResults.find(
                 (r) =>
                   r.componentId === comp.componentId ||
                   r.componentId === comp.id
@@ -250,6 +307,23 @@ const STITestsContent = () => {
           const firstService = services[0];
           setDetailSelectedService(firstService);
           setDetailComponents(allComponents[firstService.id] || []);
+
+          // Cập nhật detailModalTest với testResults
+          const updatedTest = {
+            ...test,
+            testResults: testResults,
+            testServiceConsultantNotes:
+              testResults?.testServiceConsultantNotes ||
+              testResults?.data?.testServiceConsultantNotes ||
+              [],
+          };
+
+          setDetailModalTest(updatedTest);
+
+          // Cập nhật test trong state tests để helper function có thể sử dụng
+          setTests((prevTests) =>
+            prevTests.map((t) => (t.testId === test.testId ? updatedTest : t))
+          );
         }
       } catch (err) {
         setDetailPackageServices([]);
@@ -266,12 +340,11 @@ const STITestsContent = () => {
           if (res && res.data && Array.isArray(res.data.components)) {
             comps = res.data.components;
           }
-          // Lấy kết quả thực tế
-          const resultRes = await getTestResultsByTestId(test.testId);
-          const testResults =
-            (resultRes && (resultRes.data || resultRes)) || [];
+          // Map result vào component từ API results
+          const serviceResults =
+            testResults?.results || testResults?.data?.results || [];
           comps = comps.map((comp) => {
-            const found = testResults.find(
+            const found = serviceResults.find(
               (r) =>
                 r.componentId === comp.componentId || r.componentId === comp.id
             );
@@ -287,6 +360,12 @@ const STITestsContent = () => {
               : comp;
           });
           setDetailComponents(comps);
+
+          // Cập nhật detailModalTest với testResults
+          setDetailModalTest({
+            ...test,
+            testResults: testResults,
+          });
         } else {
           setDetailComponents([]);
         }
@@ -385,6 +464,43 @@ const STITestsContent = () => {
     });
   };
 
+  // Helper function để đếm số service đã có kết luận trong package
+  const getPackageConclusionStatus = (test) => {
+    if (!test.packageId || !test.testServiceConsultantNotes) {
+      return { hasConclusion: false, statusText: 'Chưa có kết luận' };
+    }
+
+    // Đếm số service có kết luận (note không rỗng)
+    const servicesWithConclusion = test.testServiceConsultantNotes.filter(
+      (note) => note.note && note.note.trim() !== ''
+    ).length;
+
+    // Lấy tổng số service trong package
+    let totalServices = 0;
+    if (test.packageServices && Array.isArray(test.packageServices)) {
+      totalServices = test.packageServices.length;
+    } else if (test.testServiceConsultantNotes) {
+      // Fallback: dùng số lượng unique serviceId từ notes
+      const uniqueServiceIds = new Set(
+        test.testServiceConsultantNotes.map((note) => note.serviceId)
+      );
+      totalServices = uniqueServiceIds.size;
+    }
+
+    if (totalServices === 0) {
+      return { hasConclusion: false, statusText: 'Chưa có' };
+    }
+
+    if (servicesWithConclusion === totalServices) {
+      return { hasConclusion: true, statusText: 'Đã có' };
+    } else {
+      return {
+        hasConclusion: false,
+        statusText: `${servicesWithConclusion}/${totalServices}`,
+      };
+    }
+  };
+
   return (
     <Box sx={{ p: 3, backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
       {/* Simple Header */}
@@ -400,11 +516,11 @@ const STITestsContent = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <LocalHospitalIcon sx={{ fontSize: 36, mr: 2 }} />
           <Box>
-            <Typography variant="h4" fontWeight="bold">
+            {/* <Typography variant="h4" fontWeight="bold">
               Quản lý Xét nghiệm STI
-            </Typography>
-            <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-              Hệ thống quản lý xét nghiệm bệnh lây truyền qua đường tình dục
+            </Typography> */}
+            <Typography variant="h4" fontWeight="bold" sx={{ opacity: 0.9 }}>
+              Kết luận xét nghiệm bệnh lây truyền qua đường tình dục
             </Typography>
           </Box>
         </Box>
@@ -599,7 +715,25 @@ const STITestsContent = () => {
                       {formatDateDisplay(test.appointmentDate)}
                     </TableCell>
                     <TableCell align="center">
-                      {test.consultantNotes && test.consultantNotes.trim() ? (
+                      {test.packageId ? (
+                        // Logic cho package: hiển thị trạng thái kết luận dựa trên số service
+                        (() => {
+                          const conclusionStatus =
+                            getPackageConclusionStatus(test);
+                          return (
+                            <Chip
+                              label={conclusionStatus.statusText}
+                              color={
+                                conclusionStatus.hasConclusion
+                                  ? 'success'
+                                  : 'warning'
+                              }
+                              size="small"
+                            />
+                          );
+                        })()
+                      ) : // Logic cho service đơn lẻ: kiểm tra consultantNotes
+                      test.consultantNotes && test.consultantNotes.trim() ? (
                         <Chip label="Đã có" color="success" size="small" />
                       ) : (
                         <Chip label="Chưa có" color="warning" size="small" />

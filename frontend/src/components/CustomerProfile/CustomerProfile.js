@@ -225,12 +225,13 @@ const CustomerProfile = () => {
               {selectedMenuItem === 'notifications' && 'Thông báo'}
               {selectedMenuItem === 'settings' && 'Cài đặt'}
               {selectedMenuItem === 'help' && 'Trợ giúp'}
-              {selectedMenuItem === 'questions' && 'Câu hỏi đã đặt'}
+              {selectedMenuItem === 'questions' && 'Câu hỏi'}
               {selectedMenuItem === 'my-reviews' && 'Đánh giá của tôi'}
               {/* {selectedMenuItem === 'security' && 'Bảo mật'} */}
               {selectedMenuItem === 'blog-customer' && 'Blog của tôi'}
-              {selectedMenuItem === 'invoices' && 'Hóa đơn'}
               {selectedMenuItem === 'security' && 'Bảo mật tài khoản'}
+              {selectedMenuItem === 'payment-info' && 'Thông tin thanh toán'}
+              {selectedMenuItem === 'pill-history' && 'Lịch sử uống thuốc'}
             </Typography>
           </Box>{' '}
           <Chip

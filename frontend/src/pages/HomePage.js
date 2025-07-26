@@ -136,7 +136,7 @@ export const HomePage = () => {
   };
 
   const handleTestRegistration = () => {
-    navigate('/sti-services');
+    navigate('/test-registration');
   };
 
   const handleAskQuestion = async () => {

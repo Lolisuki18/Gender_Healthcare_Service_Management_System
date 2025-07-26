@@ -1,5 +1,7 @@
 package com.healapp.model;
 
+import java.time.LocalTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -33,6 +35,9 @@ public class NotificationPreference {
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 30)
     private NotificationType type; // OVULATION, PILL_REMINDER, PREGNANCY_PROBABILITY
+
+    @Column(name = "time", nullable = false)
+    private LocalTime remindTime;
 
     @Column(name = "enabled", nullable = false)
     private Boolean enabled;

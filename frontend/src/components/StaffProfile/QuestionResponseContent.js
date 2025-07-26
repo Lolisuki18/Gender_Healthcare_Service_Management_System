@@ -53,7 +53,6 @@ import {
 import questionService from '../../services/questionService';
 import consultantService from '../../services/consultantService';
 import { formatDateTimeFromArray } from '../../utils/dateUtils';
-import { confirmDialog } from '../../utils/confirmDialog';
 
 // Define theme colors and styles
 const theme = {
@@ -174,10 +173,6 @@ const QuestionResponseContent = () => {
   };
 
   const handleOpenRejectDialog = async (questionId) => {
-    const result = await confirmDialog.cancel(
-      'Bạn có chắc chắn muốn từ chối câu hỏi này?'
-    );
-    if (!result) return;
     setRejectingId(questionId);
     setRejectReason('');
     setRejectError('');
@@ -211,6 +206,8 @@ const QuestionResponseContent = () => {
 
   // Lấy danh sách consultant khi mở dialog duyệt
   const handleOpenApproveDialog = async (questionId) => {
+    const questionToApprove = questions.find((q) => q.id === questionId);
+    setDetailQuestion(questionToApprove); // Set chi tiết câu hỏi để hiển thị
     setApprovingId(questionId);
     setApproveError('');
     setReplierId(''); // reset về chuỗi rỗng
@@ -225,6 +222,7 @@ const QuestionResponseContent = () => {
   const handleCloseApproveDialog = () => {
     setOpenApproveDialog(false);
     setApprovingId(null);
+    setDetailQuestion(null); // Reset chi tiết câu hỏi
     setReplierId('');
     setApproveError('');
   };
@@ -338,7 +336,7 @@ const QuestionResponseContent = () => {
         </Avatar>
         <Box>
           <Typography variant="h4" fontWeight={700} mb={1} letterSpacing={0.5}>
-            Trả lời câu hỏi
+            Câu hỏi từ khách hàng
           </Typography>
           <Typography variant="body1" sx={{ opacity: 0.92, fontWeight: 400 }}>
             Quản lý và phản hồi các câu hỏi từ khách hàng
@@ -925,6 +923,21 @@ const QuestionResponseContent = () => {
                   boxShadow: '0 2px 8px #4A90E215',
                 }}
               >
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 600,
+                    color: theme.primary,
+                    mb: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                  }}
+                >
+                  <HelpOutlineIcon />
+                  Thông tin câu hỏi #{detailQuestion.id}
+                </Typography>
+
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Avatar
                     sx={{
@@ -936,29 +949,55 @@ const QuestionResponseContent = () => {
                   >
                     {detailQuestion.customerName.charAt(0)}
                   </Avatar>
-                  <Box>
+                  <Box sx={{ flex: 1 }}>
                     <Typography
                       variant="subtitle1"
                       sx={{ fontWeight: 600, color: theme.text }}
                     >
                       {detailQuestion.customerName}
                     </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: theme.textLight }}
-                    >
-                      <CalendarTodayIcon fontSize="inherit" sx={{ mr: 0.5 }} />{' '}
-                      Ngày hỏi:{' '}
-                      {formatDateTimeFromArray(detailQuestion.createdAt)}
+                    <Typography variant="body2" sx={{ color: theme.textLight }}>
+                      {detailQuestion.customerEmail}
                     </Typography>
                   </Box>
+                  {detailQuestion.categoryName && (
+                    <Chip
+                      label={detailQuestion.categoryName}
+                      size="small"
+                      sx={{
+                        bgcolor: theme.secondary + '20',
+                        color: theme.secondary,
+                        fontWeight: 600,
+                      }}
+                    />
+                  )}
                 </Box>
+
+                <Box sx={{ mb: 2 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: theme.textLight,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                    }}
+                  >
+                    <CalendarTodayIcon fontSize="inherit" />
+                    Ngày tạo:{' '}
+                    {formatDateTimeFromArray(detailQuestion.createdAt)}
+                  </Typography>
+                </Box>
+
+                <Typography
+                  variant="subtitle2"
+                  sx={{ fontWeight: 600, color: theme.text, mb: 1 }}
+                >
+                  Nội dung câu hỏi:
+                </Typography>
                 <Typography
                   variant="body1"
-                  gutterBottom
                   sx={{
-                    fontWeight: 500,
-                    color: theme.text,
                     p: 2,
                     backgroundColor: '#fff',
                     borderRadius: 2,
@@ -966,10 +1005,159 @@ const QuestionResponseContent = () => {
                     fontStyle: 'italic',
                     boxShadow: '0 2px 8px #0001',
                     overflowWrap: 'break-word',
+                    lineHeight: 1.6,
                   }}
                 >
                   {detailQuestion.content}
                 </Typography>
+
+                {/* Hiển thị thông tin trạng thái */}
+                <Box
+                  sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 600, color: theme.text }}
+                  >
+                    Trạng thái:
+                  </Typography>
+                  <Chip
+                    label={
+                      detailQuestion.status === 'PROCESSING'
+                        ? 'Chờ duyệt'
+                        : detailQuestion.status === 'CONFIRMED'
+                          ? 'Đã duyệt'
+                          : detailQuestion.status === 'ANSWERED'
+                            ? 'Đã trả lời'
+                            : detailQuestion.status === 'CANCELED'
+                              ? 'Đã huỷ'
+                              : detailQuestion.status
+                    }
+                    size="small"
+                    icon={
+                      detailQuestion.status === 'PROCESSING' ? (
+                        <HourglassEmptyIcon sx={{ color: theme.warning }} />
+                      ) : detailQuestion.status === 'CONFIRMED' ? (
+                        <CheckCircleIcon sx={{ color: theme.info }} />
+                      ) : detailQuestion.status === 'ANSWERED' ? (
+                        <ReplyIcon sx={{ color: theme.success }} />
+                      ) : detailQuestion.status === 'CANCELED' ? (
+                        <CloseIcon sx={{ color: theme.error }} />
+                      ) : null
+                    }
+                    sx={{
+                      fontWeight: 600,
+                      backgroundColor:
+                        detailQuestion.status === 'PROCESSING'
+                          ? `${theme.warning}15`
+                          : detailQuestion.status === 'CONFIRMED'
+                            ? `${theme.info}15`
+                            : detailQuestion.status === 'ANSWERED'
+                              ? `${theme.success}15`
+                              : detailQuestion.status === 'CANCELED'
+                                ? `${theme.error}15`
+                                : '#e2e8f0',
+                      color:
+                        detailQuestion.status === 'PROCESSING'
+                          ? theme.warning
+                          : detailQuestion.status === 'CONFIRMED'
+                            ? theme.info
+                            : detailQuestion.status === 'ANSWERED'
+                              ? theme.success
+                              : detailQuestion.status === 'CANCELED'
+                                ? theme.error
+                                : theme.textLight,
+                      borderRadius: 2,
+                      border: `1px solid ${
+                        detailQuestion.status === 'PROCESSING'
+                          ? theme.warning
+                          : detailQuestion.status === 'CONFIRMED'
+                            ? theme.info
+                            : detailQuestion.status === 'ANSWERED'
+                              ? theme.success
+                              : detailQuestion.status === 'CANCELED'
+                                ? theme.error
+                                : '#e2e8f0'
+                      }30`,
+                    }}
+                  />
+                </Box>
+
+                {/* Hiển thị người trả lời nếu có */}
+                {(detailQuestion.status === 'CONFIRMED' ||
+                  detailQuestion.status === 'ANSWERED') &&
+                  detailQuestion.replierId && (
+                    <Box
+                      sx={{
+                        mt: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ fontWeight: 600, color: theme.text }}
+                      >
+                        Người trả lời:
+                      </Typography>
+                      <Chip
+                        label={
+                          detailQuestion.replierName ||
+                          consultantMap[detailQuestion.replierId] ||
+                          `ID: ${detailQuestion.replierId}`
+                        }
+                        size="small"
+                        color="info"
+                        sx={{ fontWeight: 600, borderRadius: 2 }}
+                      />
+                    </Box>
+                  )}
+
+                {/* Hiển thị người duyệt nếu có */}
+                {detailQuestion.updaterId && detailQuestion.updaterName && (
+                  <Box
+                    sx={{
+                      mt: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 600, color: theme.text }}
+                    >
+                      Người duyệt:
+                    </Typography>
+                    <Chip
+                      label={detailQuestion.updaterName}
+                      size="small"
+                      color="secondary"
+                      sx={{ fontWeight: 600, borderRadius: 2 }}
+                    />
+                  </Box>
+                )}
+
+                {/* Hiển thị ngày cập nhật nếu có */}
+                {detailQuestion.updatedAt && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: theme.textLight,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                      }}
+                    >
+                      <CalendarTodayIcon fontSize="inherit" />
+                      Ngày cập nhật:{' '}
+                      {formatDateTimeFromArray(detailQuestion.updatedAt)}
+                    </Typography>
+                  </Box>
+                )}
+
                 {/* Hiển thị lý do huỷ nếu có */}
                 {detailQuestion.status === 'CANCELED' &&
                   detailQuestion.rejectionReason && (
@@ -992,28 +1180,48 @@ const QuestionResponseContent = () => {
                     </Box>
                   )}
               </Paper>
+
+              {/* Hiển thị câu trả lời nếu có */}
               {detailQuestion.answer && (
-                <Box mt={2}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 3,
+                    bgcolor: '#fff',
+                    borderRadius: 2,
+                    borderColor: '#e3f2fd',
+                    boxShadow: '0 2px 8px #4A90E215',
+                  }}
+                >
                   <Typography
-                    variant="subtitle2"
-                    fontWeight={600}
-                    mb={1}
-                    color={theme.success}
+                    variant="h6"
+                    sx={{
+                      fontWeight: 600,
+                      color: theme.success,
+                      mb: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                    }}
                   >
-                    Câu trả lời:
+                    <ReplyIcon />
+                    Câu trả lời
                   </Typography>
                   <Typography
                     variant="body1"
                     sx={{
-                      background: '#e0f7fa',
                       p: 2,
+                      backgroundColor: '#e8f5e8',
                       borderRadius: 2,
+                      borderLeft: `4px solid ${theme.success}`,
                       overflowWrap: 'break-word',
+                      lineHeight: 1.6,
+                      boxShadow: '0 2px 8px #0001',
                     }}
                   >
                     {detailQuestion.answer}
                   </Typography>
-                </Box>
+                </Paper>
               )}
             </Box>
           )}
@@ -1120,48 +1328,259 @@ const QuestionResponseContent = () => {
       <Dialog
         open={openApproveDialog}
         onClose={handleCloseApproveDialog}
-        maxWidth="xs"
+        maxWidth="md"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 4, p: 0 } }}
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            p: 0,
+            boxShadow: '0 10px 40px #4A90E230',
+            border: '1px solid #e3f2fd',
+          },
+        }}
       >
-        <DialogTitle sx={{ fontWeight: 700, fontSize: 20, pb: 1 }}>
-          Chọn người trả lời
+        <DialogTitle
+          sx={{
+            background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 100%)',
+            color: '#fff',
+            fontWeight: 700,
+            fontSize: 22,
+            letterSpacing: 0.5,
+            py: 2,
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <CheckCircleIcon sx={{ fontSize: 28 }} />
+            Duyệt câu hỏi
+          </Box>
         </DialogTitle>
-        <DialogContent sx={{ pt: 1, px: 3 }}>
-          <FormControl fullWidth sx={{ mt: 2 }}>
-            <InputLabel id="replier-select-label">Người trả lời</InputLabel>
-            <Select
-              labelId="replier-select-label"
-              value={String(replierId)}
-              label="Người trả lời"
-              onChange={(e) => {
-                console.log('Chọn replierId:', e.target.value);
-                setReplierId(e.target.value);
+        <DialogContent sx={{ pt: 3, px: 3 }}>
+          {/* Thông tin chi tiết câu hỏi */}
+          {detailQuestion && (
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 3,
+                mb: 3,
+                bgcolor: '#f8fafc',
+                borderRadius: 2,
+                borderColor: '#e3f2fd',
+                boxShadow: '0 2px 8px #4A90E215',
               }}
             >
-              {consultants.map((c) => (
-                <MenuItem key={c.userId} value={String(c.userId)}>
-                  {c.fullName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                  color: theme.primary,
+                  mb: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                <HelpOutlineIcon />
+                Thông tin câu hỏi #{detailQuestion.id}
+              </Typography>
+
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    mr: 2,
+                    background: theme.gradient,
+                  }}
+                >
+                  {detailQuestion.customerName.charAt(0)}
+                </Avatar>
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ fontWeight: 600, color: theme.text }}
+                  >
+                    {detailQuestion.customerName}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: theme.textLight }}>
+                    {detailQuestion.customerEmail}
+                  </Typography>
+                </Box>
+                <Chip
+                  label={detailQuestion.categoryName}
+                  size="small"
+                  sx={{
+                    bgcolor: theme.secondary + '20',
+                    color: theme.secondary,
+                    fontWeight: 600,
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ mb: 2 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: theme.textLight,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
+                  <CalendarTodayIcon fontSize="inherit" />
+                  Ngày tạo: {formatDateTimeFromArray(detailQuestion.createdAt)}
+                </Typography>
+              </Box>
+
+              <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 600, color: theme.text, mb: 1 }}
+              >
+                Nội dung câu hỏi:
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  p: 2,
+                  backgroundColor: '#fff',
+                  borderRadius: 2,
+                  borderLeft: `4px solid ${theme.primary}`,
+                  fontStyle: 'italic',
+                  boxShadow: '0 2px 8px #0001',
+                  overflowWrap: 'break-word',
+                  lineHeight: 1.6,
+                }}
+              >
+                {detailQuestion.content}
+              </Typography>
+            </Paper>
+          )}
+
+          {/* Chọn người trả lời */}
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 3,
+              bgcolor: '#fff',
+              borderRadius: 2,
+              borderColor: '#e3f2fd',
+              boxShadow: '0 2px 8px #4A90E215',
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                color: theme.primary,
+                mb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <PersonOutlineIcon />
+              Chọn người trả lời
+            </Typography>
+
+            <FormControl fullWidth>
+              <InputLabel id="replier-select-label">Consultant</InputLabel>
+              <Select
+                labelId="replier-select-label"
+                value={String(replierId)}
+                label="Consultant"
+                onChange={(e) => {
+                  console.log('Chọn replierId:', e.target.value);
+                  setReplierId(e.target.value);
+                }}
+                sx={{
+                  borderRadius: 2,
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#e3f2fd' },
+                    '&:hover fieldset': { borderColor: theme.primary },
+                    '&.Mui-focused fieldset': {
+                      borderColor: theme.primary,
+                      borderWidth: 2,
+                    },
+                  },
+                }}
+              >
+                {consultants.map((c) => (
+                  <MenuItem key={c.userId} value={String(c.userId)}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          fontSize: '0.875rem',
+                          bgcolor: theme.secondary,
+                        }}
+                      >
+                        {c.fullName.charAt(0)}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {c.fullName}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: theme.textLight }}
+                        >
+                          ID: {c.userId}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Paper>
+
           {approveError && (
             <Alert severity="error" sx={{ mt: 2 }}>
               {approveError}
             </Alert>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5, gap: 2 }}>
-          <Button onClick={handleCloseApproveDialog} variant="outlined">
+        <DialogActions sx={{ px: 3, pb: 3, gap: 2 }}>
+          <Button
+            onClick={handleCloseApproveDialog}
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              color: theme.primary,
+              borderColor: theme.primary + '40',
+              fontWeight: 600,
+              px: 3,
+              '&:hover': {
+                background: theme.primary + '10',
+                borderColor: theme.primary,
+              },
+            }}
+          >
             HỦY
           </Button>
           <Button
             onClick={handleConfirmApprove}
             variant="contained"
-            sx={{ fontWeight: 700 }}
+            disabled={!replierId}
+            sx={{
+              borderRadius: 2,
+              background: theme.gradient,
+              color: '#fff',
+              fontWeight: 700,
+              px: 4,
+              boxShadow: '0 2px 8px #4A90E222',
+              '&:hover': {
+                background: 'linear-gradient(90deg, #357ABD, #16A085)',
+              },
+              '&:disabled': {
+                background: '#e2e8f0',
+                color: theme.textLight,
+              },
+            }}
           >
-            DUYỆT
+            XÁC NHẬN DUYỆT
           </Button>
         </DialogActions>
       </Dialog>

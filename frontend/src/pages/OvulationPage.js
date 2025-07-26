@@ -28,8 +28,10 @@ import {
   Lightbulb,
   Edit,
   Trash2,
+  Eye,
 } from 'lucide-react';
 import MenstrualCycleForm from '../components/MenstrualCycle/MenstrualCycleForm.js';
+import MenstrualCycleCalendar from '../components/MenstrualCycleCalendar';
 import { notify } from '../utils/notify';
 
 // const defaultStats = {
@@ -356,6 +358,100 @@ const OvulationPage = ({ stats }) => {
   const consistency = getConsistency(menstrualCycles);
   console.log('🎯 [Main] Kết quả consistency đã tính:', consistency);
 
+  // Hàm phân tích lý do chu kỳ không bình thường
+  const getIrregularReasons = (menstrualCycles) => {
+    const reasons = [];
+    
+    if (!Array.isArray(menstrualCycles) || menstrualCycles.length === 0) {
+      return ['Không đủ dữ liệu để phân tích'];
+    }
+
+    try {
+      // Lấy 3 chu kỳ gần nhất để đánh giá
+      const recentCycles = menstrualCycles.slice(0, Math.min(3, menstrualCycles.length));
+      
+      // Phân tích số ngày kinh nguyệt
+      const periodLengths = recentCycles.map(cycle => cycle.numberOfDays).filter(days => days);
+      if (periodLengths.length > 0) {
+        const minPeriod = Math.min(...periodLengths);
+        const maxPeriod = Math.max(...periodLengths);
+        
+        if (minPeriod < 3) {
+          reasons.push(`Kỳ kinh quá ngắn (${minPeriod} ngày) - có thể do stress, rối loạn hormone, hoặc mất cân nặng đột ngột`);
+        }
+        if (maxPeriod > 7) {
+          reasons.push(`Kỳ kinh kéo dài (${maxPeriod} ngày) - có thể do u xơ tử cung, polyp nội mạc tử cung, hoặc rối loạn đông máu`);
+        }
+        if (maxPeriod - minPeriod > 3) {
+          reasons.push(`Độ dài kỳ kinh không ổn định (từ ${minPeriod} đến ${maxPeriod} ngày) - có thể do stress hoặc thay đổi hormone`);
+        }
+      }
+
+      // Phân tích độ dài chu kỳ
+      const cycleLengths = recentCycles.map(cycle => cycle.cycleLength).filter(length => length);
+      if (cycleLengths.length > 0) {
+        const minCycle = Math.min(...cycleLengths);
+        const maxCycle = Math.max(...cycleLengths);
+        
+        if (minCycle < 21) {
+          reasons.push(`Chu kỳ quá ngắn (${minCycle} ngày) - có thể do stress, tập thể dục quá mức, thiếu hụt dinh dưỡng, hoặc cận mãn kinh`);
+        }
+        if (maxCycle > 35) {
+          reasons.push(`Chu kỳ quá dài (${maxCycle} ngày) - có thể do hội chứng buồng trứng đa nang (PCOS), rối loạn tuyến giáp, hoặc stress`);
+        }
+        
+        // Kiểm tra sự biến thiên của chu kỳ
+        if (cycleLengths.length >= 2) {
+          let maxDifference = 0;
+          for (let i = 0; i < cycleLengths.length - 1; i++) {
+            const difference = Math.abs(cycleLengths[i] - cycleLengths[i + 1]);
+            if (difference > maxDifference) {
+              maxDifference = difference;
+            }
+          }
+          
+          if (maxDifference > 7) {
+            reasons.push(`Chu kỳ biến thiên lớn (chênh lệch ${maxDifference} ngày) - có thể do stress, thay đổi cân nặng, rối loạn giấc ngủ, hoặc thay đổi lối sống`);
+          }
+        }
+        
+        // Phân tích xu hướng
+        if (cycleLengths.length >= 3) {
+          const isIncreasing = cycleLengths[0] > cycleLengths[1] && cycleLengths[1] > cycleLengths[2];
+          const isDecreasing = cycleLengths[0] < cycleLengths[1] && cycleLengths[1] < cycleLengths[2];
+          
+          if (isIncreasing) {
+            reasons.push('Chu kỳ có xu hướng ngày càng dài - có thể cần kiểm tra hormone hoặc tình trạng stress');
+          } else if (isDecreasing) {
+            reasons.push('Chu kỳ có xu hướng ngày càng ngắn - có thể do stress, giảm cân, hoặc tập thể dục quá mức');
+          }
+        }
+      }
+
+      // Đánh giá tổng thể
+      if (recentCycles.length < 3) {
+        reasons.push('Dữ liệu còn ít - khuyến nghị theo dõi thêm để có đánh giá chính xác hơn');
+      }
+
+      // Nếu không tìm thấy vấn đề cụ thể nhưng được đánh giá là irregular
+      if (reasons.length === 0 && consistency === 'irregular') {
+        reasons.push('Chu kỳ có dấu hiệu không đều đặn nhẹ - có thể do các yếu tố lối sống hoặc stress tạm thời');
+      }
+
+      // Nếu hoàn toàn không có vấn đề
+      if (reasons.length === 0) {
+        return ['Chu kỳ tương đối bình thường dựa trên dữ liệu hiện tại'];
+      }
+
+      return reasons;
+    } catch (error) {
+      console.error('Lỗi khi phân tích lý do chu kỳ không bình thường:', error);
+      return ['Không thể phân tích do lỗi dữ liệu - vui lòng kiểm tra lại thông tin chu kỳ'];
+    }
+  };
+
+  const irregularReasons = getIrregularReasons(menstrualCycles);
+
   const [expandedSection, setExpandedSection] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [calculationResult, setCalculationResult] = useState(null);
@@ -405,6 +501,14 @@ const OvulationPage = ({ stats }) => {
   // Edit cycle states
   const [editingCycle, setEditingCycle] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
+  
+  // View cycle detail states
+  const [selectedCycleForDetail, setSelectedCycleForDetail] = useState(null);
+  const [showCycleDetail, setShowCycleDetail] = useState(false);
+  
+  // Calendar modal states
+  const [selectedCycleForCalendar, setSelectedCycleForCalendar] = useState(null);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
 
   const toggleSection = (section) => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -583,7 +687,9 @@ const OvulationPage = ({ stats }) => {
       iconWrapper: `${styles.iconWrapper} ${styles.green}`,
       label: 'Tính đều đặn',
       mainValue: null,
-      subValue: 'Đánh giá chu kỳ',
+      subValue: consistency === 'irregular' && irregularReasons.length > 0 
+        ? `${irregularReasons.length} vấn đề được phát hiện` 
+        : 'Đánh giá chu kỳ',
       id: 'consistency',
       customContent: (
         <div className="mb-2">
@@ -614,15 +720,28 @@ const OvulationPage = ({ stats }) => {
         color: 'green',
       });
     } else if (consistency === 'irregular') {
+      // Thêm card hiển thị lý do cụ thể
+      advice.push({
+        icon: <AlertCircle className="h-6 w-6 text-red-600" />,
+        title: 'Lý do chu kỳ không bình thường',
+        description: 'Phân tích dựa trên dữ liệu chu kỳ của bạn:',
+        tips: irregularReasons,
+        color: 'red',
+      });
+
       advice.push({
         icon: <Activity className="h-6 w-6 text-yellow-600" />,
-        title: 'Chu kỳ không bình thường',
+        title: 'Cách cải thiện chu kỳ không đều',
         description:
-          'Chu kỳ có thể bị ảnh hưởng bởi stress, thay đổi cân nặng hoặc lối sống.',
+          'Những biện pháp có thể giúp cải thiện tình trạng chu kỳ không đều.',
         tips: [
-          'Giảm stress thông qua yoga hoặc thiền',
-          'Duy trì cân nặng ổn định',
-          'Tham khảo ý kiến bác sĩ nếu cần',
+          'Giảm stress thông qua yoga, thiền hoặc tập thở sâu',
+          'Duy trì cân nặng ổn định và tránh giảm cân đột ngột',
+          'Ngủ đủ giấc và giữ giờ giấc đều đặn',
+          'Hạn chế caffeine và rượu bia',
+          'Ăn đủ chất dinh dưỡng, đặc biệt là sắt và vitamin B',
+          'Tập thể dục nhẹ nhàng, tránh vận động quá sức',
+          'Tham khảo ý kiến bác sĩ để kiểm tra hormone',
         ],
         color: 'yellow',
       });
@@ -769,6 +888,24 @@ const OvulationPage = ({ stats }) => {
       cycleLength: data.cycleLength,
       periodLength: data.numberOfDays,
     };
+  };
+
+  // Hàm xử lý xem chi tiết chu kỳ
+  const handleViewCycleDetail = (cycle) => {
+    setSelectedCycleForCalendar(cycle);
+    setShowCalendarModal(true);
+  };
+
+  // Hàm đóng modal calendar
+  const handleCloseCalendarModal = () => {
+    setSelectedCycleForCalendar(null);
+    setShowCalendarModal(false);
+  };
+
+  // Hàm đóng modal chi tiết chu kỳ
+  const handleCloseCycleDetail = () => {
+    setSelectedCycleForDetail(null);
+    setShowCycleDetail(false);
   };
 
   // Hàm xử lý edit chu kỳ
@@ -1140,8 +1277,15 @@ const OvulationPage = ({ stats }) => {
                                   </Typography>
                                 </Box>
 
-                                {/* Edit and Delete buttons */}
+                                {/* View Detail, Edit and Delete buttons */}
                                 <Box className={styles.cycleItemActions}>
+                                  <button
+                                    className={styles.viewButton}
+                                    onClick={() => handleViewCycleDetail(cycle)}
+                                    title="Xem chi tiết chu kỳ"
+                                  >
+                                    <Eye className={styles.actionIcon} />
+                                  </button>
                                   <button
                                     className={styles.editButton}
                                     onClick={() => handleEditCycle(cycle)}
@@ -1778,6 +1922,245 @@ const OvulationPage = ({ stats }) => {
               </div>
             </div>
           </div>
+        )}
+        
+        {/* Modal chi tiết chu kỳ */}
+        {showCycleDetail && selectedCycleForDetail && (
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: '20px'
+            }}
+            onClick={handleCloseCycleDetail}
+          >
+            <Box
+              sx={{
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                maxWidth: '600px',
+                width: '100%',
+                maxHeight: '80vh',
+                overflow: 'auto',
+                padding: '24px',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h5" sx={{ fontWeight: '600', color: '#1f2937' }}>
+                  Chi tiết chu kỳ #{menstrualCycles.length - menstrualCycles.indexOf(selectedCycleForDetail)}
+                </Typography>
+                <button
+                  onClick={handleCloseCycleDetail}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '24px',
+                    cursor: 'pointer',
+                    color: '#6b7280',
+                    padding: '4px'
+                  }}
+                >
+                  ×
+                </button>
+              </Box>
+
+              {/* Thông tin cơ bản */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, color: '#374151', fontWeight: '600' }}>
+                  📅 Thông tin cơ bản
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                  <Box sx={{ p: 2, backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <Typography sx={{ fontSize: '14px', color: '#6b7280', mb: 1 }}>Ngày bắt đầu</Typography>
+                    <Typography sx={{ fontWeight: '600', color: '#1f2937' }}>
+                      {formatDate(selectedCycleForDetail.startDate)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ p: 2, backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <Typography sx={{ fontSize: '14px', color: '#6b7280', mb: 1 }}>Số ngày hành kinh</Typography>
+                    <Typography sx={{ fontWeight: '600', color: '#1f2937' }}>
+                      {selectedCycleForDetail.numberOfDays} ngày
+                    </Typography>
+                  </Box>
+                  <Box sx={{ p: 2, backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <Typography sx={{ fontSize: '14px', color: '#6b7280', mb: 1 }}>Độ dài chu kỳ</Typography>
+                    <Typography sx={{ fontWeight: '600', color: '#1f2937' }}>
+                      {selectedCycleForDetail.cycleLength} ngày
+                    </Typography>
+                  </Box>
+                  <Box sx={{ p: 2, backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                    <Typography sx={{ fontSize: '14px', color: '#6b7280', mb: 1 }}>Ngày rụng trứng dự kiến</Typography>
+                    <Typography sx={{ fontWeight: '600', color: '#1f2937' }}>
+                      {formatDate(selectedCycleForDetail.ovulationDate)}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Phân tích chi tiết */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, color: '#374151', fontWeight: '600' }}>
+                  🔍 Phân tích chi tiết
+                </Typography>
+                <Box sx={{ display: 'grid', gap: 2 }}>
+                  {/* Đánh giá độ dài chu kỳ */}
+                  <Box sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                    <Typography sx={{ fontWeight: '600', mb: 1, color: '#374151' }}>
+                      Đánh giá độ dài chu kỳ
+                    </Typography>
+                    <Typography sx={{ fontSize: '14px', color: '#6b7280', mb: 2 }}>
+                      {selectedCycleForDetail.cycleLength < 21 
+                        ? '🔴 Chu kỳ ngắn (dưới 21 ngày)' 
+                        : selectedCycleForDetail.cycleLength > 35 
+                          ? '🔴 Chu kỳ dài (trên 35 ngày)' 
+                          : '🟢 Chu kỳ bình thường (21-35 ngày)'}
+                    </Typography>
+                    {selectedCycleForDetail.cycleLength < 21 && (
+                      <Typography sx={{ fontSize: '13px', color: '#ef4444', fontStyle: 'italic' }}>
+                        Chu kỳ ngắn có thể do stress, tập thể dục quá mức, hoặc thiếu hụt dinh dưỡng.
+                      </Typography>
+                    )}
+                    {selectedCycleForDetail.cycleLength > 35 && (
+                      <Typography sx={{ fontSize: '13px', color: '#ef4444', fontStyle: 'italic' }}>
+                        Chu kỳ dài có thể do PCOS, rối loạn tuyến giáp, hoặc stress.
+                      </Typography>
+                    )}
+                    {selectedCycleForDetail.cycleLength >= 21 && selectedCycleForDetail.cycleLength <= 35 && (
+                      <Typography sx={{ fontSize: '13px', color: '#16a34a', fontStyle: 'italic' }}>
+                        Độ dài chu kỳ trong khoảng bình thường, điều này rất tốt!
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* Đánh giá kỳ kinh */}
+                  <Box sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                    <Typography sx={{ fontWeight: '600', mb: 1, color: '#374151' }}>
+                      Đánh giá kỳ kinh
+                    </Typography>
+                    <Typography sx={{ fontSize: '14px', color: '#6b7280', mb: 2 }}>
+                      {selectedCycleForDetail.numberOfDays < 3 
+                        ? '🔴 Kỳ kinh ngắn (dưới 3 ngày)' 
+                        : selectedCycleForDetail.numberOfDays > 7 
+                          ? '🔴 Kỳ kinh dài (trên 7 ngày)' 
+                          : '🟢 Kỳ kinh bình thường (3-7 ngày)'}
+                    </Typography>
+                    {selectedCycleForDetail.numberOfDays < 3 && (
+                      <Typography sx={{ fontSize: '13px', color: '#ef4444', fontStyle: 'italic' }}>
+                        Kỳ kinh ngắn có thể do rối loạn hormone hoặc stress.
+                      </Typography>
+                    )}
+                    {selectedCycleForDetail.numberOfDays > 7 && (
+                      <Typography sx={{ fontSize: '13px', color: '#ef4444', fontStyle: 'italic' }}>
+                        Kỳ kinh dài có thể do u xơ tử cung, polyp, hoặc rối loạn đông máu.
+                      </Typography>
+                    )}
+                    {selectedCycleForDetail.numberOfDays >= 3 && selectedCycleForDetail.numberOfDays <= 7 && (
+                      <Typography sx={{ fontSize: '13px', color: '#16a34a', fontStyle: 'italic' }}>
+                        Độ dài kỳ kinh trong khoảng bình thường.
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Thời gian quan trọng */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, color: '#374151', fontWeight: '600' }}>
+                  ⏰ Thời gian quan trọng trong chu kỳ này
+                </Typography>
+                <Box sx={{ display: 'grid', gap: 2 }}>
+                  <Box sx={{ p: 3, backgroundColor: '#fef3c7', borderRadius: '8px', border: '1px solid #fbbf24' }}>
+                    <Typography sx={{ fontWeight: '600', mb: 1, color: '#92400e' }}>
+                      🥚 Thời kỳ rụng trứng
+                    </Typography>
+                    <Typography sx={{ fontSize: '14px', color: '#92400e' }}>
+                      Ngày {formatDate(selectedCycleForDetail.ovulationDate)} (khoảng ngày thứ {selectedCycleForDetail.cycleLength - 14} của chu kỳ)
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ p: 3, backgroundColor: '#fce7f3', borderRadius: '8px', border: '1px solid #f472b6' }}>
+                    <Typography sx={{ fontWeight: '600', mb: 1, color: '#be185d' }}>
+                      💕 Thời kỳ thụ thai
+                    </Typography>
+                    <Typography sx={{ fontSize: '14px', color: '#be185d' }}>
+                      Từ 5 ngày trước đến 1 ngày sau ngày rụng trứng (khả năng thụ thai cao nhất)
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Lưu ý */}
+              <Box sx={{ p: 3, backgroundColor: '#f0f9ff', borderRadius: '8px', border: '1px solid #0ea5e9' }}>
+                <Typography sx={{ fontWeight: '600', mb: 1, color: '#0c4a6e', fontSize: '14px' }}>
+                  💡 Lưu ý quan trọng
+                </Typography>
+                <Typography sx={{ fontSize: '13px', color: '#0c4a6e', lineHeight: 1.5 }}>
+                  Thông tin này chỉ mang tính chất tham khảo. Mỗi người có chu kỳ kinh nguyệt khác nhau và có thể thay đổi theo thời gian.
+                  Nếu có bất kỳ lo ngại nào, hãy tham khảo ý kiến bác sĩ chuyên khoa.
+                </Typography>
+              </Box>
+
+              {/* Action buttons */}
+              <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => {
+                    handleCloseCycleDetail();
+                    handleEditCycle(selectedCycleForDetail);
+                  }}
+                  style={{
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Edit style={{ width: '16px', height: '16px' }} />
+                  Chỉnh sửa
+                </button>
+                <button
+                  onClick={handleCloseCycleDetail}
+                  style={{
+                    backgroundColor: '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Đóng
+                </button>
+              </Box>
+            </Box>
+          </Box>
+        )}
+
+        {/* Modal Calendar */}
+        {showCalendarModal && selectedCycleForCalendar && (
+          <MenstrualCycleCalendar
+            cycle={selectedCycleForCalendar}
+            onClose={handleCloseCalendarModal}
+          />
         )}
       </Container>
     </LocalizationProvider>

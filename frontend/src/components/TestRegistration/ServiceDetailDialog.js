@@ -213,35 +213,7 @@ const ServiceDetailDialog = ({
                           </Typography>
                         </Box>
                       )}
-                      <Box sx={{ display: 'flex', mb: 1 }}>
-                        <Typography variant="body2" sx={{ width: '140px', color: '#6b7280' }}>
-                          Thời gian có kết quả:
-                        </Typography>
-                        <Typography variant="body2" fontWeight={500} sx={{ color: '#374151' }}>
-                          {detailData.time || '2-3 ngày'}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex' }}>
-                        <Typography variant="body2" sx={{ width: '140px', color: '#6b7280' }}>
-                          Độ chính xác:
-                        </Typography>
-                        <Typography variant="body2" fontWeight={500} sx={{ color: '#374151' }}>
-                          {detailData.accuracy || '> 99%'}
-                        </Typography>
-                      </Box>
                     </Box>
-                  </Box>
-                </Grid>
-                
-                {/* Cột bên phải - Chỉ định xét nghiệm */}
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ color: '#2d3748' }}>
-                    Chỉ định xét nghiệm
-                  </Typography>
-                  <Box sx={{ pl: 2, borderLeft: '3px solid #FF6B6B' }}>
-                    <Typography variant="body2" sx={{ color: '#374151', lineHeight: 1.6 }}>
-                      {detailData.indication || 'Người có nguy cơ cao tiếp xúc với các bệnh lây truyền qua đường tình dục.'}
-                    </Typography>
                   </Box>
                 </Grid>
               </Grid>
@@ -543,17 +515,6 @@ const ServiceDetailDialog = ({
                                 boxShadow: '0 2px 4px rgba(33,150,243,0.1)'
                               }}
                             />
-                            {/* Thời gian có kết quả */}
-                            <Typography variant="body2" sx={{ 
-                              color: '#6b7280',
-                              backgroundColor: 'rgba(248,250,252,0.8)',
-                              padding: '2px 8px',
-                              borderRadius: 1,
-                              fontSize: '0.8rem',
-                              fontWeight: 500
-                            }}>
-                              {service.time || '2-3 ngày có kết quả'}
-                            </Typography>
                           </Box>
                         </Box>
                       </Box>
@@ -653,61 +614,6 @@ const ServiceDetailDialog = ({
                                     </Typography>
                                   </Box>
                                 )}
-                                {/* Thời gian có kết quả */}
-                                <Box sx={{ display: 'flex', mb: 1 }}>
-                                  <Typography variant="body2" sx={{ width: '140px', color: '#6b7280' }}>
-                                    Thời gian có kết quả:
-                                  </Typography>
-                                  <Typography variant="body2" fontWeight={500} sx={{ color: '#374151' }}>
-                                    {service.time || '2-3 ngày'}
-                                  </Typography>
-                                </Box>
-                                {/* Độ chính xác */}
-                                <Box sx={{ display: 'flex' }}>
-                                  <Typography variant="body2" sx={{ width: '140px', color: '#6b7280' }}>
-                                    Độ chính xác:
-                                  </Typography>
-                                  <Typography variant="body2" fontWeight={500} sx={{ color: '#374151' }}>
-                                    {service.accuracy || '> 99%'}
-                                  </Typography>
-                                </Box>
-                              </Box>
-                            </Box>
-                          </Grid>
-                          
-                          {/* Cột chỉ định xét nghiệm */}
-                          <Grid item xs={12} md={6}>
-                            <Box sx={{ 
-                              p: 2,
-                              backgroundColor: 'rgba(255,255,255,0.7)',
-                              borderRadius: 2,
-                              border: '1px solid rgba(255,107,107,0.2)'
-                            }}>
-                              <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ 
-                                color: '#2d3748',
-                                display: 'flex',
-                                alignItems: 'center',
-                                mb: 1.5
-                              }}>
-                                <Box sx={{
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: '50%',
-                                  backgroundColor: '#FF6B6B',
-                                  mr: 1
-                                }} />
-                                Chỉ định xét nghiệm
-                              </Typography>
-                              <Box sx={{ 
-                                pl: 2, 
-                                borderLeft: '3px solid #FF6B6B',
-                                backgroundColor: 'rgba(254,202,202,0.1)',
-                                borderRadius: 1,
-                                p: 1.5
-                              }}>
-                                <Typography variant="body2" sx={{ color: '#374151', lineHeight: 1.7 }}>
-                                  {service.indication || 'Người có nguy cơ cao tiếp xúc với các bệnh lây truyền qua đường tình dục.'}
-                                </Typography>
                               </Box>
                             </Box>
                           </Grid>

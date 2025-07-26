@@ -118,13 +118,13 @@ const StaffProfile = ({ user = {} }) => {
   const getPageTitle = () => {
     switch (selectedMenuItem) {
       case 'questionResponse':
-        return 'Trả lời câu hỏi';
+        return 'Quản lý câu hỏi';
       case 'stiService':
-        return 'Quản lý dịch vụ STI';
+        return 'Quản lý dịch vụ  STI';
       case 'stiTest':
-        return 'Quản lý STI Test';
+        return 'Quản lý xét nghiệm STI ';
       case 'stiPackage':
-        return 'Quản lý STI Packages';
+        return 'Quản lý các gói dịch vụ STI ';
       case 'blog':
         return 'Quản lý Blog';
       case 'review':
@@ -143,6 +143,8 @@ const StaffProfile = ({ user = {} }) => {
         return 'Lịch sử khám bệnh';
       case 'my-reviews':
         return 'Đánh giá của tôi';
+      case 'payment-info':
+        return 'Thông tin thanh toán';
       default:
         return 'Hồ sơ cá nhân';
     }

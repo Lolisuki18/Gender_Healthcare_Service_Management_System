@@ -33,7 +33,7 @@ export function PillReminderHomeScreen({ onAddSchedule, isAuthenticated }) {
           ) : (
             <Link to="/login" style={{ textDecoration: 'none', width: '100%' }}>
               <button
-                style={{ width: '100%', background: 'linear-gradient(90deg, #e57399, #a259e6)', color: '#fff', padding: '16px 24px', borderRadius: 16, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', fontSize: 18, cursor: 'pointer', boxShadow: '0 2px 8px rgba(162,89,230,0.10)' }}
+                style={{ width: '100%', background: 'linear-gradient(to right, #1C9695, #35B4A6)', color: '#fff', padding: '16px 24px', borderRadius: 16, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', fontSize: 18, cursor: 'pointer', boxShadow: '0 2px 8px rgba(162,89,230,0.10)' }}
               >
                 <Plus style={{ width: 20, height: 20 }} />
                 Đăng nhập để tạo lịch nhắc nhở

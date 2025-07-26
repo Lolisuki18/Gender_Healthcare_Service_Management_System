@@ -172,9 +172,6 @@ const PackageTable = ({ packages, services, loading, error }) => {
                 Mô tả
               </TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                Đề xuất cho
-              </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>
                 Giá
               </TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
@@ -213,7 +210,6 @@ const PackageTable = ({ packages, services, loading, error }) => {
                       <TableCell>{pkg.id}</TableCell>
                       <TableCell>{pkg.name}</TableCell>
                       <TableCell>{pkg.description}</TableCell>
-                      <TableCell>{pkg.recommended_for || ''}</TableCell>
                       <TableCell>{formatPrice(pkg.price)}</TableCell>
                       <TableCell>
                         {discountInfo.discountPercent > 0 ? (
@@ -400,20 +396,6 @@ const PackageTable = ({ packages, services, loading, error }) => {
                     </Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                      <span
-                        style={{
-                          color: '#546E7A',
-                          marginRight: '8px',
-                          fontWeight: '500',
-                        }}
-                      >
-                        Đề xuất cho:
-                      </span>
-                      <span style={{ fontWeight: '600', color: '#2c3e50' }}>
-                        {packageDetails.recommended_for}
-                      </span>
-                    </Typography>
                     <Typography variant="body1" sx={{ mb: 2 }}>
                       <span
                         style={{

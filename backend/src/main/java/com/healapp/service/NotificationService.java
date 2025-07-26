@@ -333,8 +333,9 @@ public class NotificationService {
         LocalTime currentTime = LocalTime.now();
 
         for (ControlPills schedule : activePillSchedules) {
-            // 1. Kiểm tra xem thời gian nhắc nhở cho lịch trình này đã qua hoặc đang đến chưa
-            if (!currentTime.isBefore(schedule.getRemindTime())) {
+            //1. Chỉ gửi đúng vào thời điểm giờ và phút trùng với remindTime
+            if (currentTime.getHour() == schedule.getRemindTime().getHour()
+                && currentTime.getMinute() == schedule.getRemindTime().getMinute()) {
                 // 2. Kiểm tra tất cả các nhật ký uống thuốc đã tồn tại cho hôm nay đối với lịch trình cụ thể này
                 Optional<PillLogs> todayPillLogOptional = pillLogsRepository.findByControlPillsAndLogDate(schedule, today);
 
@@ -379,9 +380,29 @@ public class NotificationService {
                     logger.info("Đã lưu bản ghi thông báo nhắc nhở uống thuốc cho người dùng ID: {} với trạng thái: {}", 
                                userId, notification.getStatus());
                 } else {
-                    // Log tồn tại nhưng chưa check-in, không gửi thêm nhắc nhở để tránh spam
-                    logger.info("Bỏ qua lời nhắc nhở uống thuốc cho lịch trình ID {} (người dùng ID {}): Log tồn tại nhưng chưa check-in.",
-                               schedule.getPillsId(), userId);
+                    // Log tồn tại nhưng chưa check-in, vẫn gửi lại nhắc nhở
+                    Notification notification = new Notification();
+                    notification.setUser(user);
+                    notification.setTitle("Nhắc nhở uống thuốc");
+                    notification.setContent("Đã đến giờ uống thuốc của bạn.");
+                    notification.setType(NotificationType.PILL_REMINDER);
+                    notification.setScheduledAt(LocalDateTime.now());
+
+                    try {
+                        emailService.sendPillReminderAsync(user.getEmail(), user.getFullName(), schedule.getRemindTime());
+                        notification.setStatus(NotificationStatus.SENT);
+                        notification.setSentAt(LocalDateTime.now());
+                        logger.info("Đã gửi lại email nhắc nhở uống thuốc cho người dùng {} ({}) cho lịch trình ID {} (log tồn tại nhưng chưa check-in)", 
+                                   user.getFullName(), user.getEmail(), schedule.getPillsId());
+                    } catch (Exception ex) {
+                        notification.setStatus(NotificationStatus.FAILED);
+                        notification.setErrorMessage(ex.getMessage());
+                        logger.error("Không thể gửi lại email nhắc nhở uống thuốc cho người dùng {} ({}) cho lịch trình ID {}. Lý do: {}", 
+                                    user.getFullName(), user.getEmail(), schedule.getPillsId(), ex.getMessage(), ex);
+                    }
+                    notificationRepository.save(notification);
+                    logger.info("Đã lưu bản ghi thông báo nhắc nhở uống thuốc (gửi lại) cho người dùng ID: {} với trạng thái: {}", 
+                               userId, notification.getStatus());
                 }
             } else {
                 logger.info("Bỏ qua lời nhắc nhở uống thuốc cho lịch trình ID {} (người dùng ID {}): Thời gian nhắc nhở chưa đến.", 

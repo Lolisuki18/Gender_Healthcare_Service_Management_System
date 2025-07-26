@@ -1,5 +1,6 @@
 package com.healapp.repository;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +25,9 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
     @Transactional
     @Query("UPDATE NotificationPreference np SET np.enabled = :enabled WHERE np.user.id = :userId AND np.type = :type")
     int updateNotificationPreference(@Param("userId") Long userId, @Param("type") NotificationType type, @Param("enabled") boolean enabled);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE NotificationPreference np SET np.remindTime = :time WHERE np.user.id = :userId AND np.type = :type")
+    int updateNotificationPreference(@Param("userId") Long userId, @Param("type") NotificationType notificationType, @Param("time") LocalTime time);
 }
