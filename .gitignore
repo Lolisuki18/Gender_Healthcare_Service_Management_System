@@ -38,4 +38,6 @@ build/
 **/*.properties
 !**/application.properties.example
 
+### MCP Server Demo ###
 mcp-server-demo/.venv/
+mcp-server-demo/healapp_mcp_server.py
