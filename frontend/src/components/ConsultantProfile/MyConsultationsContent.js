@@ -1474,13 +1474,30 @@ const MyConsultationsContent = () => {
                             <span>
                               <IconButton
                                 color="success"
-                                onClick={() =>
-                                  handleUpdateStatus(
-                                    slot.consultationId || slot.id,
-                                    'COMPLETED',
-                                    slot.notes
-                                  )
-                                }
+                                onClick={async () => {
+                                  try {
+                                    await handleUpdateStatus(
+                                      slot.consultationId || slot.id,
+                                      'COMPLETED',
+                                      slot.notes
+                                    );
+                                  } catch (err) {
+                                    if (
+                                      err?.response?.data?.message ===
+                                      'Consultation cannot be marked as completed before its end time'
+                                    ) {
+                                      notify.error(
+                                        'Không thể hoàn thành',
+                                        'Không thể đánh dấu hoàn thành trước khi kết thúc buổi tư vấn.'
+                                      );
+                                    } else {
+                                      notify.error(
+                                        'Lỗi',
+                                        'Có lỗi xảy ra khi đánh dấu hoàn thành.'
+                                      );
+                                    }
+                                  }
+                                }}
                                 disabled={updateStatus.loading}
                                 sx={{ color: '#2e7d32' }}
                               >
@@ -2367,14 +2384,30 @@ const MyConsultationsContent = () => {
                 <MedicalButton
                   variant="contained"
                   onClick={async () => {
-                    // Kiểm tra notes trước khi hoàn thành
-                    await handleUpdateStatus(
-                      selectedConsultation.id ||
-                        selectedConsultation.consultationId,
-                      'COMPLETED',
-                      selectedConsultation.notes
-                    );
-                    setDetailsDialogOpen(false);
+                    try {
+                      await handleUpdateStatus(
+                        selectedConsultation.id ||
+                          selectedConsultation.consultationId,
+                        'COMPLETED',
+                        selectedConsultation.notes
+                      );
+                      setDetailsDialogOpen(false);
+                    } catch (err) {
+                      if (
+                        err?.response?.data?.message ===
+                        'Consultation cannot be marked as completed before its end time'
+                      ) {
+                        notify.error(
+                          'Không thể hoàn thành',
+                          'Không thể đánh dấu hoàn thành trước khi kết thúc buổi tư vấn.'
+                        );
+                      } else {
+                        notify.error(
+                          'Lỗi',
+                          'Có lỗi xảy ra khi đánh dấu hoàn thành.'
+                        );
+                      }
+                    }
                   }}
                   disabled={updateStatus.loading}
                   startIcon={

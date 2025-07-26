@@ -45,6 +45,7 @@ import { useNavigate } from 'react-router-dom';
 import { notify } from '@/utils/notify';
 import AdminSideBar from './AdminSideBar';
 import AdminBlogManagementContent from './AdminBlogManagementContent';
+import AdminRatingManagementContent from './AdminRatingManagementContent';
 
 // Styled component cho nội dung chính
 // Tự động điều chỉnh margin dựa trên trạng thái sidebar
@@ -107,21 +108,28 @@ const AdminProfile = () => {
   const renderContent = () => {
     switch (selectedMenuItem) {
       case 'dashboard':
-        return <DashboardContent onNavigate={handleMenuItemSelect} />; // Tổng quan hệ thống
+        return <DashboardContent onNavigate={handleMenuItemSelect} />;
       case 'users':
-        return <UserManagementContent openAddModal={openAddUserModal} onCloseAddModal={() => setOpenAddUserModal(false)} />; // Quản lý người dùng
+        return (
+          <UserManagementContent
+            openAddModal={openAddUserModal}
+            onCloseAddModal={() => setOpenAddUserModal(false)}
+          />
+        );
       case 'services':
-        return <ServiceManagementContent />; // Quản lý dịch vụ
+        return <ServiceManagementContent />;
       case 'appointments':
-        return <AppointmentManagementContent />; // Quản lý lịch hẹn
+        return <AppointmentManagementContent />;
       case 'reports':
-        return <ReportsContent />; // Báo cáo và thống kê
+        return <ReportsContent />;
       case 'settings':
-        return <SettingsContent />; // Cài đặt hệ thống
+        return <SettingsContent />;
       case 'admin-blog':
-        return <AdminBlogManagementContent />; // Quản lý blog
+        return <AdminBlogManagementContent />;
+      case 'admin-ratings':
+        return <AdminRatingManagementContent />;
       default:
-        return <ReportsContent />; // Fallback về dashboard
+        return <ReportsContent />;
     }
   };
 
@@ -142,6 +150,8 @@ const AdminProfile = () => {
         return 'Cài đặt hệ thống';
       case 'admin-blog':
         return 'Quản lý Blog';
+      case 'admin-ratings':
+        return 'Quản lý đánh giá';
       default:
         return 'Tổng quan';
     }
