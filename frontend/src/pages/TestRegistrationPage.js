@@ -44,8 +44,7 @@ const ITEMS_PER_PAGE = 6;
 const TIME_SLOTS = [
   '08:00', '09:00', '10:00', '11:00', // Khung giờ buổi sáng
   '12:00', '13:00', '14:00', '15:00', // Khung giờ buổi chiều
-  '16:00', '17:00', '18:00', '19:00', // Khung giờ buổi chiều muộn
-  '20:00'                             // Khung giờ buổi tối
+  '16:00', '17:00',              // Khung giờ buổi tối
 ];
 
 // ===== STYLED COMPONENT - NÚT BẤM HIỆN ĐẠI =====
