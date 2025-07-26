@@ -153,7 +153,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/sti-services/packages/{packageId}").permitAll()
 
                         // Pill Reminder Endpoints
-                        .requestMatchers(HttpMethod.POST,"/contraceptive").hasAnyRole("CUSTOMER", "STAFF", "CONSULTANT")
+                        .requestMatchers(HttpMethod.POST, "/contraceptive")
+                        .hasAnyRole("CUSTOMER", "STAFF", "CONSULTANT")
 
                         // ========= BLOG AUTHENTICATED ENDPOINTS =========
                         .requestMatchers(HttpMethod.POST, "/blog").authenticated()
@@ -215,7 +216,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/blog/{postId}/status").hasRole("STAFF")
 
                         // ========= RATING STAFF ENDPOINTS =========
-                        .requestMatchers(HttpMethod.GET, "/ratings/staff/all").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/ratings/staff/all").hasAnyRole("STAFF", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/ratings/staff/consultation").hasRole("STAFF")
                         .requestMatchers(HttpMethod.GET, "/ratings/staff/sti-service").hasRole("STAFF")
                         .requestMatchers(HttpMethod.GET, "/ratings/staff/sti-package").hasRole("STAFF")
@@ -277,7 +278,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/blog/{postId}/status").hasAnyRole("STAFF", "ADMIN")
 
                         // ========= STI TEST SERVICE CONSULTANT NOTE =========
-                        .requestMatchers(HttpMethod.PUT, "/sti-tests/{testId}/service-note").hasAnyRole("CONSULTANT", "STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/sti-tests/{testId}/service-note")
+                        .hasAnyRole("CONSULTANT", "STAFF", "ADMIN")
 
                         .anyRequest().authenticated())
 
@@ -302,7 +304,7 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

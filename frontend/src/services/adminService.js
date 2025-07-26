@@ -2,6 +2,17 @@ import apiClient from './api';
 
 // Service cho các API liên quan đến người dùng
 export const adminService = {
+  // Lấy toàn bộ rating hệ thống (cho admin/staff)
+  getAllRatings: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/ratings/staff/all', { params });
+      // Trả về đúng structure { success, data, ... }
+      return response.data;
+    } catch (error) {
+      console.error('AdminService.getAllRatings error:', error);
+      throw error.response?.data || error;
+    }
+  },
   //=================================================Thêm người dùng=================================================
   // TThêm người dùng mới
   addNewUserAccount: async (userData) => {
@@ -256,7 +267,7 @@ export const adminService = {
   },
 
   //=================================================Quản lý tài khoản=================================================
-  
+
   /**
    * Admin vô hiệu hóa tài khoản user
    */

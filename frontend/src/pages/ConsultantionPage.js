@@ -1164,25 +1164,32 @@ const ConsultationPage = () => {
                   disabled={availableSlots.length === 0}
                 >
                   {timeSlotOptions.map((slot) => {
-                    // Lấy ngày được chọn
                     const selectedDate = appointmentForm.date;
                     const now = new Date();
-
-                    // Kiểm tra nếu là hôm nay
                     let isToday = false;
+                    let isPast = false;
                     if (selectedDate) {
                       isToday =
                         selectedDate.getDate() === now.getDate() &&
                         selectedDate.getMonth() === now.getMonth() &&
                         selectedDate.getFullYear() === now.getFullYear();
+                      if (isToday) {
+                        // Lấy giờ bắt đầu và phút bắt đầu (nếu có)
+                        const startHour = parseInt(
+                          slot.value.split('-')[0],
+                          10
+                        );
+                        const startMinute = 0; // Nếu có phút thì parse thêm
+                        // So sánh giờ hiện tại đã qua giờ bắt đầu chưa
+                        if (
+                          now.getHours() > startHour ||
+                          (now.getHours() === startHour &&
+                            now.getMinutes() >= startMinute)
+                        ) {
+                          isPast = true;
+                        }
+                      }
                     }
-
-                    // Lấy giờ kết thúc của khung giờ (ví dụ: '8-10' => 10)
-                    const endHour = parseInt(slot.value.split('-')[1], 10);
-
-                    // Nếu là hôm nay và đã qua giờ kết thúc thì disable
-                    const isPast = isToday && now.getHours() >= endHour;
-
                     return (
                       <MenuItem
                         key={slot.value}
