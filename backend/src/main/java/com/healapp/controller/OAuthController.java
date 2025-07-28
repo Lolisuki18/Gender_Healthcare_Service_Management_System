@@ -147,6 +147,20 @@ public class OAuthController {
                         pillReminderNotification.setEnabled(true);
                         notificationPreferenceService.save(pillReminderNotification);
                         
+                        // Gửi email thông báo tài khoản OAuth mới được tạo
+                        try {
+                            emailService.sendOAuthAccountCreatedNotificationAsync(
+                                user.getEmail(), 
+                                user.getFullName(), 
+                                defaultPassword
+                            );
+                            logger.info("OAuth account creation notification sent to: {}", user.getEmail());
+                        } catch (Exception emailException) {
+                            logger.warn("Failed to send OAuth account creation notification to {}: {}", 
+                                user.getEmail(), emailException.getMessage());
+                            // Không throw exception vì đây không phải lỗi nghiêm trọng
+                        }
+                        
                     } catch (Exception userCreationException) {
                         logger.error("Error creating new OAuth user: {}", userCreationException.getMessage(), userCreationException);
                         throw new RuntimeException("Failed to create OAuth user: " + userCreationException.getMessage(), userCreationException);

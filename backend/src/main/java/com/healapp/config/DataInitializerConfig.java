@@ -6,22 +6,16 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import com.healapp.model.BlogPost;
-import com.healapp.model.BlogPostStatus;
 import com.healapp.model.Category;
 import com.healapp.model.CategoryQuestion;
 import com.healapp.model.ConsultantProfile;
-import com.healapp.model.Consultation;
 import com.healapp.model.PackageService;
 import com.healapp.model.Payment;
-import com.healapp.model.PaymentInfo;
 import com.healapp.model.Question;
 import com.healapp.model.Rating;
-import com.healapp.model.RatingSummary;
 import com.healapp.model.Role;
 import com.healapp.model.STIPackage;
 import com.healapp.model.STIService;
-import com.healapp.model.STITest;
 import com.healapp.model.ServiceTestComponent;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.BlogPostRepository;
@@ -333,7 +327,7 @@ public class DataInitializerConfig implements CommandLineRunner {
             createCategoriesIfNotExists();
 
             // BLOG_POSTS
-            createBlogPostsAndSectionsIfNotExists();
+            // createBlogPostsAndSectionsIfNotExists();
 
             // CONSULTANT_PROFILES
             createConsultantProfilesIfNotExists();
@@ -865,173 +859,7 @@ public class DataInitializerConfig implements CommandLineRunner {
         }
     }
 
-    private void createBlogPostsAndSectionsIfNotExists() {
-        if (blogPostRepository.count() < 5 && userRepository.count() > 0 && categoryRepository.count() > 0) {
-            for (int i = (int) blogPostRepository.count(); i < 5; i++) {
-                BlogPost post = new BlogPost();
-                post.setTitle("Bài viết mẫu " + (i + 1));
-                post.setContent("Nội dung bài viết mẫu " + (i + 1));
-                post.setCategory(categoryRepository.findAll().get(i % (int) categoryRepository.count()));
-                post.setAuthor(userRepository.findAll().get(i % (int) userRepository.count()));
-                post.setStatus(i % 3 == 0 ? BlogPostStatus.PROCESSING
-                        : (i % 3 == 1 ? BlogPostStatus.CONFIRMED : BlogPostStatus.CANCELED));
-                post.setCreatedAt(java.time.LocalDateTime.now());
-                blogPostRepository.save(post);
-            }
-        }
-        // CONSULTANT_PROFILES
-        if (consultantProfileRepository.count() < 5 && userRepository.count() > 0) {
-            for (int i = (int) consultantProfileRepository.count(); i < 5; i++) {
-                ConsultantProfile cp = new ConsultantProfile();
-                cp.setUser(userRepository.findAll().get(i % (int) userRepository.count()));
-                cp.setQualifications("Bằng cấp mẫu " + (i + 1));
-                cp.setExperience((5 + i) + " năm kinh nghiệm");
-                cp.setBio("Bio mẫu " + (i + 1));
-                cp.setCreatedAt(java.time.LocalDateTime.now());
-                cp.setUpdatedAt(java.time.LocalDateTime.now());
-                consultantProfileRepository.save(cp);
-            }
-        }
-        // PAYMENTS
-        if (paymentRepository.count() < 5 && userRepository.count() > 0) {
-            for (int i = (int) paymentRepository.count(); i < 5; i++) {
-                Payment p = new Payment();
-                p.setUser(userRepository.findAll().get(i % (int) userRepository.count())); // Sửa: truyền UserDtls thay vì id
-                p.setServiceType(i % 2 == 0 ? "STI_SERVICE" : "STI_PACKAGE");
-                p.setServiceId((long) ((i % 2) + 1));
-                p.setPaymentMethod(i % 3 == 0 ? com.healapp.model.PaymentMethod.VISA
-                        : (i % 3 == 1 ? com.healapp.model.PaymentMethod.QR_CODE : com.healapp.model.PaymentMethod.COD));
-                p.setPaymentStatus(i % 2 == 0 ? com.healapp.model.PaymentStatus.COMPLETED
-                        : com.healapp.model.PaymentStatus.PENDING);
-                p.setAmount(new java.math.BigDecimal(500000 + i * 100000));
-                p.setCurrency("VND");
-                p.setCreatedAt(java.time.LocalDateTime.now());
-                p.setUpdatedAt(java.time.LocalDateTime.now());
-                paymentRepository.save(p);
-            }
-        }
-        // STI_SERVICES
-        if (stiServiceRepository.count() < 5) {
-            for (int i = (int) stiServiceRepository.count(); i < 5; i++) {
-                STIService s = new STIService();
-                s.setName("Dịch vụ STI mẫu " + (i + 1));
-                s.setDescription("Mô tả dịch vụ STI mẫu " + (i + 1));
-                s.setPrice(new java.math.BigDecimal(400000 + i * 50000));
-                s.setIsActive(true);
-                s.setCreatedAt(java.time.LocalDateTime.now());
-                s.setUpdatedAt(java.time.LocalDateTime.now());
-                stiServiceRepository.save(s);
-            }
-        }
-        // STI_PACKAGES
-        if (stiPackageRepository.count() < 5) {
-            for (int i = (int) stiPackageRepository.count(); i < 5; i++) {
-                STIPackage p = new STIPackage();
-                p.setPackageName("Gói xét nghiệm mẫu " + (i + 1));
-                p.setDescription("Mô tả gói xét nghiệm mẫu " + (i + 1));
-                p.setPackagePrice(new java.math.BigDecimal(800000 + i * 100000));
-                p.setIsActive(true);
-                p.setCreatedAt(java.time.LocalDateTime.now());
-                p.setUpdatedAt(java.time.LocalDateTime.now());
-                stiPackageRepository.save(p);
-            }
-        }
-        // QUESTIONS
-        if (questionRepository.count() < 5 && userRepository.count() > 0 && categoryQuestionRepository.count() > 0) {
-            for (int i = (int) questionRepository.count(); i < 5; i++) {
-                Question q = new Question();
-                q.setCustomer(userRepository.findAll().get(i % (int) userRepository.count()));
-                q.setCategoryQuestion(
-                        categoryQuestionRepository.findAll().get(i % (int) categoryQuestionRepository.count()));
-                q.setContent("Câu hỏi mẫu " + (i + 1));
-                q.setAnswer(i % 2 == 0 ? "Trả lời mẫu " + (i + 1) : null);
-                q.setStatus(i % 3 == 0 ? Question.QuestionStatus.ANSWERED
-                        : (i % 3 == 1 ? Question.QuestionStatus.PROCESSING : Question.QuestionStatus.CONFIRMED));
-                q.setCreatedAt(java.time.LocalDateTime.now());
-                q.setUpdatedAt(java.time.LocalDateTime.now());
-                questionRepository.save(q);
-            }
-        }
-        // RATINGS
-        if (ratingRepository.count() < 5 && userRepository.count() > 0) {
-            for (int i = (int) ratingRepository.count(); i < 5; i++) {
-                Rating r = new Rating();
-                r.setUser(userRepository.findAll().get(i % (int) userRepository.count()));
-                r.setTargetType(i % 2 == 0 ? Rating.RatingTargetType.CONSULTANT : Rating.RatingTargetType.STI_SERVICE);
-                r.setTargetId((long) ((i % 2) + 1));
-                r.setRating(1 + (i % 5));
-                r.setComment("Nhận xét mẫu " + (i + 1));
-                r.setIsActive(true);
-                r.setCreatedAt(java.time.LocalDateTime.now());
-                r.setUpdatedAt(java.time.LocalDateTime.now());
-                ratingRepository.save(r);
-            }
-        }
-        // NOTIFICATIONS
-        // NOTIFICATION_PREFERENCE
-        // CONSULTATIONS
-        if (consultationRepository.count() < 5 && userRepository.count() > 1) {
-            for (int i = (int) consultationRepository.count(); i < 5; i++) {
-                Consultation c = new Consultation();
-                c.setCustomer(userRepository.findAll().get(i % (int) userRepository.count()));
-                c.setConsultant(userRepository.findAll().get((i + 1) % (int) userRepository.count()));
-                c.setStartTime(java.time.LocalDateTime.now().minusDays(i));
-                c.setEndTime(java.time.LocalDateTime.now().minusDays(i).plusMinutes(30));
-                c.setStatus(i % 4 == 0 ? com.healapp.model.ConsultationStatus.COMPLETED
-                        : (i % 4 == 1 ? com.healapp.model.ConsultationStatus.CONFIRMED
-                                : (i % 4 == 2 ? com.healapp.model.ConsultationStatus.CANCELED
-                                        : com.healapp.model.ConsultationStatus.PENDING)));
-                c.setCreatedAt(java.time.LocalDateTime.now());
-                consultationRepository.save(c);
-            }
-        }
-        // PAYMENT_INFO
-        if (paymentInfoRepository.count() < 5 && userRepository.count() > 0) {
-            for (int i = (int) paymentInfoRepository.count(); i < 5; i++) {
-                PaymentInfo pi = new PaymentInfo();
-                pi.setCardNumber("411111111111111" + i); // 15 ký tự + 1 ký tự = 16 ký tự
-                pi.setCardHolderName("Holder " + (i + 1));
-                pi.setExpiryMonth(String.format("%02d", (i % 12) + 1));
-                pi.setExpiryYear("202" + (i % 10));
-                pi.setCvv("1" + (i + 1) + "3");
-                pi.setCardType(i % 2 == 0 ? "VISA" : "MASTERCARD");
-                pi.setIsDefault(i == 0);
-                pi.setIsActive(true);
-                pi.setCreatedAt(java.time.LocalDateTime.now());
-                pi.setUpdatedAt(java.time.LocalDateTime.now());
-                pi.setUser(userRepository.findAll().get(i % (int) userRepository.count())); // Sửa: truyền UserDtls thay vì id
-                paymentInfoRepository.save(pi);
-            }
-        }
-        // STI_TESTS
-        if (stiTestRepository.count() < 5 && userRepository.count() > 0 && stiServiceRepository.count() > 0) {
-            for (int i = (int) stiTestRepository.count(); i < 5; i++) {
-                STITest test = new STITest();
-                test.setCustomer(userRepository.findAll().get(i % (int) userRepository.count()));
-                test.setStiService(stiServiceRepository.findAll().get(i % (int) stiServiceRepository.count()));
-                test.setStatus(i % 3 == 0 ? com.healapp.model.STITestStatus.COMPLETED
-                        : (i % 3 == 1 ? com.healapp.model.STITestStatus.PENDING
-                                : com.healapp.model.STITestStatus.CANCELED));
-                test.setCreatedAt(java.time.LocalDateTime.now());
-                test.setUpdatedAt(java.time.LocalDateTime.now());
-                stiTestRepository.save(test);
-            }
-        }
-        // RATING_SUMMARY
-        if (ratingSummaryRepository.count() < 5) {
-            for (int i = (int) ratingSummaryRepository.count(); i < 5; i++) {
-                RatingSummary rs = new RatingSummary();
-                rs.setTargetType(i % 2 == 0 ? com.healapp.model.Rating.RatingTargetType.CONSULTANT
-                        : com.healapp.model.Rating.RatingTargetType.STI_SERVICE);
-                rs.setTargetId((long) ((i % 2) + 1));
-                rs.setTotalRatings(1 + i);
-                rs.setAverageRating(new java.math.BigDecimal(2.0 + i));
-                rs.setFiveStarCount(i);
-                rs.setLastUpdated(java.time.LocalDateTime.now());
-                ratingSummaryRepository.save(rs);
-            }
-        }
-    }
+
 
     private void createRolesIfNotExists() {
         try {
