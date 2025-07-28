@@ -1209,8 +1209,20 @@ const TestResultInputModal = ({
         )}
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
-        <Button onClick={onClose} color="secondary">
-          Hủy
+        <Button
+          onClick={onClose}
+          color="secondary"
+          variant="outlined"
+          sx={{
+            fontWeight: 600,
+            borderColor: '#4A90E2',
+            color: '#4A90E2',
+            '&:hover': {
+              backgroundColor: 'rgba(74, 144, 226, 0.04)',
+            },
+          }}
+        >
+          Đóng
         </Button>
         <Button
           onClick={handleSaveAll}

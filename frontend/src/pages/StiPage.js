@@ -27,6 +27,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 // import HomeIcon from '@mui/icons-material/Home'; // XÓA
 // React Router
+import { confirmDialog } from '@/utils/confirmDialog';
 import { useNavigate } from 'react-router-dom';
 import { servicesData } from '../data/servicesData';
 
@@ -395,7 +396,13 @@ export default function StiPage() {
                         variant="contained"
                         endIcon={<ArrowForwardIcon />}
                         fullWidth
-                        onClick={() => navigate(service.detailRoute)}
+                        onClick={() => {
+                          if (service.id === 5 || service.id === 6) {
+                            confirmDialog.info('Chức năng đang phát triển. Tính năng này sẽ sớm được cập nhật!');
+                            return;
+                          }
+                          navigate(service.detailRoute);
+                        }}
                         sx={{
                           background: `linear-gradient(45deg, ${service.color}90, ${service.color})`,
                           color: '#fff',
