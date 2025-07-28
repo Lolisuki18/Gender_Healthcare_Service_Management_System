@@ -191,11 +191,11 @@ const ReviewsContent = () => {
       console.log('🧪 All STI tests:', allTests);
       
       const completedTests = allTests.filter(test => {
-        const hasValidId = test.id || test.serviceId;
-        const hasValidStatus = test.status && completedStatuses.includes(test.status.toUpperCase());
-        
-        console.log(`🔍 STI Test ${test.id || 'Unknown'}: hasValidId=${hasValidId}, status=${test.status}, hasValidStatus=${hasValidStatus}`);
-        
+      const hasValidId = test.testId; // Sử dụng testId cho cả lẻ và gói
+      const hasValidStatus = test.status && completedStatuses.includes(test.status.toUpperCase());
+
+        console.log(`🔍 STI Test ${test.testId || 'Unknown'}: hasValidId=${hasValidId}, status=${test.status}, hasValidStatus=${hasValidStatus}`);
+
         return hasValidId && hasValidStatus;
       });
       
@@ -305,16 +305,16 @@ const ReviewsContent = () => {
             (r.consultationId && String(r.consultationId) === String(service.consultationId))
         );
       } else if (service.type === 'STI_PACKAGE') {
-          matchedReview = reviews.find(
-            (r) =>
-              r.targetType === 'STI_PACKAGE' &&
-              String(r.targetId) === String(service.packageId) &&
-              (
-                (r.stiTestId && String(r.stiTestId) === String(service.testId)) ||
-                (r.testId && String(r.testId) === String(service.testId))
-              )
-          );
-        }
+        matchedReview = reviews.find(
+          (r) =>
+            r.targetType === 'STI_PACKAGE' &&
+            String(r.packageId || r.targetId) === String(service.packageId) &&
+            (
+              (r.stiTestId && String(r.stiTestId) === String(service.testId)) ||
+              (r.testId && String(r.testId) === String(service.testId))
+            )
+        );
+      }
       return {
         ...service,
         status: matchedReview ? 'completed' : 'pending',
@@ -400,6 +400,10 @@ const ReviewsContent = () => {
       if (!hasReview && serviceTestId) {
         uniqueSTIServices.add(serviceTestId);
       }
+    }else if (service.type === 'STI_PACKAGE' && service.status === 'pending') {
+        // Thêm từng test thuộc gói
+        const key = `${service.packageId}_${service.testId}`;
+        uniqueSTIServices.add(key);
     } else if (service.type === 'CONSULTANT' && service.status === 'pending') {
       // So sánh bằng consultationId
       const consultationIdentifier = service.consultationId;
@@ -1338,6 +1342,24 @@ const ReviewsContent = () => {
                         height: '20px',
                         '& .MuiChip-icon': {
                           color: '#4CAF50'
+                        }
+                      }}
+                    />
+                  )}
+                  {review.type === 'STI_PACKAGE' && (
+                    <Chip
+                      icon={<ScienceIcon sx={{ fontSize: '12px !important' }} />}
+                      label="Gói xét nghiệm"
+                      size="small"
+                      sx={{
+                        background: 'rgba(255, 193, 7, 0.1)',
+                        color: '#FFC107',
+                        border: '1px solid rgba(255, 193, 7, 0.3)',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        height: '20px',
+                        '& .MuiChip-icon': {
+                          color: '#FFC107'
                         }
                       }}
                     />
