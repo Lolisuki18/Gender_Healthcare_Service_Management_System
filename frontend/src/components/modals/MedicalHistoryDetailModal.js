@@ -684,7 +684,6 @@ const MedicalHistoryDetailModal = ({
                           variant="body1"
                           sx={{
                             ml: 3.5,
-                            fontFamily: 'monospace',
                             fontWeight: 500,
                             color: '#1e293b',
                             fontSize: '0.9rem',
@@ -724,7 +723,6 @@ const MedicalHistoryDetailModal = ({
                           variant="body1"
                           sx={{
                             ml: 3.5,
-                            fontFamily: 'monospace',
                             fontWeight: 500,
                             color: '#1e293b',
                             fontSize: '0.9rem',

@@ -406,7 +406,6 @@ const ConsultantTestResultDetailModal = ({
           color: '#fff',
           fontWeight: 700,
           fontSize: 22,
-          fontFamily: FONT_FAMILY,
           py: 2,
           px: 3,
         }}

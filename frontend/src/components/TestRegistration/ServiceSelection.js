@@ -36,7 +36,6 @@ const ServiceSelection = ({
       p: { xs: 3, md: 5 },                                    // Padding responsive: mobile 24px, desktop 40px
       boxShadow: '0 8px 32px rgba(74,144,226,0.10)',          // Đổ bóng xanh nhẹ
       my: 2,                                                   // Margin vertical 16px
-      fontFamily: 'inherit'                                    // Kế thừa font từ parent
     }}>
       
       {/* ===== PHẦN HEADER - TIÊU ĐỀ VÀ MÔ TẢ ===== */}
@@ -63,7 +62,6 @@ const ServiceSelection = ({
             color: '#757575',                                  // Màu xám
             fontWeight: 400,                                   // Font weight normal
             fontSize: { xs: 16, md: 18 },                     // Font size responsive
-            fontFamily: 'inherit',
             maxWidth: 600,                                     // Giới hạn chiều rộng
             mx: 'auto',                                        // Căn giữa
             lineHeight: 1.6                                    // Khoảng cách dòng

@@ -501,7 +501,6 @@ const PaymentInfoContent = () => {
                     {/* Card number */}
                     <Typography
                       variant="h5"
-                      fontFamily="monospace"
                       fontWeight={600}
                       letterSpacing={2}
                       sx={{ color: 'white', mb: 1, mt: 2 }}

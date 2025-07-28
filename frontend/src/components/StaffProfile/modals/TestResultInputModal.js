@@ -645,7 +645,6 @@ const TestResultInputModal = ({
                         sx={{
                           fontWeight: 600,
                           color: isSelected ? '#4A90E2' : '#1e293b',
-                          fontFamily: FONT_FAMILY,
                         }}
                       >
                         {svc.name || svc.serviceName}
@@ -684,7 +683,6 @@ const TestResultInputModal = ({
                 sx={{
                   color: '#fff',
                   fontWeight: 700,
-                  fontFamily: FONT_FAMILY,
                 }}
               >
                 Tên thành phần
@@ -693,7 +691,6 @@ const TestResultInputModal = ({
                 sx={{
                   color: '#fff',
                   fontWeight: 700,
-                  fontFamily: FONT_FAMILY,
                 }}
               >
                 Kết quả
@@ -702,7 +699,6 @@ const TestResultInputModal = ({
                 sx={{
                   color: '#fff',
                   fontWeight: 700,
-                  fontFamily: FONT_FAMILY,
                 }}
               >
                 Đơn vị
@@ -711,7 +707,6 @@ const TestResultInputModal = ({
                 sx={{
                   color: '#fff',
                   fontWeight: 700,
-                  fontFamily: FONT_FAMILY,
                 }}
               >
                 Khoảng bình thường
@@ -720,7 +715,6 @@ const TestResultInputModal = ({
                 sx={{
                   color: '#fff',
                   fontWeight: 700,
-                  fontFamily: FONT_FAMILY,
                 }}
               >
                 Kết luận
@@ -948,7 +942,6 @@ const TestResultInputModal = ({
           color: '#fff',
           fontWeight: 700,
           fontSize: 22,
-          fontFamily: FONT_FAMILY,
           py: 2,
           px: 3,
         }}

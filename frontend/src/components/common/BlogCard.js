@@ -239,8 +239,7 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+            overflow: 'hidden'
           }}
         >
           {post.title}
@@ -253,8 +252,7 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
             color: '#546e7a',
             mb: 4,
             lineHeight: 1.7,
-            fontSize: '1rem',
-            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+            fontSize: '1rem'
           }}
         >
           {getCleanContentPreview(post.content, truncateContent)}
@@ -290,8 +288,7 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
                 sx={{ 
                   fontWeight: 600,
                   color: '#37474f',
-                  fontSize: '0.875rem',
-                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+                  fontSize: '0.875rem'
                 }}
               >
                 {post.authorName || 'Tác giả'}
@@ -302,8 +299,7 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
                   variant="caption" 
                   sx={{ 
                     color: '#90a4ae',
-                    fontSize: '0.75rem',
-                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
+                    fontSize: '0.75rem'
                   }}
                 >
                   {formatDateVN(post.createdAt)}
@@ -325,7 +321,6 @@ const BlogCard = ({ post, truncateContent = 120 }) => {
               py: 1,
               fontSize: '0.875rem',
               fontWeight: 600,
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
               boxShadow: 'none',
               textTransform: 'none',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',

@@ -388,7 +388,6 @@ const BlogCreatePage = () => {
             color: '#1a237e',
             mb: 2,
             fontSize: { xs: '1.8rem', md: '2.5rem' },
-            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
           }}
         >
           Tạo bài viết mới
@@ -399,7 +398,6 @@ const BlogCreatePage = () => {
             color: '#546e7a',
             mb: 6,
             fontSize: '1.125rem',
-            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
           }}
         >
           Chia sẻ kiến thức y khoa với cộng đồng
@@ -450,8 +448,6 @@ const BlogCreatePage = () => {
                 fontWeight: 700,
                 color: '#1a237e',
                 mb: 4,
-                fontFamily:
-                  '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
               }}
             >
               Thông tin cơ bản
@@ -513,8 +509,6 @@ const BlogCreatePage = () => {
                 fontWeight: 700,
                 color: '#1a237e',
                 mb: 4,
-                fontFamily:
-                  '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
               }}
             >
               Hình ảnh đại diện
@@ -570,8 +564,6 @@ const BlogCreatePage = () => {
                   sx={{
                     fontWeight: 700,
                     color: '#1a237e',
-                    fontFamily:
-                      '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                   }}
                 >
                   Phần nội dung chi tiết
@@ -685,8 +677,6 @@ const BlogCreatePage = () => {
                     color="text.secondary"
                     sx={{
                       mb: 2,
-                      fontFamily:
-                        '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                     }}
                   >
                     Chưa có phần nội dung chi tiết nào

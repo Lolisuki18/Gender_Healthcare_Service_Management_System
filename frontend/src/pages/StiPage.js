@@ -47,7 +47,6 @@ export default function StiPage() {
         minHeight: '100vh',
         position: 'relative',
         overflow: 'hidden',
-        fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
       }}
     >
       {/* --- Nền trang với các hình tròn trang trí --- */}
@@ -141,7 +140,7 @@ export default function StiPage() {
               variant="h2"
               component="h1"
               sx={{
-                fontWeight: 900,
+                fontWeight: 700,
                 fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' },
                 color: 'transparent',
                 background: 'linear-gradient(135deg, #4A90E2 0%, #1ABC9C 50%, #667eea 100%)',
@@ -152,7 +151,9 @@ export default function StiPage() {
                 lineHeight: 1.1,
                 letterSpacing: '-2px',
                 mb: 3,
-                textShadow: '0 4px 8px rgba(74, 144, 226, 0.1)',
+                /* Đổ bóng nổi bật hơn */
+                textShadow: `0 4px 10px rgba(0, 0, 0, 0.15),
+                              0 1px 0 rgba(255, 255, 255, 0.1)`,  
               }}
             >
               Dịch vụ của chúng tôi

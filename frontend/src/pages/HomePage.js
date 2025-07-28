@@ -360,18 +360,19 @@ export const HomePage = () => {
       >
         <Container maxWidth="lg">
           <Box sx={{ mb: 7, textAlign: 'center' }}>
-            <Chip
-              label="DỊCH VỤ NỔI BẬT"
-              sx={{
-                mb: 2,
-                bgcolor: (theme) => theme.palette.primary.light + '30',
-                color: (theme) => theme.palette.primary.main,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                borderRadius: '16px',
-                px: 1.5,
-              }}
-            />
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <Chip
+                label="DỊCH VỤ NỔI BẬT"
+                sx={{
+                  bgcolor: (theme) => theme.palette.primary.light + '30',
+                  color: (theme) => theme.palette.primary.main,
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  borderRadius: '16px',
+                  px: 1.5,
+                }}
+              />
+            </Box>
 
             <Typography
               variant="h3"
@@ -379,21 +380,31 @@ export const HomePage = () => {
               gutterBottom
               sx={{
                 mb: 3,
-                color: (theme) => theme.palette.text.primary,
                 fontWeight: 800,
-                fontSize: { xs: '1.8rem', sm: '2.25rem', md: '2.75rem' },
+                fontFamily: 'Inter, sans-serif',
+                fontSize: { xs: '2.1rem', sm: '2.7rem', md: '3.2rem' },
+                background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 60%, #9B59B6 100%)',
+                color: 'transparent',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textAlign: 'center',
+                letterSpacing: '-1.5px',
+                lineHeight: 1.13,
+                textShadow: '0 4px 24px rgba(0,0,0,0.1), 0 1.5px 0px rgba(0,0,0,0.1)',
                 position: 'relative',
                 display: 'inline-block',
                 '&::after': {
                   content: '""',
                   position: 'absolute',
-                  width: '80px',
-                  height: '5px',
-                  bottom: '-15px',
+                  width: '110px',
+                  height: '7px',
+                  bottom: '-18px',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  background: 'linear-gradient(to right, #4A90E2, #1ABC9C)',
-                  borderRadius: '10px',
+                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 60%, #9B59B6 100%)',
+                  borderRadius: '12px',
+                  boxShadow: '0 2px 8px rgba(74,144,226,0.13)',
                 },
               }}
             >
@@ -748,39 +759,50 @@ export const HomePage = () => {
       >
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
           <Box sx={{ textAlign: 'center', mb: 8 }}>
-            <Chip
-              label="ĐÁNH GIÁ TỪ KHÁCH HÀNG"
-              sx={{
-                mb: 2,
-                bgcolor: (theme) => theme.palette.secondary.light + '30',
-                color: (theme) => theme.palette.secondary.main,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                borderRadius: '16px',
-                px: 1.5,
-              }}
-            />
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <Chip
+                label="ĐÁNH GIÁ TỪ KHÁCH HÀNG"
+                sx={{
+                  bgcolor: (theme) => theme.palette.secondary.light + '30',
+                  color: (theme) => theme.palette.secondary.main,
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  borderRadius: '16px',
+                  px: 1.5,
+                }}
+              />
+            </Box>
             <Typography
               variant="h3"
               component="h2"
               gutterBottom
               sx={{
                 mb: 3,
-                color: (theme) => theme.palette.text.primary,
                 fontWeight: 800,
-                fontSize: { xs: '1.8rem', sm: '2.25rem', md: '2.75rem' },
+                fontFamily: 'Inter, sans-serif',
+                fontSize: { xs: '2.1rem', sm: '2.7rem', md: '3.2rem' },
+                background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 60%, #9B59B6 100%)',
+                color: 'transparent',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textAlign: 'center',
+                letterSpacing: '-1.5px',
+                lineHeight: 1.13,
+                textShadow: '0 4px 24px rgba(0,0,0,0.1), 0 1.5px 0px rgba(0,0,0,0.1)',
                 position: 'relative',
                 display: 'inline-block',
                 '&::after': {
                   content: '""',
                   position: 'absolute',
-                  width: '80px',
-                  height: '5px',
-                  bottom: '-15px',
+                  width: '110px',
+                  height: '7px',
+                  bottom: '-18px',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  background: 'linear-gradient(to right, #1ABC9C, #4A90E2)',
-                  borderRadius: '10px',
+                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 60%, #9B59B6 100%)',
+                  borderRadius: '12px',
+                  boxShadow: '0 2px 8px rgba(26,188,156,0.13)',
                 },
               }}
             >
@@ -963,39 +985,50 @@ export const HomePage = () => {
       >
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
           <Box sx={{ textAlign: 'center', mb: 7 }}>
-            <Chip
-              label="TIN TỨC MỚI NHẤT"
-              sx={{
-                mb: 2,
-                bgcolor: (theme) => theme.palette.primary.light + '30',
-                color: (theme) => theme.palette.primary.main,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                borderRadius: '16px',
-                px: 1.5,
-              }}
-            />
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <Chip
+                label="TIN TỨC MỚI NHẤT"
+                sx={{
+                  bgcolor: (theme) => theme.palette.primary.light + '30',
+                  color: (theme) => theme.palette.primary.main,
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  borderRadius: '16px',
+                  px: 1.5,
+                }}
+              />
+            </Box>
             <Typography
               variant="h3"
               component="h2"
               gutterBottom
               sx={{
                 mb: 3,
-                color: (theme) => theme.palette.text.primary,
                 fontWeight: 800,
-                fontSize: { xs: '1.8rem', sm: '2.25rem', md: '2.75rem' },
+                fontFamily: 'Inter, sans-serif',
+                fontSize: { xs: '2.1rem', sm: '2.7rem', md: '3.2rem' },
+                background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 60%, #9B59B6 100%)',
+                color: 'transparent',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textAlign: 'center',
+                letterSpacing: '-1.5px',
+                lineHeight: 1.13,
+                textShadow: '0 4px 24px rgba(0,0,0,0.1), 0 1.5px 0px rgba(0,0,0,0.1)',
                 position: 'relative',
                 display: 'inline-block',
                 '&::after': {
                   content: '""',
                   position: 'absolute',
-                  width: '80px',
-                  height: '5px',
-                  bottom: '-15px',
+                  width: '110px',
+                  height: '7px',
+                  bottom: '-18px',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  background: 'linear-gradient(to right, #4A90E2, #1ABC9C)',
-                  borderRadius: '10px',
+                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 60%, #9B59B6 100%)',
+                  borderRadius: '12px',
+                  boxShadow: '0 2px 8px rgba(74,144,226,0.13)',
                 },
               }}
             >
@@ -1217,69 +1250,84 @@ export const HomePage = () => {
       <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F7FAFC' }}>
         <Container maxWidth="lg">
           <Box sx={{ textAlign: 'center', mb: 7 }}>
-            <Chip
-              label="CÂU HỎI THƯỜNG GẶP"
-              icon={<HelpOutlineIcon />}
-              sx={{
-                mb: 2,
-                bgcolor: (theme) => theme.palette.secondary.light + '30',
-                color: (theme) => theme.palette.secondary.main,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                borderRadius: '16px',
-                px: 1.5,
-                '& .MuiChip-icon': {
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <Chip
+                label="CÂU HỎI THƯỜNG GẶP"
+                icon={<HelpOutlineIcon />}
+                sx={{
+                  bgcolor: (theme) => theme.palette.secondary.light + '30',
                   color: (theme) => theme.palette.secondary.main,
-                },
-              }}
-            />
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  borderRadius: '16px',
+                  px: 1.5,
+                  '& .MuiChip-icon': {
+                    color: (theme) => theme.palette.secondary.main,
+                  },
+                }}
+              />
+            </Box>
             <Typography
               variant="h3"
               component="h2"
               gutterBottom
               sx={{
                 mb: 3,
-                color: (theme) => theme.palette.text.primary,
                 fontWeight: 800,
-                fontSize: { xs: '1.8rem', sm: '2.25rem', md: '2.75rem' },
+                fontFamily: 'Inter, sans-serif',
+                fontSize: { xs: '2.1rem', sm: '2.7rem', md: '3.2rem' },
+                background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 60%, #9B59B6 100%)',
+                color: 'transparent',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textAlign: 'center',
+                letterSpacing: '-1.5px',
+                lineHeight: 1.13,
+                textShadow: '0 4px 24px rgba(0,0,0,0.1), 0 1.5px 0px rgba(0,0,0,0.1)',
                 position: 'relative',
                 display: 'inline-block',
                 '&::after': {
                   content: '""',
                   position: 'absolute',
-                  width: '80px',
-                  height: '5px',
-                  bottom: '-15px',
+                  width: '110px',
+                  height: '7px',
+                  bottom: '-18px',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  background: 'linear-gradient(to right, #1ABC9C, #4A90E2)',
-                  borderRadius: '10px',
+                  background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 60%, #9B59B6 100%)',
+                  borderRadius: '12px',
+                  boxShadow: '0 2px 8px rgba(26,188,156,0.13)',
                 },
               }}
             >
               Giải đáp thắc mắc
             </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleAskQuestion}
-              sx={{
-                mt: 2,
-                borderRadius: 8,
-                fontWeight: 600,
-                px: 4,
-                py: 1.2,
-                textTransform: 'none',
-                fontSize: '1.05rem',
-                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
-                '&:hover': {
-                  background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
-                },
-              }}
-            >
-              Đặt câu hỏi
-            </Button>
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleAskQuestion}
+                sx={{
+                  mt: 4,
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  px: 4,
+                  py: 1.2,
+                  textTransform: 'none',
+                  fontSize: '1.05rem',
+                  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #1ABC9C, #4A90E2)',
+                  },
+                  
+                }}
+              >
+                Đặt câu hỏi
+              </Button>
+            </Box>
+            
           </Box>{' '}
           <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
             {[

@@ -126,7 +126,6 @@ const DeleteAccountModal = ({
           fontSize: 17,
           padding: '8px 0',
           color: '#b71c1c',
-          fontFamily: 'inherit',
         }}
       >
         <div

@@ -58,7 +58,6 @@ const useStyles = makeStyles({
     letterSpacing: 0.5,
     margin: 0,
     textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
   },
   titleSubtext: {
     fontSize: '1rem',
@@ -596,37 +595,7 @@ const MenstrualCycleForm = ({ open, onSubmit, onCancel, initialData = null, isEd
 
         </Box>
 
-        {/* Thông báo tổng hợp về dữ liệu bất thường */}
-        {(warnings.numberOfDays || warnings.cycleLength) && (
-          <Box 
-            sx={{
-              marginTop: 3,
-              padding: '16px',
-              backgroundColor: '#fff3cd',
-              border: '1px solid #ffeaa7',
-              borderRadius: '12px',
-              color: '#856404',
-            }}
-          >
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                fontSize: '1rem', 
-                fontWeight: 600, 
-                marginBottom: 1,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              ⚠️ Lưu ý về dữ liệu
-            </Typography>
-            <Typography sx={{ fontSize: '0.9rem', lineHeight: 1.5 }}>
-              Dữ liệu bạn nhập có một số điểm bất thường. Điều này có thể bình thường đối với một số người, 
-              nhưng nếu bạn lo lắng, hãy tham khảo ý kiến bác sĩ chuyên khoa để được tư vấn chính xác.
-            </Typography>
-          </Box>
-        )}
+        
         </DialogContent>
 
         {/* Actions */}

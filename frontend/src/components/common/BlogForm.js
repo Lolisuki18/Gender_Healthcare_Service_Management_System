@@ -2,7 +2,7 @@ import React from 'react';
 
 import { getBlogImageUrl } from '@/utils/imageUrl';
 import {
-  Box, Typography, TextField, FormControl, InputLabel, Select, MenuItem, Button, Grid, Card, IconButton
+  Box, Typography, TextField, FormControl, InputLabel, Select, MenuItem, Button, Card, IconButton
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import AddIcon from '@mui/icons-material/Add';
@@ -10,21 +10,15 @@ import RemoveIcon from '@mui/icons-material/Remove';
 
 const BlogForm = ({
   form,
-  setForm,
   categories,
-  thumbnailFile,
   thumbnailPreview,
-  sectionFiles,
   handleFormChange,
   handleThumbnailChange,
   handleSectionChange,
   addSection,
   removeSection,
   handleSectionImageChange,
-  loading,
-  onSubmit,
-  onCancel,
-  isEdit
+  onSubmit
 }) => (
   <Box component="form" onSubmit={e => { e.preventDefault(); onSubmit(); }}>
     <TextField

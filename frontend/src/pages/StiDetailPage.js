@@ -287,7 +287,6 @@ export default function StiDetailPage() {
         minHeight: '100vh',
         position: 'relative',
         overflow: 'hidden',
-        fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
       }}
     >
       {/* --- Nền trang với các hình tròn trang trí --- */}

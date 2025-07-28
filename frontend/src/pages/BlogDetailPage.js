@@ -387,7 +387,6 @@ const BlogDetailPage = () => {
                 mb: 4,
                 fontSize: { xs: '1.8rem', md: '2.5rem' },
                 lineHeight: 1.2,
-                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
               }}
             >
               {blog.title}
@@ -426,7 +425,6 @@ const BlogDetailPage = () => {
                     fontWeight: 600,
                     color: '#37474f',
                     fontSize: '1rem',
-                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
                   }}
                 >
                   {blog.authorName || 'Tác giả'}
@@ -439,7 +437,6 @@ const BlogDetailPage = () => {
                     sx={{ 
                       color: '#90a4ae',
                       fontSize: '0.875rem',
-                      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
                     }}
                   >
                     Xuất bản: {formatDateVN(blog.createdAt)}
@@ -454,7 +451,6 @@ const BlogDetailPage = () => {
                       sx={{ 
                         color: '#90a4ae',
                         fontSize: '0.875rem',
-                        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
                       }}
                     >
                       Cập nhật: {formatDateVN(blog.updatedAt)}
@@ -474,7 +470,6 @@ const BlogDetailPage = () => {
                   color: '#37474f',
                   lineHeight: 1.8,
                   fontSize: '1.125rem',
-                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                   '& p': {
                     mb: 3
                   },
@@ -521,7 +516,6 @@ const BlogDetailPage = () => {
                     color: '#1a237e',
                     mb: 4,
                     fontSize: '1.5rem',
-                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
                   }}
                 >
                   Nội dung chi tiết
@@ -539,7 +533,6 @@ const BlogDetailPage = () => {
                             color: '#1a237e',
                             mb: 3,
                             fontSize: '1.25rem',
-                            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
                           }}
                         >
                           {section.sectionTitle}
@@ -570,7 +563,6 @@ const BlogDetailPage = () => {
                             color: '#37474f',
                             lineHeight: 1.8,
                             fontSize: '1.125rem',
-                            fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
                           }}
                           dangerouslySetInnerHTML={{ __html: section.sectionContent }}
                         />
@@ -598,7 +590,6 @@ const BlogDetailPage = () => {
                   py: 2,
                   fontSize: '1.1rem',
                   fontWeight: 600,
-                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                   boxShadow: '0 8px 25px rgba(38, 198, 218, 0.3)',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   textTransform: 'none',

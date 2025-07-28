@@ -339,12 +339,11 @@ const BlogPage = () => {
           <Typography
             variant="h1"
             sx={{
-              fontWeight: 800,
+              fontWeight: 700,
               color: '#1a237e',
               mb: 4,
               fontSize: { xs: '2.5rem', md: '3.5rem' },
               letterSpacing: '-0.02em',
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
               background: 'linear-gradient(135deg, #006064 0%, #26c6da 100%)',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
@@ -362,7 +361,6 @@ const BlogPage = () => {
               lineHeight: 1.8,
               fontWeight: 400,
               fontSize: { xs: '1.1rem', md: '1.25rem' },
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
             }}
           >
             Cập nhật thông tin y khoa mới nhất từ đội ngũ chuyên gia hàng đầu
@@ -421,8 +419,6 @@ const BlogPage = () => {
                 boxShadow: '0 8px 32px rgba(38, 198, 218, 0.15)',
                 border: '2px solid #e0f7fa',
                 fontSize: '1.1rem',
-                fontFamily:
-                  '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                 '& fieldset': {
                   border: 'none',
                 },
@@ -446,8 +442,6 @@ const BlogPage = () => {
                 fontSize: '1.1rem',
                 fontWeight: 400,
                 color: '#37474f',
-                fontFamily:
-                  '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                 '&::placeholder': {
                   color: '#90a4ae',
                   opacity: 1,
@@ -494,7 +488,6 @@ const BlogPage = () => {
                 py: 1.5,
                 fontSize: '1.1rem',
                 fontWeight: 600,
-                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                 boxShadow: '0 8px 25px rgba(38, 198, 218, 0.3)',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 textTransform: 'none',
@@ -523,8 +516,6 @@ const BlogPage = () => {
                 textAlign: 'center',
                 fontSize: '1.2rem',
                 fontWeight: 500,
-                fontFamily:
-                  '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                 backgroundColor: '#ffffff',
                 py: 3,
                 px: 4,
@@ -571,7 +562,6 @@ const BlogPage = () => {
               backdropFilter: 'blur(20px)',
               boxShadow: '0 12px 40px rgba(255, 152, 0, 0.2)',
               border: '2px solid rgba(255, 152, 0, 0.2)',
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
               '& .MuiAlert-message': {
                 fontSize: '1.1rem',
                 fontWeight: 500,
@@ -705,8 +695,6 @@ const BlogPage = () => {
                   mb: 3,
                   fontWeight: 700,
                   fontSize: { xs: '1.8rem', md: '2.2rem' },
-                  fontFamily:
-                    '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                 }}
               >
                 {searchTerm
@@ -719,8 +707,6 @@ const BlogPage = () => {
                   color: '#546e7a',
                   fontWeight: 400,
                   fontSize: '1.2rem',
-                  fontFamily:
-                    '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                   mb: 4,
                 }}
               >
@@ -742,8 +728,6 @@ const BlogPage = () => {
                     py: 1.5,
                     fontSize: '1.1rem',
                     fontWeight: 600,
-                    fontFamily:
-                      '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                     boxShadow: '0 8px 25px rgba(38, 198, 218, 0.3)',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     textTransform: 'none',
@@ -789,8 +773,6 @@ const BlogPage = () => {
                 onChange={handlePageChange}
                 size="large"
                 sx={{
-                  fontFamily:
-                    '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                   '& .MuiPaginationItem-root': {
                     borderRadius: '12px',
                     color: '#546e7a',

@@ -61,7 +61,6 @@ const SampleCollectionModal = ({
                     fontWeight: 700,
                     fontSize: 15,
                     textTransform: 'uppercase',
-                    fontFamily: FONT_FAMILY,
                     py: 1.5,
                   }}
                 >
@@ -103,7 +102,6 @@ const SampleCollectionModal = ({
           color: '#fff',
           fontWeight: 700,
           fontSize: 22,
-          fontFamily: FONT_FAMILY,
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
           py: 2,
@@ -207,7 +205,6 @@ const SampleCollectionModal = ({
                               fontWeight: 700,
                               fontSize: 17,
                               color: isSelected ? '#fff' : '#1e293b',
-                              fontFamily: FONT_FAMILY,
                               letterSpacing: 0.5,
                             }}
                           >
@@ -272,7 +269,6 @@ const SampleCollectionModal = ({
             borderRadius: 3,
             px: 3,
             fontSize: 15,
-            fontFamily: FONT_FAMILY,
             height: 44,
           }}
         >

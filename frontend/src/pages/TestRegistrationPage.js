@@ -56,7 +56,6 @@ const ModernButton = styled(Button)(({ theme }) => ({
   textTransform: 'none',                                     // Không viết hoa tự động
   padding: '10px 24px',                                      // Padding 10px dọc, 24px ngang
   transition: 'all 0.2s ease',                               // Animation mượt 200ms
-  fontFamily: 'inherit',                                     // Kế thừa font family từ parent
   boxShadow: '0 2px 8px rgba(33,150,243,0.08)',             // Đổ bóng nhẹ màu xanh
   '&:hover': {                                               // Hiệu ứng khi hover
     transform: 'translateY(-2px)',                           // Nâng lên 2px
@@ -1005,7 +1004,6 @@ function TestRegistrationPage() {
       minHeight: '100vh', 
       position: 'relative', 
       overflow: 'hidden', 
-      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif' 
     }}>
       {/* Các phần tử trang trí background với hiệu ứng gradient tròn */}
       <Box
@@ -1145,7 +1143,6 @@ function TestRegistrationPage() {
           boxShadow: '0 8px 32px rgba(33,150,243,0.12)', 
           mb: 4, 
           border: '1px solid rgba(33, 150, 243, 0.08)',
-          fontFamily: 'inherit' 
         }}>
           {/* Stepper tùy chỉnh hiện đại với animation */}
           <Box sx={{ width: '100%', mb: 3 }}>
@@ -1333,7 +1330,6 @@ function TestRegistrationPage() {
                 boxShadow: '0 8px 32px rgba(33,150,243,0.12)', 
                 mb: 4, 
                 border: '1px solid rgba(33, 150, 243, 0.08)',
-                fontFamily: 'inherit' 
               }}>
                 {/* Tiêu đề bước 2 */}
                 <Typography 
@@ -1385,7 +1381,6 @@ function TestRegistrationPage() {
                 boxShadow: '0 8px 32px rgba(33,150,243,0.12)', 
                 mb: 4, 
                 border: '1px solid rgba(33, 150, 243, 0.08)',
-                fontFamily: 'inherit' 
               }}>
                 <Typography 
                   variant="h4" 

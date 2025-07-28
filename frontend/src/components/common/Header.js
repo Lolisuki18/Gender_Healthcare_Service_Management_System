@@ -138,8 +138,6 @@ const Header = () => {
             to="/"
             sx={{
               mr: { xs: 1, md: 4 },
-              fontFamily:
-                "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
               fontWeight: 700,
               letterSpacing: '.05rem',
               color:
