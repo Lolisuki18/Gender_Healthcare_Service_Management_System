@@ -344,6 +344,18 @@ public class DataInitializerConfig implements CommandLineRunner {
             // PAYMENTS
             createPaymentsIfNotExists();
 
+            // STI_SERVICES (phải tạo trước SERVICE_TEST_COMPONENTS)
+            createSTIServicesIfNotExists();
+
+            // STI_PACKAGES (phải tạo trước PACKAGE_SERVICES)
+            createSTIPackagesIfNotExists();
+
+            // SERVICE_TEST_COMPONENTS (cần STI_SERVICES)
+            createServiceTestComponentsIfNotExists();
+
+            // PACKAGE_SERVICES (cần cả STI_PACKAGES và STI_SERVICES)
+            createPackageServicesIfNotExists();
+
             // QUESTIONS
             createQuestionsIfNotExists();
 
@@ -353,19 +365,7 @@ public class DataInitializerConfig implements CommandLineRunner {
             // RATINGS
             createRatingsIfNotExists();
 
-            // SERVICE_TEST_COMPONENTS
-            createServiceTestComponentsIfNotExists();
-
-            // STI_PACKAGES
-            createSTIPackagesIfNotExists();
-
-            // STI_SERVICES
-            createSTIServicesIfNotExists();
-
-            // PACKAGE_SERVICES
-            createPackageServicesIfNotExists();
-
-            // STI_TESTS
+            // STI_TESTS (cần USERS và STI_SERVICES)
             createSTITestsIfNotExists();
         } catch (Exception e) {
             System.err.println("Error during data initialization: " + e.getMessage());
