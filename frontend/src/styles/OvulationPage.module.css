@@ -898,6 +898,7 @@ body, #root {
   font-size: 1.05rem;
   line-height: 1.6;
   font-weight: 400;
+  font-style: oblique;
 }
 
 .adviceCardList {

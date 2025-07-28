@@ -161,21 +161,6 @@ const OvulationPage = ({ stats }) => {
     };
   }, []);
 
-  // Tỉ lệ mang thai
-  // const [pregnancyProb, setPregnancyProb] = useState([]);
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const data =
-  //         await ovulationService.getAllMenstrualCyclesWithPregnancyProb();
-  //       setPregnancyProb(data);
-  //     } catch (err) {
-  //       console.error('Lỗi khi lấy dữ liệu tỉ lệ mang thai:', err);
-  //     }
-  //   };
-  //   fetchData();
-  // }, []);
-
   // Độ dài chu kỳ trung bình
   const getAverageCycleLength = (menstrualCycles) => {
     if (!Array.isArray(menstrualCycles) || menstrualCycles.length === 0)
@@ -813,6 +798,10 @@ const OvulationPage = ({ stats }) => {
   const sortedCycles = menstrualCycles.sort(
     (a, b) => new Date(b.startDate) - new Date(a.startDate)
   );
+
+  const ortherSortedCycles = [...menstrualCycles].sort(
+    (a, b) => new Date(a.startDate) - new Date(b.startDate)
+  );
   const totalPages = Math.ceil(sortedCycles.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -889,6 +878,99 @@ const OvulationPage = ({ stats }) => {
       periodLength: data.numberOfDays,
     };
   };
+
+  // Hàm lấy chu kỳ gần nhất sau chu kỳ được nhập vào
+  const getNextCycleAfterInput = (inputCycle) => {
+    if (!inputCycle || !ortherSortedCycles.length) return null;
+
+    const inputStartDate = new Date(inputCycle.startDate);
+
+    for (const cycle of ortherSortedCycles) {
+      const cycleStartDate = new Date(cycle.startDate);
+
+      if (cycleStartDate > inputStartDate) {
+        return cycle;
+      }
+    }
+
+    return null;
+  };
+  
+  // Hàm lấy chu kỳ gần nhất trước chu kỳ được nhập vào
+  const getLastCycleBeforeInput = (inputCycle) => {
+    if (!inputCycle || !sortedCycles.length) return null;
+
+    const inputStartDate = new Date(inputCycle.startDate);
+
+    for (const cycle of sortedCycles) {
+      const cycleStartDate = new Date(cycle.startDate);
+
+      if (cycleStartDate < inputStartDate) {
+        return cycle;
+      }
+    }
+
+    return null;
+  };
+
+
+  // Hàm so sánh chu kỳ đã nhập với chu kỳ sau gần nhất
+  const compareCycleWithNext = (inputCycle) => {
+    const nextCycle = getNextCycleAfterInput(inputCycle);
+    if (!nextCycle) return null;
+
+    // So sánh độ dài chu kỳ của chu kỳ sau gần nhất và khoảng cách thực tế so với đã nhập
+    const nextCycleLength = nextCycle.cycleLength;
+    const actualCycleLength =
+      (new Date(nextCycle.startDate) - new Date(inputCycle.startDate)) /
+      (1000 * 60 * 60 * 24);
+
+    if (nextCycleLength !== actualCycleLength) {
+      // Nếu độ dài chu kỳ không khớp, có thể cần điều chỉnh
+      console.warn('Độ dài chu kỳ không khớp:', {
+        nextCycleLength,
+        actualCycleLength,
+        nextCycle
+      });
+    }
+
+    return {
+      nextCycle,
+      nextCycleLength,
+      actualCycleLength,
+    };
+  };
+
+  const compareCycleResultWithNext = compareCycleWithNext(calculationResult);
+
+  // Hàm so sánh chu kỳ đã nhập với chu kỳ trước gần nhất
+  const compareCycleWithLast = (inputCycle) => {
+    const lastCycle = getLastCycleBeforeInput(inputCycle);
+    if (!lastCycle) return null;
+
+    // So sánh độ dài chu kỳ của chu kỳ trước gần nhất và khoảng cách thực tế so với đã nhập
+    const lastCycleLength = lastCycle.cycleLength;
+    const actualCycleLength =
+      (new Date(inputCycle.startDate) - new Date(lastCycle.startDate)) /
+      (1000 * 60 * 60 * 24);
+
+    if (lastCycleLength !== actualCycleLength) {
+      // Nếu độ dài chu kỳ không khớp, có thể cần điều chỉnh
+      console.warn('Độ dài chu kỳ không khớp:', {
+        lastCycleLength,
+        actualCycleLength,
+        lastCycle
+      });
+    }
+
+    return {
+      lastCycle,
+      lastCycleLength,
+      actualCycleLength,
+    };
+  };
+
+  const compareCycleResultWithLast = compareCycleWithLast(calculationResult);
 
   // Hàm xử lý xem chi tiết chu kỳ
   const handleViewCycleDetail = (cycle) => {
@@ -1473,6 +1555,8 @@ const OvulationPage = ({ stats }) => {
                         </Box>
                       </Box>
 
+                      
+
                       <Box className={styles.form}>
                         {/* Thông tin chu kỳ hiện tại */}
                         <Card
@@ -1548,6 +1632,7 @@ const OvulationPage = ({ stats }) => {
                               )}{' '}
                               ngày
                             </ListItem>
+                            
                           </List>
                         </Card>
 
@@ -1597,6 +1682,98 @@ const OvulationPage = ({ stats }) => {
                             </ListItem>
                           </List>
                         </Card>
+
+                        {/* Nếu chu kỳ tiếp theo không khớp với chu kỳ đã nhập */}
+                        {((compareCycleResultWithNext !== null && compareCycleResultWithNext.nextCycleLength !== compareCycleResultWithNext.actualCycleLength)
+                         || (compareCycleResultWithLast !== null && compareCycleResultWithLast.lastCycleLength !== compareCycleResultWithLast.actualCycleLength)) && (
+                          <Card
+                            sx={{
+                              background: '#F5F5DC',
+                              border: '1.5px solid #f59e0b',
+                              borderRadius: '12px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 2,
+                              padding: '18px 20px',
+                              margin: '36px 36px',
+                              boxShadow: '0 2px 8px 0 rgba(239,68,68,0.08)',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', marginRight: 16 }}>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="32"
+                                height="32"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                style={{ color: '#f59e0b', flexShrink: 0 }}
+                              >
+                                <circle cx="12" cy="12" r="10" stroke="#f59e0b" strokeWidth="2" fill="#F5F5DC" />
+                                <path d="M12 8v4" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" />
+                                <circle cx="12" cy="16" r="1" fill="#f59e0b" />
+                              </svg>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <Typography
+                                sx={{
+                                  color: '#f59e0b',
+                                  fontWeight: 700,
+                                  fontSize: '1.08rem',
+                                  letterSpacing: '0.5px',
+                                  lineHeight: 1.5,
+                                }}
+                              >
+                                Cảnh báo: Độ dài chu kỳ không khớp!
+                              </Typography>
+
+                              {(compareCycleResultWithLast !== null && compareCycleResultWithLast.lastCycleLength !== compareCycleResultWithLast.actualCycleLength) && (
+                                <Typography
+                                  sx={{
+                                    color: '#f59e0b',
+                                    fontSize: '0.97rem',
+                                    marginTop: '2px',
+                                    lineHeight: 2,
+                                  }}
+                                >
+                                  Chu kỳ trước ({compareCycleResultWithLast?.lastCycle?.startDate && formatDate(compareCycleResultWithLast.lastCycle.startDate)},
+                                   dài {compareCycleResultWithLast.lastCycleLength} ngày)
+                                   cách chu kỳ được nhập: {compareCycleResultWithLast.actualCycleLength.toFixed(0)} ngày.
+                                  <br />
+                                </Typography>
+                              )}
+                              {(compareCycleResultWithNext !== null && compareCycleResultWithNext.nextCycleLength !== compareCycleResultWithNext.actualCycleLength) && (
+                              <Typography
+                                sx={{
+                                  color: '#f59e0b',
+                                  fontSize: '0.97rem',
+                                  marginTop: '2px',
+                                  lineHeight: 2,
+                                }}
+                              >
+                                Chu kỳ sau ({compareCycleResultWithNext?.nextCycle?.startDate && formatDate(compareCycleResultWithNext.nextCycle.startDate)},
+                                 dài {compareCycleResultWithNext.nextCycleLength} ngày)
+                                 cách chu kỳ được nhập:  {compareCycleResultWithNext.actualCycleLength.toFixed(0)} ngày.
+                                <br />
+                              </Typography>
+                              )}
+
+                              <Typography
+                                sx={{
+                                  color: '#f59e0b',
+                                  fontSize: '0.97rem',
+                                  marginTop: '2px',
+                                  lineHeight: 2,
+                                }}
+                              >
+                                Hãy chắc chắn rằng bạn đã nhập đúng thông tin về chu kỳ kinh nguyệt của mình trước khi lưu thông tin vào hồ sơ để dữ liệu được tính toán chính xác hơn.
+                              </Typography>
+                            </div>
+                          </Card>
+                        )}
+                        
+
                       </Box>
 
                       {/* Button actions */}
