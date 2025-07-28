@@ -12,13 +12,48 @@ export function PillReminderHomeScreen({ onAddSchedule, isAuthenticated }) {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ width: 96, height: 96, background: 'linear-gradient(to right, #44c0c9, #2aa4bc)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <Pill style={{ width: 48, height: 48, color: '#fff' }} />
+          </div><div style={{ textAlign: 'center', marginBottom: 8 }}>
+            <h1 style={{ 
+              fontSize: 32, 
+              fontWeight: 800, 
+              fontFamily: 'Inter, sans-serif',
+              background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 60%, #9B59B6 100%)', 
+              backgroundClip: 'text', 
+              WebkitBackgroundClip: 'text', 
+              WebkitTextFillColor: 'transparent', 
+              marginBottom: 0,
+              letterSpacing: '-1.5px',
+              lineHeight: 1.13,
+              textShadow: '0 4px 24px rgba(0,0,0,0.1), 0 1.5px 0px rgba(0,0,0,0.1)',
+              display: 'inline-block'
+            }}>Lịch Nhắc Nhở uống thuốc tránh thai</h1>
+            <div style={{
+              width: '110px',
+              height: '7px',
+              background: 'linear-gradient(90deg, #4A90E2 0%, #1ABC9C 60%, #9B59B6 100%)',
+              borderRadius: '12px',
+              boxShadow: '0 2px 8px rgba(74,144,226,0.13)',
+              margin: '18px auto 0 auto'
+            }}></div>
           </div>
-          <h1 style={{ fontSize: 32, fontWeight: 700, color: '#181c32', marginBottom: 8 }}>Lịch Nhắc Nhở</h1>
           <p style={{ color: '#666' }}>Uống thuốc tránh thai đúng giờ</p>
         </div>
         {/* Main Action Button */}
         <div className={styles.card}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <div style={{ 
+              width: 64, 
+              height: 64, 
+              background: 'linear-gradient(135deg, #f3e5f5 0%, #ffffff 100%)', 
+              borderRadius: '16px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              margin: '0 auto 16px',
+              boxShadow: '0 4px 12px rgba(162,89,230,0.1)'
+            }}>
+              <Calendar style={{ width: 32, height: 32, color: '#9c27b0' }} />
+            </div>
             <h2 className={styles.cardTitle}>Bắt đầu theo dõi</h2>
             <p className={styles.cardDescription}>Tạo lịch uống thuốc cá nhân của bạn</p>
           </div>

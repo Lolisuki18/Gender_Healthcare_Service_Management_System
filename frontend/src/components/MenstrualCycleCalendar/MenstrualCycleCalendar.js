@@ -49,6 +49,10 @@ const MenstrualCycleCalendar = ({ cycle, onClose }) => {
     const ovulationDate = new Date(cycle.ovulationDate);
     const periodEnd = new Date(startDate);
     periodEnd.setDate(startDate.getDate() + cycle.numberOfDays - 1);
+
+    // Ngày kết thúc chu kỳ
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + cycle.cycleLength - 1);
     
     // Thời kỳ thụ thai (5 ngày trước đến 1 ngày sau rụng trứng)
     const fertilityStart = new Date(ovulationDate);
@@ -59,6 +63,8 @@ const MenstrualCycleCalendar = ({ cycle, onClose }) => {
     // Chu kỳ tiếp theo dự kiến
     const nextCycleStart = new Date(startDate);
     nextCycleStart.setDate(startDate.getDate() + cycle.cycleLength);
+
+    const getMonthKey = (date) => `${date.getFullYear()}-${date.getMonth()}`;
     
     return {
       startDate,
@@ -66,9 +72,17 @@ const MenstrualCycleCalendar = ({ cycle, onClose }) => {
       ovulationDate,
       fertilityStart,
       fertilityEnd,
-      nextCycleStart
+      nextCycleStart,
+      minMonthKey: getMonthKey(startDate),
+      maxMonthKey: getMonthKey(endDate)
     };
   }, [cycle]);
+
+  // Kiểm tra xem tháng có nằm trong chu kỳ hiện tại không
+  const isMonthInRange = (date) => {
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    return key >= cycleInfo.minMonthKey && key <= cycleInfo.maxMonthKey;
+  };
 
   // Tính tỉ lệ mang thai theo ngày
   const getPregnancyChance = (date, dayType) => {
@@ -204,11 +218,17 @@ const MenstrualCycleCalendar = ({ cycle, onClose }) => {
   const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
   const goToPreviousMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    if (isMonthInRange(newDate)) {
+      setCurrentDate(newDate);
+    }
   };
 
   const goToNextMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+    if (isMonthInRange(newDate)) {
+      setCurrentDate(newDate);
+    }
   };
 
   return (
@@ -358,6 +378,7 @@ const MenstrualCycleCalendar = ({ cycle, onClose }) => {
         }}>
           <IconButton 
             onClick={goToPreviousMonth}
+            disabled={!isMonthInRange(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
             sx={{
               color: '#e57399',
               border: '1px solid #f3f4f6',
@@ -382,6 +403,7 @@ const MenstrualCycleCalendar = ({ cycle, onClose }) => {
           </Typography>
           <IconButton 
             onClick={goToNextMonth}
+            disabled={!isMonthInRange(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
             sx={{
               color: '#e57399',
               border: '1px solid #f3f4f6',
