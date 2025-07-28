@@ -324,7 +324,7 @@ const showConfirmDialog = (options) => {
       title = 'Xác nhận',
       message = 'Bạn có chắc chắn muốn thực hiện hành động này?',
       confirmText = 'Có',
-      cancelText = 'Hủy',
+      cancelText = 'Đóng',
       type = 'info',
       showCloseButton = true,
     } = config;
@@ -460,7 +460,7 @@ export const confirmDialog = {
         message:
           msg = 'Bạn có chắc chắn muốn huỷ lịch hẹn này? Hành động này không thể hoàn tác.',
         confirmText = 'Xác nhận huỷ',
-        cancelText = 'Hủy',
+        cancelText = 'Đóng',
         type = 'danger',
         showCloseButton = true,
       } = { ...config, ...options };
@@ -841,7 +841,7 @@ export const confirmDialog = {
                   '&:hover': { background: '#e3f2fd', borderColor: '#4A90E2' },
                 }}
               >
-                HỦY
+                Đóng
               </Button>
               <Button
                 onClick={handleSend}
