@@ -68,9 +68,25 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
     setSelectedServiceId(null);
 
     try {
-      const resultsResponse = await getTestResultsByTestId(currentTest.testId);
-      const allResults = Array.isArray(resultsResponse) ? resultsResponse : [];
+      // Lấy đúng dữ liệu từ API (có thể nằm ở data.data hoặc data)
+      const apiRes = await getTestResultsByTestId(currentTest.testId);
+      const apiData = apiRes?.data?.data || apiRes?.data || apiRes || {};
 
+      // Lấy kết quả chi tiết
+      const allResults = Array.isArray(apiData.results) ? apiData.results : [];
+
+      // Lấy note của bác sĩ
+      const consultantNotesArr = Array.isArray(apiData.testServiceConsultantNotes)
+        ? apiData.testServiceConsultantNotes
+        : [];
+      // Hiển thị nhiều dòng note
+      const consultantNotesText = consultantNotesArr.length
+        ? consultantNotesArr.map(note =>
+            `${note.serviceName ? note.serviceName + ': ' : ''}${note.note} (${note.consultantName})`
+          ).join('\n')
+        : '';
+
+      // Gom kết quả theo serviceId
       const resultsByService = allResults.reduce((acc, result) => {
         const serviceId = result.serviceId || 'unknown';
         if (!acc[serviceId]) {
@@ -92,6 +108,7 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
         return acc;
       }, {});
 
+      // Lấy tên dịch vụ từ API nếu có
       const serviceIds = Object.keys(resultsByService).filter(
         (id) => id !== 'unknown'
       );
@@ -121,9 +138,15 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
         })
       );
 
+      // Bổ sung thông tin khách hàng, dịch vụ, ngày kết quả
       const details = {
         ...currentTest,
         services,
+        consultantNotes: consultantNotesText,
+        customerName: currentTest.customerName || currentTest.customer?.name || '',
+        customerPhone: currentTest.customerPhone || currentTest.customer?.phone || '',
+        serviceName: currentTest.serviceName || currentTest.packageName || currentTest.testName || '',
+        resultDate: currentTest.resultDate || currentTest.completedAt || currentTest.resultedAt || '',
       };
 
       setFullTestDetails(details);
