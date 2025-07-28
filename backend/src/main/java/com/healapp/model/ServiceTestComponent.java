@@ -36,7 +36,7 @@ public class ServiceTestComponent {
     @JoinColumn(name = "service_id", nullable = false)
     private STIService stiService;
 
-    @Column(name = "test_name", nullable = false, length = 100)
+    @Column(name = "test_name", nullable = false, length = 100,columnDefinition="NVARCHAR(MAX)")
     private String testName;
 
     @Column(name = "unit", length = 50)
