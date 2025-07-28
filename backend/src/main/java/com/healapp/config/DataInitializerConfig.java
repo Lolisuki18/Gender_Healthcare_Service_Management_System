@@ -109,13 +109,14 @@ public class DataInitializerConfig implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // ROLES
-        // Tạo roles trước nếu chưa có
-        createRolesIfNotExists();
+        try {
+            // ROLES
+            // Tạo roles trước nếu chưa có
+            createRolesIfNotExists();
 
-        // USER
-        // Tạo user mặc định cho từng role
-        if (userRepository.count() < 10) {
+            // USER
+            // Tạo user mặc định cho từng role
+            if (userRepository.count() < 10) {
             // Lấy các roles
             Role customerRole = roleRepository.findByRoleName("CUSTOMER")
                     .orElseThrow(() -> new RuntimeException("CUSTOMER role not found"));
@@ -325,55 +326,57 @@ public class DataInitializerConfig implements CommandLineRunner {
             }
         }
 
-        // CATEGORY_QUESTIONS
-        createCategoryQuestionsIfNotExists();
+            // CATEGORY_QUESTIONS
+            createCategoryQuestionsIfNotExists();
 
-        // CATEGORIES
-        createCategoriesIfNotExists();
+            // CATEGORIES
+            createCategoriesIfNotExists();
 
-        // // BLOG_POSTS
-        // createBlogPostsAndSectionsIfNotExists();
+            // BLOG_POSTS
+            createBlogPostsAndSectionsIfNotExists();
 
-        // CONSULTANT_PROFILES
-        createConsultantProfilesIfNotExists();
+            // CONSULTANT_PROFILES
+            createConsultantProfilesIfNotExists();
 
-        // // CONSULTATIONS
-        // createConsultationsIfNotExists();
+            // CONSULTATIONS
+            createConsultationsIfNotExists();
 
-        // // MENSTRUAL_CYCLE
-        // createMenstrualCyclesIfNotExists();
+            // MENSTRUAL_CYCLE
+            createMenstrualCyclesIfNotExists();
 
-        // PAYMENT_INFO
-        createPaymentInfosIfNotExists();
+            // PAYMENT_INFO
+            createPaymentInfosIfNotExists();
 
-        // PAYMENTS
-        // createPaymentsIfNotExists();
+            // PAYMENTS
+            createPaymentsIfNotExists();
 
-        // QUESTIONS
-        // createQuestionsIfNotExists();
+            // QUESTIONS
+            createQuestionsIfNotExists();
 
-        // RATING_SUMMARY
-        // createRatingSummariesIfNotExists();
+            // RATING_SUMMARY
+            createRatingSummariesIfNotExists();
 
-        // RATINGS
-        // createRatingsIfNotExists();
+            // RATINGS
+            createRatingsIfNotExists();
 
-        // SERVICE_TEST_COMPONENTS
-        createServiceTestComponentsIfNotExists();
+            // SERVICE_TEST_COMPONENTS
+            createServiceTestComponentsIfNotExists();
 
-        // STI_PACKAGES
-        createSTIPackagesIfNotExists();
+            // STI_PACKAGES
+            createSTIPackagesIfNotExists();
 
-        // STI_SERVICES
-        createSTIServicesIfNotExists();
+            // STI_SERVICES
+            createSTIServicesIfNotExists();
 
-        // PACKAGE_SERVICES
-        createPackageServicesIfNotExists();
+            // PACKAGE_SERVICES
+            createPackageServicesIfNotExists();
 
-        // STI_TESTS
-        // createSTITestsIfNotExists();
-
-        System.out.println("Sample data for selected main tables created if not exists.");
+            // STI_TESTS
+            createSTITestsIfNotExists();
+        } catch (Exception e) {
+            System.err.println("Error during data initialization: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void createCategoryQuestionsIfNotExists() {
@@ -684,57 +687,66 @@ public class DataInitializerConfig implements CommandLineRunner {
 
     private void createConsultantProfilesIfNotExists() {
         if (consultantProfileRepository.count() == 0 && userRepository.count() > 0) {
-            // Lấy tất cả users có role CONSULTANT
-            java.util.List<UserDtls> consultants = userRepository.findByRoleName("CONSULTANT");
-
-            for (int i = 0; i < consultants.size(); i++) {
-                UserDtls consultant = consultants.get(i);
-                ConsultantProfile cp = new ConsultantProfile();
-                cp.setUser(consultant);
-
-                // Tạo profile chi tiết cho từng consultant
-                switch (i) {
-                    case 0: // Dr. Phạm Thị D
-                        cp.setQualifications("Bác sĩ Chuyên khoa II Sản phụ khoa, Thạc sĩ Y học");
-                        cp.setExperience("15 năm kinh nghiệm trong lĩnh vực sức khỏe sinh sản phụ nữ");
-                        cp.setBio(
-                                "Chuyên gia hàng đầu về sức khỏe phụ nữ, tư vấn về các vấn đề sinh sản và nội tiết tố");
-                        break;
-                    case 1: // Dr. Nguyễn Minh F
-                        cp.setQualifications("Bác sĩ Chuyên khoa I Da liễu, Chứng chỉ STI/HIV");
-                        cp.setExperience("12 năm kinh nghiệm điều trị các bệnh lây truyền qua đường tình dục");
-                        cp.setBio("Chuyên gia về STI, HIV và các bệnh da liễu, tư vấn phòng chống bệnh lây nhiễm");
-                        break;
-                    case 2: // Dr. Lê Thị G
-                        cp.setQualifications("Bác sĩ Chuyên khoa I Tâm lý lâm sàng, Tiến sĩ Tâm lý học");
-                        cp.setExperience("10 năm kinh nghiệm tư vấn tâm lý về giới tính và sức khỏe tinh thần");
-                        cp.setBio("Chuyên gia tâm lý, tư vấn về các vấn đề giới tính, tình dục và sức khỏe tinh thần");
-                        break;
-                    case 3: // Dr. Trần Văn H
-                        cp.setQualifications("Bác sĩ Chuyên khoa I Tiết niệu, Chứng chỉ Andrologia");
-                        cp.setExperience("14 năm kinh nghiệm điều trị các bệnh nam khoa và tiết niệu");
-                        cp.setBio("Chuyên gia nam khoa, tư vấn về sức khỏe sinh sản nam giới và rối loạn tình dục");
-                        break;
-                    case 4: // Dr. Võ Thị I
-                        cp.setQualifications("Bác sĩ Chuyên khoa I Nội tiết, Thạc sĩ Dinh dưỡng");
-                        cp.setExperience("8 năm kinh nghiệm về nội tiết sinh sản và dinh dưỡng sức khỏe");
-                        cp.setBio("Chuyên gia nội tiết, tư vấn về hormone, chu kỳ kinh nguyệt và dinh dưỡng");
-                        break;
-                    case 5: // Dr. Đặng Minh J
-                        cp.setQualifications("Bác sĩ Chuyên khoa I Nhiễm khuẩn, Chứng chỉ HIV/AIDS");
-                        cp.setExperience("11 năm kinh nghiệm điều trị các bệnh nhiễm khuẩn và HIV");
-                        cp.setBio("Chuyên gia nhiễm khuẩn, tư vấn điều trị HIV, STI và các bệnh nhiễm trùng");
-                        break;
-                    default:
-                        cp.setQualifications("Bác sĩ Chuyên khoa I");
-                        cp.setExperience("5+ năm kinh nghiệm tư vấn sức khỏe");
-                        cp.setBio("Bác sĩ chuyên nghiệp, tận tâm với bệnh nhân");
-                        break;
+            try {
+                // Lấy tất cả users có role CONSULTANT
+                java.util.List<UserDtls> consultants = userRepository.findByRoleName("CONSULTANT");
+                
+                if (consultants.isEmpty()) {
+                    return;
                 }
 
-                cp.setCreatedAt(java.time.LocalDateTime.now());
-                cp.setUpdatedAt(java.time.LocalDateTime.now());
-                consultantProfileRepository.save(cp);
+                for (int i = 0; i < consultants.size(); i++) {
+                    UserDtls consultant = consultants.get(i);
+                    ConsultantProfile cp = new ConsultantProfile();
+                    cp.setUser(consultant);
+
+                    // Tạo profile chi tiết cho từng consultant
+                    switch (i) {
+                        case 0: // Dr. Phạm Thị Diệu Linh
+                            cp.setQualifications("Bác sĩ Chuyên khoa II Sản phụ khoa, Thạc sĩ Y học");
+                            cp.setExperience("15 năm kinh nghiệm trong lĩnh vực sức khỏe sinh sản phụ nữ");
+                            cp.setBio(
+                                    "Chuyên gia hàng đầu về sức khỏe phụ nữ, tư vấn về các vấn đề sinh sản và nội tiết tố");
+                            break;
+                        case 1: // Dr. Nguyễn Minh Phương
+                            cp.setQualifications("Bác sĩ Chuyên khoa I Da liễu, Chứng chỉ STI/HIV");
+                            cp.setExperience("12 năm kinh nghiệm điều trị các bệnh lây truyền qua đường tình dục");
+                            cp.setBio("Chuyên gia về STI, HIV và các bệnh da liễu, tư vấn phòng chống bệnh lây nhiễm");
+                            break;
+                        case 2: // Dr. Lê Thị Gấm
+                            cp.setQualifications("Bác sĩ Chuyên khoa I Tâm lý lâm sàng, Tiến sĩ Tâm lý học");
+                            cp.setExperience("10 năm kinh nghiệm tư vấn tâm lý về giới tính và sức khỏe tinh thần");
+                            cp.setBio("Chuyên gia tâm lý, tư vấn về các vấn đề giới tính, tình dục và sức khỏe tinh thần");
+                            break;
+                        case 3: // Dr. Trần Văn Hoàng
+                            cp.setQualifications("Bác sĩ Chuyên khoa I Tiết niệu, Chứng chỉ Andrologia");
+                            cp.setExperience("14 năm kinh nghiệm điều trị các bệnh nam khoa và tiết niệu");
+                            cp.setBio("Chuyên gia nam khoa, tư vấn về sức khỏe sinh sản nam giới và rối loạn tình dục");
+                            break;
+                        case 4: // Dr. Võ Thị Sáu
+                            cp.setQualifications("Bác sĩ Chuyên khoa I Nội tiết, Thạc sĩ Dinh dưỡng");
+                            cp.setExperience("8 năm kinh nghiệm về nội tiết sinh sản và dinh dưỡng sức khỏe");
+                            cp.setBio("Chuyên gia nội tiết, tư vấn về hormone, chu kỳ kinh nguyệt và dinh dưỡng");
+                            break;
+                        case 5: // Dr. Đặng Minh Tâm
+                            cp.setQualifications("Bác sĩ Chuyên khoa I Nhiễm khuẩn, Chứng chỉ HIV/AIDS");
+                            cp.setExperience("11 năm kinh nghiệm điều trị các bệnh nhiễm khuẩn và HIV");
+                            cp.setBio("Chuyên gia nhiễm khuẩn, tư vấn điều trị HIV, STI và các bệnh nhiễm trùng");
+                            break;
+                        default:
+                            cp.setQualifications("Bác sĩ Chuyên khoa I");
+                            cp.setExperience("5+ năm kinh nghiệm tư vấn sức khỏe");
+                            cp.setBio("Bác sĩ chuyên nghiệp, tận tâm với bệnh nhân");
+                            break;
+                    }
+
+                    cp.setCreatedAt(java.time.LocalDateTime.now());
+                    cp.setUpdatedAt(java.time.LocalDateTime.now());
+                    consultantProfileRepository.save(cp);
+                }
+            } catch (Exception e) {
+                System.err.println("Error creating consultant profiles: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
@@ -1022,97 +1034,106 @@ public class DataInitializerConfig implements CommandLineRunner {
     }
 
     private void createRolesIfNotExists() {
-        // Tạo role CUSTOMER nếu chưa có
-        if (!roleRepository.existsByRoleName("CUSTOMER")) {
-            Role customerRole = new Role("CUSTOMER", "Customer role for regular users");
-            roleRepository.save(customerRole);
-        }
+        try {
+            // Tạo role CUSTOMER nếu chưa có
+            if (!roleRepository.existsByRoleName("CUSTOMER")) {
+                Role customerRole = new Role("CUSTOMER", "Customer role for regular users");
+                roleRepository.save(customerRole);
+            }
 
-        // Tạo role STAFF nếu chưa có
-        if (!roleRepository.existsByRoleName("STAFF")) {
-            Role staffRole = new Role("STAFF", "Staff role for employees");
-            roleRepository.save(staffRole);
-        }
+            // Tạo role STAFF nếu chưa có
+            if (!roleRepository.existsByRoleName("STAFF")) {
+                Role staffRole = new Role("STAFF", "Staff role for employees");
+                roleRepository.save(staffRole);
+            }
 
-        // Tạo role CONSULTANT nếu chưa có
-        if (!roleRepository.existsByRoleName("CONSULTANT")) {
-            Role consultantRole = new Role("CONSULTANT", "Medical consultant role");
-            roleRepository.save(consultantRole);
-        }
+            // Tạo role CONSULTANT nếu chưa có
+            if (!roleRepository.existsByRoleName("CONSULTANT")) {
+                Role consultantRole = new Role("CONSULTANT", "Medical consultant role");
+                roleRepository.save(consultantRole);
+            }
 
-        // Tạo role ADMIN nếu chưa có
-        if (!roleRepository.existsByRoleName("ADMIN")) {
-            Role adminRole = new Role("ADMIN", "Administrator role with full access");
-            roleRepository.save(adminRole);
+            // Tạo role ADMIN nếu chưa có
+            if (!roleRepository.existsByRoleName("ADMIN")) {
+                Role adminRole = new Role("ADMIN", "Administrator role with full access");
+                roleRepository.save(adminRole);
+            }
+        } catch (Exception e) {
+            System.err.println("Error creating roles: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     private void createPackageServicesIfNotExists() {
         if (packageServiceRepository.count() == 0 && stiPackageRepository.count() > 0
                 && stiServiceRepository.count() > 0) {
-            // Lấy danh sách packages và services
-            java.util.List<STIPackage> packages = stiPackageRepository.findAll();
-            java.util.List<STIService> services = stiServiceRepository.findAll();
+            try {
+                // Lấy danh sách packages và services
+                java.util.List<STIPackage> packages = stiPackageRepository.findAll();
+                java.util.List<STIService> services = stiServiceRepository.findAll();
 
-            if (packages.size() >= 5 && services.size() >= 6) {
-                // Gói toàn diện - Package 1 (index 0)
-                STIPackage comprehensivePackage = packages.get(0);
-                // Bao gồm tất cả services: HIV, HPV, Syphilis, Hepatitis B, Gonorrhea,
-                // Chlamydia
-                for (int i = 0; i < 6; i++) {
-                    PackageService ps = new PackageService();
-                    ps.setStiPackage(comprehensivePackage);
-                    ps.setStiService(services.get(i));
-                    ps.setCreatedAt(java.time.LocalDateTime.now());
-                    packageServiceRepository.save(ps);
-                }
+                if (packages.size() >= 5 && services.size() >= 6) {
+                    // Gói toàn diện - Package 1 (index 0)
+                    STIPackage comprehensivePackage = packages.get(0);
+                    // Bao gồm tất cả services: HIV, HPV, Syphilis, Hepatitis B, Gonorrhea, Chlamydia
+                    for (int i = 0; i < 6; i++) {
+                        PackageService ps = new PackageService();
+                        ps.setStiPackage(comprehensivePackage);
+                        ps.setStiService(services.get(i));
+                        ps.setCreatedAt(java.time.LocalDateTime.now());
+                        packageServiceRepository.save(ps);
+                    }
 
-                // Gói cơ bản - Package 2 (index 1)
-                STIPackage basicPackage = packages.get(1);
-                // Bao gồm: HIV (0), Syphilis (2), Hepatitis B (3)
-                int[] basicServices = { 0, 2, 3 };
-                for (int serviceIndex : basicServices) {
-                    PackageService ps = new PackageService();
-                    ps.setStiPackage(basicPackage);
-                    ps.setStiService(services.get(serviceIndex));
-                    ps.setCreatedAt(java.time.LocalDateTime.now());
-                    packageServiceRepository.save(ps);
-                }
+                    // Gói cơ bản - Package 2 (index 1)
+                    STIPackage basicPackage = packages.get(1);
+                    // Bao gồm: HIV (0), Syphilis (2), Hepatitis B (3)
+                    int[] basicServices = { 0, 2, 3 };
+                    for (int serviceIndex : basicServices) {
+                        PackageService ps = new PackageService();
+                        ps.setStiPackage(basicPackage);
+                        ps.setStiService(services.get(serviceIndex));
+                        ps.setCreatedAt(java.time.LocalDateTime.now());
+                        packageServiceRepository.save(ps);
+                    }
 
-                // Gói cho phụ nữ - Package 3 (index 2)
-                STIPackage womensPackage = packages.get(2);
-                // Bao gồm: HPV (1), Chlamydia (5), Gonorrhea (4), HIV (0)
-                int[] womensServices = { 0, 1, 4, 5 };
-                for (int serviceIndex : womensServices) {
-                    PackageService ps = new PackageService();
-                    ps.setStiPackage(womensPackage);
-                    ps.setStiService(services.get(serviceIndex));
-                    ps.setCreatedAt(java.time.LocalDateTime.now());
-                    packageServiceRepository.save(ps);
-                }
+                    // Gói cho phụ nữ - Package 3 (index 2)
+                    STIPackage womensPackage = packages.get(2);
+                    // Bao gồm: HPV (1), Chlamydia (5), Gonorrhea (4), HIV (0)
+                    int[] womensServices = { 0, 1, 4, 5 };
+                    for (int serviceIndex : womensServices) {
+                        PackageService ps = new PackageService();
+                        ps.setStiPackage(womensPackage);
+                        ps.setStiService(services.get(serviceIndex));
+                        ps.setCreatedAt(java.time.LocalDateTime.now());
+                        packageServiceRepository.save(ps);
+                    }
 
-                // Gói nhanh - Package 4 (index 3)
-                STIPackage quickPackage = packages.get(3);
-                // Bao gồm: HIV (0), Syphilis (2)
-                int[] quickServices = { 0, 2 };
-                for (int serviceIndex : quickServices) {
-                    PackageService ps = new PackageService();
-                    ps.setStiPackage(quickPackage);
-                    ps.setStiService(services.get(serviceIndex));
-                    ps.setCreatedAt(java.time.LocalDateTime.now());
-                    packageServiceRepository.save(ps);
-                }
+                    // Gói nhanh - Package 4 (index 3)
+                    STIPackage quickPackage = packages.get(3);
+                    // Bao gồm: HIV (0), Syphilis (2)
+                    int[] quickServices = { 0, 2 };
+                    for (int serviceIndex : quickServices) {
+                        PackageService ps = new PackageService();
+                        ps.setStiPackage(quickPackage);
+                        ps.setStiService(services.get(serviceIndex));
+                        ps.setCreatedAt(java.time.LocalDateTime.now());
+                        packageServiceRepository.save(ps);
+                    }
 
-                // Gói hàng năm - Package 5 (index 4)
-                STIPackage annualPackage = packages.get(4);
-                // Bao gồm tất cả services như gói toàn diện
-                for (int i = 0; i < 6; i++) {
-                    PackageService ps = new PackageService();
-                    ps.setStiPackage(annualPackage);
-                    ps.setStiService(services.get(i));
-                    ps.setCreatedAt(java.time.LocalDateTime.now());
-                    packageServiceRepository.save(ps);
+                    // Gói hàng năm - Package 5 (index 4)
+                    STIPackage annualPackage = packages.get(4);
+                    // Bao gồm tất cả services như gói toàn diện
+                    for (int i = 0; i < 6; i++) {
+                        PackageService ps = new PackageService();
+                        ps.setStiPackage(annualPackage);
+                        ps.setStiService(services.get(i));
+                        ps.setCreatedAt(java.time.LocalDateTime.now());
+                        packageServiceRepository.save(ps);
+                    }
                 }
+            } catch (Exception e) {
+                System.err.println("Error creating package services: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
