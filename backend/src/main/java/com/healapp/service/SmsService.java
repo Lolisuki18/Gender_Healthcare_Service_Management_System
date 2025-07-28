@@ -23,7 +23,20 @@ public class SmsService {
 
     @PostConstruct
     public void init() {
-        Twilio.init(accountSid, authToken);
+        try {
+            if (accountSid == null || authToken == null || fromPhoneNumber == null) {
+                System.err.println("Twilio configuration is missing. SMS service will not work properly.");
+                System.err.println("Account SID: " + (accountSid != null ? "Set" : "Missing"));
+                System.err.println("Auth Token: " + (authToken != null ? "Set" : "Missing"));
+                System.err.println("Phone Number: " + (fromPhoneNumber != null ? "Set" : "Missing"));
+                return;
+            }
+            Twilio.init(accountSid, authToken);
+            System.out.println("Twilio SMS service initialized successfully");
+        } catch (Exception e) {
+            System.err.println("Failed to initialize Twilio SMS service: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -34,10 +47,19 @@ public class SmsService {
      */
     public boolean sendOtpSms(String toPhoneNumber, String otpCode) {
         try {
+            // Kiểm tra cấu hình Twilio
+            if (accountSid == null || authToken == null || fromPhoneNumber == null) {
+                System.err.println("Twilio configuration is missing. Cannot send SMS.");
+                return false;
+            }
+
             String messageBody = String.format(
                 "[HealApp] Mã xác thực của bạn là: %s. Mã có hiệu lực trong 5 phút. Không chia sẻ mã này với ai!",
                 otpCode
             );
+
+            System.out.println("Sending SMS to: " + toPhoneNumber);
+            System.out.println("From: " + fromPhoneNumber);
 
             Message message = Message.creator(
                 new PhoneNumber(toPhoneNumber),
@@ -50,6 +72,8 @@ public class SmsService {
 
         } catch (Exception e) {
             System.err.println("Failed to send SMS: " + e.getMessage());
+            System.err.println("To: " + toPhoneNumber);
+            System.err.println("From: " + fromPhoneNumber);
             e.printStackTrace();
             return false;
         }

@@ -32,33 +32,43 @@ public class PhoneVerificationService {
      * Tạo và gửi mã OTP tới số điện thoại
      */
     public boolean sendPhoneVerificationCode(String phoneNumber) throws RateLimitException {
-        // Chuẩn hóa số điện thoại
-        String formattedPhone = smsService.formatVietnamesePhoneNumber(phoneNumber);
-        
-        // Kiểm tra tính hợp lệ
-        if (!smsService.isValidVietnamesePhoneNumber(phoneNumber)) {
-            throw new IllegalArgumentException("Invalid phone number format");
-        }
+        try {
+            // Chuẩn hóa số điện thoại
+            String formattedPhone = smsService.formatVietnamesePhoneNumber(phoneNumber);
+            
+            // Kiểm tra tính hợp lệ
+            if (!smsService.isValidVietnamesePhoneNumber(phoneNumber)) {
+                throw new IllegalArgumentException("Invalid phone number format");
+            }
 
-        // Kiểm tra rate limit
-        if (isRateLimited(formattedPhone)) {
-            throw new RateLimitException("Please wait " + rateLimitMinutes + " minute(s) before requesting new code");
-        }
+            // Kiểm tra rate limit
+            if (isRateLimited(formattedPhone)) {
+                throw new RateLimitException("Please wait " + rateLimitMinutes + " minute(s) before requesting new code");
+            }
 
-        // Tạo mã OTP
-        String otpCode = generateOtpCode();
-        
-        // Gửi SMS
-        boolean smsSent = smsService.sendOtpSms(formattedPhone, otpCode);
-        
-        if (smsSent) {
-            // Lưu OTP và cập nhật rate limit
-            storeOtp(formattedPhone, otpCode);
-            updateRateLimit(formattedPhone);
-            return true;
+            // Tạo mã OTP
+            String otpCode = generateOtpCode();
+            
+            System.out.println("Generated OTP for phone: " + formattedPhone);
+            
+            // Gửi SMS
+            boolean smsSent = smsService.sendOtpSms(formattedPhone, otpCode);
+            
+            if (smsSent) {
+                // Lưu OTP và cập nhật rate limit
+                storeOtp(formattedPhone, otpCode);
+                updateRateLimit(formattedPhone);
+                System.out.println("SMS verification code sent successfully to: " + formattedPhone);
+                return true;
+            } else {
+                System.err.println("Failed to send SMS to: " + formattedPhone);
+                return false;
+            }
+        } catch (Exception e) {
+            System.err.println("Error in sendPhoneVerificationCode: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-        
-        return false;
     }
 
     /**
