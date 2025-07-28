@@ -55,8 +55,10 @@ const reviewService = {
         throw new Error('Bình luận là bắt buộc và không được để trống');
       }
 
-      // Chuẩn bị dữ liệu đánh giá theo format yêu cầu (đơn giản)
+      // Chuẩn bị dữ liệu đánh giá theo format chuẩn
       const requestBody = {
+        targetType: 'CONSULTANT',
+        targetId: parseInt(consultantId),
         rating: parseInt(reviewData.rating),
         comment: reviewData.comment.trim(),
       };
@@ -108,18 +110,20 @@ const reviewService = {
         throw new Error('Bình luận là bắt buộc và không được để trống');
       }
 
+      // Chuẩn hóa payload: luôn gửi cả sti_test_id (snake_case) và stiTestId (camelCase)
       const requestBody = {
+        targetType: 'STI_SERVICE',
+        targetId: parseInt(serviceId),
         rating: parseInt(reviewData.rating),
         comment: reviewData.comment.trim(),
+        sti_test_id: reviewData.sti_test_id || reviewData.stiTestId,
+        stiTestId: reviewData.stiTestId || reviewData.sti_test_id,
+        serviceId: serviceId,
+        customerId: reviewData.customerId,
+        staffId: reviewData.staffId,
+        consultantId: reviewData.consultantId,
+        // Thêm các trường khác nếu cần
       };
-      // Nếu có sti_test_id thì thêm vào body và log ra
-      if (reviewData.sti_test_id) {
-        requestBody.sti_test_id = reviewData.sti_test_id;
-        console.log('[LOG][reviewService] sti_test_id gửi lên:', reviewData.sti_test_id);
-      } else {
-        console.warn('[WARN][reviewService] sti_test_id không tồn tại trong reviewData:', reviewData);
-      }
-
       // Log toàn bộ requestBody trước khi gửi
       console.log('[LOG][reviewService] requestBody gửi lên backend:', requestBody);
 
@@ -159,10 +163,22 @@ const reviewService = {
         throw new Error('Bình luận là bắt buộc và không được để trống');
       }
 
+      // Chuẩn hóa payload: luôn gửi cả sti_test_id (snake_case) và stiTestId (camelCase)
       const requestBody = {
+        targetType: 'STI_PACKAGE',
+        targetId: parseInt(packageId),
         rating: parseInt(reviewData.rating),
         comment: reviewData.comment.trim(),
+        sti_test_id: reviewData.sti_test_id || reviewData.stiTestId,
+        stiTestId: reviewData.stiTestId || reviewData.sti_test_id,
+        packageId: packageId,
+        customerId: reviewData.customerId,
+        staffId: reviewData.staffId,
+        consultantId: reviewData.consultantId,
+        // Thêm các trường khác nếu cần
       };
+      // Log toàn bộ requestBody trước khi gửi
+      console.log('[LOG][reviewService] requestBody gửi lên backend:', requestBody);
 
       const response = await apiClient.post(
         `/ratings/sti-package/${packageId}`,

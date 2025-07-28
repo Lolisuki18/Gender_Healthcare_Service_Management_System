@@ -442,7 +442,7 @@ const ReviewsContent = () => {
   const paginatedCompletedReviews = filteredCompletedReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
   const paginatedPendingReviews = filteredPendingReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
 
-  const handleTabChange = (event, newValue) => {
+  const handleTabChange = (evfent, newValue) => {
     setActiveTab(newValue);
   };
 
@@ -629,13 +629,14 @@ const ReviewsContent = () => {
         const stiServiceReviewData = {
           rating: reviewData.rating,
           comment: reviewData.comment,
+          stiTestId: selectedReview.testId,
           sti_test_id: selectedReview.testId
         };
         // Log payload gửi lên backend
         console.log('[DEBUG] Payload gửi đánh giá STI:', stiServiceReviewData);
         // URL endpoint: /ratings/sti-service/{serviceId}
         await reviewService.createSTIServiceReview(selectedReview.serviceId, stiServiceReviewData);
-        // ...existing code...
+        
         
       } else if (selectedReview.type === 'STI_PACKAGE') {
         // Kiểm tra packageId
@@ -649,9 +650,10 @@ const ReviewsContent = () => {
         // Chuẩn bị dữ liệu đánh giá theo format mẫu JSON
         const stiPackageReviewData = {
           rating: reviewData.rating,
-          comment: reviewData.comment
+          comment: reviewData.comment,
+          stiTestId: selectedReview.testId,
+          sti_test_id: selectedReview.testId
         };
-        
         // URL endpoint: /ratings/sti-package/{packageId}
         await reviewService.createSTIPackageReview(selectedReview.packageId, stiPackageReviewData);
         // ...existing code...
@@ -702,11 +704,10 @@ const ReviewsContent = () => {
         // Chuẩn bị dữ liệu đánh giá theo format mẫu JSON
         const consultantReviewData = {
           rating: reviewData.rating,
-          comment: reviewData.comment
+          comment: reviewData.comment,
+          consultationId: selectedReview.consultationId,
+          consultation_id: selectedReview.consultationId
         };
-        if (selectedReview.consultationId) {
-          consultantReviewData.consultationId = selectedReview.consultationId;
-        }
         // Log payload gửi lên backend
         console.log('[DEBUG] Payload gửi đánh giá tư vấn:', consultantReviewData);
         // URL endpoint: /ratings/consultant/{consultantId}
