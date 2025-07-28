@@ -77,34 +77,36 @@ const CustomerProfile = () => {
 
   // Effect để xử lý initial tab selection từ navigation state và URL params
   useEffect(() => {
-    // Kiểm tra URL search params trước
+    // Ưu tiên đọc query param ?tab=... để chuyển tab tương ứng
     const urlParams = new URLSearchParams(location.search);
     const tabParam = urlParams.get('tab');
 
-    if (tabParam) {
-      // Map URL parameter to menu item
-      const tabMapping = {
-        appointments: 'appointments',
-        profile: 'profile',
-        'medical-history': 'medical-history',
-        'payment-history': 'payment-history',
-        invoices: 'invoices',
-        notifications: 'notifications',
-        questions: 'questions',
-        reviews: 'reviews',
-        security: 'security',
-        'payment-methods': 'payment-methods',
-        'blog-customer': 'blog-customer',
-        'payment-info': 'payment-info',
-        'pill-history': 'pill-history',
-      };
+    // Map các giá trị tab param sang menu item hợp lệ
+    const tabMapping = {
+      appointments: 'appointments',
+      profile: 'profile',
+      'medical-history': 'medical-history',
+      'payment-history': 'payment-history',
+      invoices: 'invoices',
+      notifications: 'notifications',
+      questions: 'questions',
+      reviews: 'reviews',
+      security: 'security',
+      'payment-methods': 'payment-methods',
+      'blog-customer': 'blog-customer',
+      'payment-info': 'payment-info',
+      'pill-history': 'pill-history',
+    };
 
-      if (tabMapping[tabParam]) {
-        setSelectedMenuItem(tabMapping[tabParam]);
-      }
-    } else if (location.state?.initialTab) {
-      setSelectedMenuItem(location.state.initialTab);
+    if (tabParam && tabMapping[tabParam]) {
+      setSelectedMenuItem(tabMapping[tabParam]);
+    } else if (
+      location.state?.initialTab &&
+      tabMapping[location.state.initialTab]
+    ) {
+      setSelectedMenuItem(tabMapping[location.state.initialTab]);
     }
+    // Nếu không có tab param hoặc initialTab, giữ nguyên tab mặc định
   }, [location.state, location.search]);
 
   // Handler functions
