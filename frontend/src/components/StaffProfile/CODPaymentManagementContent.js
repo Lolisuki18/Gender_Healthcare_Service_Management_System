@@ -162,7 +162,7 @@ const CODPaymentManagementContent = () => {
       <Card>
         <CardContent>
           <Typography variant="h5" gutterBottom>
-            Quản lý thanh toán COD
+            Quản lý thanh toán tiền mặt
           </Typography>
           <Typography variant="body2" color="textSecondary" gutterBottom>
             Quản lý các thanh toán tiền mặt khi nhận hàng đang chờ xác nhận
@@ -193,7 +193,7 @@ const CODPaymentManagementContent = () => {
 
           {codPayments.length === 0 ? (
             <Alert severity="info">
-              Không có thanh toán COD nào đang chờ xác nhận
+              Không có thanh toán tiền mặt nào đang chờ xác nhận
             </Alert>
           ) : (
             <TableContainer component={Paper}>
@@ -266,7 +266,7 @@ const CODPaymentManagementContent = () => {
 
       {/* Confirmation Dialog */}
       <Dialog open={confirmDialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Xác nhận thanh toán COD</DialogTitle>
+        <DialogTitle>Xác nhận thanh toán tiền mặt</DialogTitle>
         <DialogContent>
           {selectedPayment && (
             <Box sx={{ mb: 2 }}>
