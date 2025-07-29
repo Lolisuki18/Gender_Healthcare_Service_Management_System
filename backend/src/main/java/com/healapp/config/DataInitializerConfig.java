@@ -333,16 +333,16 @@ public class DataInitializerConfig implements CommandLineRunner {
             createConsultantProfilesIfNotExists();
 
             // CONSULTATIONS
-            createConsultationsIfNotExists();
+            // createConsultationsIfNotExists();
 
             // MENSTRUAL_CYCLE
             createMenstrualCyclesIfNotExists();
 
             // PAYMENT_INFO
-            createPaymentInfosIfNotExists();
+            // createPaymentInfosIfNotExists();
 
             // PAYMENTS
-            createPaymentsIfNotExists();
+            // createPaymentsIfNotExists();
 
             // STI_SERVICES (phải tạo trước SERVICE_TEST_COMPONENTS)
             createSTIServicesIfNotExists();
@@ -357,16 +357,16 @@ public class DataInitializerConfig implements CommandLineRunner {
             createPackageServicesIfNotExists();
 
             // QUESTIONS
-            createQuestionsIfNotExists();
+            // createQuestionsIfNotExists();
 
             // RATING_SUMMARY
-            createRatingSummariesIfNotExists();
+            // createRatingSummariesIfNotExists();
 
             // RATINGS
-            createRatingsIfNotExists();
+            // createRatingsIfNotExists();
 
             // STI_TESTS (cần USERS và STI_SERVICES)
-            createSTITestsIfNotExists();
+            // createSTITestsIfNotExists();
         } catch (Exception e) {
             System.err.println("Error during data initialization: " + e.getMessage());
             e.printStackTrace();
