@@ -126,7 +126,7 @@ export const sidebarMenuConfig = [
   },
   {
     id: 'cod-payment',
-    label: 'Quản lý thanh toán COD',
+    label: 'Quản lý thanh toán tiền mặt',
     icon: <PaymentIcon />,
     roles: ['STAFF'],
   },

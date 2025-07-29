@@ -85,7 +85,7 @@ public class Payment {
     private BigDecimal refundAmount;
 
     // Additional info
-    @Column(name = "description", length = 500)
+    @Column(name = "description", length = 500, columnDefinition="NVARCHAR(MAX)")
     private String description;
 
     @Column(name = "notes", columnDefinition = "NVARCHAR(MAX)")

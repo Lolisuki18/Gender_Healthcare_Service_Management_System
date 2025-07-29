@@ -183,7 +183,7 @@ const StaffProfile = ({ user = {} }) => {
       case 'payment-info':
         return 'Thông tin thanh toán';
       case 'cod-payment':
-        return 'Quản lý thanh toán COD';
+        return 'Quản lý thanh toán tiền mặt';
       default:
         return 'Hồ sơ cá nhân';
     }
