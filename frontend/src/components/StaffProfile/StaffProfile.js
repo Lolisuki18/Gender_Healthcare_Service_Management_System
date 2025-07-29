@@ -42,6 +42,7 @@ import STITestManagementContent from './STITestManagementContent';
 import STIPackageManagementContent from './STIPackageManagementContent';
 import BlogManagementContent from './BlogManagementContent';
 import ReviewManagementContent from './ReviewManagementContent';
+import CODPaymentManagementContent from './CODPaymentManagementContent';
 import ProfileContent from '../siderBar/ProfileContent';
 import CategoryManagementContent from './CategoryManagementContent';
 import SecurityContent from '../siderBar/SecurityContent';
@@ -110,6 +111,8 @@ const StaffProfile = ({ user = {} }) => {
         return <PaymentInfoContent />;
       case 'my-reviews':
         return <ReviewsContent />;
+      case 'cod-payment':
+        return <CODPaymentManagementContent />;
 
       default:
         return <ProfileContent />;
@@ -145,6 +148,8 @@ const StaffProfile = ({ user = {} }) => {
         return 'Đánh giá của tôi';
       case 'payment-info':
         return 'Thông tin thanh toán';
+      case 'cod-payment':
+        return 'Quản lý thanh toán COD';
       default:
         return 'Hồ sơ cá nhân';
     }
