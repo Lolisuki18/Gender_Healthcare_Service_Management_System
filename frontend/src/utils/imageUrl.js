@@ -6,7 +6,7 @@
  * cho các hình ảnh như avatar được lưu trữ trên máy chủ.
  */
 
- const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 //const API_BASE_URL = 'http://localhost:8080' || process.env.REACT_APP_API_URL;
 
 /**
@@ -17,7 +17,10 @@
 export function getFullImageUrl(url) {
   if (!url || url === 'null' || url === 'undefined')
     return '/img/avatar/default.jpg';
+  
+  // Nếu đã là URL đầy đủ (http/https) thì trả về nguyên
   if (url.startsWith('http')) return url;
+  
   // Nếu là đường dẫn tương đối /img/... thì nối domain backend
   return `${API_BASE_URL}${url}`;
 }
@@ -72,10 +75,12 @@ export function getAvatarUrl(path) {
     return '/img/avatar/default.jpg';
   }
 
+  // Nếu đã là URL đầy đủ (GCS hoặc http khác) thì trả về nguyên
   if (path.startsWith('http')) {
     return path;
   }
 
+  // Nếu là đường dẫn tương đối thì nối với API_BASE_URL
   const fullUrl = `${API_BASE_URL}${path}`;
   return fullUrl;
 }
