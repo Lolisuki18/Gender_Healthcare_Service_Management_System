@@ -452,6 +452,17 @@
   gap: 14px;
   min-width: 260px;
   max-width: 320px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 16px;
+  transform: translateY(0);
+}
+
+.benefitItemRow:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 25px rgba(162,89,230,0.15);
 }
 .benefitIconRow {
   width: 48px;
@@ -525,10 +536,48 @@
   flex-direction: column;
   align-items: center;
   margin-bottom: 0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  transform: translateY(0);
 }
-.effectPink { background: #ffe2ec; }
-.effectPurple { background: #ede7f6; }
-.effectBlue { background: #e3f2fd; }
+
+.effectCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(162,89,230,0.20);
+  background: linear-gradient(135deg, #fff 0%, #faf7fc 100%);
+}
+.effectPink { 
+  background: #ffe2ec; 
+  transition: all 0.3s ease;
+}
+
+.effectPink:hover {
+  background: linear-gradient(135deg, #ffe2ec 0%, #ffd6e7 100%);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(229, 115, 153, 0.25);
+}
+
+.effectPurple { 
+  background: #ede7f6; 
+  transition: all 0.3s ease;
+}
+
+.effectPurple:hover {
+  background: linear-gradient(135deg, #ede7f6 0%, #e1d5f0 100%);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(162, 89, 230, 0.25);
+}
+
+.effectBlue { 
+  background: #e3f2fd; 
+  transition: all 0.3s ease;
+}
+
+.effectBlue:hover {
+  background: linear-gradient(135deg, #e3f2fd 0%, #d4e8f7 100%);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(59, 130, 246, 0.25);
+}
 .effectIcon {
   width: 56px;
   height: 56px;
@@ -669,7 +718,7 @@
 .btnModalConfirm {
   padding: 12px 32px;
   border-radius: 12px;
-  background: linear-gradient(90deg, #e57399, #a259e6);
+  background: linear-gradient(135deg, #36d1c4 0%, #5b86e5 100%);
   color: #fff;
   border: none;
   font-size: 18px;
@@ -713,6 +762,55 @@
   background: linear-gradient(to right, #35B4A6, #1C9695);
   box-shadow: 0 6px 20px rgba(28,150,149,0.25);
   transform: translateY(-2px);
+}
+
+/* Add Schedule Button Style */
+.addScheduleButton {
+  width: auto;
+  min-width: 280px;
+  max-width: 400px;
+  background: linear-gradient(to right, #44c0c9, #2aa4bc);
+  color: #fff;
+  padding: 14px 20px;
+  border-radius: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(162,89,230,0.10);
+  transition: all 0.3s ease;
+  transform: translateY(0);
+  margin: 0 auto;
+}
+
+.addScheduleButton:hover {
+  background: linear-gradient(to right, #3ba8b0, #2493a8);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(68, 192, 201, 0.3);
+}
+
+.addScheduleButton:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 15px rgba(68, 192, 201, 0.4);
+}
+
+.addScheduleButton:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(68, 192, 201, 0.3), 0 2px 8px rgba(162, 89, 230, 0.10);
+}
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .addScheduleButton {
+    padding: 12px 18px;
+    font-size: 14px;
+    min-width: 240px;
+    max-width: 320px;
+  }
 }
 
 /* Specific button classes that extend the base */
