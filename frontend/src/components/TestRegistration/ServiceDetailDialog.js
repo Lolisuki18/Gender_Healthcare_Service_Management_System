@@ -29,14 +29,18 @@ const ServiceDetailDialog = ({
   onClose,
   detailData,
   detailType,
-  loadingDetail,
-  onOpenDetail,
-  onSelectService
+  loadingDetail
 }) => {
   const navigate = useNavigate();
   
   // State quản lý các mục xét nghiệm đã mở chi tiết trong gói
   const [expandedItems, setExpandedItems] = useState({});
+
+  // Reset trạng thái bảng chỉ số về thu gọn khi đóng dialog
+  const handleClose = () => {
+    setExpandedItems({});
+    onClose();
+  };
 
   /**
    * Xử lý việc mở/đóng chi tiết từng mục xét nghiệm trong gói
@@ -54,7 +58,7 @@ const ServiceDetailDialog = ({
    * Đóng dialog và chuyển đến trang đăng ký với dữ liệu đã chọn
    */
   const handleRegisterService = () => {
-    onClose();
+    handleClose();
     // Gửi dữ liệu khác nhau tùy thuộc vào loại (gói hoặc xét nghiệm đơn lẻ)
     if (detailType === 'package') {
       navigate('/test-registration', { 
@@ -80,7 +84,7 @@ const ServiceDetailDialog = ({
   // Hiển thị loading khi đang tải dữ liệu
   if (loadingDetail) {
     return (
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogContent sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
           <CircularProgress sx={{ color: '#2196F3' }} />
         </DialogContent>
@@ -195,27 +199,7 @@ const ServiceDetailDialog = ({
               }
             }}>
               <Grid container spacing={2}>
-                {/* Cột bên trái - Thông tin chi tiết về xét nghiệm */}
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ color: '#2d3748' }}>
-                      Thông tin chi tiết
-                    </Typography>
-                    <Box sx={{ pl: 2, borderLeft: '3px solid #4aaeb5' }}>
-                      {/* Hiển thị loại mẫu xét nghiệm từ API nếu có */}
-                      {detailData.components && detailData.components.length > 0 && detailData.components[0].sampleType && (
-                        <Box sx={{ display: 'flex', mb: 1 }}>
-                          <Typography variant="body2" sx={{ width: '140px', color: '#6b7280' }}>
-                            Loại mẫu xét nghiệm:
-                          </Typography>
-                          <Typography variant="body2" fontWeight={500} sx={{ color: '#374151' }}>
-                            {detailData.components[0].sampleType}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </Box>
-                </Grid>
+
               </Grid>
               
               {/* Bảng hiển thị các chỉ số xét nghiệm - lấy từ API */}
@@ -239,9 +223,10 @@ const ServiceDetailDialog = ({
                     p: 1.5,
                     borderBottom: '1px solid rgba(33,150,243,0.2)'
                   }}>
-                    <Typography variant="body2" fontWeight={600} sx={{ width: '40%', color: '#2d3748' }}>Tên chỉ số</Typography>
+                    <Typography variant="body2" fontWeight={600} sx={{ width: '30%', color: '#2d3748' }}>Tên chỉ số</Typography>
                     <Typography variant="body2" fontWeight={600} sx={{ width: '20%', color: '#2d3748' }}>Đơn vị</Typography>
-                    <Typography variant="body2" fontWeight={600} sx={{ width: '40%', color: '#2d3748' }}>Giá trị tham chiếu</Typography>
+                    <Typography variant="body2" fontWeight={600} sx={{ width: '30%', color: '#2d3748' }}>Giá trị tham chiếu</Typography>
+                    <Typography variant="body2" fontWeight={600} sx={{ width: '20%', color: '#2d3748' }}>Loại mẫu xét nghiệm</Typography>
                   </Box>
                   
                   {/* Danh sách các chỉ số xét nghiệm từ API */}
@@ -262,7 +247,7 @@ const ServiceDetailDialog = ({
                       }}
                     >
                       {/* Tên chỉ số - hỗ trợ cả hai cấu trúc API */}
-                      <Typography variant="body2" sx={{ width: '40%', color: '#374151', fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{ width: '30%', color: '#374151', fontWeight: 500 }}>
                         {component.componentName || component.testName}
                       </Typography>
                       {/* Đơn vị đo */}
@@ -270,7 +255,7 @@ const ServiceDetailDialog = ({
                         {component.unit || '-'}
                       </Typography>
                       {/* Giá trị tham chiếu/bình thường */}
-                      <Typography variant="body2" sx={{ width: '40%' }}>
+                      <Typography variant="body2" sx={{ width: '30%' }}>
                         <Box component="span" sx={{ 
                           py: 0.3, 
                           px: 1, 
@@ -282,6 +267,10 @@ const ServiceDetailDialog = ({
                         }}>
                           {component.normalRange || component.referenceRange || 'Xem kết quả'}
                         </Box>
+                      </Typography>
+                      {/* Loại mẫu xét nghiệm */}
+                      <Typography variant="body2" sx={{ width: '20%', color: '#374151', fontWeight: 500 }}>
+                        {component.sampleType || '-'}
                       </Typography>
                     </Box>
                   ))}
@@ -568,57 +557,6 @@ const ServiceDetailDialog = ({
                           {service.description || 'Xét nghiệm này giúp phát hiện kịp thời các bệnh lây truyền qua đường tình dục, đảm bảo sức khỏe sinh sản tối ưu.'}
                         </Typography>
                         
-                        <Grid container spacing={2}>
-                          {/* Cột thông tin chi tiết xét nghiệm */}
-                          <Grid item xs={12} md={6}>
-                            <Box sx={{ 
-                              mb: 2,
-                              p: 2,
-                              backgroundColor: 'rgba(255,255,255,0.7)',
-                              borderRadius: 2,
-                              border: '1px solid rgba(74,174,181,0.1)'
-                            }}>
-                              <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ 
-                                color: '#2d3748',
-                                display: 'flex',
-                                alignItems: 'center',
-                                mb: 1.5
-                              }}>
-                                <Box sx={{
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: '50%',
-                                  backgroundColor: '#4aaeb5',
-                                  mr: 1
-                                }} />
-                                Thông tin chi tiết
-                              </Typography>
-                              <Box sx={{ 
-                                pl: 2, 
-                                borderLeft: `3px solid ${index % 4 === 0 ? '#4aaeb5' : 
-                                  index % 4 === 1 ? '#69d4db' : 
-                                  index % 4 === 2 ? '#5cbcc3' : '#7dd3db'}`,
-                                backgroundColor: 'rgba(248,250,252,0.5)',
-                                borderRadius: 1,
-                                p: 1.5
-                              }}>
-                                {/* Hiển thị loại mẫu xét nghiệm - cần sửa đổi để hiển thị đúng */}
-                                {service.components && service.components.length > 0 && (
-                                  <Box sx={{ display: 'flex', mb: 1 }}>
-                                    <Typography variant="body2" sx={{ width: '140px', color: '#6b7280' }}>
-                                      Loại mẫu xét nghiệm:
-                                    </Typography>
-                                    <Typography variant="body2" fontWeight={500} sx={{ color: '#374151' }}>
-                                      {service.components[0].sampleType || 
-                                       (service.components[0].componentId ? 'Máu' : 'Huyết thanh/Huyết tương')}
-                                    </Typography>
-                                  </Box>
-                                )}
-                              </Box>
-                            </Box>
-                          </Grid>
-                        </Grid>
-                        
                         {/* Bảng các chỉ số xét nghiệm */}
                         {service.components && service.components.length > 0 && (
                           <Box sx={{ mt: 4 }}>
@@ -666,9 +604,10 @@ const ServiceDetailDialog = ({
                                 p: 2,
                                 borderBottom: '2px solid rgba(74,174,181,0.2)'
                               }}>
-                                <Typography variant="body2" fontWeight={600} sx={{ width: '40%', color: '#2d3748' }}>Tên chỉ số</Typography>
+                                <Typography variant="body2" fontWeight={600} sx={{ width: '30%', color: '#2d3748' }}>Tên chỉ số</Typography>
                                 <Typography variant="body2" fontWeight={600} sx={{ width: '20%', color: '#2d3748' }}>Đơn vị</Typography>
-                                <Typography variant="body2" fontWeight={600} sx={{ width: '40%', color: '#2d3748' }}>Giá trị tham chiếu</Typography>
+                                <Typography variant="body2" fontWeight={600} sx={{ width: '30%', color: '#2d3748' }}>Giá trị tham chiếu</Typography>
+                                <Typography variant="body2" fontWeight={600} sx={{ width: '20%', color: '#2d3748' }}>Loại mẫu xét nghiệm</Typography>
                               </Box>
                               
                               {/* Danh sách chi tiết các chỉ số */}
@@ -688,7 +627,7 @@ const ServiceDetailDialog = ({
                                   }}
                                 >
                                   {/* Tên chỉ số */}
-                                  <Typography variant="body2" sx={{ width: '40%', color: '#374151', fontWeight: 500 }}>
+                                  <Typography variant="body2" sx={{ width: '30%', color: '#374151', fontWeight: 500 }}>
                                     {component.componentName || component.testName}
                                   </Typography>
                                   {/* Đơn vị */}
@@ -696,7 +635,7 @@ const ServiceDetailDialog = ({
                                     {component.unit || '-'}
                                   </Typography>
                                   {/* Giá trị tham chiếu */}
-                                  <Typography variant="body2" sx={{ width: '40%' }}>
+                                  <Typography variant="body2" sx={{ width: '30%' }}>
                                     <Box component="span" sx={{ 
                                       py: 0.3, 
                                       px: 1, 
@@ -708,6 +647,10 @@ const ServiceDetailDialog = ({
                                     }}>
                                       {component.normalRange || component.referenceRange || 'Xem kết quả'}
                                     </Box>
+                                  </Typography>
+                                  {/* Loại mẫu xét nghiệm */}
+                                  <Typography variant="body2" sx={{ width: '20%', color: '#374151', fontWeight: 500 }}>
+                                    {component.sampleType || '-'}
                                   </Typography>
                                 </Box>
                               ))}
@@ -817,7 +760,7 @@ const ServiceDetailDialog = ({
         
         {/* Nút đóng dialog */}
         <Button
-          onClick={onClose}
+          onClick={handleClose}
           sx={{
             color: '#2196F3',
             fontWeight: 600,

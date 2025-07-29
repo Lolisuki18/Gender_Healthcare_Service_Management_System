@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus, Calendar, Clock, Check, X, ChevronLeft, ChevronRight, Edit, Shield, Heart, Star, Pill, Trash } from 'lucide-react';
+import { Box, Typography } from '@mui/material';
 import styles from '../../styles/PillReminderPage.module.css';
 import PillIcon from './PillIcon';
 import { Link } from 'react-router-dom';
@@ -249,7 +250,7 @@ export function PillReminderFormScreen({ formData, onFormChange, onFormSubmit, o
                 onChange={e => onFormChange('pillDays', Number(e.target.value))}
                 className={styles.formInput}
                 min="1"
-                max="30"
+                max="84"
                 required
                 aria-label="Số ngày uống thuốc"
                 placeholder="Nhập số ngày"
@@ -361,32 +362,37 @@ export function PillReminderCalendarScreen({ schedule, currentMonthIndex, setCur
             </div>
           </div>
         </div>
-        <div className={styles.calendarLegend} style={{ display: 'flex', gap: 64, justifyContent: 'center', margin: '24px 0' }}>
-          <div className={styles.legendItem} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#2ecc40', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <PillIcon status="pill" />
-            </span>
-            Đã uống
-          </div>
-          <div className={styles.legendItem} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#e53935', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <PillIcon status="missed" />
-            </span>
-            Bỏ lỡ
-          </div>
-          <div className={styles.legendItem} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#2979ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <PillIcon status="future" />
-            </span>
-            Sắp tới
-          </div>
-          <div className={styles.legendItem} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#a0a4ad', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <X size={16} color="#fff" />
-            </span>
-            Ngày nghỉ
+        {/* Thông tin lịch được di chuyển lên đây */}
+        <div style={{ 
+          margin: '20px 0', 
+          padding: '16px 20px', 
+          backgroundColor: '#f8f9fa', 
+          borderRadius: '12px',
+          border: '1px solid #e9ecef'
+        }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+            gap: '12px',
+            fontSize: '14px',
+            color: '#495057'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: '600', color: '#44c0c9' }}>Chu kỳ hiện tại:</span>
+              <span>{schedule.pillDays} ngày uống, {schedule.breakDays} ngày nghỉ</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Clock size={16} style={{ color: '#44c0c9' }} />
+              <span style={{ fontWeight: '600', color: '#44c0c9' }}>Thời gian nhắc nhở:</span>
+              <span>{schedule.reminderTime}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: '600', color: '#44c0c9' }}>Ngày bắt đầu:</span>
+              <span>{schedule.startDate ? new Date(schedule.startDate).toLocaleDateString('vi-VN') : ''}</span>
+            </div>
           </div>
         </div>
+
       </div>
       <div className={styles.calendarCard}>
         <div className={styles.calendarHeader}>
@@ -433,11 +439,92 @@ export function PillReminderCalendarScreen({ schedule, currentMonthIndex, setCur
           ))}
         </div>
       </div>
+      {/* Box chú thích mới */}
+      <div className={styles.calendarCard}>
+        <div style={{ 
+          padding: '20px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '12px',
+          border: '1px solid #e9ecef'
+        }}>
+          <div style={{ 
+            fontWeight: '600', 
+            fontSize: '16px', 
+            color: '#495057', 
+            marginBottom: '16px',
+            textAlign: 'left'
+          }}>
+            Chú thích
+          </div>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '20px',
+            fontSize: '14px',
+            color: '#495057'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ 
+                width: 28, 
+                height: 28, 
+                borderRadius: '50%', 
+                background: '#2ecc40', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center' 
+              }}>
+                <PillIcon status="pill" />
+              </span>
+              <span>Đã uống</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ 
+                width: 28, 
+                height: 28, 
+                borderRadius: '50%', 
+                background: '#e53935', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center' 
+              }}>
+                <PillIcon status="missed" />
+              </span>
+              <span>Bỏ lỡ</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ 
+                width: 28, 
+                height: 28, 
+                borderRadius: '50%', 
+                background: '#2979ff', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center' 
+              }}>
+                <PillIcon status="future" />
+              </span>
+              <span>Sắp tới</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ 
+                width: 28, 
+                height: 28, 
+                borderRadius: '50%', 
+                background: '#a0a4ad', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center' 
+              }}>
+                <X size={16} color="#fff" />
+              </span>
+              <span>Ngày nghỉ</span>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className={styles.settingsCard}>
         <div className={styles.settingsTitle}>Cài đặt lịch</div>
-        <div className={styles.settingsText}>Chu kỳ hiện tại: {schedule.pillDays} ngày uống, {schedule.breakDays} ngày nghỉ</div>
-        <div className={styles.settingsText} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Clock size={18} style={{ marginRight: 4, verticalAlign: 'middle' , color: '#44c0c9'}} /> Thời gian nhắc nhở: {schedule.reminderTime}</div>
-        <div className={styles.settingsText}>Ngày bắt đầu: {schedule.startDate ? new Date(schedule.startDate).toLocaleDateString('vi-VN') : ''}</div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px', alignItems: 'stretch' }}>
           <button
             onClick={handleEditClick}
@@ -454,6 +541,39 @@ export function PillReminderCalendarScreen({ schedule, currentMonthIndex, setCur
             Xóa lịch
           </button>
         </div>
+        {/* Ghi chú */}
+        <Box sx={{ 
+          mt: 3, 
+          p: 3, 
+          backgroundColor: '#dbeafe', 
+          borderRadius: '20px', 
+          border: '1px solid #3b82f6',
+          boxShadow: '0 4px 24px rgba(59,130,246,0.08)'
+        }}>
+          <Typography sx={{ 
+            fontWeight: '600', 
+            mb: 2, 
+            color: '#1e40af', 
+            fontSize: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}>
+            💡 Lời khuyên
+          </Typography>
+                      <Typography sx={{ 
+              fontSize: '14px', 
+              color: '#1e40af', 
+              lineHeight: 1.6,
+              fontWeight: '500',
+              textAlign: 'left',
+              paddingLeft: '0.7cm'
+            }}>
+              • Uống thuốc cùng một giờ mỗi ngày<br/>
+              • Đặt báo thức để không quên<br/>
+              • Nếu quên uống, tham khảo hướng dẫn của bác sĩ
+            </Typography>
+        </Box>
       </div>
     </div>
   );

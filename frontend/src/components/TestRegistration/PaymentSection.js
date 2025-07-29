@@ -219,7 +219,7 @@ const PaymentSection = ({
                   <BankIcon sx={{ mr: 1, color: 'success.main' }} />
                   <Box>
                     <Typography variant="body1" fontWeight={500}>
-                      Thanh toán tiền mặt (COD)
+                      Thanh toán tiền mặt 
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Thanh toán khi nhận dịch vụ
