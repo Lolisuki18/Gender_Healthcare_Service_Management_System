@@ -920,6 +920,28 @@ const STITestManagementContent = () => {
 
   // Get button based on test status
   const getActionButton = (test) => {
+    // Helper function to render cancel button
+    const renderCancelButton = () => (
+      <Tooltip title="Hủy xét nghiệm">
+        <Button
+          variant="outlined"
+          size="small"
+          color="error"
+          startIcon={<CancelIcon />}
+          onClick={async () => {
+            const reason = await confirmDialog.cancelWithReason(
+              'Bạn có chắc chắn muốn hủy xét nghiệm này? Vui lòng nhập lý do hủy.'
+            );
+            if (reason) {
+              await handleCancelTestAction(test.testId, reason);
+            }
+          }}
+        >
+          Hủy
+        </Button>
+      </Tooltip>
+    );
+
     switch (test.status) {
       case 'PENDING':
         // Kiểm tra trạng thái thanh toán để quyết định có disable nút xác nhận không
@@ -945,7 +967,6 @@ const STITestManagementContent = () => {
 
         return (
           <>
-            {' '}
             <Tooltip title={confirmTooltip}>
               <span>
                 <Button
@@ -971,82 +992,74 @@ const STITestManagementContent = () => {
                 </Button>
               </span>
             </Tooltip>
-            <Tooltip title="Hủy xét nghiệm">
-              <Button
-                variant="outlined"
-                size="small"
-                color="error"
-                startIcon={<CancelIcon />}
-                onClick={async () => {
-                  const reason = await confirmDialog.cancelWithReason(
-                    'Bạn có chắc chắn muốn hủy xét nghiệm này? Vui lòng nhập lý do hủy.'
-                  );
-                  if (reason) {
-                    await handleCancelTestAction(test.testId, reason);
-                  }
-                }}
-              >
-                Hủy
-              </Button>
-            </Tooltip>
+            {renderCancelButton()}
           </>
         );
       case 'CONFIRMED':
         return (
-          <Tooltip title="Lấy mẫu">
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<BiotechIcon />}
-              onClick={() => handleOpenSampleModal(test)}
-              sx={{
-                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                color: '#fff',
-                fontWeight: 600,
-                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-              }}
-            >
-              Lấy mẫu
-            </Button>
-          </Tooltip>
+          <>
+            <Tooltip title="Lấy mẫu">
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<BiotechIcon />}
+                onClick={() => handleOpenSampleModal(test)}
+                sx={{
+                  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                }}
+              >
+                Lấy mẫu
+              </Button>
+            </Tooltip>
+            {renderCancelButton()}
+          </>
         );
       case 'SAMPLED':
         return (
-          <Tooltip title="Nhập kết quả">
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<ScienceIcon />}
-              onClick={() => handleOpenResultModal(test)}
-              sx={{
-                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                color: '#fff',
-                fontWeight: 600,
-                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-              }}
-            >
-              Nhập kết quả
-            </Button>
-          </Tooltip>
+          <>
+            <Tooltip title="Nhập kết quả">
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<ScienceIcon />}
+                onClick={() => handleOpenResultModal(test)}
+                sx={{
+                  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                }}
+              >
+                Nhập kết quả
+              </Button>
+            </Tooltip>
+            {renderCancelButton()}
+          </>
         );
       case 'RESULTED':
         return (
-          <Tooltip title="Xem kết quả">
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<ScienceIcon />}
-              onClick={() => handleOpenResultModal(test)}
-              sx={{
-                background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
-                color: '#fff',
-                fontWeight: 600,
-                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
-              }}
-            >
-              Xem kết quả
-            </Button>
-          </Tooltip>
+          <>
+            <Tooltip title="Xem kết quả">
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<ScienceIcon />}
+                onClick={() => handleOpenResultModal(test)}
+                sx={{
+                  background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.25)',
+                }}
+              >
+                Xem kết quả
+              </Button>
+            </Tooltip>
+            {renderCancelButton()}
+          </>
         );
       case 'COMPLETED':
         return (

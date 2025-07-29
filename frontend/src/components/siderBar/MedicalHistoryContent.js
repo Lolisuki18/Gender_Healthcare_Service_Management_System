@@ -236,7 +236,13 @@ const MedicalHistoryContent = () => {
       const reviewData = {
         rating: rating,
         comment: feedback.trim(),
-        sti_test_id: reviewingRecord.testId, // Sử dụng snake_case đúng chuẩn backend
+        sti_test_id: reviewingRecord.testId,
+        stiTestId: reviewingRecord.testId,
+        customerId: reviewingRecord.customerId,
+        staffId: reviewingRecord.staffId,
+        consultantId: reviewingRecord.consultantId,
+        serviceId: reviewingRecord.serviceId,
+        packageId: reviewingRecord.packageId,
       };
       if (isEditMode && editingReviewId) {
         await import('../../services/reviewService').then((m) =>
@@ -244,9 +250,17 @@ const MedicalHistoryContent = () => {
         );
         toast.success('Đánh giá đã được cập nhật thành công!');
       } else {
-        await import('../../services/reviewService').then((m) =>
-          m.default.createSTIServiceReview(reviewingRecord.testId, reviewData)
-        );
+        if (reviewingRecord.packageId) {
+          // Nếu có packageId thì là đánh giá gói
+          await import('../../services/reviewService').then((m) =>
+            m.default.createSTIPackageReview(reviewingRecord.packageId, reviewData)
+          );
+        } else {
+          // Nếu không có packageId thì là dịch vụ lẻ
+          await import('../../services/reviewService').then((m) =>
+            m.default.createSTIServiceReview(reviewingRecord.serviceId || reviewingRecord.testId, reviewData)
+          );
+        }
         toast.success('Đánh giá đã được gửi thành công!');
       }
       handleCloseReviewDialog();

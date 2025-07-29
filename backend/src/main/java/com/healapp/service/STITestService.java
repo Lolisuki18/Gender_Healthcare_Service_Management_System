@@ -1045,17 +1045,13 @@ public class STITestService {
 
             boolean isStaffOrAdmin = "STAFF".equals(roleName) || "ADMIN".equals(roleName);
 
-            // Nếu không phải staff/admin thì chỉ cho phép customer tự huỷ test của mình và kiểm tra 24h
+            // Nếu không phải staff/admin thì chỉ cho phép customer tự huỷ test của mình và chỉ khi status là PENDING
             if (!isStaffOrAdmin) {
                 if (!stiTest.getCustomer().getId().equals(userId)) {
                     return ApiResponse.error("You can only cancel your own tests");
                 }
-                if (!STITestStatus.PENDING.equals(stiTest.getStatus())
-                        && !STITestStatus.CONFIRMED.equals(stiTest.getStatus())) {
-                    return ApiResponse.error("Cannot cancel test in current status: " + stiTest.getStatus());
-                }
-                if (stiTest.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(24))) {
-                    return ApiResponse.error("Cannot cancel test within 24 hours of appointment");
+                if (!STITestStatus.PENDING.equals(stiTest.getStatus())) {
+                    return ApiResponse.error("Customers can only cancel tests before confirmation. Current status: " + stiTest.getStatus());
                 }
             } else {
                 // Staff/Admin có thể huỷ bất kỳ test nào, chỉ cần test chưa COMPLETED/CANCELED

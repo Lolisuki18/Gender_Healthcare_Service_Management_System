@@ -191,11 +191,11 @@ const ReviewsContent = () => {
       console.log('🧪 All STI tests:', allTests);
       
       const completedTests = allTests.filter(test => {
-        const hasValidId = test.id || test.serviceId;
-        const hasValidStatus = test.status && completedStatuses.includes(test.status.toUpperCase());
-        
-        console.log(`🔍 STI Test ${test.id || 'Unknown'}: hasValidId=${hasValidId}, status=${test.status}, hasValidStatus=${hasValidStatus}`);
-        
+      const hasValidId = test.testId; // Sử dụng testId cho cả lẻ và gói
+      const hasValidStatus = test.status && completedStatuses.includes(test.status.toUpperCase());
+
+        console.log(`🔍 STI Test ${test.testId || 'Unknown'}: hasValidId=${hasValidId}, status=${test.status}, hasValidStatus=${hasValidStatus}`);
+
         return hasValidId && hasValidStatus;
       });
       
@@ -240,24 +240,37 @@ const ReviewsContent = () => {
   const createReviewableServices = useCallback(() => {
     // 1. Gom tất cả dịch vụ đã hoàn thành (STI + Consultation)
     const completedServices = [];
-    const completedStatusesSTI = ['COMPLETED', 'FINISHED', 'DONE', 'SUCCESS', 'ANALYZED'];
-    const completedStatusesConsult = ['COMPLETED', 'FINISHED', 'DONE', 'SUCCESS', 'CLOSED'];
+    const completedStatusesSTI = ['COMPLETED', 'FINISHED', 'DONE', 'SUCCESS'];
+    const completedStatusesConsult = ['COMPLETED', 'FINISHED', 'DONE', 'SUCCESS'];
 
     stiTests.forEach((test, index) => {
       if (!test || (!test.testId && !test.id) || !test.serviceName) return;
       if (!test.status || !completedStatusesSTI.includes(test.status.toUpperCase())) return;
-      // testId là duy nhất cho mỗi lần xét nghiệm, ưu tiên test.testId, fallback test.id
       const uniqueTestId = test.testId || test.id;
-      completedServices.push({
-        id: `sti_${uniqueTestId}`,
-        type: 'STI_SERVICE',
-        serviceId: test.serviceId,
-        serviceName: test.serviceName,
-        consultantName: test.consultantName || 'Chuyên viên STI',
-        date: test.appointmentDate || test.updatedAt || new Date().toISOString(),
-        testId: uniqueTestId,
-        raw: test,
-      });
+      // Nếu là gói xét nghiệm (packageId tồn tại), thêm vào type STI_PACKAGE
+      if (test.packageId) {
+        completedServices.push({
+          id: `sti_package_${uniqueTestId}`,
+          type: 'STI_PACKAGE',
+          packageId: test.packageId,
+          serviceName: test.serviceName,
+          consultantName: test.consultantName,
+          date: test.appointmentDate || test.updatedAt || new Date().toISOString(),
+          testId: uniqueTestId,
+          raw: test,
+        });
+      } else {
+        completedServices.push({
+          id: `sti_${uniqueTestId}`,
+          type: 'STI_SERVICE',
+          serviceId: test.serviceId,
+          serviceName: test.serviceName,
+          consultantName: test.consultantName ,
+          date: test.appointmentDate || test.updatedAt || new Date().toISOString(),
+          testId: uniqueTestId,
+          raw: test,
+        });
+      }
     });
 
     consultations.forEach((consultation, index) => {
@@ -280,16 +293,26 @@ const ReviewsContent = () => {
     const reviewableServices = completedServices.map((service) => {
       let matchedReview = null;
       if (service.type === 'STI_SERVICE') {
-        // So sánh chính xác theo testId (mỗi lần test là một đánh giá riêng)
         matchedReview = reviews.find(
           (r) =>
-            (r.targetType === 'STI_SERVICE' && r.testId && String(r.testId) === String(service.testId))
+            (r.targetType === 'STI_SERVICE' && String(r.targetId) === String(service.serviceId)) &&
+            (String(r.stiTestId) === String(service.testId))
         );
       } else if (service.type === 'CONSULTANT') {
         matchedReview = reviews.find(
           (r) =>
             (r.targetType === 'CONSULTANT' && String(r.targetId) === String(service.consultantId)) ||
             (r.consultationId && String(r.consultationId) === String(service.consultationId))
+        );
+      } else if (service.type === 'STI_PACKAGE') {
+        matchedReview = reviews.find(
+          (r) =>
+            r.targetType === 'STI_PACKAGE' &&
+            String(r.packageId || r.targetId) === String(service.packageId) &&
+            (
+              (r.stiTestId && String(r.stiTestId) === String(service.testId)) ||
+              (r.testId && String(r.testId) === String(service.testId))
+            )
         );
       }
       return {
@@ -298,8 +321,7 @@ const ReviewsContent = () => {
         rating: matchedReview?.rating || 0,
         comment: matchedReview?.comment || '',
         reviewId: matchedReview?.id,
-        isEligible: !matchedReview, // Chỉ cho phép đánh giá nếu chưa có review
-        // debugInfo: matchedReview ? { ...matchedReview } : undefined,
+        isEligible: !matchedReview,
       };
     });
     return reviewableServices;
@@ -308,9 +330,6 @@ const ReviewsContent = () => {
   const allReviewableServices = useMemo(() => {
     return createReviewableServices();
   }, [createReviewableServices]);
-  
-  // ...existing code...
-
   
   // Apply service filter with memoized services
   const filteredServices = allReviewableServices.filter(service => {
@@ -381,6 +400,10 @@ const ReviewsContent = () => {
       if (!hasReview && serviceTestId) {
         uniqueSTIServices.add(serviceTestId);
       }
+    }else if (service.type === 'STI_PACKAGE' && service.status === 'pending') {
+        // Thêm từng test thuộc gói
+        const key = `${service.packageId}_${service.testId}`;
+        uniqueSTIServices.add(key);
     } else if (service.type === 'CONSULTANT' && service.status === 'pending') {
       // So sánh bằng consultationId
       const consultationIdentifier = service.consultationId;
@@ -419,6 +442,16 @@ const ReviewsContent = () => {
           (rating.consultationId && String(rating.consultationId) === String(service.consultationId))
         )
       );
+    } else if (service.type === 'STI_PACKAGE') {
+      // So sánh với tất cả review đã có bằng packageId và stiTestId/testId
+      return !filteredMyRatings.some(rating =>
+        (rating.targetType === 'STI_PACKAGE') &&
+        String(rating.targetId) === String(service.packageId) &&
+        (
+          (rating.stiTestId && String(rating.stiTestId) === String(service.testId)) ||
+          (rating.testId && String(rating.testId) === String(service.testId))
+        )
+      );
     }
     return true;
   });
@@ -442,7 +475,7 @@ const ReviewsContent = () => {
   const paginatedCompletedReviews = filteredCompletedReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
   const paginatedPendingReviews = filteredPendingReviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
 
-  const handleTabChange = (event, newValue) => {
+  const handleTabChange = (evfent, newValue) => {
     setActiveTab(newValue);
   };
 
@@ -545,8 +578,9 @@ const ReviewsContent = () => {
       if (selectedReview.type === 'CONSULTANT' && selectedReview.consultationId) {
         reviewData.consultationId = selectedReview.consultationId;
       }
-
-      // ...existing code...
+    if (selectedReview.type === 'STI_PACKAGE' && selectedReview.testId) {
+      reviewData.stiTestId = selectedReview.testId;
+    }
 
       // Kiểm tra xem đây là edit mode hay create mode
       if (isEditMode && editingReviewId) {
@@ -629,13 +663,15 @@ const ReviewsContent = () => {
         const stiServiceReviewData = {
           rating: reviewData.rating,
           comment: reviewData.comment,
-          sti_test_id: selectedReview.testId
+          stiTestId: selectedReview.testId,
+          sti_test_id: selectedReview.testId,
+          target_id: selectedReview.serviceId
         };
         // Log payload gửi lên backend
         console.log('[DEBUG] Payload gửi đánh giá STI:', stiServiceReviewData);
         // URL endpoint: /ratings/sti-service/{serviceId}
         await reviewService.createSTIServiceReview(selectedReview.serviceId, stiServiceReviewData);
-        // ...existing code...
+        
         
       } else if (selectedReview.type === 'STI_PACKAGE') {
         // Kiểm tra packageId
@@ -649,9 +685,11 @@ const ReviewsContent = () => {
         // Chuẩn bị dữ liệu đánh giá theo format mẫu JSON
         const stiPackageReviewData = {
           rating: reviewData.rating,
-          comment: reviewData.comment
+          comment: reviewData.comment,
+          stiTestId: selectedReview.testId,
+          sti_test_id: selectedReview.testId,
+          target_id: selectedReview.packageId
         };
-        
         // URL endpoint: /ratings/sti-package/{packageId}
         await reviewService.createSTIPackageReview(selectedReview.packageId, stiPackageReviewData);
         // ...existing code...
@@ -702,11 +740,11 @@ const ReviewsContent = () => {
         // Chuẩn bị dữ liệu đánh giá theo format mẫu JSON
         const consultantReviewData = {
           rating: reviewData.rating,
-          comment: reviewData.comment
+          comment: reviewData.comment,
+          consultationId: selectedReview.consultationId,
+          consultation_id: selectedReview.consultationId,
+          target_id: selectedReview.consultantId
         };
-        if (selectedReview.consultationId) {
-          consultantReviewData.consultationId = selectedReview.consultationId;
-        }
         // Log payload gửi lên backend
         console.log('[DEBUG] Payload gửi đánh giá tư vấn:', consultantReviewData);
         // URL endpoint: /ratings/consultant/{consultantId}
@@ -886,7 +924,13 @@ const ReviewsContent = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, color: '#2D3748', fontSize: '18px' }}>
                     {/* Lấy tên dịch vụ hoặc tên tư vấn viên từ API */}
-                    {review.targetType === 'STI_SERVICE' ? (review.targetName || 'Dịch vụ') : review.targetType === 'CONSULTANT' ? (review.targetName || 'Tư vấn viên') : (review.serviceName || review.consultantName || 'Dịch vụ')}
+                    {review.targetType === 'STI_SERVICE'
+                      ? (review.targetName || 'Dịch vụ')
+                      : review.targetType === 'CONSULTANT'
+                        ? (review.targetName || 'Tư vấn viên')
+                        : review.targetType === 'STI_PACKAGE'
+                          ? (review.targetName || review.serviceName || 'Gói xét nghiệm')
+                          : (review.serviceName || review.consultantName || 'Dịch vụ')}
                   </Typography>
                   {/* Hiển thị ID dịch vụ
                   {review.targetType === 'STI_SERVICE' && (
@@ -1298,6 +1342,24 @@ const ReviewsContent = () => {
                         height: '20px',
                         '& .MuiChip-icon': {
                           color: '#4CAF50'
+                        }
+                      }}
+                    />
+                  )}
+                  {review.type === 'STI_PACKAGE' && (
+                    <Chip
+                      icon={<ScienceIcon sx={{ fontSize: '12px !important' }} />}
+                      label="Gói xét nghiệm"
+                      size="small"
+                      sx={{
+                        background: 'rgba(255, 193, 7, 0.1)',
+                        color: '#FFC107',
+                        border: '1px solid rgba(255, 193, 7, 0.3)',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        height: '20px',
+                        '& .MuiChip-icon': {
+                          color: '#FFC107'
                         }
                       }}
                     />
