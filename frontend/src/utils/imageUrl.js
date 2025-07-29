@@ -6,8 +6,8 @@
  * cho các hình ảnh như avatar được lưu trữ trên máy chủ.
  */
 
-// const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-const API_BASE_URL = 'http://localhost:8080' || process.env.REACT_APP_API_URL;
+ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+//const API_BASE_URL = 'http://localhost:8080' || process.env.REACT_APP_API_URL;
 
 /**
  * Chuyển đổi đường dẫn tương đối thành URL đầy đủ cho hình ảnh
