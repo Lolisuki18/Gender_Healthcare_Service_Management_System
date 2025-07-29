@@ -313,8 +313,12 @@ export function PillReminderFormScreen({
               placeholder="mm/dd/yyyy"
               min={(() => {
                 const d = new Date();
-                d.setDate(d.getDate() + 1);
-                return d.toISOString().split('T')[0];
+                d.setDate(d.getDate());
+                // Format yyyy-mm-dd theo local time
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
               })()}
               style={{
                 padding: '12px 16px',
