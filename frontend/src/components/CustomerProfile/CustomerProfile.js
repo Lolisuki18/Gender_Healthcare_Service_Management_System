@@ -83,7 +83,7 @@ const CustomerProfile = () => {
 
     // Map các giá trị tab param sang menu item hợp lệ
     const tabMapping = {
-      appointments: 'appointments',
+      appointments: 'medical-history',
       profile: 'profile',
       'medical-history': 'medical-history',
       'payment-history': 'payment-history',
