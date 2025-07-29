@@ -36,6 +36,12 @@ const ServiceDetailDialog = ({
   // State quản lý các mục xét nghiệm đã mở chi tiết trong gói
   const [expandedItems, setExpandedItems] = useState({});
 
+  // Reset trạng thái bảng chỉ số về thu gọn khi đóng dialog
+  const handleClose = () => {
+    setExpandedItems({});
+    onClose();
+  };
+
   /**
    * Xử lý việc mở/đóng chi tiết từng mục xét nghiệm trong gói
    * @param {number} itemId - ID của mục cần mở/đóng
@@ -52,7 +58,7 @@ const ServiceDetailDialog = ({
    * Đóng dialog và chuyển đến trang đăng ký với dữ liệu đã chọn
    */
   const handleRegisterService = () => {
-    onClose();
+    handleClose();
     // Gửi dữ liệu khác nhau tùy thuộc vào loại (gói hoặc xét nghiệm đơn lẻ)
     if (detailType === 'package') {
       navigate('/test-registration', { 
@@ -78,7 +84,7 @@ const ServiceDetailDialog = ({
   // Hiển thị loading khi đang tải dữ liệu
   if (loadingDetail) {
     return (
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogContent sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
           <CircularProgress sx={{ color: '#2196F3' }} />
         </DialogContent>
@@ -754,7 +760,7 @@ const ServiceDetailDialog = ({
         
         {/* Nút đóng dialog */}
         <Button
-          onClick={onClose}
+          onClick={handleClose}
           sx={{
             color: '#2196F3',
             fontWeight: 600,
