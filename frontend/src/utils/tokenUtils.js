@@ -78,10 +78,10 @@ export const handleInactivity = async (inactiveTime) => {
   if (inactiveTime > 60 * 60 * 1000) {
     try {
       await tokenService.refreshTokenIfNeeded();
-      notify.success(
-        'Phiên đăng nhập đã được làm mới',
-        'Hệ thống đã tự động làm mới phiên đăng nhập của bạn'
-      );
+      // notify.success(
+      //   'Phiên đăng nhập đã được làm mới',
+      //   'Hệ thống đã tự động làm mới phiên đăng nhập của bạn'
+      // );
     } catch (error) {
       console.error('Failed to refresh token after inactivity:', error);
       notify.error(
@@ -108,10 +108,10 @@ export const handleConnectionRestore = async () => {
       // Token đã hết hạn hoàn toàn, thử refresh
       if (isRefreshTokenValid(token.refreshToken)) {
         await tokenService.refreshTokenIfNeeded();
-        notify.success(
-          'Kết nối đã được khôi phục',
-          'Phiên đăng nhập đã được làm mới tự động'
-        );
+        // notify.success(
+        //   'Kết nối đã được khôi phục',
+        //   'Phiên đăng nhập đã được làm mới tự động'
+        // );
       } else {
         // Refresh token cũng hết hạn
         notify.error(
@@ -125,10 +125,10 @@ export const handleConnectionRestore = async () => {
       }
     } else {
       // Token vẫn còn hợp lệ
-      notify.success(
-        'Kết nối đã được khôi phục',
-        'Bạn có thể tiếp tục sử dụng ứng dụng'
-      );
+      // notify.success(
+      //   'Kết nối đã được khôi phục',
+      //   'Bạn có thể tiếp tục sử dụng ứng dụng'
+      // );
     }
   } catch (error) {
     console.error('Failed to handle connection restore:', error);

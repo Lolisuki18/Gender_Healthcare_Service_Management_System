@@ -17,7 +17,7 @@
  * với medical light design đồng bộ với hệ thống
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -30,7 +30,7 @@ import { Menu as MenuIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import DynamicSideBar from '@/components/siderBar/DynamicSideBar';
 import localStorageUtil from '@/utils/localStorage';
-
+import { useLocation } from 'react-router-dom';
 // Import content components
 import MyQuestionsContent from './MyQuestionsContent';
 // New components to be created
@@ -59,6 +59,7 @@ const MainContent = styled(Box)(({ theme, sidebarOpen }) => ({
 }));
 
 const ConsultantProfile = ({ user = {} }) => {
+  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
@@ -73,7 +74,39 @@ const ConsultantProfile = ({ user = {} }) => {
   };
 
   const userData = localStorageUtil.get('userProfile')?.data || {};
+  // Effect để xử lý initial tab selection từ navigation state và URL params
+  useEffect(() => {
+    // Ưu tiên đọc query param ?tab=... để chuyển tab tương ứng
+    const urlParams = new URLSearchParams(location.search);
+    const tabParam = urlParams.get('tab');
 
+    // Map các giá trị tab param sang menu item hợp lệ
+    const tabMapping = {
+      appointments: 'medical-history',
+      profile: 'profile',
+      'medical-history': 'medical-history',
+      'payment-history': 'payment-history',
+      invoices: 'invoices',
+      notifications: 'notifications',
+      questions: 'questions',
+      reviews: 'reviews',
+      security: 'security',
+      'payment-methods': 'payment-methods',
+      'blog-customer': 'blog-customer',
+      'payment-info': 'payment-info',
+      'pill-history': 'pill-history',
+    };
+
+    if (tabParam && tabMapping[tabParam]) {
+      setSelectedMenuItem(tabMapping[tabParam]);
+    } else if (
+      location.state?.initialTab &&
+      tabMapping[location.state.initialTab]
+    ) {
+      setSelectedMenuItem(tabMapping[location.state.initialTab]);
+    }
+    // Nếu không có tab param hoặc initialTab, giữ nguyên tab mặc định
+  }, [location.state, location.search]);
   // Updated function to get page title based on menu item
   const getPageTitle = () => {
     switch (selectedMenuItem) {
