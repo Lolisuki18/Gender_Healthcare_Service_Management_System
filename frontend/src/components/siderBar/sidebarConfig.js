@@ -125,6 +125,12 @@ export const sidebarMenuConfig = [
     roles: ['STAFF'],
   },
   {
+    id: 'cod-payment',
+    label: 'Quản lý thanh toán COD',
+    icon: <PaymentIcon />,
+    roles: ['STAFF'],
+  },
+  {
     id: 'categoryManagement',
     label: 'Quản lý danh mục',
     icon: <SettingsIcon />,

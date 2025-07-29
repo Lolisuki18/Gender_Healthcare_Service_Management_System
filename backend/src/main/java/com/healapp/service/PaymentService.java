@@ -77,8 +77,8 @@ public class PaymentService {
             BigDecimal amount, String description) {
         try {
             Payment payment = createPayment(userId, serviceType, serviceId, PaymentMethod.COD, amount, description);
-            payment.setPaymentStatus(PaymentStatus.COMPLETED); // COD is considered "completed" when booked
-            payment.setPaidAt(LocalDateTime.now());
+            payment.setPaymentStatus(PaymentStatus.PENDING); // COD is now PENDING until staff confirms
+            // Remove the line that sets paidAt to now since it's not paid yet
 
             Payment savedPayment = paymentRepository.save(payment);
             log.info("COD payment created - Payment ID: {}", savedPayment.getPaymentId());
@@ -757,5 +757,61 @@ public class PaymentService {
 
     public UserDtls getUserById(Long userId) {
         return userRepository.findById(userId).orElse(null);
+    }
+
+    public ApiResponse<Payment> manualConfirmCODPayment(Long paymentId, String notes) {
+        try {
+            Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
+
+            if (paymentOpt.isEmpty()) {
+                return ApiResponse.error("Payment not found");
+            }
+
+            Payment payment = paymentOpt.get();
+
+            // Chỉ cho phép cập nhật COD payments
+            if (payment.getPaymentMethod() != PaymentMethod.COD) {
+                return ApiResponse.error("This API is only for COD payments");
+            }
+
+            if (payment.getPaymentStatus() == PaymentStatus.COMPLETED) {
+                return ApiResponse.success("COD payment already confirmed", payment);
+            }
+
+            if (payment.getPaymentStatus() == PaymentStatus.REFUNDED) {
+                return ApiResponse.error("Cannot confirm refunded payment");
+            }
+
+            // Manual confirmation for COD
+            payment.setPaymentStatus(PaymentStatus.COMPLETED);
+            payment.setPaidAt(LocalDateTime.now());
+            payment.setNotes((payment.getNotes() != null ? payment.getNotes() + "; " : "") +
+                    "COD payment confirmed by staff - Notes: " + notes);
+
+            Payment confirmedPayment = paymentRepository.save(payment);
+
+            log.info("COD payment manually confirmed - Payment ID: {}, Amount: {}",
+                    confirmedPayment.getPaymentId(), confirmedPayment.getAmount());
+
+            return ApiResponse.success("COD payment manually confirmed", confirmedPayment);
+
+        } catch (Exception e) {
+            log.error("Error manually confirming COD payment: {}", e.getMessage(), e);
+            return ApiResponse.error("Failed to confirm COD payment: " + e.getMessage());
+        }
+    }
+
+    public ApiResponse<List<Payment>> getPendingCODPayments() {
+        try {
+            List<Payment> pendingCODPayments = paymentRepository.findByPaymentMethodAndPaymentStatus(
+                    PaymentMethod.COD, PaymentStatus.PENDING);
+            
+            log.info("Retrieved {} pending COD payments", pendingCODPayments.size());
+            return ApiResponse.success("Retrieved " + pendingCODPayments.size() + " pending COD payments", 
+                    pendingCODPayments);
+        } catch (Exception e) {
+            log.error("Error retrieving pending COD payments: {}", e.getMessage(), e);
+            return ApiResponse.error("Failed to retrieve pending COD payments: " + e.getMessage());
+        }
     }
 }

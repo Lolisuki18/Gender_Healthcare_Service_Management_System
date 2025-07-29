@@ -695,6 +695,30 @@ export const getCanceledTests = async () => {
   }
 };
 
+// Get pending COD payments for staff
+const getPendingCODPayments = async () => {
+  try {
+    const response = await apiClient.get('/sti-services/staff/pending-cod-payments');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching pending COD payments:', error);
+    throw error.response?.data || error.message;
+  }
+};
+
+// Confirm COD payment by staff
+const confirmCODPayment = async (paymentId, notes) => {
+  try {
+    const response = await apiClient.put(`/sti-services/staff/payments/${paymentId}/confirm-cod`, {
+      notes: notes || ''
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error confirming COD payment:', error);
+    throw error.response?.data || error.message;
+  }
+};
+
 // Export as a default object with all functions
 const stiService = {
   createSTIService,
@@ -730,6 +754,8 @@ const stiService = {
   getCanceledTests,
 
   retryPayment,
+  getPendingCODPayments,
+  confirmCODPayment,
 
   // New function to get services within a package
   // getServicesInPackage: async (packageId) => {

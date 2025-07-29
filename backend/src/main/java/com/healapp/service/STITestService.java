@@ -276,7 +276,7 @@ public class STITestService {
                 // Không rollback, trả về thông báo lỗi thanh toán nhưng test đã được tạo
                 String errorMessage = "Đặt lịch thành công nhưng thanh toán thất bại: " + paymentResult.getMessage();
                 if (paymentMethod == PaymentMethod.COD) {
-                    errorMessage = "Đặt lịch thành công - Thanh toán khi nhận";
+                    errorMessage = "Đặt lịch thành công - Thanh toán khi nhận (chờ xác nhận)";
                 }
 
                 log.info("Step 10: Returning booking success with payment failure");
@@ -290,7 +290,7 @@ public class STITestService {
             String message = request.isPackageBooking() ? "STI package test scheduled successfully"
                     : "STI test scheduled successfully";
             if (paymentMethod == PaymentMethod.COD) {
-                message += " - Payment on delivery";
+                message += " - Payment on delivery (pending confirmation)";
             } else if (payment.getPaymentStatus() == PaymentStatus.COMPLETED) {
                 message += " - Payment processed";
             } else if (paymentMethod == PaymentMethod.QR_CODE && payment.getPaymentStatus() == PaymentStatus.PENDING) {
@@ -710,7 +710,7 @@ public class STITestService {
 
             // COD có thể confirm mà không cần payment completed ngay
             if (payment.getPaymentMethod() == PaymentMethod.COD) {
-                return true;
+                return true; // COD payments can be confirmed regardless of status
             }
 
             // VISA và QR_CODE cần payment completed
@@ -1089,7 +1089,16 @@ public class STITestService {
                                 testId, payment.getPaymentId(), payment.getQrPaymentReference());
                     }
                 } else if (payment.getPaymentMethod() == PaymentMethod.COD) {
-                    log.info("📦 COD test cancelled - No refund needed - Test ID: {}", testId);
+                    // Chuyển COD thành REFUNDED khi hủy
+                    payment.setPaymentStatus(PaymentStatus.REFUNDED);
+                    payment.setRefundedAt(LocalDateTime.now());
+                    payment.setNotes((payment.getNotes() != null ? payment.getNotes() + "; " : "") +
+                            "COD payment refunded due to test cancellation");
+                    paymentRepository.save(payment);
+                    
+                    refundMessage = " - COD payment refunded";
+                    log.info(" COD payment refunded for cancelled test - Test ID: {}, Payment ID: {}",
+                            testId, payment.getPaymentId());
                 } else if (payment.getPaymentStatus() != PaymentStatus.COMPLETED) {
                     log.info("⏳ Payment not completed - No refund needed - Test ID: {}, Status: {}",
                             testId, payment.getPaymentStatus());
@@ -1656,7 +1665,7 @@ public class STITestService {
 
             String message = "Payment retry successful";
             if (paymentMethod == PaymentMethod.COD) {
-                message += " - Payment on delivery";
+                message += " - Payment on delivery (pending confirmation)";
             } else if (newPayment.getPaymentStatus() == PaymentStatus.COMPLETED) {
                 message += " - Payment processed";
             } else if (paymentMethod == PaymentMethod.QR_CODE

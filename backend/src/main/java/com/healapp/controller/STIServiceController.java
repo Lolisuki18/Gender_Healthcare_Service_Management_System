@@ -19,13 +19,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.healapp.dto.ApiResponse;
+import com.healapp.dto.CODPaymentConfirmationRequest;
 import com.healapp.dto.STIServiceRequest;
 import com.healapp.dto.STIServiceResponse;
 import com.healapp.dto.STITestRequest;
 import com.healapp.dto.STITestResponse;
 import com.healapp.dto.STITestStatusUpdateRequest;
 import com.healapp.dto.TestResultRequest;
+import com.healapp.model.Payment;
 import com.healapp.model.TestConclusion;
+import com.healapp.service.PaymentService;
 import com.healapp.service.STIServiceService;
 import com.healapp.service.STITestService;
 import com.healapp.service.UserService;
@@ -43,6 +46,9 @@ public class STIServiceController {
 
     @Autowired
     private STITestService stiTestService;
+
+    @Autowired
+    private PaymentService paymentService;
 
     /*
      * description: Tạo mới một dịch vụ xét nghiệm STI
@@ -359,6 +365,23 @@ public class STIServiceController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<List<STITestResponse>>> getAllSTITestsForAdmin() {
         ApiResponse<List<STITestResponse>> response = stiTestService.getAllSTITests();
+        return getResponseEntity(response);
+    }
+
+    @PutMapping("/staff/payments/{paymentId}/confirm-cod")
+    @PreAuthorize("hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<Payment>> confirmCODPayment(
+            @PathVariable Long paymentId,
+            @Valid @RequestBody CODPaymentConfirmationRequest request) {
+        Long staffId = getCurrentUserId();
+        ApiResponse<Payment> response = paymentService.manualConfirmCODPayment(paymentId, request.getNotes());
+        return getResponseEntity(response);
+    }
+
+    @GetMapping("/staff/pending-cod-payments")
+    @PreAuthorize("hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<List<Payment>>> getPendingCODPayments() {
+        ApiResponse<List<Payment>> response = paymentService.getPendingCODPayments();
         return getResponseEntity(response);
     }
 
