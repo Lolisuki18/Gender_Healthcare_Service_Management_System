@@ -17,22 +17,12 @@ public class SchedulerController {
     @Autowired
     private NotificationService notificationService;
 
-    @GetMapping("/ovulation-remind")
-    public ResponseEntity<String> sendOvulationRemind() {
+    @GetMapping("/send-remind")
+    public ResponseEntity<String> sendReminders() {
         notificationService.sendOvulationNotification();
-        return ResponseEntity.ok("Ovulation reminder sent successfully");
-    }
-
-    @GetMapping("/pregnancy-remind")
-    public ResponseEntity<String> sendPregnancyRemind() {
         notificationService.sendPregnancyProbNotification();
-        return ResponseEntity.ok("Pregnancy probability reminder sent successfully");
-    }
-    
-    @GetMapping("/pill-remind")
-    public ResponseEntity<String> sendPillRemind() {
         notificationService.sendPillReminder();
-        return ResponseEntity.ok("Pill reminder sent successfully");
+        return ResponseEntity.ok("All reminders sent successfully");
     }
 
 }
