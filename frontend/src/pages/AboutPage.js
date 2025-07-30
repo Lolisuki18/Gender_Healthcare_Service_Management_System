@@ -1240,21 +1240,7 @@ export const AboutPage = () => {
               </Box>
             </Grid>
           </Grid>
-          {/* Bản đồ */}
-          <Box mt={6} borderRadius="16px" overflow="hidden" height="400px">
-            <Box
-              component="iframe"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3918.712991690893!2d106.8097243153346!3d10.84112869226547!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3175271d1b6e7e2b%3A0x6e7b6b6b6b6b6b6b!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBGUFQgUXXhuq1uIDksIFRow6BuaCBwaOG7kSBI4buTIENow60gTWluaCwgUXXhuq1uIDksIFRow6BuaCBwaOG7kSBI4buTIENow60gTWluaCwgVmnhu4d0IE5hbQ!5e0!3m2!1svi!2s!4v1685531234567!5m2!1svi!2s"
-              width="100%"
-              height="100%"
-              frameBorder="0"
-              style={{ border: 0 }}
-              allowFullScreen=""
-              aria-hidden="false"
-              tabIndex="0"
-              title="Đại học FPT Hồ Chí Minh"
-            />
-          </Box>
+          {/* Đã xoá phần bản đồ Google Map theo yêu cầu */}
         </Container>
       </Section>
       {/* Call-to-Action Section */}

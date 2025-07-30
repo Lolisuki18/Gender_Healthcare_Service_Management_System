@@ -925,7 +925,7 @@ const OvulationPage = ({ stats }) => {
       (new Date(nextCycle.startDate) - new Date(inputCycle.startDate)) /
       (1000 * 60 * 60 * 24);
 
-    if (nextCycleLength !== actualCycleLength) {
+    if (Number(nextCycleLength) !== Number(actualCycleLength.toFixed(0))) {
       // Nếu độ dài chu kỳ không khớp, có thể cần điều chỉnh
       console.warn('Độ dài chu kỳ không khớp:', {
         nextCycleLength,
@@ -954,7 +954,7 @@ const OvulationPage = ({ stats }) => {
       (new Date(inputCycle.startDate) - new Date(lastCycle.startDate)) /
       (1000 * 60 * 60 * 24);
 
-    if (lastCycleLength !== actualCycleLength) {
+    if (Number(lastCycleLength) !== Number(actualCycleLength.toFixed(0))) {
       // Nếu độ dài chu kỳ không khớp, có thể cần điều chỉnh
       console.warn('Độ dài chu kỳ không khớp:', {
         lastCycleLength,
@@ -1684,8 +1684,8 @@ const OvulationPage = ({ stats }) => {
                         </Card>
 
                         {/* Nếu chu kỳ tiếp theo không khớp với chu kỳ đã nhập */}
-                        {((compareCycleResultWithNext !== null && compareCycleResultWithNext.nextCycleLength !== compareCycleResultWithNext.actualCycleLength)
-                         || (compareCycleResultWithLast !== null && compareCycleResultWithLast.lastCycleLength !== compareCycleResultWithLast.actualCycleLength)) && (
+                        {((compareCycleResultWithLast !== null && Math.round(compareCycleResultWithLast.lastCycleLength) !== Math.round(compareCycleResultWithLast.actualCycleLength))
+                         || (compareCycleResultWithNext !== null && Math.round(compareCycleResultWithNext.nextCycleLength) !== Math.round(compareCycleResultWithNext.actualCycleLength))) && (
                           <Card
                             sx={{
                               background: '#F5F5DC',
@@ -1728,7 +1728,7 @@ const OvulationPage = ({ stats }) => {
                                 Cảnh báo: Độ dài chu kỳ không khớp!
                               </Typography>
 
-                              {(compareCycleResultWithLast !== null && compareCycleResultWithLast.lastCycleLength !== compareCycleResultWithLast.actualCycleLength) && (
+                              {(compareCycleResultWithLast !== null && Math.round(compareCycleResultWithLast.lastCycleLength) !== Math.round(compareCycleResultWithLast.actualCycleLength)) && (
                                 <Typography
                                   sx={{
                                     color: '#f59e0b',
@@ -1743,7 +1743,7 @@ const OvulationPage = ({ stats }) => {
                                   <br />
                                 </Typography>
                               )}
-                              {(compareCycleResultWithNext !== null && compareCycleResultWithNext.nextCycleLength !== compareCycleResultWithNext.actualCycleLength) && (
+                              {(compareCycleResultWithNext !== null && Math.round(compareCycleResultWithNext.nextCycleLength) !== Math.round(compareCycleResultWithNext.actualCycleLength)) && (
                               <Typography
                                 sx={{
                                   color: '#f59e0b',

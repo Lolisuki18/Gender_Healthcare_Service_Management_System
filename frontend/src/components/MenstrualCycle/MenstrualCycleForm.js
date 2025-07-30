@@ -520,7 +520,7 @@ const MenstrualCycleForm = ({ open, onSubmit, onCancel, initialData = null, isEd
                 className={classes.textField}
                 placeholder="Chọn ngày bắt đầu"
                 inputProps={{ 
-                  max: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Chỉ cho phép chọn ngày trước hôm nay
+                  max: new Date().toISOString().split('T')[0] // Cho phép chọn đến hôm nay
                 }}
                 error={!!dateError}
                 helperText={dateError}
