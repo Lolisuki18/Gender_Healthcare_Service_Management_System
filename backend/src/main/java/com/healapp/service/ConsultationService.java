@@ -3,14 +3,16 @@ package com.healapp.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.Map;
-import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,11 +51,15 @@ public class ConsultationService {
     private EmailService emailService;
 
     private static final List<String> TIME_SLOTS = Arrays.asList("8-10", "10-12", "13-15", "15-17");
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     public ApiResponse<List<AvailableTimeSlot>> getAvailableTimeSlots(Long consultantId, LocalDate date) {
         try {
             // Thêm kiểm tra ngày quá khứ
-            if (date.isBefore(LocalDate.now())) {
+            // Sử dụng timezone Asia/Ho_Chi_Minh để tránh lỗi timezone
+            LocalDate todayInVietnam = ZonedDateTime.now(VIETNAM_ZONE).toLocalDate();
+            
+            if (date.isBefore(todayInVietnam)) {
                 return ApiResponse.error("Cannot check availability for past dates");
             }
 
@@ -154,7 +160,11 @@ public class ConsultationService {
             }
 
             // Kiểm tra thời gian không được trong quá khứ
-            if (consultationStartTime.isBefore(LocalDateTime.now())) {
+            // Sử dụng timezone Asia/Ho_Chi_Minh để tránh lỗi timezone
+            ZonedDateTime nowInVietnam = ZonedDateTime.now(VIETNAM_ZONE);
+            ZonedDateTime startTimeInVietnam = consultationStartTime.atZone(VIETNAM_ZONE);
+            
+            if (startTimeInVietnam.isBefore(nowInVietnam)) {
                 return ApiResponse.error("Không thể đặt lịch trong quá khứ. Vui lòng chọn ngày khác.");
             }
 
@@ -280,7 +290,11 @@ public class ConsultationService {
                 }
 
                 // check time, cant complete before end time
-                if (LocalDateTime.now().isBefore(consultation.getEndTime())) {
+                // Sử dụng timezone Asia/Ho_Chi_Minh để tránh lỗi timezone
+                ZonedDateTime nowInVietnam = ZonedDateTime.now(VIETNAM_ZONE);
+                ZonedDateTime endTimeInVietnam = consultation.getEndTime().atZone(VIETNAM_ZONE);
+                
+                if (nowInVietnam.isBefore(endTimeInVietnam)) {
                     return ApiResponse.error("Consultation cannot be marked as completed before its end time");
                 }
             }
