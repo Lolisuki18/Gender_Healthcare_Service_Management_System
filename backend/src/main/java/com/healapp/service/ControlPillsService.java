@@ -2,40 +2,38 @@ package com.healapp.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ControlPillsRequest;
 import com.healapp.dto.ControlPillsResponse;
 import com.healapp.dto.PillLogsRespone;
 import com.healapp.dto.PillReminderDetailsResponse;
-import com.healapp.model.UserDtls;
 import com.healapp.model.ControlPills;
 import com.healapp.model.NotificationPreference;
 import com.healapp.model.NotificationType;
 import com.healapp.model.PillLogs;
 import com.healapp.model.PillType;
+import com.healapp.model.UserDtls;
 import com.healapp.repository.ControlPillsRepository;
 import com.healapp.repository.NotificationPreferenceRepository;
 import com.healapp.repository.PillLogsRepository;
 import com.healapp.repository.UserRepository;
 
-
 @Service
 public class ControlPillsService {
    
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
     @Autowired
     private ControlPillsRepository controlPillsRepository;
 
@@ -138,9 +136,9 @@ public class ControlPillsService {
             } else {
                 // Check-in
                 log.setStatus(true);
-                log.setCheckIn(LocalDateTime.now());
+                log.setCheckIn(LocalDateTime.now(VIETNAM_ZONE));
             }
-            log.setUpdatedAt(LocalDateTime.now());
+            log.setUpdatedAt(LocalDateTime.now(VIETNAM_ZONE));
             // Không cập nhật logDate khi bỏ check-in
     
             pillLogsRepository.save(log);
@@ -243,8 +241,8 @@ public class ControlPillsService {
             }
             PillLogs log = new PillLogs();
             log.setControlPills(con);
-            log.setCreatedAt(LocalDateTime.now());
-            log.setUpdatedAt(LocalDateTime.now());
+            log.setCreatedAt(LocalDateTime.now(VIETNAM_ZONE));
+            log.setUpdatedAt(LocalDateTime.now(VIETNAM_ZONE));
             log.setStatus(false);
             log.setLogDate(logDate);
             pillLogsRepository.save(log);
@@ -254,7 +252,7 @@ public class ControlPillsService {
     // New method for daily log generation by scheduler
     @Transactional
     public void generateLogsForActivePills() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(VIETNAM_ZONE);
         List<ControlPills> activePills = controlPillsRepository.findByIsActive(true);
 
         for (ControlPills con : activePills) {

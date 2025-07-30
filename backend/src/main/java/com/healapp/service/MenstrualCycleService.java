@@ -1,13 +1,13 @@
 package com.healapp.service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -29,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class MenstrualCycleService {
+
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     @Autowired
     private MenstrualCycleRepository menstrualCycleRepository;
@@ -216,7 +218,7 @@ public class MenstrualCycleService {
                 return ApiResponse.error("Thông tin chu kỳ kinh nguyệt không hợp lệ");
             }
             LocalDate startDate = request.getStartDate();
-            if (startDate.isAfter(LocalDate.now())) {
+            if (startDate.isAfter(LocalDate.now(VIETNAM_ZONE))) {
                 return ApiResponse.error("Ngày bắt đầu chu kỳ kinh nguyệt phải là ngày trong quá khứ");
             }
             if (request.getNumberOfDays() <= 0 || request.getCycleLength() <= 0) {

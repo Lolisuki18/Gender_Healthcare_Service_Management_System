@@ -3,6 +3,7 @@ package com.healapp.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
@@ -15,26 +16,27 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.healapp.model.ControlPills;
 import com.healapp.model.MenstrualCycle;
 import com.healapp.model.Notification;
 import com.healapp.model.NotificationPreference;
 import com.healapp.model.NotificationStatus;
 import com.healapp.model.NotificationType;
+import com.healapp.model.PillLogs;
 import com.healapp.model.PregnancyProbLog;
 import com.healapp.model.UserDtls;
-import com.healapp.model.ControlPills;
-import com.healapp.model.PillLogs;
+import com.healapp.repository.ControlPillsRepository;
 import com.healapp.repository.NotificationPreferenceRepository;
 import com.healapp.repository.NotificationRepository;
+import com.healapp.repository.PillLogsRepository;
 import com.healapp.repository.PregnancyProbLogRepository;
 import com.healapp.repository.UserRepository;
-import com.healapp.repository.ControlPillsRepository;
-import com.healapp.repository.PillLogsRepository;
 
 @Service
 public class NotificationService {
 
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     @Autowired
     private EmailService emailService;
@@ -66,6 +68,11 @@ public class NotificationService {
     public void sendOvulationNotification() {
         logger.info("Starting scheduled ovulation notification task");
         
+        // Log timezone information for debugging
+        LocalTime currentTime = LocalTime.now(VIETNAM_ZONE);
+        LocalDateTime currentDateTime = LocalDateTime.now(VIETNAM_ZONE);
+        logger.info("Current time in Vietnam: {} (DateTime: {})", currentTime, currentDateTime);
+        
         // For scheduled tasks - send to all users with enabled ovulation notifications
         List<NotificationPreference> ovulationPreferences = notificationPreferenceRepository.findAll()
             .stream()
@@ -76,12 +83,22 @@ public class NotificationService {
         
         for (NotificationPreference preference : ovulationPreferences) {
             try {
-                if(preference.getRemindTime().equals(LocalTime.of(LocalTime.now().getHour(), LocalTime.now().getMinute()))) {
+                LocalTime remindTime = preference.getRemindTime();
+                
+                logger.info("Checking ovulation notification for user ID {}: current time={}, remind time={}", 
+                           preference.getUser().getId(), currentTime, remindTime);
+                
+                // Kiểm tra thời gian với độ lệch ±1 phút để tránh bỏ lỡ
+                boolean isTimeToSend = remindTime.equals(LocalTime.of(currentTime.getHour(), currentTime.getMinute())) ||
+                                     remindTime.equals(LocalTime.of(currentTime.getHour(), currentTime.getMinute() - 1)) ||
+                                     remindTime.equals(LocalTime.of(currentTime.getHour(), currentTime.getMinute() + 1));
+                
+                if(isTimeToSend) {
                     sendOvulationNotificationToUser(preference.getUser().getId());
                     logger.info("Sending ovulation notification to user ID: {}", preference.getUser().getId());
                 } else {
-                    logger.info("Skipping ovulation notification for user ID {}: Not the right time", 
-                               preference.getUser().getId());
+                    logger.info("Skipping ovulation notification for user ID {}: Not the right time (current={}, remind={})", 
+                               preference.getUser().getId(), currentTime, remindTime);
                     continue;
                 }
             } catch (Exception e) {
@@ -124,7 +141,7 @@ public class NotificationService {
             return;
         }
 
-        if(ovulationDate.minusDays(1).isEqual(LocalDate.now())) {
+        if(ovulationDate.minusDays(1).isEqual(LocalDate.now(VIETNAM_ZONE))) {
             // Nếu ngày rụng trứng là ngày mai, gửi thông báo
             logger.info("Sending ovulation notification to user ID {}: Ovulation date is tomorrow ({})", 
                        userId, ovulationDate);
@@ -137,12 +154,12 @@ public class NotificationService {
             notification.setTitle("Nhắc nhở ngày rụng trứng sắp tới");
             notification.setContent("Đây là thời điểm có khả năng thụ thai cao nhất.");
             notification.setType(NotificationType.OVULATION);
-            notification.setScheduledAt(LocalDateTime.now());
+            notification.setScheduledAt(LocalDateTime.now(VIETNAM_ZONE));
 
             try {
                 emailService.sendOvulationReminderAsync(user.getEmail(), user.getFullName(), ovulationDate);
                 notification.setStatus(NotificationStatus.SENT);
-                notification.setSentAt(LocalDateTime.now());
+                notification.setSentAt(LocalDateTime.now(VIETNAM_ZONE));
                 logger.info("Successfully sent ovulation notification email to user {} ({})", 
                         user.getFullName(), user.getEmail());
             } catch (Exception ex) {
@@ -167,6 +184,11 @@ public class NotificationService {
     public void sendPregnancyProbNotification() {
         logger.info("Starting scheduled pregnancy probability notification task");
         
+        // Log timezone information for debugging
+        LocalTime currentTime = LocalTime.now(VIETNAM_ZONE);
+        LocalDateTime currentDateTime = LocalDateTime.now(VIETNAM_ZONE);
+        logger.info("Current time in Vietnam: {} (DateTime: {})", currentTime, currentDateTime);
+        
         // For scheduled tasks - send to all users with enabled pregnancy probability notifications
         List<NotificationPreference> pregnancyPreferences = notificationPreferenceRepository.findAll()
             .stream()
@@ -177,12 +199,22 @@ public class NotificationService {
         
         for (NotificationPreference preference : pregnancyPreferences) {
             try {
-                if(preference.getRemindTime().equals(LocalTime.of(LocalTime.now().getHour(), LocalTime.now().getMinute()))) {
+                LocalTime remindTime = preference.getRemindTime();
+                
+                logger.info("Checking pregnancy probability notification for user ID {}: current time={}, remind time={}", 
+                           preference.getUser().getId(), currentTime, remindTime);
+                
+                // Kiểm tra thời gian với độ lệch ±1 phút để tránh bỏ lỡ
+                boolean isTimeToSend = remindTime.equals(LocalTime.of(currentTime.getHour(), currentTime.getMinute())) ||
+                                     remindTime.equals(LocalTime.of(currentTime.getHour(), currentTime.getMinute() - 1)) ||
+                                     remindTime.equals(LocalTime.of(currentTime.getHour(), currentTime.getMinute() + 1));
+                
+                if(isTimeToSend) {
                     logger.info("Sending pregnancy probability notification to user ID: {}", preference.getUser().getId());
                     sendPregnancyProbNotificationToUser(preference.getUser().getId());
                 } else {
-                    logger.info("Skipping pregnancy probability notification for user ID {}: Not the right time", 
-                               preference.getUser().getId());
+                    logger.info("Skipping pregnancy probability notification for user ID {}: Not the right time (current={}, remind={})", 
+                               preference.getUser().getId(), currentTime, remindTime);
                     continue;
                 }
             } catch (Exception e) {
@@ -216,7 +248,7 @@ public class NotificationService {
         noti.setTitle("Xác suất mang thai");
         noti.setContent("Thông báo xác suất mang thai");
         noti.setType(NotificationType.PREGNANCY_PROBABILITY);
-        noti.setScheduledAt(LocalDateTime.now());
+        noti.setScheduledAt(LocalDateTime.now(VIETNAM_ZONE));
 
         // Lấy chu kỳ kinh nguyệt gần nhất của người dùng
         MenstrualCycle latestCycle = menstrualCycleService.getLatestCycleBeforeToday(userId)
@@ -243,7 +275,7 @@ public class NotificationService {
             }
 
             // Tính toán
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(VIETNAM_ZONE);
             if (today == null) {
                 throw new IllegalStateException("Current date is not available");
             }
@@ -273,7 +305,7 @@ public class NotificationService {
                 );
 
                 noti.setStatus(NotificationStatus.SENT);
-                noti.setSentAt(LocalDateTime.now());
+                noti.setSentAt(LocalDateTime.now(VIETNAM_ZONE));
                 logger.info("Successfully sent pregnancy probability notification email to user {} ({})", 
                            user.getFullName(), user.getEmail());
             } else {
@@ -296,6 +328,11 @@ public class NotificationService {
     //Gửi mail cho cái nhắc uống thuốc
     public void sendPillReminder() {
         logger.info("Starting scheduled pill reminder task");
+        
+        // Log timezone information for debugging
+        LocalTime currentTime = LocalTime.now(VIETNAM_ZONE);
+        LocalDateTime currentDateTime = LocalDateTime.now(VIETNAM_ZONE);
+        logger.info("Current time in Vietnam: {} (DateTime: {})", currentTime, currentDateTime);
         List<NotificationPreference> pillReminderPreferences = notificationPreferenceRepository.findAll()
             .stream()
             .filter(pref -> pref.getType() == NotificationType.PILL_REMINDER && pref.getEnabled())
@@ -303,7 +340,24 @@ public class NotificationService {
         logger.info("Found {} users with enabled pill reminder notifications", pillReminderPreferences.size());
         for (NotificationPreference preference : pillReminderPreferences) {
             try {
-                sendPillReminderToUser(preference.getUser().getId());
+                LocalTime remindTime = preference.getRemindTime();
+                
+                logger.info("Checking pill reminder for user ID {}: current time={}, remind time={}", 
+                           preference.getUser().getId(), currentTime, remindTime);
+                
+                // Kiểm tra thời gian với độ lệch ±1 phút để tránh bỏ lỡ
+                boolean isTimeToSend = remindTime.equals(LocalTime.of(currentTime.getHour(), currentTime.getMinute())) ||
+                                     remindTime.equals(LocalTime.of(currentTime.getHour(), currentTime.getMinute() - 1)) ||
+                                     remindTime.equals(LocalTime.of(currentTime.getHour(), currentTime.getMinute() + 1));
+                
+                if(isTimeToSend) {
+                    logger.info("Sending pill reminder to user ID: {}", preference.getUser().getId());
+                    sendPillReminderToUser(preference.getUser().getId());
+                } else {
+                    logger.info("Skipping pill reminder for user ID {}: Not the right time (current={}, remind={})", 
+                               preference.getUser().getId(), currentTime, remindTime);
+                    continue;
+                }
             } catch (Exception e) {
                 logger.error("Error sending pill reminder notification to user ID {}: {}", 
                            preference.getUser().getId(), e.getMessage(), e);
@@ -343,8 +397,8 @@ public class NotificationService {
             return;
         }
 
-        LocalDate today = LocalDate.now();
-        LocalTime currentTime = LocalTime.now();
+        LocalDate today = LocalDate.now(VIETNAM_ZONE);
+        LocalTime currentTime = LocalTime.now(VIETNAM_ZONE);
 
         for (ControlPills schedule : activePillSchedules) {
             //1. Chỉ gửi đúng vào thời điểm giờ và phút trùng với remindTime
@@ -366,8 +420,8 @@ public class NotificationService {
                     newPillLog.setControlPills(schedule);
                     newPillLog.setLogDate(today);
                     newPillLog.setStatus(false); // Mặc định là bỏ lỡ, người dùng có thể check-in sau
-                    newPillLog.setCreatedAt(LocalDateTime.now()); // Đặt thời gian tạo
-                    newPillLog.setUpdatedAt(LocalDateTime.now()); // Đặt thời gian cập nhật
+                    newPillLog.setCreatedAt(LocalDateTime.now(VIETNAM_ZONE)); // Đặt thời gian tạo
+                    newPillLog.setUpdatedAt(LocalDateTime.now(VIETNAM_ZONE)); // Đặt thời gian cập nhật
                     pillLogsRepository.save(newPillLog); // Lưu nhật ký trước
 
                     // Bây giờ, gửi thông báo
@@ -376,12 +430,12 @@ public class NotificationService {
                     notification.setTitle("Nhắc nhở uống thuốc");
                     notification.setContent("Đã đến giờ uống thuốc của bạn.");
                     notification.setType(NotificationType.PILL_REMINDER);
-                    notification.setScheduledAt(LocalDateTime.now());
+                    notification.setScheduledAt(LocalDateTime.now(VIETNAM_ZONE));
 
                     try {
                         emailService.sendPillReminderAsync(user.getEmail(), user.getFullName(), schedule.getRemindTime());
                         notification.setStatus(NotificationStatus.SENT);
-                        notification.setSentAt(LocalDateTime.now());
+                        notification.setSentAt(LocalDateTime.now(VIETNAM_ZONE));
                         logger.info("Đã gửi email nhắc nhở uống thuốc thành công cho người dùng {} ({}) cho lịch trình ID {}", 
                                    user.getFullName(), user.getEmail(), schedule.getPillsId());
                     } catch (Exception ex) {
@@ -400,12 +454,12 @@ public class NotificationService {
                     notification.setTitle("Nhắc nhở uống thuốc");
                     notification.setContent("Đã đến giờ uống thuốc của bạn.");
                     notification.setType(NotificationType.PILL_REMINDER);
-                    notification.setScheduledAt(LocalDateTime.now());
+                    notification.setScheduledAt(LocalDateTime.now(VIETNAM_ZONE));
 
                     try {
                         emailService.sendPillReminderAsync(user.getEmail(), user.getFullName(), schedule.getRemindTime());
                         notification.setStatus(NotificationStatus.SENT);
-                        notification.setSentAt(LocalDateTime.now());
+                        notification.setSentAt(LocalDateTime.now(VIETNAM_ZONE));
                         logger.info("Đã gửi lại email nhắc nhở uống thuốc cho người dùng {} ({}) cho lịch trình ID {} (log tồn tại nhưng chưa check-in)", 
                                    user.getFullName(), user.getEmail(), schedule.getPillsId());
                     } catch (Exception ex) {
