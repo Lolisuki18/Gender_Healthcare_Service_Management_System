@@ -113,6 +113,7 @@ const CODPaymentManagementContent = () => {
       if (Array.isArray(dateTime)) {
         // Format: [year, month, day, hour, minute, second, nano]
         const [year, month, day, hour, minute, second] = dateTime;
+        // Backend đã lưu thời gian theo múi giờ Việt Nam (UTC+7), không cần chuyển đổi
         date = new Date(year, month - 1, day, hour, minute, second); // month - 1 vì JS month bắt đầu từ 0
       } else if (typeof dateTime === 'string') {
         // Nếu là string ISO date

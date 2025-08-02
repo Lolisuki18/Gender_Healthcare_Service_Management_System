@@ -490,7 +490,7 @@ function TestRegistrationPage() {
   const [note, setNote] = useState(''); // Ghi chú của khách hàng
   const [bookingSuccess, setBookingSuccess] = useState(false); // Trạng thái đặt lịch thành công
   const [bookingMessage, setBookingMessage] = useState(''); // Thông báo kết quả đặt lịch
-  const [paymentMethod, setPaymentMethod] = useState('cash'); // Phương thức thanh toán
+  const [paymentMethod, setPaymentMethod] = useState('COD'); // Phương thức thanh toán
   const [selectedCard, setSelectedCard] = useState(null); // ID thẻ được chọn
   const [isBooking, setIsBooking] = useState(false); // Trạng thái đang xử lý đặt lịch
   const [paymentFailed, setPaymentFailed] = useState(false); // Trạng thái thanh toán thất bại
@@ -812,8 +812,8 @@ function TestRegistrationPage() {
     setPaymentFailed(false);
     setPaymentFailedMessage('');
 
-    // Reset selected card khi đổi về cash
-    if (method === 'cash') {
+    // Reset selected card khi đổi về cash hoặc COD
+    if (method === 'cash' || method === 'COD') {
       setSelectedCard(null);
     }
   };
@@ -909,7 +909,10 @@ function TestRegistrationPage() {
 
     // Chuyển đổi payment method sang format API
     let paymentMethodApi = 'COD';
-    if (paymentMethod === 'card') paymentMethodApi = 'VISA'; // Cập nhật từ 'visa' thành 'card'
+    if (paymentMethod === 'card' || paymentMethod === 'VISA') paymentMethodApi = 'VISA';
+    if (paymentMethod === 'cash' || paymentMethod === 'COD') paymentMethodApi = 'COD';
+    
+    console.log('Payment method conversion:', { paymentMethod, paymentMethodApi });
 
     // Tạo payload gửi lên server
     const payload = {
@@ -923,7 +926,7 @@ function TestRegistrationPage() {
     if (packageId) payload.packageId = packageId;
 
     // Thêm thông tin thẻ nếu chọn thanh toán bằng thẻ
-    if (paymentMethod === 'card' && selectedCard) {
+    if ((paymentMethod === 'card' || paymentMethod === 'VISA') && selectedCard) {
       try {
         // Lấy thông tin thẻ đầy đủ từ backend để thanh toán
         const cardResponse =
