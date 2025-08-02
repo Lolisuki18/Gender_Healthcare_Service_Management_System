@@ -604,17 +604,26 @@ const MedicalHistoryDetailModal = ({
                         </Typography>
                       </Box>
                       <Chip
-                        label={
-                          record.paymentStatus === 'COMPLETED'
-                            ? 'Đã thanh toán'
-                            : 'Chưa thanh toán'
-                        }
+                        label={(() => {
+                          // Kiểm tra nhiều điều kiện để xác định trạng thái thanh toán
+                          const isCompleted = 
+                            record.payment === 'COMPLETED' ||
+                            record.paymentCompleted === true ||
+                            (record.paymentMethod === 'COD' && record.codpayment === true) ||
+                            (record.paymentMethod === 'VISA' && record.stripePayment === true);
+                          
+                          return isCompleted ? 'Đã thanh toán' : 'Chưa thanh toán';
+                        })()}
                         size="small"
-                        color={
-                          record.paymentStatus === 'COMPLETED'
-                            ? 'success'
-                            : 'warning'
-                        }
+                        color={(() => {
+                          const isCompleted = 
+                            record.payment === 'COMPLETED' ||
+                            record.paymentCompleted === true ||
+                            (record.paymentMethod === 'COD' && record.codpayment === true) ||
+                            (record.paymentMethod === 'VISA' && record.stripePayment === true);
+                          
+                          return isCompleted ? 'success' : 'warning';
+                        })()}
                         sx={{
                           ml: 3.5,
                           fontWeight: 600,
