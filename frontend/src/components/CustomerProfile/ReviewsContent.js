@@ -591,9 +591,10 @@ const ReviewsContent = () => {
           throw new Error("ID đánh giá không hợp lệ. Vui lòng thử lại với một đánh giá khác.");
         }
         
-        await reviewService.updateReview(editingReviewId, reviewData);
+        // Truyền thêm tham số suppressNotification để ngăn thông báo trùng lặp ở nơi khác
+        await reviewService.updateReview(editingReviewId, reviewData, { suppressNotification: true });
         console.log('✅ Review updated successfully');
-        notify.success('Thành công', 'Đánh giá đã được cập nhật thành công!');
+        // Thông báo thành công sẽ được hiển thị ở phần chung phía dưới
       } else {
         // ...existing code...
         

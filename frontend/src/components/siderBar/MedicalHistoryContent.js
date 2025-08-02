@@ -246,9 +246,12 @@ const MedicalHistoryContent = () => {
       };
       if (isEditMode && editingReviewId) {
         await import('../../services/reviewService').then((m) =>
-          m.default.updateReview(editingReviewId, reviewData)
+          m.default.updateReview(editingReviewId, reviewData, { suppressNotification: true })
         );
-        toast.success('Đánh giá đã được cập nhật thành công!');
+        // Chỉ hiển thị thông báo nếu không có yêu cầu suppress từ component khác
+        if (!reviewData.suppressNotification) {
+          toast.success('Đánh giá đã được cập nhật thành công!');
+        }
       } else {
         if (reviewingRecord.packageId) {
           // Nếu có packageId thì là đánh giá gói

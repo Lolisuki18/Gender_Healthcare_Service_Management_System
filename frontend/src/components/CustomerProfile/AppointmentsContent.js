@@ -444,9 +444,12 @@ const AppointmentsContent = () => {
 
       // Kiểm tra nếu là chỉnh sửa hoặc tạo mới
       if (isEditMode && editingReviewId) {
-        // Gọi API cập nhật đánh giá
-        await reviewService.updateReview(editingReviewId, reviewData);
-        toast.success('Đánh giá đã được cập nhật thành công!');
+        // Gọi API cập nhật đánh giá - thêm suppressNotification để tránh thông báo trùng lặp
+        await reviewService.updateReview(editingReviewId, reviewData, { suppressNotification: true });
+        // Kiểm tra xem có yêu cầu tắt thông báo không
+        if (!reviewData.suppressNotification) {
+          toast.success('Đánh giá đã được cập nhật thành công!');
+        }
       } else {
         // Gọi API tạo mới đánh giá
         await reviewService.createConsultantReview(
