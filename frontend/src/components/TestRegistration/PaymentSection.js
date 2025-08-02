@@ -59,7 +59,7 @@ const PaymentSection = ({
 
   // Auto-select thẻ mặc định khi có
   useEffect(() => {
-    if (paymentMethods.length > 0 && selectedPaymentMethod === 'card' && !selectedCard) {
+    if (paymentMethods.length > 0 && (selectedPaymentMethod === 'card' || selectedPaymentMethod === 'VISA') && !selectedCard) {
       const defaultCard = paymentMethods.find(card => card.isDefault);
       if (defaultCard) {
         onCardChange(defaultCard.paymentInfoId, paymentMethods);
@@ -91,10 +91,10 @@ const PaymentSection = ({
   const handlePaymentMethodChange = (event) => {
     const method = event.target.value;
     onPaymentMethodChange(method);
-    // Reset selected card khi đổi sang cash
-    if (method === 'cash') {
+    // Reset selected card khi đổi sang cash/COD
+    if (method === 'cash' || method === 'COD') {
       onCardChange(null, paymentMethods);
-    } else if (method === 'card' && paymentMethods.length > 0) {
+    } else if ((method === 'card' || method === 'VISA') && paymentMethods.length > 0) {
       // Auto-select thẻ mặc định hoặc thẻ đầu tiên
       const defaultCard = paymentMethods.find(card => card.isDefault);
       const cardToSelect = defaultCard || paymentMethods[0];
@@ -140,8 +140,8 @@ const PaymentSection = ({
         setEditingCard(null);
         await loadPaymentMethods(); // Reload danh sách
         
-        // Auto-select thẻ mới thêm nếu đang ở mode card
-        if (!editingCard && selectedPaymentMethod === 'card') {
+        // Auto-select thẻ mới thêm nếu đang ở mode card/VISA
+        if (!editingCard && (selectedPaymentMethod === 'card' || selectedPaymentMethod === 'VISA')) {
           const newCard = response.data.data;
           onCardChange(newCard.paymentInfoId, paymentMethods);
         }
@@ -212,14 +212,14 @@ const PaymentSection = ({
           >
             {/* Thanh toán tiền mặt */}
             <FormControlLabel
-              value="cash"
+              value="COD"
               control={<Radio />}
               label={
                 <Box display="flex" alignItems="center">
                   <BankIcon sx={{ mr: 1, color: 'success.main' }} />
                   <Box>
                     <Typography variant="body1" fontWeight={500}>
-                      Thanh toán tiền mặt 
+                      Thanh toán tiền mặt (COD)
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Thanh toán khi nhận dịch vụ
@@ -231,7 +231,7 @@ const PaymentSection = ({
 
             {/* Thanh toán thẻ */}
             <FormControlLabel
-              value="card"
+              value="VISA"
               control={<Radio />}
               label={
                 <Box display="flex" alignItems="center" justifyContent="space-between" width="100%">
@@ -280,7 +280,7 @@ const PaymentSection = ({
         )}
 
         {/* Danh sách thẻ khi chọn thanh toán bằng thẻ */}
-        {selectedPaymentMethod === 'card' && (
+        {(selectedPaymentMethod === 'card' || selectedPaymentMethod === 'VISA') && (
           <Box mt={2} ml={4}>
             {paymentMethods.length === 0 ? (
               <Alert severity="info">
@@ -377,7 +377,7 @@ const PaymentSection = ({
               <Typography variant="subtitle2" gutterBottom>
                 Phương thức thanh toán đã chọn:
               </Typography>
-              {selectedPaymentMethod === 'cash' ? (
+              {(selectedPaymentMethod === 'cash' || selectedPaymentMethod === 'COD') ? (
                 <Box display="flex" alignItems="center">
                   <BankIcon sx={{ mr: 1, color: 'success.main' }} />
                   <Typography variant="body2">
