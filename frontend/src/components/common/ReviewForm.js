@@ -209,7 +209,7 @@ const ReviewForm = ({
                       Ngày đánh giá: {displayInfo.reviewedDate}
                     </Typography>
                   )}
-                  {/* Thời gian và lý do tư vấn giữ nguyên nếu có */}
+                  {/* Thời gian và lý do tư vấn giữ nguyên nếu có
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
                     {review.startTime && review.endTime && (
                       <Typography variant="caption" sx={{ color: '#6B7280' }}>
@@ -221,7 +221,7 @@ const ReviewForm = ({
                         Lý do tư vấn: {review.reason}
                       </Typography>
                     )}
-                  </Box>
+                  </Box> */}
                 </Box>
               </Box>
             </Box>

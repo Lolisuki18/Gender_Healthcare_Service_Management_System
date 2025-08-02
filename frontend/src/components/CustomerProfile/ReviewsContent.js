@@ -334,7 +334,7 @@ const ReviewsContent = () => {
   // Apply service filter with memoized services
   const filteredServices = allReviewableServices.filter(service => {
     if (serviceFilter === 'all') return true;
-    if (serviceFilter === 'sti') return service.type === 'STI_SERVICE';
+    if (serviceFilter === 'sti') return service.type === 'STI_SERVICE' || service.type === 'STI_PACKAGE';
     if (serviceFilter === 'consultation') return service.type === 'CONSULTANT';
     return true;
   });
@@ -362,7 +362,7 @@ const ReviewsContent = () => {
   const filteredMyRatings = useMemo(() => {
     return myRatings.filter(rating => {
       if (serviceFilter === 'all') return isWithinDateRange(rating);
-      if (serviceFilter === 'sti') return (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI') && isWithinDateRange(rating);
+      if (serviceFilter === 'sti') return (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI' || rating.targetType === 'STI_PACKAGE') && isWithinDateRange(rating);
       if (serviceFilter === 'consultation') return (rating.targetType === 'CONSULTANT' || rating.serviceType === 'CONSULTATION') && isWithinDateRange(rating);
       return isWithinDateRange(rating);
     });
@@ -374,13 +374,13 @@ const ReviewsContent = () => {
   
   // Add completed reviews (từ API đã filter theo user)
   filteredMyRatings.forEach(rating => {
-    if (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI') {
-      // Sử dụng targetId hoặc serviceId làm unique identifier
-      const identifier = rating.targetId || rating.serviceId || `rating_${rating.id}`;
+    if (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI' || rating.targetType === 'STI_PACKAGE') {
+      // Sử dụng stiTestId làm unique identifier cho đánh giá đã hoàn thành (cả STI thường và gói)
+      const identifier = rating.stiTestId || `rating_${rating.id}`;
       uniqueSTIServices.add(identifier);
     } else if (rating.targetType === 'CONSULTANT' || rating.serviceType === 'CONSULTATION') {
-      // Sử dụng targetId hoặc consultantId + consultationId làm unique identifier
-      const identifier = rating.targetId || `consultant_${rating.consultantId}_${rating.consultationId || 'unknown'}` || `rating_${rating.id}`;
+      // Sử dụng consultationId làm unique identifier cho đánh giá tư vấn đã hoàn thành
+      const identifier = rating.consultationId || `rating_${rating.id}`;
       uniqueConsultationServices.add(identifier);
     }
   });
@@ -401,9 +401,10 @@ const ReviewsContent = () => {
         uniqueSTIServices.add(serviceTestId);
       }
     }else if (service.type === 'STI_PACKAGE' && service.status === 'pending') {
-        // Thêm từng test thuộc gói
-        const key = `${service.packageId}_${service.testId}`;
-        uniqueSTIServices.add(key);
+        // Thêm từng test thuộc gói sử dụng testId
+        if (service.testId) {
+          uniqueSTIServices.add(service.testId);
+        }
     } else if (service.type === 'CONSULTANT' && service.status === 'pending') {
       // So sánh bằng consultationId
       const consultationIdentifier = service.consultationId;
@@ -414,8 +415,7 @@ const ReviewsContent = () => {
         )
       );
       if (!hasReview && consultationIdentifier) {
-        const identifier = `consultant_${service.consultantId}_${consultationIdentifier}`;
-        uniqueConsultationServices.add(identifier);
+        uniqueConsultationServices.add(consultationIdentifier);
       }
     }
   });
@@ -429,7 +429,7 @@ const ReviewsContent = () => {
     if (service.type === 'STI_SERVICE') {
       // So sánh với tất cả review đã có bằng stiTestId hoặc testId
       return !filteredMyRatings.some(rating =>
-        (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI') &&
+        (rating.targetType === 'STI_SERVICE' || rating.serviceType === 'STI' || rating.targetType === 'STI_PACKAGE') &&
         (
           (rating.stiTestId && String(rating.stiTestId) === String(service.testId)) ||
           (rating.testId && String(rating.testId) === String(service.testId))
@@ -944,7 +944,7 @@ const ReviewsContent = () => {
                       (ID: {review.consultationId || review.targetId || 'N/A'})
                     </Typography>
                   )} */}
-                  {review.targetType === 'STI_SERVICE' && (
+                  {(review.targetType === 'STI_SERVICE' || review.targetType === 'STI_PACKAGE') && (
                     <Chip
                       icon={<ScienceIcon sx={{ fontSize: '12px !important' }} />}
                       label="STI"
@@ -1781,7 +1781,7 @@ const ReviewsContent = () => {
             />
           </Tabs>
         </Box>
-        {/* Chip thống kê mới nằm cùng hàng với Tabs */}
+        {/* Chip thống kê mới nằm cùng hàng với Tabs
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Chip
             icon={<ScienceIcon sx={{ fontSize: '16px !important' }} />}
@@ -1807,7 +1807,7 @@ const ReviewsContent = () => {
               '& .MuiChip-icon': { color: '#4CAF50' }
             }}
           />
-        </Box>
+        </Box> */}
       </Box>
 
       {/* Loading State */}
