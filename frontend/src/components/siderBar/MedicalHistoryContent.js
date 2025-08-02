@@ -91,6 +91,7 @@ import ReviewForm from '../common/ReviewForm';
 import MedicalHistoryDetailModal from '../modals/MedicalHistoryDetailModal';
 import { notify } from '@/utils/notify';
 import ServiceDetailDialog from '../TestRegistration/ServiceDetailDialog';
+import reviewService from '../../services/reviewService';
 import {
   getSTIServiceById,
   getSTIPackageById,
@@ -162,9 +163,7 @@ const MedicalHistoryContent = () => {
       setIsLoadingRatings(true);
       try {
         // Lấy tối đa 1000 đánh giá, nếu nhiều hơn thì cần phân trang
-        const data = await import('../../services/reviewService').then((m) =>
-          m.default.getMyReviews(0, 1000)
-        );
+        const data = await reviewService.getMyReviews(0, 1000);
         setMyRatings(data?.content || data?.data || data || []);
       } catch (err) {
         setMyRatings([]);
@@ -245,9 +244,7 @@ const MedicalHistoryContent = () => {
         packageId: reviewingRecord.packageId,
       };
       if (isEditMode && editingReviewId) {
-        await import('../../services/reviewService').then((m) =>
-          m.default.updateReview(editingReviewId, reviewData, { suppressNotification: true })
-        );
+        await reviewService.updateReview(editingReviewId, reviewData, { suppressNotification: true });
         // Chỉ hiển thị thông báo nếu không có yêu cầu suppress từ component khác
         if (!reviewData.suppressNotification) {
           toast.success('Đánh giá đã được cập nhật thành công!');
@@ -255,22 +252,16 @@ const MedicalHistoryContent = () => {
       } else {
         if (reviewingRecord.packageId) {
           // Nếu có packageId thì là đánh giá gói
-          await import('../../services/reviewService').then((m) =>
-            m.default.createSTIPackageReview(reviewingRecord.packageId, reviewData)
-          );
+          await reviewService.createSTIPackageReview(reviewingRecord.packageId, reviewData);
         } else {
           // Nếu không có packageId thì là dịch vụ lẻ
-          await import('../../services/reviewService').then((m) =>
-            m.default.createSTIServiceReview(reviewingRecord.serviceId || reviewingRecord.testId, reviewData)
-          );
+          await reviewService.createSTIServiceReview(reviewingRecord.serviceId || reviewingRecord.testId, reviewData);
         }
         toast.success('Đánh giá đã được gửi thành công!');
       }
       handleCloseReviewDialog();
       // Reload lại đánh giá
-      const data = await import('../../services/reviewService').then((m) =>
-        m.default.getMyReviews(0, 1000)
-      );
+      const data = await reviewService.getMyReviews(0, 1000);
       setMyRatings(data?.content || data?.data || data || []);
     } catch (err) {
       toast.error('Lỗi khi gửi đánh giá: ' + (err.message || ''));
