@@ -136,7 +136,7 @@ public class RatingService {
     }
 
     /**
-     * Cập nhật rating (trong 24h)
+     * Cập nhật rating
      */
     @Transactional
     public ApiResponse<RatingResponse> updateRating(Long userId, Long ratingId, UpdateRatingRequest request) {
@@ -153,12 +153,7 @@ public class RatingService {
                 return ApiResponse.error("You can only update your own ratings");
             }
 
-            // Kiểm tra thời gian (24h)
-            if (rating.getCreatedAt().isBefore(LocalDateTime.now().minusHours(24))) {
-                return ApiResponse.error("You can only update ratings within 24 hours of creation");
-            }
-
-            // Cập nhật
+            // Cập nhật rating
             rating.setRating(request.getRating());
             rating.setComment(request.getComment());
             rating.setUpdatedAt(LocalDateTime.now());
@@ -178,7 +173,7 @@ public class RatingService {
     }
 
     /**
-     * Xóa rating (user trong 24h hoặc staff/admin bất kỳ lúc nào)
+     * Xóa rating
      */
     @Transactional
     public ApiResponse<String> deleteRating(Long userId, Long ratingId) {
@@ -204,15 +199,9 @@ public class RatingService {
             boolean isStaffOrAdmin = "STAFF".equals(userRole) || "ADMIN".equals(userRole);
 
             if (!isOwner && !isStaffOrAdmin) {
-                return ApiResponse.error("You can only delete your own ratings");
+                return ApiResponse.error("You can only delete your own ratings" );
             }
 
-            // Nếu là owner, kiểm tra thời gian (24h)
-            if (isOwner && !isStaffOrAdmin) {
-                if (rating.getCreatedAt().isBefore(LocalDateTime.now().minusHours(24))) {
-                    return ApiResponse.error("You can only delete ratings within 24 hours of creation");
-                }
-            }
             // Staff và Admin có thể xóa bất kỳ lúc nào
 
             // Soft delete
@@ -1051,8 +1040,8 @@ public class RatingService {
         response.setCreatedAt(rating.getCreatedAt());
         response.setUpdatedAt(rating.getUpdatedAt());
 
-        // Kiểm tra có thể edit không (trong 24h)
-        boolean canEdit = rating.getCreatedAt().isAfter(LocalDateTime.now().minusHours(24));
+        // Bỏ giới hạn 24h - User có thể edit rating bất kỳ lúc nào
+        boolean canEdit = true;
         response.setCanEdit(canEdit);
 
         return response;
