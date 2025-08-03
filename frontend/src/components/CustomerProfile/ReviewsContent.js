@@ -846,9 +846,9 @@ const ReviewsContent = () => {
     }
   };
 
-  // Hàm kiểm tra còn trong thời gian cho phép chỉnh sửa (ví dụ: 7 ngày)
-  // Cho phép chỉnh sửa nếu vẫn cùng ngày (theo local time) hoặc chưa quá 24h
-  // Sử dụng updatedAt (nếu có), nếu không thì dùng createdAt. Hỗ trợ cả kiểu mảng [yyyy,mm,dd,hh,mm,ss,ms]
+  // Hàm chuyển đổi định dạng ngày API thành đối tượng Date
+  // Giữ lại hàm này vì có thể sẽ cần dùng trong tương lai, hoặc đang được dùng ở nơi khác
+  // Hỗ trợ cả kiểu mảng [yyyy,mm,dd,hh,mm,ss,ms]
   const getApiDate = (dateField) => {
     if (!dateField) return null;
     if (Array.isArray(dateField) && dateField.length >= 6) {
@@ -859,23 +859,16 @@ const ReviewsContent = () => {
     return new Date(dateField);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const isEditAllowed = (review) => {
-    // Chỉ dùng ngày tạo (createdAt)
-    const baseDate = getApiDate(review.createdAt);
-    if (!baseDate) return false;
-    const now = new Date();
-    // So sánh theo ngày tháng năm local
-    if (
-      baseDate.getFullYear() === now.getFullYear() &&
-      baseDate.getMonth() === now.getMonth() &&
-      baseDate.getDate() === now.getDate()
-    ) {
-      return true;
-    }
-    // Nếu khác ngày, vẫn cho phép nếu chưa quá 24h thực tế
-    const diffMs = now - baseDate;
-    const diffHours = diffMs / (1000 * 60 * 60);
-    return diffHours <= 24;
+    // Luôn cho phép chỉnh sửa đánh giá bất kỳ lúc nào
+    return true;
+    // const baseDate = getApiDate(review.createdAt);
+    // if (!baseDate) return false;
+    // const now = new Date();
+    // const diffMs = now - baseDate;
+    // const diffHours = diffMs / (1000 * 60 * 60);
+    // return diffHours <= 24;
   };
 
   const renderCompletedReview = (review, uniqueKey) => (
@@ -1215,8 +1208,8 @@ const ReviewsContent = () => {
               {/* Luôn hiển thị nút chỉnh sửa, nhưng disable nếu quá 24h */}
               <IconButton
                 size="small"
-                onClick={() => isEditAllowed(review) && handleEditReview(review)}
-                disabled={!isEditAllowed(review)}
+                onClick={() => handleEditReview(review)} 
+                // disabled={!isEditAllowed(review)} 
                 sx={{
                   color: '#4A90E2',
                   background: 'rgba(74, 144, 226, 0.1)',
@@ -1728,7 +1721,7 @@ const ReviewsContent = () => {
                   <StarIcon fontSize="small" />
                   TẤT CẢ
                   <Chip
-                    label={allReviews.length}
+                    label={filteredAllReviews.length}
                     size="small"
                     sx={{
                       height: 20,
@@ -1747,7 +1740,7 @@ const ReviewsContent = () => {
                   <CheckCircleIcon fontSize="small" />
                   ĐÃ ĐÁNH GIÁ
                   <Chip
-                    label={completedReviews.length}
+                    label={filteredCompletedReviews.length}
                     size="small"
                     sx={{
                       height: 20,
@@ -1766,7 +1759,7 @@ const ReviewsContent = () => {
                   <ScheduleIcon fontSize="small" />
                   CHƯA ĐÁNH GIÁ
                   <Chip
-                    label={pendingReviews.length}
+                    label={filteredPendingReviews.length}
                     size="small"
                     sx={{
                       height: 20,
@@ -1845,10 +1838,10 @@ const ReviewsContent = () => {
                 </Typography>
               </Box>
             )}
-            {allReviews.length > REVIEWS_PER_PAGE && (
+            {filteredAllReviews.length > REVIEWS_PER_PAGE && (
               <Box display="flex" justifyContent="center" mt={2}>
                 <Pagination
-                  count={Math.ceil(allReviews.length / REVIEWS_PER_PAGE)}
+                  count={Math.ceil(filteredAllReviews.length / REVIEWS_PER_PAGE)}
                   page={page}
                   onChange={(e, value) => setPage(value)}
                   color="primary"
@@ -1877,10 +1870,10 @@ const ReviewsContent = () => {
                 </Typography>
               </Box>
             )}
-            {completedReviews.length > REVIEWS_PER_PAGE && (
+            {filteredCompletedReviews.length > REVIEWS_PER_PAGE && (
               <Box display="flex" justifyContent="center" mt={2}>
                 <Pagination
-                  count={Math.ceil(completedReviews.length / REVIEWS_PER_PAGE)}
+                  count={Math.ceil(filteredCompletedReviews.length / REVIEWS_PER_PAGE)}
                   page={page}
                   onChange={(e, value) => setPage(value)}
                   color="primary"
@@ -1909,10 +1902,10 @@ const ReviewsContent = () => {
                 </Typography>
               </Box>
             )}
-            {pendingReviews.length > REVIEWS_PER_PAGE && (
+            {filteredPendingReviews.length > REVIEWS_PER_PAGE && (
               <Box display="flex" justifyContent="center" mt={2}>
                 <Pagination
-                  count={Math.ceil(pendingReviews.length / REVIEWS_PER_PAGE)}
+                  count={Math.ceil(filteredPendingReviews.length / REVIEWS_PER_PAGE)}
                   page={page}
                   onChange={(e, value) => setPage(value)}
                   color="primary"

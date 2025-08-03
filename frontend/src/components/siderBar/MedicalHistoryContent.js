@@ -1442,7 +1442,10 @@ const MedicalHistoryContent = () => {
                                   color="success"
                                   size="medium"
                                   onClick={() => {
-                                    setReviewingRecord(record);
+                                    setReviewingRecord({
+                                      ...record,
+                                      createdAt: foundReview.createdAt
+                                    });
                                     setRating(foundReview.rating || 0);
                                     setFeedback(foundReview.comment || '');
                                     setIsEditMode(true);
@@ -1490,7 +1493,10 @@ const MedicalHistoryContent = () => {
                                   color="primary"
                                   size="medium"
                                   onClick={() => {
-                                    setReviewingRecord(record);
+                                    setReviewingRecord({
+                                      ...record,
+                                      createdAt: new Date().toISOString() // Đối với đánh giá mới, sử dụng ngày hiện tại
+                                    });
                                     setRating(0);
                                     setFeedback('');
                                     setIsEditMode(false);

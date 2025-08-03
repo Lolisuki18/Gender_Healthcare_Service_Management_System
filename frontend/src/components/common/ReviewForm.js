@@ -105,8 +105,8 @@ const ReviewForm = ({
     }
     // Dòng 2: tên khách hàng (ưu tiên customerName)
     let customerName = review?.customerName || review?.userFullName || review?.maskedUserName || '';
-    // Dòng 3: ngày đánh giá
-    let reviewedDateRaw = review?.reviewedDate || review?.createdAt || review?.date;
+    // Dòng 3: ngày đánh giá - Luôn lấy từ createdAt của API
+    let reviewedDateRaw = review?.createdAt;
     let reviewedDate = reviewedDateRaw ? convertApiDateToDate(reviewedDateRaw).toLocaleDateString('vi-VN') : '';
     let avatarChar = (mainName || customerName || 'N')[0];
     return { mainName, customerName, reviewedDate, avatarChar, isConsultant };
