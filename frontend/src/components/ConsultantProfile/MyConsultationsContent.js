@@ -1,13 +1,3 @@
-/**
- * MyConsultationsContent.js - Component để hiển thị và quản lý lịch tư vấn của chuyên gia
- *
- * Features:
- * - Xem lịch tư vấn theo ngày, tuần, tháng
- * - Quản lý trạng thái lịch tư vấn
- * - Chi tiết lịch tư vấn
- * - Thay đổi trạng thái lịch tư vấn
- */
-
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -18,8 +8,6 @@ import {
   CardContent,
   Button,
   IconButton,
-  Menu,
-  MenuItem,
   Dialog,
   DialogActions,
   DialogContent,
@@ -31,7 +19,6 @@ import {
   Avatar,
   CircularProgress,
   Alert,
-  Divider,
   Table,
   TableHead,
   TableBody,
@@ -44,11 +31,9 @@ import {
   Today as TodayIcon,
   CalendarMonth as CalendarMonthIcon,
   CalendarViewWeek as CalendarViewWeekIcon,
-  MoreVert as MoreVertIcon,
   Check as CheckIcon,
   Close as CloseIcon,
   Videocam as VideocamIcon,
-  Chat as ChatIcon,
   Event as EventIcon,
   EventAvailable as EventAvailableIcon,
   PendingActions as PendingActionsIcon,
@@ -105,6 +90,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   },
 }));
 
+// Gradient background for the main container
 const GradientBackground = styled(Box)(({ theme }) => ({
   minHeight: '100vh',
   background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
@@ -125,6 +111,7 @@ const GradientBackground = styled(Box)(({ theme }) => ({
   },
 }));
 
+// MedicalCard styled component
 const MedicalCard = styled(Card)(({ theme, status }) => ({
   background: 'linear-gradient(145deg, #ffffff 0%, #f8fafb 100%)',
   borderRadius: '16px',
@@ -155,6 +142,7 @@ const MedicalCard = styled(Card)(({ theme, status }) => ({
   },
 }));
 
+// StatusChip styled component
 const StatusChip = styled(Chip)(({ theme, status }) => ({
   fontWeight: 600,
   fontSize: '0.75rem',
@@ -184,6 +172,7 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
   }),
 }));
 
+// MedicalButton styled component
 const MedicalButton = styled(Button)(({ theme, variant = 'contained' }) => ({
   borderRadius: '12px',
   textTransform: 'none',
@@ -208,6 +197,7 @@ const MedicalButton = styled(Button)(({ theme, variant = 'contained' }) => ({
   }),
 }));
 
+// MedicalTabs styled component
 const MedicalTabs = styled(Tabs)(({ theme }) => ({
   '& .MuiTabs-indicator': {
     background: 'linear-gradient(45deg, #4A90E2, #1ABC9C)',
@@ -223,550 +213,6 @@ const MedicalTabs = styled(Tabs)(({ theme }) => ({
     },
   },
 }));
-
-// Component để hiển thị slot thời gian
-const TimeSlot = ({
-  slot,
-  onViewDetails,
-  onUpdateConsultationStatus,
-  updateStatus,
-}) => {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const open = Boolean(anchorEl);
-
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleViewDetails = () => {
-    handleClose();
-    onViewDetails(slot);
-  };
-
-  const consultationId = slot.consultationId || slot.id;
-
-  const handleUpdateStatusClick = (status) => {
-    handleClose();
-    if (typeof onUpdateConsultationStatus !== 'function') {
-      console.warn(
-        'onUpdateConsultationStatus prop is not a function!',
-        onUpdateConsultationStatus
-      );
-      return;
-    }
-    if (typeof consultationId !== 'number' || typeof status !== 'string') {
-      console.warn(
-        'handleUpdateStatusClick: consultationId or status is invalid',
-        consultationId,
-        status
-      );
-      return;
-    }
-    onUpdateConsultationStatus(consultationId, status);
-  };
-
-  // Hàm lấy icon theo phương thức tư vấn
-  const getConsultationTypeIcon = (type) => {
-    switch (type) {
-      case 'video':
-        return <VideocamIcon fontSize="small" />;
-      case 'chat':
-        return <ChatIcon fontSize="small" />;
-      default:
-        return <EventIcon fontSize="small" />;
-    }
-  };
-
-  // Hàm lấy chip status
-  const getStatusChip = (status) => {
-    switch (status) {
-      case 'PENDING':
-        return (
-          <StatusChip
-            label={STATUS_TEXT[status]}
-            size="small"
-            status={status}
-            icon={<PendingActionsIcon fontSize="small" />}
-          />
-        );
-      case 'CONFIRMED':
-        return (
-          <StatusChip
-            label={STATUS_TEXT[status]}
-            size="small"
-            status={status}
-            icon={<EventAvailableIcon fontSize="small" />}
-          />
-        );
-      case 'CANCELED':
-        return (
-          <StatusChip
-            label={STATUS_TEXT[status]}
-            size="small"
-            status={status}
-            icon={<CloseIcon fontSize="small" />}
-          />
-        );
-      case 'COMPLETED':
-        return (
-          <StatusChip
-            label={STATUS_TEXT[status]}
-            size="small"
-            status={status}
-            icon={<CheckIcon fontSize="small" />}
-          />
-        );
-      default:
-        return (
-          <Chip
-            label="Không xác định"
-            size="small"
-            sx={{
-              backgroundColor: '#F5F5F5',
-              color: '#757575',
-              fontWeight: 500,
-              borderRadius: '8px',
-              height: '28px',
-              border: '1px solid #E0E0E0',
-            }}
-          />
-        );
-    }
-  };
-
-  return (
-    <MedicalCard
-      variant="outlined"
-      sx={{
-        mb: 3,
-        position: 'relative',
-        transition: 'all 0.3s ease',
-      }}
-      status={slot.status}
-    >
-      <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
-        <Grid container alignItems="flex-start" spacing={3}>
-          {/* Cột 1: Thông tin khách hàng */}
-          <Grid item xs={12} md={2.5}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Avatar
-                alt={slot.customerName}
-                src={slot.customerAvatar}
-                sx={{
-                  width: 50,
-                  height: 50,
-                  mr: 2,
-                  border: '2px solid rgba(74, 144, 226, 0.2)',
-                  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)',
-                }}
-              />
-              <Box>
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    fontWeight: 600,
-                    color: '#2c3e50',
-                    mb: 0.5,
-                  }}
-                >
-                  {slot.customerName}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    fontSize: '0.875rem',
-                  }}
-                >
-                  {slot.customerEmail}
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          {/* Cột 2: Thời gian */}
-          <Grid item xs={12} md={2}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    fontWeight: 600,
-                    color: '#2c3e50',
-                    mb: 0.5,
-                  }}
-                >
-                  {Array.isArray(slot.startTime)
-                    ? formatDateTimeFromArray(slot.startTime)
-                    : formatDateTime(slot.startTime)}{' '}
-                  -{' '}
-                  {Array.isArray(slot.endTime)
-                    ? formatDateTimeFromArray(slot.endTime)
-                    : formatDateTime(slot.endTime)}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    fontSize: '0.875rem',
-                  }}
-                >
-                  {Array.isArray(slot.date)
-                    ? formatDateTimeFromArray(slot.date)
-                    : formatDateDisplay(slot.date)}
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          {/* Cột 3: Lý do tư vấn và phương thức */}
-          <Grid item xs={12} md={3.5}>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 2,
-                flexDirection: 'column',
-              }}
-            >
-              {/* Status và Type chips */}
-              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                <Chip
-                  label={
-                    slot.type === 'video'
-                      ? 'Video'
-                      : slot.type === 'chat'
-                        ? 'Chat'
-                        : 'Trực tiếp'
-                  }
-                  size="small"
-                  sx={{
-                    backgroundColor: '#F0F7FF',
-                    color: '#1976D2',
-                    fontWeight: 500,
-                    fontSize: '0.75rem',
-                    height: '28px',
-                    border: '1px solid #BBDEFB',
-                    borderRadius: '8px',
-                    '& .MuiChip-icon': {
-                      color: '#1976D2',
-                    },
-                  }}
-                  icon={getConsultationTypeIcon(slot.type)}
-                />
-                {getStatusChip(slot.status)}
-              </Box>
-
-              {/* Lý do tư vấn */}
-              <Box sx={{ width: '100%' }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    fontSize: '0.8rem',
-                    fontWeight: 500,
-                    mb: 0.5,
-                  }}
-                >
-                  {slot.status === 'CANCELED'
-                    ? slot.notes
-                      ? 'Lý do chuyên gia huỷ:'
-                      : slot.reason
-                        ? 'Lý do khách hàng huỷ:'
-                        : 'Lý do huỷ:'
-                    : 'Lý do tư vấn:'}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: '#2c3e50',
-                    fontSize: '0.85rem',
-                    lineHeight: 1.4,
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {slot.status === 'CANCELED'
-                    ? slot.notes
-                      ? slot.notes
-                      : slot.reason
-                        ? slot.reason
-                        : 'Không có lý do huỷ'
-                    : slot.reason || 'Không có lý do tư vấn'}
-                </Typography>
-              </Box>
-
-              {/* Thông tin bổ sung */}
-              <Box sx={{ width: '100%' }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    fontSize: '0.75rem',
-                    mb: 0.5,
-                  }}
-                >
-                  Thời gian tạo:{' '}
-                  {Array.isArray(slot.createdAt)
-                    ? formatDateTimeFromArray(slot.createdAt)
-                    : formatDateDisplay(slot.createdAt)}
-                </Typography>
-                {slot.customerPhone && (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'text.secondary',
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    SĐT: {slot.customerPhone}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          </Grid>
-
-          {/* Cột 4: Actions và Meet Link */}
-          <Grid
-            item
-            xs={12}
-            md={4}
-            sx={{
-              textAlign: { xs: 'left', md: 'right' },
-              mt: { xs: 2, md: 0 },
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                gap: 1.5,
-                alignItems: 'flex-start',
-                justifyContent: { xs: 'flex-start', md: 'flex-end' },
-                flexDirection: 'column',
-                height: '100%',
-              }}
-            >
-              {/* Action buttons */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 1.5,
-                  alignItems: 'center',
-                  justifyContent: { xs: 'flex-start', md: 'flex-end' },
-                }}
-              >
-                {slot.status === 'PENDING' && (
-                  <>
-                    <Tooltip title="Xác nhận lịch tư vấn">
-                      <span>
-                        <IconButton
-                          sx={{ color: '#2e7d32' }}
-                          onClick={async () => {
-                            const confirmed = await confirmDialog.show({
-                              title: 'Xác nhận lịch tư vấn',
-                              message:
-                                'Bạn có chắc chắn muốn xác nhận lịch tư vấn này?',
-                              confirmText: 'Xác nhận',
-                              cancelText: 'Hủy',
-                              type: 'info',
-                            });
-                            if (confirmed) {
-                              handleUpdateStatusClick('CONFIRMED');
-                            }
-                          }}
-                          disabled={updateStatus.loading}
-                        >
-                          <EventAvailableIcon sx={{ color: '#2e7d32' }} />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                    <Tooltip title="Huỷ lịch tư vấn">
-                      <span>
-                        <IconButton
-                          color="error"
-                          onClick={() => handleUpdateStatusClick('CANCELED')}
-                          disabled={updateStatus.loading}
-                        >
-                          <CloseIcon />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  </>
-                )}
-                {slot.status === 'CONFIRMED' && (
-                  <Tooltip title="Đánh dấu hoàn thành">
-                    <span>
-                      <IconButton
-                        color="success"
-                        onClick={() =>
-                          handleUpdateStatusClick('COMPLETED', slot.notes)
-                        }
-                        disabled={updateStatus.loading}
-                        sx={{ color: '#2e7d32' }}
-                      >
-                        <CheckIcon />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                )}
-                <Tooltip title="Xem chi tiết">
-                  <span>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleViewDetails(slot)}
-                      sx={{ color: '#4A90E2' }}
-                    >
-                      <VisibilityIcon />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-                <IconButton
-                  size="medium"
-                  onClick={handleClick}
-                  sx={{
-                    border: '1px solid rgba(74, 144, 226, 0.2)',
-                    borderRadius: '8px',
-                    width: '40px',
-                    height: '40px',
-                    color: '#4A90E2',
-                    '&:hover': {
-                      background: 'rgba(74, 144, 226, 0.1)',
-                      borderColor: '#1ABC9C',
-                      transform: 'translateY(-1px)',
-                    },
-                  }}
-                >
-                  <MoreVertIcon fontSize="small" />
-                </IconButton>
-              </Box>
-
-              {/* Hiển thị feedback cho completed consultations */}
-              {slot.status === 'COMPLETED' && slot.rating && (
-                <Box
-                  sx={{
-                    textAlign: { xs: 'left', md: 'right' },
-                    mt: 1,
-                  }}
-                >
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'text.secondary',
-                      fontSize: '0.75rem',
-                      display: 'block',
-                      mb: 0.5,
-                    }}
-                  >
-                    Đánh giá:
-                  </Typography>
-                  <Chip
-                    label={`${slot.rating}/5 ⭐`}
-                    size="small"
-                    sx={{
-                      backgroundColor: '#FFF3E0',
-                      color: '#F57C00',
-                      fontWeight: 600,
-                      fontSize: '0.7rem',
-                      height: '24px',
-                      border: '1px solid #FFE0B2',
-                    }}
-                  />
-                </Box>
-              )}
-            </Box>
-          </Grid>
-        </Grid>
-      </CardContent>
-
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-        PaperProps={{
-          sx: {
-            borderRadius: '12px',
-            boxShadow: '0 8px 30px rgba(74, 144, 226, 0.15)',
-            border: '1px solid rgba(74, 144, 226, 0.1)',
-            minWidth: '220px',
-          },
-        }}
-      >
-        <MenuItem
-          onClick={handleViewDetails}
-          sx={{
-            py: 1.5,
-            fontSize: '0.9rem',
-            fontWeight: 500,
-            '&:hover': {
-              background: 'rgba(74, 144, 226, 0.08)',
-            },
-          }}
-        >
-          <EventIcon fontSize="small" sx={{ mr: 1.5, color: '#4A90E2' }} />
-          Xem chi tiết
-        </MenuItem>
-        <Divider sx={{ my: 0.5 }} />
-        {slot.status === 'PENDING' && (
-          <MenuItem
-            onClick={() => handleUpdateStatusClick('CONFIRMED')}
-            sx={{
-              py: 1.5,
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: '#1ABC9C',
-              '&:hover': {
-                background: 'rgba(26, 188, 156, 0.08)',
-              },
-            }}
-          >
-            <EventAvailableIcon fontSize="small" sx={{ mr: 1.5 }} />
-            Xác nhận lịch tư vấn
-          </MenuItem>
-        )}
-        {slot.status === 'CONFIRMED' && (
-          <MenuItem
-            onClick={() => handleUpdateStatusClick('COMPLETED')}
-            sx={{
-              py: 1.5,
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: '#1ABC9C',
-              '&:hover': {
-                background: 'rgba(26, 188, 156, 0.08)',
-              },
-            }}
-          >
-            <CheckIcon fontSize="small" sx={{ mr: 1.5 }} />
-            Đánh dấu đã hoàn thành
-          </MenuItem>
-        )}
-        {(slot.status === 'PENDING' || slot.status === 'CONFIRMED') && (
-          <MenuItem
-            onClick={() => handleUpdateStatusClick('CANCELED')}
-            sx={{
-              py: 1.5,
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: '#E74C3C',
-              '&:hover': {
-                background: 'rgba(231, 76, 60, 0.08)',
-              },
-            }}
-          >
-            <CloseIcon fontSize="small" sx={{ mr: 1.5 }} />
-            Hủy lịch tư vấn
-          </MenuItem>
-        )}
-      </Menu>
-    </MedicalCard>
-  );
-};
 
 const MyConsultationsContent = () => {
   // State for current view
@@ -786,8 +232,8 @@ const MyConsultationsContent = () => {
   });
 
   // Pagination states
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page] = useState(0);
+  const [rowsPerPage] = useState(10);
   const [consultations, setConsultations] = useState([]);
 
   // Thông tin chi tiết customer
@@ -824,6 +270,7 @@ const MyConsultationsContent = () => {
       date1.getDate() === date2.getDate()
     );
   }
+  // Thêm hàm so sánh tuần
   function isSameWeek(date, weekDate) {
     // weekDate là ngày bất kỳ trong tuần cần so sánh
     const d = new Date(date);
@@ -838,6 +285,7 @@ const MyConsultationsContent = () => {
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     return d >= startOfWeek && d <= endOfWeek;
   }
+  // Thêm hàm so sánh tháng
   function isSameMonth(date, monthDate) {
     return (
       date.getFullYear() === monthDate.getFullYear() &&
@@ -1074,6 +522,8 @@ const MyConsultationsContent = () => {
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
+
+  //Redender the component
   return (
     <GradientBackground>
       <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: '1400px', mx: 'auto' }}>
@@ -2461,6 +1911,7 @@ const MyConsultationsContent = () => {
       </Box>
     </GradientBackground>
   );
+  //end render component
 };
 
 export default MyConsultationsContent;

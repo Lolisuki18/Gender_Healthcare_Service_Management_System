@@ -97,7 +97,7 @@ function TabPanel(props) {
 }
 
 const STITestManagementContent = () => {
-  // Status constants for display
+  //display màu cho các trạng thái xét nghiệm
   const STATUS_COLORS = useMemo(
     () => ({
       PENDING: '#FFA726', // Orange
@@ -109,7 +109,7 @@ const STITestManagementContent = () => {
     }),
     []
   );
-
+  //display tên trạng thái xét nghiệm thành tiếng việt
   const STATUS_LABELS = useMemo(
     () => ({
       PENDING: 'Chờ xử lý',
@@ -121,7 +121,7 @@ const STITestManagementContent = () => {
     }),
     []
   );
-
+  //display tên phương thức thanh toán thành tiếng việt
   const PAYMENT_LABELS = useMemo(
     () => ({
       COD: 'Tiền mặt',
@@ -252,7 +252,8 @@ const STITestManagementContent = () => {
   // Initial data load
   useEffect(() => {
     fetchTests();
-  }, [fetchTests]); // Filter function
+  }, [fetchTests]);
+  // Filter function
   useEffect(() => {
     if (!tests || !Array.isArray(tests) || tests.length === 0) {
       console.warn('Dữ liệu xét nghiệm trống hoặc không phải mảng:', tests);
@@ -1628,7 +1629,8 @@ const STITestManagementContent = () => {
         />
       </Paper>
     </Container>
-  ); // Function to render the test table
+  );
+  // Function to render the test table
   function renderTestTable() {
     // Ensure tests and filteredTests are accessible
     const testsData = tests || [];

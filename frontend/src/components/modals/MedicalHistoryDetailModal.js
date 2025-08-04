@@ -51,7 +51,32 @@ const MedicalHistoryDetailModal = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Helper functions
+  // Helper function để kiểm tra trạng thái thanh toán
+  const checkPaymentCompleted = (record) => {
+    // Ưu tiên kiểm tra paymentStatus và paymentCompleted trước
+    if (
+      record.paymentStatus === 'COMPLETED' ||
+      record.paymentCompleted === true
+    ) {
+      return true;
+    }
+
+    // Chỉ coi là đã thanh toán khi:
+    // - COD: vừa có codpayment = true VÀ paymentCompleted = true
+    // - VISA: vừa có stripePayment = true VÀ paymentCompleted = true
+    if (record.paymentMethod === 'COD') {
+      return record.codpayment === true && record.paymentCompleted === true;
+    }
+
+    if (record.paymentMethod === 'VISA') {
+      return record.stripePayment === true && record.paymentCompleted === true;
+    }
+
+    return false;
+  };
+  //end of helper function checkPaymentCompleted
+
+  // Helper functions để lấy màu status
   const getStatusColor = (status) => {
     switch (status) {
       case 'Hoàn thành':
@@ -72,7 +97,9 @@ const MedicalHistoryDetailModal = ({
         return '#607D8B';
     }
   };
+  //End of helper functions
 
+  // Helper function để lấy icon cho trạng thái
   const getStatusIcon = (status) => {
     switch (status) {
       case 'Hoàn thành':
@@ -93,7 +120,9 @@ const MedicalHistoryDetailModal = ({
         return <InfoIcon sx={{ color: '#607D8B' }} />;
     }
   };
+  //end of helper functions getStatusIcon
 
+  // Helper function để lấy icon cho phương thức thanh toán
   const getPaymentMethodIcon = (method) => {
     switch (method) {
       case 'VISA':
@@ -107,7 +136,9 @@ const MedicalHistoryDetailModal = ({
         return <PaymentIcon />;
     }
   };
+  //end of helper functions getPaymentMethodIcon
 
+  // Helper function để lấy text cho phương thức thanh toán
   const getPaymentMethodText = (method) => {
     switch (method) {
       case 'VISA':
@@ -120,9 +151,11 @@ const MedicalHistoryDetailModal = ({
         return method;
     }
   };
+  //end of helper functions getPaymentMethodText
 
   if (!record) return null;
 
+  //Return main component
   return (
     <Dialog
       open={open}
@@ -604,26 +637,15 @@ const MedicalHistoryDetailModal = ({
                         </Typography>
                       </Box>
                       <Chip
-                        label={(() => {
-                          // Kiểm tra nhiều điều kiện để xác định trạng thái thanh toán
-                          const isCompleted = 
-                            record.payment === 'COMPLETED' ||
-                            record.paymentCompleted === true ||
-                            (record.paymentMethod === 'COD' && record.codpayment === true) ||
-                            (record.paymentMethod === 'VISA' && record.stripePayment === true);
-                          
-                          return isCompleted ? 'Đã thanh toán' : 'Chưa thanh toán';
-                        })()}
+                        label={
+                          checkPaymentCompleted(record)
+                            ? 'Đã thanh toán'
+                            : 'Chưa thanh toán'
+                        }
                         size="small"
-                        color={(() => {
-                          const isCompleted = 
-                            record.payment === 'COMPLETED' ||
-                            record.paymentCompleted === true ||
-                            (record.paymentMethod === 'COD' && record.codpayment === true) ||
-                            (record.paymentMethod === 'VISA' && record.stripePayment === true);
-                          
-                          return isCompleted ? 'success' : 'warning';
-                        })()}
+                        color={
+                          checkPaymentCompleted(record) ? 'success' : 'warning'
+                        }
                         sx={{
                           ml: 3.5,
                           fontWeight: 600,
@@ -666,7 +688,7 @@ const MedicalHistoryDetailModal = ({
                     </Box>
                   </Grid>
                   {record.paymentTransactionId && (
-                    <Grid item xs={12} md={6}>
+                    <Grid item size={6} xs={12} md={6}>
                       <Box
                         sx={{
                           p: 2,
@@ -705,7 +727,7 @@ const MedicalHistoryDetailModal = ({
                   )}
 
                   {record.stripePaymentIntentId && (
-                    <Grid item xs={12} md={6}>
+                    <Grid item size={6} xs={12} md={6}>
                       <Box
                         sx={{
                           p: 2,
@@ -960,7 +982,7 @@ const MedicalHistoryDetailModal = ({
 
                   <Grid container spacing={3}>
                     {record.staffName && (
-                      <Grid item xs={12} md={6}>
+                      <Grid size={4} item xs={12} md={6}>
                         <Box
                           sx={{
                             p: 2,
@@ -998,7 +1020,7 @@ const MedicalHistoryDetailModal = ({
                     )}
 
                     {record.staffId && (
-                      <Grid item xs={12} md={6}>
+                      <Grid size={4} item xs={12} md={6}>
                         <Box
                           sx={{
                             p: 2,
@@ -1036,7 +1058,7 @@ const MedicalHistoryDetailModal = ({
                     )}
 
                     {record.consultantId && (
-                      <Grid item xs={12} md={6}>
+                      <Grid size={4} item xs={12} md={6}>
                         <Box
                           sx={{
                             p: 2,
@@ -1289,6 +1311,7 @@ const MedicalHistoryDetailModal = ({
       </DialogActions>
     </Dialog>
   );
+  //End of the component
 };
 
 export default MedicalHistoryDetailModal;

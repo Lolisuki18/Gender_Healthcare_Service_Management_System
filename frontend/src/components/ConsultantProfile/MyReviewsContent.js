@@ -21,7 +21,6 @@ import {
   Chip,
   CircularProgress,
   useTheme,
- 
   Pagination,
   FormControl,
   Select,
@@ -219,6 +218,7 @@ const MyReviewsContent = () => {
     );
   }
 
+  //render the component
   return (
     <Box>
       {/* Statistics Section */}
@@ -952,6 +952,7 @@ const MyReviewsContent = () => {
       </StyledPaper>
     </Box>
   );
+  // End of MyReviewsContent component
 };
 
 export default MyReviewsContent;

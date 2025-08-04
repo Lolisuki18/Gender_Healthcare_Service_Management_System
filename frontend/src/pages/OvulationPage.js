@@ -346,45 +346,57 @@ const OvulationPage = ({ stats }) => {
   // Hàm phân tích lý do chu kỳ không bình thường
   const getIrregularReasons = (menstrualCycles) => {
     const reasons = [];
-    
+
     if (!Array.isArray(menstrualCycles) || menstrualCycles.length === 0) {
       return ['Không đủ dữ liệu để phân tích'];
     }
 
     try {
       // Lấy 3 chu kỳ gần nhất để đánh giá
-      const recentCycles = menstrualCycles.slice(0, Math.min(3, menstrualCycles.length));
-      
+      const recentCycles = menstrualCycles.slice(
+        0,
+        Math.min(3, menstrualCycles.length)
+      );
+
       // Phân tích số ngày kinh nguyệt
-      const periodLengths = recentCycles.map(cycle => cycle.numberOfDays).filter(days => days);
+      const periodLengths = recentCycles
+        .map((cycle) => cycle.numberOfDays)
+        .filter((days) => days);
       if (periodLengths.length > 0) {
         const minPeriod = Math.min(...periodLengths);
         const maxPeriod = Math.max(...periodLengths);
-        
-        if (minPeriod < 3) {
-          reasons.push(`Kỳ kinh quá ngắn (${minPeriod} ngày) - có thể do stress, rối loạn hormone, hoặc mất cân nặng đột ngột`);
+
+        if (minPeriod < 2) {
+          reasons.push(
+            `Kỳ kinh quá ngắn (${minPeriod} ngày) - có thể do stress, rối loạn hormone, hoặc mất cân nặng đột ngột`
+          );
         }
-        if (maxPeriod > 7) {
-          reasons.push(`Kỳ kinh kéo dài (${maxPeriod} ngày) - có thể do u xơ tử cung, polyp nội mạc tử cung, hoặc rối loạn đông máu`);
-        }
-        if (maxPeriod - minPeriod > 3) {
-          reasons.push(`Độ dài kỳ kinh không ổn định (từ ${minPeriod} đến ${maxPeriod} ngày) - có thể do stress hoặc thay đổi hormone`);
+        if (maxPeriod > 8) {
+          reasons.push(
+            `Kỳ kinh kéo dài (${maxPeriod} ngày) - có thể do u xơ tử cung, polyp nội mạc tử cung, hoặc rối loạn đông máu`
+          );
         }
       }
 
       // Phân tích độ dài chu kỳ
-      const cycleLengths = recentCycles.map(cycle => cycle.cycleLength).filter(length => length);
+      const cycleLengths = recentCycles
+        .map((cycle) => cycle.cycleLength)
+        .filter((length) => length);
       if (cycleLengths.length > 0) {
         const minCycle = Math.min(...cycleLengths);
         const maxCycle = Math.max(...cycleLengths);
-        
-        if (minCycle < 21) {
-          reasons.push(`Chu kỳ quá ngắn (${minCycle} ngày) - có thể do stress, tập thể dục quá mức, thiếu hụt dinh dưỡng, hoặc cận mãn kinh`);
+
+        if (minCycle < 24) {
+          reasons.push(
+            `Chu kỳ quá ngắn (${minCycle} ngày) - có thể do stress, tập thể dục quá mức, thiếu hụt dinh dưỡng, hoặc cận mãn kinh`
+          );
         }
-        if (maxCycle > 35) {
-          reasons.push(`Chu kỳ quá dài (${maxCycle} ngày) - có thể do hội chứng buồng trứng đa nang (PCOS), rối loạn tuyến giáp, hoặc stress`);
+        if (maxCycle > 38) {
+          reasons.push(
+            `Chu kỳ quá dài (${maxCycle} ngày) - có thể do hội chứng buồng trứng đa nang (PCOS), rối loạn tuyến giáp, hoặc stress`
+          );
         }
-        
+
         // Kiểm tra sự biến thiên của chu kỳ
         if (cycleLengths.length >= 2) {
           let maxDifference = 0;
@@ -394,33 +406,47 @@ const OvulationPage = ({ stats }) => {
               maxDifference = difference;
             }
           }
-          
+
           if (maxDifference > 7) {
-            reasons.push(`Chu kỳ biến thiên lớn (chênh lệch ${maxDifference} ngày) - có thể do stress, thay đổi cân nặng, rối loạn giấc ngủ, hoặc thay đổi lối sống`);
+            reasons.push(
+              `Chu kỳ biến thiên lớn (chênh lệch ${maxDifference} ngày) - có thể do stress, thay đổi cân nặng, rối loạn giấc ngủ, hoặc thay đổi lối sống`
+            );
           }
         }
-        
+
         // Phân tích xu hướng
-        if (cycleLengths.length >= 3) {
-          const isIncreasing = cycleLengths[0] > cycleLengths[1] && cycleLengths[1] > cycleLengths[2];
-          const isDecreasing = cycleLengths[0] < cycleLengths[1] && cycleLengths[1] < cycleLengths[2];
-          
-          if (isIncreasing) {
-            reasons.push('Chu kỳ có xu hướng ngày càng dài - có thể cần kiểm tra hormone hoặc tình trạng stress');
-          } else if (isDecreasing) {
-            reasons.push('Chu kỳ có xu hướng ngày càng ngắn - có thể do stress, giảm cân, hoặc tập thể dục quá mức');
-          }
-        }
+        // if (cycleLengths.length >= 3) {
+        //   const isIncreasing =
+        //     cycleLengths[0] > cycleLengths[1] &&
+        //     cycleLengths[1] > cycleLengths[2];
+        //   const isDecreasing =
+        //     cycleLengths[0] < cycleLengths[1] &&
+        //     cycleLengths[1] < cycleLengths[2];
+
+        //   if (isIncreasing) {
+        //     reasons.push(
+        //       'Chu kỳ có xu hướng ngày càng dài - có thể cần kiểm tra hormone hoặc tình trạng stress'
+        //     );
+        //   } else if (isDecreasing) {
+        //     reasons.push(
+        //       'Chu kỳ có xu hướng ngày càng ngắn - có thể do stress, giảm cân, hoặc tập thể dục quá mức'
+        //     );
+        //   }
+        // }
       }
 
       // Đánh giá tổng thể
       if (recentCycles.length < 3) {
-        reasons.push('Dữ liệu còn ít - khuyến nghị theo dõi thêm để có đánh giá chính xác hơn');
+        reasons.push(
+          'Dữ liệu còn ít - khuyến nghị theo dõi thêm để có đánh giá chính xác hơn'
+        );
       }
 
       // Nếu không tìm thấy vấn đề cụ thể nhưng được đánh giá là irregular
       if (reasons.length === 0 && consistency === 'irregular') {
-        reasons.push('Chu kỳ có dấu hiệu không đều đặn nhẹ - có thể do các yếu tố lối sống hoặc stress tạm thời');
+        reasons.push(
+          'Chu kỳ có dấu hiệu không đều đặn nhẹ - có thể do các yếu tố lối sống hoặc stress tạm thời'
+        );
       }
 
       // Nếu hoàn toàn không có vấn đề
@@ -431,7 +457,9 @@ const OvulationPage = ({ stats }) => {
       return reasons;
     } catch (error) {
       console.error('Lỗi khi phân tích lý do chu kỳ không bình thường:', error);
-      return ['Không thể phân tích do lỗi dữ liệu - vui lòng kiểm tra lại thông tin chu kỳ'];
+      return [
+        'Không thể phân tích do lỗi dữ liệu - vui lòng kiểm tra lại thông tin chu kỳ',
+      ];
     }
   };
 
@@ -486,13 +514,14 @@ const OvulationPage = ({ stats }) => {
   // Edit cycle states
   const [editingCycle, setEditingCycle] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
-  
+
   // View cycle detail states
   const [selectedCycleForDetail, setSelectedCycleForDetail] = useState(null);
   const [showCycleDetail, setShowCycleDetail] = useState(false);
-  
+
   // Calendar modal states
-  const [selectedCycleForCalendar, setSelectedCycleForCalendar] = useState(null);
+  const [selectedCycleForCalendar, setSelectedCycleForCalendar] =
+    useState(null);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
 
   const toggleSection = (section) => {
@@ -672,9 +701,10 @@ const OvulationPage = ({ stats }) => {
       iconWrapper: `${styles.iconWrapper} ${styles.green}`,
       label: 'Tính đều đặn',
       mainValue: null,
-      subValue: consistency === 'irregular' && irregularReasons.length > 0 
-        ? `${irregularReasons.length} vấn đề được phát hiện` 
-        : 'Đánh giá chu kỳ',
+      subValue:
+        consistency === 'irregular' && irregularReasons.length > 0
+          ? `${irregularReasons.length} vấn đề được phát hiện`
+          : 'Đánh giá chu kỳ',
       id: 'consistency',
       customContent: (
         <div className="mb-2">
@@ -895,7 +925,7 @@ const OvulationPage = ({ stats }) => {
 
     return null;
   };
-  
+
   // Hàm lấy chu kỳ gần nhất trước chu kỳ được nhập vào
   const getLastCycleBeforeInput = (inputCycle) => {
     if (!inputCycle || !sortedCycles.length) return null;
@@ -913,7 +943,6 @@ const OvulationPage = ({ stats }) => {
     return null;
   };
 
-
   // Hàm so sánh chu kỳ đã nhập với chu kỳ sau gần nhất
   const compareCycleWithNext = (inputCycle) => {
     const nextCycle = getNextCycleAfterInput(inputCycle);
@@ -930,7 +959,7 @@ const OvulationPage = ({ stats }) => {
       console.warn('Độ dài chu kỳ không khớp:', {
         nextCycleLength,
         actualCycleLength,
-        nextCycle
+        nextCycle,
       });
     }
 
@@ -959,7 +988,7 @@ const OvulationPage = ({ stats }) => {
       console.warn('Độ dài chu kỳ không khớp:', {
         lastCycleLength,
         actualCycleLength,
-        lastCycle
+        lastCycle,
       });
     }
 
@@ -1555,8 +1584,6 @@ const OvulationPage = ({ stats }) => {
                         </Box>
                       </Box>
 
-                      
-
                       <Box className={styles.form}>
                         {/* Thông tin chu kỳ hiện tại */}
                         <Card
@@ -1632,7 +1659,6 @@ const OvulationPage = ({ stats }) => {
                               )}{' '}
                               ngày
                             </ListItem>
-                            
                           </List>
                         </Card>
 
@@ -1684,8 +1710,20 @@ const OvulationPage = ({ stats }) => {
                         </Card>
 
                         {/* Nếu chu kỳ tiếp theo không khớp với chu kỳ đã nhập */}
-                        {((compareCycleResultWithLast !== null && Math.round(compareCycleResultWithLast.lastCycleLength) !== Math.round(compareCycleResultWithLast.actualCycleLength))
-                         || (compareCycleResultWithNext !== null && Math.round(compareCycleResultWithNext.nextCycleLength) !== Math.round(compareCycleResultWithNext.actualCycleLength))) && (
+                        {((compareCycleResultWithLast !== null &&
+                          Math.round(
+                            compareCycleResultWithLast.lastCycleLength
+                          ) !==
+                            Math.round(
+                              compareCycleResultWithLast.actualCycleLength
+                            )) ||
+                          (compareCycleResultWithNext !== null &&
+                            Math.round(
+                              compareCycleResultWithNext.nextCycleLength
+                            ) !==
+                              Math.round(
+                                compareCycleResultWithNext.actualCycleLength
+                              ))) && (
                           <Card
                             sx={{
                               background: '#F5F5DC',
@@ -1699,7 +1737,13 @@ const OvulationPage = ({ stats }) => {
                               boxShadow: '0 2px 8px 0 rgba(239,68,68,0.08)',
                             }}
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', marginRight: 16 }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                marginRight: 16,
+                              }}
+                            >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="32"
@@ -1710,8 +1754,20 @@ const OvulationPage = ({ stats }) => {
                                 strokeWidth="2"
                                 style={{ color: '#f59e0b', flexShrink: 0 }}
                               >
-                                <circle cx="12" cy="12" r="10" stroke="#f59e0b" strokeWidth="2" fill="#F5F5DC" />
-                                <path d="M12 8v4" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" />
+                                <circle
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="#f59e0b"
+                                  strokeWidth="2"
+                                  fill="#F5F5DC"
+                                />
+                                <path
+                                  d="M12 8v4"
+                                  stroke="#f59e0b"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
                                 <circle cx="12" cy="16" r="1" fill="#f59e0b" />
                               </svg>
                             </div>
@@ -1728,36 +1784,70 @@ const OvulationPage = ({ stats }) => {
                                 Cảnh báo: Độ dài chu kỳ không khớp!
                               </Typography>
 
-                              {(compareCycleResultWithLast !== null && Math.round(compareCycleResultWithLast.lastCycleLength) !== Math.round(compareCycleResultWithLast.actualCycleLength)) && (
-                                <Typography
-                                  sx={{
-                                    color: '#f59e0b',
-                                    fontSize: '0.97rem',
-                                    marginTop: '2px',
-                                    lineHeight: 2,
-                                  }}
-                                >
-                                  Chu kỳ trước ({compareCycleResultWithLast?.lastCycle?.startDate && formatDate(compareCycleResultWithLast.lastCycle.startDate)},
-                                   dài {compareCycleResultWithLast.lastCycleLength} ngày)
-                                   cách chu kỳ được nhập: {compareCycleResultWithLast.actualCycleLength.toFixed(0)} ngày.
-                                  <br />
-                                </Typography>
-                              )}
-                              {(compareCycleResultWithNext !== null && Math.round(compareCycleResultWithNext.nextCycleLength) !== Math.round(compareCycleResultWithNext.actualCycleLength)) && (
-                              <Typography
-                                sx={{
-                                  color: '#f59e0b',
-                                  fontSize: '0.97rem',
-                                  marginTop: '2px',
-                                  lineHeight: 2,
-                                }}
-                              >
-                                Chu kỳ sau ({compareCycleResultWithNext?.nextCycle?.startDate && formatDate(compareCycleResultWithNext.nextCycle.startDate)},
-                                 dài {compareCycleResultWithNext.nextCycleLength} ngày)
-                                 cách chu kỳ được nhập:  {compareCycleResultWithNext.actualCycleLength.toFixed(0)} ngày.
-                                <br />
-                              </Typography>
-                              )}
+                              {compareCycleResultWithLast !== null &&
+                                Math.round(
+                                  compareCycleResultWithLast.lastCycleLength
+                                ) !==
+                                  Math.round(
+                                    compareCycleResultWithLast.actualCycleLength
+                                  ) && (
+                                  <Typography
+                                    sx={{
+                                      color: '#f59e0b',
+                                      fontSize: '0.97rem',
+                                      marginTop: '2px',
+                                      lineHeight: 2,
+                                    }}
+                                  >
+                                    Chu kỳ trước (
+                                    {compareCycleResultWithLast?.lastCycle
+                                      ?.startDate &&
+                                      formatDate(
+                                        compareCycleResultWithLast.lastCycle
+                                          .startDate
+                                      )}
+                                    , dài{' '}
+                                    {compareCycleResultWithLast.lastCycleLength}{' '}
+                                    ngày) cách chu kỳ được nhập:{' '}
+                                    {compareCycleResultWithLast.actualCycleLength.toFixed(
+                                      0
+                                    )}{' '}
+                                    ngày.
+                                    <br />
+                                  </Typography>
+                                )}
+                              {compareCycleResultWithNext !== null &&
+                                Math.round(
+                                  compareCycleResultWithNext.nextCycleLength
+                                ) !==
+                                  Math.round(
+                                    compareCycleResultWithNext.actualCycleLength
+                                  ) && (
+                                  <Typography
+                                    sx={{
+                                      color: '#f59e0b',
+                                      fontSize: '0.97rem',
+                                      marginTop: '2px',
+                                      lineHeight: 2,
+                                    }}
+                                  >
+                                    Chu kỳ sau (
+                                    {compareCycleResultWithNext?.nextCycle
+                                      ?.startDate &&
+                                      formatDate(
+                                        compareCycleResultWithNext.nextCycle
+                                          .startDate
+                                      )}
+                                    , dài{' '}
+                                    {compareCycleResultWithNext.nextCycleLength}{' '}
+                                    ngày) cách chu kỳ được nhập:{' '}
+                                    {compareCycleResultWithNext.actualCycleLength.toFixed(
+                                      0
+                                    )}{' '}
+                                    ngày.
+                                    <br />
+                                  </Typography>
+                                )}
 
                               <Typography
                                 sx={{
@@ -1767,13 +1857,14 @@ const OvulationPage = ({ stats }) => {
                                   lineHeight: 2,
                                 }}
                               >
-                                Hãy chắc chắn rằng bạn đã nhập đúng thông tin về chu kỳ kinh nguyệt của mình trước khi lưu thông tin vào hồ sơ để dữ liệu được tính toán chính xác hơn.
+                                Hãy chắc chắn rằng bạn đã nhập đúng thông tin về
+                                chu kỳ kinh nguyệt của mình trước khi lưu thông
+                                tin vào hồ sơ để dữ liệu được tính toán chính
+                                xác hơn.
                               </Typography>
                             </div>
                           </Card>
                         )}
-                        
-
                       </Box>
 
                       {/* Button actions */}
@@ -2100,7 +2191,7 @@ const OvulationPage = ({ stats }) => {
             </div>
           </div>
         )}
-        
+
         {/* Modal chi tiết chu kỳ */}
         {showCycleDetail && selectedCycleForDetail && (
           <Box
@@ -2115,7 +2206,7 @@ const OvulationPage = ({ stats }) => {
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 9999,
-              padding: '20px'
+              padding: '20px',
             }}
             onClick={handleCloseCycleDetail}
           >
@@ -2128,14 +2219,27 @@ const OvulationPage = ({ stats }) => {
                 maxHeight: '80vh',
                 overflow: 'auto',
                 padding: '24px',
-                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                boxShadow:
+                  '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
               }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h5" sx={{ fontWeight: '600', color: '#1f2937' }}>
-                  Chi tiết chu kỳ #{menstrualCycles.length - menstrualCycles.indexOf(selectedCycleForDetail)}
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 3,
+                }}
+              >
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: '600', color: '#1f2937' }}
+                >
+                  Chi tiết chu kỳ #
+                  {menstrualCycles.length -
+                    menstrualCycles.indexOf(selectedCycleForDetail)}
                 </Typography>
                 <button
                   onClick={handleCloseCycleDetail}
@@ -2145,7 +2249,7 @@ const OvulationPage = ({ stats }) => {
                     fontSize: '24px',
                     cursor: 'pointer',
                     color: '#6b7280',
-                    padding: '4px'
+                    padding: '4px',
                   }}
                 >
                   ×
@@ -2154,30 +2258,79 @@ const OvulationPage = ({ stats }) => {
 
               {/* Thông tin cơ bản */}
               <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2, color: '#374151', fontWeight: '600' }}>
+                <Typography
+                  variant="h6"
+                  sx={{ mb: 2, color: '#374151', fontWeight: '600' }}
+                >
                   📅 Thông tin cơ bản
                 </Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                  <Box sx={{ p: 2, backgroundColor: '#f9fafb', borderRadius: '8px' }}>
-                    <Typography sx={{ fontSize: '14px', color: '#6b7280', mb: 1 }}>Ngày bắt đầu</Typography>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                    gap: 2,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      p: 2,
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    <Typography
+                      sx={{ fontSize: '14px', color: '#6b7280', mb: 1 }}
+                    >
+                      Ngày bắt đầu
+                    </Typography>
                     <Typography sx={{ fontWeight: '600', color: '#1f2937' }}>
                       {formatDate(selectedCycleForDetail.startDate)}
                     </Typography>
                   </Box>
-                  <Box sx={{ p: 2, backgroundColor: '#f9fafb', borderRadius: '8px' }}>
-                    <Typography sx={{ fontSize: '14px', color: '#6b7280', mb: 1 }}>Số ngày hành kinh</Typography>
+                  <Box
+                    sx={{
+                      p: 2,
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    <Typography
+                      sx={{ fontSize: '14px', color: '#6b7280', mb: 1 }}
+                    >
+                      Số ngày hành kinh
+                    </Typography>
                     <Typography sx={{ fontWeight: '600', color: '#1f2937' }}>
                       {selectedCycleForDetail.numberOfDays} ngày
                     </Typography>
                   </Box>
-                  <Box sx={{ p: 2, backgroundColor: '#f9fafb', borderRadius: '8px' }}>
-                    <Typography sx={{ fontSize: '14px', color: '#6b7280', mb: 1 }}>Độ dài chu kỳ</Typography>
+                  <Box
+                    sx={{
+                      p: 2,
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    <Typography
+                      sx={{ fontSize: '14px', color: '#6b7280', mb: 1 }}
+                    >
+                      Độ dài chu kỳ
+                    </Typography>
                     <Typography sx={{ fontWeight: '600', color: '#1f2937' }}>
                       {selectedCycleForDetail.cycleLength} ngày
                     </Typography>
                   </Box>
-                  <Box sx={{ p: 2, backgroundColor: '#f9fafb', borderRadius: '8px' }}>
-                    <Typography sx={{ fontSize: '14px', color: '#6b7280', mb: 1 }}>Ngày rụng trứng dự kiến</Typography>
+                  <Box
+                    sx={{
+                      p: 2,
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    <Typography
+                      sx={{ fontSize: '14px', color: '#6b7280', mb: 1 }}
+                    >
+                      Ngày rụng trứng dự kiến
+                    </Typography>
                     <Typography sx={{ fontWeight: '600', color: '#1f2937' }}>
                       {formatDate(selectedCycleForDetail.ovulationDate)}
                     </Typography>
@@ -2187,109 +2340,223 @@ const OvulationPage = ({ stats }) => {
 
               {/* Phân tích chi tiết */}
               <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2, color: '#374151', fontWeight: '600' }}>
+                <Typography
+                  variant="h6"
+                  sx={{ mb: 2, color: '#374151', fontWeight: '600' }}
+                >
                   🔍 Phân tích chi tiết
                 </Typography>
                 <Box sx={{ display: 'grid', gap: 2 }}>
                   {/* Đánh giá độ dài chu kỳ */}
-                  <Box sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '8px' }}>
-                    <Typography sx={{ fontWeight: '600', mb: 1, color: '#374151' }}>
+                  <Box
+                    sx={{
+                      p: 3,
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    <Typography
+                      sx={{ fontWeight: '600', mb: 1, color: '#374151' }}
+                    >
                       Đánh giá độ dài chu kỳ
                     </Typography>
-                    <Typography sx={{ fontSize: '14px', color: '#6b7280', mb: 2 }}>
-                      {selectedCycleForDetail.cycleLength < 21 
-                        ? '🔴 Chu kỳ ngắn (dưới 21 ngày)' 
-                        : selectedCycleForDetail.cycleLength > 35 
-                          ? '🔴 Chu kỳ dài (trên 35 ngày)' 
+                    <Typography
+                      sx={{ fontSize: '14px', color: '#6b7280', mb: 2 }}
+                    >
+                      {selectedCycleForDetail.cycleLength < 21
+                        ? '🔴 Chu kỳ ngắn (dưới 21 ngày)'
+                        : selectedCycleForDetail.cycleLength > 35
+                          ? '🔴 Chu kỳ dài (trên 35 ngày)'
                           : '🟢 Chu kỳ bình thường (21-35 ngày)'}
                     </Typography>
                     {selectedCycleForDetail.cycleLength < 21 && (
-                      <Typography sx={{ fontSize: '13px', color: '#ef4444', fontStyle: 'italic' }}>
-                        Chu kỳ ngắn có thể do stress, tập thể dục quá mức, hoặc thiếu hụt dinh dưỡng.
+                      <Typography
+                        sx={{
+                          fontSize: '13px',
+                          color: '#ef4444',
+                          fontStyle: 'italic',
+                        }}
+                      >
+                        Chu kỳ ngắn có thể do stress, tập thể dục quá mức, hoặc
+                        thiếu hụt dinh dưỡng.
                       </Typography>
                     )}
                     {selectedCycleForDetail.cycleLength > 35 && (
-                      <Typography sx={{ fontSize: '13px', color: '#ef4444', fontStyle: 'italic' }}>
-                        Chu kỳ dài có thể do PCOS, rối loạn tuyến giáp, hoặc stress.
+                      <Typography
+                        sx={{
+                          fontSize: '13px',
+                          color: '#ef4444',
+                          fontStyle: 'italic',
+                        }}
+                      >
+                        Chu kỳ dài có thể do PCOS, rối loạn tuyến giáp, hoặc
+                        stress.
                       </Typography>
                     )}
-                    {selectedCycleForDetail.cycleLength >= 21 && selectedCycleForDetail.cycleLength <= 35 && (
-                      <Typography sx={{ fontSize: '13px', color: '#16a34a', fontStyle: 'italic' }}>
-                        Độ dài chu kỳ trong khoảng bình thường, điều này rất tốt!
-                      </Typography>
-                    )}
+                    {selectedCycleForDetail.cycleLength >= 21 &&
+                      selectedCycleForDetail.cycleLength <= 35 && (
+                        <Typography
+                          sx={{
+                            fontSize: '13px',
+                            color: '#16a34a',
+                            fontStyle: 'italic',
+                          }}
+                        >
+                          Độ dài chu kỳ trong khoảng bình thường, điều này rất
+                          tốt!
+                        </Typography>
+                      )}
                   </Box>
 
                   {/* Đánh giá kỳ kinh */}
-                  <Box sx={{ p: 3, border: '1px solid #e5e7eb', borderRadius: '8px' }}>
-                    <Typography sx={{ fontWeight: '600', mb: 1, color: '#374151' }}>
+                  <Box
+                    sx={{
+                      p: 3,
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    <Typography
+                      sx={{ fontWeight: '600', mb: 1, color: '#374151' }}
+                    >
                       Đánh giá kỳ kinh
                     </Typography>
-                    <Typography sx={{ fontSize: '14px', color: '#6b7280', mb: 2 }}>
-                      {selectedCycleForDetail.numberOfDays < 3 
-                        ? '🔴 Kỳ kinh ngắn (dưới 3 ngày)' 
-                        : selectedCycleForDetail.numberOfDays > 7 
-                          ? '🔴 Kỳ kinh dài (trên 7 ngày)' 
+                    <Typography
+                      sx={{ fontSize: '14px', color: '#6b7280', mb: 2 }}
+                    >
+                      {selectedCycleForDetail.numberOfDays < 3
+                        ? '🔴 Kỳ kinh ngắn (dưới 3 ngày)'
+                        : selectedCycleForDetail.numberOfDays > 7
+                          ? '🔴 Kỳ kinh dài (trên 7 ngày)'
                           : '🟢 Kỳ kinh bình thường (3-7 ngày)'}
                     </Typography>
                     {selectedCycleForDetail.numberOfDays < 3 && (
-                      <Typography sx={{ fontSize: '13px', color: '#ef4444', fontStyle: 'italic' }}>
+                      <Typography
+                        sx={{
+                          fontSize: '13px',
+                          color: '#ef4444',
+                          fontStyle: 'italic',
+                        }}
+                      >
                         Kỳ kinh ngắn có thể do rối loạn hormone hoặc stress.
                       </Typography>
                     )}
                     {selectedCycleForDetail.numberOfDays > 7 && (
-                      <Typography sx={{ fontSize: '13px', color: '#ef4444', fontStyle: 'italic' }}>
-                        Kỳ kinh dài có thể do u xơ tử cung, polyp, hoặc rối loạn đông máu.
+                      <Typography
+                        sx={{
+                          fontSize: '13px',
+                          color: '#ef4444',
+                          fontStyle: 'italic',
+                        }}
+                      >
+                        Kỳ kinh dài có thể do u xơ tử cung, polyp, hoặc rối loạn
+                        đông máu.
                       </Typography>
                     )}
-                    {selectedCycleForDetail.numberOfDays >= 3 && selectedCycleForDetail.numberOfDays <= 7 && (
-                      <Typography sx={{ fontSize: '13px', color: '#16a34a', fontStyle: 'italic' }}>
-                        Độ dài kỳ kinh trong khoảng bình thường.
-                      </Typography>
-                    )}
+                    {selectedCycleForDetail.numberOfDays >= 3 &&
+                      selectedCycleForDetail.numberOfDays <= 7 && (
+                        <Typography
+                          sx={{
+                            fontSize: '13px',
+                            color: '#16a34a',
+                            fontStyle: 'italic',
+                          }}
+                        >
+                          Độ dài kỳ kinh trong khoảng bình thường.
+                        </Typography>
+                      )}
                   </Box>
                 </Box>
               </Box>
 
               {/* Thời gian quan trọng */}
               <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2, color: '#374151', fontWeight: '600' }}>
+                <Typography
+                  variant="h6"
+                  sx={{ mb: 2, color: '#374151', fontWeight: '600' }}
+                >
                   ⏰ Thời gian quan trọng trong chu kỳ này
                 </Typography>
                 <Box sx={{ display: 'grid', gap: 2 }}>
-                  <Box sx={{ p: 3, backgroundColor: '#fef3c7', borderRadius: '8px', border: '1px solid #fbbf24' }}>
-                    <Typography sx={{ fontWeight: '600', mb: 1, color: '#92400e' }}>
+                  <Box
+                    sx={{
+                      p: 3,
+                      backgroundColor: '#fef3c7',
+                      borderRadius: '8px',
+                      border: '1px solid #fbbf24',
+                    }}
+                  >
+                    <Typography
+                      sx={{ fontWeight: '600', mb: 1, color: '#92400e' }}
+                    >
                       🥚 Thời kỳ rụng trứng
                     </Typography>
                     <Typography sx={{ fontSize: '14px', color: '#92400e' }}>
-                      Ngày {formatDate(selectedCycleForDetail.ovulationDate)} (khoảng ngày thứ {selectedCycleForDetail.cycleLength - 14} của chu kỳ)
+                      Ngày {formatDate(selectedCycleForDetail.ovulationDate)}{' '}
+                      (khoảng ngày thứ {selectedCycleForDetail.cycleLength - 14}{' '}
+                      của chu kỳ)
                     </Typography>
                   </Box>
-                  
-                  <Box sx={{ p: 3, backgroundColor: '#fce7f3', borderRadius: '8px', border: '1px solid #f472b6' }}>
-                    <Typography sx={{ fontWeight: '600', mb: 1, color: '#be185d' }}>
+
+                  <Box
+                    sx={{
+                      p: 3,
+                      backgroundColor: '#fce7f3',
+                      borderRadius: '8px',
+                      border: '1px solid #f472b6',
+                    }}
+                  >
+                    <Typography
+                      sx={{ fontWeight: '600', mb: 1, color: '#be185d' }}
+                    >
                       💕 Thời kỳ thụ thai
                     </Typography>
                     <Typography sx={{ fontSize: '14px', color: '#be185d' }}>
-                      Từ 5 ngày trước đến 1 ngày sau ngày rụng trứng (khả năng thụ thai cao nhất)
+                      Từ 5 ngày trước đến 1 ngày sau ngày rụng trứng (khả năng
+                      thụ thai cao nhất)
                     </Typography>
                   </Box>
                 </Box>
               </Box>
 
               {/* Lưu ý */}
-              <Box sx={{ p: 3, backgroundColor: '#f0f9ff', borderRadius: '8px', border: '1px solid #0ea5e9' }}>
-                <Typography sx={{ fontWeight: '600', mb: 1, color: '#0c4a6e', fontSize: '14px' }}>
+              <Box
+                sx={{
+                  p: 3,
+                  backgroundColor: '#f0f9ff',
+                  borderRadius: '8px',
+                  border: '1px solid #0ea5e9',
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontWeight: '600',
+                    mb: 1,
+                    color: '#0c4a6e',
+                    fontSize: '14px',
+                  }}
+                >
                   💡 Lưu ý quan trọng
                 </Typography>
-                <Typography sx={{ fontSize: '13px', color: '#0c4a6e', lineHeight: 1.5 }}>
-                  Thông tin này chỉ mang tính chất tham khảo. Mỗi người có chu kỳ kinh nguyệt khác nhau và có thể thay đổi theo thời gian.
-                  Nếu có bất kỳ lo ngại nào, hãy tham khảo ý kiến bác sĩ chuyên khoa.
+                <Typography
+                  sx={{ fontSize: '13px', color: '#0c4a6e', lineHeight: 1.5 }}
+                >
+                  Thông tin này chỉ mang tính chất tham khảo. Mỗi người có chu
+                  kỳ kinh nguyệt khác nhau và có thể thay đổi theo thời gian.
+                  Nếu có bất kỳ lo ngại nào, hãy tham khảo ý kiến bác sĩ chuyên
+                  khoa.
                 </Typography>
               </Box>
 
               {/* Action buttons */}
-              <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'flex-end' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 2,
+                  mt: 3,
+                  justifyContent: 'flex-end',
+                }}
+              >
                 <button
                   onClick={() => {
                     handleCloseCycleDetail();
@@ -2306,7 +2573,7 @@ const OvulationPage = ({ stats }) => {
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px'
+                    gap: '6px',
                   }}
                 >
                   <Edit style={{ width: '16px', height: '16px' }} />
@@ -2322,7 +2589,7 @@ const OvulationPage = ({ stats }) => {
                     padding: '8px 16px',
                     fontSize: '14px',
                     fontWeight: '500',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
                   }}
                 >
                   Đóng
