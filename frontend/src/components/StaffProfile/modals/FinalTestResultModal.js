@@ -342,7 +342,9 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
   };
 
   const renderServiceDetail = (service) => {
-    if (!service || !service.components || service.components.length === 0) {
+    const activeComponents =
+      service.components?.filter((comp) => comp.active !== false) || [];
+    if (!service || !activeComponents || activeComponents.length === 0) {
       return (
         <Typography sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
           Không có dữ liệu chi tiết cho dịch vụ này.
@@ -391,36 +393,38 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {service.components.map((comp) => {
-                const abnormal = isAbnormal(comp);
-                return (
-                  <TableRow
-                    key={comp.id || comp.componentId}
-                    hover
-                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                  >
-                    <TableCell sx={{ fontWeight: 500 }}>
-                      {comp.componentName}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: abnormal ? 'bold' : 'normal',
-                        color: abnormal ? 'error.main' : 'text.primary',
-                      }}
+              {service.components
+                .filter((comp) => comp.active !== false) // Lọc bỏ components có active: false
+                .map((comp) => {
+                  const abnormal = isAbnormal(comp);
+                  return (
+                    <TableRow
+                      key={comp.id || comp.componentId}
+                      hover
+                      sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                     >
-                      {comp.resultValue ?? 'Chưa có'}
-                    </TableCell>
-                    <TableCell>{comp.unit || '-'}</TableCell>
-                    <TableCell>{comp.normalRange || '-'}</TableCell>
-                    <TableCell>
-                      <ConclusionDisplay
-                        conclusion={comp.conclusion}
-                        conclusionDisplayName={comp.conclusionDisplayName}
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                      <TableCell sx={{ fontWeight: 500 }}>
+                        {comp.componentName}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: abnormal ? 'bold' : 'normal',
+                          color: abnormal ? 'error.main' : 'text.primary',
+                        }}
+                      >
+                        {comp.resultValue ?? 'Chưa có'}
+                      </TableCell>
+                      <TableCell>{comp.unit || '-'}</TableCell>
+                      <TableCell>{comp.normalRange || '-'}</TableCell>
+                      <TableCell>
+                        <ConclusionDisplay
+                          conclusion={comp.conclusion}
+                          conclusionDisplayName={comp.conclusionDisplayName}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
             </TableBody>
           </Table>
         </TableContainer>

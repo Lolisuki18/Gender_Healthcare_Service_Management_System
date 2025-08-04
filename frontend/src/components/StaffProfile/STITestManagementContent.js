@@ -48,8 +48,8 @@ import {
   getPackageTestDetails,
   cancelSTITest,
   getTestResultsByTestId,
-  getSTIServiceById,
-  getSTIPackageById,
+  getSTIServiceByIdFiltered,
+  getSTIPackageByIdFiltered,
   savePartialTestResults,
   getCanceledTests,
 } from '../../services/stiService';
@@ -58,7 +58,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
-// Import icons
+// Import các icon
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BiotechIcon from '@mui/icons-material/Biotech';
 import ScienceIcon from '@mui/icons-material/Science';
@@ -67,9 +67,9 @@ import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import PaymentIcon from '@mui/icons-material/Payment';
 import CancelIcon from '@mui/icons-material/Cancel';
-// PDF icon removed
+// PDF icon đã được loại bỏ
 
-// Import Modals
+// Import các Modal
 import SampleCollectionModal from './modals/SampleCollectionModal';
 import TestResultInputModal from './modals/TestResultInputModal';
 import FinalTestResultModal from './modals/FinalTestResultModal';
@@ -78,7 +78,7 @@ import { confirmDialog } from '../../utils/confirmDialog';
 import { notify } from '@/utils/notify';
 import CanceledTestDetailModal from './modals/CanceledTestDetailModal';
 
-// TabPanel component for tab content
+// Component TabPanel cho nội dung tab
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
@@ -97,19 +97,19 @@ function TabPanel(props) {
 }
 
 const STITestManagementContent = () => {
-  //display màu cho các trạng thái xét nghiệm
+  // Hiển thị màu cho các trạng thái xét nghiệm
   const STATUS_COLORS = useMemo(
     () => ({
-      PENDING: '#FFA726', // Orange
-      CONFIRMED: '#42A5F5', // Blue
-      SAMPLED: '#7E57C2', // Purple
-      RESULTED: '#66BB6A', // Green
-      COMPLETED: '#26A69A', // Teal
-      CANCELED: '#EF5350', // Red
+      PENDING: '#FFA726', // Cam
+      CONFIRMED: '#42A5F5', // Xanh dương
+      SAMPLED: '#7E57C2', // Tím
+      RESULTED: '#66BB6A', // Xanh lá
+      COMPLETED: '#26A69A', // Xanh lá đậm
+      CANCELED: '#EF5350', // Đỏ
     }),
     []
   );
-  //display tên trạng thái xét nghiệm thành tiếng việt
+  // Hiển thị tên trạng thái xét nghiệm thành tiếng việt
   const STATUS_LABELS = useMemo(
     () => ({
       PENDING: 'Chờ xử lý',
@@ -121,14 +121,16 @@ const STITestManagementContent = () => {
     }),
     []
   );
-  //display tên phương thức thanh toán thành tiếng việt
+  // Hiển thị tên phương thức thanh toán thành tiếng việt
   const PAYMENT_LABELS = useMemo(
     () => ({
       COD: 'Tiền mặt',
       VISA: 'Thẻ tín dụng',
     }),
     []
-  ); // State variables
+  );
+
+  // Các biến state
   const [tests, setTests] = useState([]);
   const [filteredTests, setFilteredTests] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -144,7 +146,7 @@ const STITestManagementContent = () => {
   const [dateFilter, setDateFilter] = useState(null);
   const [pendingCount, setPendingCount] = useState(0);
 
-  // Modals state
+  // State cho các modal
   const [openSingleModal, setOpenSingleModal] = useState(false);
   const [openPackageModal, setOpenPackageModal] = useState(false);
 
@@ -154,9 +156,9 @@ const STITestManagementContent = () => {
   const [serviceInfo, setServiceInfo] = useState(null);
 
   const [isPackageModal, setIsPackageModal] = useState(false);
-  const [packageServices, setPackageServices] = useState([]); // List of services in package
+  const [packageServices, setPackageServices] = useState([]); // Danh sách các service trong package
   const [selectedService, setSelectedService] = useState(null);
-  const [loadingService, setLoadingService] = useState(false); // Fetch tests based on the active tab
+  const [loadingService, setLoadingService] = useState(false); // Lấy xét nghiệm dựa trên tab đang hoạt động
   const [allServiceComponents, setAllServiceComponents] = useState({});
 
   // State cho modal nhập kết quả
@@ -184,27 +186,32 @@ const STITestManagementContent = () => {
   const [testToConfirm, setTestToConfirm] = useState(null);
   const [confirmModalLoading, setConfirmModalLoading] = useState(false);
 
+  /**
+   * Hàm lấy danh sách xét nghiệm từ API dựa trên tab hiện tại
+   * Sử dụng useCallback để tránh re-render không cần thiết
+   * Tab 0: Tất cả xét nghiệm, Tab 1: Chờ xử lý, Tab 2: Đã xác nhận, etc.
+   */
   const fetchTests = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       let response;
       switch (tabValue) {
-        case 0: // All tests
+        case 0: // Tất cả xét nghiệm
           response = await getStaffTests();
           break;
-        case 1: // Pending tests
+        case 1: // Xét nghiệm chờ xử lý
           response = await getPendingTests();
           break;
-        case 2: // Confirmed tests
+        case 2: // Xét nghiệm đã xác nhận
           response = await getConfirmedTests();
           break;
-        case 3: // Sampled
-        case 4: // Resulted
-        case 5: // Completed
+        case 3: // Đã lấy mẫu
+        case 4: // Có kết quả
+        case 5: // Hoàn thành
           response = await getStaffTests();
           break;
-        case 6: // Canceled
+        case 6: // Đã hủy
           response = await getCanceledTests();
           break;
         default:
@@ -218,7 +225,7 @@ const STITestManagementContent = () => {
         setTests(testsData);
         setFilteredTests(testsData);
 
-        // Count pending tests
+        // Đếm số xét nghiệm chờ xử lý
         const pendingTests = testsData.filter(
           (test) => test && test.status === 'PENDING'
         );
@@ -249,11 +256,20 @@ const STITestManagementContent = () => {
     }
   }, [tabValue]);
 
-  // Initial data load
+  // Tải dữ liệu ban đầu
   useEffect(() => {
     fetchTests();
   }, [fetchTests]);
-  // Filter function
+
+  /**
+   * Hàm lọc danh sách xét nghiệm dựa trên các tiêu chí:
+   * - Tab hiện tại (auto-filter theo trạng thái)
+   * - Bộ lọc trạng thái thủ công
+   * - Bộ lọc phương thức thanh toán
+   * - Từ khóa tìm kiếm
+   * - Lọc theo ngày hẹn
+   */
+  // Hàm lọc
   useEffect(() => {
     if (!tests || !Array.isArray(tests) || tests.length === 0) {
       console.warn('Dữ liệu xét nghiệm trống hoặc không phải mảng:', tests);
@@ -264,34 +280,36 @@ const STITestManagementContent = () => {
     console.log('Đang lọc từ dữ liệu xét nghiệm:', tests.length, tests);
     let result = [...tests];
 
-    // Auto-filter based on tab
+    // Tự động lọc dựa trên tab
     if (tabValue === 3) {
-      // Filter for SAMPLED tests in tab 3
+      // Lọc xét nghiệm SAMPLED ở tab 3
       result = result.filter((test) => test && test.status === 'SAMPLED');
     } else if (tabValue === 4) {
-      // Filter for RESULTED tests in tab 4
+      // Lọc xét nghiệm RESULTED ở tab 4
       result = result.filter((test) => test && test.status === 'RESULTED');
     } else if (tabValue === 5) {
-      // Filter for COMPLETED tests in tab 5
+      // Lọc xét nghiệm COMPLETED ở tab 5
       result = result.filter((test) => test && test.status === 'COMPLETED');
     } else if (tabValue === 6) {
-      // Filter for CANCELED tests in tab 6
+      // Lọc xét nghiệm CANCELED ở tab 6
       result = result.filter((test) => test && test.status === 'CANCELED');
     }
 
-    // Filter by status
+    // Lọc theo trạng thái
     if (statusFilter !== 'ALL') {
       result = result.filter((test) => test && test.status === statusFilter);
       console.log('Sau khi lọc theo trạng thái:', result.length);
     }
 
-    // Filter by payment method
+    // Lọc theo phương thức thanh toán
     if (paymentFilter !== 'ALL') {
       result = result.filter(
         (test) => test && test.paymentMethod === paymentFilter
       );
       console.log('Sau khi lọc theo phương thức thanh toán:', result.length);
-    } // Filter by search term
+    }
+
+    // Lọc theo từ khóa tìm kiếm
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       result = result.filter(
@@ -304,11 +322,11 @@ const STITestManagementContent = () => {
       console.log('Sau khi lọc theo từ khóa:', result.length);
     }
 
-    // Filter by date - from selected date onwards
+    // Lọc theo ngày - từ ngày được chọn trở đi
     if (dateFilter) {
       console.log('Đang lọc từ ngày hẹn trở đi:', dateFilter);
 
-      // dateFilter is now a Date object from DatePicker
+      // dateFilter bây giờ là đối tượng Date từ DatePicker
       const filterDate = new Date(dateFilter);
       if (isNaN(filterDate.getTime())) {
         console.log('Ngày filter không hợp lệ:', dateFilter);
@@ -322,7 +340,7 @@ const STITestManagementContent = () => {
           return false;
         }
 
-        // Convert test date to Date object safely
+        // Chuyển đổi ngày xét nghiệm thành đối tượng Date một cách an toàn
         let testDate;
 
         // Xử lý các trường hợp khác nhau của appointmentDate
@@ -355,7 +373,7 @@ const STITestManagementContent = () => {
           return false;
         }
 
-        testDate.setHours(0, 0, 0, 0); // Start of day
+        testDate.setHours(0, 0, 0, 0); // Bắt đầu ngày
 
         // Lọc từ ngày được chọn trở đi (>=)
         const isMatch = testDate.getTime() >= filterDate.getTime();
@@ -370,24 +388,41 @@ const STITestManagementContent = () => {
 
     console.log('Kết quả lọc cuối cùng:', result.length, result);
     setFilteredTests(result);
-    setPage(0); // Reset to first page when filters change
+    setPage(0); // Reset về trang đầu tiên khi bộ lọc thay đổi
   }, [tests, statusFilter, paymentFilter, searchTerm, dateFilter, tabValue]);
 
-  // Handle tab change
+  /**
+   * Hàm xử lý thay đổi tab
+   * Cập nhật tabValue để trigger fetchTests và filter
+   */
+  // Xử lý thay đổi tab
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
 
-  // Handle pagination
+  /**
+   * Hàm xử lý thay đổi trang trong pagination
+   */
+  // Xử lý phân trang
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
+  /**
+   * Hàm xử lý thay đổi số dòng hiển thị mỗi trang
+   */
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
-  // Open modals
+
+  /**
+   * Hàm mở modal xem chi tiết xét nghiệm (package hoặc đơn lẻ)
+   * - Tải thông tin chi tiết xét nghiệm
+   * - Tải kết quả nếu đã có
+   * - Xử lý khác nhau cho xét nghiệm đơn lẻ và package
+   */
+  // Mở các modal
   const handleOpenTestModal = async (test) => {
     console.log('Đang mở modal kết quả xét nghiệm cho:', test);
     setSelectedTest(test);
@@ -400,19 +435,19 @@ const STITestManagementContent = () => {
     ) {
       // Đối với xét nghiệm đơn lẻ, tạo một thành phần mặc định nếu chưa có
       if (!test.packageId) {
-        // Use proper numeric componentId value - use testId as a base for the component
+        // Sử dụng ID số thích hợp cho componentId - dùng testId làm cơ sở cho component
         const componentId = test.testId ? parseInt(test.testId) : 1;
 
         test.testComponents = [
           {
-            id: componentId, // Use numeric ID
-            componentId: componentId, // Use numeric ID
+            id: componentId, // Sử dụng ID số
+            componentId: componentId, // Sử dụng ID số
             componentName: test.serviceName || 'Xét nghiệm',
             status: test.status,
             unit: '',
             normalRange: '',
             resultValue: '',
-            // If this appears to be an HIV test, set testType accordingly
+            // Nếu đây có vẻ là xét nghiệm HIV, đặt testType tương ứng
             testType:
               test.serviceName && test.serviceName.toLowerCase().includes('hiv')
                 ? 'BINARY'
@@ -436,7 +471,7 @@ const STITestManagementContent = () => {
         if (results) {
           test.testResults = results.data || results;
 
-          // Map test results to component structure if needed
+          // Ánh xạ kết quả xét nghiệm vào cấu trúc component nếu cần
           if (
             test.testResults &&
             Array.isArray(test.testResults) &&
@@ -464,7 +499,7 @@ const STITestManagementContent = () => {
       }
     }
     if (test.packageId) {
-      // If this is a package test, first try to get complete package details
+      // Nếu đây là xét nghiệm package, trước tiên thử lấy chi tiết package đầy đủ
       try {
         setLoading(true);
         console.log('Fetching package details for:', test.testId);
@@ -474,9 +509,9 @@ const STITestManagementContent = () => {
           const packageData = response.data || response;
           console.log('Got package details:', packageData);
 
-          // If we have valid data, use that instead of the basic test data
+          // Nếu có dữ liệu hợp lệ, sử dụng thay vì dữ liệu xét nghiệm cơ bản
           if (packageData) {
-            // Check if we have components in the package data
+            // Kiểm tra xem có components trong dữ liệu package không
             if (
               packageData.testComponents &&
               packageData.testComponents.length > 0
@@ -494,9 +529,9 @@ const STITestManagementContent = () => {
         }
       } catch (err) {
         console.error('Error fetching package details:', err);
-        // Continue with the basic test data we already have
+        // Tiếp tục với dữ liệu xét nghiệm cơ bản mà chúng ta đã có
 
-        // If there was an error, make sure we have at least some dummy components
+        // Nếu có lỗi, đảm bảo chúng ta có ít nhất một số components giả
         if (
           !test.testComponents ||
           !Array.isArray(test.testComponents) ||
@@ -527,6 +562,12 @@ const STITestManagementContent = () => {
     }
   };
 
+  /**
+   * Hàm mở modal lấy mẫu xét nghiệm
+   * - Xử lý khác nhau cho package và service đơn lẻ
+   * - Tải thông tin components/thành phần xét nghiệm
+   * - Chuẩn bị dữ liệu cho modal lấy mẫu
+   */
   // Handler mở modal lấy mẫu
   const handleOpenSampleModal = async (test) => {
     setSelectedTest(test);
@@ -535,13 +576,15 @@ const STITestManagementContent = () => {
     if (test.packageId) {
       setLoadingService(true);
       try {
-        const res = await getSTIPackageById(test.packageId);
+        const res = await getSTIPackageByIdFiltered(test.packageId);
         if (res && res.data && Array.isArray(res.data.services)) {
           setIsPackageModal(true);
           setPackageServices(res.data.services);
           // Tải trước toàn bộ components cho các service trong package
           const serviceList = res.data.services;
-          const promises = serviceList.map((svc) => getSTIServiceById(svc.id));
+          const promises = serviceList.map((svc) =>
+            getSTIServiceByIdFiltered(svc.id)
+          );
           const results = await Promise.all(promises);
           const componentsMap = {};
           results.forEach((result, idx) => {
@@ -551,8 +594,10 @@ const STITestManagementContent = () => {
               result.data &&
               Array.isArray(result.data.components)
             ) {
+              // Components đã được lọc trong getSTIServiceByIdFiltered
               componentsMap[svcId] = result.data.components;
             } else if (result && Array.isArray(result.components)) {
+              // Components đã được lọc trong getSTIServiceByIdFiltered
               componentsMap[svcId] = result.components;
             } else {
               componentsMap[svcId] = [];
@@ -575,8 +620,9 @@ const STITestManagementContent = () => {
       // Nếu là service đơn lẻ
       try {
         setLoadingService(true);
-        const res = await getSTIServiceById(test.serviceId);
+        const res = await getSTIServiceByIdFiltered(test.serviceId);
         if (res && res.data && Array.isArray(res.data.components)) {
+          // Components đã được lọc trong getSTIServiceByIdFiltered
           setServiceComponents(res.data.components);
           setServiceInfo(res.data);
           setIsPackageModal(false);
@@ -596,10 +642,15 @@ const STITestManagementContent = () => {
     }
   };
 
+  /**
+   * Hàm xử lý khi chọn service trong package để xem components
+   * Cập nhật serviceComponents từ allServiceComponents đã được cache
+   */
   // Khi chọn 1 service trong package, load component của service đó bằng API
   const handleSelectServiceInPackage = (svc) => {
     setSelectedService(svc);
     if (svc && svc.id && allServiceComponents[svc.id]) {
+      // Components đã được lọc sẵn khi tải vào allServiceComponents
       setServiceComponents(allServiceComponents[svc.id]);
     } else {
       setServiceComponents([]);
@@ -607,6 +658,11 @@ const STITestManagementContent = () => {
     // Không cần loadingService nữa khi chuyển service trong package
   };
 
+  /**
+   * Callback được gọi khi xác nhận lấy mẫu hoàn tất
+   * - Gọi API để chuyển trạng thái xét nghiệm sang SAMPLED
+   * - Cập nhật UI và hiển thị thông báo
+   */
   // Callback khi xác nhận lấy mẫu xong
   const handleSampleCollected = async (testId) => {
     // Gọi API chuyển trạng thái sang SAMPLED
@@ -622,7 +678,13 @@ const STITestManagementContent = () => {
     }
   };
 
-  // Test status update handlers
+  /**
+   * Hàm xử lý xác nhận xét nghiệm (chuyển từ PENDING sang CONFIRMED)
+   * - Kiểm tra trạng thái thanh toán
+   * - Gọi API confirmTest
+   * - Cập nhật state và hiển thị thông báo
+   */
+  // Handlers cập nhật trạng thái xét nghiệm
   const handleConfirmTestAction = async (testId) => {
     try {
       setLoading(true);
@@ -678,6 +740,12 @@ const STITestManagementContent = () => {
       setLoading(false);
     }
   };
+
+  /**
+   * Hàm xử lý lấy mẫu xét nghiệm (chuyển từ CONFIRMED sang SAMPLED)
+   * - Gọi API sampleTest
+   * - Cập nhật state và hiển thị thông báo
+   */
   const handleSampleTestAction = async (testId) => {
     try {
       setLoading(true);
@@ -718,6 +786,12 @@ const STITestManagementContent = () => {
     }
   };
 
+  /**
+   * Hàm xử lý hủy xét nghiệm với lý do
+   * - Kiểm tra thời gian (không được hủy trong vòng 24h trước giờ hẹn)
+   * - Gọi API cancelSTITest
+   * - Cập nhật state và hiển thị thông báo
+   */
   const handleCancelTestAction = async (testId, reason) => {
     try {
       setLoading(true);
@@ -755,7 +829,16 @@ const STITestManagementContent = () => {
     } finally {
       setLoading(false);
     }
-  }; // Update test in state
+  };
+
+  /**
+   * Hàm cập nhật thông tin xét nghiệm trong state
+   * - Cập nhật tests và filteredTests
+   * - Xử lý cập nhật một xét nghiệm hoặc toàn bộ danh sách
+   * - Lọc lại theo tab hiện tại
+   * - Cập nhật số lượng pending
+   */
+  // Cập nhật xét nghiệm trong state
   const updateTestInState = (updatedTest) => {
     if (!updatedTest || !updatedTest.testId) {
       console.error('Invalid updated test:', updatedTest);
@@ -764,7 +847,7 @@ const STITestManagementContent = () => {
 
     console.log('Updating test in state:', updatedTest);
 
-    // Handle if we were given an array of tests (rare case)
+    // Xử lý nếu chúng ta được cung cấp một mảng xét nghiệm (trường hợp hiếm)
     if (Array.isArray(updatedTest)) {
       setTests(updatedTest);
 
@@ -791,7 +874,7 @@ const STITestManagementContent = () => {
         setFilteredTests(filtered);
       }
     } else {
-      // Handle single test update
+      // Xử lý cập nhật xét nghiệm đơn lẻ
       const updatedTests = tests.map((test) =>
         test && test.testId === updatedTest.testId ? updatedTest : test
       );
@@ -828,18 +911,22 @@ const STITestManagementContent = () => {
       setFilteredTests(updatedFilteredTests);
     }
 
-    // Recalculate pending count whenever a test is updated
+    // Tính lại số lượng pending mỗi khi xét nghiệm được cập nhật
     const pendingTests = tests.filter(
       (test) => test && test.status === 'PENDING'
     );
     setPendingCount(pendingTests.length);
 
-    // Show success message and auto-hide it after 3 seconds
+    // Hiển thị thông báo thành công và tự động ẩn sau 3 giây
     setSuccess(`Cập nhật xét nghiệm #${updatedTest.testId} thành công`);
     setTimeout(() => setSuccess(null), 3000);
   };
 
-  // Helper function để format ngày hiển thị
+  /**
+   * Hàm helper để format ngày hiển thị trong bảng
+   * Xử lý các định dạng ngày khác nhau (Array, String, Date object)
+   */
+  // Hàm helper để format ngày hiển thị
   const formatAppointmentDate = (appointmentDate) => {
     if (!appointmentDate) return 'Không có ngày hẹn';
 
@@ -863,7 +950,10 @@ const STITestManagementContent = () => {
     return formatDateDisplay(date);
   };
 
-  // Reset filters
+  /**
+   * Hàm reset tất cả bộ lọc về giá trị mặc định
+   */
+  // Reset bộ lọc
   const handleResetFilters = () => {
     setStatusFilter('ALL');
     setPaymentFilter('ALL');
@@ -871,7 +961,10 @@ const STITestManagementContent = () => {
     setDateFilter(null);
   };
 
-  // Render status chip
+  /**
+   * Hàm render chip hiển thị trạng thái xét nghiệm với màu sắc tương ứng
+   */
+  // Render chip trạng thái
   const renderStatusChip = (status) => {
     return (
       <Chip
@@ -886,7 +979,12 @@ const STITestManagementContent = () => {
     );
   };
 
-  // Get payment method display
+  /**
+   * Hàm hiển thị thông tin phương thức thanh toán với trạng thái
+   * - Hiển thị màu sắc khác nhau dựa trên trạng thái thanh toán
+   * - COMPLETED: xanh lá, FAILED: đỏ, PENDING: vàng
+   */
+  // Lấy hiển thị phương thức thanh toán
   const getPaymentMethodDisplay = (test) => {
     const method = test.paymentMethod;
     const status = test.paymentStatus;
@@ -919,9 +1017,18 @@ const STITestManagementContent = () => {
     );
   };
 
-  // Get button based on test status
+  /**
+   * Hàm quyết định button thao tác hiển thị dựa trên trạng thái xét nghiệm
+   * - PENDING: nút Xác nhận (+ kiểm tra thanh toán) và Hủy
+   * - CONFIRMED: nút Lấy mẫu và Hủy
+   * - SAMPLED: nút Nhập kết quả và Hủy
+   * - RESULTED: nút Xem kết quả và Hủy
+   * - COMPLETED: nút Xem kết quả cuối cùng
+   * - CANCELED: nút Xem chi tiết
+   */
+  // Lấy button dựa trên trạng thái xét nghiệm
   const getActionButton = (test) => {
-    // Helper function to render cancel button
+    // Hàm helper để render nút hủy
     const renderCancelButton = () => (
       <Tooltip title="Hủy xét nghiệm">
         <Button
@@ -1114,6 +1221,12 @@ const STITestManagementContent = () => {
     }
   };
 
+  /**
+   * Hàm mở modal nhập kết quả xét nghiệm
+   * - Tải kết quả đã có nếu xét nghiệm ở trạng thái RESULTED/COMPLETED
+   * - Xử lý khác nhau cho package và service đơn lẻ
+   * - Chuẩn bị dữ liệu components cho modal
+   */
   // Hàm mở modal nhập kết quả
   const handleOpenResultModal = async (test) => {
     setResultModalTest(test);
@@ -1152,10 +1265,12 @@ const STITestManagementContent = () => {
           allComponents = allServiceComponents;
         } else {
           // Lấy lại từ API
-          const res = await getSTIPackageById(test.packageId);
+          const res = await getSTIPackageByIdFiltered(test.packageId);
           if (res && res.data && Array.isArray(res.data.services)) {
             services = res.data.services;
-            const promises = services.map((svc) => getSTIServiceById(svc.id));
+            const promises = services.map((svc) =>
+              getSTIServiceByIdFiltered(svc.id)
+            );
             const results = await Promise.all(promises);
             results.forEach((result, idx) => {
               const svcId = services[idx].id;
@@ -1178,7 +1293,9 @@ const STITestManagementContent = () => {
         // Mặc định chọn service đầu tiên
         const firstService = services[0];
         setResultModalSelectedService(firstService);
-        setResultModalComponents(allComponents[firstService.id] || []);
+        // Components đã được lọc sẵn trong allComponents
+        const filteredComponents = allComponents[firstService.id] || [];
+        setResultModalComponents(filteredComponents);
       } catch (err) {
         setResultModalError('Không thể tải thông tin gói dịch vụ');
         setResultModalPackageServices([]);
@@ -1193,10 +1310,14 @@ const STITestManagementContent = () => {
       // Nếu là service đơn lẻ
       try {
         if (test.testComponents) {
-          setResultModalComponents(test.testComponents);
+          // Lọc bỏ components có active: false
+          setResultModalComponents(
+            test.testComponents.filter((comp) => comp.active !== false)
+          );
         } else if (test.serviceId) {
-          const res = await getSTIServiceById(test.serviceId);
+          const res = await getSTIServiceByIdFiltered(test.serviceId);
           if (res && res.data && Array.isArray(res.data.components)) {
+            // Components đã được lọc trong getSTIServiceByIdFiltered
             setResultModalComponents(res.data.components);
           } else {
             setResultModalComponents([]);
@@ -1214,16 +1335,25 @@ const STITestManagementContent = () => {
     }
   };
 
+  /**
+   * Hàm xử lý khi chọn service trong package ở modal nhập kết quả
+   * Cập nhật components của service được chọn
+   */
   // Khi chọn service trong package
   const handleSelectServiceInResultModal = (svc) => {
     setResultModalSelectedService(svc);
     if (svc && svc.id && resultModalAllServiceComponents[svc.id]) {
+      // Components đã được lọc sẵn trong resultModalAllServiceComponents
       setResultModalComponents(resultModalAllServiceComponents[svc.id]);
     } else {
       setResultModalComponents([]);
     }
   };
 
+  /**
+   * Hàm lưu tạm thời kết quả xét nghiệm
+   * Cho phép lưu kết quả từng phần mà không cần hoàn tất
+   */
   // Hàm lưu tạm thời (cho từng service trong package hoặc service đơn)
   const handleSavePartialResult = async (data) => {
     setResultModalLoading(true);
@@ -1239,6 +1369,11 @@ const STITestManagementContent = () => {
     }
   };
 
+  /**
+   * Hàm lưu toàn bộ kết quả xét nghiệm (chuyển sang trạng thái RESULTED)
+   * - Sử dụng API addTestResults hoặc updateTestResults tùy trạng thái
+   * - Đóng modal và refresh dữ liệu sau khi thành công
+   */
   // Hàm lưu tất cả (cho từng service trong package hoặc service đơn)
   const handleSaveAllResult = async (data) => {
     setResultModalLoading(true);
@@ -1263,6 +1398,12 @@ const STITestManagementContent = () => {
     }
   };
 
+  /**
+   * Hàm hoàn tất xét nghiệm (chuyển sang trạng thái COMPLETED)
+   * - Lưu kết quả mới nhất
+   * - Gọi API completeTest để chuyển trạng thái
+   * - Đóng modal và refresh dữ liệu
+   */
   // Hàm mới để xử lý việc hoàn tất xét nghiệm
   const handleCompleteResult = async (data) => {
     setResultModalLoading(true);
@@ -1303,6 +1444,10 @@ const STITestManagementContent = () => {
     }
   };
 
+  /**
+   * Hàm mở modal xem kết quả cuối cùng cho xét nghiệm đã hoàn tất
+   * Hiển thị kết quả và có thể có thêm ghi chú từ consultant
+   */
   // Hàm xử lý mở modal kết quả cuối cùng
   const handleOpenFinalResult = async (test) => {
     setSelectedTest(test);
@@ -1312,17 +1457,31 @@ const STITestManagementContent = () => {
     console.log('Opening final result modal for test:', test);
   };
 
+  /**
+   * Hàm mở modal xem chi tiết xét nghiệm đã bị hủy
+   * Hiển thị lý do hủy và thông tin liên quan
+   */
   const handleOpenCanceledDetailModal = (test) => {
     setSelectedCanceledTest(test);
     setOpenCanceledDetailModal(true);
   };
 
+  /**
+   * Hàm mở modal xác nhận xét nghiệm
+   * Hiển thị thông tin chi tiết trước khi xác nhận
+   */
   // Hàm mở modal xác nhận xét nghiệm
   const handleOpenConfirmModal = (test) => {
     setTestToConfirm(test);
     setOpenConfirmModal(true);
   };
 
+  /**
+   * Hàm xác nhận xét nghiệm từ modal với optimistic update
+   * - Cập nhật UI ngay lập tức để trải nghiệm người dùng tốt hơn
+   * - Gọi API để xác nhận trên server
+   * - Hoàn tác nếu API thất bại
+   */
   // Hàm xác nhận xét nghiệm từ modal
   const handleConfirmFromModal = async () => {
     if (!testToConfirm) return;
@@ -1454,7 +1613,7 @@ const STITestManagementContent = () => {
             <Tab label="Đã hủy" />
           </Tabs>
         </Box>
-        {/* Filter Section */}
+        {/* Phần lọc */}
         <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
           {' '}
           <Grid item xs={12} md={4}>
@@ -1547,7 +1706,7 @@ const STITestManagementContent = () => {
             </Button>
           </Grid>
         </Grid>
-        {/* Test Table */}
+        {/* Bảng xét nghiệm */}
         <TabPanel value={tabValue} index={0}>
           {renderTestTable()}
         </TabPanel>
@@ -1569,7 +1728,7 @@ const STITestManagementContent = () => {
         <TabPanel value={tabValue} index={6}>
           {renderTestTable()}
         </TabPanel>
-        {/* Modals */} {/* Modal lấy mẫu */}
+        {/* Các Modal */} {/* Modal lấy mẫu */}
         <SampleCollectionModal
           open={openComponentModal}
           onClose={() => setOpenComponentModal(false)}
@@ -1633,9 +1792,16 @@ const STITestManagementContent = () => {
       </Paper>
     </Container>
   );
-  // Function to render the test table
+
+  /**
+   * Hàm render bảng hiển thị danh sách xét nghiệm
+   * - Hiển thị loading khi đang tải dữ liệu
+   * - Hiển thị thông báo khi không có dữ liệu
+   * - Render bảng với pagination và các thao tác
+   */
+  // Hàm để render bảng xét nghiệm
   function renderTestTable() {
-    // Ensure tests and filteredTests are accessible
+    // Đảm bảo tests và filteredTests có thể truy cập được
     const testsData = tests || [];
 
     console.log(

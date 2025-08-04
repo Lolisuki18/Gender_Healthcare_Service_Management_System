@@ -79,6 +79,7 @@ const STIServiceManagementContent = () => {
     testType: 'QUANTITATIVE', // Default value
     isActive: true,
     componentId: null,
+    sampleType: '', // Thêm trường loại mẫu
   });
   const [editingComponentIndex, setEditingComponentIndex] = useState(-1);
 
@@ -163,22 +164,22 @@ const STIServiceManagementContent = () => {
 
     // Validate name (required, max length 100)
     if (!formData.name.trim()) {
-      newErrors.name = 'Service name is required';
+      newErrors.name = 'Tên của service là bắt buộc';
       isValid = false;
     } else if (formData.name.length > 100) {
-      newErrors.name = 'Service name must not exceed 100 characters';
+      newErrors.name = 'Tên của service không được vượt quá 100 ký tự';
       isValid = false;
     }
 
     // Validate price (required, must be positive)
     if (!formData.price || formData.price <= 0) {
-      newErrors.price = 'Price is required and must be greater than 0';
+      newErrors.price = 'Giá là bắt buộc và phải lớn hơn 0';
       isValid = false;
     }
 
     // Validate components (at least one component required)
     if (!formData.components || formData.components.length === 0) {
-      newErrors.components = 'At least one test component is required';
+      newErrors.components = 'Ít nhất một thành phần xét nghiệm là bắt buộc';
       isValid = false;
     }
 
@@ -229,6 +230,7 @@ const STIServiceManagementContent = () => {
       testType: component.testType || 'QUANTITATIVE', // Ensure fallback
       componentId: component.componentId || null,
       component_id: component.component_id || component.componentId || null,
+      sampleType: component.sampleType || '', // Ensure sampleType is set
     });
     setEditingComponentIndex(index);
     setEditComponentDialog(true);
@@ -244,6 +246,7 @@ const STIServiceManagementContent = () => {
       testType: 'QUANTITATIVE', // Default value
       isActive: true,
       componentId: null,
+      sampleType: '', // Reset sampleType
     });
     setEditingComponentIndex(-1);
   };
@@ -370,6 +373,7 @@ const STIServiceManagementContent = () => {
       referenceRange: comp.normalRange,
       interpretation: comp.description,
       testType: comp.testType || 'QUANTITATIVE', // Ensure fallback
+      sampleType: comp.sampleType || '', // Add sampleType mapping
       // Use consistent helper approach for getting status
       isActive:
         comp.isActive !== undefined
@@ -470,6 +474,7 @@ const STIServiceManagementContent = () => {
           referenceRange: comp.referenceRange,
           interpretation: comp.interpretation || '',
           testType: comp.testType || 'QUANTITATIVE', // Ensure fallback
+          sampleType: comp.sampleType || '', // Add sampleType to payload
           isActive: comp.isActive !== false ? true : false, // Pass individual component status
         })),
       };
@@ -520,21 +525,6 @@ const STIServiceManagementContent = () => {
       style: 'currency',
       currency: 'VND',
     }).format(price);
-  };
-  // Format date
-  const formatDate = (dateArray) => {
-    // Check if dateArray is an array (from API) or a string
-    if (Array.isArray(dateArray)) {
-      // Format: [year, month, day, hour, minute, second, nanosecond]
-      const [year, month, day, hour, minute, second] = dateArray;
-      // Month is 0-based in JavaScript Date, but 1-based in the array from API
-      const date = new Date(year, month - 1, day, hour, minute, second);
-      return date.toLocaleString('vi-VN');
-    } else if (dateArray) {
-      // Handle string dates if they come in that format
-      return new Date(dateArray).toLocaleString('vi-VN');
-    }
-    return 'N/A';
   };
 
   return (
@@ -657,9 +647,6 @@ const STIServiceManagementContent = () => {
                 Trạng thái
               </TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>
-                Cập nhật lần cuối
-              </TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>
                 Hành động
               </TableCell>
             </TableRow>
@@ -667,7 +654,7 @@ const STIServiceManagementContent = () => {
           <TableBody>
             {filteredServices.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={7} align="center">
                   {loading ? 'Đang tải...' : 'Không tìm thấy dịch vụ nào'}
                 </TableCell>
               </TableRow>
@@ -736,7 +723,6 @@ const STIServiceManagementContent = () => {
                         }}
                       />
                     </TableCell>
-                    <TableCell>{formatDate(service.updatedAt)}</TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={1}>
                         <Tooltip title="Xem chi tiết">
@@ -1425,28 +1411,6 @@ const STIServiceManagementContent = () => {
                     </Typography>
                   </Box>
                 </Grid>
-                {/* Cập nhật lần cuối */}
-                <Grid item size={4} xs={12} sm={6}>
-                  <Box
-                    sx={{
-                      mb: 2,
-                      p: 2,
-                      borderRadius: 2,
-                      background: '#fff',
-                      boxShadow: '0 1px 4px rgba(74,144,226,0.07)',
-                    }}
-                  >
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ fontWeight: 700, color: '#4A90E2', mb: 0.5 }}
-                    >
-                      Cập nhật lần cuối
-                    </Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      {formatDate(selectedService.updatedAt)}
-                    </Typography>
-                  </Box>
-                </Grid>
                 {/* Giá */}
                 <Grid item size={4} xs={12} sm={6}>
                   <Box
@@ -1492,6 +1456,9 @@ const STIServiceManagementContent = () => {
                         fontWeight: 400,
                         color: '#222',
                         whiteSpace: 'pre-line',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-word',
                       }}
                     >
                       {selectedService.description || 'Không có mô tả'}
@@ -1870,7 +1837,26 @@ const STIServiceManagementContent = () => {
                   }}
                 />
               </Grid>
-              <Grid item size={12} xs={12} sm={6}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Loại mẫu"
+                  value={editingComponent.sampleType || ''}
+                  onChange={(e) =>
+                    handleEditComponentChange('sampleType', e.target.value)
+                  }
+                  sx={{
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '10px',
+                      background: '#f6fafd',
+                      fontWeight: 500,
+                      fontSize: '1.05rem',
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item size={12} xs={12}>
                 <TextField
                   fullWidth
                   label="Mô tả"

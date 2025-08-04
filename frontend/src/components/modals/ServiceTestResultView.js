@@ -77,11 +77,6 @@ const ServiceTestResultView = ({
                 mb: 2,
               }}
             >
-              <img
-                src="/logo192.png"
-                alt="Logo"
-                style={{ width: 48, height: 48, marginBottom: 8 }}
-              />
               <Typography
                 variant={isMobile ? 'h6' : 'h4'}
                 align="center"

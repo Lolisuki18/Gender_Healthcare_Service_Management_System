@@ -72,16 +72,22 @@ const SampleCollectionModal = ({
         </TableHead>
         <TableBody>
           {components?.length > 0 ? (
-            components.map((comp) => (
-              <TableRow key={comp.componentId || comp.id}>
-                <TableCell sx={{ fontWeight: 600 }}>
-                  {comp.componentName || comp.testName}
-                </TableCell>
-                <TableCell>{comp.unit}</TableCell>
-                <TableCell>{comp.normalRange || comp.referenceRange}</TableCell>
-                <TableCell>{comp.sampleType || comp.sample || '---'}</TableCell>
-              </TableRow>
-            ))
+            components
+              .filter((comp) => comp.active !== false) // Lọc bỏ components có active: false
+              .map((comp) => (
+                <TableRow key={comp.componentId || comp.id}>
+                  <TableCell sx={{ fontWeight: 600 }}>
+                    {comp.componentName || comp.testName}
+                  </TableCell>
+                  <TableCell>{comp.unit}</TableCell>
+                  <TableCell>
+                    {comp.normalRange || comp.referenceRange}
+                  </TableCell>
+                  <TableCell>
+                    {comp.sampleType || comp.sample || '---'}
+                  </TableCell>
+                </TableRow>
+              ))
           ) : (
             <TableRow>
               <TableCell colSpan={4} sx={{ textAlign: 'center', py: 2 }}>

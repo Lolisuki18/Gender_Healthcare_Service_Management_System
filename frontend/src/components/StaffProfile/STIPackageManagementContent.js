@@ -9,7 +9,7 @@
 
 // ======================= IMPORT CÁC THƯ VIỆN VÀ HÀM API =======================
 // Import các thư viện React, Material UI, các icon, các hàm gọi API, và Toast để hiển thị thông báo
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -52,6 +52,7 @@ import {
   createSTIPackage,
   updateSTIPackage,
   deleteSTIPackage,
+  getAllActiveSTIServicesForStaff,
 } from '@/services/stiService';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -59,10 +60,64 @@ import useSTIServicesAndPackages from '../../hooks/useSTIServicesAndPackages';
 import { confirmDialog } from '../../utils/confirmDialog';
 
 const STIPackageManagementContent = () => {
-  const { services, packages, loading, error, reload } =
-    useSTIServicesAndPackages();
+  const {
+    packages,
+    loading: packagesLoading,
+    error: packagesError,
+    reload: reloadPackages,
+  } = useSTIServicesAndPackages();
+
+  // State để quản lý services riêng biệt
+  const [services, setServices] = useState([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
+  const [servicesError, setServicesError] = useState('');
+
+  // Fetch services với filter active
+  const fetchServices = async () => {
+    setServicesLoading(true);
+    setServicesError('');
+    try {
+      const serviceList = await getAllActiveSTIServicesForStaff();
+      const normalizedServices = (
+        Array.isArray(serviceList) ? serviceList : serviceList.data || []
+      ).map((s) => ({
+        id: s.id,
+        name: s.name || s.serviceName,
+        description: s.description || '',
+        price: s.price || 0,
+        isActive:
+          s.isActive !== undefined
+            ? s.isActive
+            : s.active !== undefined
+              ? s.active
+              : true,
+        duration: s.duration,
+        ...s,
+      }));
+      setServices(normalizedServices);
+    } catch (err) {
+      setServicesError('Lỗi khi tải dữ liệu dịch vụ: ' + (err.message || err));
+    } finally {
+      setServicesLoading(false);
+    }
+  };
+
+  // Load services khi component mount
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
   // availableServices: Danh sách các dịch vụ xét nghiệm có thể chọn khi tạo/sửa gói
   const availableServices = services;
+  // Combine loading states
+  const loading = packagesLoading || servicesLoading;
+  // Combine errors
+  const error = packagesError || servicesError;
+
+  // Hàm reload cho cả services và packages
+  const reload = async () => {
+    await Promise.all([fetchServices(), reloadPackages()]);
+  };
   // packages: Danh sách các gói xét nghiệm STI (đã chuẩn hóa)
   // selectedServices: Danh sách ID dịch vụ được chọn cho gói hiện tại
   const [selectedServices, setSelectedServices] = useState([]);
