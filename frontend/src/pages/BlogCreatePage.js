@@ -28,8 +28,17 @@ import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ImageIcon from '@mui/icons-material/Image';
+import PreviewIcon from '@mui/icons-material/Preview';
 import blogService from '../services/blogService';
 import categoryService from '../services/categoryService';
+import BlogPreview from '../components/modals/BlogPreview';
+import { 
+  validateBlogContent, 
+  countWords, 
+  estimateReadingTime,
+  processBlogContent,
+  createSlug
+} from '../utils/textUtils';
 
 const BlogCreatePage = () => {
   const navigate = useNavigate();
@@ -47,6 +56,17 @@ const BlogCreatePage = () => {
     categoryId: '',
     sections: [],
   });
+
+  // Text stats
+  const [contentStats, setContentStats] = useState({
+    wordCount: 0,
+    readingTime: 0,
+    isValid: true,
+    validationMessage: ''
+  });
+
+  // Preview modal
+  const [showPreview, setShowPreview] = useState(false);
 
   // File handling
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -78,6 +98,17 @@ const BlogCreatePage = () => {
       ...prev,
       [name]: value,
     }));
+
+    // Update content stats when content changes
+    if (name === 'content') {
+      const validation = validateBlogContent(value);
+      setContentStats({
+        wordCount: countWords(value),
+        readingTime: estimateReadingTime(value),
+        isValid: validation.isValid,
+        validationMessage: validation.message
+      });
+    }
   };
 
   const handleThumbnailChange = (e) => {
@@ -174,8 +205,10 @@ const BlogCreatePage = () => {
       return;
     }
 
-    if (!formData.content.trim()) {
-      setError('Vui lòng nhập nội dung bài viết');
+    // Validate content using utility
+    const contentValidation = validateBlogContent(formData.content);
+    if (!contentValidation.isValid) {
+      setError(contentValidation.message);
       return;
     }
 
@@ -197,7 +230,7 @@ const BlogCreatePage = () => {
       // Prepare request data
       const requestData = {
         title: formData.title.trim(),
-        content: formData.content.trim(),
+        content: processBlogContent(formData.content.trim()), // Process content with formatting
         categoryId: parseInt(formData.categoryId, 10), // Parse as integer explicitly
         sections: formData.sections
           .filter(
@@ -206,7 +239,7 @@ const BlogCreatePage = () => {
           )
           .map((section, index) => ({
             sectionTitle: section.sectionTitle.trim(),
-            sectionContent: section.sectionContent.trim(),
+            sectionContent: processBlogContent(section.sectionContent.trim()), // Process section content too
             displayOrder: index, // Use plain index without Number() conversion
           })),
         status: 'PROCESSING', // Default status for new posts
@@ -496,9 +529,39 @@ const BlogCreatePage = () => {
               required
               multiline
               rows={8}
-              sx={{ mb: 4 }}
-              placeholder="Nhập nội dung bài viết..."
+              sx={{ mb: 2 }}
+              placeholder="Nhập nội dung bài viết... 
+
+Hỗ trợ format đơn giản:
+- **Chữ đậm** hoặc __Chữ đậm__
+- *Chữ nghiêng*
+- ### Tiêu đề 3
+- ## Tiêu đề 2  
+- # Tiêu đề 1
+- - Danh sách bullet"
+              error={!contentStats.isValid}
+              helperText={!contentStats.isValid ? contentStats.validationMessage : ''}
             />
+            
+            {/* Content Stats */}
+            {formData.content && (
+              <Box sx={{ 
+                mb: 4, 
+                p: 2, 
+                backgroundColor: '#f8fbff',
+                borderRadius: '8px',
+                border: '1px solid #e3f2fd'
+              }}>
+                <Typography variant="body2" color="text.secondary">
+                  📊 Thống kê: {contentStats.wordCount} từ | ⏱️ Thời gian đọc: ~{contentStats.readingTime} phút
+                  {contentStats.isValid ? (
+                    <span style={{ color: '#4caf50', marginLeft: '8px' }}>✓ Nội dung hợp lệ</span>
+                  ) : (
+                    <span style={{ color: '#f44336', marginLeft: '8px' }}>⚠️ {contentStats.validationMessage}</span>
+                  )}
+                </Typography>
+              </Box>
+            )}
 
             <Divider sx={{ my: 4 }} />
 
@@ -629,7 +692,12 @@ const BlogCreatePage = () => {
                     multiline
                     rows={4}
                     sx={{ mb: 2 }}
-                    placeholder="Nhập nội dung cho phần này..."
+                    placeholder="Nhập nội dung cho phần này...
+
+Hỗ trợ format:
+- **Chữ đậm**, *Chữ nghiêng*
+- ### Tiêu đề
+- - Danh sách"
                   />
 
                   <Button
@@ -734,6 +802,28 @@ const BlogCreatePage = () => {
               </Button>
 
               <Button
+                variant="outlined"
+                onClick={() => setShowPreview(true)}
+                disabled={loading || !formData.title.trim() || !formData.content.trim()}
+                startIcon={<PreviewIcon />}
+                sx={{
+                  borderRadius: '12px',
+                  px: 4,
+                  py: 1.5,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  borderColor: '#26c6da',
+                  color: '#26c6da',
+                  '&:hover': {
+                    borderColor: '#00acc1',
+                    backgroundColor: 'rgba(38, 198, 218, 0.04)',
+                  },
+                }}
+              >
+                Xem trước
+              </Button>
+
+              <Button
                 type="submit"
                 variant="contained"
                 disabled={loading}
@@ -763,6 +853,13 @@ const BlogCreatePage = () => {
             </Box>
           </form>
         </Card>
+
+        {/* Blog Preview Modal */}
+        <BlogPreview
+          open={showPreview}
+          onClose={() => setShowPreview(false)}
+          blogData={formData}
+        />
       </Container>
     </Box>
   );
