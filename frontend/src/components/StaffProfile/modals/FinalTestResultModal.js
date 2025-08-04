@@ -561,6 +561,10 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
                   lineHeight: 1.6,
                   color: '#374151',
                   whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  maxWidth: '100%',
                 }}
               >
                 {fullTestDetails.consultantNotes}
