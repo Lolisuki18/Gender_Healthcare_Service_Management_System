@@ -135,7 +135,22 @@ export const HomePage = () => {
     navigate('/consultation');
   };
 
-  const handleTestRegistration = () => {
+  const handleTestRegistration = async () => {
+    const userProfile = localStorageUtil.get('userProfile');
+    if (!userProfile) {
+      const result = await confirmDialog.info(
+        'Bạn cần đăng nhập để đặt lịch dịch vụ. Bạn có muốn chuyển đến trang đăng nhập không?',
+        {
+          confirmText: 'Đăng nhập',
+          cancelText: 'Hủy',
+          title: 'Yêu cầu đăng nhập',
+        }
+      );
+      if (result) {
+        navigate('/login');
+      }
+      return;
+    }
     navigate('/test-registration');
   };
 
