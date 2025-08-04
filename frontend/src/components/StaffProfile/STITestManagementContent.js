@@ -1307,6 +1307,9 @@ const STITestManagementContent = () => {
   const handleOpenFinalResult = async (test) => {
     setSelectedTest(test);
     setOpenFinalResultModal(true);
+
+    // Có thể thêm logic load thêm dữ liệu consultant notes nếu cần
+    console.log('Opening final result modal for test:', test);
   };
 
   const handleOpenCanceledDetailModal = (test) => {

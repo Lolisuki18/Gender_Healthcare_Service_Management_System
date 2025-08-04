@@ -70,29 +70,84 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
     try {
       // Lấy đúng dữ liệu từ API (có thể nằm ở data.data hoặc data)
       const apiRes = await getTestResultsByTestId(currentTest.testId);
-      const apiData = apiRes?.data?.data || apiRes?.data || apiRes || {};
+      console.log('🔍 API Response Full:', apiRes);
 
-      // Lấy kết quả chi tiết
-      const allResults = Array.isArray(apiData.results) ? apiData.results : [];
+      const apiData = apiRes?.data?.data || apiRes?.data || apiRes || {};
+      console.log('🔍 API Data:', apiData);
+
+      // Xử lý dữ liệu - có thể là array trực tiếp hoặc object có field results
+      let allResults = [];
+
+      if (Array.isArray(apiData)) {
+        // Trường hợp API trả về array trực tiếp
+        allResults = apiData;
+        console.log('🔍 Data is direct array');
+      } else if (Array.isArray(apiData.results)) {
+        // Trường hợp API trả về object có field results
+        allResults = apiData.results;
+        console.log('🔍 Data has results field');
+      } else if (typeof apiData === 'object' && apiData !== null) {
+        // Trường hợp object được convert từ array (có keys số)
+        const keys = Object.keys(apiData);
+        if (keys.length > 0 && keys.every((key) => !isNaN(key))) {
+          allResults = Object.values(apiData);
+          console.log(
+            '🔍 Data is object with numeric keys, converting to array'
+          );
+        }
+      }
+
+      console.log('🔍 Final All Results:', allResults);
+      console.log('🔍 AllResults length:', allResults.length);
 
       // Lấy note của bác sĩ
-      const consultantNotesArr = Array.isArray(apiData.testServiceConsultantNotes)
-        ? apiData.testServiceConsultantNotes
-        : [];
-      // Hiển thị nhiều dòng note
-      const consultantNotesText = consultantNotesArr.length
-        ? consultantNotesArr.map(note =>
-            `${note.serviceName ? note.serviceName + ': ' : ''}${note.note} (${note.consultantName})`
-          ).join('\n')
-        : '';
+      let consultantNotesText = '';
+
+      // Cho package: lấy từ testServiceConsultantNotes
+      if (Array.isArray(apiData.testServiceConsultantNotes)) {
+        const consultantNotesArr = apiData.testServiceConsultantNotes;
+        console.log(
+          '🔍 Found consultant notes in testServiceConsultantNotes field (package)'
+        );
+
+        consultantNotesText = consultantNotesArr.length
+          ? consultantNotesArr
+              .map(
+                (note) =>
+                  `${note.serviceName ? note.serviceName + ': ' : ''}${note.note} (${note.consultantName})`
+              )
+              .join('\n')
+          : '';
+      }
+      // Cho service lẻ: lấy từ consultantNotes hoặc currentTest.consultantNotes
+      else if (apiData.consultantNotes || currentTest.consultantNotes) {
+        const noteText =
+          apiData.consultantNotes || currentTest.consultantNotes || '';
+        const consultantName =
+          apiData.consultantName || currentTest.consultantName || 'Bác sĩ';
+
+        // Thêm tên consultant vào cuối note nếu chưa có
+        consultantNotesText = noteText.includes('(')
+          ? noteText
+          : `${noteText} (${consultantName})`;
+        console.log('🔍 Found consultant notes for single service');
+      }
+
+      console.log('🔍 Final Consultant Notes Text:', consultantNotesText);
 
       // Gom kết quả theo serviceId
       const resultsByService = allResults.reduce((acc, result) => {
-        const serviceId = result.serviceId || 'unknown';
+        // Đối với service lẻ, có thể serviceId null/undefined hoặc là serviceId thực
+        const serviceId =
+          result.serviceId || currentTest.serviceId || 'single-service';
         if (!acc[serviceId]) {
           acc[serviceId] = {
             components: [],
-            serviceName: result.testName || `Dịch vụ ${serviceId}`,
+            serviceName:
+              result.testName ||
+              currentTest.serviceName ||
+              currentTest.testName ||
+              `Dịch vụ ${serviceId}`,
           };
         }
         acc[serviceId].components.push({
@@ -108,9 +163,33 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
         return acc;
       }, {});
 
-      // Lấy tên dịch vụ từ API nếu có
+      // Xử lý trường hợp không có kết quả nào được gom nhóm nhưng có dữ liệu
+      if (allResults.length > 0 && Object.keys(resultsByService).length === 0) {
+        resultsByService['default-service'] = {
+          components: allResults.map((result) => ({
+            id: result.componentId,
+            componentId: result.componentId,
+            componentName: result.componentName,
+            resultValue: result.resultValue,
+            unit: result.unit,
+            normalRange: result.normalRange || result.referenceRange,
+            conclusion: result.conclusion,
+            conclusionDisplayName: result.conclusionDisplayName,
+          })),
+          serviceName:
+            currentTest.serviceName ||
+            currentTest.testName ||
+            'Kết quả xét nghiệm',
+        };
+      }
+
+      // Lấy tên dịch vụ từ API nếu có serviceId hợp lệ (chỉ với serviceId số)
       const serviceIds = Object.keys(resultsByService).filter(
-        (id) => id !== 'unknown'
+        (id) =>
+          id !== 'unknown' &&
+          id !== 'single-service' &&
+          id !== 'default-service' &&
+          !isNaN(Number(id))
       );
       if (serviceIds.length > 0) {
         const serviceDetailsPromises = serviceIds.map((id) =>
@@ -143,11 +222,25 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
         ...currentTest,
         services,
         consultantNotes: consultantNotesText,
-        customerName: currentTest.customerName || currentTest.customer?.name || '',
-        customerPhone: currentTest.customerPhone || currentTest.customer?.phone || '',
-        serviceName: currentTest.serviceName || currentTest.packageName || currentTest.testName || '',
-        resultDate: currentTest.resultDate || currentTest.completedAt || currentTest.resultedAt || '',
+        customerName:
+          currentTest.customerName || currentTest.customer?.name || '',
+        customerPhone:
+          currentTest.customerPhone || currentTest.customer?.phone || '',
+        serviceName:
+          currentTest.serviceName ||
+          currentTest.packageName ||
+          currentTest.testName ||
+          '',
+        resultDate:
+          currentTest.resultDate ||
+          currentTest.completedAt ||
+          currentTest.resultedAt ||
+          '',
       };
+
+      console.log('🔍 Final Details:', details);
+      console.log('🔍 Services count:', services.length);
+      console.log('🔍 Consultant Notes in details:', details.consultantNotes);
 
       setFullTestDetails(details);
       if (services.length > 0) {
@@ -165,6 +258,13 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
       fetchFullTestDetails(test);
     }
   }, [open, test, fetchFullTestDetails]);
+
+  // Thêm useEffect này để đảm bảo selectedServiceId được set đúng
+  useEffect(() => {
+    if (fullTestDetails?.services?.length > 0 && !selectedServiceId) {
+      setSelectedServiceId(fullTestDetails.services[0].id);
+    }
+  }, [fullTestDetails, selectedServiceId]);
 
   const selectedService = useMemo(() => {
     if (!fullTestDetails || !selectedServiceId) return null;
@@ -193,6 +293,10 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
         </Typography>
       );
     }
+
+    // Đảm bảo có selectedService
+    const currentSelectedService =
+      selectedService || fullTestDetails.services[0];
 
     if (fullTestDetails.services.length > 1) {
       return (
@@ -227,13 +331,14 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
               ))}
             </List>
           </Paper>
-          {selectedService && renderServiceDetail(selectedService)}
+          {currentSelectedService &&
+            renderServiceDetail(currentSelectedService)}
         </Box>
       );
     }
 
-    // Render single service details directly
-    return renderServiceDetail(fullTestDetails.services[0]);
+    // Render single service details directly - đảm bảo service được render
+    return renderServiceDetail(currentSelectedService);
   };
 
   const renderServiceDetail = (service) => {
@@ -429,7 +534,7 @@ const FinalTestResultModal = ({ open, onClose, test, formatDateDisplay }) => {
         </Typography>
         {renderContent()}
 
-        {/* Kết luận từ consultant */}
+        {/* Kết luận từ consultant - chỉ hiển thị khi có consultant notes thực sự */}
         {fullTestDetails.consultantNotes && (
           <Box sx={{ mt: 4 }}>
             <Typography

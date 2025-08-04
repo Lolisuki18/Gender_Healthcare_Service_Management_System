@@ -29,8 +29,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Paper,
-
   Chip,
   Button,
   Dialog,
@@ -39,7 +37,6 @@ import {
   DialogActions,
   CircularProgress,
   IconButton,
-
   Table,
   TableBody,
   TableCell,
@@ -79,8 +76,7 @@ import consultantService from '../../services/consultantService';
 import reviewService from '../../services/reviewService';
 import ReviewForm from '../common/ReviewForm.js';
 
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
+const StyledPaper = styled(MuiPaper)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.95)',
   backdropFilter: 'blur(20px)',
   borderRadius: '20px',
@@ -94,7 +90,7 @@ const AppointmentsContent = () => {
   const [loading, setLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
- 
+
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -104,7 +100,6 @@ const AppointmentsContent = () => {
   const [endDate, setEndDate] = useState('');
   const [cancelReason, setCancelReason] = useState('');
   const [cancelError, setCancelError] = useState('');
-  const [reviewedConsultationIds, setReviewedConsultationIds] = useState([]);
   const [myRatings, setMyRatings] = useState([]);
 
   // Cập nhật các state cho ReviewForm
@@ -116,6 +111,8 @@ const AppointmentsContent = () => {
   const [editingReviewId, setEditingReviewId] = useState(null);
   const [reviewLoading, setReviewLoading] = useState(false);
 
+  //lấy danh sách lịch hẹn từ API
+  // và gắn review tương ứng vào từng lịch hẹn
   const fetchAppointments = async () => {
     try {
       setLoading(true);
@@ -157,10 +154,12 @@ const AppointmentsContent = () => {
     }
   };
 
+  //chạy useEffect để lấy danh sách lịch hẹn khi component mount
   useEffect(() => {
     fetchAppointments();
   }, []);
 
+  //Xử lý sự kiện khi người dùng chọn hủy lịch hẹn
   const handleCancelAppointment = async () => {
     if (!selectedAppointment) return;
     if (!cancelReason.trim()) {
@@ -186,11 +185,13 @@ const AppointmentsContent = () => {
     }
   };
 
+  //Đóng dialog hủy lịch hẹn
   const handleCloseDetailDialog = () => {
     setOpenDetailDialog(false);
     setSelectedAppointment(null);
   };
 
+  // Helper function: lấy màu sắc cho trạng thái
   const getStatusColor = (status) => {
     switch (status?.toUpperCase()) {
       case 'CONFIRMED':
@@ -226,6 +227,7 @@ const AppointmentsContent = () => {
     }
   };
 
+  // Helper function:Dịch status sang tiếng Việt
   const getStatusText = (status) => {
     switch (status?.toUpperCase()) {
       case 'CONFIRMED':
@@ -333,6 +335,7 @@ const AppointmentsContent = () => {
     return statusMatch && dateMatch;
   });
 
+  //Status : lọc theo status
   const statusOptions = [
     { value: 'ALL', label: 'Tất cả', count: appointments.length },
     {
@@ -454,17 +457,6 @@ const AppointmentsContent = () => {
           reviewData
         );
         toast.success('Đánh giá đã được gửi thành công!');
-
-        // Cập nhật ngay lập tức mảng reviewedConsultationIds để hiển thị đúng trạng thái
-        if (
-          reviewingAppointment.consultationId &&
-          !reviewedConsultationIds.includes(reviewingAppointment.consultationId)
-        ) {
-          setReviewedConsultationIds([
-            ...reviewedConsultationIds,
-            reviewingAppointment.consultationId,
-          ]);
-        }
       }
 
       handleCloseReviewDialog();
@@ -630,7 +622,7 @@ const AppointmentsContent = () => {
             dateFilter !== 'ALL' ||
             startDate ||
             endDate) && (
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'left' }}>
               <Button
                 variant="outlined"
                 startIcon={<ClearIcon />}

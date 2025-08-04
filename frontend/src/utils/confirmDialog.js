@@ -782,6 +782,21 @@ export const confirmDialog = {
                 </Typography>
               </Box>
               {/* PHẦN 2: Nội dung câu hỏi */}
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontWeight: 600,
+                    color: '#1976d2',
+                    fontSize: '0.95rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
+                  💬 Nội dung câu hỏi:
+                </Typography>
+              </Box>
               <Box
                 sx={{
                   background: '#f4f8fb',
@@ -793,7 +808,16 @@ export const confirmDialog = {
               >
                 <Typography
                   variant="body1"
-                  sx={{ color: '#222', fontWeight: 500 }}
+                  sx={{
+                    color: '#222',
+                    fontWeight: 500,
+                    wordWrap: 'break-word', // Wrap từ dài
+                    wordBreak: 'break-word', // Break từ nếu cần
+                    whiteSpace: 'pre-wrap', // Giữ nguyên line breaks và spaces
+                    overflowWrap: 'break-word', // Wrap overflow text
+                    lineHeight: 1.6, // Tăng line height cho dễ đọc
+                    maxWidth: '100%',
+                  }}
                 >
                   {question.content}
                 </Typography>
