@@ -15,6 +15,7 @@ import {
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import questionService from '@/services/questionService';
 import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 /**
  * AskQuestionDialog - Modal dùng chung để đặt câu hỏi
@@ -68,7 +69,15 @@ const AskQuestionDialog = ({
         content: question,
         categoryQuestionId: category,
       });
-      // toast.success('Câu hỏi đã được gửi thành công!'); // Đã chuyển sang QuestionsContent.js
+      // Hiển thị thông báo thành công bằng tiếng Việt ở góc bên phải
+      toast.success('Câu hỏi đã được gửi thành công!', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true
+      });
       if (onSuccess) onSuccess(response);
       onClose();
     } catch (err) {

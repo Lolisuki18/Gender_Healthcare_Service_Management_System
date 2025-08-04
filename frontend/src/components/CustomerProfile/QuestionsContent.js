@@ -60,7 +60,7 @@ import { styled } from '@mui/material/styles';
 import AskQuestionDialog from '../common/AskQuestionDialog';
 import { formatDateTimeFromArray } from '../../utils/dateUtils';
 import Pagination from '@mui/material/Pagination';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import questionService from '../../services/questionService';
 
@@ -319,12 +319,7 @@ const QuestionsContent = () => {
           open={showNewQuestionForm}
           onClose={() => setShowNewQuestionForm(false)}
           onSuccess={(response) => {
-            const id = response?.data?.data?.id;
-            toast.success(
-              id
-                ? `Câu hỏi đã được gửi thành công! ID: ${id}`
-                : 'Câu hỏi đã được gửi thành công!'
-            );
+            // Notification is now handled in AskQuestionDialog.js
             fetchQuestions();
             setPage(1);
           }}
@@ -1114,7 +1109,10 @@ const QuestionsContent = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      <ToastContainer position="top-center" autoClose={3000} />
+      <ToastContainer 
+        position="top-right" 
+        autoClose={3000}
+      />
     </Box>
   );
 };
