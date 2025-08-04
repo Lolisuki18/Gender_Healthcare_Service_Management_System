@@ -165,13 +165,13 @@ export const sidebarMenuConfig = [
   // },
   {
     id: 'customer-appointments',
-    label: 'Lịch hẹn',
+    label: 'Lịch tư vấn',
     icon: <CalendarIcon />,
     roles: ['CUSTOMER'],
   },
   {
     id: 'medical-history',
-    label: 'Lịch sử khám',
+    label: 'Lịch sử khám bệnh',
     icon: <AnalyticsIcon />,
     roles: ['CUSTOMER', 'STAFF', 'CONSULTANT'],
   },

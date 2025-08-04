@@ -244,7 +244,9 @@ const MedicalHistoryContent = () => {
         packageId: reviewingRecord.packageId,
       };
       if (isEditMode && editingReviewId) {
-        await reviewService.updateReview(editingReviewId, reviewData, { suppressNotification: true });
+        await reviewService.updateReview(editingReviewId, reviewData, {
+          suppressNotification: true,
+        });
         // Chỉ hiển thị thông báo nếu không có yêu cầu suppress từ component khác
         if (!reviewData.suppressNotification) {
           toast.success('Đánh giá đã được cập nhật thành công!');
@@ -252,10 +254,16 @@ const MedicalHistoryContent = () => {
       } else {
         if (reviewingRecord.packageId) {
           // Nếu có packageId thì là đánh giá gói
-          await reviewService.createSTIPackageReview(reviewingRecord.packageId, reviewData);
+          await reviewService.createSTIPackageReview(
+            reviewingRecord.packageId,
+            reviewData
+          );
         } else {
           // Nếu không có packageId thì là dịch vụ lẻ
-          await reviewService.createSTIServiceReview(reviewingRecord.serviceId || reviewingRecord.testId, reviewData);
+          await reviewService.createSTIServiceReview(
+            reviewingRecord.serviceId || reviewingRecord.testId,
+            reviewData
+          );
         }
         toast.success('Đánh giá đã được gửi thành công!');
       }
@@ -778,47 +786,6 @@ const MedicalHistoryContent = () => {
               </Box>
             </Box>
 
-            {/* Lần khám gần nhất */}
-            <Box
-              sx={{
-                p: 2,
-                flexGrow: 1,
-                flexBasis: '200px',
-                borderRadius: '12px',
-                background: 'rgba(59, 130, 246, 0.05)',
-                border: '1px solid rgba(59, 130, 246, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              <Box
-                sx={{
-                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                  borderRadius: '50%',
-                  p: 1,
-                  mr: 2,
-                }}
-              >
-                <TimeIcon sx={{ color: '#3b82f6', fontSize: 24 }} />
-              </Box>
-              <Box>
-                <Typography
-                  variant="body2"
-                  sx={{ color: '#3b82f6', fontWeight: 500 }}
-                >
-                  Lần khám gần nhất
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{ color: '#3b82f6', fontWeight: 600 }}
-                >
-                  {medicalRecords.length > 0
-                    ? formatDateDisplay(medicalRecords[0]?.date)
-                    : 'Chưa có lần khám nào'}
-                </Typography>
-              </Box>
-            </Box>
-
             {/* Có kết quả */}
             <Box
               sx={{
@@ -938,6 +905,46 @@ const MedicalHistoryContent = () => {
                   sx={{ color: '#EF5350', fontWeight: 700 }}
                 >
                   {medicalRecords.filter((r) => r.status === 'CANCELED').length}
+                </Typography>
+              </Box>
+            </Box>
+            {/* Lần khám gần nhất */}
+            <Box
+              sx={{
+                p: 2,
+                flexGrow: 1,
+                flexBasis: '200px',
+                borderRadius: '12px',
+                background: 'rgba(59, 130, 246, 0.05)',
+                border: '1px solid rgba(59, 130, 246, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <Box
+                sx={{
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  borderRadius: '50%',
+                  p: 1,
+                  mr: 2,
+                }}
+              >
+                <TimeIcon sx={{ color: '#3b82f6', fontSize: 24 }} />
+              </Box>
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{ color: '#3b82f6', fontWeight: 500 }}
+                >
+                  Lịch khám gần nhất
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{ color: '#3b82f6', fontWeight: 600 }}
+                >
+                  {medicalRecords.length > 0
+                    ? formatDateDisplay(medicalRecords[0]?.date)
+                    : 'Chưa có lần khám nào'}
                 </Typography>
               </Box>
             </Box>
@@ -1444,7 +1451,7 @@ const MedicalHistoryContent = () => {
                                   onClick={() => {
                                     setReviewingRecord({
                                       ...record,
-                                      createdAt: foundReview.createdAt
+                                      createdAt: foundReview.createdAt,
                                     });
                                     setRating(foundReview.rating || 0);
                                     setFeedback(foundReview.comment || '');
@@ -1495,7 +1502,7 @@ const MedicalHistoryContent = () => {
                                   onClick={() => {
                                     setReviewingRecord({
                                       ...record,
-                                      createdAt: new Date().toISOString() // Đối với đánh giá mới, sử dụng ngày hiện tại
+                                      createdAt: new Date().toISOString(), // Đối với đánh giá mới, sử dụng ngày hiện tại
                                     });
                                     setRating(0);
                                     setFeedback('');

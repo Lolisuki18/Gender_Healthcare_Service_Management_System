@@ -87,6 +87,7 @@ const CustomerProfile = () => {
       profile: 'profile',
       'medical-history': 'medical-history',
       'payment-history': 'payment-history',
+      consultantions: 'appointments',
       invoices: 'invoices',
       notifications: 'notifications',
       questions: 'questions',

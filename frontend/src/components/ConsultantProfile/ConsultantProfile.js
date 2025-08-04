@@ -84,7 +84,7 @@ const ConsultantProfile = ({ user = {} }) => {
     const tabMapping = {
       appointments: 'medical-history',
       profile: 'profile',
-      'medical-history': 'medical-history',
+      // 'medical-history': 'medical-history',
       'payment-history': 'payment-history',
       invoices: 'invoices',
       notifications: 'notifications',
@@ -107,6 +107,7 @@ const ConsultantProfile = ({ user = {} }) => {
     }
     // Nếu không có tab param hoặc initialTab, giữ nguyên tab mặc định
   }, [location.state, location.search]);
+
   // Updated function to get page title based on menu item
   const getPageTitle = () => {
     switch (selectedMenuItem) {
@@ -132,8 +133,9 @@ const ConsultantProfile = ({ user = {} }) => {
         return 'Hồ sơ chuyên gia';
     }
   };
+  //End of updated function to get page title
 
-  // Updated navigation content rendering based on the new menu items
+  //Hàm renderContent để hiển thị nội dung dựa trên selectedMenuItem
   const renderContent = () => {
     switch (selectedMenuItem) {
       case 'my-questions':
@@ -162,6 +164,9 @@ const ConsultantProfile = ({ user = {} }) => {
         return <ConsultantProfileContent />;
     }
   };
+  //End of renderContent function
+
+  // Return JSX for the ConsultantProfile component
   return (
     <Box
       sx={{
@@ -253,6 +258,7 @@ const ConsultantProfile = ({ user = {} }) => {
       </MainContent>
     </Box>
   );
+  //end of return JSX
 };
 
 export default ConsultantProfile;

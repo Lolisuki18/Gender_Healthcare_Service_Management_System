@@ -89,7 +89,7 @@ const StaffProfile = ({ user = {} }) => {
     const tabMapping = {
       appointments: 'medical-history',
       profile: 'profile',
-      'medical-history': 'medical-history',
+      // 'medical-history': 'medical-history',
       'payment-history': 'payment-history',
       invoices: 'invoices',
       notifications: 'notifications',

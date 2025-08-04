@@ -569,7 +569,7 @@ const ConsultationPage = () => {
 
         // Nếu user chọn xem lịch hẹn, chuyển hướng đến trang profile với tab appointments
         if (result) {
-          navigate('/profile?tab=appointments');
+          navigate('/profile?tab=consultantions');
         }
       } else {
         // Xử lý thông báo lỗi chi tiết
