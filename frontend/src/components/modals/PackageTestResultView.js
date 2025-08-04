@@ -73,16 +73,11 @@ const PackageTestResultView = ({
     : 100;
 
   const getAutoConclusion = (service) => {
-    const conclusions = service.components.map(
-      (c) => c.conclusion
-    );
+    const conclusions = service.components.map((c) => c.conclusion);
     const hasInfected = conclusions.includes('INFECTED');
     const hasAbnormal = conclusions.includes('ABNORMAL');
-    const allNotInfected = conclusions.every(
-      (c) => c === 'NOT_INFECTED'
-    );
-    if (hasInfected && hasAbnormal)
-      return 'Bị nhiễm, Bất thường';
+    const allNotInfected = conclusions.every((c) => c === 'NOT_INFECTED');
+    if (hasInfected && hasAbnormal) return 'Bị nhiễm, Bất thường';
     if (hasInfected) return 'Bị nhiễm';
     if (hasAbnormal) return 'Bất thường';
     if (allNotInfected) return 'Không bị nhiễm';
@@ -110,11 +105,6 @@ const PackageTestResultView = ({
                 mb: 2,
               }}
             >
-              <img
-                src="/logo192.png"
-                alt="Logo"
-                style={{ width: 48, height: 48, marginBottom: 8 }}
-              />
               <Typography
                 variant={isMobile ? 'h6' : 'h4'}
                 align="center"
@@ -270,8 +260,12 @@ const PackageTestResultView = ({
           {testPackageInfo.services &&
             testPackageInfo.services.map((service, index) => {
               // Xoá log debug
-              const consultantNoteObj = Array.isArray(testPackageInfo.testServiceConsultantNotes)
-                ? testPackageInfo.testServiceConsultantNotes.find(n => String(n.serviceId) === String(service.serviceId))
+              const consultantNoteObj = Array.isArray(
+                testPackageInfo.testServiceConsultantNotes
+              )
+                ? testPackageInfo.testServiceConsultantNotes.find(
+                    (n) => String(n.serviceId) === String(service.serviceId)
+                  )
                 : null;
               const consultantNote = consultantNoteObj?.note;
 
@@ -312,7 +306,9 @@ const PackageTestResultView = ({
                       <TableBody>
                         {service.components.map((row, idx) => (
                           <StyledTableRow key={idx}>
-                            <StyledTableCell>{row.componentName}</StyledTableCell>
+                            <StyledTableCell>
+                              {row.componentName}
+                            </StyledTableCell>
                             <StyledTableCell>{row.unit}</StyledTableCell>
                             <StyledTableCell>{row.normalRange}</StyledTableCell>
                             <StyledTableCell
@@ -352,42 +348,51 @@ const PackageTestResultView = ({
                       mt: 1,
                     }}
                   >
-                    Kết luận: {consultantNote && consultantNote.trim() !== '' ? consultantNote : getAutoConclusion(service)}
+                    Kết luận:{' '}
+                    {consultantNote && consultantNote.trim() !== ''
+                      ? consultantNote
+                      : getAutoConclusion(service)}
                   </Typography>
                 </Paper>
               );
             })}
         </Box>
         {/* Tổng kết luận gói */}
-        {testPackageInfo?.consultantNotes && testPackageInfo.consultantNotes.trim() !== '' && (
-          <Box
-            sx={{
-              mt: 4,
-              mb: 3,
-              p: isMobile ? 2 : 3,
-              bgcolor: '#e3f2fd',
-              borderRadius: 2,
-              border: '1px solid #90caf9',
-            }}
-          >
-            <Typography
-              variant={isMobile ? 'h6' : 'h5'}
-              sx={{ mb: 2, color: '#1976d2', fontWeight: 700, letterSpacing: 1 }}
-            >
-              Kết luận xét nghiệm
-            </Typography>
-            <Typography
-              variant="body1"
+        {testPackageInfo?.consultantNotes &&
+          testPackageInfo.consultantNotes.trim() !== '' && (
+            <Box
               sx={{
-                fontWeight: 600,
-                fontSize: isMobile ? '1rem' : '1.08rem',
-                color: '#222',
+                mt: 4,
+                mb: 3,
+                p: isMobile ? 2 : 3,
+                bgcolor: '#e3f2fd',
+                borderRadius: 2,
+                border: '1px solid #90caf9',
               }}
             >
-              {testPackageInfo.consultantNotes}
-            </Typography>
-          </Box>
-        )}
+              <Typography
+                variant={isMobile ? 'h6' : 'h5'}
+                sx={{
+                  mb: 2,
+                  color: '#1976d2',
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                }}
+              >
+                Kết luận xét nghiệm
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: isMobile ? '1rem' : '1.08rem',
+                  color: '#222',
+                }}
+              >
+                {testPackageInfo.consultantNotes}
+              </Typography>
+            </Box>
+          )}
       </Box>
       <Box
         sx={{
