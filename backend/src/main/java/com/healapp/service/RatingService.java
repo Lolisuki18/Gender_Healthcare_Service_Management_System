@@ -40,6 +40,7 @@ import com.healapp.repository.STIPackageRepository;
 import com.healapp.repository.STIServiceRepository;
 import com.healapp.repository.STITestRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.utils.TimezoneUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -1031,14 +1032,14 @@ public class RatingService {
             response.setRepliedById(rating.getRepliedBy().getId());
             response.setRepliedByName(rating.getRepliedBy().getFullName());
         }
-        response.setRepliedAt(rating.getRepliedAt());
+        response.setRepliedAt(TimezoneUtils.convertUtcToVietnam(rating.getRepliedAt()));
 
         // Reference fields
         response.setConsultationId(rating.getConsultationId());
         response.setStiTestId(rating.getStiTestId());
 
-        response.setCreatedAt(rating.getCreatedAt());
-        response.setUpdatedAt(rating.getUpdatedAt());
+        response.setCreatedAt(TimezoneUtils.convertUtcToVietnam(rating.getCreatedAt()));
+        response.setUpdatedAt(TimezoneUtils.convertUtcToVietnam(rating.getUpdatedAt()));
 
         // Bỏ giới hạn 24h - User có thể edit rating bất kỳ lúc nào
         boolean canEdit = true;

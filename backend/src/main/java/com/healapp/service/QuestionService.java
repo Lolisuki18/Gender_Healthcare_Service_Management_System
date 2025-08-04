@@ -21,6 +21,7 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.CategoryQuestionRepository;
 import com.healapp.repository.QuestionRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.utils.TimezoneUtils;
 
 @Service
 public class QuestionService {
@@ -328,8 +329,8 @@ public class QuestionService {
         response.setContent(question.getContent());
         response.setAnswer(question.getAnswer());
         response.setStatus(question.getStatus());
-        response.setCreatedAt(question.getCreatedAt());
-        response.setUpdatedAt(question.getUpdatedAt());
+        response.setCreatedAt(TimezoneUtils.convertUtcToVietnam(question.getCreatedAt()));
+        response.setUpdatedAt(TimezoneUtils.convertUtcToVietnam(question.getUpdatedAt()));
 
         // Set customer info
         response.setCustomerId(question.getCustomer().getId());
@@ -362,8 +363,8 @@ public class QuestionService {
         response.setContent(question.getContent());
         response.setAnswer(question.getAnswer());
         response.setStatus(question.getStatus());
-        response.setCreatedAt(question.getCreatedAt());
-        response.setUpdatedAt(question.getUpdatedAt());
+        response.setCreatedAt(TimezoneUtils.convertUtcToVietnam(question.getCreatedAt()));
+        response.setUpdatedAt(TimezoneUtils.convertUtcToVietnam(question.getUpdatedAt()));
 
         // Set customer info
         response.setCustomerId(question.getCustomer().getId());

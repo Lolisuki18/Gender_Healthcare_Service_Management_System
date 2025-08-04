@@ -40,6 +40,7 @@ import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.NotificationPreferenceRepository;
 import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.utils.TimezoneUtils;
 
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
@@ -709,9 +710,9 @@ public class UserService {
         response.setIsActive(user.getIsActive());
         response.setRole(user.getRoleName());
         response.setAddress(user.getAddress());
-        response.setCreatedDate(user.getCreatedDate());
+        response.setCreatedDate(TimezoneUtils.convertUtcToVietnam(user.getCreatedDate()));
         response.setIsDeleted(user.getIsDeleted());
-        response.setDeletedAt(user.getDeletedAt());
+        response.setDeletedAt(TimezoneUtils.convertUtcToVietnam(user.getDeletedAt()));
         // Thêm provider để frontend biết user đăng nhập qua Google hay Local
         response.setProvider(user.getProvider() != null ? user.getProvider().name() : "LOCAL");
         return response;

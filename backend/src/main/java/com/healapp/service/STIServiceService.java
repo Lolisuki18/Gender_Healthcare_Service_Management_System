@@ -2,8 +2,8 @@ package com.healapp.service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,6 +15,7 @@ import com.healapp.dto.ServiceTestComponentRequest;
 import com.healapp.model.STIService;
 import com.healapp.model.ServiceTestComponent;
 import com.healapp.repository.STIServiceRepository;
+import com.healapp.utils.TimezoneUtils;
 
 @Service
 public class STIServiceService {
@@ -225,8 +226,8 @@ public class STIServiceService {
         response.setDescription(service.getDescription());
         response.setPrice(service.getPrice());
         response.setActive(service.getIsActive());
-        response.setCreatedAt(service.getCreatedAt());
-        response.setUpdatedAt(service.getUpdatedAt());
+        response.setCreatedAt(TimezoneUtils.convertUtcToVietnam(service.getCreatedAt()));
+        response.setUpdatedAt(TimezoneUtils.convertUtcToVietnam(service.getUpdatedAt()));
 
         // Đếm số components
         if (service.getTestComponents() != null) {
