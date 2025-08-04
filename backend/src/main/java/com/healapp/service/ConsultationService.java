@@ -32,7 +32,6 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.ConsultationRepository;
 import com.healapp.repository.UserRepository;
-import com.healapp.utils.TimezoneUtils;
 
 @Service
 public class ConsultationService {
@@ -161,11 +160,10 @@ public class ConsultationService {
             }
 
             // Kiểm tra thời gian không được trong quá khứ
-            // Sử dụng timezone Asia/Ho_Chi_Minh để tránh lỗi timezone
-            ZonedDateTime nowInVietnam = ZonedDateTime.now(VIETNAM_ZONE);
-            ZonedDateTime startTimeInVietnam = consultationStartTime.atZone(VIETNAM_ZONE);
+            // Database lưu thời gian theo giờ địa phương (UTC+7), so sánh trực tiếp
+            LocalDateTime nowInVietnam = ZonedDateTime.now(VIETNAM_ZONE).toLocalDateTime();
             
-            if (startTimeInVietnam.isBefore(nowInVietnam)) {
+            if (consultationStartTime.isBefore(nowInVietnam)) {
                 return ApiResponse.error("Không thể đặt lịch trong quá khứ. Vui lòng chọn ngày khác.");
             }
 
@@ -291,11 +289,11 @@ public class ConsultationService {
                 }
 
                 // check time, cant complete before end time
-                // Sử dụng timezone Asia/Ho_Chi_Minh để tránh lỗi timezone
-                ZonedDateTime nowInVietnam = ZonedDateTime.now(VIETNAM_ZONE);
-                ZonedDateTime endTimeInVietnam = consultation.getEndTime().atZone(VIETNAM_ZONE);
+                // Database lưu thời gian theo giờ địa phương (UTC+7), so sánh trực tiếp
+                LocalDateTime nowInVietnam = ZonedDateTime.now(VIETNAM_ZONE).toLocalDateTime();
+                LocalDateTime endTime = consultation.getEndTime();
                 
-                if (nowInVietnam.isBefore(endTimeInVietnam)) {
+                if (nowInVietnam.isBefore(endTime)) {
                     return ApiResponse.error("Consultation cannot be marked as completed before its end time");
                 }
             }
@@ -512,13 +510,13 @@ public class ConsultationService {
             e.printStackTrace();
         }
 
-        response.setStartTime(TimezoneUtils.convertUtcToVietnam(consultation.getStartTime()));
-        response.setEndTime(TimezoneUtils.convertUtcToVietnam(consultation.getEndTime()));
+        response.setStartTime(consultation.getStartTime());
+        response.setEndTime(consultation.getEndTime());
         response.setStatus(consultation.getStatus());
         response.setMeetUrl(consultation.getMeetUrl());
 
-        response.setCreatedAt(TimezoneUtils.convertUtcToVietnam(consultation.getCreatedAt()));
-        response.setUpdatedAt(TimezoneUtils.convertUtcToVietnam(consultation.getUpdatedAt()));
+        response.setCreatedAt(consultation.getCreatedAt());
+        response.setUpdatedAt(consultation.getUpdatedAt());
         response.setNotes(consultation.getNotes());
         response.setReason(consultation.getReason());
         return response;
