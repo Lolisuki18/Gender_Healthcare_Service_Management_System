@@ -28,6 +28,7 @@ import com.healapp.repository.ControlPillsRepository;
 import com.healapp.repository.NotificationPreferenceRepository;
 import com.healapp.repository.PillLogsRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.utils.TimezoneUtils;
 
 @Service
 public class ControlPillsService {
@@ -376,7 +377,7 @@ public class ControlPillsService {
             response.setRemindTime(con.getRemindTime());
             response.setIsActive(con.getIsActive());
             response.setStartDate(con.getStartDate());
-            response.setUpdatedAt(con.getUpdatedAt());
+            response.setUpdatedAt(TimezoneUtils.convertUtcToVietnam(con.getUpdatedAt()));
             response.setPillType(con.getPillType());
         return response;
 
@@ -387,7 +388,7 @@ public class ControlPillsService {
             res.setLogId(pill.getLogId());
             res.setCheckIn(pill.getCheckIn());
             res.setLogDate(pill.getLogDate());
-            res.setCreatedAt(pill.getCreatedAt());
+            res.setCreatedAt(TimezoneUtils.convertUtcToVietnam(pill.getCreatedAt()));
             res.setStatus(pill.getStatus());
         return res;
     }

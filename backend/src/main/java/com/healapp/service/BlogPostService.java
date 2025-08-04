@@ -27,6 +27,7 @@ import com.healapp.repository.BlogPostRepository;
 import com.healapp.repository.BlogSectionRepository;
 import com.healapp.repository.CategoryRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.utils.TimezoneUtils;
 
 @Service
 public class BlogPostService {
@@ -415,8 +416,8 @@ public class BlogPostService {
         response.setAuthorId(blogPost.getAuthor().getId());
         response.setAuthorName(blogPost.getAuthor().getFullName());
         response.setAuthorAvatar(blogPost.getAuthor().getAvatar());
-        response.setCreatedAt(blogPost.getCreatedAt());
-        response.setUpdatedAt(blogPost.getUpdatedAt());
+        response.setCreatedAt(TimezoneUtils.convertUtcToVietnam(blogPost.getCreatedAt()));
+        response.setUpdatedAt(TimezoneUtils.convertUtcToVietnam(blogPost.getUpdatedAt()));
         response.setStatus(blogPost.getStatus());
 
         // Set existingThumbnail để frontend biết ảnh cũ
@@ -447,7 +448,7 @@ public class BlogPostService {
             response.setReviewerName(blogPost.getReviewer().getFullName());
         }
 
-        response.setReviewedAt(blogPost.getReviewedAt());
+        response.setReviewedAt(TimezoneUtils.convertUtcToVietnam(blogPost.getReviewedAt()));
         response.setRejectionReason(blogPost.getRejectionReason());
 
         return response;

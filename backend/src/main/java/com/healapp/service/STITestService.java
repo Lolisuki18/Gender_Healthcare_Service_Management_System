@@ -42,6 +42,7 @@ import com.healapp.repository.ServiceTestComponentRepository;
 import com.healapp.repository.TestResultRepository;
 import com.healapp.repository.TestServiceConsultantNoteRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.utils.TimezoneUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -1227,7 +1228,7 @@ public class STITestService {
         }
 
         // Appointment information
-        response.setAppointmentDate(stiTest.getAppointmentDate());
+        response.setAppointmentDate(TimezoneUtils.convertUtcToVietnam(stiTest.getAppointmentDate()));
         response.setStatus(stiTest.getStatus().name());
 
         // ========== PAYMENT INFORMATION ==========
@@ -1239,7 +1240,7 @@ public class STITestService {
                 response.setPaymentId(payment.getPaymentId());
                 response.setPaymentMethod(payment.getPaymentMethod().name());
                 response.setPaymentStatus(payment.getPaymentStatus().name());
-                response.setPaidAt(payment.getPaidAt());
+                response.setPaidAt(TimezoneUtils.convertUtcToVietnam(payment.getPaidAt()));
                 response.setPaymentTransactionId(payment.getTransactionId());
 
                 // Add payment failure information
@@ -1261,7 +1262,7 @@ public class STITestService {
                 // QR payment specific
                 if (payment.getPaymentMethod() == PaymentMethod.QR_CODE) {
                     response.setQrPaymentReference(payment.getQrPaymentReference());
-                    response.setQrExpiresAt(payment.getExpiresAt());
+                    response.setQrExpiresAt(TimezoneUtils.convertUtcToVietnam(payment.getExpiresAt()));
 
                     if (payment.getQrPaymentReference() != null) {
                         response.setQrCodeUrl(generateQRCodeUrl(payment));
@@ -1284,10 +1285,10 @@ public class STITestService {
         // Additional information
         response.setCustomerNotes(stiTest.getCustomerNotes());
         response.setConsultantNotes(stiTest.getConsultantNotes());
-        response.setResultDate(stiTest.getResultDate());
+        response.setResultDate(TimezoneUtils.convertUtcToVietnam(stiTest.getResultDate()));
         response.setCancelReason(stiTest.getCancelReason());
-        response.setCreatedAt(stiTest.getCreatedAt());
-        response.setUpdatedAt(stiTest.getUpdatedAt());
+        response.setCreatedAt(TimezoneUtils.convertUtcToVietnam(stiTest.getCreatedAt()));
+        response.setUpdatedAt(TimezoneUtils.convertUtcToVietnam(stiTest.getUpdatedAt()));
 
         // Bổ sung lý do huỷ nếu có
         response.setCancelReason(stiTest.getCancelReason());
@@ -1324,7 +1325,7 @@ public class STITestService {
         response.setConclusionDisplayName(
                 result.getConclusion() != null ? result.getConclusion().getDisplayName() : null);
         response.setReviewedBy(result.getReviewedBy());
-        response.setReviewedAt(result.getReviewedAt());
+        response.setReviewedAt(TimezoneUtils.convertUtcToVietnam(result.getReviewedAt()));
 
         if (result.getReviewedBy() != null) {
             userRepository.findById(result.getReviewedBy())
@@ -1513,9 +1514,9 @@ public class STITestService {
         response.setUnit(result.getUnit());
         response.setConclusion(result.getConclusion());
         response.setReviewedBy(result.getReviewedBy());
-        response.setReviewedAt(result.getReviewedAt());
-        response.setCreatedAt(result.getCreatedAt());
-        response.setUpdatedAt(result.getUpdatedAt());
+        response.setReviewedAt(TimezoneUtils.convertUtcToVietnam(result.getReviewedAt()));
+        response.setCreatedAt(TimezoneUtils.convertUtcToVietnam(result.getCreatedAt()));
+        response.setUpdatedAt(TimezoneUtils.convertUtcToVietnam(result.getUpdatedAt()));
         return response;
     }
 

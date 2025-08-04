@@ -3,23 +3,24 @@ package com.healapp.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.healapp.dto.ApiResponse;
-import com.healapp.dto.STIPackageResponse;
 import com.healapp.dto.STIPackageRequest;
+import com.healapp.dto.STIPackageResponse;
 import com.healapp.model.PackageService;
 import com.healapp.model.STIPackage;
 import com.healapp.model.STIService;
+import com.healapp.model.ServiceTestComponent;
 import com.healapp.repository.PackageServiceRepository;
 import com.healapp.repository.STIPackageRepository;
 import com.healapp.repository.STIServiceRepository;
 import com.healapp.repository.ServiceTestComponentRepository;
-import com.healapp.model.ServiceTestComponent;
+import com.healapp.utils.TimezoneUtils;
 
 import jakarta.transaction.Transactional;
 
@@ -209,8 +210,8 @@ public class STIPackageService {
         response.setDescription(pkg.getDescription());
         response.setPrice(pkg.getPackagePrice());
         response.setActive(pkg.getIsActive());
-        response.setCreatedAt(pkg.getCreatedAt());
-        response.setUpdatedAt(pkg.getUpdatedAt());
+        response.setCreatedAt(TimezoneUtils.convertUtcToVietnam(pkg.getCreatedAt()));
+        response.setUpdatedAt(TimezoneUtils.convertUtcToVietnam(pkg.getUpdatedAt()));
 
         // Lấy dịch vụ từ bảng trung gian package_services
         List<PackageService> packageServices = packageServiceRepository.findByStiPackage_PackageId(pkg.getPackageId());
