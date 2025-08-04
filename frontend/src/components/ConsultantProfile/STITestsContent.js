@@ -1,5 +1,5 @@
 /**
- * STITestsContent.js - Simple and Clean UI for STI Tests Management
+ * conclusion the STIS Test
  */
 
 import React, { useState, useEffect } from 'react';
@@ -846,7 +846,7 @@ const STITestsContent = () => {
                 </Card>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              {/* <Grid item xs={12} md={6}>
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
@@ -866,7 +866,7 @@ const STITestsContent = () => {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
+              </Grid> */}
 
               {selectedTest.symptoms && (
                 <Grid item xs={12}>

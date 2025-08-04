@@ -35,7 +35,6 @@ import {
   Edit as EditIcon,
   Work as WorkIcon,
   Save as SaveIcon,
-
   Cake as CakeIcon,
   Wc as GenderIcon,
   Home as AddressIcon,
@@ -44,16 +43,12 @@ import {
   Info as BioIcon,
   Verified as VerifiedIcon,
   Cancel as CancelIcon,
-
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import AvatarUpload from '../common/AvatarUpload';
-import apiClient from '../../services/api';
-import {
-
-  formatDateDisplay,
-  formatDateForInput,
-} from '../../utils/dateUtils';
+import { userService } from '../../services/userService';
+import consultantService from '../../services/consultantService';
+import { formatDateDisplay, formatDateForInput } from '../../utils/dateUtils';
 import imageUrl from '../../utils/imageUrl';
 import { notify } from '../../utils/notify';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -73,6 +68,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   marginBottom: theme.spacing(4),
 }));
 
+// Styled components for ProfileCard
 const ProfileCard = styled(Card)(({ theme }) => ({
   background: 'linear-gradient(120deg, #e3f0fa 60%, #f8feff 100%)',
   backdropFilter: 'blur(30px)',
@@ -84,6 +80,7 @@ const ProfileCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(4),
 }));
 
+// Styled components for MainContent
 const IconWrapper = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -97,6 +94,7 @@ const IconWrapper = styled(Box)(({ theme }) => ({
   flexShrink: 0,
 }));
 
+// Styled components for TextField
 const StyledTextField = styled(TextField)(({ theme }) => ({
   '& .MuiInputLabel-root': {
     color: '#4A5568',
@@ -136,7 +134,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
   },
 }));
 
-// FieldInfoBox component - Support action button for special fields
+// Dùng để hiển thị thông tin cá nhân và chuyên môn
 const FieldInfoBox = ({
   icon,
   label,
@@ -154,7 +152,7 @@ const FieldInfoBox = ({
   actionButton = null,
 }) => {
   const isEmailField = type === 'email';
-
+  // Render FieldInfoBox component
   return (
     <Paper
       elevation={0}
@@ -300,6 +298,7 @@ const FieldInfoBox = ({
       )}
     </Paper>
   );
+  //end of FieldInfoBox component
 };
 
 // TabPanel component for tab content - Không cần thiết nữa
@@ -403,6 +402,7 @@ const DatePickerFieldBox = ({ icon, label, value, onChange, error }) => (
     </Box>
   </Paper>
 );
+//end of DatePickerFieldBox component
 
 const ConsultantProfileContent = () => {
   // ====================================================================
@@ -454,18 +454,16 @@ const ConsultantProfileContent = () => {
   // API FUNCTIONS
   // ====================================================================
 
-  /**
-   * Function to load user profile and consultant profile
-   */
+  // Function to load user profile and consultant profile
   const loadProfileData = async () => {
     setIsProfileLoading(true);
 
     try {
       // Load user profile (personal info)
-      const userResponse = await apiClient.get('/users/profile');
-      if (userResponse.data.success) {
-        const userData = userResponse.data.data;
-        console.log('User data from API:', userData); // Debug log
+      const userResponse = await userService.getCurrentUser();
+      if (userResponse.success) {
+        const userData = userResponse.data;
+        // console.log('User data from API:', userData); // Debug log
         setUserProfile(userData);
 
         // Prepare form data with personal info
@@ -509,7 +507,7 @@ const ConsultantProfileContent = () => {
           avatar: userData.avatar || '',
         };
 
-        console.log('Personal info prepared:', personalInfo); // Debug log
+        // console.log('Personal info prepared:', personalInfo); // Debug log
 
         // Load consultant profile (professional info) if user is consultant
         let professionalInfo = {
@@ -520,15 +518,13 @@ const ConsultantProfileContent = () => {
 
         if (userData.role === 'CONSULTANT') {
           try {
-            const consultantResponse = await apiClient.get(
-              `/consultants/${userData.id}`
-            );
-            if (consultantResponse.data.success) {
+            const consultantResponse =
+              await consultantService.getConsultantDetails(userData.id);
+            if (consultantResponse.success) {
               professionalInfo = {
-                qualifications:
-                  consultantResponse.data.data.qualifications || '',
-                experience: consultantResponse.data.data.experience || '',
-                bio: consultantResponse.data.data.bio || '',
+                qualifications: consultantResponse.data.qualifications || '',
+                experience: consultantResponse.data.experience || '',
+                bio: consultantResponse.data.bio || '',
               };
             }
           } catch (consultantError) {
@@ -554,17 +550,9 @@ const ConsultantProfileContent = () => {
       setIsProfileLoading(false);
     }
   };
+  //end of loadProfileData function
 
-  /**
-   * Refresh data - reload từ API
-   */
-   // ====================================================================
-  // UTILITY FUNCTIONS
-  // ====================================================================
-
-  /**
-   * Handle form input change
-   */
+  //Handle form input change
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -572,10 +560,9 @@ const ConsultantProfileContent = () => {
       [name]: value,
     }));
   };
+  //end of handleFormChange function
 
-  /**
-   * Handle toggle edit mode
-   */
+  //Handle toggle edit mode
   const handleToggleEdit = () => {
     if (isEditing) {
       // Cancel edit - reset to original data
@@ -621,10 +608,9 @@ const ConsultantProfileContent = () => {
     }
     setIsEditing(!isEditing);
   };
+  //end of handleToggleEdit function
 
-  /**
-   * Validate date of birth
-   */
+  //Validate date of birth
   const validateDateOfBirth = (dob) => {
     if (!dob) return { isValid: true, message: '' };
 
@@ -670,10 +656,9 @@ const ConsultantProfileContent = () => {
 
     return { isValid: true, message: '' };
   };
+  //end of validateDateOfBirth function
 
-  /**
-   * Handle save profile changes
-   */
+  //Handle save profile changes
   const handleSaveProfile = async () => {
     setIsLoading(true);
 
@@ -694,12 +679,10 @@ const ConsultantProfileContent = () => {
         address: formData.address,
       };
 
-      const personalResponse = await apiClient.put(
-        '/users/profile/basic',
-        personalInfoPayload
-      );
+      const personalResponse =
+        await userService.updateProfile(personalInfoPayload);
 
-      if (personalResponse.data.success) {
+      if (personalResponse.success) {
         // Update professional info using ConsultantController APIs
         if (userProfile && userProfile.role === 'CONSULTANT') {
           const professionalInfoPayload = {
@@ -708,8 +691,8 @@ const ConsultantProfileContent = () => {
             bio: formData.bio,
           };
 
-          await apiClient.put(
-            `/consultants/profile/${userProfile.id}`,
+          await consultantService.updateProfessionalInfo(
+            userProfile.id,
             professionalInfoPayload
           );
         }
@@ -729,35 +712,33 @@ const ConsultantProfileContent = () => {
     } finally {
       setIsLoading(false);
     }
-  }; // ====================================================================
+  };
+  //end of handleSaveProfile function
+
+  // ====================================================================
   // AVATAR HANDLER FUNCTIONS
   // ====================================================================
 
-  /**
-   * Handle avatar change click
-   */
+  // Handle avatar change click
   const handleAvatarChangeClick = () => {
     setIsAvatarModalOpen(true);
   };
+  //end of handleAvatarChangeClick function
 
-  /**
-   * Handle close avatar modal
-   */
+  //Handle close avatar modal
   const handleCloseAvatarModal = () => {
     setIsAvatarModalOpen(false);
     setAvatarError('');
   };
+  //end of handleCloseAvatarModal function
 
-  /**
-   * Handle avatar upload error
-   */
+  // Handle avatar upload error
   const handleAvatarUploadError = (errorMessage) => {
     setAvatarError(errorMessage);
   };
+  //end of handleAvatarUploadError function
 
-  // ====================================================================
   // RENDER FUNCTIONS
-  // ====================================================================
   // Show loading screen while fetching profile data
   if (isProfileLoading) {
     return (
@@ -774,6 +755,7 @@ const ConsultantProfileContent = () => {
       </Box>
     );
   }
+  //end of loading screen
 
   // Gender options for select
   const genderOptions = [
@@ -781,6 +763,8 @@ const ConsultantProfileContent = () => {
     { value: 'Nữ', label: 'Nữ' },
     { value: 'Khác', label: 'Khác' },
   ];
+
+  // Render main profile content
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
       {/* Profile Header Card - Cải thiện layout */}
@@ -1332,6 +1316,7 @@ const ConsultantProfileContent = () => {
       )}
     </Box>
   );
+  //end of return
 };
 
 export default ConsultantProfileContent;

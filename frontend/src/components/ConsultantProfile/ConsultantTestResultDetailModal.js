@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -47,12 +47,12 @@ const ConsultantTestResultDetailModal = ({
   const [savingServiceNote, setSavingServiceNote] = useState({});
 
   // Đồng bộ consultantNote với test.consultantNotes khi test thay đổi
-  React.useEffect(() => {
+  useEffect(() => {
     setConsultantNote(test?.consultantNotes || '');
   }, [test?.consultantNotes]);
 
   // Khi mở modal, load note từng service nếu là package
-  React.useEffect(() => {
+  useEffect(() => {
     if (isPackage && packageServices.length > 0 && test?.testId) {
       // Đồng bộ lại note từng service từ testServiceConsultantNotes
       const notesMap = {};
@@ -74,7 +74,7 @@ const ConsultantTestResultDetailModal = ({
   ]);
 
   // Khi selectedService thay đổi, load note cho service đó vào TextField
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedService && test?.testServiceConsultantNotes) {
       const savedNote = test.testServiceConsultantNotes.find(
         (note) => note.serviceId === selectedService.id
@@ -88,18 +88,27 @@ const ConsultantTestResultDetailModal = ({
     }
   }, [selectedService, test?.testServiceConsultantNotes]);
 
-  // Debug effect để kiểm tra dữ liệu
-  React.useEffect(() => {
-    if (open) {
-      console.log('=== ConsultantTestResultDetailModal Debug ===');
-      console.log('isPackage:', isPackage);
-      console.log('packageServices:', packageServices);
-      console.log('selectedService:', selectedService);
-      console.log('components:', components);
-      console.log('test:', test);
-    }
-  }, [open, isPackage, packageServices, selectedService, components, test]);
+  // // Debug effect để kiểm tra dữ liệu
+  // useEffect(() => {
+  //   if (open) {
+  //     console.log('=== ConsultantTestResultDetailModal Debug ===');
+  //     console.log('isPackage:', isPackage);
+  //     console.log('packageServices:', packageServices);
+  //     console.log('selectedService:', selectedService);
+  //     console.log('components:', components);
+  //     console.log('test:', test);
+  //   }
+  // }, [open, isPackage, packageServices, selectedService, components, test]);
 
+  // useEffect(() => {
+  //   if (open) {
+  //     console.log('=== ConsultantTestResultDetailModal Mounted ===');
+  //     console.log('Initial consultantNote:', consultantNote);
+  //     console.log('Initial serviceNotes:', serviceNotes);
+  //     console.log('Initial savingServiceNote:', savingServiceNote);
+  //     console.log('Test data:', components);
+  //   }
+  // }, []);
   // Hàm lưu note cho từng service
   const handleSaveServiceNote = async (serviceId) => {
     if (!test?.testId || !serviceId) return;
@@ -143,6 +152,7 @@ const ConsultantTestResultDetailModal = ({
     }
   };
 
+  //Hàm lưu kết luận chung cho t
   const handleSave = async () => {
     // Hiện dialog xác nhận
     const action =
@@ -188,197 +198,139 @@ const ConsultantTestResultDetailModal = ({
 
   // Helper: render bảng thành phần
   const renderComponentTable = (comps = []) => (
-    <TableContainer
-      component={Paper}
-      sx={{
-        borderRadius: 2,
-        boxShadow: '0 2px 8px rgba(74,144,226,0.10)',
-        mb: 2,
-      }}
-    >
-      <Table>
-        <TableHead>
-          <TableRow sx={{ background: MEDICAL_GRADIENT }}>
-            <TableCell sx={{ color: '#fff', fontWeight: 700 }}>
-              Tên thành phần
-            </TableCell>
-            <TableCell sx={{ color: '#fff', fontWeight: 700 }}>
-              Kết quả
-            </TableCell>
-            <TableCell sx={{ color: '#fff', fontWeight: 700 }}>
-              Đơn vị
-            </TableCell>
-            <TableCell sx={{ color: '#fff', fontWeight: 700 }}>
-              Khoảng bình thường
-            </TableCell>
-            <TableCell sx={{ color: '#fff', fontWeight: 700 }}>
-              Kết luận
-            </TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {comps.map((comp, idx) => (
-            <TableRow key={comp.componentId || comp.resultId || comp.id || idx}>
-              <TableCell>{comp.componentName || comp.testName}</TableCell>
-              <TableCell>{comp.resultValue || 'Chưa có'}</TableCell>
-              <TableCell>{comp.unit || ''}</TableCell>
-              <TableCell>
-                {comp.normalRange || comp.referenceRange || ''}
+    console.log('Rendering component table with components:', comps),
+    (
+      <TableContainer
+        component={Paper}
+        sx={{
+          borderRadius: 2,
+          boxShadow: '0 2px 8px rgba(74,144,226,0.10)',
+          mb: 2,
+        }}
+      >
+        <Table>
+          <TableHead>
+            <TableRow sx={{ background: MEDICAL_GRADIENT }}>
+              <TableCell sx={{ color: '#fff', fontWeight: 700 }}>
+                Tên thành phần
               </TableCell>
-              <TableCell>
-                {comp.conclusion ? (
-                  (() => {
-                    const conclusionData = getConclusionLabel(comp.conclusion);
-                    return (
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: conclusionData.color,
-                          fontWeight: 600,
-                          fontSize: '0.875rem',
-                        }}
-                      >
-                        {conclusionData.text}
-                      </Typography>
-                    );
-                  })()
-                ) : (
-                  <Typography
-                    variant="body2"
-                    sx={{ color: '#757575', fontStyle: 'italic' }}
-                  >
-                    Chưa có kết luận
-                  </Typography>
-                )}
+              <TableCell sx={{ color: '#fff', fontWeight: 700 }}>
+                Kết quả
+              </TableCell>
+              <TableCell sx={{ color: '#fff', fontWeight: 700 }}>
+                Đơn vị
+              </TableCell>
+              <TableCell sx={{ color: '#fff', fontWeight: 700 }}>
+                Khoảng bình thường
+              </TableCell>
+              <TableCell sx={{ color: '#fff', fontWeight: 700 }}>
+                Kết luận
               </TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+          </TableHead>
+          <TableBody>
+            {comps.map((comp, idx) => (
+              <TableRow
+                key={comp.componentId || comp.resultId || comp.id || idx}
+              >
+                <TableCell>{comp.componentName || comp.testName}</TableCell>
+                <TableCell>{comp.resultValue || 'Chưa có'}</TableCell>
+                <TableCell>{comp.unit || ''}</TableCell>
+                <TableCell>
+                  {comp.normalRange || comp.referenceRange || ''}
+                </TableCell>
+                <TableCell>
+                  {comp.conclusion ? (
+                    (() => {
+                      const conclusionData = getConclusionLabel(
+                        comp.conclusion
+                      );
+                      return (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: conclusionData.color,
+                            fontWeight: 600,
+                            fontSize: '0.875rem',
+                          }}
+                        >
+                          {conclusionData.text}
+                        </Typography>
+                      );
+                    })()
+                  ) : (
+                    <Typography
+                      variant="body2"
+                      sx={{ color: '#757575', fontStyle: 'italic' }}
+                    >
+                      Chưa có kết luận
+                    </Typography>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    )
   );
 
-  // Render bảng kết quả cho package hoặc service đơn
-  const renderResults = () => {
-    if (isPackage && packageServices.length > 0) {
-      // Xác định service nào được chọn
-      const currentService = selectedService || packageServices[0];
+  // Helper: Lấy kết quả xét nghiệm cho service đơn lẻ
+  const getTestResultsForSingleService = () => {
+    console.log('=== Getting Test Results For Single Service ===');
+    console.log('test.testResults:', test?.testResults);
+    console.log('components prop:', components);
 
-      // Lấy components cho service hiện tại
-      const getComponentsForService = (serviceId) => {
-        // Kiểm tra cấu trúc dữ liệu từ API
-        let resultsArray = [];
+    let testResultsToShow = [];
 
-        if (
-          test?.testResults?.results &&
-          Array.isArray(test.testResults.results)
-        ) {
-          // API structure: { results: [...] } - NEW FORMAT
-          resultsArray = test.testResults.results;
-        } else if (
-          test?.testResults?.data?.results &&
-          Array.isArray(test.testResults.data.results)
-        ) {
-          // API structure: { data: { results: [...] } } - OLD FORMAT
-          resultsArray = test.testResults.data.results;
-        } else if (test?.testResults && Array.isArray(test.testResults)) {
-          // Direct array structure
-          resultsArray = test.testResults;
-        } else {
-          return [];
-        }
-
-        // Lọc components theo serviceId
-        return resultsArray.filter((result) => result.serviceId === serviceId);
-      };
-
-      const currentComponents = currentService
-        ? getComponentsForService(currentService.id)
-        : [];
-
-      return (
-        <Box>
-          <Box sx={{ mb: 2 }}>
-            <Tabs
-              value={currentService ? currentService.id : packageServices[0].id}
-              onChange={(e, val) => {
-                const svc = packageServices.find((s) => s.id === val);
-                if (svc) onSelectService(svc);
-              }}
-              variant="scrollable"
-              scrollButtons="auto"
-            >
-              {packageServices.map((svc) => (
-                <Tab
-                  key={svc.id}
-                  label={svc.name || svc.serviceName}
-                  value={svc.id}
-                />
-              ))}
-            </Tabs>
-          </Box>
-
-          {/* Debug: Hiển thị thông tin để debug
-          {process.env.NODE_ENV === 'development' && (
-            <Box
-              sx={{ mb: 2, p: 1, backgroundColor: '#f0f0f0', fontSize: '12px' }}
-            >
-              <div>
-                Selected Service: {currentService ? currentService.id : 'None'}
-              </div>
-              <div>Current Components Length: {currentComponents.length}</div>
-              <div>
-                Test Results Structure:{' '}
-                {test?.testResults
-                  ? JSON.stringify(Object.keys(test.testResults))
-                  : 'undefined'}
-              </div>
-              <div>Package Services: {packageServices.length}</div>
-              <div>Test ID: {test?.testId}</div>
-              {currentComponents.length > 0 && (
-                <div>
-                  Component Service IDs:{' '}
-                  {currentComponents.map((c) => c.serviceId).join(', ')}
-                </div>
-              )}
-              {test?.testResults?.data?.results && (
-                <div>Total Results: {test.testResults.data.results.length}</div>
-              )}
-            </Box>
-          )} */}
-
-          {currentService && (
-            <>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                {currentService.name || currentService.serviceName}
-              </Typography>
-              {currentComponents && currentComponents.length > 0 ? (
-                renderComponentTable(currentComponents)
-              ) : (
-                <Box sx={{ textAlign: 'center', py: 3 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Không có kết quả xét nghiệm cho dịch vụ này.
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ mt: 1, display: 'block' }}
-                  >
-                    Có thể kết quả chưa được cập nhật hoặc dịch vụ chưa được
-                    thực hiện.
-                  </Typography>
-                </Box>
-              )}
-            </>
-          )}
-        </Box>
-      );
+    // Kiểm tra các cấu trúc dữ liệu khác nhau từ API
+    if (test?.testResults && Array.isArray(test.testResults)) {
+      // Direct array structure
+      testResultsToShow = test.testResults;
+    } else if (
+      test?.testResults?.results &&
+      Array.isArray(test.testResults.results)
+    ) {
+      // API structure: { results: [...] }
+      testResultsToShow = test.testResults.results;
+    } else if (
+      test?.testResults?.data?.results &&
+      Array.isArray(test.testResults.data.results)
+    ) {
+      // API structure: { data: { results: [...] } }
+      testResultsToShow = test.testResults.data.results;
+    } else if (
+      components &&
+      Array.isArray(components) &&
+      components.length > 0
+    ) {
+      // Fallback: Sử dụng components prop nếu có
+      testResultsToShow = components;
     }
-    // Service đơn lẻ
+
+    console.log('testResultsToShow:', testResultsToShow);
+    console.log('testResultsToShow.length:', testResultsToShow.length);
+
+    return testResultsToShow;
+  };
+
+  // Helper: Render kết quả cho service đơn lẻ
+  const renderSingleServiceResults = () => {
+    const testResultsToShow = getTestResultsForSingleService();
+
     return (
       <Box>
-        {components && components.length > 0 ? (
-          renderComponentTable(components)
+        {testResultsToShow && testResultsToShow.length > 0 ? (
+          <Box>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mb: 1, display: 'block' }}
+            >
+              Hiển thị {testResultsToShow.length} kết quả xét nghiệm
+            </Typography>
+            {renderComponentTable(testResultsToShow)}
+          </Box>
         ) : (
           <Box sx={{ textAlign: 'center', py: 3 }}>
             <Typography variant="body2" color="text.secondary">
@@ -391,10 +343,340 @@ const ConsultantTestResultDetailModal = ({
             >
               Kết quả có thể chưa được cập nhật.
             </Typography>
+            <Typography
+              variant="caption"
+              sx={{ mt: 1, display: 'block', color: 'red' }}
+            >
+              Debug: testResults={test?.testResults ? 'có' : 'không'} |
+              components={components?.length || 0}
+            </Typography>
           </Box>
         )}
       </Box>
     );
+  };
+  // Helper: Render tabs cho package services
+  const renderPackageServiceTabs = (currentService) => (
+    <Box sx={{ mb: 2 }}>
+      <Tabs
+        value={currentService ? currentService.id : packageServices[0].id}
+        onChange={(e, val) => {
+          const svc = packageServices.find((s) => s.id === val);
+          if (svc) onSelectService(svc);
+        }}
+        variant="scrollable"
+        scrollButtons="auto"
+      >
+        {packageServices.map((svc) => (
+          <Tab
+            key={svc.id}
+            label={svc.name || svc.serviceName}
+            value={svc.id}
+          />
+        ))}
+      </Tabs>
+    </Box>
+  );
+
+  // Helper: Render empty state cho package service
+  const renderPackageServiceEmptyState = () => (
+    <Box sx={{ textAlign: 'center', py: 3 }}>
+      <Typography variant="body2" color="text.secondary">
+        Không có kết quả xét nghiệm cho dịch vụ này.
+      </Typography>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mt: 1, display: 'block' }}
+      >
+        Có thể kết quả chưa được cập nhật hoặc dịch vụ chưa được thực hiện.
+      </Typography>
+    </Box>
+  );
+
+  // Helper: Render kết quả cho package services
+  const renderPackageServiceResults = () => {
+    // Xác định service nào được chọn
+    const currentService = selectedService || packageServices[0];
+    const currentComponents = currentService
+      ? getComponentsForService(currentService.id)
+      : [];
+
+    return (
+      <Box>
+        {renderPackageServiceTabs(currentService)}
+        {/* Hiển thị thông tin dịch vụ và kết quả */}
+        {currentService && (
+          <>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+              {currentService.name || currentService.serviceName}
+            </Typography>
+            {currentComponents && currentComponents.length > 0
+              ? renderComponentTable(currentComponents)
+              : renderPackageServiceEmptyState()}
+          </>
+        )}
+      </Box>
+    );
+  };
+  const getComponentsForService = (serviceId) => {
+    // Kiểm tra cấu trúc dữ liệu từ API
+    let resultsArray = [];
+
+    if (test?.testResults?.results && Array.isArray(test.testResults.results)) {
+      // API structure: { results: [...] } - NEW FORMAT
+      resultsArray = test.testResults.results;
+    } else if (
+      test?.testResults?.data?.results &&
+      Array.isArray(test.testResults.data.results)
+    ) {
+      // API structure: { data: { results: [...] } } - OLD FORMAT
+      resultsArray = test.testResults.data.results;
+    } else if (test?.testResults && Array.isArray(test.testResults)) {
+      // Direct array structure
+      resultsArray = test.testResults;
+    } else {
+      return [];
+    }
+
+    // Lọc components theo serviceId
+    return resultsArray.filter((result) => result.serviceId === serviceId);
+  };
+  // Helper: Render consultant notes cho package service
+  const renderPackageServiceNote = (savedNote) => {
+    return savedNote && savedNote.note && savedNote.note.trim() ? (
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="caption" color="text.secondary">
+          Kết luận đã lưu:
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{
+            mt: 1,
+            p: 2,
+            backgroundColor: '#e8f5e8',
+            borderRadius: 1,
+            border: '1px solid #c8e6c9',
+            whiteSpace: 'pre-wrap',
+            color: '#2e7d32',
+            fontWeight: 500,
+          }}
+        >
+          {savedNote.note}
+        </Typography>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ mt: 1, display: 'block' }}
+        >
+          Bạn có thể chỉnh sửa kết luận này bên dưới
+        </Typography>
+      </Box>
+    ) : (
+      <Box sx={{ mb: 1 }}>
+        <Typography variant="caption" color="text.secondary">
+          Chưa có kết luận cho dịch vụ này
+        </Typography>
+      </Box>
+    );
+  };
+
+  // Helper: Render consultant notes cho service đơn lẻ
+  const renderSingleServiceNote = () => {
+    return test?.consultantNotes && test.consultantNotes.trim() ? (
+      <Box sx={{ mb: 2 }}>
+        <Typography
+          variant="body2"
+          sx={{
+            fontSize: '0.875rem',
+            lineHeight: 1.6,
+            color: '#2e7d32',
+            fontWeight: 500,
+            backgroundColor: '#e8f5e8',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            border: '1px solid #c8e6c9',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          {test.consultantNotes}
+        </Typography>
+        <Typography
+          variant="caption"
+          sx={{
+            color: '#2e7d32',
+            mt: 1,
+            display: 'block',
+            fontStyle: 'italic',
+          }}
+        >
+          Kết luận đã được lưu
+        </Typography>
+      </Box>
+    ) : (
+      <Typography
+        variant="body2"
+        sx={{
+          color: '#f57c00',
+          fontStyle: 'italic',
+          mb: 2,
+          padding: '8px 12px',
+          backgroundColor: '#fff3e0',
+          borderRadius: '4px',
+          border: '1px solid #ffcc02',
+        }}
+      >
+        Chưa có kết luận từ consultant
+      </Typography>
+    );
+  };
+
+  // Helper: Render text field cho consultant notes
+  const renderConsultantNotesTextField = () => {
+    return (
+      <TextField
+        label={
+          test?.consultantNotes && test.consultantNotes.trim()
+            ? 'Chỉnh sửa kết luận/chú thích cho bệnh nhân'
+            : 'Nhập kết luận/chú thích cho bệnh nhân'
+        }
+        value={consultantNote}
+        onChange={(e) => setConsultantNote(e.target.value)}
+        placeholder={
+          test?.consultantNotes && test.consultantNotes.trim()
+            ? 'Chỉnh sửa kết luận hiện tại...'
+            : 'Nhập kết luận/chú thích cho bệnh nhân...'
+        }
+        multiline
+        minRows={3}
+        maxRows={6}
+        fullWidth
+        disabled={saving}
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            backgroundColor:
+              test?.consultantNotes && test.consultantNotes.trim()
+                ? '#f8f9fa'
+                : '#fff',
+          },
+        }}
+      />
+    );
+  };
+
+  // Helper: Render phần consultant notes section
+  const renderConsultantNotesSection = () => {
+    if (isPackage && packageServices.length > 0) {
+      return (
+        <Box>
+          {/* Chỉ hiển thị ô nhập kết luận cho service đang được chọn */}
+          {selectedService && (
+            <Box
+              sx={{
+                mb: 3,
+                p: 2,
+                background: '#fff',
+                borderRadius: 2,
+                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+              }}
+            >
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                Kết luận cho:{' '}
+                {selectedService.name || selectedService.serviceName}
+              </Typography>
+
+              {/* Hiển thị kết luận đã lưu nếu có */}
+              {test?.testServiceConsultantNotes &&
+                (() => {
+                  const savedNote = test.testServiceConsultantNotes.find(
+                    (note) => note.serviceId === selectedService.id
+                  );
+                  return renderPackageServiceNote(savedNote);
+                })()}
+
+              <TextField
+                label={(() => {
+                  const savedNote = test?.testServiceConsultantNotes?.find(
+                    (note) => note.serviceId === selectedService.id
+                  );
+                  return savedNote && savedNote.note && savedNote.note.trim()
+                    ? 'Chỉnh sửa kết luận/ghi chú cho dịch vụ này'
+                    : 'Kết luận/ghi chú cho dịch vụ này';
+                })()}
+                value={serviceNotes[selectedService.id] || ''}
+                onChange={(e) =>
+                  setServiceNotes((prev) => ({
+                    ...prev,
+                    [selectedService.id]: e.target.value,
+                  }))
+                }
+                placeholder={(() => {
+                  const savedNote = test?.testServiceConsultantNotes?.find(
+                    (note) => note.serviceId === selectedService.id
+                  );
+                  return savedNote && savedNote.note && savedNote.note.trim()
+                    ? 'Chỉnh sửa kết luận hiện tại...'
+                    : 'Nhập kết luận/ghi chú cho dịch vụ...';
+                })()}
+                multiline
+                minRows={2}
+                maxRows={5}
+                fullWidth
+                disabled={savingServiceNote[selectedService.id]}
+                sx={{ mb: 1 }}
+              />
+              <Button
+                variant="contained"
+                onClick={() => handleSaveServiceNote(selectedService.id)}
+                disabled={
+                  savingServiceNote[selectedService.id] ||
+                  !(
+                    serviceNotes[selectedService.id] &&
+                    serviceNotes[selectedService.id].trim()
+                  )
+                }
+                sx={{
+                  background: MEDICAL_GRADIENT,
+                  color: '#fff',
+                  fontWeight: 600,
+                }}
+              >
+                {savingServiceNote[selectedService.id]
+                  ? 'Đang lưu...'
+                  : (() => {
+                      const savedNote = test?.testServiceConsultantNotes?.find(
+                        (note) => note.serviceId === selectedService.id
+                      );
+                      return savedNote &&
+                        savedNote.note &&
+                        savedNote.note.trim()
+                        ? 'Cập nhật kết luận'
+                        : 'Lưu kết luận';
+                    })()}
+              </Button>
+            </Box>
+          )}
+        </Box>
+      );
+    } else {
+      return (
+        <>
+          {/* Logic cho test lẻ */}
+          {renderSingleServiceNote()}
+          {renderConsultantNotesTextField()}
+        </>
+      );
+    }
+  };
+
+  // Render bảng kết quả cho package hoặc service đơn
+  const renderResults = () => {
+    if (isPackage && packageServices.length > 0) {
+      return renderPackageServiceResults();
+    } else {
+      return renderSingleServiceResults();
+    }
   };
 
   // Thay thế phần render kết luận consultant:
@@ -458,220 +740,7 @@ const ConsultantTestResultDetailModal = ({
           >
             Kết luận từ consultant
           </Typography>
-          {isPackage && packageServices.length > 0 ? (
-            <Box>
-              {/* Chỉ hiển thị ô nhập kết luận cho service đang được chọn */}
-              {selectedService && (
-                <Box
-                  sx={{
-                    mb: 3,
-                    p: 2,
-                    background: '#fff',
-                    borderRadius: 2,
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                  }}
-                >
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ fontWeight: 600, mb: 1 }}
-                  >
-                    Kết luận cho:{' '}
-                    {selectedService.name || selectedService.serviceName}
-                  </Typography>
-
-                  {/* Hiển thị kết luận đã lưu nếu có */}
-                  {test?.testServiceConsultantNotes &&
-                    (() => {
-                      const savedNote = test.testServiceConsultantNotes.find(
-                        (note) => note.serviceId === selectedService.id
-                      );
-
-                      return savedNote &&
-                        savedNote.note &&
-                        savedNote.note.trim() ? (
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            Kết luận đã lưu:
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              mt: 1,
-                              p: 2,
-                              backgroundColor: '#e8f5e8',
-                              borderRadius: 1,
-                              border: '1px solid #c8e6c9',
-                              whiteSpace: 'pre-wrap',
-                              color: '#2e7d32',
-                              fontWeight: 500,
-                            }}
-                          >
-                            {savedNote.note}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ mt: 1, display: 'block' }}
-                          >
-                            Bạn có thể chỉnh sửa kết luận này bên dưới
-                          </Typography>
-                        </Box>
-                      ) : (
-                        <Box sx={{ mb: 1 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            Chưa có kết luận cho dịch vụ này
-                          </Typography>
-                        </Box>
-                      );
-                    })()}
-
-                  <TextField
-                    label={(() => {
-                      const savedNote = test?.testServiceConsultantNotes?.find(
-                        (note) => note.serviceId === selectedService.id
-                      );
-                      return savedNote &&
-                        savedNote.note &&
-                        savedNote.note.trim()
-                        ? 'Chỉnh sửa kết luận/ghi chú cho dịch vụ này'
-                        : 'Kết luận/ghi chú cho dịch vụ này';
-                    })()}
-                    value={serviceNotes[selectedService.id] || ''}
-                    onChange={(e) =>
-                      setServiceNotes((prev) => ({
-                        ...prev,
-                        [selectedService.id]: e.target.value,
-                      }))
-                    }
-                    placeholder={(() => {
-                      const savedNote = test?.testServiceConsultantNotes?.find(
-                        (note) => note.serviceId === selectedService.id
-                      );
-                      return savedNote &&
-                        savedNote.note &&
-                        savedNote.note.trim()
-                        ? 'Chỉnh sửa kết luận hiện tại...'
-                        : 'Nhập kết luận/ghi chú cho dịch vụ...';
-                    })()}
-                    multiline
-                    minRows={2}
-                    maxRows={5}
-                    fullWidth
-                    disabled={savingServiceNote[selectedService.id]}
-                    sx={{ mb: 1 }}
-                  />
-                  <Button
-                    variant="contained"
-                    onClick={() => handleSaveServiceNote(selectedService.id)}
-                    disabled={
-                      savingServiceNote[selectedService.id] ||
-                      !(
-                        serviceNotes[selectedService.id] &&
-                        serviceNotes[selectedService.id].trim()
-                      )
-                    }
-                    sx={{
-                      background: MEDICAL_GRADIENT,
-                      color: '#fff',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {savingServiceNote[selectedService.id]
-                      ? 'Đang lưu...'
-                      : (() => {
-                          const savedNote =
-                            test?.testServiceConsultantNotes?.find(
-                              (note) => note.serviceId === selectedService.id
-                            );
-                          return savedNote &&
-                            savedNote.note &&
-                            savedNote.note.trim()
-                            ? 'Cập nhật kết luận'
-                            : 'Lưu kết luận';
-                        })()}
-                  </Button>
-                </Box>
-              )}
-            </Box>
-          ) : (
-            <>
-              {/* Logic cũ cho test lẻ */}
-              {test?.consultantNotes && test.consultantNotes.trim() ? (
-                <Box sx={{ mb: 2 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontSize: '0.875rem',
-                      lineHeight: 1.6,
-                      color: '#2e7d32',
-                      fontWeight: 500,
-                      backgroundColor: '#e8f5e8',
-                      padding: '12px 16px',
-                      borderRadius: '8px',
-                      border: '1px solid #c8e6c9',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                    }}
-                  >
-                    {test.consultantNotes}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: '#2e7d32',
-                      mt: 1,
-                      display: 'block',
-                      fontStyle: 'italic',
-                    }}
-                  >
-                    Kết luận đã được lưu
-                  </Typography>
-                </Box>
-              ) : (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: '#f57c00',
-                    fontStyle: 'italic',
-                    mb: 2,
-                    padding: '8px 12px',
-                    backgroundColor: '#fff3e0',
-                    borderRadius: '4px',
-                    border: '1px solid #ffcc02',
-                  }}
-                >
-                  Chưa có kết luận từ consultant
-                </Typography>
-              )}
-              <TextField
-                label={
-                  test?.consultantNotes && test.consultantNotes.trim()
-                    ? 'Chỉnh sửa kết luận/chú thích cho bệnh nhân'
-                    : 'Nhập kết luận/chú thích cho bệnh nhân'
-                }
-                value={consultantNote}
-                onChange={(e) => setConsultantNote(e.target.value)}
-                placeholder={
-                  test?.consultantNotes && test.consultantNotes.trim()
-                    ? 'Chỉnh sửa kết luận hiện tại...'
-                    : 'Nhập kết luận/chú thích cho bệnh nhân...'
-                }
-                multiline
-                minRows={3}
-                maxRows={6}
-                fullWidth
-                disabled={saving}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor:
-                      test?.consultantNotes && test.consultantNotes.trim()
-                        ? '#f8f9fa'
-                        : '#fff',
-                  },
-                }}
-              />
-            </>
-          )}
+          {renderConsultantNotesSection()}
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
