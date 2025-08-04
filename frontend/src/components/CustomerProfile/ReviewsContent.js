@@ -1095,7 +1095,15 @@ const ReviewsContent = () => {
                         background: 'rgba(26, 188, 156, 0.05)',
                         p: 1.5,
                         borderRadius: '8px',
-                        fontStyle: 'normal'
+                        fontStyle: 'normal',
+                        display: 'block',
+                        wordWrap: 'break-word',
+                        whiteSpace: 'pre-line',
+                        width: { xs: '100%', md: '590px' },
+                        minWidth: { xs: '100%', md: '590px' },
+                        maxWidth: { xs: '100%', md: '590px' },
+                        overflow: 'auto',
+                        boxSizing: 'border-box'
                       }}
                     >
                       {review.staffReply}
