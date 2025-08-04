@@ -111,214 +111,214 @@ public class DataInitializerConfig implements CommandLineRunner {
             // USER
             // Tạo user mặc định cho từng role
             if (userRepository.count() < 10) {
-            // Lấy các roles
-            Role customerRole = roleRepository.findByRoleName("CUSTOMER")
-                    .orElseThrow(() -> new RuntimeException("CUSTOMER role not found"));
-            Role staffRole = roleRepository.findByRoleName("STAFF")
-                    .orElseThrow(() -> new RuntimeException("STAFF role not found"));
-            Role consultantRole = roleRepository.findByRoleName("CONSULTANT")
-                    .orElseThrow(() -> new RuntimeException("CONSULTANT role not found"));
-            Role adminRole = roleRepository.findByRoleName("ADMIN")
-                    .orElseThrow(() -> new RuntimeException("ADMIN role not found"));
+                // Lấy các roles
+                Role customerRole = roleRepository.findByRoleName("CUSTOMER")
+                        .orElseThrow(() -> new RuntimeException("CUSTOMER role not found"));
+                Role staffRole = roleRepository.findByRoleName("STAFF")
+                        .orElseThrow(() -> new RuntimeException("STAFF role not found"));
+                Role consultantRole = roleRepository.findByRoleName("CONSULTANT")
+                        .orElseThrow(() -> new RuntimeException("CONSULTANT role not found"));
+                Role adminRole = roleRepository.findByRoleName("ADMIN")
+                        .orElseThrow(() -> new RuntimeException("ADMIN role not found"));
 
-            // Tạo 2 tài khoản CUSTOMER
-            if (userRepository.count() < 1) {
-                UserDtls customer1 = new UserDtls();
-                customer1.setFullName("Nguyễn Văn An");
-                customer1.setUsername("customer1");
-                customer1.setPassword(passwordEncoder.encode("Aa12345@"));
-                customer1.setEmail("customer1@healapp.com");
-                customer1.setPhone("0900000001");
-                customer1.setIsActive(true);
-                customer1.setGender(com.healapp.model.Gender.MALE);
-                customer1.setBirthDay(java.time.LocalDate.of(1990, 1, 15));
-                customer1.setAddress("123 Đường ABC, Quận 1, TP.HCM");
-                customer1.setProvider(com.healapp.model.AuthProvider.LOCAL);
-                customer1.setCreatedDate(LocalDateTime.now());
-                customer1.setRole(customerRole);
-                userRepository.save(customer1);
+                // Tạo 2 tài khoản CUSTOMER
+                if (userRepository.count() < 1) {
+                    UserDtls customer1 = new UserDtls();
+                    customer1.setFullName("Nguyễn Văn An");
+                    customer1.setUsername("customer1");
+                    customer1.setPassword(passwordEncoder.encode("Aa12345@"));
+                    customer1.setEmail("customer1@healapp.com");
+                    customer1.setPhone("0900000001");
+                    customer1.setIsActive(true);
+                    customer1.setGender(com.healapp.model.Gender.MALE);
+                    customer1.setBirthDay(java.time.LocalDate.of(1990, 1, 15));
+                    customer1.setAddress("123 Đường ABC, Quận 1, TP.HCM");
+                    customer1.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                    customer1.setCreatedDate(LocalDateTime.now());
+                    customer1.setRole(customerRole);
+                    userRepository.save(customer1);
 
-                // Tạo cài đặt thông báo cho customer1
-                notificationPreferenceService.createDefaultNotificationPreferences(customer1.getId());
+                    // Tạo cài đặt thông báo cho customer1
+                    notificationPreferenceService.createDefaultNotificationPreferences(customer1.getId());
+                }
+
+                if (userRepository.count() < 2) {
+                    UserDtls customer2 = new UserDtls();
+                    customer2.setFullName("Trần Thị Bình");
+                    customer2.setUsername("customer2");
+                    customer2.setPassword(passwordEncoder.encode("Aa12345@"));
+                    customer2.setEmail("customer2@healapp.com");
+                    customer2.setPhone("0900000002");
+                    customer2.setIsActive(true);
+                    customer2.setGender(com.healapp.model.Gender.FEMALE);
+                    customer2.setBirthDay(java.time.LocalDate.of(1992, 3, 20));
+                    customer2.setAddress("456 Đường DEF, Quận 2, TP.HCM");
+                    customer2.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                    customer2.setCreatedDate(LocalDateTime.now());
+                    customer2.setRole(customerRole);
+                    userRepository.save(customer2);
+
+                    // Tạo cài đặt thông báo cho customer2
+                    notificationPreferenceService.createDefaultNotificationPreferences(customer2.getId());
+                }
+
+                // Tạo 1 tài khoản STAFF
+                if (userRepository.count() < 3) {
+                    UserDtls staff = new UserDtls();
+                    staff.setFullName("Lê Văn Cao");
+                    staff.setUsername("staff1");
+                    staff.setPassword(passwordEncoder.encode("Aa12345@"));
+                    staff.setEmail("staff1@healapp.com");
+                    staff.setPhone("0900000003");
+                    staff.setIsActive(true);
+                    staff.setGender(com.healapp.model.Gender.MALE);
+                    staff.setBirthDay(java.time.LocalDate.of(1988, 5, 10));
+                    staff.setAddress("789 Đường GHI, Quận 3, TP.HCM");
+                    staff.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                    staff.setCreatedDate(LocalDateTime.now());
+                    staff.setRole(staffRole);
+                    userRepository.save(staff);
+
+                    // Tạo cài đặt thông báo cho staff
+                    notificationPreferenceService.createDefaultNotificationPreferences(staff.getId());
+                }
+
+                // Tạo 6 tài khoản CONSULTANT
+                if (userRepository.count() < 4) {
+                    UserDtls consultant1 = new UserDtls();
+                    consultant1.setFullName("Dr. Phạm Thị Diệu Linh");
+                    consultant1.setUsername("consultant1");
+                    consultant1.setPassword(passwordEncoder.encode("Aa12345@"));
+                    consultant1.setEmail("consultant1@healapp.com");
+                    consultant1.setPhone("0900000004");
+                    consultant1.setIsActive(true);
+                    consultant1.setGender(com.healapp.model.Gender.FEMALE);
+                    consultant1.setBirthDay(java.time.LocalDate.of(1985, 8, 25));
+                    consultant1.setAddress("321 Đường JKL, Quận 4, TP.HCM");
+                    consultant1.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                    consultant1.setCreatedDate(LocalDateTime.now());
+                    consultant1.setRole(consultantRole);
+                    userRepository.save(consultant1);
+
+                    // Tạo cài đặt thông báo cho consultant1
+                    notificationPreferenceService.createDefaultNotificationPreferences(consultant1.getId());
+                }
+
+                if (userRepository.count() < 5) {
+                    UserDtls consultant2 = new UserDtls();
+                    consultant2.setFullName("Dr. Nguyễn Minh Phương");
+                    consultant2.setUsername("consultant2");
+                    consultant2.setPassword(passwordEncoder.encode("Aa12345@"));
+                    consultant2.setEmail("consultant2@healapp.com");
+                    consultant2.setPhone("0900000005");
+                    consultant2.setIsActive(true);
+                    consultant2.setGender(com.healapp.model.Gender.MALE);
+                    consultant2.setBirthDay(java.time.LocalDate.of(1980, 3, 15));
+                    consultant2.setAddress("789 Đường PQR, Quận 7, TP.HCM");
+                    consultant2.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                    consultant2.setCreatedDate(LocalDateTime.now());
+                    consultant2.setRole(consultantRole);
+                    userRepository.save(consultant2);
+
+                    // Tạo cài đặt thông báo cho consultant2
+                    notificationPreferenceService.createDefaultNotificationPreferences(consultant2.getId());
+                }
+
+                if (userRepository.count() < 6) {
+                    UserDtls consultant3 = new UserDtls();
+                    consultant3.setFullName("Dr. Lê Thị Gấm");
+                    consultant3.setUsername("consultant3");
+                    consultant3.setPassword(passwordEncoder.encode("Aa12345@"));
+                    consultant3.setEmail("consultant3@healapp.com");
+                    consultant3.setPhone("0900000006");
+                    consultant3.setIsActive(true);
+                    consultant3.setGender(com.healapp.model.Gender.FEMALE);
+                    consultant3.setBirthDay(java.time.LocalDate.of(1987, 11, 10));
+                    consultant3.setAddress("456 Đường STU, Quận 8, TP.HCM");
+                    consultant3.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                    consultant3.setCreatedDate(LocalDateTime.now());
+                    consultant3.setRole(consultantRole);
+                    userRepository.save(consultant3);
+
+                    // Tạo cài đặt thông báo cho consultant3
+                    notificationPreferenceService.createDefaultNotificationPreferences(consultant3.getId());
+                }
+
+                if (userRepository.count() < 7) {
+                    UserDtls consultant4 = new UserDtls();
+                    consultant4.setFullName("Dr. Trần Văn Hoàng");
+                    consultant4.setUsername("consultant4");
+                    consultant4.setPassword(passwordEncoder.encode("Aa12345@"));
+                    consultant4.setEmail("consultant4@healapp.com");
+                    consultant4.setPhone("0900000007");
+                    consultant4.setIsActive(true);
+                    consultant4.setGender(com.healapp.model.Gender.MALE);
+                    consultant4.setBirthDay(java.time.LocalDate.of(1983, 6, 28));
+                    consultant4.setAddress("123 Đường VWX, Quận 9, TP.HCM");
+                    consultant4.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                    consultant4.setCreatedDate(LocalDateTime.now());
+                    consultant4.setRole(consultantRole);
+                    userRepository.save(consultant4);
+                    // Tạo cài đặt thông báo cho consultant4
+                    notificationPreferenceService.createDefaultNotificationPreferences(consultant4.getId());
+                }
+
+                if (userRepository.count() < 8) {
+                    UserDtls consultant5 = new UserDtls();
+                    consultant5.setFullName("Dr. Võ Thị Sáu");
+                    consultant5.setUsername("consultant5");
+                    consultant5.setPassword(passwordEncoder.encode("Aa12345@"));
+                    consultant5.setEmail("consultant5@healapp.com");
+                    consultant5.setPhone("0900000008");
+                    consultant5.setIsActive(true);
+                    consultant5.setGender(com.healapp.model.Gender.FEMALE);
+                    consultant5.setBirthDay(java.time.LocalDate.of(1989, 9, 18));
+                    consultant5.setAddress("987 Đường YZ, Quận 10, TP.HCM");
+                    consultant5.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                    consultant5.setCreatedDate(LocalDateTime.now());
+                    consultant5.setRole(consultantRole);
+                    userRepository.save(consultant5);
+                    // Tạo cài đặt thông báo cho consultant5
+                    notificationPreferenceService.createDefaultNotificationPreferences(consultant5.getId());
+                }
+
+                if (userRepository.count() < 9) {
+                    UserDtls consultant6 = new UserDtls();
+                    consultant6.setFullName("Dr. Đặng Minh Tâm");
+                    consultant6.setUsername("consultant6");
+                    consultant6.setPassword(passwordEncoder.encode("Aa12345@"));
+                    consultant6.setEmail("consultant6@healapp.com");
+                    consultant6.setPhone("0900000009");
+                    consultant6.setIsActive(true);
+                    consultant6.setGender(com.healapp.model.Gender.MALE);
+                    consultant6.setBirthDay(java.time.LocalDate.of(1982, 12, 3));
+                    consultant6.setAddress("654 Đường ABC, Quận 11, TP.HCM");
+                    consultant6.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                    consultant6.setCreatedDate(LocalDateTime.now());
+                    consultant6.setRole(consultantRole);
+                    userRepository.save(consultant6);
+                    // Tạo cài đặt thông báo cho consultant6
+                    notificationPreferenceService.createDefaultNotificationPreferences(consultant6.getId());
+                }
+
+                // Tạo 1 tài khoản ADMIN
+                if (userRepository.count() < 10) {
+                    UserDtls admin = new UserDtls();
+                    admin.setFullName("Admin System Management");
+                    admin.setUsername("admin1");
+                    admin.setPassword(passwordEncoder.encode("Aa12345@"));
+                    admin.setEmail("admin1@healapp.com");
+                    admin.setPhone("0900000010");
+                    admin.setIsActive(true);
+                    admin.setGender(com.healapp.model.Gender.MALE);
+                    admin.setBirthDay(java.time.LocalDate.of(1983, 12, 5));
+                    admin.setAddress("654 Đường MNO, Quận 5, TP.HCM");
+                    admin.setProvider(com.healapp.model.AuthProvider.LOCAL);
+                    admin.setCreatedDate(LocalDateTime.now());
+                    admin.setRole(adminRole);
+                    userRepository.save(admin);
+                }
             }
-
-            if (userRepository.count() < 2) {
-                UserDtls customer2 = new UserDtls();
-                customer2.setFullName("Trần Thị Bình");
-                customer2.setUsername("customer2");
-                customer2.setPassword(passwordEncoder.encode("Aa12345@"));
-                customer2.setEmail("customer2@healapp.com");
-                customer2.setPhone("0900000002");
-                customer2.setIsActive(true);
-                customer2.setGender(com.healapp.model.Gender.FEMALE);
-                customer2.setBirthDay(java.time.LocalDate.of(1992, 3, 20));
-                customer2.setAddress("456 Đường DEF, Quận 2, TP.HCM");
-                customer2.setProvider(com.healapp.model.AuthProvider.LOCAL);
-                customer2.setCreatedDate(LocalDateTime.now());
-                customer2.setRole(customerRole);
-                userRepository.save(customer2);
-
-                // Tạo cài đặt thông báo cho customer2
-                notificationPreferenceService.createDefaultNotificationPreferences(customer2.getId());
-            }
-
-            // Tạo 1 tài khoản STAFF
-            if (userRepository.count() < 3) {
-                UserDtls staff = new UserDtls();
-                staff.setFullName("Lê Văn Cao");
-                staff.setUsername("staff1");
-                staff.setPassword(passwordEncoder.encode("Aa12345@"));
-                staff.setEmail("staff1@healapp.com");
-                staff.setPhone("0900000003");
-                staff.setIsActive(true);
-                staff.setGender(com.healapp.model.Gender.MALE);
-                staff.setBirthDay(java.time.LocalDate.of(1988, 5, 10));
-                staff.setAddress("789 Đường GHI, Quận 3, TP.HCM");
-                staff.setProvider(com.healapp.model.AuthProvider.LOCAL);
-                staff.setCreatedDate(LocalDateTime.now());
-                staff.setRole(staffRole);
-                userRepository.save(staff);
-
-                // Tạo cài đặt thông báo cho staff
-                notificationPreferenceService.createDefaultNotificationPreferences(staff.getId());
-            }
-
-            // Tạo 6 tài khoản CONSULTANT
-            if (userRepository.count() < 4) {
-                UserDtls consultant1 = new UserDtls();
-                consultant1.setFullName("Dr. Phạm Thị Diệu Linh");
-                consultant1.setUsername("consultant1");
-                consultant1.setPassword(passwordEncoder.encode("Aa12345@"));
-                consultant1.setEmail("consultant1@healapp.com");
-                consultant1.setPhone("0900000004");
-                consultant1.setIsActive(true);
-                consultant1.setGender(com.healapp.model.Gender.FEMALE);
-                consultant1.setBirthDay(java.time.LocalDate.of(1985, 8, 25));
-                consultant1.setAddress("321 Đường JKL, Quận 4, TP.HCM");
-                consultant1.setProvider(com.healapp.model.AuthProvider.LOCAL);
-                consultant1.setCreatedDate(LocalDateTime.now());
-                consultant1.setRole(consultantRole);
-                userRepository.save(consultant1);
-
-                // Tạo cài đặt thông báo cho consultant1
-                notificationPreferenceService.createDefaultNotificationPreferences(consultant1.getId());
-            }
-
-            if (userRepository.count() < 5) {
-                UserDtls consultant2 = new UserDtls();
-                consultant2.setFullName("Dr. Nguyễn Minh Phương");
-                consultant2.setUsername("consultant2");
-                consultant2.setPassword(passwordEncoder.encode("Aa12345@"));
-                consultant2.setEmail("consultant2@healapp.com");
-                consultant2.setPhone("0900000005");
-                consultant2.setIsActive(true);
-                consultant2.setGender(com.healapp.model.Gender.MALE);
-                consultant2.setBirthDay(java.time.LocalDate.of(1980, 3, 15));
-                consultant2.setAddress("789 Đường PQR, Quận 7, TP.HCM");
-                consultant2.setProvider(com.healapp.model.AuthProvider.LOCAL);
-                consultant2.setCreatedDate(LocalDateTime.now());
-                consultant2.setRole(consultantRole);
-                userRepository.save(consultant2);
-
-                // Tạo cài đặt thông báo cho consultant2
-                notificationPreferenceService.createDefaultNotificationPreferences(consultant2.getId());
-            }
-
-            if (userRepository.count() < 6) {
-                UserDtls consultant3 = new UserDtls();
-                consultant3.setFullName("Dr. Lê Thị Gấm");
-                consultant3.setUsername("consultant3");
-                consultant3.setPassword(passwordEncoder.encode("Aa12345@"));
-                consultant3.setEmail("consultant3@healapp.com");
-                consultant3.setPhone("0900000006");
-                consultant3.setIsActive(true);
-                consultant3.setGender(com.healapp.model.Gender.FEMALE);
-                consultant3.setBirthDay(java.time.LocalDate.of(1987, 11, 10));
-                consultant3.setAddress("456 Đường STU, Quận 8, TP.HCM");
-                consultant3.setProvider(com.healapp.model.AuthProvider.LOCAL);
-                consultant3.setCreatedDate(LocalDateTime.now());
-                consultant3.setRole(consultantRole);
-                userRepository.save(consultant3);
-
-                // Tạo cài đặt thông báo cho consultant3
-                notificationPreferenceService.createDefaultNotificationPreferences(consultant3.getId());
-            }
-
-            if (userRepository.count() < 7) {
-                UserDtls consultant4 = new UserDtls();
-                consultant4.setFullName("Dr. Trần Văn Hoàng");
-                consultant4.setUsername("consultant4");
-                consultant4.setPassword(passwordEncoder.encode("Aa12345@"));
-                consultant4.setEmail("consultant4@healapp.com");
-                consultant4.setPhone("0900000007");
-                consultant4.setIsActive(true);
-                consultant4.setGender(com.healapp.model.Gender.MALE);
-                consultant4.setBirthDay(java.time.LocalDate.of(1983, 6, 28));
-                consultant4.setAddress("123 Đường VWX, Quận 9, TP.HCM");
-                consultant4.setProvider(com.healapp.model.AuthProvider.LOCAL);
-                consultant4.setCreatedDate(LocalDateTime.now());
-                consultant4.setRole(consultantRole);
-                userRepository.save(consultant4);
-                // Tạo cài đặt thông báo cho consultant4
-                notificationPreferenceService.createDefaultNotificationPreferences(consultant4.getId());
-            }
-
-            if (userRepository.count() < 8) {
-                UserDtls consultant5 = new UserDtls();
-                consultant5.setFullName("Dr. Võ Thị Sáu");
-                consultant5.setUsername("consultant5");
-                consultant5.setPassword(passwordEncoder.encode("Aa12345@"));
-                consultant5.setEmail("consultant5@healapp.com");
-                consultant5.setPhone("0900000008");
-                consultant5.setIsActive(true);
-                consultant5.setGender(com.healapp.model.Gender.FEMALE);
-                consultant5.setBirthDay(java.time.LocalDate.of(1989, 9, 18));
-                consultant5.setAddress("987 Đường YZ, Quận 10, TP.HCM");
-                consultant5.setProvider(com.healapp.model.AuthProvider.LOCAL);
-                consultant5.setCreatedDate(LocalDateTime.now());
-                consultant5.setRole(consultantRole);
-                userRepository.save(consultant5);
-                // Tạo cài đặt thông báo cho consultant5
-                notificationPreferenceService.createDefaultNotificationPreferences(consultant5.getId());
-            }
-
-            if (userRepository.count() < 9) {
-                UserDtls consultant6 = new UserDtls();
-                consultant6.setFullName("Dr. Đặng Minh Tâm");
-                consultant6.setUsername("consultant6");
-                consultant6.setPassword(passwordEncoder.encode("Aa12345@"));
-                consultant6.setEmail("consultant6@healapp.com");
-                consultant6.setPhone("0900000009");
-                consultant6.setIsActive(true);
-                consultant6.setGender(com.healapp.model.Gender.MALE);
-                consultant6.setBirthDay(java.time.LocalDate.of(1982, 12, 3));
-                consultant6.setAddress("654 Đường ABC, Quận 11, TP.HCM");
-                consultant6.setProvider(com.healapp.model.AuthProvider.LOCAL);
-                consultant6.setCreatedDate(LocalDateTime.now());
-                consultant6.setRole(consultantRole);
-                userRepository.save(consultant6);
-                // Tạo cài đặt thông báo cho consultant6
-                notificationPreferenceService.createDefaultNotificationPreferences(consultant6.getId());
-            }
-
-            // Tạo 1 tài khoản ADMIN
-            if (userRepository.count() < 10) {
-                UserDtls admin = new UserDtls();
-                admin.setFullName("Admin System Management");
-                admin.setUsername("admin1");
-                admin.setPassword(passwordEncoder.encode("Aa12345@"));
-                admin.setEmail("admin1@healapp.com");
-                admin.setPhone("0900000010");
-                admin.setIsActive(true);
-                admin.setGender(com.healapp.model.Gender.MALE);
-                admin.setBirthDay(java.time.LocalDate.of(1983, 12, 5));
-                admin.setAddress("654 Đường MNO, Quận 5, TP.HCM");
-                admin.setProvider(com.healapp.model.AuthProvider.LOCAL);
-                admin.setCreatedDate(LocalDateTime.now());
-                admin.setRole(adminRole);
-                userRepository.save(admin);
-            }
-        }
 
             // CATEGORY_QUESTIONS
             createCategoryQuestionsIfNotExists();
@@ -647,6 +647,68 @@ public class DataInitializerConfig implements CommandLineRunner {
                 antiHbs.setUpdatedAt(java.time.LocalDateTime.now());
                 serviceTestComponentRepository.save(antiHbs);
             }
+
+            // Tạo test components cho Gonorrhea Service
+            if (services.size() > 4) {
+                STIService gonorrheaService = services.get(4); // Service thứ năm là Gonorrhea
+
+                // Gonorrhea PCR Test
+                ServiceTestComponent gonorrheaPcr = new ServiceTestComponent();
+                gonorrheaPcr.setStiService(gonorrheaService);
+                gonorrheaPcr.setTestName("Neisseria gonorrhoeae DNA PCR");
+                gonorrheaPcr.setUnit("Copies/mL");
+                gonorrheaPcr.setReferenceRange("Không phát hiện");
+                gonorrheaPcr.setInterpretation("Âm tính: Không phát hiện DNA, Dương tính: Phát hiện DNA vi khuẩn");
+                gonorrheaPcr.setSampleType("Nước tiểu/Dịch tiết niệu đạo");
+                gonorrheaPcr.setIsActive(true);
+                gonorrheaPcr.setCreatedAt(java.time.LocalDateTime.now());
+                gonorrheaPcr.setUpdatedAt(java.time.LocalDateTime.now());
+                serviceTestComponentRepository.save(gonorrheaPcr);
+
+                // Gonorrhea Culture Test
+                ServiceTestComponent gonorrheaCulture = new ServiceTestComponent();
+                gonorrheaCulture.setStiService(gonorrheaService);
+                gonorrheaCulture.setTestName("Cấy khuẩn Neisseria gonorrhoeae");
+                gonorrheaCulture.setUnit("CFU/mL");
+                gonorrheaCulture.setReferenceRange("Âm tính");
+                gonorrheaCulture.setInterpretation("Âm tính: Không có vi khuẩn, Dương tính: Có vi khuẩn phát triển");
+                gonorrheaCulture.setSampleType("Dịch tiết niệu đạo");
+                gonorrheaCulture.setIsActive(true);
+                gonorrheaCulture.setCreatedAt(java.time.LocalDateTime.now());
+                gonorrheaCulture.setUpdatedAt(java.time.LocalDateTime.now());
+                serviceTestComponentRepository.save(gonorrheaCulture);
+            }
+
+            // Tạo test components cho Chlamydia Service
+            if (services.size() > 5) {
+                STIService chlamydiaService = services.get(5); // Service thứ sáu là Chlamydia
+
+                // Chlamydia PCR Test
+                ServiceTestComponent chlamydiaPcr = new ServiceTestComponent();
+                chlamydiaPcr.setStiService(chlamydiaService);
+                chlamydiaPcr.setTestName("Chlamydia trachomatis DNA PCR");
+                chlamydiaPcr.setUnit("Copies/mL");
+                chlamydiaPcr.setReferenceRange("Không phát hiện");
+                chlamydiaPcr.setInterpretation("Âm tính: Không phát hiện DNA, Dương tính: Phát hiện DNA vi khuẩn");
+                chlamydiaPcr.setSampleType("Nước tiểu/Dịch tiết niệu đạo");
+                chlamydiaPcr.setIsActive(true);
+                chlamydiaPcr.setCreatedAt(java.time.LocalDateTime.now());
+                chlamydiaPcr.setUpdatedAt(java.time.LocalDateTime.now());
+                serviceTestComponentRepository.save(chlamydiaPcr);
+
+                // Chlamydia Antigen Test
+                ServiceTestComponent chlamydiaAntigen = new ServiceTestComponent();
+                chlamydiaAntigen.setStiService(chlamydiaService);
+                chlamydiaAntigen.setTestName("Chlamydia trachomatis Antigen");
+                chlamydiaAntigen.setUnit("EIA Index");
+                chlamydiaAntigen.setReferenceRange("< 0.90");
+                chlamydiaAntigen.setInterpretation("< 0.90: Âm tính, 0.90-1.10: Nghi ngờ, > 1.10: Dương tính");
+                chlamydiaAntigen.setSampleType("Dịch tiết cổ tử cung/Niệu đạo");
+                chlamydiaAntigen.setIsActive(true);
+                chlamydiaAntigen.setCreatedAt(java.time.LocalDateTime.now());
+                chlamydiaAntigen.setUpdatedAt(java.time.LocalDateTime.now());
+                serviceTestComponentRepository.save(chlamydiaAntigen);
+            }
         }
     }
 
@@ -684,7 +746,7 @@ public class DataInitializerConfig implements CommandLineRunner {
             try {
                 // Lấy tất cả users có role CONSULTANT
                 java.util.List<UserDtls> consultants = userRepository.findByRoleName("CONSULTANT");
-                
+
                 if (consultants.isEmpty()) {
                     return;
                 }
@@ -710,7 +772,8 @@ public class DataInitializerConfig implements CommandLineRunner {
                         case 2: // Dr. Lê Thị Gấm
                             cp.setQualifications("Bác sĩ Chuyên khoa I Tâm lý lâm sàng, Tiến sĩ Tâm lý học");
                             cp.setExperience("10 năm kinh nghiệm tư vấn tâm lý về giới tính và sức khỏe tinh thần");
-                            cp.setBio("Chuyên gia tâm lý, tư vấn về các vấn đề giới tính, tình dục và sức khỏe tinh thần");
+                            cp.setBio(
+                                    "Chuyên gia tâm lý, tư vấn về các vấn đề giới tính, tình dục và sức khỏe tinh thần");
                             break;
                         case 3: // Dr. Trần Văn Hoàng
                             cp.setQualifications("Bác sĩ Chuyên khoa I Tiết niệu, Chứng chỉ Andrologia");
@@ -859,8 +922,6 @@ public class DataInitializerConfig implements CommandLineRunner {
         }
     }
 
-
-
     private void createRolesIfNotExists() {
         try {
             // Tạo role CUSTOMER nếu chưa có
@@ -903,7 +964,8 @@ public class DataInitializerConfig implements CommandLineRunner {
                 if (packages.size() >= 5 && services.size() >= 6) {
                     // Gói toàn diện - Package 1 (index 0)
                     STIPackage comprehensivePackage = packages.get(0);
-                    // Bao gồm tất cả services: HIV, HPV, Syphilis, Hepatitis B, Gonorrhea, Chlamydia
+                    // Bao gồm tất cả services: HIV, HPV, Syphilis, Hepatitis B, Gonorrhea,
+                    // Chlamydia
                     for (int i = 0; i < 6; i++) {
                         PackageService ps = new PackageService();
                         ps.setStiPackage(comprehensivePackage);
