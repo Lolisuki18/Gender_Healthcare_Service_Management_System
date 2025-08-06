@@ -803,11 +803,9 @@ const MyConsultationsContent = () => {
                       <TableCell>
                         <Typography variant="body2" color="text.secondary">
                           {slot.status === 'CANCELED'
-                            ? slot.notes
-                              ? slot.notes
-                              : slot.reason
-                                ? slot.reason
-                                : 'Không có lý do huỷ'
+                            ? slot.reason
+                              ? slot.reason
+                              : 'Không có lý do huỷ'
                             : slot.reason || 'Không có lý do tư vấn'}
                         </Typography>
                       </TableCell>
@@ -1665,7 +1663,11 @@ const MyConsultationsContent = () => {
                             <>
                               <TextField
                                 size="small"
-                                value={notesValue}
+                                value={
+                                  selectedConsultation.status === 'CANCELED'
+                                    ? 'Không có ghi chú'
+                                    : notesValue
+                                }
                                 onChange={(e) => setNotesValue(e.target.value)}
                                 sx={{
                                   minWidth: 260,
@@ -1676,6 +1678,9 @@ const MyConsultationsContent = () => {
                                 multiline
                                 maxRows={4}
                                 placeholder="Nhập ghi chú..."
+                                disabled={
+                                  selectedConsultation.status === 'CANCELED'
+                                }
                               />
                               <Button
                                 size="small"
@@ -1755,9 +1760,11 @@ const MyConsultationsContent = () => {
                                 display="inline"
                                 sx={{ ml: 1, flex: 1 }}
                               >
-                                {selectedConsultation.notes
-                                  ? selectedConsultation.notes
-                                  : 'Không có ghi chú'}
+                                {selectedConsultation.status === 'CANCELED'
+                                  ? 'Không có ghi chú'
+                                  : selectedConsultation.notes
+                                    ? selectedConsultation.notes
+                                    : 'Không có ghi chú'}
                               </Typography>
                               <IconButton
                                 size="small"
@@ -1774,6 +1781,9 @@ const MyConsultationsContent = () => {
                                   borderRadius: 2,
                                   '&:hover': { bgcolor: '#bbdefb' },
                                 }}
+                                disabled={
+                                  selectedConsultation.status === 'CANCELED'
+                                }
                               >
                                 <EditIcon fontSize="small" />
                               </IconButton>
