@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { use, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -47,7 +47,7 @@ const StyledTableRow = (props) => (
 
 const ServiceTestResultView = ({
   results,
-  testPackageInfo,
+  testTypeInfo,
   error,
   onClose,
   showExportUI,
@@ -57,6 +57,27 @@ const ServiceTestResultView = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const getAutoConclusion = (service) => {
+    const conclusions = service.components.map((c) => c.conclusion);
+    const hasInfected = conclusions.includes('INFECTED');
+    const hasAbnormal = conclusions.includes('ABNORMAL');
+    const allNotInfected = conclusions.every((c) => c === 'NOT_INFECTED');
+    if (hasInfected && hasAbnormal) return 'Bị nhiễm, Bất thường';
+    if (hasInfected) return 'Bị nhiễm';
+    if (hasAbnormal) return 'Bất thường';
+    if (allNotInfected) return 'Không bị nhiễm';
+    return '';
+  };
+  const getChipColor = (type) => {
+    if (type === 'infected') return { color: '#fff', bgcolor: '#e53935' };
+    if (type === 'abnormal') return { color: '#fff', bgcolor: '#fb8c00' };
+    if (type === 'notinfected') return { color: '#fff', bgcolor: '#43a047' };
+    return {};
+  };
+  useEffect(() => {
+    console.warn('ServiceTestResultView mounted', results);
+    // console.warn('testPackageInfo mounted', testPackageInfo);
+  }, []);
   return (
     <>
       <Box sx={{ mt: isMobile ? 1 : 3 }}>
@@ -87,33 +108,77 @@ const ServiceTestResultView = ({
                   letterSpacing: 1,
                 }}
               >
-                Kết quả xét nghiệm
+                {results && results.length > 0
+                  ? testTypeInfo.serviceName ||
+                    results[0].testName ||
+                    'Xét nghiệm STI'
+                  : 'Xét nghiệm STI'}
               </Typography>
-              <Chip
-                label={
-                  results.some(
-                    (r) => r.resultValue?.toLowerCase() !== 'negative'
-                  )
-                    ? 'DƯƠNG TÍNH'
-                    : 'ÂM TÍNH'
-                }
+              <Box
                 sx={{
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                  mx: 0.5,
-                  mb: 0.5,
-                  color: results.some(
-                    (r) => r.resultValue?.toLowerCase() !== 'negative'
-                  )
-                    ? '#fff'
-                    : '#fff',
-                  bgcolor: results.some(
-                    (r) => r.resultValue?.toLowerCase() !== 'negative'
-                  )
-                    ? '#e53935'
-                    : '#43a047',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 1,
+                  mb: 1,
+                  flexWrap: 'wrap',
                 }}
-              />
+              >
+                {(() => {
+                  // results là array các kết quả xét nghiệm, không có property services
+                  const allConclusions = (results || [])
+                    .map((result) => result.conclusion)
+                    .filter(Boolean);
+                  const hasInfected = allConclusions.includes('INFECTED');
+                  const hasAbnormal = allConclusions.includes('ABNORMAL');
+                  const allNotInfected = allConclusions.every(
+                    (c) => c === 'NOT_INFECTED'
+                  );
+                  const tags = [];
+                  if (hasInfected)
+                    tags.push(
+                      <Chip
+                        key="infected"
+                        label="Bị nhiễm"
+                        sx={{
+                          ...getChipColor('infected'),
+                          fontWeight: 600,
+                          fontSize: '0.95rem',
+                          mx: 0.5,
+                          mb: 0.5,
+                        }}
+                      />
+                    );
+                  if (hasAbnormal)
+                    tags.push(
+                      <Chip
+                        key="abnormal"
+                        label="Bất thường"
+                        sx={{
+                          ...getChipColor('abnormal'),
+                          fontWeight: 600,
+                          fontSize: '0.95rem',
+                          mx: 0.5,
+                          mb: 0.5,
+                        }}
+                      />
+                    );
+                  if (!hasInfected && !hasAbnormal && allNotInfected)
+                    tags.push(
+                      <Chip
+                        key="notinfected"
+                        label="Không bị nhiễm"
+                        sx={{
+                          ...getChipColor('notinfected'),
+                          fontWeight: 600,
+                          fontSize: '0.95rem',
+                          mx: 0.5,
+                          mb: 0.5,
+                        }}
+                      />
+                    );
+                  return tags;
+                })()}
+              </Box>
             </Box>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
@@ -122,7 +187,7 @@ const ServiceTestResultView = ({
                   Mã xét nghiệm:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
-                  #{results[0]?.testId}
+                  #{results && results.length > 0 ? results[0].testId : 'N/A'}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6} md={4}>
@@ -130,7 +195,9 @@ const ServiceTestResultView = ({
                   Khách hàng:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
-                  {results[0]?.reviewerName || 'Khách hàng'}
+                  {results && results.length > 0
+                    ? results[0].reviewerName || 'Khách hàng'
+                    : 'Khách hàng'}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6} md={4}>
@@ -138,7 +205,9 @@ const ServiceTestResultView = ({
                   Ngày làm xét nghiệm:
                 </Typography>
                 <Typography variant="body1" fontWeight="600">
-                  {Array.isArray(results[0]?.reviewedAt) &&
+                  {results &&
+                  results.length > 0 &&
+                  Array.isArray(results[0].reviewedAt) &&
                   results[0].reviewedAt.length >= 3
                     ? `${results[0].reviewedAt[2]}/${results[0].reviewedAt[1]}/${results[0].reviewedAt[0]}`
                     : 'Không xác định'}
@@ -175,23 +244,19 @@ const ServiceTestResultView = ({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {results.map((result, index) => (
+                {(results || []).map((result, index) => (
                   <StyledTableRow key={`result-${index}`}>
                     <StyledTableCell>
-                      {result.componentName || 'HIV Antibody'}
+                      {result.componentName ||
+                        result.testName ||
+                        'Thành phần xét nghiệm'}
                     </StyledTableCell>
+                    <StyledTableCell>{result.unit || '-'}</StyledTableCell>
                     <StyledTableCell>
-                      {result.unit || 'Positive/Negative'}
-                    </StyledTableCell>
-                    <StyledTableCell>
-                      {result.normalRange || 'Negative'}
+                      {result.normalRange || result.referenceRange || '-'}
                     </StyledTableCell>
                     <StyledTableCell
                       sx={{
-                        color:
-                          result.resultValue?.toLowerCase() === 'negative'
-                            ? '#43a047'
-                            : '#e53935',
                         fontWeight: 600,
                       }}
                     >
@@ -200,7 +265,12 @@ const ServiceTestResultView = ({
                     <StyledTableCell
                       sx={{
                         fontSize: '1rem',
-                        color: result.conclusion ? '#374151' : '#9ca3af',
+                        color:
+                          result.conclusion?.toLowerCase() === 'infected'
+                            ? '#e53935'
+                            : result.conclusion?.toLowerCase() === 'abnormal'
+                              ? '#fb8c00'
+                              : '#43a047',
                         fontStyle: result.conclusion ? 'normal' : 'italic',
                         fontWeight: result.conclusion ? 'bold' : 'normal',
                       }}
@@ -240,13 +310,20 @@ const ServiceTestResultView = ({
               color: '#222',
             }}
           >
-            {results[0]?.consultantNotes ||
-              consultantNoteFromApi ||
-              (results.some(
-                (result) => result.resultValue?.toLowerCase() !== 'negative'
+            {results && results.length > 0
+              ? results[0].consultantNotes || consultantNoteFromApi
+              : consultantNoteFromApi}
+            {!(
+              (results && results.length > 0 && results[0].consultantNotes) ||
+              consultantNoteFromApi
+            ) &&
+              ((results || []).some(
+                (result) =>
+                  result.conclusion?.toLowerCase() === 'infected' ||
+                  result.conclusion?.toLowerCase() === 'abnormal'
               )
-                ? 'Đã phát hiện dấu hiệu dương tính trong xét nghiệm. Vui lòng tham khảo ý kiến bác sĩ để được tư vấn chi tiết.'
-                : 'Tất cả các chỉ số đều trong giới hạn bình thường. Kết quả xét nghiệm âm tính.')}
+                ? 'Đã phát hiện dấu hiệu bất thường trong xét nghiệm. Vui lòng tham khảo ý kiến bác sĩ để được tư vấn chi tiết.'
+                : 'Tất cả các chỉ số đều trong giới hạn bình thường. Kết quả xét nghiệm bình thường.')}
           </Typography>
         </Box>
       </Box>
@@ -299,7 +376,8 @@ const ServiceTestResultView = ({
           results={getExportData().rows}
           conclusion={getExportData().conclusion}
           consultantNote={
-            (results && results[0]?.consultantNotes) || consultantNoteFromApi
+            (results && results.length > 0 && results[0]?.consultantNotes) ||
+            consultantNoteFromApi
           }
           onClose={() => setShowExportUI(false)}
         />

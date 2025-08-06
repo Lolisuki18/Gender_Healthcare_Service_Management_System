@@ -374,6 +374,7 @@ const MedicalHistoryContent = () => {
           notes: test.customerNotes || 'Không có ghi chú',
           consultantNotes: test.consultantNotes || null,
           testId: test.testId || null,
+          // testName: test.testName || null,
           hasTestResults:
             test.status === 'RESULTED' || test.status === 'COMPLETED',
           paymentStatus: test.paymentStatus || null,
@@ -510,6 +511,7 @@ const MedicalHistoryContent = () => {
     console.log(`Viewing test results for testId: ${testId}`);
 
     setSelectedTestId(testId);
+    // console.warn('Selected testId:', testId);
     toast.info('Đang tải kết quả', 'Đang tải dữ liệu kết quả xét nghiệm...', {
       duration: 3000,
     });
@@ -637,6 +639,7 @@ const MedicalHistoryContent = () => {
         const response = await getSTIServiceById(record.serviceId);
         if (response && response.success && response.data) {
           detailData = response.data;
+          console.error('Service detail data:', detailData);
           detailType = 'single';
         } else {
           throw new Error('Không thể tải thông tin dịch vụ');

@@ -313,10 +313,6 @@ const PackageTestResultView = ({
                             <StyledTableCell>{row.normalRange}</StyledTableCell>
                             <StyledTableCell
                               sx={{
-                                color:
-                                  row.resultValue?.toLowerCase() === 'negative'
-                                    ? '#43a047'
-                                    : '#e53935',
                                 fontWeight: 600,
                               }}
                             >
@@ -325,7 +321,13 @@ const PackageTestResultView = ({
                             <StyledTableCell
                               sx={{
                                 fontSize: '1rem',
-                                color: row.conclusion ? '#374151' : '#9ca3af',
+                                color:
+                                  row.conclusion?.toLowerCase() === 'infected'
+                                    ? '#e53935'
+                                    : row.conclusion?.toLowerCase() ===
+                                        'abnormal'
+                                      ? '#fb8c00'
+                                      : '#43a047',
                                 fontStyle: row.conclusion ? 'normal' : 'italic',
                                 fontWeight: row.conclusion ? 'bold' : 'normal',
                               }}

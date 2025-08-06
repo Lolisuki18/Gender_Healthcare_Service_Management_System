@@ -90,7 +90,6 @@ const InvoicesContent = () => {
   const [cardList, setCardList] = useState([]); // Lưu danh sách thẻ từ PaymentSection
   const [retryLoading, setRetryLoading] = useState(false);
 
-
   // Fetch invoices from API
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -167,6 +166,11 @@ const InvoicesContent = () => {
           bg: 'linear-gradient(45deg, #E74C3C, #C0392B)',
           text: 'Thanh toán thất bại',
         };
+      case 'REFUNDED':
+        return {
+          bg: 'linear-gradient(45deg, #607D8B, #455A64)',
+          text: 'Đã hoàn tiền',
+        };
       default:
         return {
           bg: 'linear-gradient(45deg, #607D8B, #455A64)',
@@ -224,30 +228,35 @@ const InvoicesContent = () => {
       paymentMethod = 'VISA'; // fallback mặc định
     }
     let retryData = {
-      paymentMethod
+      paymentMethod,
     };
-    
+
     // Chỉ validate thẻ khi phương thức là VISA
     if (paymentMethod === 'VISA') {
       let cardObj = selectedCard;
       // ...resolve cardObj như cũ...
-      if ((typeof cardObj === 'string' || typeof cardObj === 'number') && cardList.length > 0) {
-        cardObj = cardList.find(card => card.paymentInfoId == cardObj);
+      if (
+        (typeof cardObj === 'string' || typeof cardObj === 'number') &&
+        cardList.length > 0
+      ) {
+        cardObj = cardList.find((card) => card.paymentInfoId == cardObj);
       }
       if (!cardObj && cardList.length === 1) {
         cardObj = cardList[0];
       }
       if (!cardObj) {
-        toast.error('Vui lòng chọn thẻ thanh toán');  
+        toast.error('Vui lòng chọn thẻ thanh toán');
         return;
       }
       if (typeof cardObj !== 'object' || !cardObj.cardNumber) {
-        toast.error('Không lấy được thông tin thẻ. Vui lòng chọn lại hoặc thêm mới thẻ.');
+        toast.error(
+          'Không lấy được thông tin thẻ. Vui lòng chọn lại hoặc thêm mới thẻ.'
+        );
         return;
       }
       // Đảm bảo có CVV - nếu không có thì dùng giá trị mặc định cho retry payment
       if (!cardObj.cvv || cardObj.cvv === null) {
-        cardObj.cvv = "123"; // CVV mặc định cho retry payment
+        cardObj.cvv = '123'; // CVV mặc định cho retry payment
       }
       let cardNumRaw = '';
       if (typeof cardObj.cardNumber === 'string') {
@@ -265,7 +274,7 @@ const InvoicesContent = () => {
       // Đảm bảo field gửi lên là 'cvc' (backend expect cvc, không phải cvv)
       let cleanCard = {
         ...cardObj,
-        cardNumber: rawCardNumber
+        cardNumber: rawCardNumber,
       };
       if (cleanCard.cvv && !cleanCard.cvc) {
         cleanCard.cvc = cleanCard.cvv;
@@ -273,7 +282,7 @@ const InvoicesContent = () => {
       }
       retryData = {
         ...retryData,
-        ...cleanCard
+        ...cleanCard,
       };
     }
     if (selectedInvoice.appointmentDate) {
@@ -281,7 +290,10 @@ const InvoicesContent = () => {
     }
     setRetryLoading(true);
     try {
-      await stiService.retryPayment(selectedInvoice.testId || selectedInvoice.paymentId, retryData);
+      await stiService.retryPayment(
+        selectedInvoice.testId || selectedInvoice.paymentId,
+        retryData
+      );
       toast.success('Thanh toán lại thành công!');
       handleCloseRetryModal();
       // Reload lại danh sách hóa đơn
@@ -400,7 +412,6 @@ const InvoicesContent = () => {
                 <StyledTableHead>Mã hóa đơn</StyledTableHead>
                 <StyledTableHead>Ngày tạo</StyledTableHead>
                 <StyledTableHead>Dịch vụ</StyledTableHead>
-                <StyledTableHead>Nhân viên đảm nhận</StyledTableHead>
                 <StyledTableHead>Số tiền</StyledTableHead>
                 <StyledTableHead>Thanh toán</StyledTableHead>
                 <StyledTableHead>Thao tác</StyledTableHead>
@@ -420,9 +431,7 @@ const InvoicesContent = () => {
                       {formatDateDisplay(invoice.createdAt)}
                     </StyledTableCell>
                     <StyledTableCell>{invoice.serviceName}</StyledTableCell>
-                    <StyledTableCell>
-                      {invoice.staffName || invoice.consultantName || ''}
-                    </StyledTableCell>
+
                     <StyledTableCell sx={{ fontWeight: 600 }}>
                       {formatCurrency(invoice.totalPrice)}
                     </StyledTableCell>
@@ -487,118 +496,210 @@ const InvoicesContent = () => {
                             Thanh toán
                           </Button>
                         )}
-      {/* Modal thanh toán lại */}
-      <Dialog 
-        open={retryModalOpen} 
-        onClose={handleCloseRetryModal} 
-        maxWidth="md" 
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: '16px',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          pb: 1, 
-          fontSize: '1.5rem', 
-          fontWeight: 700,
-          borderBottom: '1px solid #E2E8F0'
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <PaymentIcon sx={{ mr: 1, color: '#3b82f6' }} />
-            Thanh toán lại hóa đơn
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          {selectedInvoice ? (
-            <>
-              <Box sx={{ mb: 3, p: 2, backgroundColor: '#F7FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                <Typography variant="h6" sx={{ mb: 1, color: '#2D3748', fontWeight: 600 }}>
-                  Thông tin hóa đơn
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Dịch vụ:</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>{selectedInvoice.serviceName}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Số tiền:</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#E53E3E' }}>{formatCurrency(selectedInvoice.totalPrice)}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Mã hóa đơn:</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>{selectedInvoice.testId || selectedInvoice.paymentId}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Trạng thái:</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#E53E3E' }}>{selectedInvoice.paymentStatus}</Typography>
-                  </Grid>
-                </Grid>
-              </Box>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="h6" sx={{ mb: 2, color: '#2D3748', fontWeight: 600 }}>
-                  Chọn phương thức thanh toán mới
-                </Typography>
-                <PaymentSection
-                  selectedPaymentMethod={selectedPaymentMethod}
-                  onPaymentMethodChange={handlePaymentMethodChange}
-                  selectedCard={selectedCard}
-                  // Đảm bảo luôn có cardList nếu chỉ có card object
-                  onCardChange={(card, cards) => {
-                    setSelectedCard(card);
-                    if (Array.isArray(cards)) {
-                      setCardList(cards);
-                    } else if (card && typeof card === 'object' && cardList.length === 0) {
-                      setCardList([card]);
-                    }
-                  }}
-                  disabled={retryLoading}
-                />
-              </Box>
-            </>
-          ) : (
-            <Typography>Đang tải thông tin hóa đơn...</Typography>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 3, borderTop: '1px solid #E2E8F0', gap: 2 }}>
-          <Button 
-            onClick={handleCloseRetryModal}
-            variant="outlined"
-            sx={{
-              borderColor: '#CBD5E0',
-              color: '#4A5568',
-              '&:hover': {
-                borderColor: '#A0AEC0',
-                backgroundColor: '#F7FAFC',
-              },
-            }}
-          >
-            Hủy
-          </Button>
-          <Button 
-            onClick={handleRetryPayment} 
-            variant="contained"
-            disabled={
-              retryLoading || 
-              !selectedPaymentMethod || 
-              (selectedPaymentMethod === 'VISA' && !selectedCard)
-            }
-            sx={{
-              backgroundColor: '#3b82f6',
-              '&:hover': {
-                backgroundColor: '#2563eb',
-              },
-              '&:disabled': {
-                backgroundColor: '#CBD5E0',
-              },
-            }}
-          >
-            {retryLoading ? 'Đang xử lý...' : 'Thanh toán lại'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+                        {/* Modal thanh toán lại */}
+                        <Dialog
+                          open={retryModalOpen}
+                          onClose={handleCloseRetryModal}
+                          maxWidth="md"
+                          fullWidth
+                          PaperProps={{
+                            sx: {
+                              borderRadius: '16px',
+                              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+                            },
+                          }}
+                        >
+                          <DialogTitle
+                            sx={{
+                              pb: 1,
+                              fontSize: '1.5rem',
+                              fontWeight: 700,
+                              borderBottom: '1px solid #E2E8F0',
+                            }}
+                          >
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <PaymentIcon sx={{ mr: 1, color: '#3b82f6' }} />
+                              Thanh toán lại hóa đơn
+                            </Box>
+                          </DialogTitle>
+                          <DialogContent sx={{ pt: 3 }}>
+                            {selectedInvoice ? (
+                              <>
+                                <Box
+                                  sx={{
+                                    mb: 3,
+                                    p: 2,
+                                    backgroundColor: '#F7FAFC',
+                                    borderRadius: '12px',
+                                    border: '1px solid #E2E8F0',
+                                  }}
+                                >
+                                  <Typography
+                                    variant="h6"
+                                    sx={{
+                                      mb: 1,
+                                      color: '#2D3748',
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    Thông tin hóa đơn
+                                  </Typography>
+                                  <Grid container spacing={2}>
+                                    <Grid item xs={12} sm={6}>
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                      >
+                                        Dịch vụ:
+                                      </Typography>
+                                      <Typography
+                                        variant="body1"
+                                        sx={{ fontWeight: 600 }}
+                                      >
+                                        {selectedInvoice.serviceName}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                      >
+                                        Số tiền:
+                                      </Typography>
+                                      <Typography
+                                        variant="body1"
+                                        sx={{
+                                          fontWeight: 600,
+                                          color: '#E53E3E',
+                                        }}
+                                      >
+                                        {formatCurrency(
+                                          selectedInvoice.totalPrice
+                                        )}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                      >
+                                        Mã hóa đơn:
+                                      </Typography>
+                                      <Typography
+                                        variant="body1"
+                                        sx={{ fontWeight: 600 }}
+                                      >
+                                        {selectedInvoice.testId ||
+                                          selectedInvoice.paymentId}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                      >
+                                        Trạng thái:
+                                      </Typography>
+                                      <Typography
+                                        variant="body1"
+                                        sx={{
+                                          fontWeight: 600,
+                                          color: '#E53E3E',
+                                        }}
+                                      >
+                                        {selectedInvoice.paymentStatus}
+                                      </Typography>
+                                    </Grid>
+                                  </Grid>
+                                </Box>
+                                <Box sx={{ mb: 2 }}>
+                                  <Typography
+                                    variant="h6"
+                                    sx={{
+                                      mb: 2,
+                                      color: '#2D3748',
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    Chọn phương thức thanh toán mới
+                                  </Typography>
+                                  <PaymentSection
+                                    selectedPaymentMethod={
+                                      selectedPaymentMethod
+                                    }
+                                    onPaymentMethodChange={
+                                      handlePaymentMethodChange
+                                    }
+                                    selectedCard={selectedCard}
+                                    // Đảm bảo luôn có cardList nếu chỉ có card object
+                                    onCardChange={(card, cards) => {
+                                      setSelectedCard(card);
+                                      if (Array.isArray(cards)) {
+                                        setCardList(cards);
+                                      } else if (
+                                        card &&
+                                        typeof card === 'object' &&
+                                        cardList.length === 0
+                                      ) {
+                                        setCardList([card]);
+                                      }
+                                    }}
+                                    disabled={retryLoading}
+                                  />
+                                </Box>
+                              </>
+                            ) : (
+                              <Typography>
+                                Đang tải thông tin hóa đơn...
+                              </Typography>
+                            )}
+                          </DialogContent>
+                          <DialogActions
+                            sx={{
+                              p: 3,
+                              borderTop: '1px solid #E2E8F0',
+                              gap: 2,
+                            }}
+                          >
+                            <Button
+                              onClick={handleCloseRetryModal}
+                              variant="outlined"
+                              sx={{
+                                borderColor: '#CBD5E0',
+                                color: '#4A5568',
+                                '&:hover': {
+                                  borderColor: '#A0AEC0',
+                                  backgroundColor: '#F7FAFC',
+                                },
+                              }}
+                            >
+                              Hủy
+                            </Button>
+                            <Button
+                              onClick={handleRetryPayment}
+                              variant="contained"
+                              disabled={
+                                retryLoading ||
+                                !selectedPaymentMethod ||
+                                (selectedPaymentMethod === 'VISA' &&
+                                  !selectedCard)
+                              }
+                              sx={{
+                                backgroundColor: '#3b82f6',
+                                '&:hover': {
+                                  backgroundColor: '#2563eb',
+                                },
+                                '&:disabled': {
+                                  backgroundColor: '#CBD5E0',
+                                },
+                              }}
+                            >
+                              {retryLoading
+                                ? 'Đang xử lý...'
+                                : 'Thanh toán lại'}
+                            </Button>
+                          </DialogActions>
+                        </Dialog>
                       </Box>
                     </StyledTableCell>
                   </TableRow>

@@ -789,6 +789,26 @@ export const getConsultantSTITests = async () => {
   }
 };
 
+// Get all tests assigned to current consultant (excluding canceled tests)
+export const getConsultantSTITestsExcludingCanceled = async () => {
+  try {
+    const response = await apiClient.get('/sti-services/consultant/my-tests');
+    const data = response.data;
+
+    // Lọc bỏ các test có status là 'CANCELED'
+    if (data && data.data && Array.isArray(data.data)) {
+      data.data = data.data.filter((test) => test.status !== 'CANCELED');
+    } else if (data && Array.isArray(data)) {
+      // Nếu data trực tiếp là array
+      return data.filter((test) => test.status !== 'CANCELED');
+    }
+
+    return data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
 // Get canceled tests (Staff only)
 export const getCanceledTests = async () => {
   try {
@@ -864,6 +884,7 @@ const stiService = {
 
   updateConsultantNotes,
   getConsultantSTITests,
+  getConsultantSTITestsExcludingCanceled,
   getCanceledTests,
 
   retryPayment,

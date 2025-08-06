@@ -44,10 +44,13 @@ import {
 } from '@mui/icons-material';
 import {
   getConsultantSTITests,
+  getConsultantSTITestsExcludingCanceled,
   updateConsultantNotes,
   getSTIPackageById,
   getSTIServiceById,
   getTestResultsByTestId,
+  getSTIPackageByIdFiltered,
+  getSTIServiceByIdFiltered,
 } from '../../services/stiService';
 
 import ConsultantTestResultDetailModal from './ConsultantTestResultDetailModal';
@@ -137,7 +140,7 @@ const STITestsContent = () => {
   const fetchTests = async () => {
     setLoading(true);
     try {
-      const res = await getConsultantSTITests();
+      const res = await getConsultantSTITestsExcludingCanceled();
       const testsData = res.data || [];
 
       // Load thêm thông tin cho package tests để có thể đếm số service
@@ -147,7 +150,7 @@ const STITestsContent = () => {
             try {
               // Load package services và test results để có đủ thông tin
               const [packageRes, resultsRes] = await Promise.all([
-                getSTIPackageById(test.packageId),
+                getSTIPackageByIdFiltered(test.packageId),
                 getTestResultsByTestId(test.testId),
               ]);
 
@@ -260,7 +263,9 @@ const STITestsContent = () => {
           const services = res.data.services;
           setDetailPackageServices(services);
           // Lấy thành phần từng service
-          const promises = services.map((svc) => getSTIServiceById(svc.id));
+          const promises = services.map((svc) =>
+            getSTIServiceByIdFiltered(svc.id)
+          );
           const results = await Promise.all(promises);
 
           const allComponents = {};
@@ -335,7 +340,7 @@ const STITestsContent = () => {
       // Nếu là service đơn, lấy thành phần xét nghiệm và map result
       try {
         if (test.serviceId) {
-          const res = await getSTIServiceById(test.serviceId);
+          const res = await getSTIServiceByIdFiltered(test.serviceId);
           let comps = [];
           if (res && res.data && Array.isArray(res.data.components)) {
             comps = res.data.components;

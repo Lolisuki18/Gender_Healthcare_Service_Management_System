@@ -22,6 +22,7 @@ const TestResultsModalContent = ({ testId, onClose }) => {
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('package'); // 'package' or 'component'
   const [testPackageInfo, setTestPackageInfo] = useState(null);
+  const [testTypeInfo, setTestTypeInfo] = useState(null); // Thêm state cho testTypeInfo
   const [expandedAccordions, setExpandedAccordions] = useState({});
   const printRef = useRef();
   const [showExportUI, setShowExportUI] = useState(false);
@@ -67,6 +68,7 @@ const TestResultsModalContent = ({ testId, onClose }) => {
         // First get test type (package or service)
         const testTypeInfo = await fetchTestType(testId);
         console.log('Test type info:', testTypeInfo);
+        setTestTypeInfo(testTypeInfo); // Lưu vào state
 
         const response = await stiService.getTestResults(testId);
         console.log('Test results response:', response);
@@ -80,12 +82,18 @@ const TestResultsModalContent = ({ testId, onClose }) => {
         ) {
           // API trả về object {results, testServiceConsultantNotes}
           const data = response.data.results;
-          const testServiceConsultantNotes = response.data.testServiceConsultantNotes || [];
+          const testServiceConsultantNotes =
+            response.data.testServiceConsultantNotes || [];
 
-          setViewMode(testTypeInfo.isPackage ? 'package' : 'component');
+          console.log(
+            'Processing new API format, isPackage:',
+            testTypeInfo.isPackage
+          );
+
           setResults(data);
 
           if (testTypeInfo.isPackage) {
+            setViewMode('package');
             // Group components by serviceId
             const grouped = {};
             data.forEach((result) => {
@@ -128,71 +136,40 @@ const TestResultsModalContent = ({ testId, onClose }) => {
               reviewedAt: data[0]?.reviewedAt,
               services,
               testServiceConsultantNotes,
+              serviceName: testTypeInfo.serviceName || 'Dịch vụ',
             });
+          } else {
+            // Single service test - use ServiceTestResultView
+            setViewMode('component');
+            console.log('Setting up single service test view');
+          }
+
+          // After setting results and testPackageInfo:
+          // Check if consultantNotes is missing, then fetch via getSTITestDetails
+          let hasConsultantNote = false;
+          if (Array.isArray(data) && data.length > 0) {
+            hasConsultantNote = !!data[0]?.consultantNotes;
+          }
+          if (!hasConsultantNote) {
+            // Try to fetch consultantNotes from test details
+            try {
+              const detailRes = await stiService.getSTITestDetails(testId);
+              if (
+                detailRes &&
+                detailRes.data &&
+                detailRes.data.consultantNotes
+              ) {
+                setConsultantNoteFromApi(detailRes.data.consultantNotes);
+              }
+            } catch (e) {
+              // Ignore error, just fallback to default
+            }
           }
           return;
         }
 
-        // Handle legacy/alternative format
-        const data = response && response.data ? response.data : response;
-        console.log('Test results data:', data);
-
-        if (
-          !data ||
-          (Array.isArray(data) && data.length === 0) ||
-          (data.data && Array.isArray(data.data) && data.data.length === 0)
-        ) {
-          setError('Không có dữ liệu kết quả xét nghiệm cho lần khám này.');
-          setResults([]);
-        } else {
-          // Determine if this is package data or component data
-          const isPackage =
-            data.packageName ||
-            (data.components && Array.isArray(data.components));
-          setViewMode(isPackage ? 'package' : 'component');
-
-          if (isPackage) {
-            setTestPackageInfo(data);
-
-            // Initialize all accordions as expanded
-            if (data.components && Array.isArray(data.components)) {
-              const accordionState = {};
-              data.components.forEach((comp, index) => {
-                accordionState[`panel-${index}`] = true;
-              });
-              setExpandedAccordions(accordionState);
-            }
-          }
-
-          // Set results based on data structure
-          if (data.data && Array.isArray(data.data)) {
-            setResults(data.data);
-          } else if (Array.isArray(data)) {
-            setResults(data);
-          } else if (data.components && Array.isArray(data.components)) {
-            setResults(data.components);
-          } else {
-            setResults([data]); // Single result
-          }
-        }
-
-        // After setting results and testPackageInfo:
-        // Check if consultantNotes is missing, then fetch via getSTITestDetails
-        let hasConsultantNote = false;
-        if (Array.isArray(results) && results.length > 0) {
-          hasConsultantNote = !!results[0]?.consultantNotes;
-        }
-        if (!hasConsultantNote) {
-          // Try to fetch consultantNotes from test details
-          try {
-            const detailRes = await stiService.getSTITestDetails(testId);
-            if (detailRes && detailRes.data && detailRes.data.consultantNotes) {
-              setConsultantNoteFromApi(detailRes.data.consultantNotes);
-            }
-          } catch (e) {
-            // Ignore error, just fallback to default
-          }
-        }
+        // Handle legacy/alternative format - di chuyển phần này xuống sau để xử lý riêng
+        await handleLegacyFormat(response, testTypeInfo);
       } catch (apiError) {
         console.error('API Error:', apiError);
         setError(
@@ -201,6 +178,68 @@ const TestResultsModalContent = ({ testId, onClose }) => {
         setResults([]);
       } finally {
         setLoading(false);
+      }
+    };
+
+    // Hàm xử lý format cũ
+    const handleLegacyFormat = async (response, testTypeInfo) => {
+      const data = response && response.data ? response.data : response;
+      console.log('Processing legacy format, data:', data);
+
+      if (
+        !data ||
+        (Array.isArray(data) && data.length === 0) ||
+        (data.data && Array.isArray(data.data) && data.data.length === 0)
+      ) {
+        setError('Không có dữ liệu kết quả xét nghiệm cho lần khám này.');
+        setResults([]);
+      } else {
+        // Determine if this is package data or component data
+        const isPackage =
+          data.packageName ||
+          (data.components && Array.isArray(data.components));
+        setViewMode(isPackage ? 'package' : 'component');
+
+        if (isPackage) {
+          setTestPackageInfo(data);
+
+          // Initialize all accordions as expanded
+          if (data.components && Array.isArray(data.components)) {
+            const accordionState = {};
+            data.components.forEach((comp, index) => {
+              accordionState[`panel-${index}`] = true;
+            });
+            setExpandedAccordions(accordionState);
+          }
+        }
+
+        // Set results based on data structure
+        if (data.data && Array.isArray(data.data)) {
+          setResults(data.data);
+        } else if (Array.isArray(data)) {
+          setResults(data);
+        } else if (data.components && Array.isArray(data.components)) {
+          setResults(data.components);
+        } else {
+          setResults([data]); // Single result
+        }
+      }
+
+      // Check if consultantNotes is missing for legacy format
+      const currentResults = data.data || data.components || data;
+      let hasConsultantNote = false;
+      if (Array.isArray(currentResults) && currentResults.length > 0) {
+        hasConsultantNote = !!currentResults[0]?.consultantNotes;
+      }
+      if (!hasConsultantNote) {
+        try {
+          const detailRes = await stiService.getSTITestDetails(testId);
+          if (detailRes && detailRes.data && detailRes.data.consultantNotes) {
+            setConsultantNoteFromApi(detailRes.data.consultantNotes);
+          }
+        } catch (e) {
+          // Ignore error, just fallback to default
+        }
       }
     };
 
@@ -319,7 +358,7 @@ const TestResultsModalContent = ({ testId, onClose }) => {
   return (
     <ServiceTestResultView
       results={results}
-      testPackageInfo={testPackageInfo}
+      testTypeInfo={testTypeInfo}
       error={error}
       onClose={onClose}
       showExportUI={showExportUI}
