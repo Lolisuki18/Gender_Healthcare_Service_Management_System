@@ -77,7 +77,7 @@ const Header = () => {
       handleCloseMenu();
       toast.success('Bạn đã đăng xuất thành công!');
       setTimeout(() => {
-        navigate('/login#/login');
+        navigate('/login');
       }, 100);
     } catch (error) {
       console.error('Error during logout:', error);

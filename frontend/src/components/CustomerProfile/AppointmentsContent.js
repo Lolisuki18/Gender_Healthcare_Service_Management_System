@@ -52,6 +52,7 @@ import {
   Select,
   MenuItem as SelectMenuItem,
   Rating,
+  Tooltip,
 } from '@mui/material';
 import {
   CalendarToday as CalendarIcon,
@@ -945,30 +946,36 @@ const AppointmentsContent = () => {
                                 Vào phòng họp
                               </Button>
                             )}
-                          <IconButton
-                            aria-label="Xem chi tiết"
-                            onClick={() => {
-                              setSelectedAppointment(appointment);
-                              setOpenDetailDialog(true);
-                            }}
-                            size="medium"
-                            sx={{
-                              border: '1.5px solid #1976d2',
-                              color: '#1976d2',
-                              background: '#fff',
-                              borderRadius: '20px',
-                              transition: 'all 0.2s',
-                              '&:hover': {
-                                background: '#e3f2fd',
-                                borderColor: '#1565c0',
-                                color: '#1565c0',
-                                boxShadow:
-                                  '0 2px 8px 0 rgba(25, 118, 210, 0.10)',
-                              },
-                            }}
+                          <Tooltip
+                            title="Xem chi tiết lịch hẹn"
+                            placement="top"
+                            arrow
                           >
-                            <VisibilityIcon />
-                          </IconButton>
+                            <IconButton
+                              aria-label="Xem chi tiết"
+                              onClick={() => {
+                                setSelectedAppointment(appointment);
+                                setOpenDetailDialog(true);
+                              }}
+                              size="medium"
+                              sx={{
+                                border: '1.5px solid #1976d2',
+                                color: '#1976d2',
+                                background: '#fff',
+                                borderRadius: '20px',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                  background: '#e3f2fd',
+                                  borderColor: '#1565c0',
+                                  color: '#1565c0',
+                                  boxShadow:
+                                    '0 2px 8px 0 rgba(25, 118, 210, 0.10)',
+                                },
+                              }}
+                            >
+                              <VisibilityIcon />
+                            </IconButton>
+                          </Tooltip>
                           {appointment.status?.toUpperCase() === 'PENDING' && (
                             <IconButton
                               aria-label="Hủy lịch hẹn"
