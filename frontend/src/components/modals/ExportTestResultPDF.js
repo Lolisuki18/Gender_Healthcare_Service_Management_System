@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 
 const ExportTestResultPDF = ({
+  serviceName,
   logo,
   testInfo,
   results,
@@ -154,7 +155,7 @@ const ExportTestResultPDF = ({
           {/* Nếu là test đơn lẻ, hiển thị tên xét nghiệm */}
           {!testInfo?.packageName && testInfo?.testName && (
             <Typography>
-              <b>Tên xét nghiệm:</b> {testInfo.testName}
+              <b>Tên xét nghiệm:</b> {serviceName || testInfo.testName}
             </Typography>
           )}
         </Box>

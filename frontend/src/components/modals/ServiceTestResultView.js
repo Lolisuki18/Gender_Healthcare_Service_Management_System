@@ -371,7 +371,9 @@ const ServiceTestResultView = ({
       </Box>
       {showExportUI && (
         <ExportTestResultPDF
-          logo="/logo192.png"
+          serviceName={
+            testTypeInfo.serviceName || results[0]?.testName || 'Xét nghiệm STI'
+          }
           testInfo={getExportData().info}
           results={getExportData().rows}
           conclusion={getExportData().conclusion}
