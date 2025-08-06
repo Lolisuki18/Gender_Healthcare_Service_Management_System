@@ -116,6 +116,19 @@ public class NotificationService {
             throw new IllegalArgumentException("User ID cannot be null");
         }
 
+        // Kiểm tra gửi mail chưa
+        List<Notification> existingNotifications = notificationRepository.findByUserIdAndTypeAndStatus(
+            userId, NotificationType.OVULATION, NotificationStatus.SENT);
+
+        for (Notification notification : existingNotifications) {
+            // Kiểm tra xem đã gửi trong hôm nay chưa
+            if (notification.getSentAt() != null && 
+                notification.getSentAt().toLocalDate().isEqual(LocalDate.now(VIETNAM_ZONE))) {
+                logger.info("Skipping ovulation notification for user ID {}: Already sent today", userId);
+                return;
+            }
+        }
+
         logger.info("Attempting to send ovulation notification to user ID: {}", userId);
 
         UserDtls user = userRepository.findById(userId).orElse(null);
@@ -232,6 +245,19 @@ public class NotificationService {
             throw new IllegalArgumentException("User ID cannot be null");
         }
         
+        // Kiểm tra gửi mail chưa
+        List<Notification> existingNotifications = notificationRepository.findByUserIdAndTypeAndStatus(
+            userId, NotificationType.PREGNANCY_PROBABILITY, NotificationStatus.SENT);
+
+        for (Notification notification : existingNotifications) {
+            // Kiểm tra xem đã gửi trong hôm nay chưa
+            if (notification.getSentAt() != null && 
+                notification.getSentAt().toLocalDate().isEqual(LocalDate.now(VIETNAM_ZONE))) {
+                logger.info("Skipping pregnancy probability notification for user ID {}: Already sent today", userId);
+                return;
+            }
+        }
+
         logger.info("Attempting to send pregnancy probability notification to user ID: {}", userId);
         
         UserDtls user = userRepository.findById(userId).orElse(null);
