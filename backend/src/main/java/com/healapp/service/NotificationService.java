@@ -123,8 +123,9 @@ public class NotificationService {
         for (Notification notification : existingNotifications) {
             // Kiểm tra xem đã gửi trong hôm nay chưa
             if (notification.getSentAt() != null && 
-                notification.getSentAt().toLocalDate().isEqual(LocalDate.now(VIETNAM_ZONE))) {
-                logger.info("Skipping ovulation notification for user ID {}: Already sent today", userId);
+                notification.getSentAt().toLocalDate().isEqual(LocalDate.now(VIETNAM_ZONE)) &&
+                notification.getSentAt().getHour() == LocalTime.now(VIETNAM_ZONE).getHour()) {
+                logger.info("Skipping ovulation notification for user ID {}: Already sent this hour", userId);
                 return;
             }
         }
@@ -251,9 +252,11 @@ public class NotificationService {
 
         for (Notification notification : existingNotifications) {
             // Kiểm tra xem đã gửi trong hôm nay chưa
+            // một giờ chỉ gửi một lần
             if (notification.getSentAt() != null && 
-                notification.getSentAt().toLocalDate().isEqual(LocalDate.now(VIETNAM_ZONE))) {
-                logger.info("Skipping pregnancy probability notification for user ID {}: Already sent today", userId);
+                notification.getSentAt().toLocalDate().isEqual(LocalDate.now(VIETNAM_ZONE)) &&
+                notification.getSentAt().getHour() == LocalTime.now(VIETNAM_ZONE).getHour()) {
+                logger.info("Skipping pregnancy probability notification for user ID {}: Already sent this time", userId);
                 return;
             }
         }
