@@ -1,10 +1,12 @@
-
 import apiClient from '@services/api';
 
 // Retry payment for a failed test payment
 export const retryPayment = async (testId, retryData) => {
   try {
-    const response = await apiClient.post(`/sti-services/tests/${testId}/retry-payment`, retryData);
+    const response = await apiClient.post(
+      `/sti-services/tests/${testId}/retry-payment`,
+      retryData
+    );
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -51,11 +53,52 @@ export const getAllSTIServices = async () => {
   }
 };
 
+// Get all active STI services for staff (lọc bỏ services có active: false)
+export const getAllActiveSTIServicesForStaff = async () => {
+  try {
+    const response = await apiClient.get('/sti-services/staff');
+    const data = response.data;
+
+    // Lọc bỏ các services có active: false
+    if (data && data.data && Array.isArray(data.data)) {
+      data.data = data.data.filter((service) => service.active !== false);
+    } else if (data && Array.isArray(data)) {
+      // Nếu data trực tiếp là array
+      return data.filter((service) => service.active !== false);
+    }
+
+    return data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
 // Get STI service by ID
 export const getSTIServiceById = async (serviceId) => {
   try {
     const response = await apiClient.get(`${API_URL}/${serviceId}`);
     return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// Get STI service by ID with filtered active components only
+export const getSTIServiceByIdFiltered = async (serviceId) => {
+  try {
+    const response = await apiClient.get(`${API_URL}/${serviceId}`);
+    const data = response.data;
+
+    // Lọc bỏ các components có active: false
+    if (data && data.data && Array.isArray(data.data.components)) {
+      data.data.components = data.data.components.filter(
+        (comp) => comp.active !== false
+      );
+    } else if (data && Array.isArray(data.components)) {
+      data.components = data.components.filter((comp) => comp.active !== false);
+    }
+
+    return data;
   } catch (error) {
     throw error.response?.data || error.message;
   }
@@ -458,6 +501,30 @@ export const getAllSTIPackages = async () => {
   }
 };
 
+// Get all active STI packages (lọc bỏ packages có active: false)
+export const getAllActiveSTIPackages = async () => {
+  try {
+    const response = await apiClient.get('/sti-packages');
+    const data = response.data;
+
+    // Lọc bỏ các packages có active: false
+    if (data && data.data && Array.isArray(data.data)) {
+      data.data = data.data.filter(
+        (pkg) => pkg.active !== false && pkg.isActive !== false
+      );
+    } else if (data && Array.isArray(data)) {
+      // Nếu data trực tiếp là array
+      return data.filter(
+        (pkg) => pkg.active !== false && pkg.isActive !== false
+      );
+    }
+
+    return data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
 // Create a new STI package (Staff only)
 export const createSTIPackage = async (packageData) => {
   try {
@@ -491,6 +558,37 @@ export const getSTIPackageById = async (packageId) => {
   try {
     const response = await apiClient.get(`/sti-packages/${packageId}`);
     return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// Get STI package by ID with filtered active components only
+export const getSTIPackageByIdFiltered = async (packageId) => {
+  try {
+    const response = await apiClient.get(`/sti-packages/${packageId}`);
+    const data = response.data;
+
+    // Lọc bỏ các components có active: false trong các services của package
+    if (data && data.data && Array.isArray(data.data.services)) {
+      data.data.services.forEach((service) => {
+        if (Array.isArray(service.components)) {
+          service.components = service.components.filter(
+            (comp) => comp.active !== false
+          );
+        }
+      });
+    } else if (data && Array.isArray(data.services)) {
+      data.services.forEach((service) => {
+        if (Array.isArray(service.components)) {
+          service.components = service.components.filter(
+            (comp) => comp.active !== false
+          );
+        }
+      });
+    }
+
+    return data;
   } catch (error) {
     throw error.response?.data || error.message;
   }
@@ -663,12 +761,18 @@ export const updateConsultantNotes = async (testId, consultantNotes) => {
 };
 
 // Update consultant note for a specific service in a package test
-export const updateConsultantNoteForService = async (testId, serviceId, consultantId, note) => {
+export const updateConsultantNoteForService = async (
+  testId,
+  serviceId,
+  consultantId,
+  note
+) => {
   try {
-    const response = await apiClient.put(
-      `/sti-tests/${testId}/service-note`,
-      { serviceId, consultantId, note }
-    );
+    const response = await apiClient.put(`/sti-tests/${testId}/service-note`, {
+      serviceId,
+      consultantId,
+      note,
+    });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -698,7 +802,9 @@ export const getCanceledTests = async () => {
 // Get pending COD payments for staff
 const getPendingCODPayments = async () => {
   try {
-    const response = await apiClient.get('/sti-services/staff/pending-cod-payments');
+    const response = await apiClient.get(
+      '/sti-services/staff/pending-cod-payments'
+    );
     return response.data;
   } catch (error) {
     console.error('Error fetching pending COD payments:', error);
@@ -709,9 +815,12 @@ const getPendingCODPayments = async () => {
 // Confirm COD payment by staff
 const confirmCODPayment = async (paymentId, notes) => {
   try {
-    const response = await apiClient.put(`/sti-services/staff/payments/${paymentId}/confirm-cod`, {
-      notes: notes || ''
-    });
+    const response = await apiClient.put(
+      `/sti-services/staff/payments/${paymentId}/confirm-cod`,
+      {
+        notes: notes || '',
+      }
+    );
     return response.data;
   } catch (error) {
     console.error('Error confirming COD payment:', error);
@@ -723,7 +832,9 @@ const confirmCODPayment = async (paymentId, notes) => {
 const stiService = {
   createSTIService,
   getAllSTIServices,
+  getAllActiveSTIServicesForStaff,
   getSTIServiceById,
+  getSTIServiceByIdFiltered,
   updateSTIService,
   deleteSTIService,
   bookSTITest,
@@ -740,8 +851,10 @@ const stiService = {
   getTestResults,
   getTestResultsByTestId,
   getAllSTIPackages,
+  getAllActiveSTIPackages,
   createSTIPackage,
   getSTIPackageById,
+  getSTIPackageByIdFiltered,
   updateSTIPackage,
   deleteSTIPackage,
   getPackageTestDetails,
