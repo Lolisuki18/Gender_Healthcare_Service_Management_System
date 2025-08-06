@@ -110,18 +110,41 @@ const CanceledTestDetailModal = ({
         <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
           <Box sx={{ flex: 1 }}>
             <Typography variant="subtitle2" color="text.secondary">
+              Nhân viên đảm nhận
+            </Typography>
+            <Typography sx={{ fontWeight: 500 }}>
+              {test.staffName || 'Chưa phân công'}
+            </Typography>
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle2" color="text.secondary">
               Trạng thái
             </Typography>
             <Typography color="error" sx={{ fontWeight: 700 }}>
               Đã hủy
             </Typography>
           </Box>
+        </Box>
+        <Divider sx={{ mb: 2 }} />
+        <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
           <Box sx={{ flex: 1 }}>
             <Typography variant="subtitle2" color="text.secondary">
               Phương thức thanh toán
             </Typography>
             <Typography sx={{ fontWeight: 500 }}>
               {test.paymentMethod || 'Không có'}
+            </Typography>
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Trạng thái thanh toán
+            </Typography>
+            <Typography sx={{ fontWeight: 500 }}>
+              {test.paymentStatus === 'REFUNDED'
+                ? 'Đã hoàn tiền'
+                : test.paymentStatus === 'PAID'
+                  ? 'Đã thanh toán'
+                  : test.paymentStatus || 'Không có'}
             </Typography>
           </Box>
         </Box>

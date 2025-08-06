@@ -376,7 +376,7 @@ const MedicalHistoryContent = () => {
           testId: test.testId || null,
           hasTestResults:
             test.status === 'RESULTED' || test.status === 'COMPLETED',
-          payment: test.paymentStatus || null,
+          paymentStatus: test.paymentStatus || null,
           paymentMethod: test.paymentMethod || null,
           paymentDisplayText: (() => {
             // Ưu tiên paymentDisplayText từ API
