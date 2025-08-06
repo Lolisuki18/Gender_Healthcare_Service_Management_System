@@ -67,6 +67,11 @@ const AppRoutes = () => {
             isAuthenticated && user ? <AutoRedirectToProfile /> : <HomePage />
           }
         />
+        {/* Route cho GitHub Pages - redirect về homepage */}
+        <Route
+          path="/Gender_Healthcare_Service_Management_System"
+          element={<Navigate to="/" replace />}
+        />
         <Route path="/consultation" element={<ConsultationPage />}></Route>
         <Route path="/sti-services" element={<StiPage />} />
         <Route path="/ovulation" element={<OvulationPage />} />
@@ -79,13 +84,7 @@ const AppRoutes = () => {
         <Route path="/pill-reminder" element={<PillReminderPage />} />
         {/* Trang STI Test (đổi endpoint) */}
         {/* Homepage cho các role đã đăng nhập (trừ admin) */}
-        <Route path="home" element={<HomePage />} />
-        {/* Thêm route mới chỉ tới HomePage */}
-        <Route
-          path="/Gender_Healthcare_Service_Management_System"
-          element={<HomePage />}
-        />{' '}
-        <Route path="/" element={<HomePage />} />{' '}
+        <Route path="/home" element={<HomePage />} />
         {/* Profile Page chung - sẽ render component phù hợp với role */}
         <Route
           path="profile"
@@ -99,11 +98,11 @@ const AppRoutes = () => {
         />
         {/* Public routes */}
         {/* Trang đăng nhập */}
-        <Route path="login" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
         {/* Các route đăng ký và quên mật khẩu */}
-        <Route path="register" element={<RegisterForm />} />
+        <Route path="/register" element={<RegisterForm />} />
         {/* Trang quên mật khẩu */}
-        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         {/* Trang đăng ký xét nghiệm */}
         <Route path="/test-registration" element={<TestRegistrationPage />} />
         {/* 404 Page -> sẽ được hiện ra khi truy cập những path không hợp lệ */}
