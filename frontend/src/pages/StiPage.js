@@ -16,17 +16,11 @@ import {
   Container,
   Fade,
   Zoom,
-  Avatar,
-  Paper,
-  Stack,
-  // Breadcrumbs, // XÓA
-  // Link,        // XÓA
+  Avatar,       
 } from '@mui/material';
 // Icon từ MUI
 import CheckIcon from '@mui/icons-material/Check';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-// import HomeIcon from '@mui/icons-material/Home'; // XÓA
-// React Router
 import { confirmDialog } from '@/utils/confirmDialog';
 import { useNavigate } from 'react-router-dom';
 import { servicesData } from '../data/servicesData';
@@ -80,43 +74,7 @@ export default function StiPage() {
       <Container
         maxWidth="lg"
         sx={{ position: 'relative', zIndex: 1, py: { xs: 6, md: 10 } }}
-      >
-        {/* Breadcrumbs
-        <Breadcrumbs 
-          aria-label="breadcrumb" 
-          sx={{ 
-            mb: 6,
-            '& .MuiBreadcrumbs-separator': {
-              color: '#90a4ae',
-              mx: 1
-            },
-            '& .MuiBreadcrumbs-li': {
-              fontSize: '1rem'
-            }
-          }}
-        >
-          <Link 
-            underline="hover" 
-            color="inherit" 
-            onClick={() => navigate('/')}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              color: '#546e7a',
-              fontWeight: 500,
-              cursor: 'pointer',
-              '&:hover': {
-                color: '#1976d2'
-              }
-            }}
-          >
-            <HomeIcon sx={{ mr: 0.5, fontSize: 18, mb: '-2px' }} /> Trang chủ
-          </Link>
-          <Typography color="#4A90E2" sx={{ fontWeight: 600, fontSize: '1rem' }}>
-            Dịch vụ STI
-          </Typography>
-        </Breadcrumbs> */}
-        
+      > 
         {/* --- Header: Tiêu đề, mô tả, underline --- */}
         <Fade in={loaded} timeout={800}>
           <Box sx={{ textAlign: 'center', mb: 8 }}>
