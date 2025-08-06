@@ -32,6 +32,7 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.ConsultationRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.utils.TimezoneUtils;
 
 @Service
 public class ConsultationService {
@@ -515,7 +516,7 @@ public class ConsultationService {
         response.setStatus(consultation.getStatus());
         response.setMeetUrl(consultation.getMeetUrl());
 
-        response.setCreatedAt(consultation.getCreatedAt());
+        response.setCreatedAt(TimezoneUtils.convertUtcToVietnam(consultation.getCreatedAt()));
         response.setUpdatedAt(consultation.getUpdatedAt());
         response.setNotes(consultation.getNotes());
         response.setReason(consultation.getReason());

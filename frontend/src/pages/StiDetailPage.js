@@ -19,7 +19,6 @@ import {
   Fade,
   Paper,
   Avatar,
-  Stack,
   TextField,
   InputAdornment,
 } from '@mui/material';
@@ -30,9 +29,9 @@ import SearchIcon from '@mui/icons-material/Search';
 // React Router
 import { useNavigate } from 'react-router-dom';
 // API và utilities
-import apiClient from '@/services/api';
 import localStorageUtil from '@/utils/localStorage';
 import confirmDialog from '@/utils/confirmDialog';
+import { userService } from '@/services/userService';
 // Hàm gọi API lấy danh sách gói xét nghiệm
 import { getAllSTIPackages, getActiveSTIServices } from '@/services/stiService';
 // Import component dialog chi tiết dịch vụ
@@ -59,14 +58,13 @@ export default function StiDetailPage() {
   const [activeTab, setActiveTab] = useState('package'); // 'single' hoặc 'package'
 
   // State cho tìm kiếm
-  const [searchQuery, setSearchQuery] = useState(''); // Từ khóa tìm kiếm
+  const [searchQuery, setSearchQuery] = useState(''); 
 
   // ===== EFFECT CHẠY KHI COMPONENT ĐƯỢC MOUNT =====
   useEffect(() => {
     // ===== HÀM LẤY DANH SÁCH GÓI XÉT NGHIỆM VÀ XÉT NGHIỆM LẺ TỪ API =====
     const fetchData = async () => {
       try {
-        // Gọi cả 2 API song song để tối ưu thời gian tải
         const [packagesRes, servicesRes] = await Promise.all([
           getAllSTIPackages(),
           getActiveSTIServices(),
@@ -139,9 +137,6 @@ export default function StiDetailPage() {
   };
 
   // ===== HÀM MỞ DIALOG CHI TIẾT XÉT NGHIỆM ĐƠN LẺ =====
-  // Hàm này có thể được gọi theo 2 cách:
-  // 1. Từ ServiceDetailDialog với serviceId (string/number) và type
-  // 2. Trực tiếp với service object từ component khác
   const handleOpenServiceDetail = (serviceOrId, type = 'single') => {
     // ===== TRƯỜNG HỢP 1: ĐƯỢC GỌI VỚI SERVICE ID =====
     if (typeof serviceOrId === 'string' || typeof serviceOrId === 'number') {
@@ -199,13 +194,11 @@ export default function StiDetailPage() {
     }
     try {
       // ===== KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP =====
-      // Gọi API để check authentication status - sử dụng endpoint có sẵn
-      const response = await apiClient.get('/users/profile', {
-        skipAutoRedirect: true, // Không tự động redirect khi lỗi
-      });
-
+      // Gọi API để check authentication status thông qua userService
+      const userData = await userService.getCurrentUser(true); // true = skipAutoRedirect
+      
       // ===== NẾU ĐÃ ĐĂNG NHẬP - CHUYỂN ĐẾN TRANG ĐĂNG KÝ =====
-      if (response.status === 200) {
+      if (userData) {
         if (selectedItem) {
           // Kiểm tra xem selectedItem là gói hay xét nghiệm lẻ
           // Gói xét nghiệm có thuộc tính 'services', xét nghiệm lẻ có 'components'
@@ -320,57 +313,6 @@ export default function StiDetailPage() {
         maxWidth="lg"
         sx={{ position: 'relative', zIndex: 1, py: { xs: 6, md: 10 } }}
       >
-        {/* Breadcrumbs
-        <Breadcrumbs 
-          aria-label="breadcrumb" 
-          sx={{ 
-            mb: 6,
-            '& .MuiBreadcrumbs-separator': {
-              color: '#90a4ae',
-              mx: 1
-            },
-            '& .MuiBreadcrumbs-li': {
-              fontSize: '1rem'
-            }
-          }}
-        >
-          <Link 
-            underline="hover" 
-            color="inherit" 
-            onClick={() => navigate('/')}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              color: '#546e7a',
-              fontWeight: 500,
-              cursor: 'pointer',
-              '&:hover': {
-                color: '#1976d2'
-              }
-            }}
-          >
-            <HomeIcon sx={{ mr: 0.5, fontSize: 18, mb: '-2px' }} /> Trang chủ
-          </Link>
-          <Link 
-            underline="hover" 
-            color="inherit" 
-            onClick={() => navigate('/sti-services')}
-            sx={{
-              color: '#546e7a',
-              fontWeight: 500,
-              cursor: 'pointer',
-              '&:hover': {
-                color: '#1976d2'
-              }
-            }}
-          >
-            Dịch vụ STI
-          </Link>
-          <Typography color="#26c6da" sx={{ fontWeight: 600, fontSize: '1rem' }}>
-            Chi tiết
-          </Typography>
-        </Breadcrumbs> */}
-
         {/* --- Nút quay lại --- */}
         <Fade in={loaded} timeout={600}>
           <Button
@@ -977,7 +919,7 @@ export default function StiDetailPage() {
                       in={loaded}
                       style={{ transitionDelay: `${idx * 150 + 600}ms` }}
                     >
-                      {/* --- Card xét nghiệm lẻ - Style giống hình mẫu --- */}
+                      {/* --- Card xét nghiệm lẻ  --- */}
                       <Card
                         sx={{
                           borderRadius: 5,
@@ -1009,7 +951,7 @@ export default function StiDetailPage() {
                           },
                         }}
                       >
-                        {/* Header với gradient xanh dương giống gói xét nghiệm */}
+                        {/* Header với gradient xanh dương */}
                         <Box
                           className="service-header"
                           sx={{
@@ -1066,9 +1008,9 @@ export default function StiDetailPage() {
                               fontWeight: 400,
                               lineHeight: 1.6,
                               textAlign: 'center',
-                              minHeight: 72, // Tăng chiều cao để đồng đều với gói xét nghiệm
+                              minHeight: 72, 
                               display: '-webkit-box',
-                              WebkitLineClamp: 3, // Giới hạn 3 dòng
+                              WebkitLineClamp: 3, 
                               WebkitBoxOrient: 'vertical',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
@@ -1077,7 +1019,7 @@ export default function StiDetailPage() {
                             {service.description}
                           </Typography>
 
-                          {/* Price Display - Giống hệt gói xét nghiệm */}
+                          {/* Price Display */}
                           <Box
                             sx={{
                               textAlign: 'center',
